@@ -6,6 +6,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.systemGestureExclusion
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -1181,7 +1182,9 @@ fun PlayScreen(
                 color = Pc.Gold, modifier = Modifier.padding(horizontal = 8.dp))
         }
         Row(
-            Modifier.fillMaxWidth().padding(8.dp).horizontalScroll(rememberScrollState()),
+            // Excluded from the system back gesture: a fast fling on this strip
+            // starting near the screen edge used to leave the game (2026-09-06).
+            Modifier.fillMaxWidth().systemGestureExclusion().padding(8.dp).horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -1828,7 +1831,7 @@ fun PlayScreen(
                 // column, and adding MENU pushed it past that edge.
                 if (editingLayout) layoutToolbar(Modifier.align(Alignment.TopStart))
                 if (!streamClean && !editingLayout) Row(
-                    Modifier.align(Alignment.TopStart).fillMaxWidth().padding(6.dp)
+                    Modifier.align(Alignment.TopStart).fillMaxWidth().systemGestureExclusion().padding(6.dp)
                         .horizontalScroll(rememberScrollState())
                         .alpha(chipAlpha),
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -2457,7 +2460,8 @@ private fun Pad(onB: () -> Unit = {}, scale: Float = 1f) {
     // A button is 56dp plus 2dp of padding each side: that is the grid cell.
     val cell = (60 * scale).dp
     Row(
-        Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp),
+        // The pad sits at the screen edges; a thumb sliding off the D-pad must not be a back gesture.
+        Modifier.fillMaxWidth().systemGestureExclusion().padding(horizontal = 8.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // A plain plus. Nothing else lives on the movement cluster.
@@ -2509,7 +2513,7 @@ private fun Pad(onB: () -> Unit = {}, scale: Float = 1f) {
 /** Fullscreen overlay pad: translucent GBA controls at the screen's thumbs. */
 @Composable
 private fun OverlayPad(onB: () -> Unit, modifier: Modifier = Modifier) {
-    Box(modifier) {
+    Box(modifier.systemGestureExclusion()) {
         Column(
             Modifier.align(Alignment.BottomStart).padding(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,

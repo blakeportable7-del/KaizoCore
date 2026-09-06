@@ -51,8 +51,8 @@ object Demo {
 
     /** Emerald, Wattson's gym: a Scyther against the third of his four. */
     fun gba(t: GbaTracker, mode: String): TrackerState {
-        // Scyther 123: Wing Attack 17, Slash 163, Swords Dance 14, Pursuit 228. Oran Berry is item 133.
-        val scyther = gen3Mon(123, 25, 61, 78, listOf(17, 163, 14, 228), listOf(31, 20, 18, 20), 133, 0, 3)
+        // Scyther 123: Wing Attack 17, Slash 163, Swords Dance 14, Pursuit 228. Oran Berry is item 139 (Cheri is 133).
+        val scyther = gen3Mon(123, 25, 61, 78, listOf(17, 163, 14, 228), listOf(31, 20, 18, 20), 139, 0, 3)
         val party = listOf(tracked(t, scyther, 6, 11, 29))
         if (mode == "gba-over") return TrackerState(
             partyCount = 1, party = listOf(tracked(t, scyther.copy(curHp = 0), 6, 11, 29)),

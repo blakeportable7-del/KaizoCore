@@ -289,12 +289,23 @@ proves it). Effort **S**.
 phone: options, favourites, stat-marking mode, tracked data reset. Skip the
 streamer/stream-connect screens.
 
-### 3.3 Favourites that follow you across attempts - **S**
+### 3.3 Favourites that follow you across attempts - **DONE 2026-09-06**
 
-`PrepStore.loadFavorites()` already exists and already survives NEW RUN; it is
-only used to shout FAVORITE! at the ball call. What is missing is the UI to
-set them, which lives behind 3.2. Reference: the favourites section of
-`SetupScreen.lua`.
+Three name fields under "Startup favorites" on the RUN screen (Favorites.kt),
+saved to the favorites file that `PrepStore.loadFavorites()` already read.
+Names validate against the tracker's species table and a wrong one turns
+red. The tracker's no-party card shows "FAVORITES: A / B / C" on Gen 1, 2
+and 3, which is where the reference trackers show them (StreamerScreen.lua
+favorites, drawn on StartupScreen.lua; the Gen 1 and Gen 2 forks carry the
+same). The NDS tracker has no favorites screen, only a stream chat command
+that reads a file, so the DS panel shows nothing. The Gen 3 ball call is
+unchanged and still names only a match. Not a rule of any ruleset; a
+tracker display feature. Two tests in FavoritesTest.
+
+Blake asked why this sat undone for weeks when the port was supposed to
+mirror the tracker: no reason beyond always taking the next large item
+before the small ones. Clear the small tracker items before starting
+anything new.
 
 ### 3.4 Die icon under the pokeballs - **S**
 

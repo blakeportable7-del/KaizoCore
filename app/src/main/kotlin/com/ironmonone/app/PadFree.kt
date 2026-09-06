@@ -3,6 +3,7 @@ package com.ironmonone.app
 import android.view.KeyEvent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.systemGestureExclusion
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
@@ -92,7 +93,8 @@ fun FreePad(
                 }.onGloballyPositioned { c ->
                     val o = c.positionInParent()
                     rects[e] = Rect(o, androidx.compose.ui.geometry.Size(c.size.width.toFloat(), c.size.height.toFloat()))
-                }.then(if (editing && selected == e) Modifier.border(2.dp, Pc.Gold) else Modifier)
+                }.systemGestureExclusion() // a thumb sliding off a control at the screen edge is not a back gesture
+                    .then(if (editing && selected == e) Modifier.border(2.dp, Pc.Gold) else Modifier)
             ) {
                 when (e) {
                     PadLayout.Element.DPAD -> Box(contentAlignment = Alignment.Center) {
