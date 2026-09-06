@@ -620,6 +620,7 @@ fun PlayScreen(
                 ndsState = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
                     runCatching { t.read() }.getOrNull()
                 } ?: ndsState
+                Demo.mode?.takeIf { it.startsWith("nds") }?.let { m -> ndsState = runCatching { Demo.nds(t, m) }.getOrNull() ?: ndsState }
             }
         }
     }
@@ -694,6 +695,7 @@ fun PlayScreen(
                     trackerRef = null
                 }
                 trackerState = fresh ?: trackerState
+                Demo.mode?.takeIf { it.startsWith("gba") }?.let { m -> trackerState = runCatching { Demo.gba(t, m) }.getOrNull() ?: trackerState }
             }
         }
     }

@@ -932,6 +932,11 @@ class GbaTracker(
         }.takeIf { it[0] >= 0 }
     }
 
+    /** The panel's four move rows for any mon, from the ROM's move table. Public for the screenshot demo. */
+    fun moveRowsOf(mon: PokemonDecoder.Mon): List<MoveRow> = moveRows(mon)
+    /** The ability the mon's slot resolves to. Public for the screenshot demo. */
+    fun abilityNameOf(mon: PokemonDecoder.Mon, base: BaseStats?): String = abilityOf(mon, base)
+
     private fun moveRows(mon: PokemonDecoder.Mon): List<MoveRow> =
         (0..3).mapNotNull { i ->
             val m = mon.moves[i]

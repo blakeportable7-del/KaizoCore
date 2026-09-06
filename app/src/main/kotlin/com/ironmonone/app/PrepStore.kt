@@ -352,7 +352,8 @@ class PrepStore(context: Context) {
     private fun currentRomId(): String = loadLastRun()?.first ?: "unknown"
 
     fun attempt(romId: String = currentRomId()): Int =
-        attemptFile(romId).takeIf { it.exists() }
+        if (Demo.mode != null) Demo.ATTEMPT
+        else attemptFile(romId).takeIf { it.exists() }
             ?.readText()?.trim()?.toIntOrNull() ?: 0
 
     fun bumpAttempt(romId: String = currentRomId()): Int =
