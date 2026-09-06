@@ -258,6 +258,35 @@ fun RunScreen(
         )
         Spacer(Modifier.height(12.dp))
 
+        // The PC tracker's startup favorites: three Pokemon it shows on the
+        // new-game screen. Typed by name here; the tracker's no-party card
+        // repeats them on Gen 1, 2 and 3, as those PC trackers do; a Gen 3 lab shouts a match in the balls.
+        Text("Startup favorites", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+        var favSlots by remember { mutableStateOf(Favorites.slots(store)) }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            favSlots.forEachIndexed { i, v ->
+                val known = v.isBlank() || Favorites.idOf(v) != null
+                androidx.compose.material3.OutlinedTextField(
+                    value = v,
+                    onValueChange = { t ->
+                        favSlots = favSlots.toMutableList().also { it[i] = t }
+                        Favorites.save(store, favSlots)
+                    },
+                    modifier = Modifier.weight(1f),
+                    singleLine = true,
+                    isError = !known,
+                    placeholder = { Text("Favorite ${i + 1}") },
+                    textStyle = MaterialTheme.typography.bodySmall,
+                )
+            }
+        }
+        Text(
+            if (favSlots.all { it.isBlank() || Favorites.idOf(it) != null }) "Shown on the tracker before your first Pokemon. A Gen 3 lab calls the ball if one is in it."
+            else "A name in red is not a Pokemon the tracker knows.",
+            style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper,
+        )
+        Spacer(Modifier.height(12.dp))
+
         Text("ROM", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
         if (preparedList.isEmpty()) {
             Text(

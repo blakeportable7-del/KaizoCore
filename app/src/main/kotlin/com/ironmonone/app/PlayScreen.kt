@@ -298,6 +298,8 @@ fun PlayScreen(
     }
 
     var favoriteHit by remember { mutableStateOf<String?>(null) }
+    // The ball call wins when there is one; otherwise the three favorites, the way the PC tracker's new-game screen lists them.
+    val favoriteLine = favoriteHit ?: remember(session.id) { Favorites.line(store) }
     var facecam by remember { mutableStateOf(false) }
     var muted by remember(session.id) { mutableStateOf(prefs0.muted) }
     // CHEATS. Per game, never on a tracked game (CheatStore.allowed). Sent
@@ -1492,7 +1494,7 @@ fun PlayScreen(
                     trackerState?.mapId?.let { statMarks.seenOnRoute(it) } ?: emptySet()
                 },
                 onSpeciesName = { sp -> trackerRef?.speciesName(sp) ?: "#$sp" },
-                      favoriteLine = favoriteHit, spriteFor = spriteFor,
+                      favoriteLine = favoriteLine, spriteFor = spriteFor,
                       enemyMarks = enemyMarks, enemyEncounters = enemyEncounters,
                       enemyLastSeenLevel = enemyLastSeen,
                       onCycleMark = { i ->
@@ -2031,7 +2033,7 @@ fun PlayScreen(
                     trackerState?.mapId?.let { statMarks.seenOnRoute(it) } ?: emptySet()
                 },
                 onSpeciesName = { sp -> trackerRef?.speciesName(sp) ?: "#$sp" },
-                favoriteLine = favoriteHit, spriteFor = spriteFor,
+                favoriteLine = favoriteLine, spriteFor = spriteFor,
                 enemyMarks = enemyMarks, enemyEncounters = enemyEncounters,
                 enemyLastSeenLevel = enemyLastSeen,
                 onCycleMark = { i ->
