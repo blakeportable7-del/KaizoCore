@@ -1,0 +1,47 @@
+name: Bug report
+description: Something in KaizoCore got in your way
+labels: ["bug", "beta"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for testing. Do NOT attach a ROM, a patched ROM or a save file; reports with one are deleted.
+        The app's INFO tab has SEND FEEDBACK, which composes most of this for you; paste it below.
+  - type: input
+    id: device
+    attributes:
+      label: Phone and Android version
+      placeholder: "Pixel 7, Android 14"
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: KaizoCore version (INFO tab)
+      placeholder: "1.0.0-rc15"
+    validations:
+      required: true
+  - type: dropdown
+    id: game
+    attributes:
+      label: Game family
+      options: ["FRLG", "RSE", "GSC", "RBY", "DPPt", "HGSS", "BW", "B2W2", "Not game-specific"]
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you saw, what you expected.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to make it happen again
+      placeholder: "1. ROMs tab, PLAY on a clean Emerald  2. FILE > STATES  3. ..."
+  - type: textarea
+    id: report
+    attributes:
+      label: The SEND FEEDBACK report, if you have it
+      render: text

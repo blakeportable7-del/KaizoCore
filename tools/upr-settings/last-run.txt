@@ -1,0 +1,43 @@
+written RBY Standard.rnqs
+written RBY Ultimate.rnqs
+written RBY Kaizo.rnqs
+written RBY Survival.rnqs
+written RBY PART 2.rnqs
+written GSC Standard.rnqs
+written GSC Ultimate.rnqs
+written GSC Kaizo.rnqs
+written GSC Survival.rnqs
+written FRLG Standard.rnqs
+written FRLG Ultimate.rnqs
+kept    FRLG Kaizo.rnqs  (matches the page)
+written FRLG Super Kaizo.rnqs
+written FRLG Survival.rnqs
+written FRLG Kaizo Doubles.rnqs
+written RSE Standard.rnqs
+written RSE Ultimate.rnqs
+kept    RSE Kaizo.rnqs  (matches the page)
+written RSE Super Kaizo.rnqs
+written RSE Survival.rnqs
+written RSE Kaizo Doubles.rnqs
+written HGSS Standard.rnqs
+written HGSS Ultimate.rnqs
+written HGSS Kaizo.rnqs
+written HGSS Super Kaizo.rnqs
+written HGSS Survival.rnqs
+written HGSS Kaizo Doubles.rnqs
+written DPPt Standard.rnqs
+written DPPt Ultimate.rnqs
+kept    DPPt Kaizo.rnqs  DIFFERS from the page in 2: [Randomize starters held items, Ban bad random starter held items]
+written DPPt Super Kaizo.rnqs
+written DPPt Survival.rnqs
+written DPPt Kaizo Doubles.rnqs
+written BW Standard.rnqs
+written BW Ultimate.rnqs
+written BW Kaizo.rnqs
+written BW Survival.rnqs
+written B2W2 Standard.rnqs
+written B2W2 Ultimate.rnqs
+written B2W2 Kaizo.rnqs
+written B2W2 Survival.rnqs
+written B2W2 Kaizo Doubles.rnqs
+39 written

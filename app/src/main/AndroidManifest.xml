@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- ROMs are read through the Storage Access Framework, which grants per-file
+         access the user picks, and no ROM is ever sent anywhere. CAMERA feeds the
+         optional on-screen facecam bubble for streaming; nothing is recorded. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <!-- INTERNET is for the stream server the player starts by hand: an HTTP
+         server on the phone that OBS on the same Wi-Fi reads. The app makes
+         no outbound connection of its own. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- VIBRATE: the phone's motor plays a game's rumble (Game Boy Player,
+         rumble carts, the DS Rumble Pak). Off in SETTINGS if unwanted. -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-feature android:name="android.hardware.camera.any" android:required="false" />
+
+    <!-- A 32MB ROM, a 26MB patch and a 32MB output are held at once while patching. -->
+    <application
+        android:largeHeap="true"
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.IronMonOne">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:configChanges="orientation|screenSize|keyboardHidden|screenLayout|smallestScreenSize|keyboard|navigation|uiMode">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

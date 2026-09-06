@@ -1,0 +1,106 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>KaizoCore tracker</title>
+<style>
+:root{--w:420px;--bg:#0b0b0b;--panel:#161616;--line:#3a3a3a;--ink:#e8e8e8;--dim:#9a9a9a;
+  --gold:#ffd54a;--red:#ff5d5d;--green:#69d36e;--blue:#7fb8ff;--plus:#69d36e;--minus:#ff5d5d;--eq:#ffd54a}
+html,body{margin:0;background:transparent}
+body{font:15px/1.25 "Segoe UI",Roboto,Arial,sans-serif;color:var(--ink)}
+#box{width:var(--w);background:var(--bg);border:2px solid var(--line);box-sizing:border-box;padding:10px;position:relative;min-height:200px}
+h1{font-size:20px;margin:0 0 4px;display:flex;justify-content:space-between;align-items:baseline}
+h1 small{color:var(--dim);font-size:13px;font-weight:normal}
+.types span{display:inline-block;padding:1px 7px;border-radius:3px;font-size:12px;margin-right:4px;background:#333}
+.hpbar{height:10px;background:#2a2a2a;border:1px solid var(--line);margin:6px 0}
+.hpbar i{display:block;height:100%;background:var(--green)}
+.hpbar.low i{background:var(--gold)}.hpbar.crit i{background:var(--red)}
+.row{display:flex;justify-content:space-between;color:var(--dim);font-size:13px;margin:2px 0}
+.row b{color:var(--ink);font-weight:600}
+table{width:100%;border-collapse:collapse;margin-top:6px}
+th{font-weight:normal;color:var(--dim);font-size:12px;text-align:left;border-bottom:1px solid var(--line);padding-right:6px}
+td{padding:2px 6px 2px 0;font-size:14px}
+td.n,th.n{text-align:right}
+.stats td{padding:1px 4px}
+.mark{font-weight:700}.mark.p{color:var(--plus)}.mark.m{color:var(--minus)}.mark.e{color:var(--eq)}
+.foot{margin-top:8px;padding-top:6px;border-top:1px solid var(--line);color:var(--dim);font-size:12px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px 10px}
+.foot b{color:var(--gold)}
+#enemy{position:absolute;inset:0;background:var(--bg);padding:10px;box-sizing:border-box;border:2px solid var(--red);display:none}
+#enemy.on{display:block}
+#enemy .tag{position:absolute;right:10px;top:8px;color:var(--red);font-size:12px;letter-spacing:1px}
+.balls span{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--red);margin-right:3px}
+.balls span.out{background:#444}
+.note{color:var(--blue);font-size:13px;margin-top:4px;white-space:pre-wrap}
+.wait{color:var(--dim);padding:40px 0;text-align:center}
+#over{display:none}#over.on{display:block}
+#over .ban{background:#2a1010;border:1px solid var(--red);padding:8px;margin-bottom:8px;font-size:16px}
+#over .ban.won{background:#10261a;border-color:var(--green)}
+.tabs button{background:#222;border:1px solid var(--line);color:var(--ink);padding:4px 10px;margin-right:4px;cursor:pointer;font:inherit;font-size:13px}
+.tabs button.on{background:#333;border-color:var(--gold)}
+#dexq{width:100%;box-sizing:border-box;background:#111;border:1px solid var(--line);color:var(--ink);padding:5px;margin:8px 0;font:inherit}
+#dexlist{max-height:260px;overflow:auto}
+#dexlist div{padding:3px 4px;cursor:pointer;border-bottom:1px solid #222;font-size:13px}
+#dexlist div:hover{background:#222}
+.mini{font-size:12px;color:var(--dim)}
+</style></head><body>
+<div id="box">
+  <div id="own"><div class="wait">Waiting for the game…</div></div>
+  <div id="enemy"></div>
+  <div id="over"></div>
+</div>
+<script>
+const q=new URLSearchParams(location.search);
+if(q.get('w'))document.documentElement.style.setProperty('--w',q.get('w')+'px');
+const k=q.get('k')||'';
+let S=null, DEX=null, overTab='party', dexSel=null, dexQuery='';
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const types=t=>`<span class="types">${(t||[]).map(x=>`<span>${esc(x)}</span>`).join('')}</span>`;
+const hpbar=(hp,max)=>{const p=max>0?Math.max(0,Math.min(100,hp*100/max)):0;
+  return `<div class="hpbar ${p<=20?'crit':p<=50?'low':''}"><i style="width:${p}%"></i></div>`};
+const moves=(ms,own)=>{if(!ms||!ms.length)return '';
+  return `<table><tr><th>Move</th><th class="n">PP</th><th class="n">Pow</th><th class="n">Acc</th><th>Type</th></tr>`+
+  ms.map(m=>`<tr><td>${esc(m.name)}</td><td class="n">${m.pp??'-'}${own&&m.ppMax?'/'+m.ppMax:''}</td><td class="n">${m.power||'-'}</td><td class="n">${m.acc||'-'}</td><td>${esc(m.type||'')}</td></tr>`).join('')+`</table>`};
+const MK=['','+','-','='];const MC=['','p','m','e'];
+const statsOwn=st=>st?`<table class="stats"><tr>${['hp','atk','def','spa','spd','spe'].map(n=>`<th class="n">${n.toUpperCase()}</th>`).join('')}</tr><tr>${['hp','atk','def','spa','spd','spe'].map(n=>`<td class="n">${st[n]??'-'}</td>`).join('')}</tr></table>`:'';
+const statsMarks=mk=>`<table class="stats"><tr>${['HP','ATK','DEF','SPA','SPD','SPE'].map(n=>`<th class="n">${n}</th>`).join('')}</tr><tr>${[0,1,2,3,4,5].map(i=>{const v=(mk||[])[i]||0;return `<td class="n mark ${MC[v]}">${MK[v]||'·'}</td>`}).join('')}</tr></table>`;
+function foot(s){const r=s.route;const b=[];
+  if(r)b.push(`<span>${esc(r.name)} <b>${r.seen}/${r.total}</b>${r.trainers?` · trainers ${r.trainers}`:''}</span>`);
+  if(s.heals)b.push(`<span>Heals <b>${s.heals.percent}%</b> (${s.heals.count})</span>`);
+  b.push(`<span>Badges <b>${countBits(s.badges)}</b></span>`);
+  if(s.steps)b.push(`<span>Steps ${s.steps}</span>`);
+  b.push(`<span>Attempt <b>${s.attempt}</b></span>`);
+  return `<div class="foot">${b.join('')}</div>`}
+const countBits=n=>{let c=0;n=n|0;while(n){c+=n&1;n>>=1}return c};
+function ownCard(s){const p=(s.party||[])[0];if(!p)return `<div class="wait">${s.tracked?'No Pokémon yet.':'Untracked game.'}</div>`;
+  return `<h1><span>${esc(p.name)} <small>Lv ${p.level}</small></span>${types(p.types)}</h1>
+  ${hpbar(p.hp,p.maxHp)}<div class="row"><span>HP <b>${p.hp}/${p.maxHp}</b>${p.status?` <b style="color:var(--gold)">${esc(p.status)}</b>`:''}</span><span>BST <b>${p.bst??'-'}</b></span></div>
+  <div class="row"><span>${esc(p.ability)}</span><span>${esc(p.item)}</span></div>
+  ${statsOwn(p.stats)}${moves(p.moves,true)}
+  <div class="row"><span>Moves ${p.movesLearned}/${p.movesTotal}${p.nextMoveLevel?` · next Lv ${p.nextMoveLevel}`:''}</span><span>${esc(p.evolution||'')}</span></div>
+  ${p.note?`<div class="note">${esc(p.note)}</div>`:''}${foot(s)}`}
+function enemyCard(s){const e=s.enemy;if(!e)return '';const team=(s.enemyTeam||[]);
+  return `<div class="tag">${s.wild?'WILD':'TRAINER'}</div><h1><span>${esc(e.name)} <small>Lv ${e.level}</small></span>${types(e.types)}</h1>
+  ${hpbar(e.hp,e.maxHp)}<div class="row"><span>HP <b>${e.hpPercent}%</b></span><span>BST <b>${e.bst??'?'}</b></span><span>${e.encounters?`Seen ${e.encounters}×${e.lastSeenLevel?` (last Lv ${e.lastSeenLevel})`:''}`:'New'}</span></div>
+  <div class="row"><span>${e.ability?esc(e.ability):'<i>'+esc(e.abilityGuess||'?')+'</i>'}</span>${team.length?`<span class="balls">${team.map(a=>`<span class="${a?'':'out'}"></span>`).join('')}</span>`:''}</div>
+  ${statsMarks(e.marks)}${moves(e.moves.length?e.moves:(e.movesSeen||[]).map(n=>({name:n})),false)}
+  ${e.note?`<div class="note">${esc(e.note)}</div>`:''}
+  <div class="row" style="margin-top:6px"><span>vs ${esc(((s.party||[])[0]||{}).name||'')} Lv ${((s.party||[])[0]||{}).level||''}</span></div>`}
+function overView(s){const won=s.outcome==='WON';
+  let h=`<div class="ban ${won?'won':''}">${won?'RUN WON':'RUN OVER'} · attempt ${s.attempt}</div>
+  <div class="tabs"><button class="${overTab==='party'?'on':''}" onclick="overTab='party';draw()">Final party</button><button class="${overTab==='dex'?'on':''}" onclick="overTab='dex';loadDex()">Randomizer data</button></div>`;
+  if(overTab==='party'){h+=(s.party||[]).map(p=>`<div style="margin-top:8px;border-top:1px solid var(--line);padding-top:6px"><b>${esc(p.name)}</b> Lv ${p.level} ${types(p.types)} BST ${p.bst??'-'}<div class="mini">${esc(p.ability)} · ${esc(p.item)}</div>${statsOwn(p.stats)}${moves(p.moves,true)}</div>`).join('')||'<div class="wait">No party recorded.</div>'}
+  else{h+=`<input id="dexq" placeholder="Search a Pokémon…" value="${esc(dexQuery)}" oninput="dexQuery=this.value;draw();document.getElementById('dexq').focus()">`;
+    if(!DEX)h+='<div class="wait">Loading…</div>';
+    else if(dexSel!=null){const d=DEX.find(x=>x.species===dexSel);h+=`<div><a href="#" onclick="dexSel=null;draw();return false" style="color:var(--blue)">← back</a></div><h1><span>${esc(d.name)}</span>${types(d.types)}</h1><div class="row"><span>${(d.abilities||[]).map(esc).join(' / ')}</span><span>BST <b>${d.bst}</b></span></div>${statsOwn(d.stats)}<div class="row"><span>${esc(d.evolution||'')}</span><span>${esc(d.weight?d.weight+' kg':'')}</span></div>`+
+      (d.learnset?`<table><tr><th class="n">Lv</th><th>Move</th></tr>${d.learnset.map(l=>`<tr><td class="n">${l.level}</td><td>${esc(l.move)}</td></tr>`).join('')}</table>`:(d.moveLevels?`<div class="mini">Move levels: ${d.moveLevels.join(', ')}</div>`:''))}
+    else{const ql=dexQuery.toLowerCase();h+=`<div id="dexlist">${DEX.filter(d=>!ql||d.name.toLowerCase().includes(ql)).slice(0,300).map(d=>`<div onclick="dexSel=${d.species};draw()">${esc(d.name)} <span class="mini">${(d.types||[]).join('/')}${d.bst?' · '+d.bst:''}</span></div>`).join('')}</div>`}}
+  return h}
+function draw(){if(!S)return;const over=document.getElementById('over'),en=document.getElementById('enemy'),own=document.getElementById('own');
+  if(S.outcome){over.className='on';own.style.display='none';en.className='';over.innerHTML=overView(S);return}
+  over.className='';own.style.display='';own.innerHTML=ownCard(S);
+  if(S.enemy&&S.inBattle){en.className='on';en.innerHTML=enemyCard(S)}else{en.className=''}}
+function loadDex(){overTab='dex';draw();if(DEX)return;fetch('/dex.json?k='+k).then(r=>r.json()).then(d=>{DEX=d;draw()}).catch(()=>{DEX=[];draw()})}
+function connect(){const es=new EventSource('/events?k='+k);es.addEventListener('state',e=>{try{S=JSON.parse(e.data);draw()}catch(x){}});
+  es.onerror=()=>{es.close();setTimeout(connect,2000)}}
+if(q.get('demo')){S={tracked:true,attempt:812,inBattle:q.get('demo')==='battle',wild:true,outcome:q.get('demo')==='over'?'LOST':null,badges:3,heals:{percent:44,count:7},route:{name:'Route 3',seen:2,total:6,trainers:5},steps:1204,
+  party:[{name:'Mothim',level:23,hp:61,maxHp:74,types:['Bug','Flying'],ability:'Swarm',item:'Oran Berry',bst:424,stats:{hp:74,atk:55,def:40,spa:61,spd:38,spe:52},moves:[{name:'Gust',pp:31,ppMax:35,power:40,acc:100,type:'Flying'},{name:'Confusion',pp:25,ppMax:25,power:50,acc:100,type:'Psychic'},{name:'Poison Powder',pp:35,ppMax:35,power:0,acc:75,type:'Poison'},{name:'Psybeam',pp:20,ppMax:20,power:65,acc:100,type:'Psychic'}],movesLearned:6,movesTotal:11,nextMoveLevel:26,evolution:'—',note:'Speed ties Geodude'}],
+  enemy:{name:'Sandile',level:21,hp:33,maxHp:60,hpPercent:55,types:['Ground','Dark'],bst:292,marks:[0,1,0,0,2,3],movesSeen:['Bite','Sand Tomb'],moves:[],abilityGuess:'Intimidate / Moxie',encounters:2,lastSeenLevel:19,note:''},enemyTeam:[true,true,false]};draw()}
+else connect();
+</script></body></html>

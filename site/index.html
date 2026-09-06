@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>KaizoCore</title>
+<meta name="description" content="Kaizo IronMON and Pokémon ROM hacks on your phone: patch, randomize, play, track and stream, in one app. Beta, Android, free.">
+<style>
+  :root { --bg:#111; --ink:#f2f2ee; --dim:#a9a9a0; --gold:#f5d33d; --card:#1b1b1b; --rule:#2c2c2c; }
+  * { box-sizing:border-box }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.5 system-ui,Segoe UI,Roboto,sans-serif }
+  main { max-width:920px; margin:0 auto; padding:32px 20px 80px }
+  h1 { font-size:2.4rem; margin:0 0 4px; letter-spacing:.02em }
+  h2 { font-size:1.15rem; margin:44px 0 12px; color:var(--gold); text-transform:uppercase; letter-spacing:.08em }
+  p { margin:0 0 12px } .dim { color:var(--dim) }
+  .lead { font-size:1.2rem; max-width:64ch }
+  .btn { display:inline-block; padding:12px 18px; border:2px solid var(--gold); color:var(--gold); text-decoration:none; font-weight:700; margin:8px 8px 0 0 }
+  .btn.solid { background:var(--gold); color:#111 }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px }
+  .grid img { width:100%; border:1px solid var(--rule); background:#000 }
+  .card { background:var(--card); border:1px solid var(--rule); padding:16px 18px; margin:0 0 12px }
+  ol,ul { padding-left:22px } li { margin:4px 0 }
+  code { background:#000; padding:2px 6px; font-size:.9em }
+  video { width:100%; max-width:420px; border:1px solid var(--rule); background:#000; display:block }
+  label { display:block; margin:10px 0 4px; color:var(--dim); font-size:.9rem }
+  input,select,textarea { width:100%; padding:10px; background:#000; color:var(--ink); border:1px solid var(--rule); font:inherit }
+  textarea { min-height:120px }
+  .warn { border-color:#8a3a2a }
+  footer { margin-top:60px; color:var(--dim); font-size:.9rem }
+</style>
+</head>
+<body>
+<main>
+  <h1>KaizoCore</h1>
+  <p class="lead">Kaizo IronMON and Pokémon ROM hacks on your phone. The library checks your dump, the patcher refuses the wrong patch, the presets are the official rulesets, the randomizer runs on the device, the tracker reads the game live, and each screen goes into OBS as a browser source. One app instead of six.</p>
+  <p class="dim">Android, free, open source. Beta: it will have bugs, and the whole point of this page is to hear about them.</p>
+  <p>
+    <a class="btn solid" href="RELEASES_URL">Download the latest build</a>
+    <a class="btn" href="#feedback">Report a problem</a>
+    <a class="btn" href="SUPPORT_URL">Support the project</a>
+  </p>
+
+  <h2>What it does</h2>
+  <div class="card">
+    <ul>
+      <li><b>Play</b> Game Boy, Game Boy Color, GBA and DS games with save states, rewind, slow motion, cheats, controller support, custom layouts and skins.</li>
+      <li><b>Prepare</b> a run: add your own dump, apply a patch or a hack (only to the game it fits), pick a ruleset, randomize. Gen 1's two-pass randomization is done for you.</li>
+      <li><b>Track</b> the run with a clone of the PC IronMON tracker, reading the game as you play: party, opponent, moves seen, abilities revealed, badges, heals.</li>
+      <li><b>Stream</b> it: the game, the tracker and the DS screens each as an OBS browser source, with a clean view for the phone.</li>
+      <li><b>Keep</b> it: RetroAchievements, cloud sync of saves through the file picker, backups that never contain a ROM.</li>
+    </ul>
+  </div>
+
+  <h2>See it</h2>
+  <video controls playsinline poster="img/poster.jpg" src="video/kaizocore-45s.mp4"></video>
+  <p class="dim">45 seconds: library, patch, randomize, play, tracker, NEW RUN, OBS.</p>
+  <div class="grid">
+    <img src="img/01-library.png" alt="The ROM library, sorted into clean, patched and hacks">
+    <img src="img/02-play.png" alt="A game running with the tracker docked beside it">
+    <img src="img/03-states.png" alt="Eight save state slots with screenshots">
+    <img src="img/04-settings.png" alt="Emulator settings for the console">
+    <img src="img/05-achievements.png" alt="RetroAchievements sign-in">
+    <img src="img/06-stream.png" alt="The tracker as an OBS browser source">
+  </div>
+
+  <h2>Before you install</h2>
+  <div class="card warn">
+    <p><b>You need your own game dumps.</b> KaizoCore contains no ROMs, links to none and downloads none. Do not ask here where to get one; that request is deleted.</p>
+    <p>Android 8 or newer. A DS game wants a phone with at least 3 GB of RAM. Installing a downloaded APK means allowing installs from your browser or file manager when Android asks.</p>
+  </div>
+  <ol>
+    <li>Download the APK from the latest build and check its SHA-256 against the <code>.sha256</code> file beside it.</li>
+    <li>Open it and allow the install.</li>
+    <li>ROMs tab: ADD FILES, pick your dump. The library says what it is and whether it is clean.</li>
+    <li>Run tab: pick the game and a ruleset, randomize. Play tab: play.</li>
+  </ol>
+
+  <h2 id="feedback">Report a problem</h2>
+  <p>Fastest: the app's INFO tab has <b>SEND FEEDBACK</b>, which composes the report with your device and log lines and hands it to any app you like. Or use this form.</p>
+  <form name="kaizocore-bug" method="POST" data-netlify="true" netlify-honeypot="website" action="/thanks.html">
+    <input type="hidden" name="form-name" value="kaizocore-bug">
+    <p hidden><label>Leave this empty <input name="website"></label></p>
+    <label>Phone and Android version</label><input name="device" required placeholder="Pixel 7, Android 14">
+    <label>KaizoCore version (INFO tab)</label><input name="version" required placeholder="1.0.0-rc15">
+    <label>Game family</label>
+    <select name="game"><option>FRLG</option><option>RSE</option><option>GSC</option><option>RBY</option><option>DPPt</option><option>HGSS</option><option>BW</option><option>B2W2</option><option>Not game-specific</option></select>
+    <label>What happened, what you expected, the steps</label><textarea name="what" required></textarea>
+    <label>How can I reach you (optional: Discord name or email)</label><input name="contact">
+    <p class="dim">No file uploads on purpose. Never send a ROM or a save.</p>
+    <p><button class="btn solid" type="submit">Send</button></p>
+  </form>
+
+  <h2>Support</h2>
+  <p>The app is free and stays free; nothing is sold and nothing is gated. If it is useful, <a href="SUPPORT_URL">a donation</a> goes to test phones for the device matrix, the domain and hosting, and the time to keep fixing what you report.</p>
+
+  <h2>Credits and licence</h2>
+  <p class="dim">Built on LibretroDroid with the mGBA, melonDS and Gambatte cores; Universal Pokémon Randomizer ZX and the Nat. Dex fork; rcheevos for RetroAchievements. The tracker follows the IronMON trackers by Besteon and the NDS IronMON Tracker. Nat. Dex Extension by CyanSMP64, used with permission. Licence: LICENSE_LINE. KaizoCore is not affiliated with Nintendo, Game Freak, The Pokémon Company, IronMON or RetroAchievements.</p>
+
+  <footer>Made in the Ohio Valley by Willow Creek Group, LLC. <a href="SOURCE_URL">Source</a> · <a href="DISCORD_URL">Discord</a></footer>
+</main>
+</body>
+</html>

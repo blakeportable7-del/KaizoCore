@@ -1,0 +1,111 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>IronMON One - LIVE</title>
+<style>
+  html, body { margin:0; height:100%; background:#1c1b17; color:#f8f8f8;
+               font-family:monospace; overflow:hidden; }
+  #wrap { display:flex; height:100%; }
+  #stage { position:relative; height:100%; aspect-ratio:1080/2340; margin:auto; }
+  video { width:100%; height:100%; display:block; background:#000; cursor:crosshair; }
+  #side { padding:14px; font-size:12px; line-height:1.9; max-width:230px; }
+  b { color:#58d080; }
+  kbd { background:#303030; border:1px solid #555; border-radius:2px; padding:0 5px; }
+  #st { color:#a9c9e2; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="stage"><video id="v" muted autoplay playsinline></video></div>
+  <div id="side">
+    <div><b>IRONMON ONE</b> live</div>
+    <div id="st">connecting…</div>
+    <hr>
+    <div>Click anywhere on the screen = tap.</div>
+    <div>Keyboard while video focused:</div>
+    <div><kbd>&uarr;&darr;&larr;&rarr;</kbd> walk (hold)</div>
+    <div><kbd>Z</kbd> A &nbsp; <kbd>X</kbd> B</div>
+    <div><kbd>Enter</kbd> START &nbsp; <kbd>Shift</kbd> SELECT</div>
+    <div><kbd>1</kbd> speed &nbsp; <kbd>F5</kbd>/<kbd>F8</kbd> save/load state</div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/jmuxer@2.0.5/dist/jmuxer.min.js"></script>
+<script>
+const DEV_W = 1080, DEV_H = 2340;
+const st = document.getElementById('st');
+const v = document.getElementById('v');
+
+const jmuxer = new JMuxer({ node: 'v', mode: 'video', flushingTime: 0,
+                            fps: 60, debug: false });
+
+async function pump() {
+  try {
+    const res = await fetch('/video');
+    const rd = res.body.getReader();
+    st.textContent = 'live';
+    while (true) {
+      const { done, value } = await rd.read();
+      if (done) break;
+      jmuxer.feed({ video: value });
+    }
+  } catch (e) { /* fallthrough to retry */ }
+  st.textContent = 'reconnecting…';
+  setTimeout(pump, 1000);
+}
+pump();
+
+// Keep latency down: jump to the live edge if the buffer runs ahead.
+setInterval(() => {
+  if (v.buffered.length) {
+    const end = v.buffered.end(v.buffered.length - 1);
+    if (end - v.currentTime > 0.4) v.currentTime = end - 0.05;
+  }
+}, 1000);
+
+function devCoords(ev) {
+  const r = v.getBoundingClientRect();
+  return { x: (ev.clientX - r.left) / r.width * DEV_W,
+           y: (ev.clientY - r.top) / r.height * DEV_H };
+}
+v.addEventListener('click', ev => {
+  const { x, y } = devCoords(ev);
+  fetch(`/tap?x=${x}&y=${y}`);
+});
+
+// The app's on-screen pad, in device pixels (harvested from the UI dump).
+const BTN = { a:[975,1572], b:[781,1572], start:[678,2016], select:[402,2016],
+              up:[265,1517], down:[265,1849], left:[105,1683], right:[425,1683],
+              speed:[148,1089], save:[398,1089], load:[678,1089] };
+function press(name, ms) {
+  const [x, y] = BTN[name];
+  fetch(`/swipe?x=${x}&y=${y}&ms=${ms || 140}`);
+}
+
+const KEYS = { ArrowUp:'up', ArrowDown:'down', ArrowLeft:'left', ArrowRight:'right' };
+const held = {};
+document.addEventListener('keydown', ev => {
+  if (ev.repeat) return;
+  const dir = KEYS[ev.key];
+  if (dir) {
+    ev.preventDefault();
+    // hold-to-walk: refresh a 300ms swipe while the key is down
+    const go = () => press(dir, 300);
+    go();
+    held[dir] = setInterval(go, 260);
+  }
+  else if (ev.key === 'z' || ev.key === 'Z') press('a');
+  else if (ev.key === 'x' || ev.key === 'X') press('b');
+  else if (ev.key === 'Enter') { ev.preventDefault(); press('start'); }
+  else if (ev.key === 'Shift') press('select');
+  else if (ev.key === '1') press('speed');
+  else if (ev.key === 'F5') { ev.preventDefault(); press('save'); }
+  else if (ev.key === 'F8') { ev.preventDefault(); press('load'); }
+});
+document.addEventListener('keyup', ev => {
+  const dir = KEYS[ev.key];
+  if (dir && held[dir]) { clearInterval(held[dir]); delete held[dir]; }
+});
+</script>
+</body>
+</html>

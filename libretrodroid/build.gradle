@@ -1,0 +1,52 @@
+// LibretroDroid 0.13.2 (GPL-3.0, Filippo Scognamiglio), vendored with the IronMON One
+// memory-read patch (SET_MEMORY_MAPS capture + readMemory JNI). Upstream:
+// https://github.com/Swordfish90/LibretroDroid - see LICENSE in this directory.
+// Build file adapted to this repo's AGP 8.3 / Kotlin 1.9 toolchain; the C++ and the
+// module are otherwise upstream plus the marked patches.
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+
+android {
+    namespace = "com.swordfish.libretrodroid"
+    compileSdkVersion 34
+    ndkVersion "26.1.10909125"
+
+    defaultConfig {
+        minSdkVersion 21
+        targetSdkVersion 34
+        consumerProguardFiles 'consumer-rules.pro'
+
+        externalNativeBuild {
+            cmake {
+                arguments '-DANDROID_STL=c++_static'
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            version '3.22.1'
+            path 'src/main/cpp/CMakeLists.txt'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+}
+
+dependencies {
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.9.24'
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.5.1'
+}

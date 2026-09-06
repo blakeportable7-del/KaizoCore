@@ -1,0 +1,77 @@
+1	Stench	While at the head of the party, decreases the wild encounter rate by 50%.	In the Battle Pyramid, the wild encounter rate is only decreased by 25%.
+2	Drizzle	Changes weather to rain when switched in. In rain, Water moves have 50% increased power and Fire moves have 50% decreased power. Thunder will always hit, Solarbeam deals 50% reduced damage, and Moonlight, Synthesis, and Morning Sun heal for 1/4 max HP	
+3	Speed Boost	At the end of each turn, raises Speed stat by one stage.	
+4	Battle Armor	Prevents this Pokémon from receiving critical hits.	
+5	Sturdy	Cannot be hit by one-hit KO moves (Fissure, Horn Drill, Guillotine, Sheer Cold).	
+6	Damp	Prevents allied and opposing Pokémon from using self-destructing moves (Self-Destruct, Explosion).	
+7	Limber	Cannot be paralyzed. Gaining this Ability, like through Skill Swap, will cure Paralysis.	
+8	Sand Veil	Increases Evasion by 20% in a sandstorm, and this Pokémon takes no end of turn damage in a sandstorm.	While at the head of the party, decreases the wild encounter rate by 50% in a sandstorm.
+9	Static	When hit by a contact move, 1/3 chance to paralyze the attacker.	While at the head of the party, wild encounters have a 50% chance of being against an Electric Pokémon, if possible.
+10	Volt Absorb	Restores 25% max HP instead of taking damage if hit by a damaging Electric move.	
+11	Water Absorb	Restores 25% max HP instead of taking damage if hit by a damaging Water move.	
+12	Oblivious	Cannot be infatuated. Gaining this Ability, like through Skill Swap, will cure infatuation.	
+13	Cloud Nine	Negates all effects of weather, but does not end the weather.	
+14	Compoundeyes	Increases the Accuracy of moves by 30% (i.e. Thunder has an Accuracy of 70%. With this ability, it would instead have 70% x 1.3 = 91% Accuracy).	Increases the chance of finding a wild Pokémon holding an item.
+15	Insomnia	Cannot be put to sleep. If this Pokémon uses Rest, it will fail. Gaining this Ability, like through Skill Swap, will cure Sleep.	
+16	Color Change	When hit by a damaging move, changes this Pokémon's type to match the move's type.	
+17	Immunity	Cannot be inflicted with Poison. Gaining this Ability, like through Skill Swap, will cure Poison.	
+18	Flash Fire	Immune to Fire moves. The first time this Pokémon is hit by a Fire move, its own Fire moves gain 50% power.	
+19	Shield Dust	Unaffected by the additional effects of other Pokémon's damaging moves. For example, a Pokémon with this ability cannot be frozen by Blizzard or made to flinch by Fake Out.	
+20	Own Tempo	Cannot be confused. Gaining this Ability, like through Skill Swap, will cure confusion.	
+21	Suction Cups	Prevents this Pokémon from being forced to switch out.	Increases the chance of getting bites while fishing.
+22	Intimidate	Lowers all opposing Pokémons' Attack stats by one stage when this Pokémon enters battle.	While at the head of the party, 50% chance to prevent a wild encounter that would have been with a Pokémon 5 or more levels lower than this Pokémon.
+23	Shadow Tag	Prevents opposing Pokémon from switching out or fleeing.	
+24	Rough Skin	When hit by a contact move, the attacker takes 1/16 of their max HP as damage.	
+25	Wonder Guard	Immune to all damaging moves that are not super effective, except for Struggle, Beat Up, Future Sight, and Doom Desire. Cannot be copied by Role Play or swapped by Skill Swap.	
+26	Levitate	Immune to Ground moves. This immunity is lost if this Pokémon uses Ingrain.	
+27	Effect Spore	When hit by a contact move, 10% chance for the attacker to become afflicted with Poison, Paralysis, or Sleep; with an equal chance of each. It's possible the random status won't affect the attacker, in the case that it is immune to that status.	
+28	Synchronize	When a Pokémon inflicts Poison, Paralysis, or Burn on this Pokémon, that Pokémon will be inflicted with the same status condition, if possible.	While at the head of the party, there is a 50% chance that a wild encounter Pokémon will have the same nature as this Pokémon.
+29	Clear Body	Prevents stat reductions caused by opposing Pokémons' moves and abilities.	
+30	Natural Cure	Heals any status conditions on switching out.	
+31	Lightningrod	All single-target Electric moves used by opposing Pokémon are redirected to this Pokémon.	While at the head of the party, Trainers registered with the PokéNav's Match Call feature will call twice as often.
+32	Serene Grace	Doubles the chance of secondary effects from this Pokémon's moves.	
+33	Swift Swim	Doubles Speed stat during rain.	
+34	Chlorophyll	Doubles Speed stat when the weather is sunny.	
+35	Illuminate	Increases the wild encounter rate by 100%.	
+36	Trace	Copies a random opposing Pokémon's Ability when this Pokémon enters battle.	
+37	Huge Power	Doubles this Pokémon's Attack stat.	
+38	Poison Point	When hit by a contact move, 1/3 chance to inflict Poison on the attacker.	
+39	Inner Focus	Prevents flinching.	
+40	Magma Armor	Cannot be frozen. Gaining this Ability, like through Skill Swap, will cure Freeze.	Decreases the time needed to hatch an Egg by half.
+41	Water Veil	Cannot be burned. Gaining this Ability, like through Skill Swap, will cure a Burn.	
+42	Magnet Pull	Prevents allied and opposing Steel Pokémon from switching out.	While at the head of the party, wild encounters have a 50% chance of being against a Steel Pokémon, if possible.
+43	Soundproof	Immune to sound-based moves. These moves are: GrassWhistle, Growl, Heal Bell, Hyper Voice, Metal Sound, Perish Song, Roar, Screech, Sing, Snore, Supersonic, Uproar	
+44	Rain Dish	Heals this Pokémon for 1/16 max HP after each turn during rain.	
+45	Sand Stream	Changes weather to a sandstorm when switched in. After each turn during a sandstorm, each Pokémon takes 1/16 max HP damage, unless they are Rock, Ground, or Steel.	
+46	Pressure	When a moves targets this Pokémon, one additional PP is deducted. A Pokémon can still target this Pokémon with a move if it only has 1 PP remaining for it.	While at the head of the party, 50% chance that a wild encounter Pokémon will be the highest level it could appear.
+47	Thick Fat	Damage received from Ice or Fire moves is halved.	
+48	Early Bird	Spends half as many turns asleep, rounded down.	
+49	Flame Body	When hit by a contact move, 1/3 chance to burn the attacker.	Decreases the time needed to hatch an Egg by half.
+50	Run Away	Running away from wild encounters always succeeds.	
+51	Keen Eye	This Pokémon's Accuracy cannot be lowered.	While at the head of the party, 50% chance to prevent a wild encounter that would have been with a Pokémon 5 or more levels lower than this Pokémon.
+52	Hyper Cutter	This Pokémon's Attack stat cannot be lowered by other Pokémon.	If this Pokémon uses Cut in the overworld, the radius of the Cut tall grass is increased by one.
+53	Pickup	After winning a battle, there is a 10% chance that this Pokémon will be holding an item, if it was not already holding one.	The types of items obtained vary according to this Pokémon's level, or the current level of the Battle Pyramid.
+54	Truant	Every other turn using a move in battle, this Pokémon instead loafs around and does nothing.	
+55	Hustle	Increases Attack stat by 50%, but decreases the Accuracy of physical moves by 20%.	While at the head of the party, 50% chance that a wild encounter Pokémon will be the highest level it could appear.
+56	Cute Charm	When hit by a contact move, 1/3 chance to inflict infatuation on the attacker. Has no effect if this Pokémon is genderless, or the same gender as the attacker.	While at the head of the party, 2/3 chance that a wild encounter will be forced to the opposite gender of this Pokémon, if possible.
+57	Plus	When in a Double Battle where any active Pokémon has the Ability Minus, this Pokémon's Special Attack stat increases by 50%.	
+58	Minus	When in a Double Battle where any active Pokémon has the Ability Plus, this Pokémon's Special Attack stat increases by 50%.	
+59	Forecast	Castform's type changes with the weather. Fire while sunny, Water while raining, or Ice while hailing. Cloud Nine and Air Lock disable this effect. This ability has no effect if a Pokémon other than Castform obtains this ability.	
+60	Sticky Hold	This Pokémon's held item cannot be taken or removed.	Increases the chance of getting bites while fishing.
+61	Shed Skin	1/3 chance at the end of every turn to cure major status conditions (Burn, Poison, Paralysis, Freeze, Sleep).	
+62	Guts	Increases this Pokémon's Attack stat by 50% when affected by a major status condition (Burn, Poison, Paralysis, Freeze, Sleep), and ignores the Attack reduction of Burn.	
+63	Marvel Scale	Increases this Pokémon's Defense stat by 50% when affected by a major status condition (Burn, Poison, Paralysis, Freeze, Sleep).	
+64	Liquid Ooze	HP draining moves used against this Pokémon cause the attacker to instead lose the HP they would have healed.	
+65	Overgrow	If this Pokémon is at or below 1/3 of its max HP, the power of their Grass moves is increased by 50%.	
+66	Blaze	If this Pokémon is at or below 1/3 of its max HP, the power of their Fire moves is increased by 50%.	
+67	Torrent	If this Pokémon is at or below 1/3 of its max HP, the power of their Water moves is increased by 50%.	
+68	Swarm	If this Pokémon is at or below 1/3 of its max HP, the power of their Bug moves is increased by 50%.	Increases the frequency at which wild Pokémons' cries are heard in the overworld.
+69	Rock Head	Prevents recoil damage from moves, except for Struggle.	
+70	Drought	Changes weather to sunny when switched in. In sun, Fire moves have 50% increased power and Water moves have 50% decreased power. Removes the charging turn for Solarbeam, lowers the Accuracy of Thunder to 50%, and causes Moonlight, Synthesis, and Morning Sun to heal 2/3 max HP.	
+71	Arena Trap	Prevents opposing Pokémon from switching out or fleeing, except Flying-types and Pokémon with Levitate.	Increases the wild encounter rate by 100%.
+72	Vital Spirit	Cannot be put to sleep. If this Pokémon tries to use Rest, it will fail. Gaining this Ability, like through Skill Swap, will cure Sleep.	While at the head of the party, 50% chance that a wild encounter will be at the highest possible level that Pokémon could appear.
+73	White Smoke	Prevents stat reductions caused by opposing Pokémons' moves and abilities.	While at the head of the party, decreases the wild encounter rate by 50%.
+74	Pure Power	Doubles this Pokémon's Attack stat.	
+75	Shell Armor	Prevents this Pokémon from receiving critical hits.	
+76	Cacophony	Immune to sound-based moves. These moves are: GrassWhistle, Growl, Heal Bell, Hyper Voice, Metal Sound, Perish Song, Roar, Screech, Sing, Snore, Supersonic, Uproar.	
+77	Air Lock	Negates all effects of weather, but does not end the weather.	

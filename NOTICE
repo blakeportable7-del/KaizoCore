@@ -1,0 +1,183 @@
+NOTICE — third-party components, licenses, and permissions
+==========================================================
+
+Several entries here are conditions this project is bound to, not documentation.
+Read the "Binding release conditions" checklist before any public release.
+
+
+PERMISSIONS GRANTED DIRECTLY
+----------------------------
+
+CyanSMP64 / NatDexExtension — ALL RIGHTS RESERVED, USED WITH PERMISSION
+https://github.com/CyanSMP64/NatDexExtension
+
+  The repository carries no LICENSE file (GitHub API reports license: null), so all
+  rights are reserved by default. Permission was granted by the author on
+  2026-08-30. Verbatim:
+
+    "Yes. You can use NatDexExtension's Pokemon/move data and sprites in your
+     GPL-3.0 Android IronMON app, including a Kotlin port or bundling the files.
+     Conditions:
+
+     * Credit me (CyanSixFour / CyanSMP64) and link
+       https://github.com/CyanSMP64/NatDexExtension in the app About screen and the
+       repo README
+     * Don't ship, host, or link Pokemon ROMs
+     * Don't imply the app is an official IronMON or Nat. Dex release
+     * If you fork or vendor the randomizer, keep GPL-3.0 and preserve copyright
+       notices
+
+     The randomizer fork is already GPL-3.0; follow that license and you're fine.
+     Good luck with the app.
+     Cyan"
+
+  Scope: covers the extension's Pokemon and move data tables and its sprites, both
+  as a Kotlin port and as bundled files. It does NOT extend to anything else.
+
+
+billgreenwald / ironmon_emu — NO LICENSE, PERMISSION REPORTED SECURED
+https://github.com/billgreenwald/ironmon_emu
+
+  Reported secured 2026-08-30. ** THE EXACT WORDING AND SCOPE ARE NOT YET CAPTURED. **
+  Do not build on this until they are, and record them here the way Cyan's grant is
+  recorded above. Two things need answering in writing:
+
+    (a) does the grant include the UNPUBLISHED application source? The public repo
+        contains only docs, claude_docs/ and mgba-android-memapi/ — no app/, no
+        gradle build.
+    (b) what conditions, if any, are attached?
+
+  Used so far: only the publicly published architecture documentation, as reference.
+  See docs/TRACKER_SPEC.md for how that provenance is kept clean.
+
+
+LICENSED COMPONENTS
+-------------------
+
+mGBA — MPL 2.0                          https://github.com/mgba-emu/mgba
+  The LICENSE does NOT carry the "Incompatible With Secondary Licenses" notice, so
+  MPL 2.0 section 3.3 permits distributing the combined work under GPL-3.0.
+  Obligations are file-level: keep MPL headers, and offer source for any MODIFIED
+  mGBA files under both MPL and GPL. Also vendor its third-party notices
+  (inih BSD-3, LZMA public domain, MurmurHash3).
+
+Universal Pokemon Randomizer ZX — GPL-3.0    Ajarmar/universal-pokemon-randomizer-zx
+  ** VENDORED IN THIS REPO ** at engine-zx/src, from tag v4.6.1, with its LICENSE.txt
+  at engine-zx/LICENSE.txt. Source is unmodified; our own tests live in engine-zx/test
+  so the vendored tree stays pristine. Preserve copyright notices; keep GPL-3.0.
+
+CyanSMP64 randomizer fork — GPL-3.0          CyanSMP64/universal-pokemon-randomizer-zx
+  Not yet vendored. Will collide with the above on package com.dabomstew.pkrandom and
+  needs build-time relocation. Preserve copyright notices; keep GPL-3.0.
+  This is also Cyan's fourth condition above.
+
+besteon / Ironmon-Tracker — MIT              https://github.com/besteon/Ironmon-Tracker
+  Used as the source of truth for tracker constants and as a specification.
+
+LibretroDroid 0.13.2 — GPL-3.0                Swordfish90/LibretroDroid
+  ** VENDORED IN THIS REPO ** at libretrodroid/, with its LICENSE, plus the IronMON
+  One memory-read patch (SET_MEMORY_MAPS capture + readMemory JNI), each change
+  marked "IronMON One patch" in source. Oboe (Apache-2.0) and libretro-common
+  vendored within it as upstream ships them.
+
+mGBA libretro core — MPL 2.0                  mgba-emu/mgba
+  Prebuilt .so per ABI in app/src/main/jniLibs, taken from Swordfish90/LemuroidCores
+  (the build Lemuroid pins). MPL 2.0 permits this with notice; no mGBA files are
+  modified. NOTE: buildbot NIGHTLY cores segfault under LibretroDroid 0.13.2 - keep
+  the pinned builds.
+
+NDS-Ironmon-Tracker (Brian0255) - GPL-3.0   Brian0255/NDS-Ironmon-Tracker
+  The Platinum memory addresses and the pointer-chain resolution order used by
+  tracker-nds come from this project's MemoryAddresses.lua and GameConfigurator
+  .lua, read 2026-08-30. It is Lua for BizHawk and cannot run inside an APK, so
+  tracker-nds is a Kotlin port of its knowledge, not a replacement for it.
+  GPL-3.0 is this app's own licence.
+
+melonDS libretro core — GPL-3.0               melonDS-emu/melonDS
+  Prebuilt .so per ABI in app/src/main/jniLibs, taken from the same pinned
+  Swordfish90/LemuroidCores source as the mGBA core. GPL-3.0 is this app's own
+  licence, so redistribution is fine with source availability; no melonDS files
+  are modified. Runs Platinum on its built-in FreeBIOS, so no Nintendo BIOS or
+  firmware dump is required or bundled.
+
+androidx.media3 (SonicAudioProcessor) — Apache-2.0
+Oboe — Apache-2.0
+com.anggrayudi:storage — Apache-2.0
+Swordfish90/RadialGamePad — GPL-3.0          (compatible; this app is GPL-3.0)
+
+
+BUNDLED IN THE APK (personal builds)
+------------------------------------
+
+  app/src/main/assets/patches/   natdex-emerald.bps, natdex-firered.bps
+  app/src/main/assets/types/     19 type icons, from besteon/Ironmon-Tracker
+                                 (images/types), drawn 30x12 by its
+                                 Drawing.drawTypeIcon
+  app/src/main/assets/status/    6 status icons, same source
+  app/src/main/assets/gen4sprites/  986 Pokemon sprites (493 + shiny), from
+                                 Brian0255/NDS-Ironmon-Tracker
+                                 (images/pokemonIconSets/hgsssprites).
+                                 Needed because Gen 4 art lives in compressed
+                                 archives inside the ROM.
+  app/src/main/assets/gbasprites/  1285 Pokemon sprites, 32x32, indexed by
+                                 the ROM's own species id (Gen 3 internal
+                                 ordering continued past 411), NOT by national
+                                 dex number. 1-411 from
+                                 besteon/Ironmon-Tracker (images/pokemonUpdated);
+                                 412-1285 from CyanSMP64/NatDexExtension
+                                 (natdex/sprites_mons), covered by the written
+                                 permission quoted at the top of this file.
+                                 Used on the Nat. Dex builds. Vanilla
+                                 FireRed/Emerald still decode art from the ROM,
+                                 so the card shows the art of the ROM actually
+                                 being played.
+                                 Bundled because the Nat. Dex ROMs publish no
+                                 front-pic table address, so there is nothing to
+                                 decode and every card rendered blank.
+  app/src/main/assets/presets/   FRLG Kaizo, RSE Kaizo, RSE NatDex v1.2 Kaizo,
+                                 FRLG NatDex v1.2 Kaizo, DPPt Kaizo (Gen 4)
+
+  These ship inside the APK so a fresh install can patch and randomize with no
+  file hunting. The patches are extracted on demand, the presets on first run,
+  and an imported copy always wins so a newer release can be dropped in without
+  an app update.
+
+  ** The sprites and icons above are Pokemon artwork; the tracker projects are
+  GPL-3.0 but the art is Nintendo's. Same standing as the patches: fine for a
+  local personal build, and a public release must remove them or obtain rights.
+
+  ** Licence status: Cyan's grant above is recorded as covering the extension's
+  Pokemon/move data and sprites, and explicitly NOT "anything else". The .bps
+  patches and the Nat. Dex .rnqs are his files and fall outside that recorded
+  scope. This is a LOCAL, personal, undistributed build, so bundling them is
+  not redistribution. Before ANY public release, either get that grant extended
+  in writing (record it above, the way the first one is recorded) or remove
+  these assets and go back to one-time import. Condition 3 still holds
+  regardless: no ROM is bundled, only patches. **
+
+  The two vanilla GBA Kaizo presets are the official IronMON settings published
+  in UTDZac's public gist for players to use.
+
+  "DPPt Kaizo.rnqs" is DiamondPearlPlatinum_Kaizo.rnqs, copied unmodified from
+  Brian0255/NDS-Ironmon-Tracker (ironmon_tracker/settings/). That project is
+  GPL-3.0 and the file is a randomizer settings string published for players to
+  use, not game content. It is bundled for the same reason as the others: so a
+  fresh install can start a Gen 4 run without hunting for a file.
+
+
+BINDING RELEASE CONDITIONS — verify every one before any public build
+---------------------------------------------------------------------
+
+[ ] 1. App About screen credits "CyanSixFour / CyanSMP64" and links
+       https://github.com/CyanSMP64/NatDexExtension
+[ ] 2. Repo README carries the same credit and link          (DONE — see README.md)
+[ ] 3. No Pokemon ROM is shipped, hosted, or linked. This was already a project rule;
+       it is now also a license condition, so breaching it breaches a grant.
+[ ] 4. Nothing implies this is an official IronMON or Nat. Dex release. The app name
+       carries the IronMON word, so the About screen must state plainly that it is
+       unaffiliated and unendorsed. A disclaimer line satisfies this regardless of
+       the final name.
+[ ] 5. Vendored randomizer stays GPL-3.0 with copyright notices intact.
+[ ] 6. ironmon_emu grant wording captured above, or nothing of theirs is used.
+[ ] 7. Bundled Nat. Dex .bps/.rnqs assets: grant extended in writing, or assets
+       removed and one-time import restored. See BUNDLED IN THE APK above.

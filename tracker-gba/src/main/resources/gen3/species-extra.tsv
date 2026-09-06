@@ -1,0 +1,411 @@
+1	Bulbasaur	16	6.9
+2	Ivysaur	32	13.0
+3	Venusaur		100.0
+4	Charmander	16	8.5
+5	Charmeleon	36	19.0
+6	Charizard		90.5
+7	Squirtle	16	9.0
+8	Wartortle	36	22.5
+9	Blastoise		85.5
+10	Caterpie	7	2.9
+11	Metapod	10	9.9
+12	Butterfree		32.0
+13	Weedle	7	3.2
+14	Kakuna	10	10.0
+15	Beedrill		29.5
+16	Pidgey	18	1.8
+17	Pidgeotto	36	30.0
+18	Pidgeot		39.5
+19	Rattata	20	3.5
+20	Raticate		18.5
+21	Spearow	20	2.0
+22	Fearow		38.0
+23	Ekans	22	6.9
+24	Arbok		65.0
+25	Pikachu	THUNDER	6.0
+26	Raichu		30.0
+27	Sandshrew	22	12.0
+28	Sandslash		29.5
+29	Nidoran F	16	7.0
+30	Nidorina	MOON	20.0
+31	Nidoqueen		60.0
+32	Nidoran M	16	9.0
+33	Nidorino	MOON	19.5
+34	Nidoking		62.0
+35	Clefairy	MOON	7.5
+36	Clefable		40.0
+37	Vulpix	FIRE	9.9
+38	Ninetales		19.9
+39	Jigglypuff	MOON	5.5
+40	Wigglytuff		12.0
+41	Zubat	22	7.5
+42	Golbat	FRIEND	55.0
+43	Oddish	21	5.4
+44	Gloom	LEAF_SUN	8.6
+45	Vileplume		18.6
+46	Paras	24	5.4
+47	Parasect		29.5
+48	Venonat	31	30.0
+49	Venomoth		12.5
+50	Diglett	26	0.8
+51	Dugtrio		33.3
+52	Meowth	28	4.2
+53	Persian		32.0
+54	Psyduck	33	19.6
+55	Golduck		76.6
+56	Mankey	28	28.0
+57	Primeape		32.0
+58	Growlithe	FIRE	19.0
+59	Arcanine		155.0
+60	Poliwag	25	12.4
+61	Poliwhirl	WATER37_REV, -- Level 37 replaces trade evolution for Politoed	20.0
+62	Poliwrath		54.0
+63	Abra	16	19.5
+64	Kadabra	37", -- Level 37 replaces trade evolution	56.5
+65	Alakazam		48.0
+66	Machop	28	19.5
+67	Machoke	37", -- Level 37 replaces trade evolution	70.5
+68	Machamp		130.0
+69	Bellsprout	21	4.0
+70	Weepinbell	LEAF	6.4
+71	Victreebel		15.5
+72	Tentacool	30	45.5
+73	Tentacruel		55.0
+74	Geodude	25	20.0
+75	Graveler	37", -- Level 37 replaces trade evolution	105.0
+76	Golem		300.0
+77	Ponyta	40	30.0
+78	Rapidash		95.0
+79	Slowpoke	WATER37, -- Water stone replaces trade evolution to Slowking	36.0
+80	Slowbro		78.5
+81	Magnemite	30	6.0
+82	Magneton		60.0
+83	Farfetch'd		15.0
+84	Doduo	31	39.2
+85	Dodrio		85.2
+86	Seel	34	90.0
+87	Dewgong		120.0
+88	Grimer	38	30.0
+89	Muk", -- PUMP SLOP		30.0
+90	Shellder	WATER	4.0
+91	Cloyster		132.5
+92	Gastly	25	0.1
+93	Haunter	37", -- Level 37 replaces trade evolution	0.1
+94	Gengar		40.5
+95	Onix	30", -- Level 30 replaces trade evolution	210.0
+96	Drowzee	26	32.4
+97	Hypno		75.6
+98	Krabby	28	6.5
+99	Kingler		60.0
+100	Voltorb	30	10.4
+101	Electrode		66.6
+102	Exeggcute	LEAF	2.5
+103	Exeggutor		120.0
+104	Cubone	28	6.5
+105	Marowak		45.0
+106	Hitmonlee		49.8
+107	Hitmonchan		50.2
+108	Lickitung		65.5
+109	Koffing	35	1.0
+110	Weezing		9.5
+111	Rhyhorn	42	115.0
+112	Rhydon		120.0
+113	Chansey	FRIEND	34.6
+114	Tangela		35.0
+115	Kangaskhan		80.0
+116	Horsea	32	8.0
+117	Seadra	40", -- Level 40 replaces trade evolution	25.0
+118	Goldeen	33	15.0
+119	Seaking		39.0
+120	Staryu	WATER	34.5
+121	Starmie		80.0
+122	Mr. Mime		54.5
+123	Scyther	30", -- Level 30 replaces trade evolution	56.0
+124	Jynx		40.6
+125	Electabuzz		30.0
+126	Magmar", -- MAMGAR		44.5
+127	Pinsir		55.0
+128	Tauros		88.4
+129	Magikarp	20	10.0
+130	Gyarados		235.0
+131	Lapras		220.0
+132	Ditto		4.0
+133	Eevee	EEVEE_STONES	6.5
+134	Vaporeon		29.0
+135	Jolteon		24.5
+136	Flareon		25.0
+137	Porygon	30", -- Level 30 replaces trade evolution	36.5
+138	Omanyte	40	7.5
+139	Omastar", -- LORD HELIX		35.0
+140	Kabuto	40	11.5
+141	Kabutops		40.5
+142	Aerodactyl		59.0
+143	Snorlax		460.0
+144	Articuno		55.4
+145	Zapdos		52.6
+146	Moltres		60.0
+147	Dratini	30	3.3
+148	Dragonair	55	16.5
+149	Dragonite		210.0
+150	Mewtwo		122.0
+151	Mew		4.0
+152	Chikorita	16	6.4
+153	Bayleef	32	15.8
+154	Meganium		100.5
+155	Cyndaquil	14	7.9
+156	Quilava	36	19.0
+157	Typhlosion		79.5
+158	Totodile	18	9.5
+159	Croconaw	30	25.0
+160	Feraligatr		88.8
+161	Sentret	15	6.0
+162	Furret		32.5
+163	Hoothoot	20	21.2
+164	Noctowl		40.8
+165	Ledyba	18	10.8
+166	Ledian		35.6
+167	Spinarak	22	8.5
+168	Ariados		33.5
+169	Crobat		75.0
+170	Chinchou	27	12.0
+171	Lanturn		22.5
+172	Pichu	FRIEND	2.0
+173	Cleffa	FRIEND	3.0
+174	Igglybuff	FRIEND	1.0
+175	Togepi	FRIEND	1.5
+176	Togetic		3.2
+177	Natu	25	2.0
+178	Xatu		15.0
+179	Mareep	15	7.8
+180	Flaaffy	30	13.3
+181	Ampharos		61.5
+182	Bellossom		5.8
+183	Marill	18	8.5
+184	Azumarill		28.5
+185	Sudowoodo		38.0
+186	Politoed		33.9
+187	Hoppip	18	0.5
+188	Skiploom	27	1.0
+189	Jumpluff		3.0
+190	Aipom		11.5
+191	Sunkern	SUN	1.8
+192	Sunflora		8.5
+193	Yanma		38.0
+194	Wooper	20	8.5
+195	Quagsire		75.0
+196	Espeon		26.5
+197	Umbreon		27.0
+198	Murkrow		2.1
+199	Slowking		79.5
+200	Misdreavus		1.0
+201	Unown		5.0
+202	Wobbuffet		28.5
+203	Girafarig		41.5
+204	Pineco	31	7.2
+205	Forretress		125.8
+206	Dunsparce		14.0
+207	Gligar		64.8
+208	Steelix		400.0
+209	Snubbull	23	7.8
+210	Granbull		48.7
+211	Qwilfish		3.9
+212	Scizor		118.0
+213	Shuckle		20.5
+214	Heracross		54.0
+215	Sneasel		28.0
+216	Teddiursa	30	8.8
+217	Ursaring		125.8
+218	Slugma	38	35.0
+219	Magcargo		55.0
+220	Swinub	33	6.5
+221	Piloswine		55.8
+222	Corsola		5.0
+223	Remoraid	25	12.0
+224	Octillery		28.5
+225	Delibird		16.0
+226	Mantine		220.0
+227	Skarmory		50.5
+228	Houndour	24	10.8
+229	Houndoom		35.0
+230	Kingdra		152.0
+231	Phanpy	25	33.5
+232	Donphan		120.0
+233	Porygon2		32.5
+234	Stantler		71.2
+235	Smeargle		58.0
+236	Tyrogue	20	21.0
+237	Hitmontop		48.0
+238	Smoochum	30	6.0
+239	Elekid	30	23.5
+240	Magby	30	21.4
+241	Miltank		75.5
+242	Blissey		46.8
+243	Raikou		178.0
+244	Entei		198.0
+245	Suicune		187.0
+246	Larvitar	30	72.0
+247	Pupitar	55	152.0
+248	Tyranitar		202.0
+249	Lugia		216.0
+250	Ho-Oh		199.0
+251	Celebi		5.0
+252	none		0.0
+253	none		0.0
+254	none		0.0
+255	none		0.0
+256	none		0.0
+257	none		0.0
+258	none		0.0
+259	none		0.0
+260	none		0.0
+261	none		0.0
+262	none		0.0
+263	none		0.0
+264	none		0.0
+265	none		0.0
+266	none		0.0
+267	none		0.0
+268	none		0.0
+269	none		0.0
+270	none		0.0
+271	none		0.0
+272	none		0.0
+273	none		0.0
+274	none		0.0
+275	none		0.0
+276	none		0.0
+277	Treecko	16	5.0
+278	Grovyle	36	21.6
+279	Sceptile		52.2
+280	Torchic	16	2.5
+281	Combusken	36	19.5
+282	Blaziken		52.0
+283	Mudkip	16	7.6
+284	Marshtomp	36	28.0
+285	Swampert		81.9
+286	Poochyena	18	13.6
+287	Mightyena		37.0
+288	Zigzagoon	20	17.5
+289	Linoone		32.5
+290	Wurmple	7	3.6
+291	Silcoon	10	10.0
+292	Beautifly		28.4
+293	Cascoon	10	11.5
+294	Dustox		31.6
+295	Lotad	14	2.6
+296	Lombre	WATER	32.5
+297	Ludicolo		55.0
+298	Seedot	14	4.0
+299	Nuzleaf	LEAF	28.0
+300	Shiftry		59.6
+301	Nincada	20	5.5
+302	Ninjask		12.0
+303	Shedinja		1.2
+304	Taillow	22	2.3
+305	Swellow		19.8
+306	Shroomish	23	4.5
+307	Breloom		39.2
+308	Spinda		5.0
+309	Wingull	25	9.5
+310	Pelipper		28.0
+311	Surskit	22	1.7
+312	Masquerain		3.6
+313	Wailmer	40	130.0
+314	Wailord", -- STONKS		398.0
+315	Skitty	MOON	11.0
+316	Delcatty		32.6
+317	Kecleon", -- KEKLEO-N		22.0
+318	Baltoy	36	21.5
+319	Claydol		108.0
+320	Nosepass		97.0
+321	Torkoal		80.4
+322	Sableye		11.0
+323	Barboach	30	1.9
+324	Whiscash		23.6
+325	Luvdisc		8.7
+326	Corphish	30	11.5
+327	Crawdaunt", -- FRAUD		32.8
+328	Feebas	35", -- Level 35 replaces beauty condition	7.4
+329	Milotic", -- THICC		162.0
+330	Carvanha	30	20.8
+331	Sharpedo		88.8
+332	Trapinch	35	15.0
+333	Vibrava	45	15.3
+334	Flygon		82.0
+335	Makuhita	24	86.4
+336	Hariyama		253.8
+337	Electrike	26	15.2
+338	Manectric		40.2
+339	Numel	33	24.0
+340	Camerupt		220.0
+341	Spheal	32	39.5
+342	Sealeo	44	87.6
+343	Walrein		150.6
+344	Cacnea	32	51.3
+345	Cacturne		77.4
+346	Snorunt	42	16.8
+347	Glalie		256.5
+348	Lunatone		168.0
+349	Solrock		154.0
+350	Azurill	FRIEND	2.0
+351	Spoink	32	30.6
+352	Grumpig		71.5
+353	Plusle		4.2
+354	Minun		4.2
+355	Mawile		11.5
+356	Meditite	37	11.2
+357	Medicham		31.5
+358	Swablu	35	1.2
+359	Altaria		20.6
+360	Wynaut	15	14.0
+361	Duskull	37	15.0
+362	Dusclops		30.6
+363	Roselia		2.0
+364	Slakoth	18	24.0
+365	Vigoroth	36	46.5
+366	Slaking		130.5
+367	Gulpin	26	10.3
+368	Swalot		80.0
+369	Tropius		100.0
+370	Whismur	20	16.3
+371	Loudred	40	40.5
+372	Exploud		84.0
+373	Clamperl	WATER30, -- Level 30 and stone replace trade evolution	52.5
+374	Huntail		27.0
+375	Gorebyss		22.6
+376	Absol		47.0
+377	Shuppet	37	2.3
+378	Banette		12.5
+379	Seviper		52.5
+380	Zangoose		40.3
+381	Relicanth		23.4
+382	Aron	32	60.0
+383	Lairon	42	120.0
+384	Aggron		360.0
+385	Castform		0.8
+386	Volbeat		17.7
+387	Illumise		17.7
+388	Lileep	40	23.8
+389	Cradily		60.4
+390	Anorith	40	12.5
+391	Armaldo		68.2
+392	Ralts	20	6.6
+393	Kirlia	30	20.2
+394	Gardevoir		48.4
+395	Bagon	30	42.1
+396	Shelgon	50	110.5
+397	Salamence		102.6
+398	Beldum	20	95.2
+399	Metang	45	202.5
+400	Metagross		550.0
+401	Regirock		230.0
+402	Regice		175.0
+403	Registeel		205.0
+404	Kyogre		352.0
+405	Groudon		950.0
+406	Rayquaza		206.5
+407	Latias		40.0
+408	Latios		60.0
+409	Jirachi		1.1
+410	Deoxys		60.8
+411	Chimecho		1.0
