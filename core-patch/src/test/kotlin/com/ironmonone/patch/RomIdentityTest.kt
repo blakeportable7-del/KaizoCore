@@ -38,8 +38,10 @@ class RomIdentityTest {
         val hg = RomIdentity.identify(dsRom("POKEMON HG", "IPKE"))
         assertEquals(RomKind.HEARTGOLD_U, hg.kind)
         assertEquals("POKEMON HG IPKE", hg.headerLine)
-        assertTrue("by header" in hg.summary, hg.summary)
-        assertEquals(RomKind.SOULSILVER_U, RomIdentity.identify(dsRom("POKEMON SS", "IPGE")).kind)
+        // HeartGold is pinned from a dump now; SoulSilver still identifies by header.
+        val ss = RomIdentity.identify(dsRom("POKEMON SS", "IPGE"))
+        assertEquals(RomKind.SOULSILVER_U, ss.kind)
+        assertTrue("by header" in ss.summary, ss.summary)
         assertEquals(RomKind.BLACK2_U, RomIdentity.identify(dsRom("POKEMON B2", "IREO")).kind)
     }
 

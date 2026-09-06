@@ -191,8 +191,13 @@ class GbcTracker(
         )
     }
 
+    /** The raw count byte of the last read: 0 before a game has a party, 1..6 with one, anything else garbage. */
+    private var lastCount = 0
+
     private fun readParty(): List<TrackedMon> {
-        val count = ram(m.partyCount, 1).let { if (it.isEmpty()) 0 else it.u8(0) }.coerceIn(0, 6)
+        val raw = ram(m.partyCount, 1).let { if (it.isEmpty()) 0 else it.u8(0) }
+        lastCount = raw
+        val count = raw.coerceIn(0, 6)
         val species = ram(m.partySpecies, 7)
         val out = ArrayList<TrackedMon>(6)
         for (i in 0 until 6) {
@@ -274,7 +279,10 @@ class GbcTracker(
             healCount = heals.second,
             gameOver = lead?.let { if (it.mon.curHp == 0 && it.mon.level > 0) GameOver.LOST else null },
             diagnostics = "${m.name}  party=%d mode=%d".format(party.size, mode),
-            unreadable = party.isEmpty(),
+            // A count of 0 is a game with no party yet (the title screen, the
+            // intro): the panel says so. A count of 1..6 with no decodable mon,
+            // or a count no party can have, is a map that does not fit this ROM.
+            unreadable = party.isEmpty() && lastCount != 0,
         )
     }
 }

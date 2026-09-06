@@ -171,8 +171,9 @@ class GbcTrackerTest {
         assertEquals(0b101, s.badges)
         assertEquals(100 to 2, s.healPercent to s.healCount, "2 Potions x 20 on a 40 HP lead")
         assertTrue(s.diagnostics.startsWith("Gold/Silver"), s.diagnostics)
-        // The proof the map is consulted: Crystal's addresses find nothing in this RAM.
-        assertTrue(GbcTracker(goldWram(), goldRom(), Gen2Map.CRYSTAL).read().unreadable)
+        // The proof the map is consulted: Crystal's addresses find no party in this RAM
+        // (a zero count there reads as 'no party yet', not as a broken map).
+        assertEquals(0, GbcTracker(goldWram(), goldRom(), Gen2Map.CRYSTAL).read().partyCount)
     }
 
     @Test
@@ -197,6 +198,12 @@ class GbcTrackerTest {
         header(r, "TETRIS", 0x00)
         assertNull(Gen2Map.forRom(r))
         assertTrue(GbcTracker(overworld(), r).read().unreadable)
+        // And a count the game could never have (Gen 1's 0xFF terminator sitting on the count byte) is unreadable.
+        val w = overworld(); w.put(GbcTracker.PARTY_COUNT, 0xFF); w.put(GbcTracker.PARTY_SPECIES, 0xFF)
+        assertTrue(GbcTracker(w, rom()).read().unreadable)
+        // While a zero count is simply no party yet.
+        val w0 = overworld(); w0.put(GbcTracker.PARTY_COUNT, 0); w0.put(GbcTracker.PARTY_SPECIES, 0)
+        assertTrue(!GbcTracker(w0, rom()).read().unreadable)
     }
 
     @Test
