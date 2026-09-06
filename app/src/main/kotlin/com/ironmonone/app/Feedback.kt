@@ -19,7 +19,7 @@ object Feedback {
         /** Latest build, changelog and checksum. Set when the repository is public. */
         const val RELEASES = "https://github.com/blakeportable7-del/KaizoCore/releases"
         /** Ko-fi / GitHub Sponsors. Set when Blake has created the account. */
-        const val SUPPORT = ""
+        const val SUPPORT = "https://buy.stripe.com/8x2cN7b1Q8AG2VLczE67S00"
         /** The bug form on the site. Set when the site is up. */
         const val BUG_FORM = "https://willowcreek.group/kaizocore#report"
     }
