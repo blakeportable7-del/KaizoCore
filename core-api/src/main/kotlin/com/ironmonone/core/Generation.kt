@@ -171,13 +171,13 @@ data class RomKind(
             id = "soulsilver-u",
             displayName = "Pokémon SoulSilver (U)",
             titleDetect = "POKEMON SS",
-            expectedCrc = CRC_UNKNOWN,   // a copy of HeartGold's kind must not inherit HeartGold's CRC
+            expectedCrc = 0xD8EA6090L,   // Blake's dump 2026-09-06: POKEMON SS IPGE, 128 MB
         )
 
         /**
          * Gen 5 (USA). Header titles and codes from the DS reference's
          * GameInfo.VERSION_NUMBER: Black IRBO, White IRAO, Black 2 IREO,
-         * White 2 IRDO. CRC_UNKNOWN until read off Blake's dumps. Two
+         * White 2 IRDO. Black's CRC is unknown until a dump is read. Two
          * families, because the settings page and the reference both treat
          * BW and B2W2 as separate groups.
          */
@@ -193,6 +193,7 @@ data class RomKind(
         )
         val WHITE_U = BLACK_U.copy(
             id = "white-u", displayName = "Pokémon White (U)", titleDetect = "POKEMON W",
+            expectedCrc = 0xB552501CL,   // Blake's dump 2026-09-06: POKEMON W IRAO, 256 MB
         )
         val BLACK2_U = BLACK_U.copy(
             id = "black2-u", family = "B2W2", displayName = "Pokémon Black 2 (U)",
@@ -203,6 +204,7 @@ data class RomKind(
         val WHITE2_U = BLACK_U.copy(
             id = "white2-u", family = "B2W2", displayName = "Pokémon White 2 (U)",
             titleDetect = "POKEMON W2",
+            expectedCrc = 0x777EB04FL,   // Blake's dump 2026-09-06: POKEMON W2 IRDO, 512 MB
         )
 
         /**

@@ -37,8 +37,8 @@ class LibraryOrganizeTest {
     @Test
     fun `shelving follows identity, not names`() {
         val lib = LibraryStore(Files.createTempDirectory("lib").toFile())
-        // SoulSilver: the kind whose CRC is still unpinned (HeartGold was pinned from a dump on 2026-09-06).
-        val hg = lib.import("whatever.nds", dsRom("POKEMON SS", "IPGE"))
+        // Black: the one DS kind whose CRC is still unpinned (every other was pinned from a dump on 2026-09-06).
+        val hg = lib.import("whatever.nds", dsRom("POKEMON B", "IRBO"))
         assertEquals(LibraryStore.Category.CLEAN, hg.category, "header match, CRC unpinned: clean but unverified")
         assertTrue(hg.unverified)
         assertTrue(hg.subtitle.contains("unverified"))
