@@ -533,6 +533,36 @@ HGSS/BW/B2W2/Crystal so clean dumps of those track from the library too.
 game is the player's own file; the tracker stays a clone with a reference;
 the IronMON path is not to regress while the general one is built.
 
+## 4.29 The Gen 1 tracker (2026-09-06)
+
+`Gen1Tracker` in tracker-gba: Red, Blue and Yellow through Gambatte's WRAM,
+producing the same TrackerState the Gen 3 panel draws, so no panel work.
+Three sources and nothing else: the Gen 1 reference tracker's table (six
+44-byte party slots, one 29-byte battle struct for the opponent, the enemy's
+move byte recorded only when it is a move the opponent knows, the in-battle
+byte 0/1/2, one badge byte, a counted bag of (id, qty) pairs); pokered and
+pokeyellow through tools/wram_layout.py, which gives the same numbers with
+their names and confirms the reference's "Yellow is one less" rule for the
+D block (wPartyCount D163/D162, wPartyMons D16B/D16A, wEnemyMon CFE5/CFE4,
+wIsInBattle D057/D056, wEnemyMoveNum CFCC/CFCB, wObtainedBadges D356/D355,
+wNumBagItems D31D/D31C, wBagItems D31E/D31D); and the randomizer's
+gen1_offsets.ini for the ROM tables it rewrites (base stats 28 bytes per dex
+number, Mew apart in Red, moves 6 bytes, and the PokedexOrder table).
+
+The Gen 1 fact that shapes the code: RAM holds INTERNAL species ids, not
+dex numbers. The ROM's own order table (Red 0x41024, Yellow 0x410B1, 190
+entries) turns one into the other, and names, base stats and sprites key on
+the dex number. The fixtures map internal ids to dex numbers deliberately
+oddly, so a tracker that skipped the table would name the wrong Pokemon.
+Healing item ids come from pokered's item_constants.asm (Potion 0x14,
+Super 0x13, Hyper 0x12, Max 0x11, Full Restore 0x10, the three drinks
+0x3C-0x3E). Gen 1 has no held items or abilities; those lines read "-".
+The Play screen picks Gen 2 or Gen 1 from the header. Four tests: Red read
+and typed through the ROM, a wild battle with the used-move rule and the
+trainer flag, Yellow's shifted layout reading its own RAM while Red's map
+finds nothing, and the count-byte, no-party and unknown-title rules. Red and
+Yellow boot on the emulator as tracked library games. Suite green.
+
 ## 4.28 Art from the player's own ROM, the app's own icons, real dumps (2026-09-06)
 
 The bundled Nintendo art was the gate on a public build (BETA-PLAN section 0).
@@ -629,10 +659,8 @@ Proof without a cartridge: RandomizersTest stubs the engine and checks the
 order, that PART 2's input is PART 1's output, the seeds, the cleanup, the
 joined log, the refusal when PART 2 is missing, and that a failed PART 1
 still cleans up; RomIdentityTest identifies the three headers and pins the
-CRCs. Owed: a real two-pass run on a Red/Blue/Yellow dump, and a Gen 1
-tracker (the GB tracker reports "not known" for a Gen 1 header rather than
-reading Crystal's addresses; pokered plus tools/wram_layout.py is the way to
-get its addresses, the same way Gold's were). Suite green.
+CRCs. Owed: a real two-pass run on a Red/Blue/Yellow dump. The Gen 1 tracker
+landed the same day, see 4.29. Suite green.
 
 ## 4.25 Gold and Silver (2026-09-06)
 

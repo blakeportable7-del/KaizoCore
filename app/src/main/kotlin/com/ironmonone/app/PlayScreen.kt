@@ -635,13 +635,18 @@ fun PlayScreen(
             // the panel below needs nothing; trackerRef stays null, and the
             // GBA-only lookups it powers (descriptions, learnsets) are off.
             val romBytes = runCatching { rom.readBytes() }.getOrNull() ?: return@LaunchedEffect
-            val gbc = com.ironmonone.tracker.GbcTracker(reader, romBytes)
+            // Gen 2 (Crystal, Gold, Silver) or Gen 1 (Red, Blue, Yellow), picked from the header.
+            val read: () -> com.ironmonone.tracker.TrackerState = if (com.ironmonone.tracker.Gen2Map.forRom(romBytes) != null) {
+                val gbc = com.ironmonone.tracker.GbcTracker(reader, romBytes); { gbc.read() }
+            } else {
+                val gb = com.ironmonone.tracker.Gen1Tracker(reader, romBytes); { gb.read() }
+            }
             while (true) {
                 val visible = lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)
                 if (!visible) { kotlinx.coroutines.delay(1000); continue }
                 kotlinx.coroutines.delay(if (trackerState?.inBattle == true) 250 else 700)
                 trackerState = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
-                    runCatching { gbc.read() }.getOrNull()
+                    runCatching { read() }.getOrNull()
                 } ?: trackerState
             }
         }
