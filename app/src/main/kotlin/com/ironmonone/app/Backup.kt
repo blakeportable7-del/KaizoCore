@@ -101,13 +101,46 @@ object Backup {
  */
 object ZipImport {
     private val ROM_EXT = setOf("gba", "gbc", "gb", "nds", "bps", "ips", "ups")
-    private const val CAP = 256L * 1024 * 1024
+    /** Bigger than any DS cartridge (512 MB), so a zip bomb still stops. */
+    private const val CAP = 600L * 1024 * 1024
 
     fun isZip(name: String, bytes: ByteArray): Boolean =
         bytes.size >= 4 && bytes[0] == 'P'.code.toByte() && bytes[1] == 'K'.code.toByte() &&
             (name.lowercase().endsWith(".zip") || (bytes[2].toInt() == 3 && bytes[3].toInt() == 4))
 
-    /** (file name, bytes) for each ROM or patch inside. */
+    /**
+     * Stream each ROM or patch inside [input] to its own file under [dir],
+     * never holding an entry in memory: a 512 MB DS dump inside a zip is the
+     * normal case, not the edge. Returns (entry name, file) pairs.
+     */
+    fun extractToFiles(input: java.io.InputStream, dir: java.io.File): List<Pair<String, java.io.File>> {
+        val out = ArrayList<Pair<String, java.io.File>>()
+        dir.mkdirs()
+        ZipInputStream(input.buffered(1 shl 20)).use { zip ->
+            var i = 0
+            while (true) {
+                val e = zip.nextEntry ?: break
+                val name = e.name.substringAfterLast('/').substringAfterLast('\\')
+                val ext = name.substringAfterLast('.', "").lowercase()
+                if (e.isDirectory || ext !in ROM_EXT || name.startsWith("._")) { zip.closeEntry(); continue }
+                val f = java.io.File(dir, "zip${i++}-$name")
+                var total = 0L; var over = false
+                f.outputStream().buffered(1 shl 20).use { o ->
+                    val chunk = ByteArray(1 shl 16)
+                    while (true) {
+                        val r = zip.read(chunk); if (r < 0) break
+                        total += r; if (total > CAP) { over = true; break }
+                        o.write(chunk, 0, r)
+                    }
+                }
+                if (over || total == 0L) f.delete() else out += name to f
+                zip.closeEntry()
+            }
+        }
+        return out
+    }
+
+    /** (file name, bytes) for each ROM or patch inside. Small archives only; see [extractToFiles]. */
     fun extract(bytes: ByteArray): List<Pair<String, ByteArray>> {
         val out = ArrayList<Pair<String, ByteArray>>()
         ZipInputStream(bytes.inputStream()).use { zip ->

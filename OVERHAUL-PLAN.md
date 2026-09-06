@@ -533,6 +533,41 @@ HGSS/BW/B2W2/Crystal so clean dumps of those track from the library too.
 game is the player's own file; the tracker stays a clone with a reference;
 the IronMON path is not to regress while the general one is built.
 
+## 4.28 Art from the player's own ROM, the app's own icons, real dumps (2026-09-06)
+
+The bundled Nintendo art was the gate on a public build (BETA-PLAN section 0).
+Three things closed most of it in one day:
+
+- `RomSprites`: Gen 4 and Gen 5 Pokemon sprites decoded out of the player's
+  own DS ROM, the randomizer's getMascotImage read ported to int arrays and
+  run for every species into a per-kind PNG cache the tracker card reads
+  before the bundled sheet. Archive paths are checked against the
+  randomizer's own ini files by test. Proven on synthetic files first, then
+  on REAL dumps the same day: Black 2 decodes 649 of 649, HeartGold 493 of
+  493 (RomSpritesRealDumpTest, env-gated on the dump paths; montages were
+  looked at, not just counted). On the emulator the Black 2 cache holds 1298
+  files after one Play visit. The bundled gen4sprites folder is now a
+  fallback and goes once the card has been seen drawing from the cache with
+  a party on screen.
+- `tools/draw_icons.py`: the 19 type, 6 status and 112 badge icons are drawn
+  by the project from primitives and a 3x5 pixel alphabet, same names and
+  sizes, so nothing in the app changed. NOTICE says so.
+- Real dumps arrived and were read, never copied anywhere but the scratchpad
+  and the emulator: Black 2 (CRC D4427FD1), HeartGold (C180A0E9), Crystal
+  (EE6F5188, the 1.0 revision), Red (9F7FDD53) and Yellow (7D527D62), the
+  last two matching the randomizer's ini. Black 2, HeartGold and Crystal are
+  pinned now; SoulSilver's copy of HeartGold's kind had to be given
+  CRC_UNKNOWN explicitly or it would have inherited HeartGold's CRC.
+
+Found on the way and fixed: importing a 512 MB DS dump threw
+OutOfMemoryError, because the library read every picked file into a byte
+array. RomIdentity.identify(File) streams the CRC and keeps 64 KB for the
+headers; LibraryStore.importFile moves the file in; ZipImport.extractToFiles
+unpacks a zip entry straight to disk (cap 600 MB); the picker streams each
+URI to a temp file first. Only patches, which are small, are read into
+memory. Black 2 imports as "verified, tracked" and boots on the emulator's
+melonDS (title screen, tracker waiting for a party). Suite green.
+
 ## 4.27 Beta phase 1: feedback, page, release mechanics (2026-09-06)
 
 See BETA-PLAN.md for the whole plan and its gate (the licence and the

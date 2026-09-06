@@ -110,15 +110,22 @@ BUNDLED IN THE APK (personal builds)
 ------------------------------------
 
   app/src/main/assets/patches/   natdex-emerald.bps, natdex-firered.bps
-  app/src/main/assets/types/     19 type icons, from besteon/Ironmon-Tracker
-                                 (images/types), drawn 30x12 by its
-                                 Drawing.drawTypeIcon
-  app/src/main/assets/status/    6 status icons, same source
+  app/src/main/assets/types/     19 type icons, DRAWN BY THIS PROJECT
+                                 (tools/draw_icons.py) since 2026-09-06; the
+                                 tracker repositories' copies are no longer used
+  app/src/main/assets/status/    6 status icons, same: tools/draw_icons.py
+  app/src/main/assets/badges/    112 badge icons, same: tools/draw_icons.py.
+                                 Numbered medals in a colour per set, not the
+                                 games' badge designs
   app/src/main/assets/gen4sprites/  986 Pokemon sprites (493 + shiny), from
                                  Brian0255/NDS-Ironmon-Tracker
                                  (images/pokemonIconSets/hgsssprites).
-                                 Needed because Gen 4 art lives in compressed
-                                 archives inside the ROM.
+                                 FALLBACK ONLY since 2026-09-06: RomSprites
+                                 decodes every species out of the player's own
+                                 DS ROM (the randomizer's getMascotImage read,
+                                 ported) into a per-ROM cache the card reads
+                                 first. Remove this folder once each DS kind
+                                 has been seen decoding on a real dump.
   app/src/main/assets/gbasprites/  1285 Pokemon sprites, 32x32, indexed by
                                  the ROM's own species id (Gen 3 internal
                                  ordering continued past 411), NOT by national

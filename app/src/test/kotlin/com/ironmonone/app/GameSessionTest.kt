@@ -59,8 +59,9 @@ class GameSessionTest {
         assertEquals(fr, GameSession.trackerKind(fr, fr.expectedCrc))
         assertNull(GameSession.trackerKind(fr, fr.expectedCrc xor 1L), "a modified FireRed is a hack")
         // A kind whose CRC is not pinned identifies by header and must not track.
-        assertEquals(RomKind.CRC_UNKNOWN, RomKind.HEARTGOLD_U.expectedCrc)
-        assertNull(GameSession.trackerKind(RomKind.HEARTGOLD_U, 0x12345678L))
+        assertEquals(RomKind.CRC_UNKNOWN, RomKind.SOULSILVER_U.expectedCrc)   // HeartGold was pinned from a dump on 2026-09-06; SoulSilver waits for one
+        assertNull(GameSession.trackerKind(RomKind.SOULSILVER_U, 0x12345678L))
+        assertEquals(RomKind.HEARTGOLD_U, GameSession.trackerKind(RomKind.HEARTGOLD_U, 0xC180A0E9L))
         assertNull(GameSession.trackerKind(null, 0L))
     }
 

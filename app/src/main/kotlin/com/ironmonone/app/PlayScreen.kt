@@ -1111,6 +1111,22 @@ fun PlayScreen(
         }
     }
 
+    // DS sprites come out of the player's own ROM (RomSprites): decode once per
+    // kind into the cache, off the main thread, and point the card at it. A
+    // kind the decoder does not know, or a ROM it cannot open, leaves the
+    // bundled fallback in place and says nothing.
+    LaunchedEffect(session.id) {
+        val k = kind
+        if (platform != com.ironmonone.core.Platform.NDS || k == null || RomSprites.narcPath(k) == null) { RomSprites.activeKind = null; return@LaunchedEffect }
+        RomSprites.activeKind = k
+        val max = if (k.generation == com.ironmonone.core.Generation.NDS5) 649 else 493
+        val n = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            runCatching { RomSprites.decodeAll(context.filesDir, rom, k, max) }
+                .onFailure { android.util.Log.w("KaizoCore", "RomSprites: ${it}", it) }.getOrDefault(-1)
+        }
+        if (n > 0) status = "Sprites read from your ROM: $n."
+    }
+
     // The bar shows FILE only while the Play screen is up, and stops showing it
     // the moment the screen leaves - otherwise a stale button would sit over the
     // other tabs, opening a menu for a game that is no longer loaded.

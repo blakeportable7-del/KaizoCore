@@ -130,7 +130,7 @@ object RomIdentity {
 
     data class Result(
         val crc: Long,
-        val sizeBytes: Int,
+        val sizeBytes: Long,
         val header: GbaHeader?,
         val kind: RomKind?,
         val dsHeader: DsHeader? = null,
@@ -164,8 +164,31 @@ object RomIdentity {
 
     private val known: List<RomKind> get() = RomKind.allV1 + RomKind.allNatDex
 
-    fun identify(bytes: ByteArray): Result {
-        val crc = Crc32.of(bytes)
+    fun identify(bytes: ByteArray): Result = identify(bytes, bytes.size.toLong(), Crc32.of(bytes))
+
+    /** The first bytes any header parser needs; every header lives inside them. */
+    const val HEAD = 64 * 1024
+
+    /**
+     * Identify a file without reading it into memory. A 512 MB DS dump does
+     * not fit in the heap (Black 2 threw OutOfMemoryError on import); the CRC
+     * streams over the file and only [HEAD] bytes are held for the headers.
+     */
+    fun identify(file: java.io.File): Result {
+        val size = file.length()
+        val head = ByteArray(minOf(size, HEAD.toLong()).toInt())
+        val crc = java.util.zip.CRC32()
+        file.inputStream().buffered(1 shl 20).use { input ->
+            var got = 0
+            while (got < head.size) { val n = input.read(head, got, head.size - got); if (n < 0) break; got += n }
+            crc.update(head, 0, got)
+            val buf = ByteArray(1 shl 20)
+            while (true) { val n = input.read(buf); if (n < 0) break; crc.update(buf, 0, n) }
+        }
+        return identify(head, size, crc.value)
+    }
+
+    private fun identify(bytes: ByteArray, sizeBytes: Long, crc: Long): Result {
         val gba = GbaHeader.parse(bytes)
         val ds = if (gba == null) DsHeader.parse(bytes) else null
         val gb = if (gba == null && ds == null) GbHeader.parse(bytes) else null
@@ -184,7 +207,7 @@ object RomIdentity {
             else -> null
         }
         return Result(
-            crc = crc, sizeBytes = bytes.size, header = gba,
+            crc = crc, sizeBytes = sizeBytes, header = gba,
             kind = byCrc ?: byHeader, dsHeader = ds, gbHeader = gb,
         )
     }

@@ -122,6 +122,22 @@ class LibraryStore(private val root: File) {
         if (!tmp.renameTo(target)) { target.delete(); tmp.renameTo(target) }
     }
 
+    /**
+     * Take [source] in as [displayName] without reading it into memory: a
+     * rename when it sits on the same filesystem, a streamed copy otherwise.
+     * The identity is read off the file (RomIdentity.identify(File)).
+     */
+    fun importFile(displayName: String, source: File, baseName: String? = null, patchName: String? = null): Entry {
+        val target = unique(root, displayName)
+        if (!source.renameTo(target)) {
+            val tmp = File(target.parentFile, target.name + ".tmp")
+            source.inputStream().use { i -> tmp.outputStream().buffered(1 shl 20).use { o -> i.copyTo(o, 1 shl 20) } }
+            if (!tmp.renameTo(target)) { target.delete(); tmp.renameTo(target) }
+            source.delete()
+        }
+        return describe(target, RomIdentity.identify(target), baseName, patchName).also { write(it) }
+    }
+
     /** Copy [bytes] in as [displayName], never overwriting an existing entry. */
     fun import(displayName: String, bytes: ByteArray, baseName: String? = null, patchName: String? = null): Entry {
         val target = unique(root, displayName)
@@ -171,7 +187,7 @@ class LibraryStore(private val root: File) {
             .filter { it.isFile && !it.name.endsWith(".meta") && !it.name.endsWith(".tmp") &&
                 it.name != selection.name }
             .sortedByDescending { it.lastModified() }
-            .map { f -> read(f) ?: describe(f, RomIdentity.identify(f.readBytes()), null, null).also { write(it) } }
+            .map { f -> read(f) ?: describe(f, RomIdentity.identify(f), null, null).also { write(it) } }
 
     fun find(name: String): Entry? =
         File(root, name).takeIf { it.isFile }?.let { read(it) ?: list().firstOrNull { e -> e.name == name } }
@@ -204,7 +220,7 @@ class LibraryStore(private val root: File) {
             }
             k != null -> out += k.displayName.substringBefore(" (") + " hack"
         }
-        RomIdentity.identify(runCatching { e.file.readBytes() }.getOrNull() ?: ByteArray(0)).headerLine
+        runCatching { RomIdentity.identify(e.file) }.getOrNull()?.headerLine
             ?.let { out += it.trim() }
         return out.filter { it.isNotBlank() && it != e.name.substringBeforeLast('.') }.take(4)
     }

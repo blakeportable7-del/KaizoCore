@@ -162,7 +162,7 @@ data class RomKind(
             displayName = "Pokémon HeartGold (U)",
             generation = Generation.NDS4,
             fileExtension = "nds",
-            expectedCrc = CRC_UNKNOWN,
+            expectedCrc = 0xC180A0E9L,   // Blake's dump 2026-09-06: POKEMON HG IPKE rev 0, 128 MB
             titleDetect = "POKEMON HG",
             natDexCapable = false,
         )
@@ -171,6 +171,7 @@ data class RomKind(
             id = "soulsilver-u",
             displayName = "Pokémon SoulSilver (U)",
             titleDetect = "POKEMON SS",
+            expectedCrc = CRC_UNKNOWN,   // a copy of HeartGold's kind must not inherit HeartGold's CRC
         )
 
         /**
@@ -196,6 +197,8 @@ data class RomKind(
         val BLACK2_U = BLACK_U.copy(
             id = "black2-u", family = "B2W2", displayName = "Pokémon Black 2 (U)",
             titleDetect = "POKEMON B2",
+            // CRC-32 read off Blake's own dump on 2026-09-06: "POKEMON B2" IREO rev 0, 512 MB.
+            expectedCrc = 0xD4427FD1L,
         )
         val WHITE2_U = BLACK_U.copy(
             id = "white2-u", family = "B2W2", displayName = "Pokémon White 2 (U)",
@@ -214,7 +217,7 @@ data class RomKind(
             displayName = "Pokémon Crystal (U)",
             generation = Generation.GBC2,
             fileExtension = "gbc",
-            expectedCrc = CRC_UNKNOWN,
+            expectedCrc = 0xEE6F5188L,   // Blake's dump 2026-09-06: PM_CRYSTAL, CGB 0xC0, 2 MB; the 1.0 revision (ZX lists 3358E30A for 1.1)
             titleDetect = "PM_CRYSTAL",
             natDexCapable = false,
         )

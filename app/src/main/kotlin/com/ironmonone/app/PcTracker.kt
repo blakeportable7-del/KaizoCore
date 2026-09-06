@@ -255,6 +255,13 @@ object PcAssets {
     fun dsSprite(context: android.content.Context, species: Int, shiny: Boolean):
         ImageBitmap? {
         if (species <= 0) return null
+        // First choice: the sprite decoded from the player's own ROM (RomSprites),
+        // a single image, no cell crop. The bundled sheet below is the fallback
+        // until every DS kind has been seen decoding on a real dump.
+        RomSprites.activeKind?.let { kind ->
+            val f = RomSprites.cacheFile(context.filesDir, kind, species, shiny)
+            if (f.isFile) runCatching { android.graphics.BitmapFactory.decodeFile(f.absolutePath)?.asImageBitmap() }.getOrNull()?.let { return it }
+        }
         val sheet = load(context, "gen4sprites/$species${if (shiny) "s" else ""}.png")
             ?: return null
         val cell = sheet.width / 4

@@ -104,6 +104,27 @@ fun RomLibraryScreen(modifier: Modifier = Modifier, onPlay: () -> Unit = {}) {
         else -> { val e = store.library.import(name, bytes); "Added ${e.name}: ${e.subtitle}" }
     }
 
+    /**
+     * Import one picked file that has been streamed to [f]. ROMs move into
+     * the library as files (a DS dump is 128 to 512 MB and does not fit in
+     * the heap; Black 2 proved it); zips are unpacked to files the same
+     * way; only patches, which are small, are read into memory.
+     */
+    fun importFile(name: String, f: java.io.File): String {
+        val head = f.inputStream().use { i -> val b = ByteArray(8); val n = i.read(b); if (n > 0) b.copyOf(n) else ByteArray(0) }
+        return when {
+            ZipImport.isZip(name, head) -> {
+                val inside = f.inputStream().use { ZipImport.extractToFiles(it, java.io.File(f.parentFile, f.name + ".d")) }
+                f.delete()
+                if (inside.isEmpty()) "$name holds no ROM or patch this app reads."
+                else inside.joinToString(Char(10).toString()) { (n, file) -> importFile(n, file) }.ifBlank { "" }
+            }
+            LibraryStore.looksLikePatch(name) || f.length() < 32L * 1024 * 1024 && store.library.peekPatch(f.readBytes()) != null ->
+                importOne(name, f.readBytes()).also { f.delete() }
+            else -> { val e = store.library.importFile(name, f); "Added ${e.name}: ${e.subtitle}" }
+        }
+    }
+
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
         if (uris.isEmpty()) return@rememberLauncherForActivityResult
         busy = true
@@ -111,8 +132,9 @@ fun RomLibraryScreen(modifier: Modifier = Modifier, onPlay: () -> Unit = {}) {
             val lines = withContext(Dispatchers.IO) {
                 uris.mapNotNull { uri ->
                     runCatching {
-                        val bytes = context.contentResolver.openInputStream(uri)!!.use { it.readBytes() }
-                        importOne(context.displayNameOf(uri), bytes)
+                        val tmp = java.io.File(context.cacheDir, "import-" + System.nanoTime())
+                        context.contentResolver.openInputStream(uri)!!.use { i -> tmp.outputStream().buffered(1 shl 20).use { o -> i.copyTo(o, 1 shl 20) } }
+                        importFile(context.displayNameOf(uri), tmp)
                     }.getOrElse { (it as? com.ironmonone.patch.PatchException)?.message ?: "Could not read one file." }
                 }
             }
