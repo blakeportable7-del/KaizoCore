@@ -196,6 +196,8 @@ fun LayoutToolbar(
             }
         }
         LayoutChip("SKIN: ${skin.label.uppercase()}") { onSkin(skin.next()) }
+        // 2.1: the most-downloaded store emulator's layout, one tap. DS keeps its own until its reference is measured.
+        if (!isDs) LayoutChip("MY BOY LAYOUT") { onEdit(PadLayout.myBoy(landscape)); onSkin(PadSkin.OUTLINE) }
         LayoutChip("RESET", onClick = onReset)
         Text(
             if (selected == null) "DRAG A BUTTON · TAP TO PICK" else "DRAG TO MOVE",

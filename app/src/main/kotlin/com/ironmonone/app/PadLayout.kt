@@ -67,6 +67,34 @@ data class PadLayout(
 
         fun default(landscape: Boolean) = if (landscape) LANDSCAPE else PORTRAIT
 
+        /**
+         * 2.1: the layout of the most-downloaded GBA emulator on Google Play, My Boy!
+         * (com.fastemulator.gbafree, 50M+ installs on 2026-09-07; the paid listing
+         * com.fastemulator.gba is the same layout at 1M+). Positions were measured off
+         * its store screenshots, as fractions of the control area, and drawn with this
+         * app's own shapes (the OUTLINE skin): none of its artwork is used.
+         *
+         * Landscape: D-pad low left, A low right with B up and to its left on the
+         * console's diagonal, L and R as pills at mid height on each edge, SELECT and
+         * START as two small pills at the bottom centre.
+         * Portrait: the controls sit in a band under the game; L and R at the top
+         * corners, the D-pad at the left, A above B stacked at the right, SELECT and
+         * START at the bottom centre.
+         */
+        val MYBOY_LANDSCAPE = PadLayout(mapOf(
+            Element.DPAD to Place(0.13f, 0.78f),
+            Element.B to Place(0.84f, 0.82f), Element.A to Place(0.94f, 0.90f),
+            Element.L to Place(0.07f, 0.45f), Element.R to Place(0.94f, 0.45f),
+            Element.SELECT to Place(0.55f, 0.94f), Element.START to Place(0.64f, 0.94f),
+        ), opacity = 0.55f, dsLayout = "hybrid-top")
+        val MYBOY_PORTRAIT = PadLayout(mapOf(
+            Element.DPAD to Place(0.23f, 0.56f),
+            Element.L to Place(0.14f, 0.12f, 0.9f), Element.R to Place(0.86f, 0.12f, 0.9f),
+            Element.A to Place(0.86f, 0.40f), Element.B to Place(0.86f, 0.72f),
+            Element.SELECT to Place(0.40f, 0.88f), Element.START to Place(0.62f, 0.88f),
+        ), opacity = 1f, dsLayout = "top-bottom")
+        fun myBoy(landscape: Boolean) = if (landscape) MYBOY_LANDSCAPE else MYBOY_PORTRAIT
+
         /** One file per orientation and console. */
         fun key(landscape: Boolean, platform: Platform) =
             (if (landscape) "landscape" else "portrait") + "-" + platform.name.lowercase()

@@ -53,4 +53,23 @@ class PadLayoutTest {
         assertEquals(PadLayout.Place(0.2f, 0.3f, 1.1f), l[PadLayout.Element.B], "valid B is kept")
         assertEquals(1f, l.opacity); assertEquals("top-bottom", l.dsLayout); assertEquals(0, l.dsGap)
     }
+
+    /** 2.1: the My Boy presets place every control inside the area and keep the buttons apart. */
+    @Test
+    fun `the My Boy presets are complete, inside the area, and no two buttons sit on each other`() {
+        for (landscape in listOf(true, false)) {
+            val l = PadLayout.myBoy(landscape)
+            for (e in PadLayout.Element.entries) {
+                val p = l[e]
+                kotlin.test.assertTrue(p.x in 0.04f..0.96f && p.y in 0.04f..0.96f, "$e at ${p.x},${p.y}")
+            }
+            val buttons = PadLayout.Element.entries.filter { it != PadLayout.Element.DPAD }
+            for (i in buttons.indices) for (j in i + 1 until buttons.size) {
+                val a = l[buttons[i]]; val b = l[buttons[j]]
+                val d = kotlin.math.hypot((a.x - b.x).toDouble(), (a.y - b.y).toDouble())
+                kotlin.test.assertTrue(d > 0.07, "${buttons[i]} and ${buttons[j]} overlap at $d (landscape=$landscape)")
+            }
+        }
+        kotlin.test.assertEquals(PadSkin.OUTLINE, PadSkin.parse("outline"))
+    }
 }

@@ -177,7 +177,27 @@ Effort **S**.
 
 ## 2. Play screen
 
-### 2.1 Controls: match the most-downloaded emulators - **RESEARCH -> M**
+### 2.1 Controls: match the most-downloaded emulators - **GBA DONE 2026-09-07, DS WAITING ON A SCREENSHOT**
+
+Ranking read off the Play Store pages on 2026-09-07 (install band, last
+update): GBA: My Boy! Lite com.fastemulator.gbafree 50M+ (2019) and My Boy!
+com.fastemulator.gba 1M+ (Aug 2026), then John GBAC, Pizza Boy, My Retro
+Gameboy and 90s Retro Games, all 1M+. DS: DraStic is gone from the store
+(404); SuperNDS com.supernds.free 5M+ (Aug 2026), melonDS 1M+ (May 2026).
+
+GBA: EDIT LAYOUT has a MY BOY LAYOUT chip that applies PadLayout.myBoy for
+the orientation and the new OUTLINE skin (outlined circles, pills and a
+square-arm cross on a clear ground, this app's own drawing). Positions were
+measured off My Boy's store screenshots; PadLayoutTest holds them inside
+the area and apart. Seen on the emulator in both orientations.
+
+DS: SuperNDS's store listing carries no gameplay screenshot (its image
+slots are adverts), and installing a third-party APK to look is not
+something this port does. The chip is hidden for DS until Blake sends a
+screenshot of SuperNDS's controls from his phone; the DS layout also needs
+X and Y buttons, which the free pad does not draw yet.
+
+Original note:
 
 Target, per your call: the layout and look of the most-downloaded GBA
 emulator on Google Play for GBA titles, and the most-downloaded DS emulator

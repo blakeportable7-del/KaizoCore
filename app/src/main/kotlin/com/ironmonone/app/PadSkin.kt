@@ -10,7 +10,9 @@ import java.io.File
  * from PadLayout either way; the skin only changes the paint.
  */
 enum class PadSkin(val label: String) {
-    CLASSIC("Classic"), MODERN("Modern");
+    CLASSIC("Classic"), MODERN("Modern"),
+    /** 2.1: outlined shapes on a clear ground, the look of My Boy!'s controls, drawn here. */
+    OUTLINE("Outline");
 
     fun next(): PadSkin = entries[(ordinal + 1) % entries.size]
 

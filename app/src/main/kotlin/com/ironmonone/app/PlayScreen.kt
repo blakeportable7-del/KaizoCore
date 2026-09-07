@@ -2423,7 +2423,11 @@ internal fun PadButton(
     // sent from the press handlers below regardless of skin.
     var pressed by remember { mutableStateOf(false) }
     val modern = skin == PadSkin.MODERN
+    val outline = skin == PadSkin.OUTLINE
     val shape = when {
+        outline && (mini || small || wide) -> androidx.compose.foundation.shape.RoundedCornerShape(50)
+        outline && keyCode in DPAD_KEYS -> androidx.compose.ui.graphics.RectangleShape
+        outline -> androidx.compose.foundation.shape.CircleShape
         !modern -> androidx.compose.ui.graphics.RectangleShape
         mini || small || wide -> androidx.compose.foundation.shape.RoundedCornerShape(50)
         else -> androidx.compose.foundation.shape.CircleShape
@@ -2435,16 +2439,20 @@ internal fun PadButton(
             .padding(2.dp)
             .let {
                 when {
-                    mini -> if (modern) it.width((48 * scale).dp).height((30 * scale).dp) else it.size((36 * scale).dp)
+                    mini -> if (modern || outline) it.width((48 * scale).dp).height((30 * scale).dp) else it.size((36 * scale).dp)
                     small -> it.width((64 * scale).dp).height(((if (modern) 26 else 32) * scale).dp)
                     wide -> it.width((96 * scale).dp).height((44 * scale).dp)
                     else -> it.size((56 * scale).dp)
                 }
             }
             .let {
-                if (modern) it.background(modernFill, shape)
-                    .border(1.dp, modernEdge, shape)
-                else it.background(frame).padding(2.dp).background(bevel).padding(2.dp).background(paper)
+                when {
+                    // Outline: a clear ground with a light edge; a press fills it.
+                    outline -> it.background(Color.White.copy(alpha = if (pressed) 0.35f else 0.06f), shape)
+                        .border(2.dp, Color.White.copy(alpha = 0.75f), shape)
+                    modern -> it.background(modernFill, shape).border(1.dp, modernEdge, shape)
+                    else -> it.background(frame).padding(2.dp).background(bevel).padding(2.dp).background(paper)
+                }
             }
             .semantics { contentDescription = spoken }
             .pressHold(
@@ -2464,7 +2472,7 @@ internal fun PadButton(
             ),
         contentAlignment = Alignment.Center,
     ) {
-        if (modern) {
+        if (modern || outline) {
             val glyph = when (keyCode) {
                 KeyEvent.KEYCODE_DPAD_UP -> "\u25B2"; KeyEvent.KEYCODE_DPAD_DOWN -> "\u25BC"
                 KeyEvent.KEYCODE_DPAD_LEFT -> "\u25C0"; KeyEvent.KEYCODE_DPAD_RIGHT -> "\u25B6"
@@ -2680,3 +2688,6 @@ private fun Modifier.pressHold(onDown: () -> Unit, onUp: () -> Unit): Modifier =
             }
         }
     }
+
+/** The four direction keys: the OUTLINE skin draws these square, the My Boy cross. */
+private val DPAD_KEYS = setOf(KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN, KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT)

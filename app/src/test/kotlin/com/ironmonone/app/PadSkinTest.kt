@@ -11,7 +11,7 @@ class PadSkinTest {
         assertEquals(PadSkin.MODERN, PadSkin.parse(" modern "))
         assertEquals(PadSkin.CLASSIC, PadSkin.parse("nope"))
         assertEquals(PadSkin.CLASSIC, PadSkin.parse(null))
-        assertEquals(PadSkin.MODERN, PadSkin.CLASSIC.next()); assertEquals(PadSkin.CLASSIC, PadSkin.MODERN.next())
+        assertEquals(PadSkin.MODERN, PadSkin.CLASSIC.next()); assertEquals(PadSkin.OUTLINE, PadSkin.MODERN.next()); assertEquals(PadSkin.CLASSIC, PadSkin.OUTLINE.next())
         val f = File(Files.createTempDirectory("skin").toFile(), "skin.txt")
         assertEquals(PadSkin.CLASSIC, PadSkin.load(f))
         PadSkin.save(f, PadSkin.MODERN)
