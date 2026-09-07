@@ -78,7 +78,7 @@ fun FreePad(
     val rects = remember { HashMap<PadLayout.Element, Rect>() }
     Box(modifier.fillMaxSize().onSizeChanged { area = it }) {
         if (area.width == 0) return@Box
-        PadLayout.Element.entries.forEach { e ->
+        PadLayout.Element.entries.filter { it in layout.places }.forEach { e ->
             val p = layout[e]
             val s = p.scale * baseScale
             Box(
@@ -123,6 +123,8 @@ fun FreePad(
                     }
                     PadLayout.Element.A -> PadButton("A", KeyEvent.KEYCODE_BUTTON_A, translucent = translucent, scale = s, skin = skin)
                     PadLayout.Element.B -> PadButton("B", KeyEvent.KEYCODE_BUTTON_B, translucent = translucent, scale = s, onB = onB, skin = skin)
+                    PadLayout.Element.X -> PadButton("X", KeyEvent.KEYCODE_BUTTON_X, translucent = translucent, scale = s, skin = skin)
+                    PadLayout.Element.Y -> PadButton("Y", KeyEvent.KEYCODE_BUTTON_Y, translucent = translucent, scale = s, skin = skin)
                     PadLayout.Element.L -> PadButton("L", KeyEvent.KEYCODE_BUTTON_L1, translucent = translucent, scale = s, mini = true, skin = skin)
                     PadLayout.Element.R -> PadButton("R", KeyEvent.KEYCODE_BUTTON_R1, translucent = translucent, scale = s, mini = true, skin = skin)
                     PadLayout.Element.SELECT -> PadButton("SELECT", KeyEvent.KEYCODE_BUTTON_SELECT, translucent = translucent, scale = s, small = !translucent, wide = translucent, skin = skin)
@@ -132,7 +134,7 @@ fun FreePad(
         }
         if (editing) {
             fun hit(pos: Offset): PadLayout.Element? =
-                PadLayout.Element.entries.lastOrNull { rects[it]?.contains(pos) == true }
+                PadLayout.Element.entries.filter { it in current.places }.lastOrNull { rects[it]?.contains(pos) == true }
             var dragging by remember { mutableStateOf<PadLayout.Element?>(null) }
             Box(
                 Modifier.fillMaxSize()
@@ -198,6 +200,7 @@ fun LayoutToolbar(
         LayoutChip("SKIN: ${skin.label.uppercase()}") { onSkin(skin.next()) }
         // 2.1: the most-downloaded store emulator's layout, one tap. DS keeps its own until its reference is measured.
         if (!isDs) LayoutChip("MY BOY LAYOUT") { onEdit(PadLayout.myBoy(landscape)); onSkin(PadSkin.OUTLINE) }
+        if (isDs && landscape) LayoutChip("SUPERNDS LAYOUT") { onEdit(PadLayout.SUPERNDS_LANDSCAPE); onSkin(PadSkin.OUTLINE) }
         LayoutChip("RESET", onClick = onReset)
         Text(
             if (selected == null) "DRAG A BUTTON · TAP TO PICK" else "DRAG TO MOVE",

@@ -24,7 +24,9 @@ data class PadLayout(
     val dsGap: Int = 0,
 ) {
     enum class Element(val label: String) {
-        DPAD("D-pad"), A("A"), B("B"), L("L"), R("R"), SELECT("Select"), START("Start");
+        DPAD("D-pad"), A("A"), B("B"), L("L"), R("R"), SELECT("Select"), START("Start"),
+        /** DS only. A layout that lacks them does not draw them. */
+        X("X"), Y("Y");
     }
 
     data class Place(val x: Float, val y: Float, val scale: Float = 1f) {
@@ -67,6 +69,31 @@ data class PadLayout(
 
         fun default(landscape: Boolean) = if (landscape) LANDSCAPE else PORTRAIT
 
+        /** The DS defaults: the same layouts with X above and Y beside the A/B pair, the console's diamond. */
+        val LANDSCAPE_DS = LANDSCAPE.copy(places = LANDSCAPE.places +
+            mapOf(Element.X to Place(0.85f, 0.42f, 0.85f), Element.Y to Place(0.71f, 0.60f, 0.85f)))
+        val PORTRAIT_DS = PORTRAIT.copy(places = PORTRAIT.places +
+            mapOf(Element.X to Place(0.80f, 0.12f, 0.85f), Element.Y to Place(0.69f, 0.48f, 0.85f)))
+        fun default(landscape: Boolean, nds: Boolean) =
+            if (nds) (if (landscape) LANDSCAPE_DS else PORTRAIT_DS) else default(landscape)
+
+        /**
+         * 2.1, DS: the layout of the most-downloaded DS emulator on Google Play,
+         * SuperNDS (com.supernds.free, 5M+ on 2026-09-07), measured off Blake's
+         * landscape screenshot of it on 2026-09-07: the two screens side by side, the
+         * cross low at the left, X Y A B in a diamond at the right, L and R pills at
+         * the top corners, START and SELECT along the bottom (its TOUCH toggle has no
+         * counterpart here: the bottom screen is always touchable). Drawn with this
+         * app's own shapes. Portrait waits on a portrait screenshot.
+         */
+        val SUPERNDS_LANDSCAPE = PadLayout(mapOf(
+            Element.DPAD to Place(0.11f, 0.79f),
+            Element.X to Place(0.90f, 0.66f, 0.75f), Element.Y to Place(0.83f, 0.79f, 0.75f),
+            Element.A to Place(0.96f, 0.79f, 0.75f), Element.B to Place(0.90f, 0.91f, 0.75f),
+            Element.L to Place(0.07f, 0.08f), Element.R to Place(0.94f, 0.08f),
+            Element.START to Place(0.40f, 0.94f), Element.SELECT to Place(0.64f, 0.94f),
+        ), opacity = 0.55f, dsLayout = "left-right")
+
         /**
          * 2.1: the layout of the most-downloaded GBA emulator on Google Play, My Boy!
          * (com.fastemulator.gbafree, 50M+ installs on 2026-09-07; the paid listing
@@ -108,9 +135,9 @@ class LayoutStore(private val dir: File) {
     private fun file(key: String) = File(dir, "$key.properties")
 
     fun load(key: String, landscape: Boolean): PadLayout {
-        val d = PadLayout.default(landscape)
+        val d = PadLayout.default(landscape, nds = key.endsWith("-nds"))
         val p = runCatching { Properties().apply { file(key).inputStream().use { load(it) } } }.getOrNull() ?: return d
-        val places = PadLayout.Element.entries.associateWith { e ->
+        val places = PadLayout.Element.entries.filter { it in d.places }.associateWith { e ->
             val x = p.getProperty("${e.name}.x")?.toFloatOrNull()
             val y = p.getProperty("${e.name}.y")?.toFloatOrNull()
             val s = p.getProperty("${e.name}.scale")?.toFloatOrNull() ?: d[e].scale

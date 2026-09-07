@@ -177,7 +177,7 @@ Effort **S**.
 
 ## 2. Play screen
 
-### 2.1 Controls: match the most-downloaded emulators - **GBA DONE 2026-09-07, DS WAITING ON A SCREENSHOT**
+### 2.1 Controls: match the most-downloaded emulators - **DONE 2026-09-07 (DS portrait waits on a screenshot)**
 
 Ranking read off the Play Store pages on 2026-09-07 (install band, last
 update): GBA: My Boy! Lite com.fastemulator.gbafree 50M+ (2019) and My Boy!
@@ -191,11 +191,21 @@ square-arm cross on a clear ground, this app's own drawing). Positions were
 measured off My Boy's store screenshots; PadLayoutTest holds them inside
 the area and apart. Seen on the emulator in both orientations.
 
-DS: SuperNDS's store listing carries no gameplay screenshot (its image
-slots are adverts), and installing a third-party APK to look is not
-something this port does. The chip is hidden for DS until Blake sends a
-screenshot of SuperNDS's controls from his phone; the DS layout also needs
-X and Y buttons, which the free pad does not draw yet.
+DS: Blake sent a landscape screenshot of SuperNDS on 2026-09-07. EDIT
+LAYOUT on a DS game in landscape has a SUPERNDS LAYOUT chip that applies
+PadLayout.SUPERNDS_LANDSCAPE (screens side by side, cross low left,
+X Y A B diamond right, L and R pills in the top corners, START and SELECT
+along the bottom) with the OUTLINE skin. The pad now has X and Y elements:
+only DS layouts place them, so GBA and GB never draw them, and the DS
+defaults carry them in the console's diamond. Portrait keeps the DS default
+until a portrait screenshot arrives.
+
+Found on the way: in DS landscape every chip in the strip and every pad
+button over the bottom screen was dead. The stylus layer was composed on
+top of the controls and Compose hands a touch to the topmost target only,
+so nothing ever "fell through" to them. It now sits under the pad and the
+strip. Seen on the emulator (Black 2): the strip opens the editor, the
+chip applies the layout. 424 tests green.
 
 Original note:
 

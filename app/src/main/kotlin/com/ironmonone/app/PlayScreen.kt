@@ -381,7 +381,7 @@ fun PlayScreen(
             layout = padLayout, selected = selectedElement, landscape = landscape,
             isDs = platform == com.ironmonone.core.Platform.NDS,
             onEdit = { padLayout = it },
-            onReset = { store.layouts.reset(layoutKey); padLayout = PadLayout.default(landscape); selectedElement = null },
+            onReset = { store.layouts.reset(layoutKey); padLayout = PadLayout.default(landscape, nds = platform == com.ironmonone.core.Platform.NDS); selectedElement = null },
             onDone = { store.layouts.save(layoutKey, padLayout); editingLayout = false; selectedElement = null },
             skin = padSkin, onSkin = { padSkin = it; store.setPadSkin(it) },
             modifier = m,
@@ -416,6 +416,10 @@ fun PlayScreen(
     var enemyLastSeen by remember { mutableStateOf<Int?>(null) }
     var lastCountedSpecies by remember { mutableStateOf(-1) }
     var trackerOpen by remember { mutableStateOf(true) }
+    // The last touch anywhere on the play area, for the landscape chip strip's fade.
+    // Watched at the ROOT: a watcher inside the pad overlay was never hit under the
+    // DS touch surface, so in DS landscape no tap ever woke the strip (2026-09-07).
+    var lastTouch by remember { mutableStateOf(android.os.SystemClock.uptimeMillis()) }
     // STREAMING. Clean view is the capture layout: nothing on screen but
     // the game (both DS screens in the core's own layout), so scrcpy's
     // window is a clean crop. Back leaves it. The tracker for the stream
@@ -1561,7 +1565,16 @@ fun PlayScreen(
     // One core means one framebuffer means one surface: the bottom screen
     // cannot be a second view, so the layout is arranged around where the
     // core actually draws it rather than trying to move it.
-    Box(modifier.fillMaxSize()) {
+    Box(
+        modifier.fillMaxSize().pointerInput(Unit) {
+            awaitPointerEventScope {
+                while (true) {
+                    awaitPointerEvent(androidx.compose.ui.input.pointer.PointerEventPass.Initial)
+                    lastTouch = android.os.SystemClock.uptimeMillis()
+                }
+            }
+        },
+    ) {
     Row(Modifier.fillMaxSize()) {
       // GBA portrait is the one layout whose height is NOT elastic: the game
       // frame is a fixed 3:2, so on a shorter screen - or one with a system nav
@@ -1751,147 +1764,12 @@ fun PlayScreen(
 
             // Stream layout (brief 16.1): controls fade after idle so a screen
             // share reads as game + tracker; any touch brings them back.
-            var lastTouch by remember { mutableStateOf(android.os.SystemClock.uptimeMillis()) }
             var dimmed by remember { mutableStateOf(false) }
-            if (landscape) {
-                LaunchedEffect(Unit) {
-                    while (true) {
-                        kotlinx.coroutines.delay(500)
-                        dimmed = android.os.SystemClock.uptimeMillis() - lastTouch > 3000
-                    }
-                }
-            }
-            // The game now fills its pane, so these sit ON the picture rather
-            // than on a black margin. They rest SEMI-TRANSPARENT so the game
-            // reads through them, and fade to nothing when untouched instead of
-            // lingering at a ghostly 12% that was neither visible nor gone.
-            // TWO fades, because these are not the same kind of control.
-            //
-            // The chip strip (SAVE / LOAD / NEW / MENU) is occasional, so it
-            // may disappear entirely. The PAD is how you play - hiding it left
-            // no way to press a button, which is worse than it covering some
-            // scenery. It stays put, just see-through.
-            val chipAlpha by androidx.compose.animation.core.animateFloatAsState(
-                targetValue = when {
-                    landscape && dimmed -> 0f
-                    landscape -> 0.55f
-                    else -> 1f
-                },
-                label = "chipFade",
-            )
-            val controlAlpha = if (landscape) padLayout.opacity else 1f
-            // Modifier.alpha does not affect hit testing, so a faded control is
-            // still live: the tap meant to WAKE the controls also pressed
-            // whichever one it landed on - and LOAD and SAVE sit in that strip
-            // with no confirmation. While faded, the first touch only wakes.
-            // Only the CHIPS need the wake-first guard, since only they can
-            // be invisible. The pad is always visible and always live.
-            val controlsAwake = !(landscape && dimmed)
-            if (landscape) {
-                // Touch watcher at the initial pass: sees every press without
-                // consuming anything, so the pad underneath still works.
-                Box(
-                    Modifier.fillMaxSize().pointerInput(Unit) {
-                        awaitPointerEventScope {
-                            while (true) {
-                                awaitPointerEvent(
-                                    androidx.compose.ui.input.pointer.PointerEventPass.Initial
-                                )
-                                lastTouch = android.os.SystemClock.uptimeMillis()
-                            }
-                        }
-                    }
-                )
-
-                if (showPad || editingLayout) {
-                    FreePad(
-                        layout = padLayout, onB = { if (wildBattleNow) flee() },
-                        translucent = true, skin = padSkin, editing = editingLayout, selected = selectedElement,
-                        onSelect = { selectedElement = it }, onEdit = { padLayout = it },
-                        modifier = Modifier.fillMaxSize()
-                            .then(Modifier.alpha(if (editingLayout) 1f else controlAlpha)),
-                    )
-                }
-                // Swallow the wake-up touch while the strip is faded.
-                if (!controlsAwake) {
-                    Box(
-                        Modifier.align(Alignment.TopStart).fillMaxWidth()
-                            .height(56.dp)
-                            .pointerInput(Unit) {
-                                awaitPointerEventScope {
-                                    while (true) {
-                                        val e = awaitPointerEvent()
-                                        e.changes.forEach { it.consume() }
-                                    }
-                                }
-                            }
-                    )
-                }
-
-                // The FILE button is in the top bar in landscape too, so its
-                // menu renders here. Offset below the chip strip so the two
-                // do not sit on top of each other.
-                if (menuOpen) {
-                    Box(Modifier.align(Alignment.TopStart).padding(top = 54.dp)) {
-                        FileMenu()
-                    }
-                }
-
-                // Slim utility strip, top-left: speed and states stay reachable by
-                // touch even with a controller (no controller button maps to them).
-                // Bounded and scrollable: the strip is as wide as the game
-                // column, and adding MENU pushed it past that edge.
-                if (editingLayout) layoutToolbar(Modifier.align(Alignment.TopStart))
-                if (!streamClean && !editingLayout) Row(
-                    Modifier.align(Alignment.TopStart).fillMaxWidth().systemGestureExclusion().padding(6.dp)
-                        .horizontalScroll(rememberScrollState())
-                        .alpha(chipAlpha),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    // Two groups, separated by a rule: the ones that act on
-                    // the RUN first, then the ones that act on the APP. Nine
-                    // undifferentiated chips meant hunting for LOAD every
-                    // time, and NEW (which ends your run) sat between two
-                    // harmless ones.
-                    OverlayChip("SLOT $saveSlot") {
-                        saveSlot = if (saveSlot >= StateSlots.COUNT) 1 else saveSlot + 1
-                    }
-                    OverlayChip("STATES") { statesDialog = true }
-                    OverlayChip("SAVE") { saveState() }
-                    OverlayChip("LOAD") { loadState() }
-                    OverlayChip("NEW") { confirmNewRun = true }
-                    ChipRule()
-                    OverlayChip(speedLabel) { cycleSpeed() }
-                    if (rewindAllowed) HoldChip("REWIND", onDown = { startRewind() }, onUp = { stopRewind() })
-                    OverlayChip(if (muted) "MUTED" else "SOUND") {
-                        muted = !muted; applyAudio()
-                    }
-                    OverlayChip("CAM") { facecam = !facecam }
-                    OverlayChip("CLEAN") { onClean(true) }
-                    OverlayChip("LAYOUT") { editingLayout = true }
-                    // Reachable in landscape too, where the portrait notice
-                    // and its button are not rendered at all.
-                    if (controllerOn) {
-                        OverlayChip(if (padForced) "PAD ON" else "PAD OFF") {
-                            padForced = !padForced
-                            store.setPadForced(padForced)
-                        }
-                    }
-                    // The status line lives inside the FILE row, which is
-                    // portrait-only - so in landscape every message ("Save
-                    // failed", "Slot belongs to a different run", "Camera
-                    // permission denied") was unreachable and those buttons
-                    // looked like they did nothing. Show it in the strip.
-                    status?.let { msg ->
-                        OverlayChip(msg.take(38)) { status = null }
-                    }
-                    // The tab bar is gone in landscape, so without this the
-                    // only way back to the rest of the app was to rotate the
-                    // phone - impossible with rotation locked.
-                    OverlayChip("MENU") { onExitFullscreen() }
-                }
-            }
-
+            // Composed BEFORE the pad and the chip strip on purpose: Compose hands a
+            // touch to the topmost target only, so with this layer on top the chips and
+            // every pad button over the bottom screen were dead in DS landscape
+            // (2026-09-07). Below them, a tap on a control is the control's; a tap on
+            // bare screen inside the bottom screen is the stylus.
             // DS STYLUS, drawn LAST so it sits above the overlay pad.
             //
             // The stylus used to live on the game view itself, underneath the
@@ -1977,6 +1855,150 @@ fun PlayScreen(
                     }
                 )
             }
+
+            if (landscape) {
+                LaunchedEffect(Unit) {
+                    while (true) {
+                        kotlinx.coroutines.delay(500)
+                        dimmed = android.os.SystemClock.uptimeMillis() - lastTouch > 3000
+                    }
+                }
+            }
+            // The game now fills its pane, so these sit ON the picture rather
+            // than on a black margin. They rest SEMI-TRANSPARENT so the game
+            // reads through them, and fade to nothing when untouched instead of
+            // lingering at a ghostly 12% that was neither visible nor gone.
+            // TWO fades, because these are not the same kind of control.
+            //
+            // The chip strip (SAVE / LOAD / NEW / MENU) is occasional, so it
+            // may disappear entirely. The PAD is how you play - hiding it left
+            // no way to press a button, which is worse than it covering some
+            // scenery. It stays put, just see-through.
+            val chipAlpha by androidx.compose.animation.core.animateFloatAsState(
+                targetValue = when {
+                    landscape && dimmed -> 0f
+                    landscape -> 0.55f
+                    else -> 1f
+                },
+                label = "chipFade",
+            )
+            val controlAlpha = if (landscape) padLayout.opacity else 1f
+            // Modifier.alpha does not affect hit testing, so a faded control is
+            // still live: the tap meant to WAKE the controls also pressed
+            // whichever one it landed on - and LOAD and SAVE sit in that strip
+            // with no confirmation. While faded, the first touch only wakes.
+            // Only the CHIPS need the wake-first guard, since only they can
+            // be invisible. The pad is always visible and always live.
+            val controlsAwake = !(landscape && dimmed)
+            if (landscape) {
+                // Touch watcher at the initial pass: sees every press without
+                // consuming anything, so the pad underneath still works.
+                Box(
+                    Modifier.fillMaxSize().pointerInput(Unit) {
+                        awaitPointerEventScope {
+                            while (true) {
+                                awaitPointerEvent(
+                                    androidx.compose.ui.input.pointer.PointerEventPass.Initial
+                                )
+                                lastTouch = android.os.SystemClock.uptimeMillis()
+                            }
+                        }
+                    }
+                )
+
+                if (showPad || editingLayout) {
+                    FreePad(
+                        layout = padLayout, onB = { if (wildBattleNow) flee() },
+                        translucent = true, skin = padSkin, editing = editingLayout, selected = selectedElement,
+                        onSelect = { selectedElement = it }, onEdit = { padLayout = it },
+                        modifier = Modifier.fillMaxSize()
+                            .then(Modifier.alpha(if (editingLayout) 1f else controlAlpha)),
+                    )
+                }
+                // Swallow the wake-up touch while the strip is faded.
+                if (!controlsAwake) {
+                    Box(
+                        Modifier.align(Alignment.TopStart).fillMaxWidth()
+                            .height(56.dp)
+                            .pointerInput(Unit) {
+                                awaitPointerEventScope {
+                                    while (true) {
+                                        val e = awaitPointerEvent()
+                                        e.changes.forEach { it.consume() }
+                                        // This guard is the topmost hit under the strip, so the
+                                        // watcher below never sees a tap here: a tap on the faded
+                                        // strip did nothing at all. It wakes the chips itself now.
+                                        lastTouch = android.os.SystemClock.uptimeMillis()
+                                    }
+                                }
+                            }
+                    )
+                }
+
+                // The FILE button is in the top bar in landscape too, so its
+                // menu renders here. Offset below the chip strip so the two
+                // do not sit on top of each other.
+                if (menuOpen) {
+                    Box(Modifier.align(Alignment.TopStart).padding(top = 54.dp)) {
+                        FileMenu()
+                    }
+                }
+
+                // Slim utility strip, top-left: speed and states stay reachable by
+                // touch even with a controller (no controller button maps to them).
+                // Bounded and scrollable: the strip is as wide as the game
+                // column, and adding MENU pushed it past that edge.
+                if (editingLayout) layoutToolbar(Modifier.align(Alignment.TopStart))
+                if (!streamClean && !editingLayout) Row(
+                    Modifier.align(Alignment.TopStart).fillMaxWidth().systemGestureExclusion().padding(6.dp)
+                        .horizontalScroll(rememberScrollState())
+                        .alpha(chipAlpha),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    // Two groups, separated by a rule: the ones that act on
+                    // the RUN first, then the ones that act on the APP. Nine
+                    // undifferentiated chips meant hunting for LOAD every
+                    // time, and NEW (which ends your run) sat between two
+                    // harmless ones.
+                    OverlayChip("SLOT $saveSlot") {
+                        saveSlot = if (saveSlot >= StateSlots.COUNT) 1 else saveSlot + 1
+                    }
+                    OverlayChip("STATES") { statesDialog = true }
+                    OverlayChip("SAVE") { saveState() }
+                    OverlayChip("LOAD") { loadState() }
+                    OverlayChip("NEW") { confirmNewRun = true }
+                    ChipRule()
+                    OverlayChip(speedLabel) { cycleSpeed() }
+                    if (rewindAllowed) HoldChip("REWIND", onDown = { startRewind() }, onUp = { stopRewind() })
+                    OverlayChip(if (muted) "MUTED" else "SOUND") {
+                        muted = !muted; applyAudio()
+                    }
+                    OverlayChip("CAM") { facecam = !facecam }
+                    OverlayChip("CLEAN") { onClean(true) }
+                    OverlayChip("LAYOUT") { editingLayout = true }
+                    // Reachable in landscape too, where the portrait notice
+                    // and its button are not rendered at all.
+                    if (controllerOn) {
+                        OverlayChip(if (padForced) "PAD ON" else "PAD OFF") {
+                            padForced = !padForced
+                            store.setPadForced(padForced)
+                        }
+                    }
+                    // The status line lives inside the FILE row, which is
+                    // portrait-only - so in landscape every message ("Save
+                    // failed", "Slot belongs to a different run", "Camera
+                    // permission denied") was unreachable and those buttons
+                    // looked like they did nothing. Show it in the strip.
+                    status?.let { msg ->
+                        OverlayChip(msg.take(38)) { status = null }
+                    }
+                    // The tab bar is gone in landscape, so without this the
+                    // only way back to the rest of the app was to rotate the
+                    // phone - impossible with rotation locked.
+                    OverlayChip("MENU") { onExitFullscreen() }
+                }
+            }
+
         }
 
         if (!landscape) {
@@ -2403,6 +2425,8 @@ internal fun PadButton(
         KeyEvent.KEYCODE_DPAD_RIGHT -> "Right"
         KeyEvent.KEYCODE_BUTTON_A -> "A button"
         KeyEvent.KEYCODE_BUTTON_B -> "B button"
+        KeyEvent.KEYCODE_BUTTON_X -> "X button"
+        KeyEvent.KEYCODE_BUTTON_Y -> "Y button"
         KeyEvent.KEYCODE_BUTTON_L1 -> "L shoulder"
         KeyEvent.KEYCODE_BUTTON_R1 -> "R shoulder"
         KeyEvent.KEYCODE_BUTTON_START -> "Start"
