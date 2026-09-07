@@ -98,7 +98,7 @@ fun PrepareScreen(modifier: Modifier = Modifier) {
             }.onSuccess { (n, f, id) ->
                 romFile?.delete(); romName = n; romFile = f; romId = id
                 if (!id.recognised) say(id.summary, error = true)
-            }.onFailure { say("Could not read that file: ${it.message}", error = true) }
+            }.onFailure { say("Could not read that file: ${it.message}", error = true); runCatching { context.cacheDir.listFiles()?.filter { f -> f.name.startsWith("prep-") }?.forEach { f -> f.deleteRecursively() } } }
             busy = false
         }
     }
@@ -161,7 +161,7 @@ fun PrepareScreen(modifier: Modifier = Modifier) {
                         }
                     }
                 }
-            }.onSuccess { (msg, _) -> say("$msg Go to the Run tab.") }
+            }.onSuccess { (msg, _) -> say("$msg Go to the Run tab."); romFile = null; romId = null }
                 .onFailure {
                     if (it is NeedPatch) {
                         needPatchImport = true

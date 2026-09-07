@@ -35,6 +35,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -263,6 +265,8 @@ fun RunScreen(
         // repeats them on Gen 1, 2 and 3, as those PC trackers do; a Gen 3 lab shouts a match in the balls.
         Text("Startup favorites", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
         var favSlots by remember { mutableStateOf(Favorites.slots(store)) }
+        // Which box is being typed in: its suggestions show under the row.
+        var favActive by remember { mutableStateOf(-1) }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             favSlots.forEachIndexed { i, v ->
                 val known = v.isBlank() || Favorites.idOf(v) != null
@@ -270,14 +274,32 @@ fun RunScreen(
                     value = v,
                     onValueChange = { t ->
                         favSlots = favSlots.toMutableList().also { it[i] = t }
+                        favActive = i
                         Favorites.save(store, favSlots)
                     },
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f).onFocusChanged { if (it.isFocused) favActive = i },
                     singleLine = true,
                     isError = !known,
                     placeholder = { Text("Favorite ${i + 1}") },
                     textStyle = MaterialTheme.typography.bodySmall,
                 )
+            }
+        }
+        // The names that start with what is typed in the active box, narrowing
+        // with every letter; a tap fills the box. Dex order, eight at most.
+        val favHints = if (favActive in favSlots.indices) Favorites.suggest(favSlots[favActive]) else emptyList()
+        if (favHints.isNotEmpty()) {
+            Row(
+                Modifier.fillMaxWidth().padding(top = 6.dp).horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                favHints.forEach { name ->
+                    com.ironmonone.app.gen3.Gen3Button(name.uppercase()) {
+                        favSlots = favSlots.toMutableList().also { it[favActive] = name }
+                        Favorites.save(store, favSlots)
+                        favActive = -1
+                    }
+                }
             }
         }
         Text(

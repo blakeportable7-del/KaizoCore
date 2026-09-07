@@ -145,9 +145,19 @@ class PrepStore(context: Context) {
     fun savePrepared(kind: RomKind, bytes: ByteArray): File =
         preparedFile(kind).apply { writeBytes(bytes) }
 
-    /** The same from a file on disk, copied: a DS dump never passes through the heap. */
-    fun savePrepared(kind: RomKind, file: File): File =
-        preparedFile(kind).also { file.copyTo(it, overwrite = true) }
+    /**
+     * The same from a file on disk, MOVED when the source is ours (the PREP
+     * cache), copied otherwise. A copy of a 512 MB dump needs another 512 MB
+     * free and, left behind in the cache, filled a phone up (2026-09-07).
+     */
+    fun savePrepared(kind: RomKind, file: File): File {
+        val dest = preparedFile(kind)
+        dest.parentFile?.mkdirs()
+        if (dest.exists()) dest.delete()
+        if (!file.renameTo(dest)) { file.copyTo(dest, overwrite = true); file.delete() }
+        crcCache.remove(dest.absolutePath)
+        return dest
+    }
 
     /**
      * CRC per prepared file, keyed on (path, mtime, size) so an unchanged file
@@ -158,20 +168,48 @@ class PrepStore(context: Context) {
      */
     private val crcCache = HashMap<String, Pair<String, Long>>()
 
+    /**
+     * The CRC of a prepared file, streamed and remembered on disk. This used to
+     * be Crc32.of(f.readBytes()): with a 512 MB Black 2 stored, the PREP tab's
+     * "Already prepared" list asked for 512 MB of heap on every launch and the
+     * app could not open at all (Blake's phone, 2026-09-07). The on-disk
+     * memo (path, mtime:size, crc) means the file is read once, not per launch.
+     */
+    private val crcMemo = File(root, "crc-cache.txt")
     private fun cachedCrc(f: File): Long {
         val stamp = f.lastModified().toString() + ":" + f.length()
         crcCache[f.absolutePath]?.let { (s, crc) -> if (s == stamp) return crc }
-        val crc = Crc32.of(f.readBytes())
+        if (crcCache.isEmpty()) runCatching {
+            crcMemo.takeIf { it.isFile }?.forEachLine { line ->
+                val p = line.split('|'); if (p.size == 3) crcCache[p[0]] = p[1] to (p[2].toLongOrNull() ?: return@forEachLine)
+            }
+            crcCache[f.absolutePath]?.let { (s, crc) -> if (s == stamp) return crc }
+        }
+        val c = java.util.zip.CRC32()
+        f.inputStream().buffered(1 shl 20).use { i -> val buf = ByteArray(1 shl 20); while (true) { val n = i.read(buf); if (n < 0) break; c.update(buf, 0, n) } }
+        val crc = c.value
         crcCache[f.absolutePath] = stamp to crc
+        runCatching { crcMemo.writeText(crcCache.entries.joinToString(System.lineSeparator()) { (k, v) -> k + "|" + v.first + "|" + v.second }) }
         return crc
     }
 
     /** Every prepared ROM on hand, identified by CRC so a stale file cannot lie. */
-    fun listPrepared(): List<Pair<RomKind, File>> =
-        (RomKind.allV1 + RomKind.allNatDex).mapNotNull { kind ->
+    fun listPrepared(): List<Pair<RomKind, File>> {
+        val prepared = (RomKind.allV1 + RomKind.allNatDex).mapNotNull { kind ->
             val f = preparedFile(kind)
             if (f.exists() && cachedCrc(f) == kind.expectedCrc) kind to f else null
         }
+        // 2026-09-07: a verified dump added on the ROMS tab is as good a base as
+        // one that went through PREP (PREP only adds Nat. Dex patching), and
+        // Blake's phone had Black 2 in the library with nothing to randomize.
+        // Library entries fill in for kinds PREP has not stored.
+        val have = prepared.map { it.first.id }.toSet()
+        val fromLibrary = runCatching { library.list() }.getOrDefault(emptyList())
+            .filter { it.verified && it.kind != null && it.kind.id !in have }
+            .distinctBy { it.kind!!.id }
+            .map { it.kind!! to it.file }
+        return prepared + fromLibrary
+    }
 
     // ---------------------------------------------------------------- settings
 

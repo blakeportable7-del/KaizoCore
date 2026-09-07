@@ -96,6 +96,10 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Demo.mode = intent?.getStringExtra("demo")
+        // PREP and ADD FILES stream picks into the cache; a pick that was never
+        // finished (a crash, a second tap) is worthless after a restart and, at
+        // 512 MB a DS dump, fills a phone. Swept every launch.
+        runCatching { cacheDir.listFiles()?.filter { it.name.startsWith("prep-") || it.name.startsWith("import-") }?.forEach { it.deleteRecursively() } }
         TrackerOptions.load(java.io.File(filesDir, "prep/tracker-options.txt"))
         (getSystemService(INPUT_SERVICE) as InputManager)
             .registerInputDeviceListener(deviceListener, null)

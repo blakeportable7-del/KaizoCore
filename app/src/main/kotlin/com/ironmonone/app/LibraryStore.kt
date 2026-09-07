@@ -163,11 +163,12 @@ class LibraryStore(private val root: File) {
      */
     private val SIDECAR_VERSION = "v2"
 
-    private fun write(e: Entry) {
+    private fun write(e: Entry) = runCatching {
+        // A full disk must not take the library down with it.
         sidecar(e.file).writeText(
             listOf(SIDECAR_VERSION, "%08x".format(e.crc), e.kind?.id ?: "-", e.platform?.name ?: "-",
                 e.baseName ?: "-", e.patchName ?: "-", e.summary).joinToString("\n"))
-    }
+    }.let { }
 
     private fun read(f: File): Entry? {
         val all = runCatching { sidecar(f).readLines() }.getOrNull() ?: return null

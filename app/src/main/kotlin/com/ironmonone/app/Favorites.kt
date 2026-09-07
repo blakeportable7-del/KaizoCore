@@ -29,6 +29,25 @@ object Favorites {
 
     fun idOf(name: String): Int? = idByName[name.trim().lowercase()]
 
+    /** Every known name in dex order, spelled for display (Bulbasaur, Mr. Mime, Ho-Oh). */
+    val namesInOrder: List<String> by lazy {
+        idByName.entries.sortedBy { it.value }.map { e -> e.key.split(' ').joinToString(" ") { w -> w.replaceFirstChar { it.uppercase() } } }
+    }
+
+    /**
+     * Blake, 2026-09-07: "as you type the first letter, the name of the pokemon
+     * comes up, and the list narrows as you type more." Names that START with
+     * what was typed, in dex order, at most [limit]; nothing for an empty box
+     * or an exact match already typed.
+     */
+    fun suggest(typed: String, limit: Int = 8): List<String> {
+        val q = typed.trim().lowercase()
+        if (q.isEmpty()) return emptyList()
+        val hits = namesInOrder.filter { it.lowercase().startsWith(q) }
+        if (hits.size == 1 && hits[0].lowercase() == q) return emptyList()
+        return hits.take(limit)
+    }
+
     /** The three slots as typed in the favorites file, padded to [SLOTS]. */
     fun slots(text: String): List<String> {
         val typed = text.split(',', '\n').map { it.trim() }

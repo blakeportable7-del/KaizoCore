@@ -26,4 +26,19 @@ class FavoritesTest {
         assertEquals(473, Favorites.idOf(" Lucario "))
         assertNull(Favorites.idOf("Blake"))
     }
+
+    /** Typing narrows the list: "s" is many, "sn" fewer, "snorlax" exactly typed is none. */
+    @Test
+    fun `suggestions start with what was typed, in dex order, and narrow`() {
+        val s = Favorites.suggest("s")
+        kotlin.test.assertEquals(8, s.size)
+        kotlin.test.assertTrue(s.all { it.lowercase().startsWith("s") })
+        val sn = Favorites.suggest("sno")
+        kotlin.test.assertTrue(sn.size < s.size && sn.all { it.lowercase().startsWith("sno") })
+        kotlin.test.assertEquals("Snorlax", Favorites.suggest("snorl").first())
+        kotlin.test.assertTrue(Favorites.suggest("snorlax").isEmpty())
+        kotlin.test.assertTrue(Favorites.suggest("").isEmpty())
+        // Dex order, not alphabetical: Bulbasaur 1, Blastoise 9, Butterfree 12.
+        kotlin.test.assertEquals(listOf("Bulbasaur", "Blastoise", "Butterfree"), Favorites.suggest("b").take(3))
+    }
 }
