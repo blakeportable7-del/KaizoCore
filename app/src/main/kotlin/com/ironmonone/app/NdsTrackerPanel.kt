@@ -111,12 +111,12 @@ private fun NdsPartyCard(
                 { PcHealsBlock(healPercent, healCount, wholeHp = healPercent * m.maxHp / 100) }
             } else null,
         ) {
-            PcStatRow("HP", "${m.maxHp}", p.statStages["HP"])
-            PcStatRow("ATK", "${m.atk}", p.statStages["ATK"])
-            PcStatRow("DEF", "${m.def}", p.statStages["DEF"])
-            PcStatRow("SPA", "${m.spAtk}", p.statStages["SPA"])
-            PcStatRow("SPD", "${m.spDef}", p.statStages["SPD"])
-            PcStatRow("SPE", "${m.spe}", p.statStages["SPE"])
+            PcStatRow("HP", "${m.maxHp}", p.statStages["HP"], nature = m.nature)
+            PcStatRow("ATK", "${m.atk}", p.statStages["ATK"], nature = m.nature)
+            PcStatRow("DEF", "${m.def}", p.statStages["DEF"], nature = m.nature)
+            PcStatRow("SPA", "${m.spAtk}", p.statStages["SPA"], nature = m.nature)
+            PcStatRow("SPD", "${m.spDef}", p.statStages["SPD"], nature = m.nature)
+            PcStatRow("SPE", "${m.spe}", p.statStages["SPE"], nature = m.nature)
             PcStatRow("BST", p.info?.bst?.toString() ?: "?")
         }
         PcMovesSection(

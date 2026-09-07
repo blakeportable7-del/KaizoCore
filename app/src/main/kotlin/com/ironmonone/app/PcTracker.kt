@@ -373,8 +373,9 @@ fun PcSprite(bmp: ImageBitmap?) {
     } else Spacer(Modifier.size(PcRef.ICON.rp))
 }
 
+
 @Composable
-fun PcStatRow(label: String, value: String, stage: Int? = null) {
+fun PcStatRow(label: String, value: String, stage: Int? = null, nature: Int? = null) {
     // Reference geometry: label at statOffsetX, value drawn at statOffsetX+25,
     // row pitch 10, inside a stats box 44 wide. Same pitch as the enemy's
     // mark rows so the two columns line up with each other.
@@ -382,7 +383,10 @@ fun PcStatRow(label: String, value: String, stage: Int? = null) {
         Modifier.fillMaxWidth().height(10.rp).padding(start = 1.rp, end = 2.rp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        PixText(label, PcRef.FONT, Pc.Text)
+        val mark = natureMark(nature, label)
+        val labelColor = when (mark) { '+' -> Pc.Positive; '-' -> Pc.Negative; else -> Pc.Text }
+        PixText(label, PcRef.FONT, labelColor)
+        if (mark != null) PixText(mark.toString(), PcRef.FONT - 3, labelColor, Modifier.padding(start = 1.dp))
         // Stat-stage chevron, the reference's in-battle marker: green up /
         // red down beside the stat it moved. 6 is neutral and shows nothing.
         if (stage != null && stage != 6) {

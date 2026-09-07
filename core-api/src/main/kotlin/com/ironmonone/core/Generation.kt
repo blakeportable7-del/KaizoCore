@@ -127,6 +127,28 @@ data class RomKind(
         )
 
         /**
+         * Ruby, Sapphire and LeafGreen (USA) v1.0, from Blake's dumps 2026-09-07:
+         * titles "POKEMON RUBY" / "POKEMON SAPP" / "POKEMON LEAF", codes AXVE /
+         * AXPE / BPGE, version byte 0. Ruby and Sapphire join Emerald's RSE
+         * family, LeafGreen joins FRLG, so the presets and the rules are shared.
+         * The tracker has a map for each (GameMap.RUBY_U, SAPPHIRE_U,
+         * LEAFGREEN_U). Nat. Dex is built for Emerald and FireRed v1.1 only.
+         */
+        val RUBY_U = RomKind(
+            id = "ruby-u", family = "RSE", displayName = "Pokémon Ruby (U)",
+            generation = Generation.GBA3, fileExtension = "gba",
+            expectedCrc = 0xF0815EE7L, titleDetect = "POKEMON RUBY", natDexCapable = false,
+        )
+        val SAPPHIRE_U = RUBY_U.copy(
+            id = "sapphire-u", displayName = "Pokémon Sapphire (U)",
+            expectedCrc = 0x554DEDC4L, titleDetect = "POKEMON SAPP",
+        )
+        val LEAFGREEN_U = FIRERED_U_V10.copy(
+            id = "leafgreen-u", displayName = "Pokémon LeafGreen (U)",
+            expectedCrc = 0xD69C96CCL, titleDetect = "POKEMON LEAF",
+        )
+
+        /**
          * Pokémon Platinum (USA). Header read from Blake's own dump on
          * 2026-08-30: title "POKEMON PL", game code CPUE, version byte 0,
          * 128MB, CRC-32 9253921d (matched again on his 2026-09-07 dump). The DS header carries the code at 0x0C,
@@ -277,7 +299,7 @@ data class RomKind(
         val YELLOW_U = RED_U.copy(id = "yellow-u", displayName = "Pokémon Yellow (U)", expectedCrc = 0x7D527D62L, titleDetect = "POKEMON YELLOW")
 
         val allV1 = listOf(
-            FIRERED_U_V11, FIRERED_U_V10, EMERALD_U, DIAMOND_U, PEARL_U, PLATINUM_U, HEARTGOLD_U, SOULSILVER_U,
+            FIRERED_U_V11, FIRERED_U_V10, LEAFGREEN_U, EMERALD_U, RUBY_U, SAPPHIRE_U, DIAMOND_U, PEARL_U, PLATINUM_U, HEARTGOLD_U, SOULSILVER_U,
             BLACK_U, WHITE_U, BLACK2_U, WHITE2_U, CRYSTAL_U, GOLD_U, SILVER_U, RED_U, BLUE_U, YELLOW_U,
         )
         val allNatDex = listOf(EMERALD_NATDEX_121, FIRERED_NATDEX_121)

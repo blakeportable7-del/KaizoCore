@@ -1774,97 +1774,17 @@ fun PlayScreen(
             // Stream layout (brief 16.1): controls fade after idle so a screen
             // share reads as game + tracker; any touch brings them back.
             var dimmed by remember { mutableStateOf(false) }
-            // Composed BEFORE the pad and the chip strip on purpose: Compose hands a
-            // touch to the topmost target only, so with this layer on top the chips and
-            // every pad button over the bottom screen were dead in DS landscape
-            // (2026-09-07). Below them, a tap on a control is the control's; a tap on
-            // bare screen inside the bottom screen is the stylus.
-            // DS STYLUS, drawn LAST so it sits above the overlay pad.
-            //
-            // The stylus used to live on the game view itself, underneath the
-            // pad - whose translucent buttons are anchored bottom-left and
-            // bottom-right and lie directly over the DS bottom screen in
-            // landscape. They consumed every tap, so no stylus event was ever
-            // produced and the touch screen was dead in that orientation.
-            //
-            // This layer consumes ONLY inside the bottom screen, so a tap on
-            // the touch screen reaches the core and a tap anywhere else falls
-            // through to the pad exactly as before.
-            if (dsScreens) {
-                Box(
-                    Modifier.fillMaxSize().pointerInput(dsTopOnly, dsLayoutName) {
-                        awaitPointerEventScope {
-                            while (true) {
-                                val e = awaitPointerEvent()
-                                val c = e.changes.firstOrNull() ?: continue
-                                val w = size.width.toFloat()
-                                val h = size.height.toFloat()
-                                if (w <= 0f || h <= 0f) continue
-                                // The core letterboxes the stacked 256x384 pair
-                                // inside this box, so the black bars have to
-                                // come out of the maths or every touch lands
-                                // offset from where it looks.
-                                // The frame's shape follows the core's screen
-                                // layout: stacked in portrait (256x384), side
-                                // by side in landscape (512x192). The touch
-                                // mapping MUST follow it - a mapping written
-                                // for one layout silently points at the wrong
-                                // half in the other.
-                                // Geometry per melonDS layout: the frame's aspect and
-                                // where the touch screen sits inside it (fractions).
-                                // hybrid-top keeps the mapping that was tuned in a
-                                // real session; the others are the core's plain
-                                // arrangements. "top" has no touch screen at all.
-                                val geo = when (dsLayoutName) {
-                                    "top-bottom" -> floatArrayOf(256f / 384f, 0f, 0.5f, 1f, 1f)
-                                    "bottom-top" -> floatArrayOf(256f / 384f, 0f, 0f, 1f, 0.5f)
-                                    "left-right" -> floatArrayOf(512f / 192f, 0.5f, 0f, 1f, 1f)
-                                    // hybrid: the big screen is 512x384 at the left, the small one 256x192 at the right-bottom (768x384 in all)
-                                    "hybrid-top" -> floatArrayOf(768f / 384f, 2f / 3f, 0.5f, 1f, 1f)
-                                    "hybrid-bottom" -> floatArrayOf(768f / 384f, 0f, 0f, 2f / 3f, 1f)
-                                    "right-left" -> floatArrayOf(512f / 192f, 0f, 0f, 0.5f, 1f)
-                                    "bottom" -> floatArrayOf(256f / 192f, 0f, 0f, 1f, 1f)
-                                    "top" -> floatArrayOf(256f / 192f, 2f, 2f, 3f, 3f)
-                                    "rotate-left", "rotate-right" -> floatArrayOf(384f / 256f, 2f, 2f, 3f, 3f)
-                                    else -> if (landscape) floatArrayOf(768f / 384f, 2f / 3f, 0.5f, 1f, 1f) else floatArrayOf(256f / 384f, 0f, 0.5f, 1f, 1f)
-                                }
-                                val aspect = geo[0]
-                                val contentW: Float
-                                val contentH: Float
-                                if (w / h > aspect) {
-                                    contentH = h; contentW = h * aspect
-                                } else {
-                                    contentW = w; contentH = w / aspect
-                                }
-                                val offX = (w - contentW) / 2f
-                                val offY = (h - contentH) / 2f
-                                val fx = (c.position.x - offX) / contentW
-                                val fy = (c.position.y - offY) / contentH
-                                // 1-SCREEN scales 2x about the top edge, so undo
-                                // that before deciding which screen was hit.
-                                val tfy = if (dsTopOnly) fy / 2f else fy
-                                // Which half holds the touch screen, and where
-                                // inside it the tap landed.
-                                val onTouchScreen = fx in geo[1]..geo[3] && tfy in geo[2]..geo[4]
-                                val tx = (fx - geo[1]) / (geo[3] - geo[1])
-                                val ty = (tfy - geo[2]) / (geo[4] - geo[2])
-                                android.util.Log.i("Stylus", "layout=$dsLayoutName size=${size.width}x${size.height} pos=${c.position.x},${c.position.y} fx=$fx fy=$fy tfy=$tfy on=$onTouchScreen tx=$tx ty=$ty pressed=${c.pressed}")
-                                if (!onTouchScreen) continue   // let the pad have it
-                                c.consume()
-                                if (c.pressed) {
-                                    retro?.sendMotionEvent(
-                                        GLRetroView.MOTION_SOURCE_POINTER,
-                                        tx * 2f - 1f, ty * 2f - 1f)
-                                } else {
-                                    // Off-screen value = stylus lifted.
-                                    retro?.sendMotionEvent(
-                                        GLRetroView.MOTION_SOURCE_POINTER, -2f, -2f)
-                                }
-                            }
-                        }
-                    }
-                )
-            }
+            // DS stylus: the game view's own touch handling. LibretroDroid's
+            // GLRetroView.onTouchEvent normalises the touch over the view and
+            // the native side maps it through the core's letterbox
+            // (video->getLayout().getRelativePosition), so every screen layout
+            // the core can draw, stacked or side by side or hybrid, is handled
+            // where the layout is known. A Compose layer used to sit here doing
+            // the same maths itself; on 2026-09-07 it was found to receive no
+            // pointer events at all in either orientation, so no DS game could
+            // pass a "touch the screen" prompt. The free pad's buttons are the
+            // only Compose targets over the view, so a touch on bare screen
+            // reaches the view, and a touch on a button is the button's.
 
             if (landscape) {
                 LaunchedEffect(Unit) {

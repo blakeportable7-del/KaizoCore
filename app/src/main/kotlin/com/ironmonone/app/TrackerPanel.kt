@@ -101,17 +101,17 @@ private fun PartyCard(
                 { PcHealsBlock(healPercent, healCount, wholeHp = healPercent * p.mon.maxHp / 100) }
             } else null,
         ) {
-            PcStatRow("HP", "${m.maxHp}", p.statStages["HP"])
-            PcStatRow("ATK", "${m.atk}", p.statStages["ATK"])
-            PcStatRow("DEF", "${m.def}", p.statStages["DEF"])
+            PcStatRow("HP", "${m.maxHp}", p.statStages["HP"], nature = m.nature)
+            PcStatRow("ATK", "${m.atk}", p.statStages["ATK"], nature = m.nature)
+            PcStatRow("DEF", "${m.def}", p.statStages["DEF"], nature = m.nature)
             if (p.base?.singleSpecial == true) {
                 // Gen 1: one Special stat. The Gen 1 reference tracker lists it as SPA, once.
-                PcStatRow("SPA", "${m.spAtk}", p.statStages["SPA"])
+                PcStatRow("SPA", "${m.spAtk}", p.statStages["SPA"], nature = m.nature)
             } else {
-                PcStatRow("SPA", "${m.spAtk}", p.statStages["SPA"])
-                PcStatRow("SPD", "${m.spDef}", p.statStages["SPD"])
+                PcStatRow("SPA", "${m.spAtk}", p.statStages["SPA"], nature = m.nature)
+                PcStatRow("SPD", "${m.spDef}", p.statStages["SPD"], nature = m.nature)
             }
-            PcStatRow("SPE", "${m.spe}", p.statStages["SPE"])
+            PcStatRow("SPE", "${m.spe}", p.statStages["SPE"], nature = m.nature)
             PcStatRow("BST", p.base?.bst?.toString() ?: "?")
         }
         // "Moves 3/11 (17)" - learned so far / total this species learns, and

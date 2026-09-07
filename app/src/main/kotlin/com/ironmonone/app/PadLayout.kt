@@ -73,7 +73,8 @@ data class PadLayout(
         val LANDSCAPE_DS = LANDSCAPE.copy(places = LANDSCAPE.places +
             mapOf(Element.X to Place(0.85f, 0.42f, 0.85f), Element.Y to Place(0.71f, 0.60f, 0.85f)))
         val PORTRAIT_DS = PORTRAIT.copy(places = PORTRAIT.places +
-            mapOf(Element.X to Place(0.80f, 0.12f, 0.85f), Element.Y to Place(0.69f, 0.48f, 0.85f)))
+            // X above A, Y up and left of it: the console's diamond around A, clear of the SELECT/START stack at x 0.60 (Y sat on START, seen 2026-09-07).
+            mapOf(Element.X to Place(0.91f, 0.08f, 0.85f), Element.Y to Place(0.75f, 0.20f, 0.85f)))
         fun default(landscape: Boolean, nds: Boolean) =
             if (nds) (if (landscape) LANDSCAPE_DS else PORTRAIT_DS) else default(landscape)
 

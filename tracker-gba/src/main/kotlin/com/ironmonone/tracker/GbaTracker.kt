@@ -44,6 +44,19 @@ data class GameMap(
     val saveBlock1Ptr: Long = 0,
     /** gSaveBlock2Ptr. The bag's security key lives here, not in SaveBlock1. */
     val saveBlock2Ptr: Long = 0,
+    /**
+     * Ruby and Sapphire keep SaveBlock1 and SaveBlock2 at fixed EWRAM addresses
+     * (gSaveBlock1 / gSaveBlock2); every later Gen 3 game moves them and
+     * publishes IWRAM pointers instead. Non-zero here wins over the pointer.
+     */
+    val saveBlock1Fixed: Long = 0,
+    val saveBlock2Fixed: Long = 0,
+    /**
+     * Ruby and Sapphire carry LAYOUT_LILYCOVE_CITY_EMPTY_MAP at map id 108, so
+     * every id above 107 is Emerald's plus one (the reference's RouteData
+     * offset). True reads an id back onto the shared rse route table.
+     */
+    val rsMapShift: Boolean = false,
     /** Randomized starter table (ZX's own StarterPokemon offsets). ball order is
      *  slot1=left, slot2=middle, slot3=right — verified empirically: the left ball
      *  contained species u16@base on the live seed. 0 = unknown. */
@@ -301,6 +314,100 @@ data class GameMap(
             encryptionKeyOffset = 0xF20,
         )
 
+        /**
+         * Ruby (U) v1.0. RAM and code addresses from the reference's "Pokemon
+         * Ruby v1.0.json"; ROM tables (names, abilities, items, moves, pics,
+         * palettes) located in Blake's own dump on 2026-09-07 with
+         * tools/find_tables.py and tools/find_sprites.py, the same method that
+         * found FireRed's and Emerald's (re-run on those two, it reproduces
+         * every shipped address). The party lives in IWRAM here, the save
+         * blocks sit at fixed addresses, and bag quantities are not encrypted.
+         * Ruby and Sapphire share every RAM address; only the ROM tables move.
+         */
+        val RUBY_U = GameMap(
+            name = "Ruby (U) v1.0",
+            partyCount = 0x03004350,
+            party = 0x03004360,
+            enemyParty = 0x030045C0,
+            battleTypeFlags = 0x020239F8,
+            battleMons = 0x02024A80,
+            battlersCount = 0x02024A68,
+            scriptCurrInstr = 0x02024C10,
+            scriptingBattler = 0x02016003,
+            battlerAttacker = 0x02024C07,
+            battlerTarget = 0x02024C08,
+            abilityScriptTable = "ruby",
+            baseStats = 0x081FEC18,
+            speciesNames = 0x081F716C,
+            moveNames = 0x081F8320,
+            battleResults = 0x030042E0,
+            saveBlock1Fixed = 0x02025734,
+            saveBlock2Fixed = 0x02024EA4,
+            abilityNames = 0x081FA248,
+            itemNames = 0x083C5564,
+            battleMoves = 0x081FB12C,
+            weather = 0x02024DB8,
+            frontPics = 0x081E8354,
+            palettes = 0x081EA5B4,
+            badgeOffset = 0x1320,
+            badgeIsWord = true,
+            badgeSet = "RSE",
+            levelUpLearnsets = 0x08207BC8,
+            bagItemsOffset = 0x560,
+            bagItemsSlots = 20,
+            bagBerriesOffset = 0x740,
+            bagBerriesSlots = 46,
+            mapHeader = 0x0202E828,
+            labMapIds = setOf(17),
+            routeTable = "rse",
+            rsMapShift = true,
+            gameStatsOffset = 0x1540,
+            battleOutcome = 0x02024D26,
+            battleMainFunc = 0x030042D4,
+            introDrawPartySummary = 0x08011601,
+            introOpponentSendsOut = 0x080118C5,
+            handleTurnAction = 0x08012325,
+            returnToOverworld = 0x08013EB1,
+            trainerOpponent = 0x0202FF5E,
+            finalTrainers = setOf(335),      // Steven, TrainerData.setupTrainersAsRubySapphire
+            encryptionKeyOffset = 0,         // Ruby and Sapphire store quantities in the clear
+        )
+
+        /** Sapphire (U) v1.0: Ruby's RAM, its own ROM tables (found the same way, the same day). */
+        val SAPPHIRE_U = RUBY_U.copy(
+            name = "Sapphire (U) v1.0",
+            abilityScriptTable = "sapphire",
+            baseStats = 0x081FEBA8,
+            speciesNames = 0x081F70FC,
+            moveNames = 0x081F82B0,
+            abilityNames = 0x081FA1D8,
+            itemNames = 0x083C55BC,
+            battleMoves = 0x081FB0BC,
+            frontPics = 0x081E82E4,
+            palettes = 0x081EA544,
+            levelUpLearnsets = 0x08207B58,
+        )
+
+        /**
+         * LeafGreen (U) v1.0: FireRed v1.0's RAM (identical in the reference's
+         * two files), its ROM tables 0x24 lower, found in the dump. The starter
+         * offsets were measured on FireRed only and are left off here.
+         */
+        val LEAFGREEN_U = FIRERED_U_V10.copy(
+            name = "LeafGreen (U) v1.0",
+            abilityScriptTable = "leafgreen",
+            baseStats = 0x08254760,
+            speciesNames = 0x08245EBC,
+            moveNames = 0x08247070,
+            abilityNames = 0x0824FC1C,
+            itemNames = 0x083DAE64,
+            battleMoves = 0x08250BE0,
+            frontPics = 0x08235088,
+            palettes = 0x082372E8,
+            levelUpLearnsets = 0x0825D794,
+            startersBase = 0, starter2Off = 0, starter3Off = 0,
+        )
+
         /** Nat. Dex bakes 1258 into ROM at this address; vanilla has other bytes here. */
         const val NATDEX_MAGIC_ADDR = 0x08000170L
         const val NATDEX_MAGIC = 1258L
@@ -417,6 +524,13 @@ data class GameMap(
                 return when (id) {
                     "BPR" -> if (ver >= 1) FIRERED_U_V11 else FIRERED_U_V10
                     "BPE" -> EMERALD_U
+                    // 2026-09-07: Ruby, Sapphire and LeafGreen from Blake's v1.0 dumps.
+                    // A v1.1 or v1.2 cartridge moves every ROM table (the reference keeps
+                    // one address file per revision), so those are refused by name rather
+                    // than read with the wrong map.
+                    "AXV" -> if (ver == 0) RUBY_U else error("Ruby v1.$ver is not supported yet; v1.0 is")
+                    "AXP" -> if (ver == 0) SAPPHIRE_U else error("Sapphire v1.$ver is not supported yet; v1.0 is")
+                    "BPG" -> if (ver == 0) LEAFGREEN_U else error("LeafGreen v1.$ver is not supported yet; v1.0 is")
                     else -> error("Unrecognised ROM header \"" + id + "\"")
                 }
             }
@@ -1084,7 +1198,8 @@ class GbaTracker(
                 stableMapId = rawMapId
             } else candidateMapId = rawMapId
         }
-        val mapId = stableMapId
+        // Ruby and Sapphire: ids above the empty Lilycove layout (108) come down one onto the rse table.
+        val mapId = stableMapId?.let { if (map.rsMapShift && it > 108) it - 1 else it }
 
         val heals = readHeals(party.firstOrNull()?.mon?.maxHp ?: 0)
 
@@ -1097,15 +1212,9 @@ class GbaTracker(
         val trainer = !isWildEncounter
 
         var px: Int? = null; var py: Int? = null
-        if (map.saveBlock1Ptr != 0L) {
-            val ptr = memory.read(map.saveBlock1Ptr, 4)
-            if (ptr.size == 4) {
-                val sb1 = ptr.u32(0)
-                if (sb1 in 0x02000000L..0x0203FFFFL) {
-                    val pos = memory.read(sb1, 4)
-                    if (pos.size == 4) { px = pos.u16(0); py = pos.u16(2) }
-                }
-            }
+        saveBlock1()?.let { sb1 ->
+            val pos = memory.read(sb1, 4)
+            if (pos.size == 4) { px = pos.u16(0); py = pos.u16(2) }
         }
 
         return TrackerState(
@@ -1427,12 +1536,29 @@ class GbaTracker(
      *
      * Index 5 is STEPS (Constants.GAME_STATS.STEPS).
      */
+    /** SaveBlock1's base: the map's fixed address, else through its IWRAM pointer; null when unreadable. */
+    private fun saveBlock1(): Long? {
+        if (map.saveBlock1Fixed != 0L) return map.saveBlock1Fixed
+        if (map.saveBlock1Ptr == 0L) return null
+        val p = memory.read(map.saveBlock1Ptr, 4)
+        if (p.size != 4) return null
+        val sb1 = p.u32(0)
+        return if (sb1 in 0x02000000L..0x0203FFFFL) sb1 else null
+    }
+
+    /** SaveBlock2's base, the same way. */
+    private fun saveBlock2(): Long? {
+        if (map.saveBlock2Fixed != 0L) return map.saveBlock2Fixed
+        if (map.saveBlock2Ptr == 0L) return null
+        val p = memory.read(map.saveBlock2Ptr, 4)
+        if (p.size != 4) return null
+        val sb2 = p.u32(0)
+        return if (sb2 in 0x02000000L..0x0203FFFFL) sb2 else null
+    }
+
     fun readGameStat(index: Int): Int {
-        if (map.gameStatsOffset == 0L || map.saveBlock1Ptr == 0L) return 0
-        val ptr = memory.read(map.saveBlock1Ptr, 4)
-        if (ptr.size != 4) return 0
-        val sb1 = ptr.u32(0)
-        if (sb1 !in 0x02000000L..0x0203FFFFL) return 0
+        if (map.gameStatsOffset == 0L) return 0
+        val sb1 = saveBlock1() ?: return 0
         val raw = memory.read(sb1 + map.gameStatsOffset + index * 4L, 4)
         if (raw.size < 4) return 0
         val key = readSecurityKey32()
@@ -1443,11 +1569,8 @@ class GbaTracker(
 
     /** The full 32-bit security key. Item quantities use only its low half. */
     private fun readSecurityKey32(): Long {
-        if (map.encryptionKeyOffset == 0L || map.saveBlock2Ptr == 0L) return 0
-        val p = memory.read(map.saveBlock2Ptr, 4)
-        if (p.size != 4) return 0
-        val sb2 = p.u32(0)
-        if (sb2 !in 0x02000000L..0x0203FFFFL) return 0
+        if (map.encryptionKeyOffset == 0L) return 0
+        val sb2 = saveBlock2() ?: return 0
         val k = memory.read(sb2 + map.encryptionKeyOffset, 4)
         return if (k.size < 4) 0 else k.u32(0)
     }
@@ -1460,11 +1583,8 @@ class GbaTracker(
      * itself, which is what makes a wrong key detectable at all.
      */
     fun readSecurityKey(): Int {
-        if (map.encryptionKeyOffset == 0L || map.saveBlock2Ptr == 0L) return 0
-        val p = memory.read(map.saveBlock2Ptr, 4)
-        if (p.size != 4) return 0
-        val sb2 = p.u32(0)
-        if (sb2 !in 0x02000000L..0x0203FFFFL) return 0
+        if (map.encryptionKeyOffset == 0L) return 0
+        val sb2 = saveBlock2() ?: return 0
         val k = memory.read(sb2 + map.encryptionKeyOffset, 2)
         return if (k.size < 2) 0 else k.u16(0)
     }
@@ -1519,13 +1639,8 @@ class GbaTracker(
      * flat value, capped at a full heal each.
      */
     private fun readHeals(maxHp: Int): Pair<Int, Int> {
-        if (map.bagItemsOffset == 0L || map.saveBlock1Ptr == 0L || maxHp <= 0) {
-            return 0 to 0
-        }
-        val sb1Ptr = memory.read(map.saveBlock1Ptr, 4)
-        if (sb1Ptr.size != 4) return 0 to 0
-        val sb1 = sb1Ptr.u32(0)
-        if (sb1 !in 0x02000000L..0x0203FFFFL) return 0 to 0
+        if (map.bagItemsOffset == 0L || maxHp <= 0) return 0 to 0
+        val sb1 = saveBlock1() ?: return 0 to 0
 
         // The security key is in SaveBlock2 in both games (FireRed +0xF20,
         // Emerald +0xAC), NOT in SaveBlock1 where the bag itself lives. Reading
@@ -1566,12 +1681,9 @@ class GbaTracker(
      * FireRed keeps them in a byte; Emerald packs them into a word starting at
      * bit 7, which is why this is not simply "read a byte" for both.
      */
-    private fun readBadges(): Int {
-        if (map.badgeOffset == 0L || map.saveBlock1Ptr == 0L) return 0
-        val ptr = memory.read(map.saveBlock1Ptr, 4)
-        if (ptr.size != 4) return 0
-        val sb1 = ptr.u32(0)
-        if (sb1 !in 0x02000000L..0x0203FFFFL) return 0
+    internal fun readBadges(): Int {
+        if (map.badgeOffset == 0L) return 0
+        val sb1 = saveBlock1() ?: return 0
         return if (map.badgeIsWord) {
             val b = memory.read(sb1 + map.badgeOffset, 2)
             if (b.size < 2) 0 else (b.u16(0) shr 7) and 0xFF

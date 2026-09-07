@@ -204,11 +204,14 @@ The 0xB70 chain was seen resolving on Blake's Diamond dump on the emulator:
 "party base 0x0226D558 - reading live memory" before the first Pokemon. A
 battle read still waits on DS touch (below).
 
-**Open, found the same day: DS stylus touch is dead in both orientations**
-on the current build. The Compose layer that maps touches to the core's
-pointer never fires (a diagnostic log line in it printed nothing), so no DS
-game can get past a "touch the screen" prompt. Diamond's intro needs one.
-This blocks any DS run for a player and is the next thing to fix.
+**DS stylus touch, dead on 2026-09-07's first builds, fixed the same day.**
+The Compose layer that mapped touches to the core's pointer never received
+an event (a log line in it printed nothing in either orientation), so no DS
+game could pass a "touch the screen" prompt. It is gone: the game view's own
+touch handling (GLRetroView.onTouchEvent, normalised over the view, mapped
+through the core's letterbox natively) takes the stylus, and the pad's
+buttons are the only Compose targets over it. Proved on Diamond: a held
+press on YES at the touch prompt advanced Rowan's dialogue.
 
 Found on the way: in DS landscape every chip in the strip and every pad
 button over the bottom screen was dead. The stylus layer was composed on
@@ -273,6 +276,32 @@ from your phone's play area keeps buttons above 85%. 213 tests green.
 Seen and not fixed: the black bars INSIDE the game box on the emulator are
 the core's own aspect handling and predate this; your phone shows the same
 thing as a band on the right. Separate item.
+
+### 2.6 Ruby, Sapphire, LeafGreen - **DONE 2026-09-07 (v1.0 dumps)**
+
+Blake sent v1.0 dumps of all three; "all of them" was the call. The
+reference Gen 3 tracker keys one address file per revision
+(GameAddresses/Pokemon Ruby v1.0.json and so on), so RAM and code addresses
+came from those: Ruby and Sapphire share every RAM address, keep the party
+in IWRAM, hold SaveBlock1 and SaveBlock2 at fixed EWRAM addresses (no
+pointers), do not encrypt bag quantities, and carry the empty Lilycove
+layout at map 108, so every map id above it is Emerald's plus one (the
+reference's RouteData offset). GameMap gained saveBlock1Fixed /
+saveBlock2Fixed (read through saveBlock1() / saveBlock2() everywhere the
+pointer used to be dereferenced) and rsMapShift. LeafGreen is FireRed v1.0's
+RAM with its ROM tables 0x24 lower.
+
+The ROM tables the reference does not carry (species, move, ability and item
+names, battle moves, front pics, palettes) were found in the dumps with
+tools/find_tables.py and tools/find_sprites.py; re-run on FireRed and
+Emerald the same run reproduced every shipped address, and Arcanine decoded
+from the first pic and palette runs in all three. Ability-script tables come
+from each JSON's AbilityAddresses section, and regenerating FireRed's from
+its JSON matched the shipped file byte for byte. Header detection maps
+AXV/AXP/BPG with version byte 0; a v1.1 or v1.2 cartridge is refused by
+name, since its tables move. Final trainer 335 (Steven) for Ruby/Sapphire.
+RomKinds ruby-u, sapphire-u (RSE) and leafgreen-u (FRLG), pinned to the
+dumps' CRCs. 445 tests green.
 
 ### 2.3 Game-over popup - **DONE 2026-09-06, REBUILT 2026-09-07 AS THE PC SCREEN**
 
