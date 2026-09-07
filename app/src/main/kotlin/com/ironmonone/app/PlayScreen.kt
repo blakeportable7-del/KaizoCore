@@ -1821,20 +1821,11 @@ fun PlayScreen(
             // be invisible. The pad is always visible and always live.
             val controlsAwake = !(landscape && dimmed)
             if (landscape) {
-                // Touch watcher at the initial pass: sees every press without
-                // consuming anything, so the pad underneath still works.
-                Box(
-                    Modifier.fillMaxSize().pointerInput(Unit) {
-                        awaitPointerEventScope {
-                            while (true) {
-                                awaitPointerEvent(
-                                    androidx.compose.ui.input.pointer.PointerEventPass.Initial
-                                )
-                                lastTouch = android.os.SystemClock.uptimeMillis()
-                            }
-                        }
-                    }
-                )
+                // No full-size watcher Box here any more. It had a pointer modifier and
+                // sat above the game view, and Compose hands a touch to the topmost
+                // sibling only, so in landscape the DS touch screen never received a
+                // press (2026-09-07). The root Box's watcher already sees every touch
+                // at the Initial pass without consuming it.
 
                 if (showPad || editingLayout) {
                     FreePad(

@@ -211,7 +211,11 @@ game could pass a "touch the screen" prompt. It is gone: the game view's own
 touch handling (GLRetroView.onTouchEvent, normalised over the view, mapped
 through the core's letterbox natively) takes the stylus, and the pad's
 buttons are the only Compose targets over it. Proved on Diamond: a held
-press on YES at the touch prompt advanced Rowan's dialogue.
+press on YES at the touch prompt advanced Rowan's dialogue. Landscape
+needed one more cut: a landscape-only full-size watcher Box with a pointer
+modifier sat above the game view and, being the topmost sibling, took every
+touch; the root watcher already covers it. Proved in landscape the same
+way, YES at the prompt with the tracker docked beside the screens.
 
 Found on the way: in DS landscape every chip in the strip and every pad
 button over the bottom screen was dead. The stylus layer was composed on
