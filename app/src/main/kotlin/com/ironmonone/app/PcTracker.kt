@@ -402,7 +402,7 @@ fun PcStatRow(label: String, value: String, stage: Int? = null) {
  * reference tracker's four states, stored per species by the caller.
  */
 @Composable
-fun PcMarkColumn(marks: IntArray, onCycle: (Int) -> Unit) {
+fun PcMarkColumn(marks: IntArray, onCycle: (Int) -> Unit, singleSpecial: Boolean = false) {
     // The reference's enemy stat column (TrackerScreen.lua:1427, the
     // STAT_STAGE buttons at :588). Copied rather than styled:
     //
@@ -414,6 +414,8 @@ fun PcMarkColumn(marks: IntArray, onCycle: (Int) -> Unit) {
     //    which the reference never does
     //  - the glyphs are Constants.STAT_STATES: blank, "+", "--", "="
     StatMarks.STAT_NAMES.forEachIndexed { i, label ->
+        // Gen 1 has one Special: the SPD row does not exist there (the Gen 1 reference lists hp/atk/def/spa/spe).
+        if (singleSpecial && label == "SPD") return@forEachIndexed
         val state = marks.getOrElse(i) { 0 }
         Row(
             Modifier.fillMaxWidth().height(10.rp).clickable { onCycle(i) },

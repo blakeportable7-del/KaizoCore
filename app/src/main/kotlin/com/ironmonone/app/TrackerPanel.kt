@@ -180,7 +180,7 @@ private fun EnemyCard(
                 }
             },
         ) {
-            PcMarkColumn(marks, onCycleMark)
+            PcMarkColumn(marks, onCycleMark, singleSpecial = e.base?.singleSpecial == true)
             PcStatRow("BST", e.base?.bst?.toString() ?: "?")
             // Live stage chevrons for the enemy, when any stat has moved.
             e.statStages.filterKeys { it != "ACC" && it != "EVA" }
