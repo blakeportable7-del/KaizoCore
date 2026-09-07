@@ -112,8 +112,10 @@ class NdsGen5MapTest {
         assertEquals(649, e.mon.species)
         assertEquals("GENESECT", e.speciesName)
         assertEquals(77, e.mon.curHp, "live HP from battle data, not the struct's 150")
-        assertEquals(listOf("Fusion Flare", "Fusion Bolt"), e.moves.map { it.name })
-        assertEquals(listOf(4, 5), e.mon.pp.take(2))
+        // Fusion Flare at 4 of 5 PP has been used; Fusion Bolt at full PP has not, so the
+        // reference does not show it (BattleHandlerBase.lua:265, NdsTracker.usedOnly).
+        assertEquals(listOf("Fusion Flare"), e.moves.map { it.name })
+        assertEquals(listOf(4, 0), e.mon.pp.take(2))
         assertEquals(8, e.statStages["ATK"])
         assertEquals(6, e.statStages["SPE"])
     }

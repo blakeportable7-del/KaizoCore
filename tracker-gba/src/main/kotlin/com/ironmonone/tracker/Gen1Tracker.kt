@@ -149,6 +149,8 @@ class Gen1Tracker(
     fun trackedOf(mon: PokemonDecoder.Mon): TrackedMon = tracked(mon)
     fun speciesName(dex: Int): String = speciesNames[dex] ?: "#$dex"
     fun moveRowOf(id: Int, pp: Int, ppMax: Int?): MoveRow = moveRow(id, pp, ppMax)
+    /** The row for a move seen in an earlier battle, at its base PP. */
+    fun moveRowFor(id: Int): MoveRow? = if (id <= 0) null else moveData(id)?.let { moveRow(id, it[3], null) }
 
     private fun tracked(mon: PokemonDecoder.Mon): TrackedMon {
         val base = baseStats(mon.species)

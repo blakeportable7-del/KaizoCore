@@ -101,4 +101,44 @@ class StatMarksTest {
         assertFalse(m.seeOnRoute(0, 261))
         assertFalse(m.seeOnRoute(17, 0))
     }
+
+    /**
+     * 3.5, the reference's Tracker.TrackMove: what one Poochyena used is on the
+     * card when the next Poochyena appears, most recent first, with the level
+     * range widened on a repeat, Struggle never tracked, and a move that had
+     * slipped below the top four pulled back to the front when it is seen again.
+     */
+    @Test
+    fun `moves seen in one encounter are listed at the next, most recent first, with level ranges`() {
+        val m = marks()
+        assertTrue(m.addMovesSeen(261, listOf(33 to "Tackle", 44 to "Bite"), 3))
+        assertEquals(listOf("Bite", "Tackle"), m.movesSeenFor(261).map { it.name })
+        // Second Poochyena, higher level, one new move: the new one leads, Tackle's range grows.
+        assertTrue(m.addMovesSeen(261, listOf(33 to "Tackle", 43 to "Leer"), 7))
+        assertEquals(listOf("Leer", "Bite", "Tackle"), m.movesSeenFor(261).map { it.name })
+        assertEquals(3 to 7, m.movesSeenFor(261).first { it.id == 33 }.let { it.minLv to it.maxLv })
+        // Struggle is never tracked, and nothing already known is a change.
+        assertFalse(m.addMovesSeen(261, listOf(StatMarks.STRUGGLE to "Struggle"), 7))
+        assertFalse(m.addMovesSeen(261, listOf(33 to "Tackle"), 5), "level 5 is inside Tackle's 3..7, nothing to widen")
+        assertTrue(m.addMovesSeen(261, listOf(44 to "Bite"), 5), "Bite was only seen at 3, so 5 widens it")
+        // A move pushed past the top four comes back to the front when used again.
+        m.addMovesSeen(261, listOf(45 to "Growl", 46 to "Roar", 47 to "Sing"), 9)
+        assertEquals(listOf("Sing", "Roar", "Growl", "Leer", "Bite", "Tackle"), m.movesSeenFor(261).map { it.name })
+        m.addMovesSeen(261, listOf(33 to "Tackle"), 9)
+        assertEquals("Tackle", m.movesSeenFor(261).first().name)
+        // Persisted: a fresh instance reads it all back, ranges included.
+        val again = marks()
+        assertEquals(m.movesSeenFor(261), again.movesSeenFor(261))
+        assertEquals(3 to 9, again.movesSeenFor(261).first { it.id == 33 }.let { it.minLv to it.maxLv })
+    }
+
+    @Test
+    fun `a names-only moves file from an earlier build still reads`() {
+        val m = marks()
+        m.addMovesSeen(1, listOf(33 to "Tackle"), 5)
+        java.io.File(dir, "moves.txt").writeText("261:Bite|Tackle\n")
+        val again = marks()
+        assertEquals(listOf("Bite", "Tackle"), again.movesSeenFor(261).map { it.name })
+        assertEquals(0, again.movesSeenFor(261).first().id)
+    }
 }

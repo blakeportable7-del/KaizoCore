@@ -30,6 +30,8 @@ data class NdsMoveInfo(
     val pp: Int = 0,
     /** Gen 4 stores a real split, so this is read rather than derived. */
     val category: String = "",
+    /** The move id, for the run-wide move memory. 0 when the row was built without one. */
+    val id: Int = 0,
 )
 
 data class NdsTrackedMon(
@@ -236,6 +238,7 @@ class NdsTracker(
                     val p = line.split('\t')
                     if (p.size >= 5) p[0].toIntOrNull()?.let {
                         moveInfo[it] = NdsMoveInfo(
+                            id = it,
                             name = p[1],
                             power = p[2].toIntOrNull() ?: 0,
                             accuracy = p[3].toIntOrNull() ?: 0,
@@ -263,6 +266,9 @@ class NdsTracker(
             }
         }
     }
+
+    /** The ROM data's row for a move id, for the enemy card's moves seen in an earlier battle. */
+    fun moveInfoFor(id: Int): NdsMoveInfo? = moveInfo[id]
 
     fun speciesName(id: Int): String =
         speciesInfo[id]?.name ?: speciesNames[id] ?: "#$id"
@@ -590,14 +596,14 @@ class NdsTracker(
                     Gen4.PARTY_ENTRY_SIZE)
                 if (b.size < Gen4.PARTY_ENTRY_SIZE) break
                 val d = Gen4.decodeParty(b) ?: continue
-                if (d.pid == activePid) { mon = decorate(d); break }
+                if (d.pid == activePid) { mon = decorate(enemyUsedOnly(d)); break }
             }
         }
         if (mon == null) {
             val enemyBytes = memory.read(
                 ramStart + versionRel + enemyBaseOffset, Gen4.PARTY_ENTRY_SIZE)
             mon = if (enemyBytes.size < Gen4.PARTY_ENTRY_SIZE) null
-            else Gen4.decodeParty(enemyBytes)?.let { decorate(it) }
+            else Gen4.decodeParty(enemyBytes)?.let { decorate(enemyUsedOnly(it)) }
         }
         // The enemy on the field carries live stage data and status.
         mon = mon?.let {
@@ -661,7 +667,7 @@ class NdsTracker(
             memory.read(battleDataBase + 0x104 + i * 14L + 2, 1).let { if (it.size == 1) it.u8(0) else 0 }
         }
         val live = d.copy(curHp = curHp, maxHp = maxHp, status = status, moves = moves, pp = pp)
-        val mon = decorate(live).copy(statStages = readStatStagesGen5(battleDataBase + 0xFC))
+        val mon = decorate(enemyUsedOnly(live)).copy(statStages = readStatStagesGen5(battleDataBase + 0xFC))
         return Triple(mon, isWild, battleDataBase)
     }
 
@@ -803,6 +809,24 @@ class NdsTracker(
         status and 0x80L != 0L -> "PSN"
         else -> ""
     }
+
+    /**
+     * The NDS reference shows an ENEMY only the moves it has used: a move is
+     * tracked when its current PP is below the move's base PP
+     * (BattleHandlerBase.lua:265, `currentPP < maxPP` then trackMove). Slots
+     * whose move is unknown to the table are kept, since they cannot be judged.
+     * Slots, PP and PP Ups stay aligned so the card's columns line up.
+     */
+    internal fun usedOnly(mon: Gen4.Mon, basePp: (Int) -> Int): Gen4.Mon {
+        val keep = mon.moves.indices.filter { i ->
+            val id = mon.moves[i]; val base = basePp(id)
+            id != 0 && (base <= 0 || mon.pp.getOrElse(i) { 0 } < base)
+        }
+        fun <T> pick(l: List<T>, pad: T) = List(4) { k -> keep.getOrNull(k)?.let { l.getOrElse(it) { pad } } ?: pad }
+        return mon.copy(moves = pick(mon.moves, 0), pp = pick(mon.pp, 0), ppUps = pick(mon.ppUps, 0))
+    }
+
+    private fun enemyUsedOnly(mon: Gen4.Mon): Gen4.Mon = usedOnly(mon) { moveInfo[it]?.pp ?: 0 }
 
     private fun decorate(mon: Gen4.Mon): NdsTrackedMon {
         val info = speciesInfo[mon.species]

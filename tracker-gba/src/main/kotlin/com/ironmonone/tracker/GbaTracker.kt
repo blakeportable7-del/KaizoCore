@@ -940,6 +940,16 @@ class GbaTracker(
     /** The ability the mon's slot resolves to. Public for the screenshot demo. */
     fun abilityNameOf(mon: PokemonDecoder.Mon, base: BaseStats?): String = abilityOf(mon, base)
 
+    /** The row for a move seen in an EARLIER battle: base PP, since the enemy's remaining PP is unknowable. */
+    fun moveRowFor(id: Int): MoveRow? {
+        if (id <= 0) return null
+        val d = moveData(id) ?: return null
+        return MoveRow(
+            id = id, name = moveName(id), pp = d[3], ppMax = null, power = d[0], acc = d[2], type = d[1],
+            category = gen3Category(d[1], d[0]), priority = d[4].takeIf { it in -7..7 }, contact = (d[5] and 1) != 0,
+        )
+    }
+
     private fun moveRows(mon: PokemonDecoder.Mon): List<MoveRow> =
         (0..3).mapNotNull { i ->
             val m = mon.moves[i]

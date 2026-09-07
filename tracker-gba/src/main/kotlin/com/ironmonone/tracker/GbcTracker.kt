@@ -179,6 +179,8 @@ class GbcTracker(
     /** The panel's card for any mon, through this ROM's tables. Public for the screenshot demo. */
     fun trackedOf(m: PokemonDecoder.Mon): TrackedMon = tracked(m)
     fun moveRowOf(id: Int, pp: Int, ppMax: Int?): MoveRow = moveRow(id, pp, ppMax)
+    /** The row for a move seen in an earlier battle, at its base PP. */
+    fun moveRowFor(id: Int): MoveRow? = if (id <= 0) null else moveData(id)?.let { moveRow(id, it[3], null) }
 
     private fun tracked(m: PokemonDecoder.Mon): TrackedMon {
         val base = baseStats(m.species)

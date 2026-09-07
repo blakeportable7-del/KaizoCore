@@ -139,7 +139,8 @@ private fun EnemyCard(
     spriteFor: (Int) -> androidx.compose.ui.graphics.ImageBitmap?,
     marks: IntArray,
     onCycleMark: (Int) -> Unit,
-    movesSeenRunWide: List<String> = emptyList(),
+    movesSeenRunWide: List<StatMarks.SeenMove> = emptyList(),
+    moveRowFor: (Int) -> MoveRow? = { null },
     lastSeenLevel: Int? = null,
     isWild: Boolean = false,
     encounters: Int = 0,
@@ -192,7 +193,13 @@ private fun EnemyCard(
         // moves rather than printing a sentence. The asterisk is the
         // reference's own marker for "more tracked than will fit"
         // (TrackerScreen.lua:1487).
-        val seen = e.moveRows.distinctBy { it.id }
+        // Tracker.getMoves: the WHOLE run's sightings for this species, most recent
+        // first. A move used in an earlier battle is drawn from the ROM's table at
+        // its base PP; this battle's rows win where they overlap. Before 2026-09-06
+        // this only ever drew the current battle, so every encounter started blind.
+        val thisBattle = e.moveRows.distinctBy { it.id }
+        val seen = (movesSeenRunWide.mapNotNull { sm -> thisBattle.firstOrNull { it.id == sm.id } ?: moveRowFor(sm.id) } +
+            thisBattle).distinctBy { it.id }
         PcMovesSection(
             rows = seen.take(4).map { r ->
                 PcMove(
@@ -233,8 +240,10 @@ fun TrackerPanel(
     onEditNote: () -> Unit = {},
     onRerollBall: (() -> Unit)? = null,
     routeName: String? = null,
-    /** Every move this species has shown across the WHOLE run, not just now. */
-    movesSeenRunWide: List<String> = emptyList(),
+    /** Every move this species has shown across the WHOLE run, not just now, most recent first. */
+    movesSeenRunWide: List<StatMarks.SeenMove> = emptyList(),
+    /** A row for a move id seen in an earlier battle, from the ROM's move table. */
+    moveRowFor: (Int) -> MoveRow? = { null },
     /** The enemy's ability, if a battle trigger has revealed it this run. */
     revealedEnemyAbility: String? = null,
     routeSeen: Int = 0,
@@ -419,7 +428,7 @@ fun TrackerPanel(
                 }
                 if (enemy != null) {
                     EnemyCard(enemy, revealedEnemyAbility, spriteFor,
-                        enemyMarks, onCycleMark, movesSeenRunWide,
+                        enemyMarks, onCycleMark, movesSeenRunWide, moveRowFor,
                         lastSeenLevel = enemyLastSeenLevel,
                         isWild = state.isWildBattle,
                         encounters = enemyEncounters,

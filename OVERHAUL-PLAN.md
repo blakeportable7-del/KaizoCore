@@ -307,13 +307,30 @@ mirror the tracker: no reason beyond always taking the next large item
 before the small ones. Clear the small tracker items before starting
 anything new.
 
-### 3.4 Die icon under the pokeballs - **S**
+### 3.4 Die icon under the pokeballs - **DONE 2026-09-06**
 
-`onRerollBall` exists and works; it is invisible. Draw the reference's die
-(`Constants.PixelImages.DICE`) under the ball row and wire it to the same
-callback.
+The reroll is the reference's 13x14 `Constants.PixelImages.DICE`, drawn
+in Default text beside "Pick this ball:" with a 24dp hit area
+(PcDiceButton). It was a REROLL text chip, which the reference never shows.
+Seen on the emulator through the `gba-lab` screenshot mode.
 
-### 3.5 Move memory across encounters - **VERIFY, then S**
+### 3.5 Move memory across encounters - **DONE 2026-09-06 (it was not working)**
+
+The run-wide list was recorded and passed to the enemy card, and the card
+never read it: every encounter started blind. Now StatMarks keeps the
+reference's `{id, minLv, maxLv}` per move (Tracker.TrackMove: Struggle
+skipped, new move to the front, a repeat widens the range and re-fronts a
+move that slipped past four), and the enemy card draws the whole run's
+list, most recent first, with a row from the ROM's move table for a move
+used in an earlier battle. Gen 1, 2 and 3 through `moveRowFor` on each
+tracker. DS: the enemy card had no moves table at all and the tracker
+exposed every move in the opponent's slots; it now keeps only moves whose
+PP is below base (BattleHandlerBase.lua:265, `NdsTracker.usedOnly`) and
+draws the same run-wide memory. Tests: StatMarksTest (two new),
+NdsUsedMovesTest, NdsGen5MapTest updated to the used-only rule. Old
+names-only moves files still read.
+
+Original note:
 
 `StatMarks.movesSeenFor(species)` already records moves per species for the
 run and `movesSeenRunWide` is already passed into the enemy card. So the

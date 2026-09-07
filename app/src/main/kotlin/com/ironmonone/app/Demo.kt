@@ -57,6 +57,8 @@ object Demo {
         // Scyther 123: Wing Attack 17, Slash 163, Swords Dance 14, Pursuit 228. Oran Berry is item 139 (Cheri is 133).
         val scyther = gen3Mon(123, 25, 61, 78, listOf(17, 163, 14, 228), listOf(31, 20, 18, 20), 139, 0, 3, intArrayOf(66, 50, 63, 38, 50))
         val party = listOf(tracked(t, scyther, 6, 11, 29))
+        // The lab, before the first Pokemon: the ball picker with its die.
+        if (mode == "gba-lab") return TrackerState(partyCount = 0, party = emptyList(), inBattle = false, isWildBattle = false, inLab = true, badgeSet = "RSE")
         if (mode == "gba-over") return TrackerState(
             partyCount = 1, party = listOf(tracked(t, scyther.copy(curHp = 0), 6, 11, 29)),
             inBattle = false, isWildBattle = false, badges = 0b11, badgeSet = "RSE",
@@ -137,8 +139,8 @@ object Demo {
         // Lucario 448 (Steadfast): Force Palm 395, Bone Rush 198, Metal Claw 232, Quick Attack 98. Miltank 241, level 19 in HGSS.
         val luca = gen4Mon(448, 30, 79, 98, listOf(395, 198, 232, 98), listOf(10, 10, 35, 30), 0, 80, intArrayOf(79, 55, 66, 82, 55))
         val lMoves = listOf(
-            NdsMoveInfo("Force Palm", 60, 100, "FIGHTING", 10, "PHY"), NdsMoveInfo("Bone Rush", 25, 80, "GROUND", 10, "PHY"),
-            NdsMoveInfo("Metal Claw", 50, 95, "STEEL", 35, "PHY"), NdsMoveInfo("Quick Attack", 40, 100, "NORMAL", 30, "PHY"),
+            NdsMoveInfo(id = 395, name = "Force Palm", power = 60, accuracy = 100, type = "FIGHTING", pp = 10, category = "PHY"), NdsMoveInfo(id = 198, name = "Bone Rush", power = 25, accuracy = 80, type = "GROUND", pp = 10, category = "PHY"),
+            NdsMoveInfo(id = 232, name = "Metal Claw", power = 50, accuracy = 95, type = "STEEL", pp = 35, category = "PHY"), NdsMoveInfo(id = 98, name = "Quick Attack", power = 40, accuracy = 100, type = "NORMAL", pp = 30, category = "PHY"),
         )
         val l = NdsTrackedMon(
             mon = luca, speciesName = t.speciesName(448),
@@ -154,7 +156,7 @@ object Demo {
             mon = milt, speciesName = t.speciesName(241),
             info = NdsSpeciesInfo("Miltank", "NORMAL", "NORMAL", 490, "Thick Fat", "Scrappy"),
             abilityName = "?", itemName = "-",
-            moves = listOf(NdsMoveInfo("Rollout", 30, 90, "ROCK", 20, "PHY"), NdsMoveInfo("Stomp", 65, 100, "NORMAL", 20, "PHY")),
+            moves = listOf(NdsMoveInfo(id = 205, name = "Rollout", power = 30, accuracy = 90, type = "ROCK", pp = 20, category = "PHY"), NdsMoveInfo(id = 23, name = "Stomp", power = 65, accuracy = 100, type = "NORMAL", pp = 20, category = "PHY")),
         )
         return NdsTrackerState(
             partyCount = 1, party = listOf(l), located = true, inBattle = true, isWildBattle = false, enemy = enemy,
@@ -168,8 +170,8 @@ object Demo {
         // Zangoose 335 (Immunity), Leavanny 542 (Swarm / Chlorophyll); B2W2 Burgh's Leavanny is level 24.
         val zangoose = gen4Mon(335, 20, 48, 67, listOf(163, 24, 44, 372), listOf(20, 30, 25, 20), 0, 17, intArrayOf(55, 33, 44, 33, 33))
         val zMoves = listOf(
-            NdsMoveInfo("Slash", 70, 100, "NORMAL", 20, "PHY"), NdsMoveInfo("Double Kick", 30, 100, "FIGHTING", 30, "PHY"),
-            NdsMoveInfo("Bite", 60, 100, "DARK", 25, "PHY"), NdsMoveInfo("Assurance", 60, 100, "DARK", 10, "PHY"),
+            NdsMoveInfo(id = 163, name = "Slash", power = 70, accuracy = 100, type = "NORMAL", pp = 20, category = "PHY"), NdsMoveInfo(id = 24, name = "Double Kick", power = 30, accuracy = 100, type = "FIGHTING", pp = 30, category = "PHY"),
+            NdsMoveInfo(id = 44, name = "Bite", power = 60, accuracy = 100, type = "DARK", pp = 25, category = "PHY"), NdsMoveInfo(id = 372, name = "Assurance", power = 60, accuracy = 100, type = "DARK", pp = 10, category = "PHY"),
         )
         val z = NdsTrackedMon(
             mon = zangoose, speciesName = t.speciesName(335),
@@ -185,7 +187,7 @@ object Demo {
             mon = leavanny, speciesName = t.speciesName(542),
             info = NdsSpeciesInfo("Leavanny", "BUG", "GRASS", 500, "Swarm", "Chlorophyll"),
             abilityName = "?", itemName = "-",
-            moves = listOf(NdsMoveInfo("Razor Leaf", 55, 95, "GRASS", 25, "PHY"), NdsMoveInfo("Struggle Bug", 30, 100, "BUG", 20, "SPE")),
+            moves = listOf(NdsMoveInfo(id = 75, name = "Razor Leaf", power = 55, accuracy = 95, type = "GRASS", pp = 25, category = "PHY"), NdsMoveInfo(id = 522, name = "Struggle Bug", power = 30, accuracy = 100, type = "BUG", pp = 20, category = "SPE")),
         )
         return NdsTrackerState(
             partyCount = 1, party = listOf(z), located = true, inBattle = true, isWildBattle = false, enemy = enemy,

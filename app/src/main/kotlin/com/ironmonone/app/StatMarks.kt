@@ -25,6 +25,8 @@ class StatMarks(private val file: File) {
         const val STATES = 4
         /** Display order, matching the tracker's stat block. */
         val STAT_NAMES = listOf("HP", "ATK", "DEF", "SPA", "SPD", "SPE")
+        /** Move 165. The reference never tracks it (Tracker.TrackMove). */
+        const val STRUGGLE = 165
         const val COUNT = 6
 
         /**
@@ -57,7 +59,11 @@ class StatMarks(private val file: File) {
     private val routeSeen = HashMap<Int, MutableSet<Int>>()
     private val routeFile = File(file.parentFile, "routes.txt")
 
-    private val movesSeen = HashMap<Int, MutableList<String>>()
+    /** One tracked move, the reference's `{ id, level, minLv, maxLv }` (Tracker.TrackMove). */
+    data class SeenMove(val id: Int, val name: String, val minLv: Int, val maxLv: Int)
+
+    /** Per species, most recently seen FIRST, the way Tracker.TrackMove keeps its list. */
+    private val movesSeen = HashMap<Int, MutableList<SeenMove>>()
     private val movesFile = File(file.parentFile, "moves.txt")
 
     /**
@@ -196,7 +202,12 @@ class StatMarks(private val file: File) {
                 val cut = line.indexOf(':')
                 if (cut > 0) line.substring(0, cut).toIntOrNull()?.let { sp ->
                     movesSeen[sp] = line.substring(cut + 1).split('|')
-                        .filter { it.isNotBlank() }.toMutableList()
+                        .filter { it.isNotBlank() }.map { rec ->
+                            // id~name~min~max; a record without '~' is the old names-only file.
+                            val f = rec.split('~')
+                            if (f.size >= 4) SeenMove(f[0].toIntOrNull() ?: 0, f[1], f[2].toIntOrNull() ?: 0, f[3].toIntOrNull() ?: 0)
+                            else SeenMove(0, rec, 0, 0)
+                        }.toMutableList()
                 }
             }
         }
@@ -206,9 +217,9 @@ class StatMarks(private val file: File) {
         runCatching {
             movesFile.parentFile?.mkdirs()
             movesFile.bufferedWriter().use { w ->
-                movesSeen.forEach { (sp, names) ->
-                    if (names.isNotEmpty()) {
-                        w.write(sp.toString() + ":" + names.joinToString("|"))
+                movesSeen.forEach { (sp, moves) ->
+                    if (moves.isNotEmpty()) {
+                        w.write(sp.toString() + ":" + moves.joinToString("|") { "${it.id}~${it.name.replace('|', ' ').replace('~', ' ')}~${it.minLv}~${it.maxLv}" })
                         w.newLine()
                     }
                 }
@@ -252,17 +263,31 @@ class StatMarks(private val file: File) {
 
     fun abilityFor(species: Int): String? = abilitiesSeen[species]
 
-    /** Merge newly seen move names; returns true when anything was new. */
-    fun addMovesSeen(species: Int, names: List<String>): Boolean {
-        if (species <= 0 || names.isEmpty()) return false
+    /**
+     * The reference's Tracker.TrackMove, per move: Struggle is never tracked; a
+     * new move goes to the FRONT; a move seen again widens its level range and,
+     * if it had slipped below the top four, comes back to the front. Returns
+     * true when anything changed.
+     */
+    fun addMovesSeen(species: Int, moves: List<Pair<Int, String>>, level: Int): Boolean {
+        if (species <= 0 || moves.isEmpty()) return false
         val list = movesSeen.getOrPut(species) { mutableListOf() }
-        var added = false
-        names.forEach { n -> if (n.isNotBlank() && n !in list) { list.add(n); added = true } }
-        if (added) saveMoves()
-        return added
+        var changed = false
+        for ((id, name) in moves) {
+            if (id <= 0 || id == STRUGGLE || name.isBlank()) continue
+            val at = list.indexOfFirst { it.id == id }
+            if (at < 0) { list.add(0, SeenMove(id, name, level, level)); changed = true; continue }
+            val old = list[at]
+            val upd = old.copy(minLv = minOf(old.minLv, level), maxLv = maxOf(old.maxLv, level))
+            if (upd != old) { list[at] = upd; changed = true }
+            if (at > 3) { list.removeAt(at); list.add(0, upd); changed = true }
+        }
+        if (changed) saveMoves()
+        return changed
     }
 
-    fun movesSeenFor(species: Int): List<String> = movesSeen[species] ?: emptyList()
+    /** Every move this species has shown this run, most recent first. */
+    fun movesSeenFor(species: Int): List<SeenMove> = movesSeen[species] ?: emptyList()
 
     /** Records a sighting. Returns true when it is new for this map. */
     fun seeOnRoute(mapId: Int, species: Int): Boolean {

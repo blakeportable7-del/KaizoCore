@@ -749,8 +749,9 @@ fun PcBallPicker(pick: Int, onReroll: (() -> Unit)? = null) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             PixText("Pick this ball:", 8, Pc.Text, Modifier.weight(1f))
-            // The reference's dice button: clear the choice and pick again.
-            if (onReroll != null) PcSmallButton("REROLL") { onReroll() }
+            // The reference's die (RerollBallPicker): clear the choice and roll again.
+            // It was a REROLL text chip here, which the reference never shows.
+            if (onReroll != null) PcDiceButton(onReroll)
         }
         Spacer(Modifier.height(5.dp))
         Row(
@@ -884,6 +885,23 @@ private val POKEBALL_SMALL = arrayOf(
 
 /** The reference's Constants.PixelImages entries, transcribed 1:1. */
 object PcCategoryGlyphs {
+    /** Constants.PixelImages.DICE, 13x14: the reroll button under the balls (TrackerScreen.Buttons.RerollBallPicker). */
+    val DICE = arrayOf(
+        intArrayOf(0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0),
+        intArrayOf(0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0),
+        intArrayOf(0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0),
+        intArrayOf(1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1),
+        intArrayOf(1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1),
+        intArrayOf(1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1),
+        intArrayOf(1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1),
+        intArrayOf(1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1),
+        intArrayOf(1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1),
+        intArrayOf(1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1),
+        intArrayOf(1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1),
+        intArrayOf(0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0),
+        intArrayOf(0, 0, 0, 1, 1, 0, 1, 0, 1, 1, 0, 0, 0),
+        intArrayOf(0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0),
+    )
     /** Constants.PixelImages.PHYSICAL, 7x7. */
     val PHYSICAL = arrayOf(
         intArrayOf(1, 0, 0, 1, 0, 0, 1),
@@ -1339,6 +1357,26 @@ fun PcCard(content: @Composable () -> Unit) {
         Modifier.fillMaxWidth().padding(bottom = 2.rp)
             .background(Pc.Ground).border(1.rp, Pc.Border),
     ) { content() }
+}
+
+/** The reference's 13x14 die, drawn in "Default text" like its other pixel buttons, with a 24dp hit area. */
+@Composable
+fun PcDiceButton(onClick: () -> Unit) {
+    Box(
+        Modifier.size(24.dp).clickable(onClickLabel = "Reroll the ball") { onClick() },
+        contentAlignment = Alignment.Center,
+    ) {
+        androidx.compose.foundation.Canvas(Modifier.width(13.rp).height(14.rp)) {
+            val px = size.width / 13f
+            for (y in 0 until 14) for (x in 0 until 13) {
+                if (PcCategoryGlyphs.DICE[y][x] == 1) drawRect(
+                    color = Pc.Text,
+                    topLeft = androidx.compose.ui.geometry.Offset(x * px, y * px),
+                    size = androidx.compose.ui.geometry.Size(px, px),
+                )
+            }
+        }
+    }
 }
 
 @Composable

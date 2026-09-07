@@ -241,6 +241,8 @@ fun PlayScreen(
      */
     // Declared here, above flee(), which reads it for the live battle gate.
     var trackerRef by remember { mutableStateOf<com.ironmonone.tracker.GbaTracker?>(null) }
+    // The Game Boy trackers' move table, for the enemy card's run-wide moves (trackerRef is Gen 3 only).
+    var gbLookup by remember(session.id) { mutableStateOf<((Int) -> com.ironmonone.tracker.MoveRow?)?>(null) }
     // The run, through one interface, whichever tracker is producing it.
     // Only one of the two states is ever non-null on a given platform.
     val view: com.ironmonone.tracker.RunView? = ndsState ?: trackerState
@@ -453,7 +455,7 @@ fun PlayScreen(
     LaunchedEffect(trackerState, ndsState, marksVersion, session.id) {
         val notes = com.ironmonone.app.stream.StreamSnapshot.Notes(
             marksOf = { statMarks.of(it) }, noteOf = { statMarks.noteFor(it) },
-            movesSeenOf = { statMarks.movesSeenFor(it) }, abilityOf = { statMarks.abilityFor(it) },
+            movesSeenOf = { statMarks.movesSeenFor(it).map { m -> m.name } }, abilityOf = { statMarks.abilityFor(it) },
             encountersOf = { encounters[it] ?: 0 }, lastSeenLevelOf = { lastSeenLevel[it] },
             routeSeenOf = { statMarks.seenOnRoute(it).size },
         )
@@ -519,9 +521,14 @@ fun PlayScreen(
     // Count an encounter once per arrival, not once per poll tick.
     // Persist what this enemy uses as it uses it, so the next encounter with
     // the species starts informed - the reference's Tracker.TrackMove.
+    // The DS enemy's moves are already used-only (NdsTracker.usedOnly), so every one is a sighting.
+    LaunchedEffect(ndsState?.enemy?.moves) {
+        val e = ndsState?.enemy
+        if (e != null && statMarks.addMovesSeen(e.mon.species, e.moves.map { it.id to it.name }, e.mon.level)) marksVersion++
+    }
     LaunchedEffect(trackerState?.enemy?.movesSeen) {
         val e = trackerState?.enemy
-        if (e != null && statMarks.addMovesSeen(e.species, e.movesSeen)) marksVersion++
+        if (e != null && statMarks.addMovesSeen(e.species, e.moveRows.map { it.id to it.name }, e.level)) marksVersion++
     }
 
     // A battle script revealing an ability is the ONLY thing that unlocks
@@ -643,6 +650,7 @@ fun PlayScreen(
             val gbc = if (com.ironmonone.tracker.Gen2Map.forRom(romBytes) != null) com.ironmonone.tracker.GbcTracker(reader, romBytes) else null
             val gb1 = if (gbc == null) com.ironmonone.tracker.Gen1Tracker(reader, romBytes) else null
             val read: () -> com.ironmonone.tracker.TrackerState = { gbc?.read() ?: gb1!!.read() }
+            gbLookup = { id -> gbc?.moveRowFor(id) ?: gb1?.moveRowFor(id) }
             while (true) {
                 val visible = lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)
                 if (!visible) { kotlinx.coroutines.delay(1000); continue }
@@ -1456,12 +1464,15 @@ fun PlayScreen(
                       coverage = ndsCoverage,
                         revealedEnemyAbility = ndsState?.enemy
                             ?.let { statMarks.abilityFor(it.mon.species) },
+                        movesSeenRunWide = ndsState?.enemy?.let { statMarks.movesSeenFor(it.mon.species) } ?: emptyList(),
+                        moveInfoFor = { id -> ndsTrackerRef?.moveInfoFor(id) },
                   )
                   else TrackerPanel(
                       trackerState, onFlee = { flee() }, ballCall = ballCall,
                 onRerollBall = { ballReroll++ },
                 movesSeenRunWide = trackerState?.enemy
                     ?.let { statMarks.movesSeenFor(it.species) } ?: emptyList(),
+                moveRowFor = { id -> trackerRef?.moveRowFor(id) ?: gbLookup?.invoke(id) },
                 revealedEnemyAbility = trackerState?.enemy
                     ?.let { statMarks.abilityFor(it.species) },
                 routeName = trackerState?.routeName,
@@ -1975,6 +1986,8 @@ fun PlayScreen(
                         coverage = ndsCoverage,
                         revealedEnemyAbility = ndsState?.enemy
                             ?.let { statMarks.abilityFor(it.mon.species) },
+                        movesSeenRunWide = ndsState?.enemy?.let { statMarks.movesSeenFor(it.mon.species) } ?: emptyList(),
+                        moveInfoFor = { id -> ndsTrackerRef?.moveInfoFor(id) },
                     )
                 }
             } else Box(
@@ -1990,6 +2003,7 @@ fun PlayScreen(
                 onRerollBall = { ballReroll++ },
                 movesSeenRunWide = trackerState?.enemy
                     ?.let { statMarks.movesSeenFor(it.species) } ?: emptyList(),
+                moveRowFor = { id -> trackerRef?.moveRowFor(id) ?: gbLookup?.invoke(id) },
                 revealedEnemyAbility = trackerState?.enemy
                     ?.let { statMarks.abilityFor(it.species) },
                 routeName = trackerState?.routeName,

@@ -18,6 +18,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.ironmonone.tracker.nds.NdsMoveInfo
 import com.ironmonone.tracker.nds.NdsTrackedMon
 import com.ironmonone.tracker.nds.NdsTrackerState
 
@@ -44,6 +45,7 @@ private fun categoryOf(category: String): String = when (category.uppercase()) {
 private fun movesOf(p: NdsTrackedMon): List<PcMove> =
     p.moves.mapIndexed { i, m ->
         PcMove(
+            id = m.id,
             name = m.name,
             pp = p.mon.pp.getOrElse(i) { 0 },
             // Base PP raised by this mon's PP Ups, same rule as Gen 3.
@@ -57,6 +59,23 @@ private fun movesOf(p: NdsTrackedMon): List<PcMove> =
             category = categoryOf(m.category),
         )
     }
+
+/** A move this species used in an EARLIER battle, drawn from the ROM's table at base PP. */
+private fun rememberedMove(m: NdsMoveInfo): PcMove = PcMove(
+    id = m.id, name = m.name, pp = m.pp, ppMax = null, power = m.power, acc = m.accuracy,
+    color = pcTypeColorByName(m.type), typeName = m.type, category = categoryOf(m.category),
+)
+
+/**
+ * The enemy's move rows: what it has used across the WHOLE run, most recent
+ * first, this battle's live rows winning where they overlap. The panel used
+ * to draw only this battle, so a second meeting with a species started blind.
+ */
+private fun enemyMovesOf(e: NdsTrackedMon, runWide: List<StatMarks.SeenMove>, moveInfoFor: (Int) -> NdsMoveInfo?): List<PcMove> {
+    val now = movesOf(e)
+    val merged = runWide.mapNotNull { sm -> now.firstOrNull { it.id == sm.id } ?: moveInfoFor(sm.id)?.let(::rememberedMove) } + now
+    return merged.distinctBy { if (it.id != 0) it.id.toString() else it.name }
+}
 
 private fun typeChipsOf(p: NdsTrackedMon): List<Pair<String, androidx.compose.ui.graphics.Color>> {
     val info = p.info ?: return emptyList()
@@ -122,6 +141,9 @@ private fun NdsEnemyCard(
     onCycleMark: (Int) -> Unit,
     note: String,
     onEditNote: () -> Unit,
+    /** Every move this species has used this run, most recent first (the reference's trackMove). */
+    movesSeenRunWide: List<StatMarks.SeenMove> = emptyList(),
+    moveInfoFor: (Int) -> NdsMoveInfo? = { null },
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val sprite = remember(e.mon.species) {
@@ -159,6 +181,8 @@ private fun NdsEnemyCard(
         }
         androidx.compose.foundation.layout.Box(
             Modifier.fillMaxWidth().height(1.dp).background(Pc.Border))
+        // The reference's tracked moves for this opponent: only what it has used, this run.
+        PcMovesSection(enemyMovesOf(e, movesSeenRunWide, moveInfoFor), header = "Moves")
         PcNoteRow(note, onEditNote)
     }
 }
@@ -283,6 +307,8 @@ fun NdsTrackerPanel(
     coverage: Map<Double, List<Int>> = emptyMap(),
     /** The enemy's ability, once a battle trigger has revealed it this run. */
     revealedEnemyAbility: String? = null,
+    movesSeenRunWide: List<StatMarks.SeenMove> = emptyList(),
+    moveInfoFor: (Int) -> NdsMoveInfo? = { null },
 ) {
     // Same reference canvas as the GBA panel. Without it this panel would keep
     // the shared boxes' new REFERENCE-pixel sizes at 1dp each, i.e. the right
@@ -324,7 +350,8 @@ fun NdsTrackerPanel(
                     Spacer(Modifier.height(4.dp))
                     state.enemy?.let {
                         NdsEnemyCard(it, revealedEnemyAbility, enemyMarks,
-                            enemyEncounters, onCycleMark, enemyNote, onEditNote)
+                            enemyEncounters, onCycleMark, enemyNote, onEditNote,
+                            movesSeenRunWide, moveInfoFor)
                     }
                 }
                 state.party.forEachIndexed { i, p ->
