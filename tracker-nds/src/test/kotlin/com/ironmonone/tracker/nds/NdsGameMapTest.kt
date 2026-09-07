@@ -14,6 +14,8 @@ class NdsGameMapTest {
     @Test
     fun `game codes pick the map, and an unknown game gets none`() {
         assertSame(NdsGameMap.PLATINUM, NdsGameMap.forCode(0x45555043))    // CPUE
+        assertSame(NdsGameMap.DP, NdsGameMap.forCode(0x45414441))          // ADAE
+        assertSame(NdsGameMap.DP, NdsGameMap.forCode(0x45415041))          // APAE
         assertSame(NdsGameMap.HGSS, NdsGameMap.forCode(0x454B5049))        // IPKE
         assertSame(NdsGameMap.HGSS, NdsGameMap.forCode(0x45475049))        // IPGE
         assertSame(NdsGameMap.BW, NdsGameMap.forCode(0x4F425249))         // Black
@@ -39,6 +41,29 @@ class NdsGameMapTest {
         assertEquals(listOf(0x8EL, 0x93L), m.badgeOffsets)                 // johto, kanto
         assertEquals(0x246F48L, m.battleStatus)
         assertEquals("HGSS", m.badgePrefix)
+    }
+
+    @Test
+    fun `Diamond and Pearl offsets match the reference block, chain from 0xB70`() {
+        val m = NdsGameMap.DP
+        assertEquals(0xB70L, m.globalPointer)
+        assertEquals(0xBA8L, NdsGameMap.PLATINUM.globalPointer)
+        assertEquals(0x2ACL, m.playerBase)
+        assertEquals(0x4CD88L, m.enemyBase)
+        assertEquals(0x42A8EL, m.enemyTrainerId)
+        assertEquals(0x485E8L, m.playerBattleMonPid)
+        assertEquals(0x486A8L, m.enemyBattleMonPid)
+        assertEquals(0x48598L, m.statStagesPlayer)
+        assertEquals(0x48658L, m.statStagesEnemy)
+        assertEquals(0x458F0L, m.battleSubscriptMsgs)
+        assertEquals(0xD54L, m.itemStartNoBattle)
+        assertEquals(0x4546CL, m.itemStartBattle)
+        assertEquals(0xDF4L, m.berryBagStart)
+        assertEquals(0x4550CL, m.berryBagStartBattle)
+        assertEquals(listOf(0x292L), m.badgeOffsets)
+        assertEquals(0x23BB38L, m.battleStatus)
+        assertEquals("DPPT", m.badgePrefix)
+        assertEquals(236, m.entrySize)
     }
 
     @Test

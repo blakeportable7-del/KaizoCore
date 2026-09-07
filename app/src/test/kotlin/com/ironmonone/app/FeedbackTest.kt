@@ -36,4 +36,16 @@ class FeedbackTest {
             assertTrue(l.isBlank() || l.startsWith("https://"), "a link is blank or https: $l")
         }
     }
+
+    /** The last crash rides in the report, before the log tail, and only when there is one. */
+    @Test
+    fun `a crash report is included when present and absent otherwise`() {
+        val dev = Feedback.Device("Pixel", "Android 14 (API 34)", "1.0.0-rc15")
+        val with = Feedback.compose(dev, "DPPt", "froze", "log", crash = "REASON_CRASH at 12:00" + System.lineSeparator() + "trace")
+        kotlin.test.assertTrue(with.indexOf("Last crash:") in 0 until with.indexOf("Log tail:"))
+        kotlin.test.assertTrue("REASON_CRASH at 12:00" in with)
+        kotlin.test.assertFalse("Last crash:" in Feedback.compose(dev, "DPPt", "froze", "log"))
+        val mail = Feedback.Links.EMAIL
+        kotlin.test.assertEquals("blake@willowcreek.group", mail)
+    }
 }

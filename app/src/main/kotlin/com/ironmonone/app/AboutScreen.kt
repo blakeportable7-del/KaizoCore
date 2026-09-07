@@ -109,10 +109,10 @@ fun AboutScreen(modifier: Modifier = Modifier) {
         val store = remember { PrepStore(context) }
         com.ironmonone.app.gen3.Gen3Box(Modifier.fillMaxWidth()) {
             Column {
-                Text("BETA FEEDBACK", fontFamily = com.ironmonone.app.gen3.Gen3.PixelFont, fontSize = 11.sp, color = Shell.inkOnPaper)
+                Text("REPORT A BUG", fontFamily = com.ironmonone.app.gen3.Gen3.PixelFont, fontSize = 11.sp, color = Shell.inkOnPaper)
                 Spacer(Modifier.height(6.dp))
-                Text("Something in your way? Say what happened and where. The report carries your device, Android and app " +
-                    "versions, the game family and the app's own log lines. Never a ROM, a save or a file name.",
+                Text("Something in your way? Say what happened and where, then EMAIL BLAKE. The report carries your device, Android and app " +
+                    "versions, the game family, the last crash if there was one, and the app's own log lines. Never a ROM, a save or a file name.",
                     style = MaterialTheme.typography.bodyMedium, color = Shell.inkOnPaper)
                 Spacer(Modifier.height(8.dp))
                 androidx.compose.material3.OutlinedTextField(
@@ -121,7 +121,16 @@ fun AboutScreen(modifier: Modifier = Modifier) {
                 )
                 Spacer(Modifier.height(10.dp))
                 androidx.compose.foundation.layout.FlowRow(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp), verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
-                    com.ironmonone.app.gen3.Gen3Button("SEND FEEDBACK", accent = true) {
+                    com.ironmonone.app.gen3.Gen3Button("EMAIL BLAKE", accent = true) {
+                        val family = store.loadLastRun()?.first?.let { com.ironmonone.core.RomKind.byId(it)?.family }
+                        val device = Feedback.device(context)
+                        val text = Feedback.compose(device, family, feedbackWords, Feedback.logTail(), CrashLog.existing(context))
+                        runCatching {
+                            context.startActivity(Feedback.emailIntent("KaizoCore bug (${device.appVersion})", text))
+                            feedbackStatus = "Mail composed to ${Feedback.Links.EMAIL} (${text.lines().size} lines). Send it from your mail app."
+                        }.onFailure { feedbackStatus = "No mail app on this phone. Use SHARE INSTEAD and pick anything that reaches ${Feedback.Links.EMAIL}." }
+                    }
+                    com.ironmonone.app.gen3.Gen3Button("SHARE INSTEAD") {
                         val family = store.loadLastRun()?.first?.let { com.ironmonone.core.RomKind.byId(it)?.family }
                         val text = Feedback.compose(Feedback.device(context), family, feedbackWords, Feedback.logTail())
                         runCatching {

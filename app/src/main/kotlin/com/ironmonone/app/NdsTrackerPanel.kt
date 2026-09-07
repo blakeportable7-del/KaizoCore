@@ -241,6 +241,10 @@ private val NDS_RUN_OVER_MESSAGES: Map<com.ironmonone.tracker.nds.NdsRunOver, Li
         ),
     )
 
+/** The pool the DS tracker draws its closing line from for [cause]; the popup uses the same one. */
+internal fun ndsRunOverLines(cause: com.ironmonone.tracker.nds.NdsRunOver): List<String> =
+    NDS_RUN_OVER_MESSAGES[cause] ?: NDS_RUN_OVER_MESSAGES.getValue(com.ironmonone.tracker.nds.NdsRunOver.STANDARD)
+
 /**
  * The DS end-of-run card. Same shape as the GBA one, but the message comes from
  * the cause rather than a single pool.

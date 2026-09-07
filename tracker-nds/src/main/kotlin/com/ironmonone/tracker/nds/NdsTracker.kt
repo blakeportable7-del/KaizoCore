@@ -137,7 +137,7 @@ class NdsTracker(
 
     // Offsets come from the game's NdsGameMap (copied from NDS-Ironmon-Tracker's
     // MemoryAddresses.lua); Platinum unless detect() said otherwise.
-    private val globalPointer = NdsGameMap.GLOBAL_POINTER
+    private val globalPointer = map.globalPointer
     private val versionPointerOffset = NdsGameMap.VERSION_POINTER_OFFSET
     private val playerBaseOffset = map.playerBase
     private val enemyBaseOffset = map.enemyBase

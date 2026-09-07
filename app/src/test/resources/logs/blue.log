@@ -1,0 +1,400 @@
+﻿Randomizer Version: 4.6.1
+Random Seed: 222106236050274
+Settings String: 322WRIEAQIZAIUAAACRAAKeBgMECQEAFAABCQAOAgAAAAAAAAgo5ATkAQAICTIGBQMyAAIYElBva2Vtb24gWWVsbG93IChVKbFz8kzjwziK
+--Randomized Evolutions--
+BULBASAUR       -> BEEDRILL       
+IVYSAUR         -> VICTREEBEL     
+CHARMANDER      -> PONYTA         
+CHARMELEON      -> NINETALES      
+SQUIRTLE        -> WARTORTLE      
+WARTORTLE       -> GOLDUCK        
+CATERPIE        -> WEEDLE         
+METAPOD         -> PARASECT       
+WEEDLE          -> ZUBAT          
+KAKUNA          -> GLOOM          
+PIDGEY          -> PIDGEOTTO      
+PIDGEOTTO       -> PIDGEOT        
+RATTATA         -> RATICATE       
+SPEAROW         -> PERSIAN        
+EKANS           -> HAUNTER        
+PIKACHU         -> ELECTRODE      
+SANDSHREW       -> SANDSLASH      
+NIDORAN♀        -> KOFFING        
+NIDORINA        -> GOLBAT         
+NIDORAN♂        -> NIDORINO       
+NIDORINO        -> VENOMOTH       
+CLEFAIRY        -> KANGASKHAN     
+VULPIX          -> RAPIDASH       
+JIGGLYPUFF      -> DODRIO         
+ZUBAT           -> AERODACTYL     
+ODDISH          -> NIDORINA       
+GLOOM           -> WEEZING        
+PARAS           -> IVYSAUR        
+VENONAT         -> MUK            
+DIGLETT         -> MAROWAK        
+MEOWTH          -> WIGGLYTUFF     
+PSYDUCK         -> POLIWRATH      
+MANKEY          -> MACHAMP        
+GROWLITHE       -> CHARIZARD      
+POLIWAG         -> OMANYTE        
+POLIWHIRL       -> KABUTOPS       
+ABRA            -> MR.MIME        
+KADABRA         -> JYNX           
+MACHOP          -> HITMONLEE      
+MACHOKE         -> PRIMEAPE       
+BELLSPROUT      -> WEEPINBELL     
+WEEPINBELL      -> GOLBAT         
+TENTACOOL       -> SEAKING        
+GEODUDE         -> DUGTRIO        
+GRAVELER        -> NIDOQUEEN      
+PONYTA          -> MAGMAR         
+SLOWPOKE        -> OMASTAR        
+MAGNEMITE       -> RAICHU         
+DODUO           -> FEAROW         
+SEEL            -> BLASTOISE      
+GRIMER          -> GENGAR         
+SHELLDER        -> TENTACRUEL     
+GASTLY          -> ARBOK          
+HAUNTER         -> VENUSAUR       
+DROWZEE         -> HYPNO          
+KRABBY          -> SLOWBRO        
+VOLTORB         -> ELECTABUZZ     
+EXEGGCUTE       -> EXEGGUTOR      
+CUBONE          -> GRAVELER       
+KOFFING         -> VILEPLUME      
+
+--Pokemon Base Stats & Types--
+NUM|NAME      |TYPE             |  HP| ATK| DEF| SPE|SPEC
+  1|BULBASAUR |GRASS/POISON     |  38|  26|  72|  43|  74
+  2|IVYSAUR   |GRASS/POISON     |  71|  41|  54|  94|  65
+  3|VENUSAUR  |GRASS/POISON     | 128|  40|  85|  50| 122
+  4|CHARMANDER|FIRE             |  22|  20|  80|  72|  55
+  5|CHARMELEON|FIRE             |  84|  85|  30|  33|  93
+  6|CHARIZARD |FIRE/FLYING      |  98| 108|  51|  78|  90
+  7|SQUIRTLE  |WATER            |  61|  34|  62|  37|  56
+  8|WARTORTLE |WATER            |  59| 101|  44|  51|  71
+  9|BLASTOISE |WATER            |  36|  69|  78| 151|  91
+ 10|CATERPIE  |BUG              |  37|  45|  28|  37|  28
+ 11|METAPOD   |BUG              |  44|  57|  22|  25|  32
+ 12|BUTTERFREE|BUG/FLYING       |  59|  64|  69|  56|  57
+ 13|WEEDLE    |BUG/POISON       |  64|  45|  19|  13|  35
+ 14|KAKUNA    |BUG/POISON       |  61|  28|  37|  31|  23
+ 15|BEEDRILL  |BUG/POISON       |  22|  80|  49| 143|  11
+ 16|PIDGEY    |NORMAL/FLYING    |  64|  32|  16|  57|  47
+ 17|PIDGEOTTO |NORMAL/FLYING    |  56|  82|  85|  44|  32
+ 18|PIDGEOT   |NORMAL/FLYING    |  77| 109| 134|  37|  43
+ 19|RATTATA   |NORMAL           |  39|  39|  25|  66|  50
+ 20|RATICATE  |NORMAL           |  67|  66| 125|  64|  20
+ 21|SPEAROW   |NORMAL/FLYING    |  36|  56|  56|  22|  61
+ 22|FEAROW    |NORMAL/FLYING    |  48|  93|  56|  86|  97
+ 23|EKANS     |POISON           |  62|  48|  39|  42|  44
+ 24|ARBOK     |POISON           |  34|  49| 117|  41| 118
+ 25|PIKACHU   |ELECTRIC         |  81|  54|  72|  34|  20
+ 26|RAICHU    |ELECTRIC         | 184|  99|  45|  43|  25
+ 27|SANDSHREW |GROUND           |  72|  62|  57|  73|  15
+ 28|SANDSLASH |GROUND           | 139|  55|  55|  29| 128
+ 29|NIDORAN♀  |POISON           |  74|  57|  11|  51|  42
+ 30|NIDORINA  |POISON           |  92|  86|  15|  31|  85
+ 31|NIDOQUEEN |POISON/GROUND    | 148|  20| 118| 102|  23
+ 32|NIDORAN♂  |POISON           |  64|  48|  41|  55|  25
+ 33|NIDORINO  |POISON           |  89|  53|  83|  32|  53
+ 34|NIDOKING  |POISON/GROUND    |  96|  20| 209|  36|  49
+ 35|CLEFAIRY  |NORMAL           |  82|  80|  40|  17|  38
+ 36|CLEFABLE  |NORMAL           |  39|  76|  39| 120| 109
+ 37|VULPIX    |FIRE             |  39|  78|  14|  67|  52
+ 38|NINETALES |FIRE             |  98|  98|  19| 110|  99
+ 39|JIGGLYPUFF|NORMAL           |  61|  14|  57|  38|  56
+ 40|WIGGLYTUFF|NORMAL           |  80|  85|  76|  33|  76
+ 41|ZUBAT     |POISON/FLYING    |  60|  25|  23|  61|  45
+ 42|GOLBAT    |POISON/FLYING    |  96|  55| 110| 100|  29
+ 43|ODDISH    |GRASS/POISON     |  85|  43|  83|  28|  15
+ 44|GLOOM     |GRASS/POISON     |  72|  45|  53|  79|  71
+ 45|VILEPLUME |GRASS/POISON     |  95|  61| 118|  83|  33
+ 46|PARAS     |BUG/GRASS        |  63|  40|  43|  59|  34
+ 47|PARASECT  |BUG/GRASS        |  66|  70|  62|  71|  75
+ 48|VENONAT   |BUG/POISON       |  60|  56|  47|  19|  67
+ 49|VENOMOTH  |BUG/POISON       | 125|  87|  15|  82|  67
+ 50|DIGLETT   |GROUND           |  49|  14|  44| 105|  18
+ 51|DUGTRIO   |GROUND           |  73|  42|  86|  85|  68
+ 52|MEOWTH    |NORMAL           |  29|  21|  36|  78|  87
+ 53|PERSIAN   |NORMAL           |  85|  52|  91|  51|  96
+ 54|PSYDUCK   |WATER            |  38|  60|  56|  68|  34
+ 55|GOLDUCK   |WATER            |  37|  65|  37| 139| 127
+ 56|MANKEY    |FIGHTING         |  90|  37|  16|  57|  61
+ 57|PRIMEAPE  |FIGHTING         |  76| 114|  78|  53|  65
+ 58|GROWLITHE |FIRE             |  62|  33|  75|  18|  91
+ 59|ARCANINE  |FIRE             | 101|  73| 130| 133|  18
+
+--Removing Impossible Evolutions--
+KADABRA         -> JYNX            at level 37
+MACHOKE         -> PRIMEAPE        at level 37
+GRAVELER        -> NIDOQUEEN       at level 37
+HAUNTER         -> VENUSAUR        at level 37
+
+
+--Removing Timed-Based Evolutions--
+
+
+--Random Starters--
+Set starter 1 to RHYHORN
+Set starter 2 to WEEZING
+Set starter 3 to POLIWAG
+
+Move Data: Unchanged.
+
+
+--Pokemon Movesets--
+001 BULBASAUR -> BEEDRILL
+HP   38 
+ATK  26 
+DEF  72 
+SPEC 74 
+SPE  43 
+Level 1 : THUNDERPUNCH
+Level 1 : DOUBLE KICK
+Level 1 : LEECH SEED
+Level 1 : AURORA BEAM
+Level 7 : BARRAGE
+Level 13: POISON GAS
+Level 20: SELFDESTRUCT
+Level 27: SUBSTITUTE
+Level 34: DISABLE
+Level 41: POUND
+Level 48: TOXIC
+
+002 IVYSAUR -> VICTREEBEL
+HP   71 
+ATK  41 
+DEF  54 
+SPEC 65 
+SPE  94 
+Level 1 : HARDEN
+Level 1 : DREAM EATER
+Level 1 : PIN MISSILE
+Level 1 : FLAMETHROWER
+Level 7 : AMNESIA
+Level 13: ABSORB
+Level 22: SKY ATTACK
+Level 30: HYPNOSIS
+Level 38: EXPLOSION
+Level 46: RAZOR WIND
+Level 54: REST
+
+003 VENUSAUR ->  (no evolution)
+HP   128
+ATK  40 
+DEF  85 
+SPEC 122
+SPE  50 
+Level 1 : MIST
+Level 1 : FLAMETHROWER
+Level 1 : BODY SLAM
+Level 1 : PETAL DANCE
+Level 7 : DRAGON RAGE
+Level 13: PSYCHIC
+Level 22: BLIZZARD
+Level 30: EMBER
+Level 43: WRAP
+Level 55: MINIMIZE
+Level 65: SMOG
+
+004 CHARMANDER -> PONYTA
+HP   22 
+ATK  20 
+DEF  80 
+SPEC 55 
+SPE  72 
+Level 1 : DRILL PECK
+Level 1 : CONSTRICT
+Level 1 : AURORA BEAM
+Level 1 : FIRE BLAST
+Level 9 : DOUBLE TEAM
+Level 15: ICE BEAM
+Level 22: WATER GUN
+Level 30: COMET PUNCH
+Level 38: SPIKE CANNON
+Level 46: SUPERSONIC
+
+
+--TM Moves--
+TM01 FIRE BLAST
+TM02 STOMP
+TM03 DOUBLE KICK
+TM04 LEER
+TM05 JUMP KICK
+TM06 WITHDRAW
+TM07 TRI ATTACK
+TM08 SOLARBEAM
+TM09 COUNTER
+TM10 DOUBLESLAP
+TM11 HYPER BEAM
+TM12 SCREECH
+TM13 SKULL BASH
+TM14 PSYWAVE
+TM15 CONFUSE RAY
+TM16 MEGA KICK
+TM17 ICE BEAM
+TM18 MIMIC
+TM19 METRONOME
+TM20 VINE WHIP
+TM21 SUBSTITUTE
+TM22 COMET PUNCH
+TM23 ROAR
+TM24 SKY ATTACK
+TM25 BLIZZARD
+TM26 GROWTH
+TM27 ROCK THROW
+TM28 HORN DRILL
+TM29 ACID
+TM30 GROWL
+TM31 REST
+TM32 QUICK ATTACK
+TM33 EMBER
+TM34 TACKLE
+TM35 KARATE CHOP
+TM36 RAZOR LEAF
+TM37 TAKE DOWN
+TM38 PECK
+TM39 NIGHT SHADE
+TM40 DEFENSE CURL
+TM41 THUNDER
+TM42 GUILLOTINE
+TM43 SOFTBOILED
+TM44 HI JUMP KICK
+TM45 RECOVER
+TM46 POISON STING
+TM47 GUST
+TM48 ACID ARMOR
+TM49 SHARPEN
+TM50 STRING SHOT
+
+
+--TM Compatibility--
+  1 BULBASAUR     |              - |TM02 STOMP |TM03 DOUBLE KICK |TM04 LEER |             - |            - |TM07 TRI ATTACK |             - |           - |              - |TM11 HYPER BEAM |TM12 SCREECH |TM13 SKULL BASH |TM14 PSYWAVE |               - |TM16 MEGA KICK |TM17 ICE BEAM |         - |TM19 METRONOME |TM20 VINE WHIP |              - |               - |TM23 ROAR |              - |            - |TM26 GROWTH |              - |              - |TM29 ACID |         - |TM31 REST |                - |TM33 EMBER |TM34 TACKLE |TM35 KARATE CHOP |              - |TM37 TAKE DOWN |        - |               - |                - |TM41 THUNDER |              - |              - |TM44 HI JUMP KICK |TM45 RECOVER |                - |        - |TM48 ACID ARMOR |TM49 SHARPEN |TM50 STRING SHOT |HM01 CUT |HM02 FLY |HM03 SURF |HM04 STRENGTH |HM05 FLASH |
+  2 IVYSAUR       |              - |TM02 STOMP |               - |        - |TM05 JUMP KICK |            - |              - |TM08 SOLARBEAM |TM09 COUNTER |              - |              - |TM12 SCREECH |              - |TM14 PSYWAVE |               - |TM16 MEGA KICK |TM17 ICE BEAM |         - |             - |TM20 VINE WHIP |TM21 SUBSTITUTE |               - |TM23 ROAR |              - |            - |TM26 GROWTH |TM27 ROCK THROW |TM28 HORN DRILL |        - |         - |TM31 REST |TM32 QUICK ATTACK |TM33 EMBER |          - |               - |              - |TM37 TAKE DOWN |        - |TM39 NIGHT SHADE |TM40 DEFENSE CURL |TM41 THUNDER |TM42 GUILLOTINE |TM43 SOFTBOILED |                - |           - |                - |        - |              - |TM49 SHARPEN |               - |HM01 CUT |HM02 FLY |HM03 SURF |HM04 STRENGTH |HM05 FLASH |
+  3 VENUSAUR      |              - |         - |TM03 DOUBLE KICK |TM04 LEER |TM05 JUMP KICK |TM06 WITHDRAW |TM07 TRI ATTACK |             - |           - |TM10 DOUBLESLAP |              - |           - |              - |           - |               - |             - |TM17 ICE BEAM |         - |             - |             - |              - |TM22 COMET PUNCH |        - |TM24 SKY ATTACK |TM25 BLIZZARD |TM26 GROWTH |              - |TM28 HORN DRILL |        - |TM30 GROWL |        - |                - |         - |          - |TM35 KARATE CHOP |TM36 RAZOR LEAF |             - |        - |               - |TM40 DEFENSE CURL |TM41 THUNDER |TM42 GUILLOTINE |              - |                - |TM45 RECOVER |TM46 POISON STING |TM47 GUST |TM48 ACID ARMOR |TM49 SHARPEN |               - |HM01 CUT |HM02 FLY |HM03 SURF |HM04 STRENGTH |HM05 FLASH |
+  4 CHARMANDER    |TM01 FIRE BLAST |         - |               - |        - |TM05 JUMP KICK |TM06 WITHDRAW |              - |             - |           - |TM10 DOUBLESLAP |              - |TM12 SCREECH |TM13 SKULL BASH |           - |               - |             - |            - |TM18 MIMIC |             - |TM20 VINE WHIP |              - |TM22 COMET PUNCH |TM23 ROAR |TM24 SKY ATTACK |TM25 BLIZZARD |TM26 GROWTH |              - |              - |        - |TM30 GROWL |        - |                - |TM33 EMBER |          - |TM35 KARATE CHOP |TM36 RAZOR LEAF |             - |        - |TM39 NIGHT SHADE |                - |TM41 THUNDER |              - |TM43 SOFTBOILED |TM44 HI JUMP KICK |TM45 RECOVER |                - |TM47 GUST |              - |           - |TM50 STRING SHOT |HM01 CUT |HM02 FLY |HM03 SURF |HM04 STRENGTH |HM05 FLASH |
+  5 CHARMELEON    |TM01 FIRE BLAST |         - |TM03 DOUBLE KICK |        - |             - |TM06 WITHDRAW |              - |             - |TM09 COUNTER |TM10 DOUBLESLAP |              - |           - |              - |           - |               - |TM16 MEGA KICK |TM17 ICE BEAM |         - |             - |             - |              - |TM22 COMET PUNCH |        - |TM24 SKY ATTACK |            - |TM26 GROWTH |              - |              - |        - |         - |        - |TM32 QUICK ATTACK |         - |TM34 TACKLE |TM35 KARATE CHOP |TM36 RAZOR LEAF |TM37 TAKE DOWN |        - |TM39 NIGHT SHADE |                - |           - |TM42 GUILLOTINE |TM43 SOFTBOILED |                - |TM45 RECOVER |                - |TM47 GUST |TM48 ACID ARMOR |           - |TM50 STRING SHOT |HM01 CUT |HM02 FLY |HM03 SURF |HM04 STRENGTH |HM05 FLASH |
+  6 CHARIZARD     |TM01 FIRE BLAST |TM02 STOMP |               - |        - |             - |            - |TM07 TRI ATTACK |TM08 SOLARBEAM |TM09 COUNTER |TM10 DOUBLESLAP |              - |TM12 SCREECH |              - |TM14 PSYWAVE |               - |TM16 MEGA KICK |TM17 ICE BEAM |         - |             - |             - |              - |               - |TM23 ROAR |              - |            - |          - |              - |TM28 HORN DRILL |TM29 ACID |         - |        - |                - |         - |          - |               - |TM36 RAZOR LEAF |TM37 TAKE DOWN |        - |               - |TM40 DEFENSE CURL |TM41 THUNDER |              - |              - |TM44 HI JUMP KICK |           - |TM46 POISON STING |        - |              - |TM49 SHARPEN |TM50 STRING SHOT |HM01 CUT |HM02 FLY |HM03 SURF |HM04 STRENGTH |HM05 FLASH |
+
+--Trainers Pokemon--
+#1 (YOUNGSTER => Rich Girl)@39D99 - RHYHORN Lv17, DUGTRIO Lv17
+#2 (YOUNGSTER => Rich Girl)@39D9D - DITTO Lv21
+#3 (YOUNGSTER => Rich Girl)@39DA0 - VULPIX Lv15, SNORLAX Lv15, DEWGONG Lv15
+#4 (YOUNGSTER => Rich Girl)@39DA5 - RHYHORN Lv21, AERODACTYL Lv21, SANDSLASH Lv21
+#5 (YOUNGSTER => Rich Girl)@39DAA - WIGGLYTUFF Lv23, CHANSEY Lv23
+#6 (YOUNGSTER => Rich Girl)@39DAE - MANKEY Lv26
+#7 (YOUNGSTER => Rich Girl)@39DB1 - FEAROW Lv21, WIGGLYTUFF Lv21
+#8 (YOUNGSTER => Rich Girl)@39DB5 - VENOMOTH Lv32
+#9 (YOUNGSTER => Rich Girl)@39DB8 - JOLTEON Lv32
+#10 (YOUNGSTER => Rich Girl)@39DBB - DUGTRIO Lv29, RATICATE Lv29
+#11 (YOUNGSTER => Rich Girl)@39DBF - NIDOQUEEN Lv26, METAPOD Lv26, GEODUDE Lv26
+#12 (YOUNGSTER => Rich Girl)@39DC4 - OMASTAR Lv27, VENONAT Lv27
+
+--Static Pokemon--
+MAGIKARP => RATTATA
+EEVEE => MAROWAK
+HITMONLEE => GOLEM
+HITMONCHAN => SPEAROW
+LAPRAS => HYPNO
+OMANYTE => NIDORAN♀
+KABUTO => GRAVELER
+AERODACTYL => SLOWPOKE
+SNORLAX => ZAPDOS
+SNORLAX(2) => TENTACRUEL
+VOLTORB => PRIMEAPE
+VOLTORB(2) => CLEFAIRY
+VOLTORB(3) => PSYDUCK
+VOLTORB(4) => VICTREEBEL
+VOLTORB(5) => SLOWBRO
+VOLTORB(6) => ARTICUNO
+ELECTRODE => VENUSAUR
+ELECTRODE(2) => RATICATE
+ARTICUNO => MAGNEMITE
+ZAPDOS => KOFFING
+MOLTRES => NIDORINA
+MEWTWO => BUTTERFREE
+ABRA => JIGGLYPUFF
+CLEFAIRY => KINGLER
+NIDORINO => BLASTOISE
+PINSIR => METAPOD
+DRATINI => NIDOQUEEN
+PORYGON => OMASTAR
+MAROWAK => CHARIZARD
+
+
+--Wild Pokemon--
+Set #1 - Grass/Cave on ROUTE 1 (rate=25)
+JYNX Lv5                 HP 101 ATK 36  DEF 84  SPECIAL 85  SPEED 34 
+MANKEY Lv5               HP 90  ATK 37  DEF 16  SPECIAL 61  SPEED 57 
+MANKEY Lv5               HP 90  ATK 37  DEF 16  SPECIAL 61  SPEED 57 
+MANKEY Lv3               HP 90  ATK 37  DEF 16  SPECIAL 61  SPEED 57 
+JYNX Lv3                 HP 101 ATK 36  DEF 84  SPECIAL 85  SPEED 34 
+JYNX Lv5                 HP 101 ATK 36  DEF 84  SPECIAL 85  SPEED 34 
+JYNX Lv5                 HP 101 ATK 36  DEF 84  SPECIAL 85  SPEED 34 
+MANKEY Lv6               HP 90  ATK 37  DEF 16  SPECIAL 61  SPEED 57 
+JYNX Lv6                 HP 101 ATK 36  DEF 84  SPECIAL 85  SPEED 34 
+JYNX Lv8                 HP 101 ATK 36  DEF 84  SPECIAL 85  SPEED 34 
+
+Set #2 - Grass/Cave on ROUTE 2 (rate=25)
+VENOMOTH Lv5             HP 125 ATK 87  DEF 15  SPECIAL 67  SPEED 82 
+SHELLDER Lv5             HP 46  ATK 77  DEF 50  SPECIAL 31  SPEED 76 
+SHELLDER Lv6             HP 46  ATK 77  DEF 50  SPECIAL 31  SPEED 76 
+VENOMOTH Lv6             HP 125 ATK 87  DEF 15  SPECIAL 67  SPEED 82 
+SHELLDER Lv8             HP 46  ATK 77  DEF 50  SPECIAL 31  SPEED 76 
+VILEPLUME Lv5            HP 95  ATK 61  DEF 118 SPECIAL 33  SPEED 83 
+VENOMOTH Lv3             HP 125 ATK 87  DEF 15  SPECIAL 67  SPEED 82 
+VENOMOTH Lv8             HP 125 ATK 87  DEF 15  SPECIAL 67  SPEED 82 
+VILEPLUME Lv6            HP 95  ATK 61  DEF 118 SPECIAL 33  SPEED 83 
+VILEPLUME Lv8            HP 95  ATK 61  DEF 118 SPECIAL 33  SPEED 83 
+
+Set #3 - Grass/Cave on ROUTE 3 (rate=20)
+DRAGONAIR Lv9            HP 81  ATK 53  DEF 101 SPECIAL 19  SPEED 96 
+MUK Lv8                  HP 196 ATK 43  DEF 51  SPECIAL 99  SPEED 11 
+DRAGONAIR Lv11           HP 81  ATK 53  DEF 101 SPECIAL 19  SPEED 96 
+MUK Lv9                  HP 196 ATK 43  DEF 51  SPECIAL 99  SPEED 11 
+MUK Lv11                 HP 196 ATK 43  DEF 51  SPECIAL 99  SPEED 11 
+DRAGONAIR Lv12           HP 81  ATK 53  DEF 101 SPECIAL 19  SPEED 96 
+MUK Lv12                 HP 196 ATK 43  DEF 51  SPECIAL 99  SPEED 11 
+DRATINI Lv5              HP 58  ATK 55  DEF 31  SPECIAL 66  SPEED 40 
+DRATINI Lv8              HP 58  ATK 55  DEF 31  SPECIAL 66  SPEED 40 
+DRATINI Lv11             HP 58  ATK 55  DEF 31  SPECIAL 66  SPEED 40 
+
+Set #4 - Grass/Cave on ROUTE 4 (rate=20)
+DROWZEE Lv15             HP 42  ATK 11  DEF 133 SPECIAL 77  SPEED 22 
+LICKITUNG Lv15           HP 84  ATK 52  DEF 59  SPECIAL 60  SPEED 55 
+DROWZEE Lv12             HP 42  ATK 11  DEF 133 SPECIAL 77  SPEED 22 
+HAUNTER Lv9              HP 65  ATK 68  DEF 57  SPECIAL 90  SPEED 71 
+LICKITUNG Lv12           HP 84  ATK 52  DEF 59  SPECIAL 60  SPEED 55 
+HAUNTER Lv15             HP 65  ATK 68  DEF 57  SPECIAL 90  SPEED 71 
+DROWZEE Lv18             HP 42  ATK 11  DEF 133 SPECIAL 77  SPEED 22 
+LICKITUNG Lv18           HP 84  ATK 52  DEF 59  SPECIAL 60  SPEED 55 
+HAUNTER Lv12             HP 65  ATK 68  DEF 57  SPECIAL 90  SPEED 71 
+HAUNTER Lv18             HP 65  ATK 68  DEF 57  SPECIAL 90  SPEED 71 
+
+
+--In-Game Trades--
+Trade NIDORINO    -> TERRY       the NIDORINA           ->      NIDOKING    -> TERRY           the SCYTHER
+Trade ABRA        -> MARCEL      the MR.MIME            ->      VOLTORB     -> MARCEL          the LICKITUNG
+Trade PONYTA      -> SAILOR      the SEEL               ->      SANDSHREW   -> SAILOR          the KOFFING
+Trade SPEAROW     -> DUX         the FARFETCH'D         ->      KADABRA     -> DUX             the CLEFABLE
+Trade SLOWBRO     -> MARC        the LICKITUNG          ->      GOLDUCK     -> MARC            the OMANYTE
+Trade POLIWHIRL   -> LOLA        the JYNX               ->      MEW         -> LOLA            the MACHAMP
+Trade RAICHU      -> DORIS       the ELECTRODE          ->      ONIX        -> DORIS           the MAGMAR
+Trade VENONAT     -> CRINKLES    the TANGELA            ->      VENUSAUR    -> CRINKLES        the MOLTRES
+Trade NIDORAN♂    -> SPOT        the NIDORAN♀           ->      DRAGONITE   -> SPOT            the GRAVELER
+
+
+------------------------------------------------------------------
+Randomization of Pokemon Blue (U) completed.
+Time elapsed: 1264ms
+RNG Calls: 35071
+
+------------------------------------------------------------------
+
+
+--ROM Diagnostics--
+File name: blue.gb
+Original ROM CRC32: D6DA8A1A
+
+

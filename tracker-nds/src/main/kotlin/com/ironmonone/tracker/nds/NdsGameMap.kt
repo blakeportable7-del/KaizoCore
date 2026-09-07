@@ -50,6 +50,12 @@ data class NdsGameMap(
     val badgeOffsets: List<Long>,
     /** Absolute address of the battle-status word (GLOBAL.battleStatus). */
     val battleStatus: Long,
+    /**
+     * Main-RAM offset of the global pointer that starts the Gen 4 chain
+     * (MemoryAddresses[game].GLOBAL_POINTER). Platinum and HGSS use 0xBA8;
+     * Diamond and Pearl use 0xB70. Unused on an absolute (Gen 5) map.
+     */
+    val globalPointer: Long = GLOBAL_POINTER,
     // ---- Gen 5 only (BattleHandlerGen5): 0 on Gen 4 maps -------------------
     /** Table of 0x1C-byte battler records; each starts with a pointer to its battle data. */
     val mainBattleDataPtr: Long = 0,
@@ -94,6 +100,8 @@ data class NdsGameMap(
         const val CARTRIDGE_HEADER = 0x023FFE00L
 
         // GameInfo.VERSION_NUMBER
+        const val CODE_DIAMOND = 0x45414441L       // "ADAE"
+        const val CODE_PEARL = 0x45415041L         // "APAE"
         const val CODE_PLATINUM = 0x45555043L      // "CPUE"
         const val CODE_HEART_GOLD = 0x454B5049L    // "IPKE"
         const val CODE_SOUL_SILVER = 0x45475049L   // "IPGE"
@@ -101,6 +109,29 @@ data class NdsGameMap(
         const val CODE_WHITE = 0x4F415249L         // "IRAO"
         const val CODE_BLACK2 = 0x4F455249L        // "IREO"
         const val CODE_WHITE2 = 0x4F445249L        // "IRDO"
+
+        /**
+         * MemoryAddresses[DIAMOND] and [PEARL] - identical blocks down to the
+         * global pointer (0xB70, where Platinum's is 0xBA8), so one map serves
+         * both codes. GameInfo gives both BADGE_PREFIX DPPT, VERSION_GROUP 1,
+         * the same GYM_TMS as Platinum, and Platinum's LOCATION_DATA.
+         * Added 2026-09-07 from Blake's Rev 5 dumps.
+         */
+        val DP = NdsGameMap(
+            name = "Pokemon Diamond / Pearl",
+            gameCodes = setOf(CODE_DIAMOND, CODE_PEARL),
+            generation = 4, badgePrefix = "DPPT", absolute = false,
+            dataDir = "gen4", moveLevelsResource = "/gen4/movelevels.tsv",
+            playerBase = 0x2AC, enemyBase = 0x4CD88, enemyTrainerId = 0x42A8E,
+            playerBattleMonPid = 0x485E8, enemyBattleMonPid = 0x486A8,
+            statStagesPlayer = 0x48598, statStagesEnemy = 0x48658,
+            battleSubscriptMsgs = 0x458F0,
+            itemStartNoBattle = 0xD54, itemStartBattle = 0x4546C,
+            berryBagStart = 0xDF4, berryBagStartBattle = 0x4550C,
+            badgeOffsets = listOf(0x292),
+            battleStatus = 0x23BB38,
+            globalPointer = 0xB70,
+        )
 
         /** MemoryAddresses[PLATINUM]; GameInfo[PLATINUM].BADGE_PREFIX. */
         val PLATINUM = NdsGameMap(
@@ -188,7 +219,7 @@ data class NdsGameMap(
         /** MemoryAddresses[WHITE2].GLOBAL: Black 2 `+ 0x80` throughout. */
         val WHITE2 = B2W2.shifted(0x80, "Pokemon White 2", setOf(CODE_WHITE2))
 
-        val ALL = listOf(PLATINUM, HGSS, BW, WHITE, B2W2, WHITE2)
+        val ALL = listOf(DP, PLATINUM, HGSS, BW, WHITE, B2W2, WHITE2)
 
         fun forCode(code: Long): NdsGameMap? = ALL.firstOrNull { code in it.gameCodes }
 

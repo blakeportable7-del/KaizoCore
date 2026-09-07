@@ -200,6 +200,16 @@ only DS layouts place them, so GBA and GB never draw them, and the DS
 defaults carry them in the console's diamond. Portrait keeps the DS default
 until a portrait screenshot arrives.
 
+The 0xB70 chain was seen resolving on Blake's Diamond dump on the emulator:
+"party base 0x0226D558 - reading live memory" before the first Pokemon. A
+battle read still waits on DS touch (below).
+
+**Open, found the same day: DS stylus touch is dead in both orientations**
+on the current build. The Compose layer that maps touches to the core's
+pointer never fires (a diagnostic log line in it printed nothing), so no DS
+game can get past a "touch the screen" prompt. Diamond's intro needs one.
+This blocks any DS run for a player and is the next thing to fix.
+
 Found on the way: in DS landscape every chip in the strip and every pad
 button over the bottom screen was dead. The stylus layer was composed on
 top of the controls and Compose hands a touch to the topmost target only,
@@ -264,7 +274,56 @@ Seen and not fixed: the black bars INSIDE the game box on the emulator are
 the core's own aspect handling and predate this; your phone shows the same
 thing as a band on the right. Separate item.
 
-### 2.3 Game-over popup - **DONE 2026-09-06**
+### 2.3 Game-over popup - **DONE 2026-09-06, REBUILT 2026-09-07 AS THE PC SCREEN**
+
+Blake, 2026-09-07, with a shot of the PC tracker's box: "the pc tracker for
+every game will be integrated into the popup", a New game button that rolls a
+new seed, and "Inspect the log" opening the log full screen. Researched per
+title first:
+
+| Tracker | Screen | Actions |
+|---|---|---|
+| Gen 3 (Ironmon-Tracker GameOverScreen.lua) | "G a m e O v e r", Attempt, team icon that cycles and re-rolls one of 21 announcer quotes, CONGRATULATIONS!! on a win | Continue playing, Retry the battle ("Are you sure?" first), Save this attempt, Grade my notes, Inspect the log |
+| Gen 1 and Gen 2 (gen-tracker, gen-2-tracker) | one older copy of the same file, byte-identical between the two | the same four without Grade my notes |
+| DS (NDS-Ironmon-Tracker RunOverScreen.lua) | no game-over screen: a run-over box whose line is picked by CAUSE (won, Shedinja, Imposter, an enemy 100+ BST below you, else the twelve standard lines) | Dismiss, Open log |
+
+GameOverDialog takes a GameOverFamily (GEN12, GEN3, DS) and shows that
+tracker's title and quote source with one row of actions for all:
+Continue playing; Retry the battle, from a save state PlayScreen takes when
+a battle begins (the reference's createTempSaveState), hidden when none was
+taken or the run was won; Save this attempt (PrepStore.saveAttempt: the
+run's ROM, its log, a state and the per-run notes into
+files/attempts/<game>-attempt<N>-<seed>/, never overwriting); Inspect the
+log ("Open the log" on DS); New game (new seed), the existing NEW RUN path.
+Also 2026-09-07, Blake: "find a way for the user to give me bug information
+within the app. email blake@willowcreek.group". The INFO tab's feedback box
+is REPORT A BUG now: EMAIL BLAKE composes a mail to that address
+(Feedback.emailIntent, ACTION_SENDTO mailto) with the device, versions,
+game family, the last crash report if CrashLog kept one, and the log tail;
+SHARE INSTEAD is the old share-sheet path for a phone with no mail app.
+The site's download: a direct APK link in the hero and a DOWNLOAD THE BETA
+section with size, SHA-256 and the three install steps; the APK is served
+from the site itself (Saturday/kaizocore/) so it works before the GitHub
+release is published.
+
+Grade my notes is not ported yet. Blake, later the same day: an X in the top
+right of the popup and of the full-screen log; the X on the log drops back to
+the popup, and the X on the popup is Continue playing. Seen on the emulator
+in the staged Emerald mode (which reads a demo.log from the app's external
+files dir and offers Retry so every action shows): popup, log, a species
+opened from it, X back to the popup.
+
+The log itself did not exist before: both randomize paths discarded the
+engine's log text. Randomizers.randomize now writes it beside the run ROM
+(current.<ext>.log, rotated with previous), RandomizerLog.kt parses it the
+way the reference's data/RandomizerLog.lua does (checked against a log of
+each family from the bundled engine: Gen 1 has five stats, Gen 2 no
+abilities, Gen 5 three), and LogViewer.kt is the full-screen viewer with
+the reference's five tabs: Pokemon (tap one for stats, abilities, moves,
+evolutions, TMs), Trainers, Routes, TMs, Misc. 112 app tests green, six of
+them on the parser fixtures in app/src/test/resources/logs/.
+
+Earlier note (2026-09-06):
 
 GameOverDialog.kt: the reference's GameOverScreen as a dialog over the
 game. Top box: the team icon (tap cycles the team and rolls a new announcer

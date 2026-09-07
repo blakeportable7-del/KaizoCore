@@ -1,0 +1,747 @@
+﻿Randomizer Version: 4.6.1
+Random Seed: 118668317466923
+Settings String: 322WRIEEgLvAfIB9QGRAAKeBhsECQEACQACCQAuEgAAAAAABHCI5ATkwYYICTIGBgIyAAUYE1Bva2Vtb24gQmxhY2sgMiAoVSkCfDTI48M4ig==
+--Randomized Evolutions--
+Bulbasaur       -> Nidorino       
+Ivysaur         -> Crobat         
+Charmander      -> Monferno       
+Charmeleon      -> Volcarona      
+Squirtle        -> Marshtomp      
+Wartortle       -> Gyarados       
+Caterpie        -> Kakuna         
+Metapod         -> Ariados        
+Weedle          -> Burmy          
+Kakuna          -> Nidorina       
+Pidgey          -> Skiploom       
+Pidgeotto       -> Honchkrow      
+Rattata         -> Vigoroth       
+Spearow         -> Audino         
+Ekans           -> Gloom          
+Pikachu         -> Rotom          
+Sandshrew       -> Dugtrio        
+Nidoran♀        -> Roselia        
+Nidorina        -> Golbat         
+Nidoran♂        -> Whirlipede     
+Nidorino        -> Weezing        
+Clefairy        -> Zangoose       
+Vulpix          -> Infernape      
+Jigglypuff      -> Munchlax       
+Zubat           -> Vileplume      
+Golbat          -> Venusaur       
+Oddish          -> Sunflora       
+Gloom           -> Cradily and Abomasnow
+Paras           -> Bayleef        
+Venonat         -> Forretress     
+Diglett         -> Gligar         
+Meowth          -> Fearow         
+Psyduck         -> Kabutops       
+Mankey          -> Heracross      
+Growlithe       -> Ninetales      
+Poliwag         -> Bibarel        
+Poliwhirl       -> Gastrodon and Samurott
+Abra            -> Metang         
+Kadabra         -> Reuniclus      
+Machop          -> Hitmontop      
+Machoke         -> Sawk           
+Bellsprout      -> Grovyle        
+Weepinbell      -> Serperior      
+Tentacool       -> Blastoise      
+Geodude         -> Lileep         
+Graveler        -> Piloswine      
+Ponyta          -> Magmar         
+Slowpoke        -> Mantine and Gorebyss
+Magnemite       -> Ferrothorn     
+Magneton        -> Empoleon       
+Doduo           -> Sawsbuck       
+Seel            -> Pelipper       
+Grimer          -> Seviper        
+Shellder        -> Dewgong        
+Gastly          -> Misdreavus     
+Haunter         -> Cofagrigus     
+Onix            -> Bastiodon      
+Drowzee         -> Beheeyem       
+Krabby          -> Crawdaunt      
+Voltorb         -> Luxray         
+
+--Pokemon Base Stats & Types--
+NUM|NAME         |TYPE             |  HP| ATK| DEF|SATK|SDEF| SPD|ABILITY1    |ABILITY2    |ABILITY3    |ITEM
+  1|Bulbasaur    |GRASS/POISON     |  68|  59|  44|  26|  61|  60|Heatproof   |Swarm       |Cute Charm  |
+  2|Ivysaur      |GRASS/POISON     |  78|  20| 112|  89|  13|  93|Storm Drain |Oblivious   |Iron Fist   |
+  3|Venusaur     |GRASS/POISON     | 108|  54|  44| 175|  32| 111|Inner Focus |--          |Suction Cups|PP Max (dark grass only)
+  4|Charmander   |FIRE             |  88|  45|  71|  13|  31|  60|Unaware     |--          |Frisk       |X Sp. Def (rare)
+  5|Charmeleon   |FIRE             | 123|  75|  37|  46|  94|  31|Super Luck  |Moxie       |Serene Grace|Ice Gem (dark grass only)
+  6|Charizard    |FIRE/FLYING      | 129|  47|  31|  86| 134| 107|Magic Bounce|Anger Point |Magma Armor |Chesto Berry (common), Sitrus Berry (rare), Hard Stone (dark grass only)
+  7|Squirtle     |WATER            |  62|  20|  58|  59|  64|  50|Gluttony    |Light Metal |Adaptability|Heart Scale (common), Poké Toy (dark grass only)
+  8|Wartortle    |WATER            |  70|  28|  87|  88|  46|  87|Bad Dreams  |Motor Drive |Filter      |Shoal Shell (common), Silk Scarf (rare)
+  9|Blastoise    |WATER            |  94|  88| 130| 121|  66|  31|Serene Grace|--          |Flame Body  |Normal Gem (dark grass only)
+ 10|Caterpie     |BUG              |  39|  60|  14|  19|  19|  43|Rock Head   |--          |Clear Body  |Douse Drive (common), Relic Silver (rare), Draco Plate (dark grass only)
+ 11|Metapod      |BUG              |  43|  11|  44|  44|  17|  46|Steadfast   |--          |Sturdy      |
+ 12|Butterfree   |BUG/FLYING       |  68|  70|  90|  37|  86|  34|Thick Fat   |--          |Immunity    |
+ 13|Weedle       |BUG/POISON       |  51|  46|  15|  15|  11|  57|Sand Stream |Imposter    |Light Metal |White Herb (rare)
+ 14|Kakuna       |BUG/POISON       |  33|  40|  42|  18|  39|  34|Victory Star|--          |Poison Touch|Muscle Band (dark grass only)
+ 15|Beedrill     |BUG/POISON       |  91|  68|  42|  55|  44|  85|Snow Cloak  |--          |Super Luck  |Guard Spec. (100%)
+ 16|Pidgey       |NORMAL/FLYING    |  43|  35|  38|  51|  39|  44|Sand Force  |--          |Magma Armor |Power Band (dark grass only)
+ 17|Pidgeotto    |NORMAL/FLYING    |  98|  46|  49|  27| 117|  12|Damp        |--          |Huge Power  |Master Ball (dark grass only)
+ 18|Pidgeot      |NORMAL/FLYING    | 131| 141|  11|  15|  39| 132|Cloud Nine  |--          |Rattled     |
+ 19|Rattata      |NORMAL           |  56|  34|  34|  44|  44|  41|Poison Touch|Simple      |Poison Heal |Rock Incense (dark grass only)
+ 20|Raticate     |NORMAL           |  79|  76|  78|  73|  41|  66|Sand Rush   |--          |Reckless    |
+ 21|Spearow      |NORMAL/FLYING    |  84|  80|  13|  15|  35|  36|Sticky Hold |Super Luck  |Minus       |
+ 22|Fearow       |NORMAL/FLYING    | 101|  23|  69| 114|  41|  94|Serene Grace|Effect Spore|Healer      |Draco Plate (common)
+ 23|Ekans        |POISON           |  43|  37|  81|  14|  51|  61|Sap Sipper  |Analytic    |Solid Rock  |Wise Glasses (dark grass only)
+ 24|Arbok        |POISON           | 145|  39|  46|  69|  36| 104|Hydration   |Sap Sipper  |Prankster   |Prism Scale (dark grass only)
+ 25|Pikachu      |ELECTRIC         |  30|  26|  70|  37|  42|  95|Clear Body  |Klutz       |Anticipation|Berry Juice (rare)
+ 26|Raichu       |ELECTRIC         |  65|  22|  33| 135|  78| 143|Infiltrator |--          |Swift Swim  |Repeat Ball (rare), Dusk Stone (dark grass only)
+ 27|Sandshrew    |GROUND           |  61|  68|  52|  38|  18|  64|Reckless    |--          |Defeatist   |Expert Belt (dark grass only)
+ 28|Sandslash    |GROUND           |  45|  11|  41|  48| 134| 171|Sand Stream |--          |Blaze       |Expert Belt (common), Black Belt (dark grass only)
+ 29|Nidoran♀     |POISON           |  97|  30|  20|  48|  66|  13|Scrappy     |--          |Poison Touch|Psychic Gem (dark grass only)
+ 30|Nidorina     |POISON           | 102|  18|  60|  69|  89|  27|Unburden    |Water Veil  |Ice Body    |Luck Incense (dark grass only)
+ 31|Nidoqueen    |POISON/GROUND    |  50| 128| 103|  84|  42|  88|Flash Fire  |--          |Contrary    |Protector (common), Root Fossil (dark grass only)
+ 32|Nidoran♂     |POISON           |  31|  38|  16|  87|  87|  14|Light Metal |--          |Infiltrator |Revival Herb (common), Lemonade (rare), Sky Plate (dark grass only)
+ 33|Nidorino     |POISON           |  40|  29|  65|  29| 120|  81|Torrent     |Mold Breaker|Soundproof  |Sticky Barb (common)
+ 34|Nidoking     |POISON/GROUND    |  33|  58| 109|  59|  93| 144|Sand Stream |Hyper Cutter|Levitate    |Grip Claw (common), Tanga Berry (rare)
+ 35|Clefairy     |NORMAL           |  68|  19|  74|  96|  33|  32|Skill Link  |Limber      |Flash Fire  |Fire Stone (common)
+ 36|Clefable     |NORMAL           | 132|  55|  48| 125| 100|  12|Unaware     |--          |Pressure    |Miracle Seed (rare), Air Balloon (dark grass only)
+ 37|Vulpix       |FIRE             |  70|  77|  64|  52|  19|  16|Magic Guard |Teravolt    |Iron Fist   |Meadow Plate (common), Choice Band (rare)
+ 38|Ninetales    |FIRE             | 141|  96|  36| 100| 100|  32|Infiltrator |--          |Forewarn    |Rawst Berry (100%)
+ 39|Jigglypuff   |NORMAL           |  71|  58|  50|  21|  33|  37|Magma Armor |--          |Victory Star|Protein (dark grass only)
+ 40|Wigglytuff   |NORMAL           |  47|  76|  68|  52| 101|  80|Tangled Feet|Blaze       |Regenerator |Cleanse Tag (common), Protector (rare), Ether (dark grass only)
+ 41|Zubat        |POISON/FLYING    |  73|  47|  13|  58|  33|  21|Klutz       |--          |Unburden    |Burn Heal (rare), Persim Berry (dark grass only)
+ 42|Golbat       |POISON/FLYING    |  34| 108|  38|  60|  91| 124|Skill Link  |--          |Immunity    |
+ 43|Oddish       |GRASS/POISON     |  71|  41|  11|  72|  94|  32|Light Metal |--          |Truant      |Dragon Scale (100%)
+ 44|Gloom        |GRASS/POISON     | 117| 109|  11|  21|  28| 110|Serene Grace|--          |Prankster   |
+ 45|Vileplume    |GRASS/POISON     |  36|  24| 124| 120|  46| 130|Rain Dish   |--          |Turboblaze  |Fire Gem (dark grass only)
+ 46|Paras        |BUG/GRASS        |  62|  54|  42|  50|  67|  11|Limber      |--          |Effect Spore|Water Stone (common), Dragon Fang (dark grass only)
+ 47|Parasect     |BUG/GRASS        |  41|  98| 120| 110|  17|  19|Rain Dish   |Infiltrator |Pure Power  |Shock Drive (dark grass only)
+ 48|Venonat      |BUG/POISON       |  45|  56|  61|  52|  36|  54|Overcoat    |Flare Boost |Big Pecks   |
+ 49|Venomoth     |BUG/POISON       |  53|  44|  77| 157|  21|  99|Own Tempo   |Flare Boost |Intimidate  |Lum Berry (common)
+ 50|Diglett      |GROUND           |  56|  15|  82|  58|  15|  40|Poison Touch|Cursed Body |Rock Head   |Grass Gem (common), Razor Fang (rare), Leppa Berry (dark grass only)
+ 51|Dugtrio      |GROUND           |  89|  63|  92|  39|  93|  29|Rivalry     |--          |Swift Swim  |Spell Tag (common)
+ 52|Meowth       |NORMAL           |  71|  56|  37|  38|  22|  66|Cloud Nine  |--          |Toxic Boost |Full Incense (dark grass only)
+ 53|Persian      |NORMAL           |  37|  99|  49|  62|  90| 104|Snow Cloak  |Own Tempo   |Skill Link  |Clever Wing (common), Pure Incense (rare), DeepSeaScale (dark grass only)
+ 54|Psyduck      |WATER            |  24|  58| 103|  78|  20|  36|Sand Rush   |Steadfast   |Run Away    |Red Shard (rare)
+ 55|Golduck      |WATER            |  87|  18|  39| 158|  56| 142|Normalize   |Poison Point|Imposter    |Ghost Gem (common), Protector (dark grass only)
+ 56|Mankey       |FIGHTING         |  52|  16|  87|  82|  53|  15|Reckless    |--          |Rock Head   |X Accuracy (rare)
+ 57|Primeape     |FIGHTING         |  73| 227|  52|  15|  19|  68|Poison Heal |--          |Shield Dust |
+ 58|Growlithe    |FIRE             |  74|  69|  90|  20|  64|  33|Forewarn    |--          |Anger Point |Rare Bone (rare), Poison Gem (dark grass only)
+ 59|Arcanine     |FIRE             |  96|  64| 140|  31|  36| 189|Keen Eye    |Pure Power  |Super Luck  |
+
+--Removing Impossible Evolutions--
+Poliwhirl       -> Samurott        by leveling up holding King's Rock
+Kadabra         -> Reuniclus       at level 37
+Machoke         -> Sawk            at level 37
+Graveler        -> Piloswine       at level 37
+Slowpoke        -> Gorebyss        using a Water Stone
+Haunter         -> Cofagrigus      at level 37
+Onix            -> Bastiodon       by leveling up holding Metal Coat
+Lickitung       -> Exploud         at level 33
+Rhydon          -> Probopass       by leveling up holding Protector
+Tangela         -> Roserade        at level 40
+Seadra          -> Carracosta      by leveling up holding Dragon Scale
+Scyther         -> Accelgor        by leveling up holding Metal Coat
+Electabuzz      -> Manectric       by leveling up holding Electirizer
+Magmar          -> Houndoom        by leveling up holding Magmarizer
+Porygon         -> Tauros          by leveling up holding Up-Grade
+Aipom           -> Porygon2        at level 32
+Yanma           -> Durant          at level 33
+Piloswine       -> Froslass        at level 45
+Porygon2        -> Togekiss        by leveling up holding Dubious Disc
+Feebas          -> Wailord         by leveling up holding Prism Scale
+Dusclops        -> Mismagius       by leveling up holding Reaper Cloth
+Clamperl        -> Vaporeon        by leveling up holding DeepSeaTooth
+Clamperl        -> Octillery       by leveling up holding DeepSeaScale
+Bonsly          -> Pupitar         at level 33
+Mime Jr.        -> Solrock         at level 15
+Boldore         -> Rhydon          at level 37
+Gurdurr         -> Lucario         at level 37
+Karrablast      -> Galvantula      by leveling up with Shelmet in the party
+Shelmet         -> Scolipede       by leveling up with Karrablast in the party
+
+
+--Removing Timed-Based Evolutions--
+Eevee           -> Bronzong        using a Sun Stone
+Eevee           -> Mandibuzz       using a Moon Stone
+Gligar          -> Steelix         by leveling up holding Razor Fang
+Sneasel         -> Sharpedo        by leveling up holding Razor Claw
+Budew           -> Beedrill        by reaching high happiness
+Chingling       -> Medicham        by reaching high happiness
+Happiny         -> Persian         by leveling up holding Oval Stone
+Riolu           -> Poliwrath       by reaching high happiness
+
+
+--Random Starters--
+Set starter 1 to Espeon
+Set starter 2 to Haunter
+Set starter 3 to Crustle
+
+Move Data: Unchanged.
+
+
+--Pokemon Movesets--
+001 Bulbasaur -> Nidorino
+HP  68 
+ATK 59 
+DEF 44 
+SPA 26 
+SPD 61 
+SPE 60 
+Level 1 : Quick Guard
+Level 1 : Morning Sun
+Level 1 : Gear Grind
+Level 1 : Icicle Spear
+Level 3 : Synchronoise
+Level 7 : Tickle
+Level 9 : Guillotine
+Level 13: DragonBreath
+Level 13: Acid
+Level 15: ThunderShock
+Level 19: Safeguard
+Level 21: Comet Punch
+Level 25: Pound
+Level 27: Shadow Claw
+Level 31: Aromatherapy
+Level 33: Electroweb
+Level 37: Giga Impact
+Egg Moves:
+ - Snarl
+ - Shift Gear
+ - Inferno
+ - Headbutt
+ - Hyper Voice
+ - Power Trick
+ - Iron Tail
+ - Fire Pledge
+ - Megahorn
+ - Rock Blast
+ - Stealth Rock
+ - Razor Leaf
+ - Sludge Wave
+ - Heal Pulse
+
+002 Ivysaur -> Crobat
+HP  78 
+ATK 20 
+DEF 112
+SPA 89 
+SPD 13 
+SPE 93 
+Level 1 : Storm Throw
+Level 1 : Skull Bash
+Level 1 : Final Gambit
+Level 1 : Night Daze
+Level 3 : Bulldoze
+Level 7 : Telekinesis
+Level 9 : Fire Fang
+Level 13: Rock Smash
+Level 13: Shadow Punch
+Level 15: Covet
+Level 20: Spacial Rend
+Level 23: Fury Swipes
+Level 28: Water Gun
+Level 31: Defog
+Level 36: Protect
+Level 39: Charge
+Level 44: Dragon Claw
+
+003 Venusaur ->  (no evolution)
+HP  108
+ATK 54 
+DEF 44 
+SPA 175
+SPD 32 
+SPE 111
+Level 1 : Wake-Up Slap
+Level 1 : Perish Song
+Level 1 : Chatter
+Level 1 : Air Slash
+Level 3 : Mind Reader
+Level 7 : Fake Tears
+Level 9 : Toxic Spikes
+Level 13: Dragon Pulse
+Level 13: Zap Cannon
+Level 15: Smog
+Level 20: Sky Drop
+Level 23: Grass Pledge
+Level 28: Wish
+Level 31: Crush Grip
+Level 32: Flamethrower
+Level 39: Aqua Ring
+Level 45: BubbleBeam
+Level 53: Sharpen
+
+004 Charmander -> Monferno
+HP  88 
+ATK 45 
+DEF 71 
+SPA 13 
+SPD 31 
+SPE 60 
+Level 1 : Heat Wave
+Level 1 : Psywave
+Level 1 : Vital Throw
+Level 1 : Revenge
+Level 7 : Gastro Acid
+Level 10: Fire Punch
+Level 16: Dragon Pulse
+Level 19: Twineedle
+Level 25: Confusion
+Level 28: Storm Throw
+Level 34: Gyro Ball
+Level 37: Thief
+Level 43: Perish Song
+Level 46: Shift Gear
+Egg Moves:
+ - Retaliate
+ - Recycle
+ - Quiver Dance
+ - Wonder Room
+ - Beat Up
+ - Thrash
+ - Blaze Kick
+ - Trick
+ - Teeter Dance
+ - Lovely Kiss
+ - GrassWhistle
+ - Bone Rush
+ - Feint
+
+
+--TM Moves--
+TM01 Rapid Spin
+TM02 Tickle
+TM03 Retaliate
+TM04 Ice Punch
+TM05 Encore
+TM06 Imprison
+TM07 Quick Guard
+TM08 BubbleBeam
+TM09 Spike Cannon
+TM10 Ice Shard
+TM11 Magma Storm
+TM12 Needle Arm
+TM13 Charge
+TM14 Me First
+TM15 Hone Claws
+TM16 Mega Punch
+TM17 Drill Run
+TM18 Last Resort
+TM19 Thunder Fang
+TM20 Fire Spin
+TM21 Toxic
+TM22 Clamp
+TM23 Hex
+TM24 SmellingSalt
+TM25 Rain Dance
+TM26 Spider Web
+TM27 Hydro Pump
+TM28 Return
+TM29 Sharpen
+TM30 Power Gem
+TM31 Sky Uppercut
+TM32 After You
+TM33 Destiny Bond
+TM34 Water Gun
+TM35 Head Charge
+TM36 Fissure
+TM37 Psycho Shift
+TM38 Meteor Mash
+TM39 Fury Cutter
+TM40 Hail
+TM41 Superpower
+TM42 Sacred Sword
+TM43 Ally Switch
+TM44 Miracle Eye
+TM45 Hypnosis
+TM46 Trump Card
+TM47 Horn Attack
+TM48 Reflect
+TM49 ThunderPunch
+TM50 Rock Polish
+TM51 Bounce
+TM52 Doom Desire
+TM53 Leaf Blade
+TM54 SolarBeam
+TM55 Sunny Day
+TM56 Helping Hand
+TM57 Shell Smash
+TM58 Round
+TM59 Hammer Arm
+TM60 Bone Club
+
+--TM Compatibility--
+  1 Bulbasaur     |TM01 Rapid Spin |          - |TM03 Retaliate |             - |          - |            - |               - |              - |TM09 Spike Cannon |             - |               - |              - |TM13 Charge |            - |TM15 Hone Claws |              - |TM17 Drill Run |               - |                - |TM20 Fire Spin |         - |TM22 Clamp |       - |                - |              - |TM26 Spider Web |TM27 Hydro Pump |          - |TM29 Sharpen |             - |                - |             - |                - |TM34 Water Gun |               - |           - |TM37 Psycho Shift |TM38 Meteor Mash |TM39 Fury Cutter |        - |TM41 Superpower |                - |TM43 Ally Switch |TM44 Miracle Eye |            - |TM46 Trump Card |               - |TM48 Reflect |TM49 ThunderPunch |TM50 Rock Polish |          - |TM52 Doom Desire |              - |             - |TM55 Sunny Day |                - |TM57 Shell Smash |         - |TM59 Hammer Arm |             - |TM61 Focus Punch |              - |           - |TM64 Bide |TM65 Leer |                - |          - |                - |TM69 Bulldoze |TM70 Thunderbolt |        - |              - |TM73 Toxic Spikes |TM74 Mind Reader |                - |TM76 Dig |TM77 Grass Knot |           - |TM79 SonicBoom |              - |             - |           - |                - |                - |             - |        - |TM87 Poison Sting |            - |TM89 Silver Wind |          - |           - |TM92 Slam |            - |TM94 Glaciate |TM95 Water Spout |HM01 Cut |HM02 Fly |HM03 Surf |HM04 Strength |HM05 Waterfall |HM06 Dive |
+  2 Ivysaur       |              - |          - |TM03 Retaliate |TM04 Ice Punch |          - |TM06 Imprison |               - |              - |TM09 Spike Cannon |TM10 Ice Shard |               - |TM12 Needle Arm |          - |            - |              - |              - |TM17 Drill Run |               - |                - |TM20 Fire Spin |TM21 Toxic |TM22 Clamp |       - |TM24 SmellingSalt |TM25 Rain Dance |TM26 Spider Web |              - |TM28 Return |TM29 Sharpen |             - |                - |TM32 After You |TM33 Destiny Bond |             - |               - |           - |TM37 Psycho Shift |TM38 Meteor Mash |TM39 Fury Cutter |        - |              - |                - |               - |TM44 Miracle Eye |            - |              - |TM47 Horn Attack |TM48 Reflect |                - |               - |          - |               - |TM53 Leaf Blade |             - |TM55 Sunny Day |                - |               - |TM58 Round |TM59 Hammer Arm |TM60 Bone Club |               - |TM62 Stone Edge |           - |TM64 Bide |TM65 Leer |                - |          - |                - |            - |               - |        - |              - |                - |               - |TM75 Defend Order |TM76 Dig |TM77 Grass Knot |           - |TM79 SonicBoom |TM80 Arm Thrust |TM81 Octazooka |TM82 Recover |                - |TM84 Magical Leaf |             - |TM86 Rest |TM87 Poison Sting |TM88 ViceGrip |TM89 Silver Wind |TM90 Sketch |TM91 Lock-On |        - |TM93 Tailwind |TM94 Glaciate |               - |HM01 Cut |HM02 Fly |HM03 Surf |HM04 Strength |HM05 Waterfall |HM06 Dive |
+  3 Venusaur      |              - |TM02 Tickle |             - |TM04 Ice Punch |          - |TM06 Imprison |               - |              - |                - |             - |TM11 Magma Storm |TM12 Needle Arm |          - |TM14 Me First |TM15 Hone Claws |TM16 Mega Punch |TM17 Drill Run |               - |                - |TM20 Fire Spin |TM21 Toxic |TM22 Clamp |       - |                - |TM25 Rain Dance |TM26 Spider Web |TM27 Hydro Pump |TM28 Return |TM29 Sharpen |             - |                - |TM32 After You |TM33 Destiny Bond |             - |               - |           - |TM37 Psycho Shift |               - |               - |        - |TM41 Superpower |                - |TM43 Ally Switch |               - |TM45 Hypnosis |TM46 Trump Card |               - |TM48 Reflect |                - |TM50 Rock Polish |          - |TM52 Doom Desire |TM53 Leaf Blade |             - |             - |TM56 Helping Hand |TM57 Shell Smash |TM58 Round |              - |TM60 Bone Club |TM61 Focus Punch |              - |           - |TM64 Bide |        - |TM66 Seismic Toss |TM67 Growth |                - |TM69 Bulldoze |               - |        - |              - |TM73 Toxic Spikes |TM74 Mind Reader |                - |TM76 Dig |              - |           - |TM79 SonicBoom |TM80 Arm Thrust |             - |           - |TM83 Water Pledge |                - |             - |TM86 Rest |                - |            - |               - |TM90 Sketch |           - |TM92 Slam |TM93 Tailwind |            - |TM95 Water Spout |HM01 Cut |HM02 Fly |HM03 Surf |HM04 Strength |HM05 Waterfall |HM06 Dive |
+  4 Charmander    |TM01 Rapid Spin |TM02 Tickle |TM03 Retaliate |             - |          - |            - |TM07 Quick Guard |              - |TM09 Spike Cannon |TM10 Ice Shard |               - |              - |TM13 Charge |            - |TM15 Hone Claws |              - |TM17 Drill Run |TM18 Last Resort |                - |             - |TM21 Toxic |         - |       - |TM24 SmellingSalt |              - |              - |TM27 Hydro Pump |TM28 Return |TM29 Sharpen |             - |                - |             - |TM33 Destiny Bond |TM34 Water Gun |               - |           - |TM37 Psycho Shift |               - |TM39 Fury Cutter |        - |TM41 Superpower |                - |               - |TM44 Miracle Eye |            - |              - |TM47 Horn Attack |TM48 Reflect |TM49 ThunderPunch |TM50 Rock Polish |TM51 Bounce |               - |TM53 Leaf Blade |TM54 SolarBeam |             - |TM56 Helping Hand |TM57 Shell Smash |TM58 Round |              - |             - |TM61 Focus Punch |              - |TM63 Pay Day |        - |TM65 Leer |                - |          - |                - |TM69 Bulldoze |               - |TM71 Acid |TM72 Hyper Beam |TM73 Toxic Spikes |TM74 Mind Reader |TM75 Defend Order |       - |              - |           - |             - |TM80 Arm Thrust |TM81 Octazooka |TM82 Recover |                - |                - |             - |TM86 Rest |TM87 Poison Sting |            - |TM89 Silver Wind |TM90 Sketch |TM91 Lock-On |TM92 Slam |TM93 Tailwind |            - |TM95 Water Spout |HM01 Cut |HM02 Fly |HM03 Surf |HM04 Strength |HM05 Waterfall |HM06 Dive |
+  5 Charmeleon    |              - |TM02 Tickle |TM03 Retaliate |             - |          - |            - |TM07 Quick Guard |              - |                - |TM10 Ice Shard |TM11 Magma Storm |              - |          - |            - |              - |              - |             - |TM18 Last Resort |TM19 Thunder Fang |             - |TM21 Toxic |         - |TM23 Hex |TM24 SmellingSalt |              - |TM26 Spider Web |TM27 Hydro Pump |          - |TM29 Sharpen |             - |                - |TM32 After You |TM33 Destiny Bond |             - |TM35 Head Charge |TM36 Fissure |TM37 Psycho Shift |TM38 Meteor Mash |               - |TM40 Hail |TM41 Superpower |                - |               - |               - |TM45 Hypnosis |TM46 Trump Card |TM47 Horn Attack |           - |                - |               - |TM51 Bounce |TM52 Doom Desire |TM53 Leaf Blade |             - |             - |                - |TM57 Shell Smash |TM58 Round |              - |             - |TM61 Focus Punch |              - |TM63 Pay Day |TM64 Bide |TM65 Leer |                - |          - |                - |TM69 Bulldoze |TM70 Thunderbolt |        - |TM72 Hyper Beam |TM73 Toxic Spikes |TM74 Mind Reader |                - |       - |TM77 Grass Knot |           - |             - |              - |TM81 Octazooka |TM82 Recover |                - |                - |TM85 Take Down |        - |TM87 Poison Sting |            - |               - |TM90 Sketch |TM91 Lock-On |TM92 Slam |TM93 Tailwind |TM94 Glaciate |               - |HM01 Cut |HM02 Fly |HM03 Surf |HM04 Strength |HM05 Waterfall |HM06 Dive |
+  6 Charizard     |TM01 Rapid Spin |TM02 Tickle |TM03 Retaliate |             - |TM05 Encore |TM06 Imprison |TM07 Quick Guard |TM08 BubbleBeam |                - |TM10 Ice Shard |TM11 Magma Storm |              - |          - |            - |              - |TM16 Mega Punch |             - |TM18 Last Resort |                - |             - |         - |         - |TM23 Hex |TM24 SmellingSalt |TM25 Rain Dance |TM26 Spider Web |TM27 Hydro Pump |          - |TM29 Sharpen |             - |                - |TM32 After You |                - |TM34 Water Gun |TM35 Head Charge |TM36 Fissure |TM37 Psycho Shift |               - |               - |        - |              - |TM42 Sacred Sword |TM43 Ally Switch |TM44 Miracle Eye |TM45 Hypnosis |TM46 Trump Card |TM47 Horn Attack |           - |TM49 ThunderPunch |               - |TM51 Bounce |TM52 Doom Desire |TM53 Leaf Blade |TM54 SolarBeam |             - |TM56 Helping Hand |               - |TM58 Round |              - |TM60 Bone Club |TM61 Focus Punch |TM62 Stone Edge |           - |        - |        - |TM66 Seismic Toss |TM67 Growth |                - |            - |TM70 Thunderbolt |TM71 Acid |              - |TM73 Toxic Spikes |TM74 Mind Reader |TM75 Defend Order |TM76 Dig |              - |           - |TM79 SonicBoom |              - |             - |           - |TM83 Water Pledge |                - |             - |        - |TM87 Poison Sting |            - |TM89 Silver Wind |          - |           - |        - |            - |            - |               - |HM01 Cut |HM02 Fly |HM03 Surf |HM04 Strength |HM05 Waterfall |HM06 Dive |
+
+--Move Tutor Moves--
+Bind       -> Rock Smash
+Snore      -> Dragon Rage
+Knock Off  -> Sand Tomb 
+Synthesis  -> Hydro Cannon
+Heat Wave  -> Mach Punch
+Role Play  -> Earthquake
+Heal Bell  -> Camouflage
+Tailwind   -> Zap Cannon
+Sky Attack -> Cotton Spore
+Pain Split -> Thunder Wave
+Giga Drain -> Shift Gear
+Drain Punch -> Double-Edge
+Roost      -> Close Combat
+Bug Bite   -> Psystrike 
+Covet      -> Heat Crash
+Super Fang -> Perish Song
+Dual Chop  -> DoubleSlap
+Signal Beam -> Wake-Up Slap
+Iron Head  -> Hurricane 
+Seed Bomb  -> Autotomize
+Drill Run  -> DragonBreath
+Bounce     -> Slash     
+Low Kick   -> Charge Beam
+Gunk Shot  -> Stealth Rock
+Uproar     -> Air Slash 
+ThunderPunch -> Barrier   
+Fire Punch -> Thrash    
+Ice Punch  -> Psycho Boost
+Gastro Acid -> Bone Rush 
+Worry Seed -> Baton Pass
+Spite      -> Transform 
+After You  -> Sand-Attack
+Helping Hand -> Mud Sport 
+Trick      -> Peck      
+Magic Room -> Defense Curl
+Wonder Room -> Fury Swipes
+Endeavor   -> Techno Blast
+Outrage    -> Aqua Jet  
+Recycle    -> Horn Drill
+Snatch     -> Aura Sphere
+Stealth Rock -> Curse     
+Sleep Talk -> Mud Shot  
+Skill Swap -> Dragon Pulse
+Magic Coat -> Wide Guard
+Block      -> Howl      
+Earth Power -> Lunar Dance
+Foul Play  -> Electro Ball
+Gravity    -> Tail Slap 
+Magnet Rise -> Brave Bird
+Iron Defense -> Double Kick
+Last Resort -> Roar      
+Superpower -> Final Gambit
+Electroweb -> Secret Sword
+Icy Wind   -> Shadow Ball
+Aqua Tail  -> Rollout   
+Dark Pulse -> Lava Plume
+Zen Headbutt -> Hyper Voice
+Dragon Pulse -> Covet     
+Hyper Voice -> Poison Gas
+Iron Tail  -> Bestow    
+
+--Move Tutor Compatibility--
+  1 Bulbasaur     |         - |Dragon Rage |        - |           - |Mach Punch |         - |         - |         - |           - |           - |Shift Gear |Double-Edge |           - |        - |         - |          - |         - |Wake-Up Slap |Hurricane |Autotomize |           - |Slash |          - |           - |Air Slash |Barrier |     - |Psycho Boost |Bone Rush |Baton Pass |Transform |Sand-Attack |Mud Sport |Peck |           - |Fury Swipes |Techno Blast |       - |         - |          - |    - |       - |Dragon Pulse |Wide Guard |   - |          - |           - |        - |         - |Double Kick |Roar |           - |Secret Sword |Shadow Ball |Rollout |         - |Hyper Voice |    - |Poison Gas |     - |
+  2 Ivysaur       |Rock Smash |Dragon Rage |Sand Tomb |Hydro Cannon |Mach Punch |         - |Camouflage |         - |           - |           - |Shift Gear |Double-Edge |           - |Psystrike |Heat Crash |Perish Song |         - |           - |Hurricane |         - |           - |Slash |          - |Stealth Rock |        - |Barrier |     - |Psycho Boost |Bone Rush |Baton Pass |        - |Sand-Attack |        - |   - |           - |          - |           - |       - |Horn Drill |Aura Sphere |    - |Mud Shot |Dragon Pulse |Wide Guard |Howl |          - |Electro Ball |        - |Brave Bird |Double Kick |   - |Final Gambit |           - |Shadow Ball |Rollout |Lava Plume |          - |    - |Poison Gas |     - |
+  3 Venusaur      |         - |Dragon Rage |        - |Hydro Cannon |         - |Earthquake |         - |Zap Cannon |Cotton Spore |           - |         - |          - |           - |Psystrike |Heat Crash |Perish Song |DoubleSlap |           - |        - |Autotomize |           - |    - |Charge Beam |           - |Air Slash |      - |     - |           - |Bone Rush |Baton Pass |        - |          - |Mud Sport |Peck |Defense Curl |          - |           - |       - |Horn Drill |          - |Curse |       - |           - |         - |Howl |          - |Electro Ball |Tail Slap |         - |          - |   - |Final Gambit |Secret Sword |          - |Rollout |Lava Plume |          - |    - |         - |     - |
+  4 Charmander    |         - |          - |        - |           - |Mach Punch |         - |         - |         - |Cotton Spore |           - |Shift Gear |          - |           - |        - |         - |          - |DoubleSlap |Wake-Up Slap |Hurricane |Autotomize |           - |Slash |          - |           - |        - |      - |     - |           - |Bone Rush |Baton Pass |        - |Sand-Attack |        - |Peck |Defense Curl |Fury Swipes |           - |Aqua Jet |         - |          - |Curse |       - |           - |         - |   - |Lunar Dance |           - |        - |         - |Double Kick |   - |Final Gambit |Secret Sword |Shadow Ball |Rollout |Lava Plume |          - |    - |Poison Gas |Bestow |
+  5 Charmeleon    |Rock Smash |          - |        - |Hydro Cannon |Mach Punch |         - |Camouflage |Zap Cannon |           - |           - |Shift Gear |Double-Edge |           - |Psystrike |         - |          - |         - |           - |Hurricane |         - |DragonBreath |Slash |          - |           - |        - |      - |     - |Psycho Boost |Bone Rush |         - |Transform |          - |        - |Peck |Defense Curl |Fury Swipes |Techno Blast |       - |Horn Drill |          - |Curse |Mud Shot |           - |         - |Howl |          - |           - |Tail Slap |         - |Double Kick |Roar |           - |           - |Shadow Ball |      - |         - |          - |Covet |         - |Bestow |
+  6 Charizard     |Rock Smash |Dragon Rage |Sand Tomb |Hydro Cannon |Mach Punch |         - |Camouflage |Zap Cannon |Cotton Spore |Thunder Wave |Shift Gear |          - |           - |Psystrike |Heat Crash |Perish Song |DoubleSlap |Wake-Up Slap |        - |         - |           - |    - |Charge Beam |           - |        - |      - |     - |Psycho Boost |Bone Rush |         - |Transform |Sand-Attack |        - |   - |           - |Fury Swipes |Techno Blast |Aqua Jet |         - |          - |    - |Mud Shot |Dragon Pulse |         - |Howl |          - |Electro Ball |        - |         - |Double Kick |   - |           - |           - |          - |      - |Lava Plume |Hyper Voice |Covet |Poison Gas |     - |
+  7 Squirtle      |         - |Dragon Rage |Sand Tomb |           - |Mach Punch |Earthquake |         - |Zap Cannon |Cotton Spore |           - |         - |Double-Edge |Close Combat |Psystrike |Heat Crash |Perish Song |         - |Wake-Up Slap |        - |Autotomize |           - |    - |Charge Beam |           - |        - |Barrier |Thrash |Psycho Boost |Bone Rush |         - |        - |Sand-Attack |        - |   - |           - |Fury Swipes |           - |Aqua Jet |         - |Aura Sphere |    - |Mud Shot |Dragon Pulse |         - |Howl |          - |           - |Tail Slap |Brave Bird |Double Kick |   - |           - |           - |Shadow Ball |      - |         - |Hyper Voice |Covet |Poison Gas |Bestow |
+  8 Wartortle     |Rock Smash |Dragon Rage |        - |           - |         - |Earthquake |Camouflage |         - |           - |           - |         - |Double-Edge |           - |        - |         - |Perish Song |DoubleSlap |           - |        - |Autotomize |DragonBreath |Slash |Charge Beam |Stealth Rock |        - |      - |Thrash |Psycho Boost |Bone Rush |Baton Pass |Transform |Sand-Attack |        - |   - |           - |Fury Swipes |Techno Blast |       - |Horn Drill |          - |    - |       - |           - |Wide Guard |Howl |          - |           - |        - |         - |          - |Roar |Final Gambit |           - |          - |      - |         - |          - |    - |         - |     - |
+  9 Blastoise     |Rock Smash |          - |Sand Tomb |Hydro Cannon |         - |         - |Camouflage |Zap Cannon |           - |           - |         - |Double-Edge |Close Combat |Psystrike |Heat Crash |Perish Song |DoubleSlap |           - |Hurricane |         - |DragonBreath |Slash |          - |           - |Air Slash |      - |Thrash |           - |Bone Rush |Baton Pass |Transform |Sand-Attack |        - |Peck |           - |Fury Swipes |Techno Blast |Aqua Jet |Horn Drill |Aura Sphere |    - |       - |           - |         - |   - |Lunar Dance |           - |Tail Slap |         - |          - |   - |Final Gambit |Secret Sword |          - |Rollout |Lava Plume |          - |    - |         - |     - |
+ 10 Caterpie      |Rock Smash |          - |Sand Tomb |Hydro Cannon |         - |         - |Camouflage |Zap Cannon |           - |Thunder Wave |         - |Double-Edge |           - |        - |Heat Crash |Perish Song |         - |Wake-Up Slap |        - |         - |           - |    - |          - |Stealth Rock |        - |Barrier |Thrash |Psycho Boost |Bone Rush |         - |Transform |          - |        - |   - |Defense Curl |          - |           - |       - |         - |Aura Sphere |    - |       - |Dragon Pulse |Wide Guard |   - |Lunar Dance |           - |Tail Slap |Brave Bird |Double Kick |   - |           - |           - |Shadow Ball |Rollout |         - |          - |    - |         - |     - |
+ 11 Metapod       |Rock Smash |Dragon Rage |Sand Tomb |Hydro Cannon |         - |Earthquake |         - |Zap Cannon |Cotton Spore |           - |         - |Double-Edge |           - |Psystrike |         - |Perish Song |DoubleSlap |Wake-Up Slap |        - |         - |DragonBreath |Slash |          - |           - |Air Slash |      - |     - |Psycho Boost |Bone Rush |Baton Pass |        - |Sand-Attack |Mud Sport |   - |Defense Curl |Fury Swipes |           - |       - |Horn Drill |          - |Curse |       - |           - |Wide Guard |Howl |Lunar Dance |           - |Tail Slap |Brave Bird |          - |   - |Final Gambit |Secret Sword |          - |Rollout |         - |Hyper Voice |    - |Poison Gas |     - |
+ 12 Butterfree    |Rock Smash |Dragon Rage |        - |           - |         - |         - |         - |Zap Cannon |Cotton Spore |           - |         - |Double-Edge |Close Combat |Psystrike |Heat Crash |          - |DoubleSlap |Wake-Up Slap |Hurricane |         - |           - |    - |Charge Beam |           - |Air Slash |      - |     - |           - |Bone Rush |         - |Transform |          - |Mud Sport |Peck |           - |Fury Swipes |           - |Aqua Jet |Horn Drill |Aura Sphere |    - |       - |           - |         - |   - |          - |Electro Ball |        - |         - |Double Kick |   - |Final Gambit |Secret Sword |          - |Rollout |         - |Hyper Voice |Covet |Poison Gas |     - |
+ 13 Weedle        |         - |          - |Sand Tomb |           - |         - |Earthquake |Camouflage |Zap Cannon |Cotton Spore |Thunder Wave |         - |          - |Close Combat |        - |Heat Crash |Perish Song |         - |           - |Hurricane |Autotomize |           - |    - |Charge Beam |           - |Air Slash |      - |     - |           - |Bone Rush |         - |        - |Sand-Attack |        - |Peck |Defense Curl |Fury Swipes |           - |       - |Horn Drill |          - |    - |Mud Shot |Dragon Pulse |         - |   - |          - |           - |        - |         - |Double Kick |   - |Final Gambit |           - |          - |Rollout |Lava Plume |          - |Covet |         - |     - |
+ 14 Kakuna        |         - |Dragon Rage |        - |           - |         - |Earthquake |Camouflage |         - |Cotton Spore |           - |         - |          - |           - |        - |Heat Crash |          - |DoubleSlap |           - |        - |Autotomize |DragonBreath |    - |Charge Beam |Stealth Rock |Air Slash |      - |     - |Psycho Boost |Bone Rush |Baton Pass |        - |Sand-Attack |Mud Sport |   - |           - |          - |Techno Blast |Aqua Jet |         - |Aura Sphere |    - |Mud Shot |Dragon Pulse |         - |   - |          - |Electro Ball |Tail Slap |Brave Bird |Double Kick |   - |Final Gambit |Secret Sword |          - |      - |         - |          - |    - |Poison Gas |Bestow |
+ 15 Beedrill      |         - |          - |        - |Hydro Cannon |Mach Punch |Earthquake |         - |Zap Cannon |Cotton Spore |           - |Shift Gear |          - |           - |Psystrike |Heat Crash |Perish Song |         - |Wake-Up Slap |Hurricane |         - |           - |Slash |          - |Stealth Rock |        - |Barrier |     - |Psycho Boost |Bone Rush |         - |        - |          - |        - |Peck |Defense Curl |          - |Techno Blast |       - |         - |          - |    - |Mud Shot |           - |         - |Howl |Lunar Dance |           - |        - |         - |Double Kick |   - |           - |           - |Shadow Ball |Rollout |         - |Hyper Voice |Covet |         - |Bestow |
+ 16 Pidgey        |Rock Smash |          - |        - |           - |Mach Punch |         - |Camouflage |Zap Cannon |           - |Thunder Wave |         - |          - |           - |Psystrike |Heat Crash |Perish Song |         - |Wake-Up Slap |        - |Autotomize |           - |    - |Charge Beam |Stealth Rock |Air Slash |Barrier |     - |Psycho Boost |Bone Rush |         - |Transform |Sand-Attack |Mud Sport |Peck |Defense Curl |          - |           - |       - |Horn Drill |          - |Curse |       - |Dragon Pulse |Wide Guard |   - |          - |           - |Tail Slap |         - |Double Kick |Roar |           - |           - |Shadow Ball |      - |         - |          - |    - |Poison Gas |Bestow |
+ 17 Pidgeotto     |         - |          - |Sand Tomb |           - |Mach Punch |         - |         - |Zap Cannon |Cotton Spore |Thunder Wave |Shift Gear |          - |Close Combat |        - |         - |Perish Song |         - |           - |        - |         - |DragonBreath |Slash |          - |           - |Air Slash |Barrier |Thrash |           - |Bone Rush |         - |Transform |          - |Mud Sport |Peck |           - |          - |Techno Blast |Aqua Jet |Horn Drill |Aura Sphere |Curse |       - |           - |         - |   - |Lunar Dance |           - |Tail Slap |         - |Double Kick |Roar |Final Gambit |           - |Shadow Ball |      - |         - |          - |    - |Poison Gas |Bestow |
+ 18 Pidgeot       |Rock Smash |          - |        - |           - |Mach Punch |         - |         - |Zap Cannon |           - |           - |Shift Gear |          - |Close Combat |Psystrike |Heat Crash |Perish Song |DoubleSlap |Wake-Up Slap |        - |         - |           - |    - |          - |           - |Air Slash |Barrier |     - |           - |Bone Rush |         - |        - |Sand-Attack |        - |Peck |           - |Fury Swipes |Techno Blast |       - |Horn Drill |          - |Curse |Mud Shot |           - |Wide Guard |Howl |Lunar Dance |           - |Tail Slap |Brave Bird |Double Kick |   - |Final Gambit |           - |          - |Rollout |Lava Plume |          - |    - |         - |     - |
+ 19 Rattata       |         - |Dragon Rage |Sand Tomb |Hydro Cannon |         - |Earthquake |Camouflage |         - |Cotton Spore |           - |         - |Double-Edge |           - |Psystrike |         - |          - |DoubleSlap |Wake-Up Slap |        - |Autotomize |DragonBreath |Slash |          - |           - |        - |      - |     - |           - |Bone Rush |         - |        - |Sand-Attack |        - |   - |Defense Curl |Fury Swipes |Techno Blast |       - |         - |Aura Sphere |    - |Mud Shot |Dragon Pulse |Wide Guard |Howl |          - |Electro Ball |Tail Slap |Brave Bird |Double Kick |   - |           - |Secret Sword |          - |      - |Lava Plume |Hyper Voice |Covet |Poison Gas |     - |
+ 20 Raticate      |Rock Smash |Dragon Rage |Sand Tomb |           - |Mach Punch |Earthquake |Camouflage |         - |           - |           - |         - |Double-Edge |           - |Psystrike |Heat Crash |Perish Song |DoubleSlap |           - |        - |         - |DragonBreath |    - |          - |Stealth Rock |Air Slash |Barrier |Thrash |           - |Bone Rush |         - |        - |Sand-Attack |        - |Peck |Defense Curl |Fury Swipes |           - |Aqua Jet |         - |          - |Curse |       - |           - |         - |   - |Lunar Dance |           - |        - |         - |          - |   - |           - |           - |Shadow Ball |Rollout |Lava Plume |          - |Covet |         - |     - |
+ 21 Spearow       |Rock Smash |Dragon Rage |Sand Tomb |Hydro Cannon |         - |Earthquake |Camouflage |Zap Cannon |Cotton Spore |Thunder Wave |Shift Gear |Double-Edge |Close Combat |        - |Heat Crash |Perish Song |DoubleSlap |           - |        - |         - |DragonBreath |    - |          - |           - |Air Slash |      - |Thrash |           - |Bone Rush |Baton Pass |Transform |Sand-Attack |Mud Sport |   - |Defense Curl |          - |Techno Blast |Aqua Jet |         - |          - |Curse |Mud Shot |           - |Wide Guard |   - |Lunar Dance |Electro Ball |        - |Brave Bird |          - |   - |           - |           - |Shadow Ball |Rollout |         - |          - |    - |         - |Bestow |
+ 22 Fearow        |Rock Smash |          - |Sand Tomb |Hydro Cannon |Mach Punch |         - |         - |Zap Cannon |Cotton Spore |           - |         - |          - |Close Combat |        - |Heat Crash |          - |         - |           - |        - |         - |           - |Slash |Charge Beam |           - |Air Slash |Barrier |Thrash |Psycho Boost |        - |Baton Pass |Transform |          - |        - |   - |           - |          - |           - |Aqua Jet |Horn Drill |          - |    - |Mud Shot |           - |         - |   - |          - |Electro Ball |        - |         - |Double Kick |   - |           - |           - |          - |Rollout |         - |Hyper Voice |Covet |         - |     - |
+ 23 Ekans         |         - |          - |        - |Hydro Cannon |Mach Punch |         - |         - |         - |           - |           - |         - |Double-Edge |Close Combat |        - |         - |Perish Song |DoubleSlap |Wake-Up Slap |        - |         - |           - |Slash |Charge Beam |           - |Air Slash |Barrier |Thrash |           - |Bone Rush |Baton Pass |        - |Sand-Attack |Mud Sport |Peck |           - |Fury Swipes |           - |Aqua Jet |         - |Aura Sphere |Curse |Mud Shot |Dragon Pulse |Wide Guard |   - |Lunar Dance |           - |Tail Slap |         - |          - |   - |Final Gambit |Secret Sword |Shadow Ball |Rollout |         - |          - |Covet |Poison Gas |Bestow |
+ 24 Arbok         |Rock Smash |          - |        - |           - |         - |         - |         - |         - |           - |           - |         - |Double-Edge |           - |        - |         - |Perish Song |DoubleSlap |Wake-Up Slap |        - |Autotomize |DragonBreath |Slash |Charge Beam |           - |Air Slash |      - |Thrash |Psycho Boost |        - |Baton Pass |        - |Sand-Attack |Mud Sport |   - |           - |Fury Swipes |           - |       - |Horn Drill |Aura Sphere |    - |       - |Dragon Pulse |         - |Howl |Lunar Dance |Electro Ball |        - |Brave Bird |          - |Roar |Final Gambit |           - |          - |      - |         - |Hyper Voice |Covet |Poison Gas |     - |
+ 25 Pikachu       |Rock Smash |Dragon Rage |Sand Tomb |Hydro Cannon |Mach Punch |Earthquake |Camouflage |Zap Cannon |Cotton Spore |Thunder Wave |Shift Gear |          - |           - |        - |         - |          - |DoubleSlap |           - |Hurricane |Autotomize |           - |Slash |          - |Stealth Rock |Air Slash |      - |Thrash |           - |        - |Baton Pass |        - |Sand-Attack |Mud Sport |   - |           - |          - |           - |       - |Horn Drill |Aura Sphere |    - |       - |           - |         - |Howl |          - |           - |        - |Brave Bird |          - |   - |Final Gambit |           - |          - |Rollout |Lava Plume |Hyper Voice |Covet |         - |Bestow |
+ 26 Raichu        |Rock Smash |          - |Sand Tomb |           - |Mach Punch |Earthquake |Camouflage |Zap Cannon |Cotton Spore |           - |         - |          - |Close Combat |        - |Heat Crash |Perish Song |         - |           - |Hurricane |Autotomize |           - |    - |          - |Stealth Rock |Air Slash |      - |     - |Psycho Boost |Bone Rush |Baton Pass |Transform |Sand-Attack |        - |   - |Defense Curl |          - |           - |       - |         - |Aura Sphere |Curse |       - |           - |         - |Howl |Lunar Dance |Electro Ball |        - |         - |Double Kick |Roar |Final Gambit |           - |Shadow Ball |Rollout |Lava Plume |Hyper Voice |Covet |Poison Gas |Bestow |
+ 27 Sandshrew     |Rock Smash |          - |        - |Hydro Cannon |         - |         - |Camouflage |Zap Cannon |Cotton Spore |           - |Shift Gear |          - |           - |Psystrike |         - |          - |         - |Wake-Up Slap |Hurricane |Autotomize |           - |Slash |          - |Stealth Rock |        - |      - |     - |           - |Bone Rush |Baton Pass |Transform |          - |        - |Peck |Defense Curl |Fury Swipes |           - |Aqua Jet |         - |Aura Sphere |Curse |       - |Dragon Pulse |         - |Howl |Lunar Dance |           - |Tail Slap |Brave Bird |Double Kick |   - |Final Gambit |Secret Sword |Shadow Ball |Rollout |         - |          - |    - |         - |     - |
+ 28 Sandslash     |Rock Smash |Dragon Rage |Sand Tomb |           - |Mach Punch |Earthquake |         - |Zap Cannon |           - |           - |Shift Gear |          - |Close Combat |Psystrike |Heat Crash |          - |DoubleSlap |           - |        - |Autotomize |           - |    - |Charge Beam |           - |        - |Barrier |     - |Psycho Boost |        - |Baton Pass |        - |Sand-Attack |Mud Sport |Peck |Defense Curl |Fury Swipes |Techno Blast |       - |         - |Aura Sphere |Curse |       - |           - |Wide Guard |   - |Lunar Dance |           - |Tail Slap |         - |          - |Roar |Final Gambit |Secret Sword |          - |      - |         - |          - |    - |         - |Bestow |
+ 29 Nidoran♀      |Rock Smash |          - |        - |Hydro Cannon |Mach Punch |Earthquake |Camouflage |Zap Cannon |Cotton Spore |Thunder Wave |         - |Double-Edge |           - |Psystrike |         - |          - |DoubleSlap |Wake-Up Slap |Hurricane |Autotomize |           - |Slash |          - |Stealth Rock |Air Slash |      - |Thrash |Psycho Boost |        - |         - |        - |Sand-Attack |        - |Peck |           - |          - |Techno Blast |       - |         - |Aura Sphere |    - |       - |Dragon Pulse |Wide Guard |   - |          - |           - |        - |Brave Bird |Double Kick |   - |           - |Secret Sword |          - |      - |Lava Plume |          - |Covet |Poison Gas |     - |
+ 30 Nidorina      |         - |Dragon Rage |Sand Tomb |Hydro Cannon |Mach Punch |         - |Camouflage |         - |Cotton Spore |Thunder Wave |         - |Double-Edge |           - |Psystrike |         - |Perish Song |DoubleSlap |           - |        - |Autotomize |DragonBreath |Slash |Charge Beam |           - |Air Slash |      - |Thrash |Psycho Boost |Bone Rush |         - |Transform |          - |        - |   - |Defense Curl |          - |           - |       - |Horn Drill |          - |    - |       - |           - |         - |Howl |Lunar Dance |           - |Tail Slap |         - |          - |Roar |Final Gambit |           - |Shadow Ball |      - |Lava Plume |Hyper Voice |Covet |         - |     - |
+ 31 Nidoqueen     |Rock Smash |          - |        - |           - |         - |Earthquake |Camouflage |         - |Cotton Spore |Thunder Wave |Shift Gear |Double-Edge |Close Combat |        - |         - |          - |         - |           - |        - |Autotomize |DragonBreath |Slash |Charge Beam |Stealth Rock |        - |      - |Thrash |           - |        - |Baton Pass |Transform |          - |        - |   - |           - |          - |           - |Aqua Jet |         - |Aura Sphere |Curse |       - |           - |         - |   - |          - |           - |        - |Brave Bird |Double Kick |Roar |           - |Secret Sword |Shadow Ball |      - |Lava Plume |Hyper Voice |    - |Poison Gas |Bestow |
+ 32 Nidoran♂      |Rock Smash |Dragon Rage |        - |           - |Mach Punch |Earthquake |         - |Zap Cannon |Cotton Spore |Thunder Wave |Shift Gear |          - |Close Combat |        - |         - |Perish Song |         - |Wake-Up Slap |        - |         - |           - |Slash |          - |Stealth Rock |        - |Barrier |Thrash |           - |        - |Baton Pass |Transform |Sand-Attack |        - |Peck |           - |          - |Techno Blast |Aqua Jet |         - |          - |    - |       - |           - |Wide Guard |Howl |Lunar Dance |           - |Tail Slap |Brave Bird |          - |Roar |           - |Secret Sword |Shadow Ball |      - |Lava Plume |Hyper Voice |    - |Poison Gas |Bestow |
+ 33 Nidorino      |         - |Dragon Rage |Sand Tomb |           - |         - |         - |         - |Zap Cannon |           - |           - |         - |Double-Edge |           - |Psystrike |         - |          - |         - |Wake-Up Slap |        - |Autotomize |           - |Slash |Charge Beam |           - |Air Slash |      - |     - |           - |        - |         - |        - |Sand-Attack |Mud Sport |Peck |Defense Curl |Fury Swipes |           - |       - |Horn Drill |Aura Sphere |    - |Mud Shot |           - |         - |Howl |Lunar Dance |           - |Tail Slap |         - |          - |   - |Final Gambit |           - |Shadow Ball |      - |         - |          - |Covet |         - |Bestow |
+ 34 Nidoking      |         - |Dragon Rage |Sand Tomb |           - |Mach Punch |         - |         - |         - |           - |Thunder Wave |         - |Double-Edge |           - |Psystrike |Heat Crash |Perish Song |DoubleSlap |           - |        - |         - |DragonBreath |Slash |          - |           - |        - |Barrier |Thrash |Psycho Boost |Bone Rush |         - |Transform |Sand-Attack |Mud Sport |   - |Defense Curl |Fury Swipes |           - |Aqua Jet |         - |          - |Curse |       - |           - |Wide Guard |   - |Lunar Dance |           - |Tail Slap |         - |Double Kick |Roar |           - |           - |Shadow Ball |Rollout |Lava Plume |          - |    - |Poison Gas |     - |
+ 35 Clefairy      |         - |          - |Sand Tomb |Hydro Cannon |Mach Punch |         - |Camouflage |         - |Cotton Spore |           - |         - |          - |Close Combat |Psystrike |Heat Crash |Perish Song |DoubleSlap |Wake-Up Slap |Hurricane |         - |           - |    - |Charge Beam |           - |Air Slash |      - |Thrash |           - |Bone Rush |         - |        - |          - |        - |   - |Defense Curl |Fury Swipes |Techno Blast |Aqua Jet |         - |Aura Sphere |Curse |Mud Shot |           - |         - |Howl |Lunar Dance |           - |        - |         - |          - |Roar |Final Gambit |Secret Sword |          - |Rollout |         - |          - |    - |         - |     - |
+ 36 Clefable      |Rock Smash |          - |        - |           - |         - |Earthquake |Camouflage |Zap Cannon |Cotton Spore |           - |         - |          - |Close Combat |Psystrike |         - |Perish Song |DoubleSlap |           - |        - |         - |           - |Slash |Charge Beam |           - |        - |      - |     - |Psycho Boost |        - |Baton Pass |Transform |          - |Mud Sport |   - |Defense Curl |Fury Swipes |Techno Blast |Aqua Jet |Horn Drill |Aura Sphere |    - |Mud Shot |Dragon Pulse |Wide Guard |Howl |Lunar Dance |Electro Ball |        - |         - |          - |Roar |Final Gambit |Secret Sword |Shadow Ball |      - |         - |Hyper Voice |Covet |         - |     - |
+ 37 Vulpix        |         - |Dragon Rage |        - |Hydro Cannon |Mach Punch |Earthquake |         - |         - |Cotton Spore |           - |         - |          - |           - |        - |         - |          - |         - |Wake-Up Slap |        - |         - |DragonBreath |    - |Charge Beam |           - |Air Slash |Barrier |     - |           - |        - |         - |Transform |Sand-Attack |        - |Peck |Defense Curl |Fury Swipes |Techno Blast |Aqua Jet |Horn Drill |Aura Sphere |Curse |       - |Dragon Pulse |         - |   - |          - |Electro Ball |Tail Slap |Brave Bird |Double Kick |   - |Final Gambit |           - |Shadow Ball |      - |         - |Hyper Voice |    - |         - |     - |
+ 38 Ninetales     |Rock Smash |Dragon Rage |Sand Tomb |Hydro Cannon |         - |Earthquake |Camouflage |         - |           - |Thunder Wave |         - |Double-Edge |           - |        - |Heat Crash |Perish Song |DoubleSlap |           - |Hurricane |Autotomize |DragonBreath |    - |          - |Stealth Rock |Air Slash |      - |     - |Psycho Boost |Bone Rush |Baton Pass |Transform |Sand-Attack |Mud Sport |   - |Defense Curl |Fury Swipes |           - |Aqua Jet |Horn Drill |          - |Curse |       - |Dragon Pulse |Wide Guard |Howl |Lunar Dance |           - |Tail Slap |         - |          - |Roar |Final Gambit |           - |          - |      - |Lava Plume |Hyper Voice |Covet |         - |Bestow |
+ 39 Jigglypuff    |Rock Smash |Dragon Rage |Sand Tomb |           - |Mach Punch |Earthquake |Camouflage |Zap Cannon |Cotton Spore |Thunder Wave |Shift Gear |          - |Close Combat |        - |         - |Perish Song |         - |Wake-Up Slap |        - |Autotomize |DragonBreath |Slash |          - |           - |        - |      - |     - |           - |        - |Baton Pass |        - |Sand-Attack |        - |   - |Defense Curl |Fury Swipes |Techno Blast |Aqua Jet |         - |          - |Curse |       - |Dragon Pulse |Wide Guard |Howl |Lunar Dance |Electro Ball |        - |Brave Bird |Double Kick |   - |           - |           - |          - |      - |         - |Hyper Voice |    - |         - |     - |
+ 40 Wigglytuff    |Rock Smash |Dragon Rage |Sand Tomb |           - |         - |Earthquake |         - |         - |           - |           - |         - |Double-Edge |Close Combat |        - |         - |          - |DoubleSlap |           - |Hurricane |Autotomize |DragonBreath |Slash |Charge Beam |           - |Air Slash |Barrier |     - |           - |        - |         - |Transform |Sand-Attack |Mud Sport |Peck |           - |          - |           - |Aqua Jet |         - |Aura Sphere |Curse |Mud Shot |           - |Wide Guard |Howl |          - |           - |        - |         - |Double Kick |Roar |           - |           - |          - |      - |Lava Plume |          - |    - |         - |     - |
+ 41 Zubat         |Rock Smash |Dragon Rage |        - |           - |Mach Punch |Earthquake |Camouflage |         - |Cotton Spore |           - |Shift Gear |Double-Edge |Close Combat |Psystrike |         - |Perish Song |         - |           - |        - |         - |DragonBreath |Slash |Charge Beam |           - |        - |Barrier |     - |           - |        - |         - |        - |Sand-Attack |Mud Sport |Peck |           - |Fury Swipes |Techno Blast |Aqua Jet |         - |          - |Curse |Mud Shot |           - |Wide Guard |Howl |Lunar Dance |Electro Ball |        - |Brave Bird |          - |   - |           - |Secret Sword |          - |Rollout |         - |          - |    - |         - |Bestow |
+ 42 Golbat        |         - |Dragon Rage |        - |           - |Mach Punch |         - |Camouflage |         - |Cotton Spore |           - |Shift Gear |Double-Edge |           - |Psystrike |         - |          - |         - |Wake-Up Slap |Hurricane |Autotomize |           - |    - |          - |Stealth Rock |        - |Barrier |     - |           - |        - |         - |        - |Sand-Attack |Mud Sport |   - |           - |Fury Swipes |           - |       - |Horn Drill |Aura Sphere |    - |       - |           - |         - |   - |Lunar Dance |Electro Ball |        - |         - |Double Kick |   - |           - |Secret Sword |          - |Rollout |         - |          - |    - |Poison Gas |Bestow |
+ 43 Oddish        |         - |Dragon Rage |Sand Tomb |           - |Mach Punch |         - |Camouflage |Zap Cannon |Cotton Spore |           - |         - |          - |Close Combat |Psystrike |Heat Crash |          - |         - |           - |Hurricane |Autotomize |           - |    - |Charge Beam |Stealth Rock |        - |Barrier |Thrash |           - |Bone Rush |         - |Transform |          - |Mud Sport |Peck |Defense Curl |          - |           - |       - |Horn Drill |          - |    - |       - |           - |         - |Howl |          - |Electro Ball |        - |         - |          - |   - |Final Gambit |Secret Sword |Shadow Ball |Rollout |Lava Plume |Hyper Voice |    - |Poison Gas |Bestow |
+ 44 Gloom         |         - |Dragon Rage |Sand Tomb |           - |         - |         - |Camouflage |Zap Cannon |Cotton Spore |Thunder Wave |Shift Gear |Double-Edge |           - |Psystrike |Heat Crash |Perish Song |DoubleSlap |           - |        - |         - |DragonBreath |    - |          - |           - |        - |      - |     - |Psycho Boost |        - |Baton Pass |Transform |Sand-Attack |        - |Peck |           - |          - |Techno Blast |       - |         - |Aura Sphere |Curse |       - |Dragon Pulse |         - |Howl |          - |Electro Ball |        - |         - |Double Kick |   - |Final Gambit |Secret Sword |Shadow Ball |Rollout |Lava Plume |Hyper Voice |Covet |         - |Bestow |
+ 45 Vileplume     |         - |Dragon Rage |Sand Tomb |           - |         - |         - |         - |Zap Cannon |           - |           - |Shift Gear |          - |           - |        - |Heat Crash |Perish Song |         - |Wake-Up Slap |Hurricane |Autotomize |           - |Slash |          - |           - |Air Slash |Barrier |     - |Psycho Boost |        - |         - |        - |Sand-Attack |Mud Sport |   - |Defense Curl |          - |Techno Blast |       - |Horn Drill |Aura Sphere |Curse |       - |Dragon Pulse |         - |   - |          - |           - |Tail Slap |Brave Bird |          - |   - |           - |Secret Sword |          - |      - |         - |Hyper Voice |Covet |Poison Gas |     - |
+ 46 Paras         |Rock Smash |Dragon Rage |        - |           - |Mach Punch |Earthquake |Camouflage |Zap Cannon |Cotton Spore |Thunder Wave |         - |Double-Edge |Close Combat |        - |Heat Crash |Perish Song |DoubleSlap |           - |Hurricane |Autotomize |           - |Slash |          - |           - |Air Slash |Barrier |Thrash |Psycho Boost |Bone Rush |Baton Pass |        - |Sand-Attack |        - |   - |Defense Curl |          - |           - |       - |         - |Aura Sphere |Curse |       - |           - |         - |   - |Lunar Dance |Electro Ball |Tail Slap |         - |          - |Roar |Final Gambit |Secret Sword |          - |Rollout |         - |Hyper Voice |    - |         - |Bestow |
+ 47 Parasect      |Rock Smash |Dragon Rage |        - |Hydro Cannon |         - |Earthquake |         - |Zap Cannon |Cotton Spore |           - |         - |Double-Edge |           - |Psystrike |Heat Crash |          - |         - |           - |        - |Autotomize |DragonBreath |    - |Charge Beam |           - |        - |      - |     - |Psycho Boost |Bone Rush |         - |Transform |Sand-Attack |        - |Peck |           - |Fury Swipes |Techno Blast |       - |Horn Drill |          - |Curse |       - |           - |Wide Guard |   - |Lunar Dance |           - |Tail Slap |Brave Bird |          - |   - |Final Gambit |           - |Shadow Ball |      - |         - |          - |Covet |Poison Gas |     - |
+ 48 Venonat       |         - |          - |        - |           - |         - |         - |         - |Zap Cannon |           - |           - |         - |          - |Close Combat |Psystrike |Heat Crash |Perish Song |         - |           - |Hurricane |Autotomize |           - |    - |          - |           - |Air Slash |Barrier |     - |           - |Bone Rush |Baton Pass |Transform |Sand-Attack |        - |   - |           - |          - |           - |       - |Horn Drill |          - |    - |       - |           - |         - |Howl |Lunar Dance |           - |        - |Brave Bird |          - |   - |Final Gambit |Secret Sword |Shadow Ball |Rollout |         - |          - |Covet |Poison Gas |     - |
+ 49 Venomoth      |         - |          - |        - |Hydro Cannon |         - |         - |Camouflage |         - |           - |Thunder Wave |Shift Gear |          - |           - |Psystrike |         - |          - |DoubleSlap |           - |Hurricane |         - |DragonBreath |    - |Charge Beam |Stealth Rock |        - |Barrier |     - |           - |        - |Baton Pass |        - |Sand-Attack |        - |   - |           - |          - |           - |Aqua Jet |Horn Drill |Aura Sphere |    - |Mud Shot |           - |Wide Guard |   - |Lunar Dance |Electro Ball |Tail Slap |         - |Double Kick |   - |Final Gambit |Secret Sword |Shadow Ball |Rollout |Lava Plume |          - |Covet |         - |     - |
+ 50 Diglett       |         - |          - |Sand Tomb |           - |         - |Earthquake |Camouflage |Zap Cannon |Cotton Spore |Thunder Wave |Shift Gear |          - |Close Combat |        - |         - |Perish Song |DoubleSlap |           - |        - |Autotomize |DragonBreath |    - |          - |           - |        - |      - |     - |Psycho Boost |        - |         - |Transform |          - |        - |Peck |Defense Curl |          - |Techno Blast |Aqua Jet |Horn Drill |Aura Sphere |    - |       - |           - |Wide Guard |   - |Lunar Dance |           - |        - |         - |          - |   - |           - |Secret Sword |Shadow Ball |      - |Lava Plume |          - |    - |         - |Bestow |
+ 51 Dugtrio       |         - |          - |        - |           - |Mach Punch |         - |         - |Zap Cannon |Cotton Spore |Thunder Wave |Shift Gear |Double-Edge |           - |        - |         - |          - |         - |Wake-Up Slap |Hurricane |         - |           - |Slash |Charge Beam |Stealth Rock |Air Slash |Barrier |Thrash |Psycho Boost |Bone Rush |Baton Pass |        - |Sand-Attack |Mud Sport |Peck |           - |Fury Swipes |           - |       - |         - |          - |Curse |       - |           - |Wide Guard |Howl |          - |Electro Ball |Tail Slap |         - |          - |   - |Final Gambit |           - |          - |      - |Lava Plume |          - |    - |Poison Gas |     - |
+ 52 Meowth        |Rock Smash |Dragon Rage |Sand Tomb |Hydro Cannon |Mach Punch |Earthquake |Camouflage |         - |Cotton Spore |           - |Shift Gear |Double-Edge |           - |Psystrike |         - |Perish Song |DoubleSlap |           - |Hurricane |Autotomize |DragonBreath |    - |          - |Stealth Rock |Air Slash |      - |     - |Psycho Boost |Bone Rush |         - |        - |Sand-Attack |        - |   - |           - |          - |           - |       - |         - |          - |    - |       - |           - |Wide Guard |   - |          - |Electro Ball |        - |Brave Bird |Double Kick |Roar |Final Gambit |           - |Shadow Ball |Rollout |Lava Plume |          - |    - |Poison Gas |Bestow |
+ 53 Persian       |         - |Dragon Rage |        - |Hydro Cannon |Mach Punch |         - |         - |Zap Cannon |           - |Thunder Wave |         - |Double-Edge |           - |        - |         - |          - |         - |           - |Hurricane |         - |           - |    - |          - |           - |Air Slash |Barrier |Thrash |Psycho Boost |Bone Rush |Baton Pass |        - |          - |Mud Sport |Peck |           - |          - |Techno Blast |       - |Horn Drill |Aura Sphere |    - |       - |           - |Wide Guard |Howl |          - |Electro Ball |Tail Slap |Brave Bird |Double Kick |Roar |           - |Secret Sword |          - |Rollout |Lava Plume |          - |Covet |Poison Gas |     - |
+ 54 Psyduck       |Rock Smash |          - |        - |           - |         - |         - |         - |         - |Cotton Spore |Thunder Wave |         - |Double-Edge |Close Combat |Psystrike |Heat Crash |Perish Song |         - |Wake-Up Slap |Hurricane |         - |           - |Slash |Charge Beam |Stealth Rock |Air Slash |      - |Thrash |Psycho Boost |        - |         - |        - |          - |Mud Sport |   - |Defense Curl |          - |Techno Blast |       - |Horn Drill |Aura Sphere |    - |       - |           - |Wide Guard |   - |          - |           - |        - |Brave Bird |Double Kick |   - |           - |           - |          - |Rollout |Lava Plume |          - |Covet |         - |     - |
+ 55 Golduck       |Rock Smash |          - |Sand Tomb |Hydro Cannon |         - |         - |         - |         - |Cotton Spore |           - |Shift Gear |          - |           - |        - |Heat Crash |Perish Song |         - |           - |        - |         - |DragonBreath |Slash |          - |           - |        - |      - |Thrash |           - |Bone Rush |Baton Pass |        - |          - |        - |Peck |Defense Curl |          - |           - |       - |Horn Drill |Aura Sphere |    - |Mud Shot |Dragon Pulse |         - |Howl |Lunar Dance |           - |Tail Slap |Brave Bird |Double Kick |Roar |Final Gambit |           - |          - |Rollout |         - |Hyper Voice |Covet |Poison Gas |Bestow |
+ 56 Mankey        |         - |          - |Sand Tomb |           - |Mach Punch |Earthquake |         - |Zap Cannon |           - |           - |Shift Gear |          - |Close Combat |Psystrike |Heat Crash |Perish Song |         - |Wake-Up Slap |Hurricane |         - |DragonBreath |Slash |Charge Beam |Stealth Rock |Air Slash |      - |     - |           - |        - |         - |Transform |          - |Mud Sport |   - |Defense Curl |Fury Swipes |Techno Blast |       - |Horn Drill |Aura Sphere |Curse |       - |           - |Wide Guard |Howl |          - |Electro Ball |        - |         - |Double Kick |Roar |           - |           - |Shadow Ball |Rollout |Lava Plume |          - |    - |         - |     - |
+ 57 Primeape      |         - |Dragon Rage |        - |           - |Mach Punch |Earthquake |Camouflage |         - |           - |           - |Shift Gear |          - |           - |        - |Heat Crash |Perish Song |         - |Wake-Up Slap |Hurricane |         - |           - |    - |          - |Stealth Rock |        - |Barrier |     - |Psycho Boost |Bone Rush |         - |        - |Sand-Attack |Mud Sport |   - |           - |Fury Swipes |           - |Aqua Jet |Horn Drill |          - |    - |Mud Shot |Dragon Pulse |Wide Guard |Howl |Lunar Dance |           - |        - |Brave Bird |Double Kick |Roar |Final Gambit |Secret Sword |Shadow Ball |      - |         - |Hyper Voice |Covet |Poison Gas |Bestow |
+ 58 Growlithe     |         - |Dragon Rage |Sand Tomb |Hydro Cannon |         - |Earthquake |Camouflage |         - |Cotton Spore |           - |         - |          - |           - |        - |         - |Perish Song |         - |           - |Hurricane |Autotomize |DragonBreath |    - |          - |Stealth Rock |Air Slash |      - |Thrash |Psycho Boost |        - |         - |Transform |Sand-Attack |        - |Peck |           - |          - |Techno Blast |       - |         - |          - |    - |       - |Dragon Pulse |         - |   - |Lunar Dance |Electro Ball |Tail Slap |Brave Bird |Double Kick |Roar |           - |           - |          - |      - |Lava Plume |          - |    - |         - |     - |
+ 59 Arcanine      |         - |Dragon Rage |        - |           - |         - |         - |Camouflage |         - |           - |Thunder Wave |Shift Gear |Double-Edge |Close Combat |Psystrike |Heat Crash |          - |DoubleSlap |           - |        - |Autotomize |DragonBreath |    - |          - |           - |Air Slash |Barrier |Thrash |Psycho Boost |Bone Rush |         - |        - |          - |Mud Sport |Peck |           - |Fury Swipes |Techno Blast |Aqua Jet |Horn Drill |          - |Curse |Mud Shot |Dragon Pulse |Wide Guard |Howl |          - |Electro Ball |Tail Slap |Brave Bird |          - |   - |Final Gambit |           - |Shadow Ball |      - |         - |Hyper Voice |Covet |Poison Gas |Bestow |
+ 60 Poliwag       |Rock Smash |          - |Sand Tomb |           - |         - |Earthquake |         - |         - |Cotton Spore |Thunder Wave |Shift Gear |          - |Close Combat |        - |Heat Crash |Perish Song |DoubleSlap |           - |        - |Autotomize |           - |    - |Charge Beam |Stealth Rock |        - |Barrier |Thrash |Psycho Boost |        - |Baton Pass |Transform |          - |        - |   - |           - |Fury Swipes |Techno Blast |Aqua Jet |Horn Drill |Aura Sphere |Curse |Mud Shot |           - |Wide Guard |   - |          - |Electro Ball |Tail Slap |Brave Bird |          - |Roar |Final Gambit |Secret Sword |Shadow Ball |      - |         - |Hyper Voice |    - |         - |     - |
+
+--Trainers Pokemon--
+#1 (Smasher Elena => Schoolgirl Crystal) - Solrock Lv39
+#2 (Linebacker Dan => Gymnast Anne) - Drapion Lv38, Rampardos Lv38
+#3 (Smasher Aspen => Schoolgirl Jessica) - Gardevoir Lv71, Walrein Lv71
+#4 (\[PK]\[MN] Trainer Bianca => Developer Kristine) - Swoobat Lv60, Cherrim Lv57, Venusaur Lv57
+#5 (\[PK]\[MN] Trainer N => Developer Daniel) - Rapidash Lv100, Typhlosion Lv100, Beedrill Lv100, Kyurem-B Lv100
+#6 (\[PK]\[MN] Trainer N => Developer Daniel) - Ferrothorn Lv100, Audino Lv100, Kingler Lv100, Scizor Lv100
+#7 (Worker Matthew => Rich Girl Jo) - Venusaur Lv92, Bellossom Lv92
+#8 (Hoopster Bobby => Developer Veronica) - Blissey Lv39
+#9 (Hoopster John => Developer Mike) - Shiftry Lv71, Giratina-O Lv71
+#10 (Clerk ♀ Trisha => Chef Daniel) - Chimecho Lv36
+#11 (Waiter Lou => Developer Mike) - Shaymin Lv65
+#12 (Waitress Olwen => Designer Thomas) - Carracosta Lv65
+
+--Static Pokemon--
+Cobalion => Ducklett
+Virizion => Mothim
+Terrakion => Skorupi
+Reshiram => Jolteon
+Zekrom => Shiftry
+Kyurem => Shelmet
+Kyurem-B => Klinklang
+Kyurem-W => Weedle
+Latias => Shinx
+Latios => Zebstrika
+Uxie => Panpour
+Mesprit => Yanma
+Azelf => Ninjask
+Regirock => Hypno
+Regice => Charmeleon
+Registeel => Hoothoot
+Regigigas => Meditite
+Cresselia => Ditto
+Heatran => Foongus
+Mandibuzz => Seadra
+Braviary => Karrablast
+Volcarona => Monferno
+Crustle => Drifblim
+Jellicent => Gloom
+Haxorus => Crustle
+Eevee => Haxorus
+Deerling => Cinccino
+Gible => Pachirisu
+Dratini => Goldeen
+Happiny (egg) => Torkoal (egg)
+Magikarp => Chingling
+Cranidos => Machamp
+Shieldon => Typhlosion
+Omanyte => Geodude
+Kabuto => Garbodor
+Aerodactyl => Milotic
+Anorith => Quagsire
+Lileep => Suicune
+Tirtouga => Blissey
+Archen => Loudred
+Zorua => Swinub
+Foongus => Frillish
+Amoonguss => Pidgeot
+Dunsparce => Vespiquen
+Herdier => Bellsprout
+Marill => Sceptile
+Minccino => Bouffalant
+Liepard => Teddiursa
+Foongus(2) => Togekiss
+Pinsir => Dusknoir
+Heracross => Mantyke
+Leavanny => Parasect
+Combee => Stunky
+Dunsparce(2) => Flareon
+Woobat => Skitty
+Foongus(3) => Silcoon
+Nosepass => Drowzee
+Woobat(2) => Charizard
+Foongus(4) => Gallade
+Cubchoo => Haunter
+
+--Wild Pokemon--
+Set #1 - Striaton City Surfing (rate=10)
+Buneary Lvs 68-90        HP 51  ATK 68  DEF 49  SPATK 53  SPDEF 37  SPEED 91 
+Kecleon Lvs 68-90        HP 26  ATK 105 DEF 87  SPATK 23  SPDEF 23  SPEED 176
+Buneary Lvs 75-90        HP 51  ATK 68  DEF 49  SPATK 53  SPDEF 37  SPEED 91 
+Buneary Lvs 75-90        HP 51  ATK 68  DEF 49  SPATK 53  SPDEF 37  SPEED 91 
+Buneary Lvs 75-90        HP 51  ATK 68  DEF 49  SPATK 53  SPDEF 37  SPEED 91 
+
+Set #2 - Striaton City Surfing Spots (rate=1)
+Ariados Lvs 68-90        HP 40  ATK 161 DEF 18  SPATK 107 SPDEF 12  SPEED 51 
+Ariados Lvs 68-90        HP 40  ATK 161 DEF 18  SPATK 107 SPDEF 12  SPEED 51 
+Sandshrew Lvs 75-90      HP 61  ATK 68  DEF 52  SPATK 38  SPDEF 18  SPEED 64 
+Sandshrew Lvs 75-90      HP 61  ATK 68  DEF 52  SPATK 38  SPDEF 18  SPEED 64 
+Sandshrew Lvs 75-90      HP 61  ATK 68  DEF 52  SPATK 38  SPDEF 18  SPEED 64 
+
+Set #3 - Striaton City Fishing (rate=50)
+Graveler Lvs 60-90       HP 44  ATK 26  DEF 83  SPATK 43  SPDEF 93  SPEED 102
+Blitzle Lvs 60-90        HP 82  ATK 67  DEF 28  SPATK 33  SPDEF 24  SPEED 61 
+Graveler Lvs 75-100      HP 44  ATK 26  DEF 83  SPATK 43  SPDEF 93  SPEED 102
+Graveler Lvs 75-100      HP 44  ATK 26  DEF 83  SPATK 43  SPDEF 93  SPEED 102
+Graveler Lvs 75-100      HP 44  ATK 26  DEF 83  SPATK 43  SPDEF 93  SPEED 102
+
+Set #4 - Striaton City Fishing Spots (rate=1)
+Litwick Lvs 60-90        HP 53  ATK 18  DEF 69  SPATK 48  SPDEF 30  SPEED 56 
+Vanilluxe Lvs 60-90      HP 46  ATK 140 DEF 109 SPATK 92  SPDEF 130 SPEED 18 
+Skuntank Lvs 75-100      HP 53  ATK 97  DEF 38  SPATK 185 SPDEF 52  SPEED 54 
+Skuntank Lvs 75-100      HP 53  ATK 97  DEF 38  SPATK 185 SPDEF 52  SPEED 54 
+Skuntank Lvs 75-100      HP 53  ATK 97  DEF 38  SPATK 185 SPDEF 52  SPEED 54 
+
+
+--In-Game Trades--
+Trade Pikachu     -> Mankey      the Mankey             ->      Pikachu     -> Hitmontop       the Hitmontop
+Trade Pikachu     -> Wobbuffet   the Wobbuffet          ->      Pikachu     -> Ekans           the Ekans
+Trade Pikachu     -> Ralts       the Ralts              ->      Pikachu     -> Floatzel        the Floatzel
+Trade Pikachu     -> Cranidos    the Cranidos           ->      Pikachu     -> Lairon          the Lairon
+Trade Pikachu     -> Rhyhorn     the Rhyhorn            ->      Pikachu     -> Gible           the Gible
+Trade Pikachu     -> Shellos     the Shellos            ->      Pikachu     -> Torterra        the Torterra
+Trade Pikachu     -> Sableye     the Sableye            ->      Pikachu     -> Forretress      the Forretress
+Trade Pikachu     -> Spiritomb   the Spiritomb          ->      Pikachu     -> Haxorus         the Haxorus
+Trade Pikachu     -> Snorlax     the Snorlax            ->      Pikachu     -> Ledyba          the Ledyba
+Trade Pikachu     -> Phanpy      the Phanpy             ->      Pikachu     -> Smeargle        the Smeargle
+Trade Pikachu     -> Spinda      the Spinda             ->      Pikachu     -> Aggron          the Aggron
+Trade Pikachu     -> Togepi      the Togepi             ->      Pikachu     -> Simisage        the Simisage
+Trade Pikachu     -> Meowth      the Meowth             ->      Pikachu     -> Lunatone        the Lunatone
+Trade Pikachu     -> Wobbuffet   the Wobbuffet          ->      Pikachu     -> Glalie          the Glalie
+Trade Pikachu     -> Ralts       the Ralts              ->      Pikachu     -> Spearow         the Spearow
+Trade Pikachu     -> Shieldon    the Shieldon           ->      Pikachu     -> Minun           the Minun
+Trade Pikachu     -> Rhyhorn     the Rhyhorn            ->      Pikachu     -> Elekid          the Elekid
+Trade Pikachu     -> Shellos     the Shellos            ->      Pikachu     -> Fearow          the Fearow
+Trade Pikachu     -> Mawile      the Mawile             ->      Pikachu     -> Machamp         the Machamp
+Trade Pikachu     -> Spiritomb   the Spiritomb          ->      Pikachu     -> Garbodor        the Garbodor
+Trade Pikachu     -> Snorlax     the Snorlax            ->      Pikachu     -> Torchic         the Torchic
+Trade Pikachu     -> Teddiursa   the Teddiursa          ->      Pikachu     -> Kecleon         the Kecleon
+Trade Pikachu     -> Spinda      the Spinda             ->      Pikachu     -> Aipom           the Aipom
+Trade Pikachu     -> Togepi      the Togepi             ->      Pikachu     -> Glaceon         the Glaceon
+Trade Cottonee    -> Petulia     the Petilil            ->      Cottonee    -> Petulia         the Carvanha
+Trade Emolga      -> Gigalith    the Gigalith           ->      Emolga      -> Giratina        the Giratina
+Trade Mantine     -> Tangles     the Tangrowth          ->      Mantine     -> Tangles         the Yanma
+Trade Ditto       -> Bucky       the Rotom              ->      Ditto       -> Bucky           the Mr. Mime
+Trade Excadrill   -> Ambidexter  the Ambipom            ->      Excadrill   -> Ambidexter      the Unown
+Trade Hippowdon   -> Beardy      the Alakazam           ->      Hippowdon   -> Beardy          the Tirtouga
+
+
+--Pickup Items--
+Level 1-10
+30%: Smoke Ball
+10%: Nugget, Ring Target, Dusk Ball, Casteliacone, Icy Rock, Premier Ball
+4%: Kebia Berry, Ice Gem
+1%: Leftovers, Charti Berry
+
+Level 11-20
+30%: Nugget
+10%: Ring Target, Dusk Ball, Casteliacone, Icy Rock, Premier Ball, Kebia Berry
+4%: Ice Gem, Steel Gem
+1%: Charti Berry, Bug Gem
+
+Level 21-30
+30%: Ring Target
+10%: Dusk Ball, Casteliacone, Icy Rock, Premier Ball, Kebia Berry, Ice Gem
+4%: Steel Gem, Timer Ball
+1%: Bug Gem, Wise Glasses
+
+Level 31-40
+30%: Dusk Ball
+10%: Casteliacone, Icy Rock, Premier Ball, Kebia Berry, Ice Gem, Steel Gem
+4%: Timer Ball, Guard Spec.
+1%: Wise Glasses, Rock Gem
+
+Level 41-50
+30%: Casteliacone
+10%: Icy Rock, Premier Ball, Kebia Berry, Ice Gem, Steel Gem, Timer Ball
+4%: Guard Spec., Max Potion
+1%: Rock Gem, Icicle Plate
+
+Level 51-60
+30%: Icy Rock
+10%: Premier Ball, Kebia Berry, Ice Gem, Steel Gem, Timer Ball, Guard Spec.
+4%: Max Potion, Soothe Bell
+1%: Icicle Plate, Yellow Shard
+
+Level 61-70
+30%: Premier Ball
+10%: Kebia Berry, Ice Gem, Steel Gem, Timer Ball, Guard Spec., Max Potion
+4%: Soothe Bell, Zoom Lens
+1%: Yellow Shard, Blue Shard
+
+Level 71-80
+30%: Kebia Berry
+10%: Ice Gem, Steel Gem, Timer Ball, Guard Spec., Max Potion, Soothe Bell
+4%: Zoom Lens, Power Bracer
+1%: Blue Shard, Persim Berry
+
+Level 81-90
+30%: Ice Gem
+10%: Steel Gem, Timer Ball, Guard Spec., Max Potion, Soothe Bell, Zoom Lens
+4%: Power Bracer, Rawst Berry
+1%: Persim Berry, Zinc
+
+Level 91-100
+30%: Steel Gem
+10%: Timer Ball, Guard Spec., Max Potion, Soothe Bell, Zoom Lens, Power Bracer
+4%: Rawst Berry, Charcoal
+1%: Zinc, Grip Claw
+
+
+------------------------------------------------------------------
+Randomization of Pokemon Black 2 (U) completed.
+Time elapsed: 4947ms
+RNG Calls: 158433
+
+------------------------------------------------------------------
+
+
+--ROM Diagnostics--
+File name: black2.nds
+arm9: 547ABC14
+overlay9_162: C1501F3E
+overlay9_166: F3ECDF09
+overlay9_167: 6505A53A
+overlay9_168: 572F2BC9
+overlay9_284: 66C1B8BC
+overlay9_294: B578C11B
+overlay9_316: 988026C1
+overlay9_36: 99D36CE1
+a/0/0/2: 0AAFBD81
+a/0/0/3: 579FA304
+a/0/0/4: F7FF84DC
+a/0/1/2: C6B5EB86
+a/0/1/6: 01A12D6A
+a/0/1/8: 57FBEC75
+a/0/1/9: E7A49FB7
+a/0/2/0: 5AAA0D1E
+a/0/2/1: A62E835C
+a/0/2/4: D68F2EF6
+a/0/5/6: EA1E0890
+a/0/8/9: C73441C5
+a/0/9/1: 0852918C
+a/0/9/2: 9435BD3C
+a/1/2/4: 784B2D4F
+a/1/2/6: FE1792B9
+a/1/2/7: 7EAF56BE
+a/1/6/3: 15ED8FFA
+a/1/7/6: 13132CA5
+a/2/0/2: 83EB4FF0
+a/2/5/0: 60CE675E
+a/2/7/3: A4DB2F91
+a/2/8/2: 52CABC05
+a/2/9/6: 72A983AD
+
+

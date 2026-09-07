@@ -524,8 +524,14 @@ fun PlayScreen(
     LaunchedEffect(enemySpecies) { if (enemySpecies <= 0) noteDialog = false }
     // Fleeing is wild-only on BOTH consoles; a trainer battle never offers it.
     val inBattleNow = view?.inBattle == true
+    // The reference snapshots the core when a battle begins
+    // (Battle.beginNewBattle -> GameOverScreen.createTempSaveState) so the
+    // game-over screen can offer "Retry the battle". Held in memory only, for
+    // the current battle; a new battle replaces it, a new run drops it.
+    var battleStartState by remember(session.id) { mutableStateOf<ByteArray?>(null) }
     LaunchedEffect(inBattleNow) {
         if (!inBattleNow) battleEndedAt = android.os.SystemClock.uptimeMillis()
+        else battleStartState = runCatching { retro?.serializeState() }.getOrNull()?.takeIf { it.isNotEmpty() }
     }
     val wildBattleNow = view?.let { it.inBattle && it.isWildBattle } == true
 
@@ -759,6 +765,8 @@ fun PlayScreen(
     }
 
     var confirmNewRun by remember { mutableStateOf(false) }
+    /** The randomizer log open full screen (the game-over screen's Inspect the log), or null. */
+    var logViewerFile by remember { mutableStateOf<java.io.File?>(null) }
 
     /**
      * The GBA battery save, persisted per game.
@@ -846,6 +854,7 @@ fun PlayScreen(
                 ndsState = null
                 ndsTrackerRef = null
                 favoriteHit = null
+                battleStartState = null   // a state from another randomization must never be restored
                 statMarks.clear()
                 encounters.clear()
             lastSeenLevel.clear()
@@ -1839,6 +1848,7 @@ fun PlayScreen(
                                 val onTouchScreen = fx in geo[1]..geo[3] && tfy in geo[2]..geo[4]
                                 val tx = (fx - geo[1]) / (geo[3] - geo[1])
                                 val ty = (tfy - geo[2]) / (geo[4] - geo[2])
+                                android.util.Log.i("Stylus", "layout=$dsLayoutName size=${size.width}x${size.height} pos=${c.position.x},${c.position.y} fx=$fx fy=$fy tfy=$tfy on=$onTouchScreen tx=$tx ty=$ty pressed=${c.pressed}")
                                 if (!onTouchScreen) continue   // let the pad have it
                                 c.consume()
                                 if (c.pressed) {
@@ -2232,15 +2242,44 @@ fun PlayScreen(
             ?: trackerState?.party?.map { GameOverMon(it.mon.species, it.speciesName, it.mon.level, it.mon.curHp == 0, it.mon.shiny) }
             ?: emptyList()
         val ctx = androidx.compose.ui.platform.LocalContext.current
+        val family = when (platform) {
+            com.ironmonone.core.Platform.NDS -> GameOverFamily.DS
+            com.ironmonone.core.Platform.GBC -> GameOverFamily.GEN12
+            else -> GameOverFamily.GEN3
+        }
+        // The staged screenshot modes have no run and no battle: they read a log
+        // from the app's external files dir and offer Retry, so the popup shows
+        // every action it can carry. Never taken outside Demo.mode.
+        val logFile = (if (session.isRun) session.kind?.let { store.currentRunLogFor(it) } else null)
+            ?: Demo.mode?.let { ctx.getExternalFilesDir(null)?.let { d -> java.io.File(d, "demo.log") }?.takeIf { it.isFile } }
         GameOverDialog(
+            family = family,
             won = runOutcome == com.ironmonone.tracker.RunOutcome.WON,
             attempt = store.attempt(),
             team = team,
             spriteOf = { m -> if (ndsState != null) remember(m.species, m.shiny) { PcAssets.dsSprite(ctx, m.species, m.shiny) } else spriteFor(m.species) },
+            dsCause = ndsState?.runOver,
+            canRetry = (battleStartState != null || Demo.mode != null) && !raHardcore,
+            onInspectLog = logFile?.let { f -> { logViewerFile = f } },
             onContinue = { gameOverShownFor = runOutcome },
-            onNewRun = { gameOverShownFor = runOutcome; confirmNewRun = true },
+            onRetry = {
+                // The reference's loadTempSaveState: back to the moment the battle began.
+                val st = battleStartState
+                gameOverShownFor = runOutcome
+                if (st != null) {
+                    val ok = retro?.unserializeState(st) == true
+                    status = if (ok) "Back to the start of the battle." else "Could not restore the battle."
+                }
+            },
+            onSaveAttempt = {
+                val kind = session.kind
+                if (kind == null || !session.isRun) false
+                else store.saveAttempt(kind, store.attempt(), store.lastSeedText(), runCatching { retro?.serializeState() }.getOrNull())
+            },
+            onNewGame = { gameOverShownFor = runOutcome; confirmNewRun = true },
         )
     }
+    logViewerFile?.let { f -> LogViewer(f, onClose = { logViewerFile = null }) }
 
     if (rulesDialog) {
         val fam = session.kind?.family ?: ""

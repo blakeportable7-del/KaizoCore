@@ -22,7 +22,22 @@ object Feedback {
         const val SUPPORT = "https://buy.stripe.com/8x2cN7b1Q8AG2VLczE67S00"
         /** The bug form on the site. Set when the site is up. */
         const val BUG_FORM = "https://willowcreek.group/kaizocore#report"
+        /** Blake's inbox for bug reports, 2026-09-07: the EMAIL A BUG button addresses this. */
+        const val EMAIL = "blake@willowcreek.group"
     }
+
+    /**
+     * A mail to [Links.EMAIL] with the report in the body, for whatever mail
+     * app the phone has. ACTION_SENDTO with a mailto: URI is the one intent
+     * shape every mail client answers and no non-mail app claims.
+     */
+    fun emailIntent(subject: String, body: String): android.content.Intent =
+        android.content.Intent(android.content.Intent.ACTION_SENDTO).apply {
+            data = android.net.Uri.parse("mailto:" + Links.EMAIL)
+            putExtra(android.content.Intent.EXTRA_EMAIL, arrayOf(Links.EMAIL))
+            putExtra(android.content.Intent.EXTRA_SUBJECT, subject)
+            putExtra(android.content.Intent.EXTRA_TEXT, body)
+        }
 
     data class Device(val model: String, val android: String, val appVersion: String)
 
@@ -37,7 +52,7 @@ object Feedback {
      * "GSC"), or null when there is none. [log] is the log tail, already
      * captured. Deterministic, so a test can pin the shape.
      */
-    fun compose(device: Device, family: String?, words: String, log: String): String = buildString {
+    fun compose(device: Device, family: String?, words: String, log: String, crash: String? = null): String = buildString {
         appendLine("KaizoCore beta feedback")
         appendLine("App: ${device.appVersion}")
         appendLine("Device: ${device.model}, ${device.android}")
@@ -46,6 +61,11 @@ object Feedback {
         appendLine("What happened:")
         appendLine(words.trim().ifBlank { "(no description)" })
         appendLine()
+        if (!crash.isNullOrBlank()) {
+            appendLine("Last crash:")
+            appendLine(crash.trim().lines().take(60).joinToString(System.lineSeparator()))
+            appendLine()
+        }
         appendLine("Log tail:")
         append(log.trim().ifBlank { "(none)" })
         appendLine()

@@ -1,0 +1,551 @@
+﻿Randomizer Version: 4.6.1
+Random Seed: 190633258042340
+Settings String: 322WRIEEgKYAJsAngCRAAKeBhsECQEAFAACCQAuEgAAAAAADBCI5ATkQYYICTIGBQIyAAUYGlBva2Vtb24gUGxhdGludW0gKFUgUmV2IDEp/d+eOePDOIo=
+--Randomized Evolutions--
+BULBASAUR       -> BAYLEEF        
+IVYSAUR         -> MEGANIUM       
+CHARMANDER      -> MONFERNO       
+CHARMELEON      -> HOUNDOOM       
+SQUIRTLE        -> MARSHTOMP      
+WARTORTLE       -> KINGDRA        
+CATERPIE        -> KRICKETOT      
+METAPOD         -> ILLUMISE       
+WEEDLE          -> BURMY          
+KAKUNA          -> IVYSAUR        
+PIDGEY          -> FARFETCH’D     
+PIDGEOTTO       -> XATU           
+RATTATA         -> SWELLOW        
+SPEAROW         -> LINOONE        
+EKANS           -> QWILFISH       
+PIKACHU         -> AMPHAROS       
+SANDSHREW       -> GOLEM          
+NIDORAN♀        -> ROSELIA        
+NIDORINA        -> WEEZING        
+NIDORAN♂        -> GLOOM          
+NIDORINO        -> ROSERADE       
+CLEFAIRY        -> STANTLER       
+VULPIX          -> MAGMAR         
+JIGGLYPUFF      -> FURRET         
+ZUBAT           -> MUK            
+GOLBAT          -> VENUSAUR       
+ODDISH          -> ARIADOS        
+GLOOM           -> ARBOK and SUNFLORA
+PARAS           -> VOLBEAT        
+VENONAT         -> HAUNTER        
+DIGLETT         -> GABITE         
+MEOWTH          -> CHANSEY        
+PSYDUCK         -> OCTILLERY      
+MANKEY          -> POLIWRATH      
+GROWLITHE       -> TYPHLOSION     
+POLIWAG         -> AZUMARILL      
+POLIWHIRL       -> EMPOLEON and CROCONAW
+ABRA            -> WOBBUFFET      
+KADABRA         -> GIRAFARIG      
+MACHOP          -> HITMONTOP      
+MACHOKE         -> HERACROSS      
+BELLSPROUT      -> CACNEA         
+WEEPINBELL      -> CARNIVINE      
+TENTACOOL       -> KINGLER        
+GEODUDE         -> LILEEP         
+GRAVELER        -> HIPPOWDON      
+PONYTA          -> TORKOAL        
+SLOWPOKE        -> GOREBYSS and GASTRODON
+MAGNEMITE       -> ROTOM          
+MAGNETON        -> ELECTIVIRE     
+DODUO           -> ALTARIA        
+SEEL            -> CRAWDAUNT      
+GRIMER          -> TOXICROAK      
+SHELLDER        -> SWAMPERT       
+GASTLY          -> NIDORINA       
+HAUNTER         -> SEVIPER        
+ONIX            -> SHUCKLE        
+DROWZEE         -> JYNX           
+KRABBY          -> STARMIE        
+VOLTORB         -> MINUN          
+
+--Pokemon Base Stats & Types--
+NUM|NAME      |TYPE             |  HP| ATK| DEF|SATK|SDEF| SPD|ABILITY1    |ABILITY2    |ITEM
+  1|BULBASAUR    |GRASS/POISON     |  66|  35|  51|  79|  40|  46|Normalize   |Inner Focus |Rare Candy (100%)
+  2|IVYSAUR      |GRASS/POISON     |  87|  31|  11| 123|  82|  69|Scrappy     | -          |Spooky Plate (common)
+  3|VENUSAUR     |GRASS/POISON     |  32| 161|  21|  80| 134|  96|Quick Feet  |Motor Drive |TM35 (rare)
+  4|CHARMANDER   |FIRE             |  88|  47|  46|  65|  47|  17|Vital Spirit|Ice Body    |
+  5|CHARMELEON   |FIRE             |  79|  74|  85|  76|  42|  50|Levitate    |Steadfast   |Power Anklet (common)
+  6|CHARIZARD    |FIRE/FLYING      |  71|  51| 180| 129|  63|  40|Quick Feet  | -          |
+  7|SQUIRTLE     |WATER            |  73|  74|  65|  33|  20|  50|Aftermath   |Poison Point|
+  8|WARTORTLE    |WATER            |  80|  42|  31| 106|  53|  93|Levitate    | -          |Timer Ball (100%)
+  9|BLASTOISE    |WATER            | 124|  35|  48|  51| 139| 132|Unburden    |Color Change|Wide Lens (common), TM91 (rare)
+ 10|CATERPIE     |BUG              |  21|  43|  27|  41|  26|  37|Keen Eye    | -          |
+ 11|METAPOD      |BUG              |  27|  46|  37|  12|  43|  40|Own Tempo   | -          |EnergyPowder (common)
+ 12|BUTTERFREE   |BUG/FLYING       |  28|  54|  47| 109|  43| 105|Adaptability|Solar Power |
+ 13|WEEDLE       |BUG/POISON       |  38|  11|  30|  37|  18|  61|Effect Spore| -          |PP Up (common), Draco Plate (rare)
+ 14|KAKUNA       |BUG/POISON       |  52|  26|  27|  45|  19|  36|Air Lock    | -          |TM58 (rare)
+ 15|BEEDRILL     |BUG/POISON       |  89|  89|  23|  42|  75|  68|Normalize   |Slow Start  |
+ 16|PIDGEY       |NORMAL/FLYING    |  65|  52|  35|  35|  12|  51|Oblivious   |Poison Heal |
+ 17|PIDGEOTTO    |NORMAL/FLYING    |  21|  47|  65|  62|  80|  74|Leaf Guard  |Minus       |TM16 (rare)
+ 18|PIDGEOT      |NORMAL/FLYING    | 140| 173|  62|  33|  28|  33|Effect Spore| -          |NeverMeltIce (rare)
+ 19|RATTATA      |NORMAL           |  27|  44|  34|  83|  44|  22|Rain Dish   |Honey Gather|
+ 20|RATICATE     |NORMAL           | 114|  72|  76|  77|  49|  26|Own Tempo   | -          |
+ 21|SPEAROW      |NORMAL/FLYING    |  67|  51|  42|  27|  26|  50|Shed Skin   | -          |TM22 (common)
+ 22|FEAROW       |NORMAL/FLYING    | 160|  92|  36|  25|  25| 104|Flame Body  |Steadfast   |Zinc (rare)
+ 23|EKANS        |POISON           |  85|  66|  17|  47|  43|  29|Guts        | -          |Armor Fossil (common)
+ 24|ARBOK        |POISON           |  74|  14|  89|  26| 120| 114|Download    |Volt Absorb |TM74 (common), Wide Lens (rare)
+ 25|PIKACHU      |ELECTRIC         |  87|  40|  13|  76|  13|  71|Heatproof   |Battle Armor|
+ 26|RAICHU       |ELECTRIC         |  67|  76| 109| 120|  77|  26|Poison Point|Plus        |
+ 27|SANDSHREW    |GROUND           |  38|  66|  32|  71|  60|  34|Poison Heal | -          |
+ 28|SANDSLASH    |GROUND           | 101|  36|  13|  80| 131|  89|Ice Body    | -          |
+ 29|NIDORAN♀     |POISON           |  61|  56|  36|  44|  29|  49|Hustle      | -          |Light Clay (common), Luxury Ball (rare)
+ 30|NIDORINA     |POISON           |  81|  57|  38|  71|  56|  62|Damp        | -          |
+ 31|NIDOQUEEN    |POISON/GROUND    |  86|  19| 175|  25| 127|  64|Super Luck  | -          |
+ 32|NIDORAN♂     |POISON           |  39|  28|  33|  51|  71|  50|Rain Dish   | -          |Focus Band (rare)
+ 33|NIDORINO     |POISON           |  91|  93|  27|  35|  92|  27|Super Luck  | -          |Poké Doll (common)
+ 34|NIDOKING     |POISON/GROUND    |  34|  63|  49|  66| 230|  52|Sand Veil   | -          |
+ 35|CLEFAIRY     |NORMAL           |  45|  26|  71|  79|  44|  58|Ice Body    |White Smoke |
+ 36|CLEFABLE     |NORMAL           |  77|  28|  68|  62| 136| 101|Magma Armor | -          |X Attack (rare)
+ 37|VULPIX       |FIRE             |  35|  60|  39|  96|  55|  14|Poison Point| -          |TM22 (100%)
+ 38|NINETALES    |FIRE             | 105|  93|  32|  70|  87| 117|Klutz       |Speed Boost |TM32 (common), Protector (rare)
+ 39|JIGGLYPUFF   |NORMAL           |  24|  61|  51|  59|  47|  29|Ice Body    | -          |
+ 40|WIGGLYTUFF   |NORMAL           |  86| 117|  40|  13| 141|  28|Simple      |Adaptability|Wide Lens (common)
+ 41|ZUBAT        |POISON/FLYING    |  51|  42|  21|  54|  46|  30|Levitate    | -          |
+ 42|GOLBAT       |POISON/FLYING    |  21|  60|  96| 133|  44| 102|Solid Rock  |Flash Fire  |
+ 43|ODDISH       |GRASS/POISON     |  48|  92|  51| 100|  17|  11|Leaf Guard  | -          |
+ 44|GLOOM        |GRASS/POISON     |  65|  39|  49| 118|  89|  35|Immunity    |Chlorophyll |
+ 45|VILEPLUME    |GRASS/POISON     |  93| 102|  84|  85|  82|  34|Sticky Hold | -          |Colbur Berry (100%)
+ 46|PARAS        |BUG/GRASS        |  66|  68|  53|  32|  15|  51|Iron Fist   |Suction Cups|TM58 (common), Kasib Berry (rare)
+ 47|PARASECT     |BUG/GRASS        |  90|  58|  14|  96|  98|  48|Pressure    | -          |
+ 48|VENONAT      |BUG/POISON       |  51|  32|  79|  34|  52|  57|Oblivious   | -          |Big Pearl (rare)
+ 49|VENOMOTH     |BUG/POISON       |  58|  74|  80|  56|  82|  99|Trace       |Guts        |
+ 50|DIGLETT      |GROUND           |  75|  64|  38|  37|  20|  31|Klutz       | -          |
+ 51|DUGTRIO      |GROUND           | 108|  97|  61|  90|  26|  23|Huge Power  | -          |
+ 52|MEOWTH       |NORMAL           |  61|  70|  22|  21|  71|  44|Skill Link  |Shell Armor |Jaboca Berry (rare)
+ 53|PERSIAN      |NORMAL           |  37|  82|  93| 105|  74|  48|Synchronize |Truant      |
+ 54|PSYDUCK      |WATER            |  33|  44|  79|  75|  66|  23|Water Veil  | -          |Zoom Lens (rare)
+ 55|GOLDUCK      |WATER            | 113| 120|  47|  71|  59|  90|Levitate    | -          |
+ 56|MANKEY       |FIGHTING         |  25| 101|  76|  37|  27|  38|Simple      | -          |TM53 (100%)
+ 57|PRIMEAPE     |FIGHTING         |  88|  48|  71|  63| 117|  69|Aftermath   |Anger Point |
+ 58|GROWLITHE    |FIRE             | 100|  24|  44|  97|  33|  51|Hyper Cutter| -          |Macho Brace (100%)
+ 59|ARCANINE     |FIRE             | 139|  65|  21|  31| 151| 148|Chlorophyll |Hustle      |TM54 (100%)
+
+--Removing Impossible Evolutions--
+POLIWHIRL       -> CROCONAW        by leveling up holding King’s Rock
+KADABRA         -> GIRAFARIG       at level 37
+MACHOKE         -> HERACROSS       at level 37
+GRAVELER        -> HIPPOWDON       at level 37
+SLOWPOKE        -> GASTRODON       using a Water Stone
+HAUNTER         -> SEVIPER         at level 37
+ONIX            -> SHUCKLE         by leveling up holding Metal Coat
+LICKITUNG       -> EXPLOUD         at level 33
+RHYDON          -> DONPHAN         by leveling up holding Protector
+TANGELA         -> LEAFEON         at level 33
+SEADRA          -> SLOWKING        by leveling up holding Dragon Scale
+SCYTHER         -> CROBAT          by leveling up holding Metal Coat
+ELECTABUZZ      -> ELECTRODE       by leveling up holding Electirizer
+MAGMAR          -> NINETALES       by leveling up holding Magmarizer
+PORYGON         -> CLEFABLE        by leveling up holding Up-Grade
+AIPOM           -> GRANBULL        at level 32
+YANMA           -> SCYTHER         at level 33
+PILOSWINE       -> GLACEON         at level 45
+PORYGON2        -> TAUROS          by leveling up holding Dubious Disc
+DUSCLOPS        -> SPIRITOMB       by leveling up holding Reaper Cloth
+CLAMPERL        -> TENTACRUEL      by leveling up holding DeepSeaScale
+CLAMPERL        -> SEADRA          by leveling up holding DeepSeaTooth
+BONSLY          -> LAIRON          at level 17
+MIME JR.        -> KADABRA         at level 18
+
+
+--Removing Timed-Based Evolutions--
+EEVEE           -> ALAKAZAM        using a Sun Stone
+EEVEE           -> DRAPION         using a Moon Stone
+GLIGAR          -> TROPIUS         by leveling up holding Razor Fang
+SNEASEL         -> SHIFTRY         by leveling up holding Razor Claw
+BUDEW           -> LOMBRE          by reaching high happiness
+CHINGLING       -> METANG          by reaching high happiness
+HAPPINY         -> DODRIO          by leveling up holding Oval Stone
+RIOLU           -> GALLADE         by reaching high happiness
+
+
+--Random Starters--
+Set starter 1 to CROCONAW
+Set starter 2 to PICHU
+Set starter 3 to KABUTOPS
+
+Move Data: Unchanged.
+
+
+--Pokemon Movesets--
+001 BULBASAUR -> BAYLEEF
+HP  66 
+ATK 35 
+DEF 51 
+SPA 79 
+SPD 40 
+SPE 46 
+Level 1 : X-Scissor
+Level 1 : Hi Jump Kick
+Level 1 : Needle Arm
+Level 1 : Earth Power
+Level 3 : Comet Punch
+Level 7 : Rock Polish
+Level 9 : Guillotine
+Level 13: Aromatherapy
+Level 13: Sand-Attack
+Level 15: Mirror Coat
+Level 19: Thunder
+Level 21: Ice Fang
+Level 25: Head Smash
+Level 27: Leer
+Level 31: Icy Wind
+Level 33: Zap Cannon
+Level 37: Bullet Punch
+Egg Moves:
+ - Hydro Pump
+ - Crunch
+ - Wish
+ - Leech Seed
+ - Discharge
+ - Night Slash
+ - ThunderPunch
+ - Gyro Ball
+ - Grass Knot
+ - Flame Wheel
+ - Encore
+ - Mirror Coat
+
+002 IVYSAUR -> MEGANIUM
+HP  87 
+ATK 31 
+DEF 11 
+SPA 123
+SPD 82 
+SPE 69 
+Level 1 : Doom Desire
+Level 1 : Perish Song
+Level 1 : Dark Void
+Level 1 : Heat Wave
+Level 3 : Tackle
+Level 7 : Rollout
+Level 9 : Camouflage
+Level 13: Mirror Shot
+Level 13: Double Hit
+Level 15: Ingrain
+Level 20: Dive
+Level 23: Steel Wing
+Level 28: Thrash
+Level 31: Power Swap
+Level 36: Air Slash
+Level 39: Brick Break
+Level 44: Mud-Slap
+
+003 VENUSAUR ->  (no evolution)
+HP  32 
+ATK 161
+DEF 21 
+SPA 80 
+SPD 134
+SPE 96 
+Level 1 : Trick
+Level 1 : Supersonic
+Level 1 : Earth Power
+Level 1 : Wing Attack
+Level 3 : Grudge
+Level 7 : Ice Fang
+Level 9 : Horn Drill
+Level 13: Gravity
+Level 13: Pin Missile
+Level 15: Fire Fang
+Level 20: Magnet Bomb
+Level 23: Milk Drink
+Level 28: Super Fang
+Level 31: Yawn
+Level 32: Morning Sun
+Level 39: Spite
+Level 45: Camouflage
+Level 53: Spore
+
+004 CHARMANDER -> MONFERNO
+HP  88 
+ATK 47 
+DEF 46 
+SPA 65 
+SPD 47 
+SPE 17 
+Level 1 : Helping Hand
+Level 1 : Rapid Spin
+Level 1 : Force Palm
+Level 1 : Mud Shot
+Level 7 : Heart Swap
+Level 10: Trump Card
+Level 16: Double Kick
+Level 19: Flash
+Level 25: Head Smash
+Level 28: Vine Whip
+Level 34: Gastro Acid
+Level 37: Rock Wrecker
+Egg Moves:
+ - Sing
+ - Leech Life
+ - Attract
+ - Tri Attack
+ - Earthquake
+ - Transform
+ - Focus Energy
+ - Meditate
+ - ViceGrip
+ - Conversion
+ - Wood Hammer
+ - Flail
+
+
+--TM Moves--
+TM01 Bounce
+TM02 SmokeScreen
+TM03 Thunder
+TM04 Leech Seed
+TM05 Extrasensory
+TM06 Drain Punch
+TM07 Mirror Shot
+TM08 Comet Punch
+TM09 Pain Split
+TM10 Eruption
+TM11 Confusion
+TM12 Assurance
+TM13 Sludge Bomb
+TM14 Payback
+TM15 Wish
+TM16 Mist Ball
+TM17 Memento
+TM18 Stockpile
+TM19 Dizzy Punch
+TM20 Psychic
+TM21 Magnet Rise
+TM22 Horn Attack
+TM23 Doom Desire
+TM24 Air Cutter
+TM25 Light Screen
+TM26 Absorb
+TM27 Odor Sleuth
+TM28 Moonlight
+TM29 Refresh
+TM30 Aeroblast
+TM31 Hyper Voice
+TM32 Mud Bomb
+TM33 Poison Fang
+TM34 Seed Bomb
+TM35 Heal Bell
+TM36 Protect
+TM37 Water Sport
+TM38 Endure
+TM39 Yawn
+TM40 Poison Sting
+TM41 Tackle
+TM42 Steel Wing
+TM43 Miracle Eye
+TM44 Mach Punch
+TM45 Weather Ball
+TM46 Confuse Ray
+TM47 Detect
+TM48 Natural Gift
+TM49 Peck
+TM50 DoubleSlap
+TM51 Super Fang
+TM52 Double-Edge
+TM53 Mirror Coat
+TM54 Wing Attack
+TM55 Power Whip
+TM56 Iron Defense
+TM57 Shadow Ball
+TM58 Heart Swap
+TM59 Pursuit
+TM60 Kinesis
+
+--TM Compatibility--
+  1 BULBASAUR     |          - |               - |           - |              - |TM05 Extrasensory |TM06 Drain Punch |               - |TM08 Comet Punch |              - |            - |TM11 Confusion |             - |               - |           - |TM15 Wish |TM16 Mist Ball |           - |             - |TM19 Dizzy Punch |           - |               - |TM22 Horn Attack |TM23 Doom Desire |              - |                - |TM26 Absorb |TM27 Odor Sleuth |TM28 Moonlight |           - |TM30 Aeroblast |               - |            - |TM33 Poison Fang |TM34 Seed Bomb |             - |TM36 Protect |TM37 Water Sport |          - |TM39 Yawn |TM40 Poison Sting |TM41 Tackle |TM42 Steel Wing |TM43 Miracle Eye |              - |                - |               - |          - |                - |TM49 Peck |TM50 DoubleSlap |TM51 Super Fang |TM52 Double-Edge |               - |               - |              - |                - |TM57 Shadow Ball |              - |TM59 Pursuit |TM60 Kinesis |               - |TM62 False Swipe |TM63 Mist |TM64 Supersonic |TM65 Skull Bash |               - |TM67 Selfdestruct |TM68 Shadow Claw |TM69 Magma Storm |TM70 Hyper Beam |TM71 Sunny Day |TM72 Reversal |TM73 Substitute |TM74 Rock Wrecker |             - |                - |                - |             - |               - |              - |              - |                - |            - |TM84 Grudge |TM85 Lava Plume |TM86 Superpower |              - |             - |           - |         - |            - |TM92 Explosion |HM01 Cut |HM02 Fly |HM03 Surf |HM04 Strength |HM05 Defog |HM06 Rock Smash |HM07 Waterfall |HM08 Rock Climb |
+  2 IVYSAUR       |          - |               - |TM03 Thunder |TM04 Leech Seed |TM05 Extrasensory |               - |               - |               - |TM09 Pain Split |            - |             - |             - |               - |           - |TM15 Wish |             - |TM17 Memento |             - |               - |           - |               - |TM22 Horn Attack |TM23 Doom Desire |              - |                - |TM26 Absorb |               - |             - |           - |TM30 Aeroblast |               - |            - |               - |TM34 Seed Bomb |             - |           - |               - |TM38 Endure |TM39 Yawn |TM40 Poison Sting |TM41 Tackle |              - |TM43 Miracle Eye |TM44 Mach Punch |                - |TM46 Confuse Ray |          - |TM48 Natural Gift |TM49 Peck |              - |              - |               - |TM53 Mirror Coat |TM54 Wing Attack |              - |TM56 Iron Defense |               - |TM58 Heart Swap |           - |           - |               - |TM62 False Swipe |TM63 Mist |TM64 Supersonic |              - |               - |TM67 Selfdestruct |               - |               - |              - |TM71 Sunny Day |TM72 Reversal |TM73 Substitute |TM74 Rock Wrecker |TM75 Octazooka |TM76 Spike Cannon |TM77 Stealth Rock |TM78 Aqua Tail |TM79 Volt Tackle |TM80 Fire Punch |TM81 Rock Throw |TM82 DragonBreath |            - |TM84 Grudge |              - |TM86 Superpower |TM87 Seed Flare |             - |TM89 Psywave |         - |TM91 Withdraw |             - |HM01 Cut |HM02 Fly |HM03 Surf |HM04 Strength |HM05 Defog |HM06 Rock Smash |HM07 Waterfall |HM08 Rock Climb |
+  3 VENUSAUR      |          - |TM02 SmokeScreen |           - |TM04 Leech Seed |TM05 Extrasensory |TM06 Drain Punch |               - |               - |              - |            - |             - |             - |               - |TM14 Payback |TM15 Wish |             - |TM17 Memento |             - |TM19 Dizzy Punch |TM20 Psychic |TM21 Magnet Rise |               - |               - |TM24 Air Cutter |                - |TM26 Absorb |               - |             - |           - |             - |TM31 Hyper Voice |            - |TM33 Poison Fang |TM34 Seed Bomb |             - |           - |TM37 Water Sport |TM38 Endure |TM39 Yawn |TM40 Poison Sting |TM41 Tackle |TM42 Steel Wing |TM43 Miracle Eye |              - |                - |               - |TM47 Detect |TM48 Natural Gift |        - |              - |TM51 Super Fang |TM52 Double-Edge |TM53 Mirror Coat |TM54 Wing Attack |              - |TM56 Iron Defense |TM57 Shadow Ball |TM58 Heart Swap |           - |           - |TM61 Vital Throw |TM62 False Swipe |TM63 Mist |              - |TM65 Skull Bash |TM66 Rock Polish |TM67 Selfdestruct |TM68 Shadow Claw |TM69 Magma Storm |TM70 Hyper Beam |             - |            - |TM73 Substitute |                - |             - |TM76 Spike Cannon |                - |TM78 Aqua Tail |TM79 Volt Tackle |              - |              - |TM82 DragonBreath |            - |          - |TM85 Lava Plume |TM86 Superpower |TM87 Seed Flare |             - |           - |TM90 Spite |TM91 Withdraw |             - |HM01 Cut |HM02 Fly |HM03 Surf |HM04 Strength |HM05 Defog |HM06 Rock Smash |HM07 Waterfall |HM08 Rock Climb |
+  4 CHARMANDER    |          - |TM02 SmokeScreen |           - |TM04 Leech Seed |                - |               - |TM07 Mirror Shot |TM08 Comet Punch |              - |            - |TM11 Confusion |             - |               - |TM14 Payback |        - |TM16 Mist Ball |TM17 Memento |             - |TM19 Dizzy Punch |TM20 Psychic |TM21 Magnet Rise |TM22 Horn Attack |               - |TM24 Air Cutter |                - |TM26 Absorb |TM27 Odor Sleuth |TM28 Moonlight |TM29 Refresh |             - |TM31 Hyper Voice |            - |TM33 Poison Fang |             - |             - |           - |               - |TM38 Endure |TM39 Yawn |TM40 Poison Sting |          - |TM42 Steel Wing |               - |              - |TM45 Weather Ball |TM46 Confuse Ray |TM47 Detect |                - |        - |TM50 DoubleSlap |TM51 Super Fang |TM52 Double-Edge |TM53 Mirror Coat |               - |TM55 Power Whip |TM56 Iron Defense |               - |              - |           - |           - |TM61 Vital Throw |               - |TM63 Mist |TM64 Supersonic |TM65 Skull Bash |TM66 Rock Polish |                - |TM68 Shadow Claw |TM69 Magma Storm |              - |TM71 Sunny Day |TM72 Reversal |TM73 Substitute |                - |             - |                - |                - |             - |               - |TM80 Fire Punch |              - |TM82 DragonBreath |TM83 Bug Buzz |          - |              - |TM86 Superpower |              - |TM88 Foresight |TM89 Psywave |TM90 Spite |TM91 Withdraw |TM92 Explosion |HM01 Cut |HM02 Fly |HM03 Surf |HM04 Strength |HM05 Defog |HM06 Rock Smash |HM07 Waterfall |HM08 Rock Climb |
+  5 CHARMELEON    |TM01 Bounce |               - |           - |TM04 Leech Seed |TM05 Extrasensory |TM06 Drain Punch |               - |TM08 Comet Punch |TM09 Pain Split |TM10 Eruption |             - |TM12 Assurance |               - |           - |TM15 Wish |             - |TM17 Memento |TM18 Stockpile |TM19 Dizzy Punch |           - |               - |               - |TM23 Doom Desire |TM24 Air Cutter |TM25 Light Screen |TM26 Absorb |TM27 Odor Sleuth |             - |           - |TM30 Aeroblast |               - |TM32 Mud Bomb |TM33 Poison Fang |TM34 Seed Bomb |             - |TM36 Protect |               - |TM38 Endure |TM39 Yawn |                - |          - |TM42 Steel Wing |               - |TM44 Mach Punch |TM45 Weather Ball |TM46 Confuse Ray |          - |TM48 Natural Gift |TM49 Peck |              - |              - |               - |TM53 Mirror Coat |TM54 Wing Attack |              - |TM56 Iron Defense |TM57 Shadow Ball |              - |TM59 Pursuit |TM60 Kinesis |               - |TM62 False Swipe |TM63 Mist |TM64 Supersonic |TM65 Skull Bash |               - |TM67 Selfdestruct |TM68 Shadow Claw |               - |TM70 Hyper Beam |TM71 Sunny Day |TM72 Reversal |TM73 Substitute |TM74 Rock Wrecker |             - |                - |TM77 Stealth Rock |TM78 Aqua Tail |TM79 Volt Tackle |              - |              - |                - |TM83 Bug Buzz |TM84 Grudge |TM85 Lava Plume |              - |              - |             - |TM89 Psywave |TM90 Spite |            - |TM92 Explosion |HM01 Cut |HM02 Fly |HM03 Surf |HM04 Strength |HM05 Defog |HM06 Rock Smash |HM07 Waterfall |HM08 Rock Climb |
+  6 CHARIZARD     |TM01 Bounce |               - |TM03 Thunder |TM04 Leech Seed |                - |TM06 Drain Punch |               - |TM08 Comet Punch |              - |TM10 Eruption |             - |             - |               - |           - |TM15 Wish |TM16 Mist Ball |           - |TM18 Stockpile |               - |TM20 Psychic |TM21 Magnet Rise |               - |               - |TM24 Air Cutter |                - |          - |               - |TM28 Moonlight |           - |TM30 Aeroblast |               - |TM32 Mud Bomb |TM33 Poison Fang |             - |             - |           - |               - |TM38 Endure |        - |                - |TM41 Tackle |              - |TM43 Miracle Eye |              - |                - |               - |          - |                - |        - |TM50 DoubleSlap |              - |               - |               - |               - |TM55 Power Whip |TM56 Iron Defense |               - |              - |TM59 Pursuit |           - |TM61 Vital Throw |               - |TM63 Mist |TM64 Supersonic |              - |TM66 Rock Polish |TM67 Selfdestruct |               - |               - |TM70 Hyper Beam |TM71 Sunny Day |TM72 Reversal |TM73 Substitute |                - |TM75 Octazooka |TM76 Spike Cannon |                - |             - |TM79 Volt Tackle |TM80 Fire Punch |TM81 Rock Throw |TM82 DragonBreath |            - |          - |TM85 Lava Plume |              - |              - |TM88 Foresight |TM89 Psywave |TM90 Spite |            - |TM92 Explosion |HM01 Cut |HM02 Fly |HM03 Surf |HM04 Strength |HM05 Defog |HM06 Rock Smash |HM07 Waterfall |HM08 Rock Climb |
+
+--Trainers Pokemon--
+#1 (Youngster Tristan => Author Jessica) - WAILORD Lv8
+#2 (Youngster Logan => Author Marilyn) - LEDYBA Lv8
+#3 (Lass Natalie => Swimmer ♂ Wellington) - SEVIPER Lv8
+#4 (Youngster Michael => Author Sonya) - LICKILICKY Lv11, PHANPY Lv9
+#5 (Camper Mickey => Rich Boy Donna) - ENTEI Lv8
+#6 (Camper Mickey => Rich Boy Donna) - CLEFABLE Lv8
+#7 (Picnicker Angelica => Cooltrainer♂ Landon) - BEAUTIFLY Lv8
+#8 (Picnicker Angelica => Cooltrainer♂ Landon) - VIBRAVA Lv8
+#9 (Youngster Mickey => Author Donna) - IGGLYBUFF Lv8
+#10 (Youngster Tyler => Author Florentino) - AIPOM Lv12
+#11 (Lass Samantha => Swimmer ♂ Florentino) - BUDEW Lv11
+#12 (Lass Sarah => Swimmer ♂ Ann) - FURRET Lv11
+
+--Static Pokemon--
+GIRATINA => SCIZOR
+UXIE => TORTERRA
+AZELF => SHELGON
+DIALGA => UMBREON
+PALKIA => SWAMPERT
+HEATRAN => JIGGLYPUFF
+REGIGIGAS => GARDEVOIR
+REGISTEEL => BUTTERFREE
+REGICE => MILOTIC
+REGIROCK => SHIELDON
+DARKRAI => CLEFFA
+SHAYMIN => QUILAVA
+ARCEUS => TOGEPI
+TOGEPI (egg) => PIDGEOTTO (egg)
+EEVEE => CACTURNE
+PORYGON => ROSERADE
+RIOLU (egg) => SUICUNE (egg)
+DRIFLOON => DODUO
+ROTOM => SHINX
+SPIRITOMB => DIALGA
+AERODACTYL => CORSOLA
+OMANYTE => YANMEGA
+KABUTO => ABRA
+LILEEP => POLIWHIRL
+ANORITH => CARVANHA
+SHIELDON => ARBOK
+CRANIDOS => WHISMUR
+MESPRIT => MEWTWO
+CRESSELIA => GARCHOMP
+ARTICUNO => SPIRITOMB
+ZAPDOS => SWALOT
+MOLTRES => METAGROSS
+
+
+--Wild Pokemon--
+Set #1 - Canalave City Surfing (rate=10)
+FLAREON Lvs 30-45        HP 71  ATK 13  DEF 99  SPATK 196 SPDEF 113 SPEED 32 
+DRAGONAIR Lvs 30-45      HP 99  ATK 22  DEF 81  SPATK 30  SPDEF 95  SPEED 93 
+TORTERRA Lvs 30-60       HP 167 ATK 53  DEF 154 SPATK 21  SPDEF 17  SPEED 114
+TORTERRA Lvs 30-60       HP 167 ATK 53  DEF 154 SPATK 21  SPDEF 17  SPEED 114
+DUGTRIO Lvs 30-60        HP 108 ATK 97  DEF 61  SPATK 90  SPDEF 26  SPEED 23 
+
+Set #2 - Canalave City Old Rod (rate=25)
+LUMINEON Lvs 6-9         HP 130 ATK 12  DEF 42  SPATK 32  SPDEF 69  SPEED 175
+LUMINEON Lvs 5-11        HP 130 ATK 12  DEF 42  SPATK 32  SPDEF 69  SPEED 175
+LUMINEON Lvs 8-15        HP 130 ATK 12  DEF 42  SPATK 32  SPDEF 69  SPEED 175
+LUMINEON Lvs 8-15        HP 130 ATK 12  DEF 42  SPATK 32  SPDEF 69  SPEED 175
+LUMINEON Lvs 8-23        HP 130 ATK 12  DEF 42  SPATK 32  SPDEF 69  SPEED 175
+
+Set #3 - Canalave City Good Rod (rate=50)
+WORMADAM Lvs 23-30       HP 105 ATK 30  DEF 63  SPATK 51  SPDEF 102 SPEED 73 
+MEDICHAM Lvs 23-30       HP 52  ATK 127 DEF 95  SPATK 13  SPDEF 99  SPEED 24 
+WORMADAM Lvs 15-38       HP 105 ATK 30  DEF 63  SPATK 51  SPDEF 102 SPEED 73 
+MEDICHAM Lvs 15-38       HP 52  ATK 127 DEF 95  SPATK 13  SPDEF 99  SPEED 24 
+MEDICHAM Lvs 15-38       HP 52  ATK 127 DEF 95  SPATK 13  SPDEF 99  SPEED 24 
+
+Set #4 - Canalave City Super Rod (rate=75)
+KRABBY Lvs 45-83         HP 113 ATK 66  DEF 44  SPATK 46  SPDEF 26  SPEED 30 
+WORMADAM Lvs 45-60       HP 105 ATK 30  DEF 63  SPATK 51  SPDEF 102 SPEED 73 
+STEELIX Lvs 30-75        HP 57  ATK 94  DEF 77  SPATK 82  SPDEF 130 SPEED 70 
+WORMADAM Lvs 60-83       HP 105 ATK 30  DEF 63  SPATK 51  SPDEF 102 SPEED 73 
+WORMADAM Lvs 60-83       HP 105 ATK 30  DEF 63  SPATK 51  SPDEF 102 SPEED 73 
+
+
+--In-Game Trades--
+Trade MACHOP      -> Kazza       the ABRA               ->      MACHOP      -> Kazza           the SHARPEDO
+Trade BUIZEL      -> Charap      the CHATOT             ->      BUIZEL      -> Charap          the TAILLOW
+Trade MEDICHAM    -> Gaspar      the HAUNTER            ->      MEDICHAM    -> Gaspar          the LOPUNNY
+Trade FINNEON     -> Foppa       the MAGIKARP           ->      FINNEON     -> Foppa           the GASTRODON
+
+
+--Pickup Items--
+Level 1-10
+30%: TwistedSpoon
+10%: Cheri Berry, TM18, Max Potion, TM11, Poké Doll, Colbur Berry
+4%: Shiny Stone, Cherish Ball
+1%: TM22, TM82
+
+Level 11-20
+30%: Cheri Berry
+10%: TM18, Max Potion, TM11, Poké Doll, Colbur Berry, Shiny Stone
+4%: Cherish Ball, Repel
+1%: TM82, Max Ether
+
+Level 21-30
+30%: TM18
+10%: Max Potion, TM11, Poké Doll, Colbur Berry, Shiny Stone, Cherish Ball
+4%: Repel, Apicot Berry
+1%: Max Ether, Red Flute
+
+Level 31-40
+30%: Max Potion
+10%: TM11, Poké Doll, Colbur Berry, Shiny Stone, Cherish Ball, Repel
+4%: Apicot Berry, Icy Rock
+1%: Red Flute, Claw Fossil
+
+Level 41-50
+30%: TM11
+10%: Poké Doll, Colbur Berry, Shiny Stone, Cherish Ball, Repel, Apicot Berry
+4%: Icy Rock, Blue Flute
+1%: Claw Fossil, PP Up
+
+Level 51-60
+30%: Poké Doll
+10%: Colbur Berry, Shiny Stone, Cherish Ball, Repel, Apicot Berry, Icy Rock
+4%: Blue Flute, TM13
+1%: PP Up, Macho Brace
+
+Level 61-70
+30%: Colbur Berry
+10%: Shiny Stone, Cherish Ball, Repel, Apicot Berry, Icy Rock, Blue Flute
+4%: TM13, Root Fossil
+1%: Macho Brace, Life Orb
+
+Level 71-80
+30%: Shiny Stone
+10%: Cherish Ball, Repel, Apicot Berry, Icy Rock, Blue Flute, TM13
+4%: Root Fossil, Max Revive
+1%: Life Orb, Ganlon Berry
+
+Level 81-90
+30%: Cherish Ball
+10%: Repel, Apicot Berry, Icy Rock, Blue Flute, TM13, Root Fossil
+4%: Max Revive, Dire Hit
+1%: Ganlon Berry, Rare Bone
+
+Level 91-100
+30%: Repel
+10%: Apicot Berry, Icy Rock, Blue Flute, TM13, Root Fossil, Max Revive
+4%: Dire Hit, Power Lens
+1%: Rare Bone, TM05
+
+
+------------------------------------------------------------------
+Randomization of Pokemon Platinum (U) completed.
+Time elapsed: 1651ms
+RNG Calls: 88326
+
+------------------------------------------------------------------
+
+
+--ROM Diagnostics--
+File name: platinum.nds
+arm9: 4D104949
+overlay9_16: 25EBE8C1
+overlay9_5: 3E286491
+overlay9_6: E6C5F31B
+overlay9_73: C003DED1
+overlay9_78: 091E8E97
+application/zukanlist/zkn_data/zukan_enc_platinum.narc: 2F58506E
+arc/encdata_ex.narc: 03FB3F28
+battle/skill/sub_seq.narc: B02FF213
+fielddata/encountdata/pl_enc_data.narc: 188084F5
+fielddata/eventdata/zone_event.narc: D8BB2D84
+fielddata/maptable/mapname.bin: 530174B6
+fielddata/pokemon_trade/fld_trade.narc: B98CC1AF
+fielddata/script/scr_seq.narc: 6D482515
+itemtool/itemdata/pl_item_data.narc: AAE44533
+msgdata/pl_msg.narc: 5666AAEC
+poketool/personal/evo.narc: 6711E4B4
+poketool/personal/pl_personal.narc: B16A8A01
+poketool/personal/pms.narc: C457991B
+poketool/personal/wotbl.narc: 977997B9
+poketool/pokegra/pl_pokegra.narc: 03BBC013
+poketool/trainer/trdata.narc: 2EE9B886
+poketool/trainer/trpoke.narc: 739A02EE
+poketool/waza/pl_waza_tbl.narc: B2D18230
+
+

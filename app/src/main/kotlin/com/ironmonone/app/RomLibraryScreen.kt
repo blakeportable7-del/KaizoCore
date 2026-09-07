@@ -181,8 +181,8 @@ fun RomLibraryScreen(modifier: Modifier = Modifier, onPlay: () -> Unit = {}) {
             EmptyState(
                 "Nothing here yet.",
                 "ADD FILES takes ROMs (.gba, .gbc, .nds), patches (.bps, .ips, .ups) and zips of either. " +
-                    "KaizoCore tracks FireRed, Emerald, Platinum, HeartGold, SoulSilver, Black, " +
-                    "White, Black 2, White 2 and Crystal (U). Anything else plays without a tracker.",
+                    "KaizoCore tracks Red, Blue, Yellow, Gold, Silver, Crystal, FireRed, Emerald, Diamond, Pearl, " +
+                    "Platinum, HeartGold, SoulSilver, Black, White, Black 2 and White 2 (U). Anything else plays without a tracker.",
             )
         }
 

@@ -129,7 +129,7 @@ data class RomKind(
         /**
          * Pokémon Platinum (USA). Header read from Blake's own dump on
          * 2026-08-30: title "POKEMON PL", game code CPUE, version byte 0,
-         * 128MB, CRC-32 9253921d. The DS header carries the code at 0x0C,
+         * 128MB, CRC-32 9253921d (matched again on his 2026-09-07 dump). The DS header carries the code at 0x0C,
          * which is why titleDetect is the 12-byte title and the code is
          * checked separately by the picker.
          *
@@ -145,6 +145,23 @@ data class RomKind(
             expectedCrc = 0x9253921dL,
             titleDetect = "POKEMON PL",
             natDexCapable = false,
+        )
+
+        /**
+         * Pokémon Diamond and Pearl (USA), Rev 5, read off Blake's own dumps
+         * 2026-09-07: titles "POKEMON D" / "POKEMON P" (the DS header title is
+         * matched whole, so "POKEMON P" never claims Platinum's "POKEMON PL"),
+         * codes ADAE / APAE, version byte 5, 64 MB. Same DPPt family as
+         * Platinum: the settings presets and the rules are shared, the tracker
+         * map is NdsGameMap.DP. Nat. Dex is a GBA hack; never applicable.
+         */
+        val DIAMOND_U = PLATINUM_U.copy(
+            id = "diamond-u", displayName = "Pokémon Diamond (U)",
+            expectedCrc = 0x84427823L, titleDetect = "POKEMON D",
+        )
+        val PEARL_U = PLATINUM_U.copy(
+            id = "pearl-u", displayName = "Pokémon Pearl (U)",
+            expectedCrc = 0xE2D87EBFL, titleDetect = "POKEMON P",
         )
 
         const val CRC_UNKNOWN = -1L
@@ -239,7 +256,7 @@ data class RomKind(
         )
         val SILVER_U = GOLD_U.copy(
             id = "silver-u", displayName = "Pokémon Silver (U)",
-            expectedCrc = 0x8AD48636L, titleDetect = "POKEMON_SLVAAXE",
+            expectedCrc = 0x8AD48636L, titleDetect = "POKEMON_SLVAAXE",   // matched Blake's own dump 2026-09-07: POKEMON_SLVAAXE, CGB 0x80, 2 MB
         )
 
         /**
@@ -260,7 +277,7 @@ data class RomKind(
         val YELLOW_U = RED_U.copy(id = "yellow-u", displayName = "Pokémon Yellow (U)", expectedCrc = 0x7D527D62L, titleDetect = "POKEMON YELLOW")
 
         val allV1 = listOf(
-            FIRERED_U_V11, FIRERED_U_V10, EMERALD_U, PLATINUM_U, HEARTGOLD_U, SOULSILVER_U,
+            FIRERED_U_V11, FIRERED_U_V10, EMERALD_U, DIAMOND_U, PEARL_U, PLATINUM_U, HEARTGOLD_U, SOULSILVER_U,
             BLACK_U, WHITE_U, BLACK2_U, WHITE2_U, CRYSTAL_U, GOLD_U, SILVER_U, RED_U, BLUE_U, YELLOW_U,
         )
         val allNatDex = listOf(EMERALD_NATDEX_121, FIRERED_NATDEX_121)

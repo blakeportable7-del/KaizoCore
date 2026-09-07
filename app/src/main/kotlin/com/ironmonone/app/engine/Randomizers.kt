@@ -39,9 +39,17 @@ object Randomizers {
             Engine.NATDEX -> { src, st, d, sd -> NatDexEngine.randomize(src, st, d, sd) }
             Engine.ZX -> { src, st, d, sd -> ZxEngine.randomize(src, st, d, sd, kind.generation) }
         }
-        return if (kind.generation == Generation.GB1) twoPass(sourceRom, settingsFile, secondPass, dest, seed, engine)
+        val outcome = if (kind.generation == Generation.GB1) twoPass(sourceRom, settingsFile, secondPass, dest, seed, engine)
         else engine(sourceRom, settingsFile, dest, seed)
+        // The randomizer's own log, kept beside the ROM it describes so the
+        // game-over screen's "Inspect the log" has something to open. Both
+        // callers used to discard it. A failed write is not a failed run.
+        runCatching { logFor(dest).writeText(outcome.logText) }
+        return outcome
     }
+
+    /** Where [randomize] keeps the log for the ROM it wrote: `<rom>.log`, the same name the PC randomizer uses. */
+    fun logFor(dest: File): File = File(dest.parentFile, dest.name + ".log")
 
     /** PART 2's seed: derived from the run's so one seed reproduces both passes. */
     fun secondSeed(seed: Long): Long = seed xor 0x5041525432L   // "PART2"

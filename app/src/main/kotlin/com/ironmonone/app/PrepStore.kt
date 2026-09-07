@@ -403,6 +403,38 @@ class PrepStore(context: Context) {
     fun previousRunFor(kind: RomKind): File =
         File(runs, "previous.${kind.fileExtension}")
 
+    /**
+     * "Save this attempt": the reference's GameOverScreen.saveCurrentGameFiles
+     * copies the ROM, its log and the tracked data into a saved_games folder,
+     * named by seed, and never overwrites an earlier save. Here: the current
+     * run's ROM and log, a save state of the moment (when one could be taken),
+     * and the per-run notes, into files/attempts/<game>-<attempt>-<seed>/.
+     * Returns whether every file that exists was copied.
+     */
+    fun saveAttempt(kind: RomKind, attempt: Int, seed: String, state: ByteArray?): Boolean = runCatching {
+        val base = File(File(root.parentFile, "attempts"), "${kind.id}-attempt$attempt-$seed".replace(Regex("[^A-Za-z0-9._-]"), "_"))
+        var dir = base; var n = 2
+        while (dir.exists()) { dir = File(base.parentFile, base.name + "-$n"); n++ }
+        dir.mkdirs()
+        val rom = currentRunFor(kind)
+        if (!rom.isFile) error("no run")
+        rom.copyTo(File(dir, "run.${kind.fileExtension}"), overwrite = true)
+        currentRunLogFor(kind)?.copyTo(File(dir, "run.${kind.fileExtension}.log"), overwrite = true)
+        state?.takeIf { it.isNotEmpty() }?.let { File(dir, "state.bin").writeBytes(it) }
+        listOf("marks.txt", "notes.txt", "routes.txt", "moves.txt", "abilities.txt").forEach { f ->
+            File(root, f).takeIf { it.isFile }?.copyTo(File(dir, f), overwrite = true)
+        }
+        File(dir, "attempt.txt").writeText("game=${kind.id}\nattempt=$attempt\nseed=$seed\n")
+        true
+    }.getOrDefault(false)
+
+    /** The seed of the run in play, as saved by the last randomization, or "" before any. */
+    fun lastSeedText(): String = runCatching { lastSeedFile.readText().trim() }.getOrDefault("")
+
+    /** The randomizer log for the current run (Randomizers.logFor), or null when none was kept. */
+    fun currentRunLogFor(kind: RomKind): File? =
+        com.ironmonone.app.engine.Randomizers.logFor(currentRunFor(kind)).takeIf { it.isFile && it.length() > 0 }
+
     /** Rotate current -> previous before a new seed lands. */
     /**
      * Deletes the per-run notes (stat marks, free-text notes, route
@@ -423,5 +455,10 @@ class PrepStore(context: Context) {
             prev.delete()
             cur.copyTo(prev, overwrite = true)
         }
+        // The log travels with its ROM.
+        val curLog = com.ironmonone.app.engine.Randomizers.logFor(cur)
+        val prevLog = com.ironmonone.app.engine.Randomizers.logFor(prev)
+        prevLog.delete()
+        if (curLog.isFile) runCatching { curLog.copyTo(prevLog, overwrite = true) }
     }
 }
