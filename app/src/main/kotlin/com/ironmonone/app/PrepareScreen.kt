@@ -57,7 +57,11 @@ fun PrepareScreen(modifier: Modifier = Modifier) {
     val scope = rememberCoroutineScope()
 
     var romName by remember { mutableStateOf<String?>(null) }
-    var romBytes by remember { mutableStateOf<ByteArray?>(null) }
+    // The picked ROM as a FILE, never as bytes: a DS dump is 128 to 512 MB and
+    // reading one into the heap was what killed PREP on Blake's phone with
+    // Black 2 (2026-09-07). Only the GBA patch path reads bytes, and those
+    // dumps are 16 to 32 MB.
+    var romFile by remember { mutableStateOf<java.io.File?>(null) }
     var romId by remember { mutableStateOf<RomIdentity.Result?>(null) }
     var wantNatDex by remember { mutableStateOf(true) }
     var busy by remember { mutableStateOf(false) }
@@ -75,11 +79,24 @@ fun PrepareScreen(modifier: Modifier = Modifier) {
         scope.launch {
             runCatching {
                 withContext(Dispatchers.IO) {
-                    val b = context.contentResolver.openInputStream(uri)!!.use { it.readBytes() }
-                    Triple(context.displayNameOf(uri), b, RomIdentity.identify(b))
+                    // Stream to a temp file; unzip on disk; identify from the file
+                    // (RomIdentity.identify(File) reads the header and streams the CRC).
+                    val tmp = java.io.File(context.cacheDir, "prep-" + System.nanoTime())
+                    context.contentResolver.openInputStream(uri)!!.use { i -> tmp.outputStream().buffered(1 shl 20).use { o -> i.copyTo(o, 1 shl 20) } }
+                    var name = context.displayNameOf(uri)
+                    var file = tmp
+                    val head = tmp.inputStream().use { i -> val h = ByteArray(8); val n = i.read(h); if (n > 0) h.copyOf(n) else ByteArray(0) }
+                    if (ZipImport.isZip(name, head)) {
+                        val inside = tmp.inputStream().use { ZipImport.extractToFiles(it, java.io.File(tmp.parentFile, tmp.name + ".d")) }
+                        tmp.delete()
+                        val rom = inside.firstOrNull { (n, _) -> n.substringAfterLast('.').lowercase() in setOf("gba", "gbc", "gb", "nds") }
+                            ?: inside.firstOrNull() ?: error("that zip holds no ROM")
+                        name = rom.first; file = rom.second
+                    }
+                    Triple(name, file, RomIdentity.identify(file))
                 }
-            }.onSuccess { (n, b, id) ->
-                romName = n; romBytes = b; romId = id
+            }.onSuccess { (n, f, id) ->
+                romFile?.delete(); romName = n; romFile = f; romId = id
                 if (!id.recognised) say(id.summary, error = true)
             }.onFailure { say("Could not read that file: ${it.message}", error = true) }
             busy = false
@@ -106,7 +123,7 @@ fun PrepareScreen(modifier: Modifier = Modifier) {
     }
 
     fun prepare() {
-        val bytes = romBytes ?: return
+        val file = romFile ?: return
         val id = romId ?: return
         val kind = id.kind ?: return
         busy = true; message = null
@@ -116,20 +133,20 @@ fun PrepareScreen(modifier: Modifier = Modifier) {
                     when {
                         kind.isNatDex ->
                             "Already Nat. Dex. Stored as ready to randomize." to
-                                store.savePrepared(kind, bytes)
+                                store.savePrepared(kind, file)
 
                         // A ROM that cannot take Nat. Dex (e.g. FireRed v1.0) is always
                         // a standard base - the hidden radio's default must never route
                         // it into the patch path.
                         !wantNatDex || !kind.natDexCapable ->
                             "Stored as a standard (vanilla) base." to
-                                store.savePrepared(kind, bytes)
+                                store.savePrepared(kind, file)
 
                         else -> {
                             // Bundled patch is used unless the user imported one.
                             val patchFile = store.patchFileOrBundled(context, kind)
                                 ?: throw NeedPatch()
-                            val out = Patcher.apply(patchFile.readBytes(), bytes, kind.displayName)
+                            val out = Patcher.apply(patchFile.readBytes(), file.readBytes(), kind.displayName)
                             val outKind = RomKind.allNatDex.firstOrNull {
                                 it.expectedCrc == com.ironmonone.patch.Crc32.of(out)
                             } ?: error(

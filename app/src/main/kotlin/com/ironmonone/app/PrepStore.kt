@@ -145,6 +145,10 @@ class PrepStore(context: Context) {
     fun savePrepared(kind: RomKind, bytes: ByteArray): File =
         preparedFile(kind).apply { writeBytes(bytes) }
 
+    /** The same from a file on disk, copied: a DS dump never passes through the heap. */
+    fun savePrepared(kind: RomKind, file: File): File =
+        preparedFile(kind).also { file.copyTo(it, overwrite = true) }
+
     /**
      * CRC per prepared file, keyed on (path, mtime, size) so an unchanged file
      * is never hashed twice. Hashing read every ROM in full - up to five files
