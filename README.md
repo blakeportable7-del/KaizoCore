@@ -14,17 +14,9 @@ Architecture: `IRONMON_ONE_MAP.md` (how, with verified reference-repo findings).
 
 ## Beta
 
-KaizoCore is free software under the GPL-3.0 (see LICENSE). It is in a closed
-beta: the page and the sign-up form are at https://willowcreek.group/kaizocore,
-builds are attached to the releases on this repository with a SHA-256 beside
-each, and bugs go to the issue template here or to the app's INFO tab, SEND
-FEEDBACK. It needs your own game dumps: nothing here contains, links to or
-fetches a ROM, and a request for one is closed without reply.
+Download the APK from https://willowcreek.group/kaizocore (or the releases page here); the SHA-256 is on both. Install a newer APK over the old one; uninstalling wipes your games, saves, notes and attempt count. You need your own game dumps: nothing here contains, links or fetches a ROM.
 
-The Nat. Dex patch files (`app/src/main/assets/patches/`) and the Nat. Dex
-presets are not in this repository: they are CyanSMP64's files and are
-bundled only with his permission. A build without them still works; the app
-imports a patch once from the ROMs tab.
+Your first run: ROMS tab, ADD FILES, pick your dump (a zip is fine). RUN tab, pick the game and a ruleset, NEW RUN. PLAY. PREP is only for Nat. Dex on Emerald or FireRed v1.1. Bugs: INFO tab, REPORT A BUG, EMAIL BLAKE.
 
 ## State as of 2026-08-30
 
