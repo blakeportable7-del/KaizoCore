@@ -41,4 +41,19 @@ class FavoritesTest {
         // Dex order, not alphabetical: Bulbasaur 1, Blastoise 9, Butterfree 12.
         kotlin.test.assertEquals(listOf("Bulbasaur", "Blastoise", "Butterfree"), Favorites.suggest("b").take(3))
     }
+
+    /** Three on the Gen 1 to 3 trackers, four on a Gen 4 DS game, five on Gen 5; the list stops at the game's dex. */
+    @Test
+    fun `slot count and dex cap follow the game`() {
+        val K = com.ironmonone.core.RomKind
+        kotlin.test.assertEquals(3, Favorites.slotCount(K.EMERALD_U)); kotlin.test.assertEquals(3, Favorites.slotCount(K.RED_U)); kotlin.test.assertEquals(3, Favorites.slotCount(null))
+        kotlin.test.assertEquals(4, Favorites.slotCount(K.PLATINUM_U)); kotlin.test.assertEquals(5, Favorites.slotCount(K.BLACK2_U))
+        kotlin.test.assertEquals(151, Favorites.maxDex(K.RED_U)); kotlin.test.assertEquals(251, Favorites.maxDex(K.CRYSTAL_U))
+        kotlin.test.assertEquals(386, Favorites.maxDex(K.FIRERED_U_V10)); kotlin.test.assertEquals(493, Favorites.maxDex(K.PLATINUM_U)); kotlin.test.assertEquals(649, Favorites.maxDex(K.WHITE2_U))
+        kotlin.test.assertEquals(Int.MAX_VALUE, Favorites.maxDex(K.EMERALD_NATDEX_121))
+        kotlin.test.assertEquals(setOf("Mewtwo", "Mew"), Favorites.suggest("mew", maxId = 151).toSet())
+        kotlin.test.assertTrue(Favorites.suggest("sni", maxId = 386).isEmpty())
+        kotlin.test.assertTrue("Snivy" in Favorites.suggest("sni", maxId = 649))
+        kotlin.test.assertEquals(5, Favorites.slots("a,b", 5).size)
+    }
 }

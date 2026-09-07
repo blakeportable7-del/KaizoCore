@@ -305,7 +305,8 @@ fun PlayScreen(
 
     var favoriteHit by remember { mutableStateOf<String?>(null) }
     // The ball call wins when there is one; otherwise the three favorites, the way the PC tracker's new-game screen lists them.
-    val favoriteLine = favoriteHit ?: remember(session.id) { Favorites.line(store) }
+    // As many favorites as this game's PC tracker keeps (three on Gen 1 to 3, four or five on DS), in the order typed.
+    val favoriteLine = favoriteHit ?: remember(session.id) { Favorites.line(Favorites.slots(store, session.kind?.id, Favorites.slotCount(session.kind)).filter { it.isNotBlank() }) }
     var facecam by remember { mutableStateOf(false) }
     var muted by remember(session.id) { mutableStateOf(prefs0.muted) }
     // CHEATS. Per game, never on a tracked game (CheatStore.allowed). Sent
@@ -706,7 +707,7 @@ fun PlayScreen(
                 // Favorites vs the three starter balls, once per load. Only a MATCH
                 // is revealed - never the full ball contents. IronMON honesty.
                 tracker?.let { t ->
-                    val favs = store.loadFavorites()
+                    val favs = store.loadFavorites(session.kind?.id)
                     if (favs.isNotEmpty()) {
                         favoriteHit = runCatching {
                             t.starters().firstOrNull { it.name.lowercase() in favs }
@@ -1402,6 +1403,7 @@ fun PlayScreen(
                       }
                   }
                   if (dsScreens) NdsTrackerPanel(
+                      favoriteLine = favoriteLine,
                       ndsState, onFlee = { flee() }, onGear = { gearDialog = true },
                       enemyMarks = enemyMarks, enemyEncounters = enemyEncounters,
                       onCycleMark = { i ->
@@ -1938,6 +1940,7 @@ fun PlayScreen(
                         .verticalScroll(rememberScrollState())
                 ) {
                     NdsTrackerPanel(
+                        favoriteLine = favoriteLine,
                         ndsState, onFlee = { flee() }, onGear = { gearDialog = true },
                         enemyMarks = enemyMarks, enemyEncounters = enemyEncounters,
                         onCycleMark = { i ->

@@ -179,8 +179,7 @@ fun PrepareScreen(modifier: Modifier = Modifier) {
         Gen3Box(Modifier.fillMaxWidth()) {
             Column {
         Text(
-            "Add a vanilla ROM, choose Nat. Dex or Standard, and it is patched and " +
-                "stored, ready to randomize.",
+            "Add a game dump. What PREPARE does depends on the game; it says so once the dump is read.",
             style = MaterialTheme.typography.bodyMedium,
             color = Gen3.Ink,
         )
@@ -198,6 +197,14 @@ fun PrepareScreen(modifier: Modifier = Modifier) {
                 color = if (id.recognised) MaterialTheme.colorScheme.primary
                 else MaterialTheme.colorScheme.error,
             )
+            // Blake, 2026-09-07: "the prepare screen will be different and unique
+            // to each rom." What this game gets, in its own words.
+            id.kind?.let { k ->
+                Spacer(Modifier.height(6.dp))
+                PrepPlan.lines(k).forEach { line ->
+                    Text(line, style = MaterialTheme.typography.bodySmall, color = Shell.inkOnPaper)
+                }
+            }
         }
 
         if (romId?.kind?.natDexCapable == true) {

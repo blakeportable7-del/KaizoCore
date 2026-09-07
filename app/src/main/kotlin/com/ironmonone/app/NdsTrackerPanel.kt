@@ -299,6 +299,8 @@ fun PcNdsRunOver(
 
 @Composable
 fun NdsTrackerPanel(
+    /** The startup favorites line, shown before a party exists, as the DS tracker's title screen shows them. */
+    favoriteLine: String? = null,
     state: NdsTrackerState?,
     modifier: Modifier = Modifier,
     onFlee: () -> Unit = {},
@@ -341,6 +343,7 @@ fun NdsTrackerPanel(
                         else "address chain not resolved yet",
                         7, Pc.Dim,
                     )
+                    favoriteLine?.let { Spacer(Modifier.height(3.dp)); PixText(it, 7, Pc.Gold, wrap = true) }
                 }
             }
 

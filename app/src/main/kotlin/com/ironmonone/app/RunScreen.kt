@@ -264,18 +264,23 @@ fun RunScreen(
         // new-game screen. Typed by name here; the tracker's no-party card
         // repeats them on Gen 1, 2 and 3, as those PC trackers do; a Gen 3 lab shouts a match in the balls.
         Text("Startup favorites", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-        var favSlots by remember { mutableStateOf(Favorites.slots(store)) }
+        // As many boxes as the game's PC tracker keeps, and only that game's dex in the list.
+        val favCount = Favorites.slotCount(selectedRom?.first)
+        val favMax = Favorites.maxDex(selectedRom?.first)
+        val favRomId = selectedRom?.first?.id
+        var favSlots by remember(favCount, favRomId) { mutableStateOf(Favorites.slots(store, favRomId, favCount)) }
         // Which box is being typed in: its suggestions show under the row.
         var favActive by remember { mutableStateOf(-1) }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             favSlots.forEachIndexed { i, v ->
-                val known = v.isBlank() || Favorites.idOf(v) != null
+                // Known FOR THIS GAME: a name past its dex (a Gen 5 species on a standard Emerald) is as wrong as a typo.
+                val known = v.isBlank() || (Favorites.idOf(v)?.let { it <= favMax } == true)
                 androidx.compose.material3.OutlinedTextField(
                     value = v,
                     onValueChange = { t ->
                         favSlots = favSlots.toMutableList().also { it[i] = t }
                         favActive = i
-                        Favorites.save(store, favSlots)
+                        Favorites.save(store, favRomId, favSlots)
                     },
                     modifier = Modifier.weight(1f).onFocusChanged { if (it.isFocused) favActive = i },
                     singleLine = true,
@@ -287,7 +292,7 @@ fun RunScreen(
         }
         // The names that start with what is typed in the active box, narrowing
         // with every letter; a tap fills the box. Dex order, eight at most.
-        val favHints = if (favActive in favSlots.indices) Favorites.suggest(favSlots[favActive]) else emptyList()
+        val favHints = if (favActive in favSlots.indices) Favorites.suggest(favSlots[favActive], maxId = favMax) else emptyList()
         if (favHints.isNotEmpty()) {
             Row(
                 Modifier.fillMaxWidth().padding(top = 6.dp).horizontalScroll(rememberScrollState()),
@@ -296,15 +301,15 @@ fun RunScreen(
                 favHints.forEach { name ->
                     com.ironmonone.app.gen3.Gen3Button(name.uppercase()) {
                         favSlots = favSlots.toMutableList().also { it[favActive] = name }
-                        Favorites.save(store, favSlots)
+                        Favorites.save(store, favRomId, favSlots)
                         favActive = -1
                     }
                 }
             }
         }
         Text(
-            if (favSlots.all { it.isBlank() || Favorites.idOf(it) != null }) "Shown on the tracker before your first Pokemon. A Gen 3 lab calls the ball if one is in it."
-            else "A name in red is not a Pokemon the tracker knows.",
+            if (favSlots.all { it.isBlank() || (Favorites.idOf(it)?.let { id -> id <= favMax } == true) }) (if (favCount > 3) "The DS tracker keeps $favCount and rotates them on its title screen." else "Shown on the tracker before your first Pokemon. A Gen 3 lab calls the ball if one is in it.")
+            else "A name in red is not a Pokemon this game has.",
             style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper,
         )
         Spacer(Modifier.height(12.dp))
@@ -378,11 +383,13 @@ fun RunScreen(
         // file); the Mode row above is the normal way to pick.
         val visibleSettings = remember(selectedRom, settingsList) {
             val rom = selectedRom?.first
-            if (rom == null) settingsList
+            // Blake, 2026-09-07: only the loaded game's files, never all of them.
+            if (rom == null) emptyList()
             else settingsList.filter { f ->
                 RnqsInfo.parse(f.name).gameTag == null || RulesetCatalog.isCompatible(rom, f)
             }
         }
+        if (selectedRom == null) Text("Pick a ROM above to see its settings files.", style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper)
         visibleSettings.forEach { f ->
             Row(
                 Modifier.fillMaxWidth().clickable { selectedSettings = f },

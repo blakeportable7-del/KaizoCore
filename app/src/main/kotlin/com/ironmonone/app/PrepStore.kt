@@ -338,17 +338,31 @@ class PrepStore(context: Context) {
     // --------------------------------------------------------------- favorites
 
     /** One name per line or comma-separated; matching is case-insensitive. */
-    private val favoritesFile = File(root, "favorites.txt")
+    /**
+     * Favorites are PER GAME (Blake, 2026-09-07: "favorites are varying per
+     * rom"), the way the DS tracker keeps savedData/<game>.faves. One file per
+     * RomKind id under prep/favorites/; the old single favorites.txt is the
+     * starting value for any game that has none yet, so nothing typed before
+     * this change is lost.
+     */
+    private val favoritesDir = File(root, "favorites").apply { mkdirs() }
+    private val legacyFavoritesFile = File(root, "favorites.txt")
+    private fun favoritesFile(romId: String?): File =
+        File(favoritesDir, (romId ?: "unknown").replace(Regex("[^A-Za-z0-9._-]"), "_") + ".txt")
 
-    fun loadFavorites(): Set<String> =
-        if (!favoritesFile.exists()) emptySet()
-        else favoritesFile.readText().split('\n', ',')
-            .map { it.trim().lowercase() }.filter { it.isNotEmpty() }.toSet()
+    fun favoritesText(romId: String? = currentRomId()): String {
+        val f = favoritesFile(romId)
+        return when {
+            f.exists() -> f.readText()
+            legacyFavoritesFile.exists() -> legacyFavoritesFile.readText()
+            else -> ""
+        }
+    }
 
-    fun saveFavorites(text: String) = favoritesFile.writeText(text)
+    fun saveFavorites(romId: String?, text: String) = runCatching { favoritesFile(romId).writeText(text) }.let { }
 
-    fun favoritesText(): String =
-        if (favoritesFile.exists()) favoritesFile.readText() else ""
+    fun loadFavorites(romId: String? = currentRomId()): Set<String> =
+        favoritesText(romId).split('\n', ',').map { it.trim().lowercase() }.filter { it.isNotEmpty() }.toSet()
 
     // ------------------------------------------------------- last run recipe
 
