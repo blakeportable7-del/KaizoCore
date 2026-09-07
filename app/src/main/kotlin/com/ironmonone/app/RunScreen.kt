@@ -262,7 +262,7 @@ fun RunScreen(
 
         // The PC tracker's startup favorites: three Pokemon it shows on the
         // new-game screen. Typed by name here; the tracker's no-party card
-        // repeats them on Gen 1, 2 and 3, as those PC trackers do; a Gen 3 lab shouts a match in the balls.
+        // repeats them before a party exists, as the PC trackers' startup and title screens do.
         Text("Startup favorites", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
         // As many boxes as the game's PC tracker keeps, and only that game's dex in the list.
         val favCount = Favorites.slotCount(selectedRom?.first)
@@ -308,7 +308,7 @@ fun RunScreen(
             }
         }
         Text(
-            if (favSlots.all { it.isBlank() || (Favorites.idOf(it)?.let { id -> id <= favMax } == true) }) (if (favCount > 3) "The DS tracker keeps $favCount and rotates them on its title screen." else "Shown on the tracker before your first Pokemon. A Gen 3 lab calls the ball if one is in it.")
+            if (favSlots.all { it.isBlank() || (Favorites.idOf(it)?.let { id -> id <= favMax } == true) }) (if (favCount > 3) "The DS tracker keeps $favCount and rotates them on its title screen." else "Shown on the tracker before your first Pokemon, as the PC tracker's startup screen shows them.")
             else "A name in red is not a Pokemon this game has.",
             style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper,
         )

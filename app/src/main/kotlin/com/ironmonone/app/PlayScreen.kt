@@ -303,10 +303,9 @@ fun PlayScreen(
         }
     }
 
-    var favoriteHit by remember { mutableStateOf<String?>(null) }
     // The ball call wins when there is one; otherwise the three favorites, the way the PC tracker's new-game screen lists them.
     // As many favorites as this game's PC tracker keeps (three on Gen 1 to 3, four or five on DS), in the order typed.
-    val favoriteLine = favoriteHit ?: remember(session.id) { Favorites.line(Favorites.slots(store, session.kind?.id, Favorites.slotCount(session.kind)).filter { it.isNotBlank() }) }
+    val favoriteLine = remember(session.id) { Favorites.line(Favorites.slots(store, session.kind?.id, Favorites.slotCount(session.kind)).filter { it.isNotBlank() }) }
     var facecam by remember { mutableStateOf(false) }
     var muted by remember(session.id) { mutableStateOf(prefs0.muted) }
     // CHEATS. Per game, never on a tracked game (CheatStore.allowed). Sent
@@ -704,17 +703,11 @@ fun PlayScreen(
                     }.getOrNull()
                 }
                 trackerRef = tracker
-                // Favorites vs the three starter balls, once per load. Only a MATCH
-                // is revealed - never the full ball contents. IronMON honesty.
-                tracker?.let { t ->
-                    val favs = store.loadFavorites(session.kind?.id)
-                    if (favs.isNotEmpty()) {
-                        favoriteHit = runCatching {
-                            t.starters().firstOrNull { it.name.lowercase() in favs }
-                                ?.let { "FAVORITE! ${it.name} IN ${it.ball}" }
-                        }.getOrNull()
-                    }
-                }
+                // No lab ball call here. None of the four PC trackers matches the
+                // favorites against the starter balls; they show the favorites on
+                // their startup or title screen and nothing more, and so does the
+                // no-party card. An earlier build invented a match and it was cut
+                // on 2026-09-07 ("no guess work, trackers ... are clones of pc").
             }
             tracker?.let { t ->
                 t.lossCondition = TrackerOptions.lossCondition
@@ -854,7 +847,6 @@ fun PlayScreen(
                 trackerState = null
                 ndsState = null
                 ndsTrackerRef = null
-                favoriteHit = null
                 battleStartState = null   // a state from another randomization must never be restored
                 statMarks.clear()
                 encounters.clear()

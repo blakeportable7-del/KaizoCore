@@ -281,6 +281,23 @@ Seen and not fixed: the black bars INSIDE the game box on the emulator are
 the core's own aspect handling and predate this; your phone shows the same
 thing as a band on the right. Separate item.
 
+### 2.7 Favorites, per game and as the PC trackers keep them - **DONE 2026-09-07**
+
+Blake, in order: names suggested as you type and narrowing; the count per
+game; the dex per game and per Nat. Dex or standard; favorites stored per
+ROM; the tracker's card showing that game's count; and "no guess work,
+trackers for each rom supported are clones of pc". Read in the references:
+the Gen 1, 2 and 3 trackers keep three (StreamerScreen.PokemonFavorite1..3)
+and show them on StartupScreen; the DS tracker's TitleScreen reads
+`for i = 1, GEN` from savedData/<game>.faves and rotates them, so four on a
+Gen 4 game and five on Gen 5. NONE of the four matches favorites against
+the lab's starter balls; the "FAVORITE! X IN BALL" line an earlier build
+added on FireRed's starter table was an invention and is removed. What
+ships: Favorites.slotCount / maxDex / suggest(maxId), one favorites file
+per RomKind under prep/favorites/ (the old single file seeds a game
+without one), the RUN tab's boxes and list following the picked game, and
+the no-party card on both panels showing that game's favorites.
+
 ### 2.6 Ruby, Sapphire, LeafGreen - **DONE 2026-09-07 (v1.0 dumps)**
 
 Blake sent v1.0 dumps of all three; "all of them" was the call. The
