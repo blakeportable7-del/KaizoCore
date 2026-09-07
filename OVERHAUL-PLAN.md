@@ -190,7 +190,19 @@ CC-BY-4.0). Their actual artwork is proprietary and is not copied. This is
 skin, not logic: the pad's hit-testing stays, only the drawing changes.
 Attribution goes in NOTICE. Effort **M**, mostly asset work.
 
-### 2.2 Floating, movable, resizable tracker - **M**
+### 2.2 Floating, movable, resizable tracker - **DONE 2026-09-06**
+
+The tracker gear's "Landscape tracker" choice: docked beside the game
+(as before), a floating window over the game, or hidden with the edge tab
+to bring it back. FloatingTracker.kt is one Box: the title strip drags it,
+the corner grip resizes it, a double tap on the strip puts it back where
+the dock would be, DOCK on the strip returns to the dock, and it never
+leaves the window. The frame is kept per game beside speed, mute and the
+dock fraction (GameSettings floatFrame). The docked column's children were
+lifted into one trackerContent so both layouts draw the same thing.
+GameSettingsTest and TrackerOptionsTest cover the persistence.
+
+Original note:
 
 Landscape options: docked right (today), floating window, or hidden with the
 game full-screen. The floating window is one draggable `Box` with a resize

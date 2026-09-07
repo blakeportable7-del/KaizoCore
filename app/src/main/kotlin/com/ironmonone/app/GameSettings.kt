@@ -29,6 +29,8 @@ class GameSettings(private val dir: File) {
         val dsTopOnly: Boolean = false,
         /** Landscape tracker pane, as a fraction of window width; null = the default. */
         val trackerFraction: Float? = null,
+        /** The floating tracker's frame in dp (x, y, w, h); null = the default placement. */
+        val floatFrame: List<Float>? = null,
     )
 
     private fun file(id: String) = File(dir, id.replace(Regex("[^A-Za-z0-9._-]"), "_") + ".properties")
@@ -49,6 +51,7 @@ class GameSettings(private val dir: File) {
             dsTopOnly = own?.bool("dsTopOnly") ?: false,
             trackerFraction = own?.getProperty("trackerFraction")?.trim()?.toFloatOrNull()
                 ?.takeIf { it in 0.1f..0.9f },
+            floatFrame = own?.getProperty("floatFrame")?.split(',')?.mapNotNull { it.trim().toFloatOrNull() }?.takeIf { it.size == 4 },
         )
     }
 
@@ -58,6 +61,7 @@ class GameSettings(private val dir: File) {
             setProperty("muted", if (v.muted) "1" else "0")
             setProperty("dsTopOnly", if (v.dsTopOnly) "1" else "0")
             v.trackerFraction?.let { setProperty("trackerFraction", it.toString()) }
+            v.floatFrame?.takeIf { it.size == 4 }?.let { setProperty("floatFrame", it.joinToString(",")) }
         }
         write(file(id), p)
         // The desk setup a new game inherits: speed and mute only.

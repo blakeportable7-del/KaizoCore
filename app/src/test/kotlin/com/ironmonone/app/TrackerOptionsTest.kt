@@ -14,6 +14,7 @@ class TrackerOptionsTest {
         dir.deleteRecursively()
         TrackerOptions.showBallPicker = true; TrackerOptions.showCategoryIcons = true
         TrackerOptions.healsWhole = false; TrackerOptions.lossCondition = LossCondition.LEAD
+        TrackerOptions.landscapeTracker = LandscapeTracker.DOCKED
     }
 
     @Test
@@ -24,10 +25,13 @@ class TrackerOptionsTest {
         TrackerOptions.showBallPicker = false; TrackerOptions.healsWhole = true
         TrackerOptions.lossCondition = LossCondition.ENTIRE_PARTY
         TrackerOptions.save()
-        assertEquals("showBallPicker=false\nshowCategoryIcons=true\nhealsWhole=true\nlossCondition=EntirePartyFaints\n", f.readText())
+        TrackerOptions.landscapeTracker = LandscapeTracker.FLOATING
+        TrackerOptions.save()
+        assertEquals("showBallPicker=false\nshowCategoryIcons=true\nhealsWhole=true\nlossCondition=EntirePartyFaints\nlandscapeTracker=FLOATING\n", f.readText())
         TrackerOptions.showBallPicker = true; TrackerOptions.healsWhole = false; TrackerOptions.lossCondition = LossCondition.LEAD
         TrackerOptions.load(f)
         assertFalse(TrackerOptions.showBallPicker); assertTrue(TrackerOptions.healsWhole)
         assertEquals(LossCondition.ENTIRE_PARTY, TrackerOptions.lossCondition)
+        assertEquals(LandscapeTracker.FLOATING, TrackerOptions.landscapeTracker)
     }
 }

@@ -14,7 +14,11 @@ import java.io.File
  * changes the Heals line, and "Game is considered over when" is handed to every
  * tracker's game-over read. Kept in prep/tracker-options.txt as key=value lines.
  */
+/** 2.2: how the tracker sits in landscape. */
+enum class LandscapeTracker(val label: String) { DOCKED("Docked beside the game"), FLOATING("Floating window over the game"), HIDDEN("Hidden, game full screen") }
+
 object TrackerOptions {
+    var landscapeTracker by mutableStateOf(LandscapeTracker.DOCKED)
     var showBallPicker by mutableStateOf(true)
     var showCategoryIcons by mutableStateOf(true)
     var healsWhole by mutableStateOf(false)
@@ -34,6 +38,7 @@ object TrackerOptions {
                     "showCategoryIcons" -> showCategoryIcons = v == "true"
                     "healsWhole" -> healsWhole = v == "true"
                     "lossCondition" -> lossCondition = LossCondition.byKey(v)
+                    "landscapeTracker" -> landscapeTracker = LandscapeTracker.entries.firstOrNull { it.name == v } ?: LandscapeTracker.DOCKED
                 }
             }
         }
@@ -47,5 +52,5 @@ object TrackerOptions {
         }
     }
 
-    fun text(): String = "showBallPicker=$showBallPicker\nshowCategoryIcons=$showCategoryIcons\nhealsWhole=$healsWhole\nlossCondition=${lossCondition.key}\n"
+    fun text(): String = "showBallPicker=$showBallPicker\nshowCategoryIcons=$showCategoryIcons\nhealsWhole=$healsWhole\nlossCondition=${lossCondition.key}\nlandscapeTracker=${landscapeTracker.name}\n"
 }

@@ -59,6 +59,15 @@ fun TrackerGearDialog(
             GearToggle("Show heals as whole number", TrackerOptions.healsWhole) { TrackerOptions.healsWhole = it; TrackerOptions.save() }
             Spacer(Modifier.height(8.dp))
 
+            PixText("Landscape tracker", 8, Pc.Text)
+            Spacer(Modifier.height(4.dp))
+            LandscapeTracker.entries.forEach { m ->
+                GearToggle(m.label, TrackerOptions.landscapeTracker == m, radio = true) {
+                    if (it) { TrackerOptions.landscapeTracker = m; TrackerOptions.save() }
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+
             PixText("Game is considered over when", 8, Pc.Text)
             Spacer(Modifier.height(4.dp))
             LossCondition.entries.forEach { c ->

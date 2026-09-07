@@ -21,9 +21,10 @@ class GameSettingsTest {
     @Test
     fun `each game keeps its own, and a new game inherits only speed and mute`() {
         val s = fresh()
-        s.save("run", GameSettings.Values(speed = 8, muted = true, dsTopOnly = true, trackerFraction = 0.4f))
+        s.save("run", GameSettings.Values(speed = 8, muted = true, dsTopOnly = true, trackerFraction = 0.4f, floatFrame = listOf(12f, 8f, 300f, 400f)))
         val run = s.load("run")
         assertEquals(8, run.speed); assertTrue(run.muted); assertTrue(run.dsTopOnly); assertEquals(0.4f, run.trackerFraction)
+        assertEquals(listOf(12f, 8f, 300f, 400f), run.floatFrame, "2.2: the floating tracker frame rides with the other play settings")
 
         val other = s.load("lib-deadbeef")
         assertEquals(8, other.speed, "desk setup inherited")

@@ -437,16 +437,20 @@ fun PlayScreen(
     // streaming layout, rather than a fixed 340dp that ate 40% of a phone in
     // landscape and letterboxed the game. Still draggable from there; keyed on
     // the window so a rotation re-derives a sensible default.
+    // 2.2: the floating window's frame, per game, defaulting to where the dock would be.
+    var floatFrame by remember(windowWidthDp, windowHeightDp, session.id) {
+        mutableStateOf(prefs0.floatFrame?.let { FloatFrame(it[0], it[1], it[2], it[3]).clamped(windowWidthDp, windowHeightDp) } ?: FloatFrame.default(windowWidthDp, windowHeightDp))
+    }
     var trackerWidth by remember(windowWidthDp, session.id) {
         mutableStateOf(windowWidthDp * (prefs0.trackerFraction ?: TRACKER_FRACTION))
     }
     // One writer for all four, so no toggle can forget to persist. Debounced
     // because the pane width changes on every drag event.
-    LaunchedEffect(speed, muted, dsTopOnly, trackerWidth, session.id) {
+    LaunchedEffect(speed, muted, dsTopOnly, trackerWidth, floatFrame, session.id) {
         kotlinx.coroutines.delay(300)
         val fraction = (trackerWidth / windowWidthDp).takeIf { windowWidthDp > 0 && it in 0.1f..0.9f }
         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-            store.saveGameSettings(session, GameSettings.Values(speed, muted, dsTopOnly, fraction))
+            store.saveGameSettings(session, GameSettings.Values(speed, muted, dsTopOnly, fraction, listOf(floatFrame.x, floatFrame.y, floatFrame.w, floatFrame.h)))
         }
     }
 
@@ -1349,6 +1353,108 @@ fun PlayScreen(
     // tracker is taller than the screen, so the bottom screen was always hidden
     // (Blake, 2026-09-06). DS landscape is now side by side, like GBA landscape.
 
+    // The tracker column's children: the attempt row and the panel. One
+    // definition, drawn docked beside the game or inside the floating window.
+    val trackerContent: @Composable () -> Unit = {
+                  // Streaming layout: camera sits at the TOP of the right
+                  // column, with the attempt counter and the tracker beneath
+                  // it. Docked here it needs no dragging and cannot cover the
+                  // game or its own controls, which the floating bubble could.
+                  if (facecam) {
+                      FacecamDocked(onDenied = {
+                          facecam = false
+                          status = "Camera permission denied."
+                      })
+                  }
+                  Row(
+                      Modifier.fillMaxWidth()
+                          .padding(horizontal = 4.dp, vertical = 1.dp),
+                      horizontalArrangement = Arrangement.SpaceBetween,
+                      verticalAlignment = Alignment.CenterVertically,
+                  ) {
+                      // The only attempt counter in the app, and no seed: the
+                      // seed is not something you act on mid-run.
+                      Text(
+                          "ATTEMPT ${store.attempt()}",
+                          fontFamily = com.ironmonone.app.gen3.Gen3.PixelFont,
+                          fontSize = 8.sp, color = Pc.Text,
+                      )
+                      Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                          if (dsScreens) {
+                              OverlayChip(if (dsTopOnly) "2 SCR" else "1 SCR") {
+                                  dsTopOnly = !dsTopOnly
+                              }
+                          }
+                          OverlayChip("▶") { trackerOpen = false }
+                      }
+                  }
+                  if (dsScreens) NdsTrackerPanel(
+                      ndsState, onFlee = { flee() }, onGear = { gearDialog = true },
+                      enemyMarks = enemyMarks, enemyEncounters = enemyEncounters,
+                      onCycleMark = { i ->
+                          ndsState?.enemy?.let { statMarks.cycle(it.mon.species, i) }
+                          marksVersion++
+                      },
+                      enemyNote = enemyNote,
+                      onEditNote = { noteDialog = true },
+                      attempt = store.attempt(),
+                      coverage = ndsCoverage,
+                        revealedEnemyAbility = ndsState?.enemy
+                            ?.let { statMarks.abilityFor(it.mon.species) },
+                        movesSeenRunWide = ndsState?.enemy?.let { statMarks.movesSeenFor(it.mon.species) } ?: emptyList(),
+                        moveInfoFor = { id -> ndsTrackerRef?.moveInfoFor(id) },
+                  )
+                  else TrackerPanel(
+                      trackerState, onFlee = { flee() }, ballCall = ballCall, onGear = { gearDialog = true },
+                onRerollBall = { ballReroll++ },
+                movesSeenRunWide = trackerState?.enemy
+                    ?.let { statMarks.movesSeenFor(it.species) } ?: emptyList(),
+                moveRowFor = { id -> trackerRef?.moveRowFor(id) ?: gbLookup?.invoke(id) },
+                revealedEnemyAbility = trackerState?.enemy
+                    ?.let { statMarks.abilityFor(it.species) },
+                routeName = trackerState?.routeName,
+                routeSeen = trackerState?.mapId?.let { statMarks.seenOnRoute(it).size } ?: 0,
+                routeTotal = trackerState?.routeSpecies?.size ?: 0,
+                routeTrainers = trackerState?.routeTrainers?.size ?: 0,
+                routeBosses = trackerState?.routeBosses ?: 0,
+                steps = trackerState?.steps ?: 0,
+                onMoveDescription = { id -> trackerRef?.moveDescription(id) },
+                onAbilityDescription = { name ->
+                    trackerRef?.let { t -> t.abilityIdOf(name)?.let(t::abilityDescription) }
+                },
+                onWeight = { sp -> trackerRef?.weight(sp) },
+                onEvolution = { sp -> trackerRef?.evolution(sp) },
+                onEffectiveness = { sp ->
+                    trackerRef?.effectivenessAgainst(sp) ?: emptyMap()
+                },
+                onMoveLevels = { sp ->
+                    trackerRef?.learnset(sp)?.map { it.first } ?: emptyList()
+                },
+                onSpeciesNote = { sp -> statMarks.noteFor(sp) },
+                onRouteAreas = {
+                    trackerState?.mapId?.let { trackerRef?.routeEncounterAreas(it) }
+                        ?: emptyMap()
+                },
+                onRouteSeenSet = {
+                    trackerState?.mapId?.let { statMarks.seenOnRoute(it) } ?: emptySet()
+                },
+                onSpeciesName = { sp -> trackerRef?.speciesName(sp) ?: "#$sp" },
+                      favoriteLine = favoriteLine, spriteFor = spriteFor,
+                      enemyMarks = enemyMarks, enemyEncounters = enemyEncounters,
+                      enemyLastSeenLevel = enemyLastSeen,
+                      onCycleMark = { i ->
+                          trackerState?.enemy?.let { statMarks.cycle(it.species, i) }
+                          marksVersion++
+                      },
+                      enemyNote = enemyNote,
+                      onEditNote = { noteDialog = true },
+                      attempt = store.attempt(),
+                      coverage = coverage,
+                      // Landscape: your lead and the enemy together.
+                      stackBoth = true,
+                  )
+                  }
+
     // The tracker pane, hoisted so it can be laid out two ways: as a
     // full-height column beside the game, or - for DS landscape - as a
     // TOP-anchored overlay, so the bottom screen can sit BELOW it.
@@ -1356,7 +1462,9 @@ fun PlayScreen(
         Row {
           if (!session.tracked) {
               // Nothing to track: the game takes the whole width.
-          } else if (trackerOpen) {
+          } else if (TrackerOptions.landscapeTracker == LandscapeTracker.FLOATING) {
+              // 2.2: the window floats over the game; nothing sits in this row.
+          } else if (trackerOpen && TrackerOptions.landscapeTracker == LandscapeTracker.DOCKED) {
               // Drag handle: pulling it right shrinks the tracker, and the game
               // column is weighted so it takes back every pixel given up.
               // 24dp of grab, not 10, with a visible ridge. At 10dp wide
@@ -1428,111 +1536,14 @@ fun PlayScreen(
                       .background(Pc.Page)
                       .verticalScroll(rememberScrollState())
               ) {
-                  // Streaming layout: camera sits at the TOP of the right
-                  // column, with the attempt counter and the tracker beneath
-                  // it. Docked here it needs no dragging and cannot cover the
-                  // game or its own controls, which the floating bubble could.
-                  if (facecam) {
-                      FacecamDocked(onDenied = {
-                          facecam = false
-                          status = "Camera permission denied."
-                      })
-                  }
-                  Row(
-                      Modifier.fillMaxWidth()
-                          .padding(horizontal = 4.dp, vertical = 1.dp),
-                      horizontalArrangement = Arrangement.SpaceBetween,
-                      verticalAlignment = Alignment.CenterVertically,
-                  ) {
-                      // The only attempt counter in the app, and no seed: the
-                      // seed is not something you act on mid-run.
-                      Text(
-                          "ATTEMPT ${store.attempt()}",
-                          fontFamily = com.ironmonone.app.gen3.Gen3.PixelFont,
-                          fontSize = 8.sp, color = Pc.Text,
-                      )
-                      Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                          if (dsScreens) {
-                              OverlayChip(if (dsTopOnly) "2 SCR" else "1 SCR") {
-                                  dsTopOnly = !dsTopOnly
-                              }
-                          }
-                          OverlayChip("SETUP") { gearDialog = true }
-                          OverlayChip("▶") { trackerOpen = false }
-                      }
-                  }
-                  if (dsScreens) NdsTrackerPanel(
-                      ndsState, onFlee = { flee() }, onGear = { gearDialog = true },
-                      enemyMarks = enemyMarks, enemyEncounters = enemyEncounters,
-                      onCycleMark = { i ->
-                          ndsState?.enemy?.let { statMarks.cycle(it.mon.species, i) }
-                          marksVersion++
-                      },
-                      enemyNote = enemyNote,
-                      onEditNote = { noteDialog = true },
-                      attempt = store.attempt(),
-                      coverage = ndsCoverage,
-                        revealedEnemyAbility = ndsState?.enemy
-                            ?.let { statMarks.abilityFor(it.mon.species) },
-                        movesSeenRunWide = ndsState?.enemy?.let { statMarks.movesSeenFor(it.mon.species) } ?: emptyList(),
-                        moveInfoFor = { id -> ndsTrackerRef?.moveInfoFor(id) },
-                  )
-                  else TrackerPanel(
-                      trackerState, onFlee = { flee() }, ballCall = ballCall, onGear = { gearDialog = true },
-                onRerollBall = { ballReroll++ },
-                movesSeenRunWide = trackerState?.enemy
-                    ?.let { statMarks.movesSeenFor(it.species) } ?: emptyList(),
-                moveRowFor = { id -> trackerRef?.moveRowFor(id) ?: gbLookup?.invoke(id) },
-                revealedEnemyAbility = trackerState?.enemy
-                    ?.let { statMarks.abilityFor(it.species) },
-                routeName = trackerState?.routeName,
-                routeSeen = trackerState?.mapId?.let { statMarks.seenOnRoute(it).size } ?: 0,
-                routeTotal = trackerState?.routeSpecies?.size ?: 0,
-                routeTrainers = trackerState?.routeTrainers?.size ?: 0,
-                routeBosses = trackerState?.routeBosses ?: 0,
-                steps = trackerState?.steps ?: 0,
-                onMoveDescription = { id -> trackerRef?.moveDescription(id) },
-                onAbilityDescription = { name ->
-                    trackerRef?.let { t -> t.abilityIdOf(name)?.let(t::abilityDescription) }
-                },
-                onWeight = { sp -> trackerRef?.weight(sp) },
-                onEvolution = { sp -> trackerRef?.evolution(sp) },
-                onEffectiveness = { sp ->
-                    trackerRef?.effectivenessAgainst(sp) ?: emptyMap()
-                },
-                onMoveLevels = { sp ->
-                    trackerRef?.learnset(sp)?.map { it.first } ?: emptyList()
-                },
-                onSpeciesNote = { sp -> statMarks.noteFor(sp) },
-                onRouteAreas = {
-                    trackerState?.mapId?.let { trackerRef?.routeEncounterAreas(it) }
-                        ?: emptyMap()
-                },
-                onRouteSeenSet = {
-                    trackerState?.mapId?.let { statMarks.seenOnRoute(it) } ?: emptySet()
-                },
-                onSpeciesName = { sp -> trackerRef?.speciesName(sp) ?: "#$sp" },
-                      favoriteLine = favoriteLine, spriteFor = spriteFor,
-                      enemyMarks = enemyMarks, enemyEncounters = enemyEncounters,
-                      enemyLastSeenLevel = enemyLastSeen,
-                      onCycleMark = { i ->
-                          trackerState?.enemy?.let { statMarks.cycle(it.species, i) }
-                          marksVersion++
-                      },
-                      enemyNote = enemyNote,
-                      onEditNote = { noteDialog = true },
-                      attempt = store.attempt(),
-                      coverage = coverage,
-                      // Landscape: your lead and the enemy together.
-                      stackBoth = true,
-                  )
+                  trackerContent()
               }
           } else {
               // Collapsed: a thin tab on the right edge, tap to bring it back.
               Box(
                   Modifier.width(26.dp).fillMaxHeight()
                       .background(Pc.Ground)
-                      .clickable { trackerOpen = true },
+                      .clickable { trackerOpen = true; TrackerOptions.landscapeTracker = LandscapeTracker.DOCKED; TrackerOptions.save() },
                   contentAlignment = Alignment.Center,
               ) {
                   Text("◀", fontFamily = com.ironmonone.app.gen3.Gen3.PixelFont,
@@ -2099,6 +2110,13 @@ fun PlayScreen(
       // tracker sit side by side, and collapses to an arrow tab so the game can
       // have the whole screen back.
       if (landscape && !streamClean) trackerPane()
+    }
+    if (landscape && !streamClean && session.tracked && TrackerOptions.landscapeTracker == LandscapeTracker.FLOATING) {
+        FloatingTracker(
+            frame = floatFrame, windowW = windowWidthDp, windowH = windowHeightDp,
+            onFrame = { floatFrame = it },
+            onDock = { TrackerOptions.landscapeTracker = LandscapeTracker.DOCKED; TrackerOptions.save(); trackerOpen = true },
+        ) { trackerContent() }
     }
     }
 
