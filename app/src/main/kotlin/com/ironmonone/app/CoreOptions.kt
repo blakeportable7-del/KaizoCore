@@ -118,7 +118,10 @@ object CoreOptions {
         Option("melonds_opengl_filtering", "OpenGL filtering", listOf("nearest", "linear"), "nearest", "Video"),
         Option("melonds_threaded_renderer", "Threaded software renderer", listOf("enabled", "disabled"), "enabled", "Performance", restart = true),
         Option("melonds_hybrid_ratio", "Hybrid big screen ratio", listOf("2", "3"), "2", "Video"),
-        Option("melonds_hybrid_small_screen", "Hybrid small screens", listOf("bottom", "top", "duplicate"), "bottom", "Video"),
+        // melonDS DS parses exactly two values here (config/parse.hpp, ParseHybridSideScreenDisplay): "one" shows only the
+        // other screen small, "both" shows both screens small. Anything else makes the core fall back to both, which is
+        // how the top screen came to be drawn twice beside the tracker (2026-09-06).
+        Option("melonds_hybrid_small_screen", "Hybrid small screen", listOf("one", "both"), "one", "Video"),
         Option("melonds_audio_interpolation", "Audio interpolation", listOf("disabled", "linear", "cosine", "cubic", "gaussian"), "disabled", "Audio"),
         Option("melonds_audio_bitdepth", "Audio bit depth", listOf("auto", "10bit", "16bit"), "auto", "Audio"),
         Option("melonds_mic_input", "Microphone input", listOf("silence", "blow", "noise"), "silence", "Hardware",
@@ -203,6 +206,8 @@ class CoreOptionStore(private val dir: File) {
     /** Every option with its effective value: stored, else the default. */
     fun effective(p: Platform): Map<String, String> {
         val stored = load(p)
-        return CoreOptions.forPlatform(p).associate { it.key to (stored[it.key] ?: it.default) }
+        // A stored value the option no longer lists is stale (a renamed value in a
+        // newer build); the core would reject it and fall back to its own default.
+        return CoreOptions.forPlatform(p).associate { o -> o.key to (stored[o.key]?.takeIf { it in o.values } ?: o.default) }
     }
 }

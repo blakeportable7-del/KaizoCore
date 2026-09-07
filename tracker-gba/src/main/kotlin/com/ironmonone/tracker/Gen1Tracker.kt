@@ -90,7 +90,7 @@ class Gen1Tracker(
             hp = romU8(b + 1), atk = romU8(b + 2), def = romU8(b + 3), spe = romU8(b + 4),
             spAtk = spc, spDef = spc,                                   // one Special stat in Gen 1
             type1 = GbcTracker.gen3Type(romU8(b + 6)), type2 = GbcTracker.gen3Type(romU8(b + 7)),
-            ability1 = 0, ability2 = 0,
+            ability1 = 0, ability2 = 0, singleSpecial = true,
         )
     }
 
@@ -144,6 +144,11 @@ class Gen1Tracker(
             atk = be16(b, 36), def = be16(b, 38), spe = be16(b, 40), spAtk = spc, spDef = spc,
         )
     }
+
+    /** The panel's card for any mon, through this ROM's tables. Public for the screenshot demo. */
+    fun trackedOf(mon: PokemonDecoder.Mon): TrackedMon = tracked(mon)
+    fun speciesName(dex: Int): String = speciesNames[dex] ?: "#$dex"
+    fun moveRowOf(id: Int, pp: Int, ppMax: Int?): MoveRow = moveRow(id, pp, ppMax)
 
     private fun tracked(mon: PokemonDecoder.Mon): TrackedMon {
         val base = baseStats(mon.species)

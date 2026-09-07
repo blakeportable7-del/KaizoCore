@@ -546,6 +546,17 @@ the IronMON path is not to regress while the general one is built.
 
 ## 4.29 The Gen 1 tracker (2026-09-06)
 
+**One Special stat (2026-09-06, Blake).** The card showed SPA and SPD for a
+game that has one Special, and a six-stat BST that counted it twice.
+BaseStats now carries `singleSpecial`; the panel prints one SPA row (the
+label the Gen 1 reference tracker draws, `statKey:upper()` over its
+hp/atk/def/spa/spe list) and the BST is the five-stat sum. Note the
+reference's own data file lists Nidoking at 495, the modern six-stat
+figure, which is a table copied from a later generation; the ROM's five
+base stats are what the game uses, so the app sums those. Move category
+icons stay: Gen 1 already splits physical and special, by type, and the
+reference draws the same icons.
+
 `Gen1Tracker` in tracker-gba: Red, Blue and Yellow through Gambatte's WRAM,
 producing the same TrackerState the Gen 3 panel draws, so no panel work.
 Three sources and nothing else: the Gen 1 reference tracker's table (six

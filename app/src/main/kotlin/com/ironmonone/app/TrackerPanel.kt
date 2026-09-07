@@ -104,8 +104,13 @@ private fun PartyCard(
             PcStatRow("HP", "${m.maxHp}", p.statStages["HP"])
             PcStatRow("ATK", "${m.atk}", p.statStages["ATK"])
             PcStatRow("DEF", "${m.def}", p.statStages["DEF"])
-            PcStatRow("SPA", "${m.spAtk}", p.statStages["SPA"])
-            PcStatRow("SPD", "${m.spDef}", p.statStages["SPD"])
+            if (p.base?.singleSpecial == true) {
+                // Gen 1: one Special stat. The Gen 1 reference tracker lists it as SPA, once.
+                PcStatRow("SPA", "${m.spAtk}", p.statStages["SPA"])
+            } else {
+                PcStatRow("SPA", "${m.spAtk}", p.statStages["SPA"])
+                PcStatRow("SPD", "${m.spDef}", p.statStages["SPD"])
+            }
             PcStatRow("SPE", "${m.spe}", p.statStages["SPE"])
             PcStatRow("BST", p.base?.bst?.toString() ?: "?")
         }

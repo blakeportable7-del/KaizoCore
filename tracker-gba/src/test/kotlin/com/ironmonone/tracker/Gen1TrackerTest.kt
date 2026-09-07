@@ -87,6 +87,8 @@ class Gen1TrackerTest {
         assertEquals(4, lead.mon.species)
         assertEquals(12, lead.mon.level); assertEquals(30 to 40, lead.mon.curHp to lead.mon.maxHp)
         assertEquals(10, lead.base?.type1, "Fire is Gen 1 type 20, panel type 10")
+        // One Special stat: shown once, counted once. 39+52+43+65+50, not with 50 twice.
+        assertEquals(true, lead.base?.singleSpecial); assertEquals(39 + 52 + 43 + 65 + 50, lead.base?.bst)
         assertEquals(listOf("ember", "scratch"), lead.moveNames.map { it.lowercase() })
         val ember = lead.moveRows[0]
         assertEquals(40, ember.power); assertEquals(100, ember.acc); assertEquals(25, ember.ppMax)

@@ -571,7 +571,10 @@ data class GameMap(
 data class BaseStats(
     val hp: Int, val atk: Int, val def: Int, val spe: Int, val spAtk: Int, val spDef: Int,
     val type1: Int, val type2: Int, val ability1: Int, val ability2: Int,
-) { val bst: Int get() = hp + atk + def + spe + spAtk + spDef }
+    /** Gen 1: one Special stat, carried in both spAtk and spDef so damage code reads it either way.
+     *  The panel shows it once and the BST counts it once, as the Gen 1 reference tracker does. */
+    val singleSpecial: Boolean = false,
+) { val bst: Int get() = hp + atk + def + spe + spAtk + (if (singleSpecial) 0 else spDef) }
 
 /** One move row for the panel: PP is live (decrypted from the party struct);
  *  power/accuracy/max PP come from the ROM's move table, null when unknown. */

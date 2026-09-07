@@ -176,6 +176,10 @@ class GbcTracker(
         )
     }
 
+    /** The panel's card for any mon, through this ROM's tables. Public for the screenshot demo. */
+    fun trackedOf(m: PokemonDecoder.Mon): TrackedMon = tracked(m)
+    fun moveRowOf(id: Int, pp: Int, ppMax: Int?): MoveRow = moveRow(id, pp, ppMax)
+
     private fun tracked(m: PokemonDecoder.Mon): TrackedMon {
         val base = baseStats(m.species)
         val rows = m.moves.indices.filter { m.moves[it] != 0 }.map { i ->

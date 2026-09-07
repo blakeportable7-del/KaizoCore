@@ -640,11 +640,9 @@ fun PlayScreen(
             // GBA-only lookups it powers (descriptions, learnsets) are off.
             val romBytes = runCatching { rom.readBytes() }.getOrNull() ?: return@LaunchedEffect
             // Gen 2 (Crystal, Gold, Silver) or Gen 1 (Red, Blue, Yellow), picked from the header.
-            val read: () -> com.ironmonone.tracker.TrackerState = if (com.ironmonone.tracker.Gen2Map.forRom(romBytes) != null) {
-                val gbc = com.ironmonone.tracker.GbcTracker(reader, romBytes); { gbc.read() }
-            } else {
-                val gb = com.ironmonone.tracker.Gen1Tracker(reader, romBytes); { gb.read() }
-            }
+            val gbc = if (com.ironmonone.tracker.Gen2Map.forRom(romBytes) != null) com.ironmonone.tracker.GbcTracker(reader, romBytes) else null
+            val gb1 = if (gbc == null) com.ironmonone.tracker.Gen1Tracker(reader, romBytes) else null
+            val read: () -> com.ironmonone.tracker.TrackerState = { gbc?.read() ?: gb1!!.read() }
             while (true) {
                 val visible = lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)
                 if (!visible) { kotlinx.coroutines.delay(1000); continue }
@@ -652,6 +650,9 @@ fun PlayScreen(
                 trackerState = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
                     runCatching { read() }.getOrNull()
                 } ?: trackerState
+                Demo.mode?.takeIf { it.startsWith("gb-") }?.let { m ->
+                    trackerState = runCatching { if (gbc != null) Demo.gb2(gbc, m) else Demo.gb1(gb1!!, m) }.getOrNull() ?: trackerState
+                }
             }
         }
         var tracker: com.ironmonone.tracker.GbaTracker? = null
@@ -710,7 +711,6 @@ fun PlayScreen(
     // off by ~180px because the numbers it used (window width, tracker width,
     // letterboxing) do not add up to the real on-screen position.
     val dsDensity = androidx.compose.ui.platform.LocalDensity.current.density
-    var trackerLeftPx by remember { mutableStateOf(0f) }
     var dsFrameWidthPx by remember { mutableStateOf(0f) }
 
 
@@ -1327,7 +1327,10 @@ fun PlayScreen(
         }
     }
 
-    val dsStream = dsScreens && landscape
+    // DS landscape used to overlay the tracker on the right third of a full-width
+    // frame, with the bottom screen meant to show below it. With a real team the
+    // tracker is taller than the screen, so the bottom screen was always hidden
+    // (Blake, 2026-09-06). DS landscape is now side by side, like GBA landscape.
 
     // The tracker pane, hoisted so it can be laid out two ways: as a
     // full-height column beside the game, or - for DS landscape - as a
@@ -1345,8 +1348,7 @@ fun PlayScreen(
               // and the ridge is what says "pull me".
               Box(
                   Modifier.width(24.dp)
-                      .then(if (dsStream) Modifier.height(180.dp)
-                            else Modifier.fillMaxHeight())
+                      .fillMaxHeight()
                       .semantics {
                           contentDescription =
                               "Resize tracker. Drag left or right. " +
@@ -1405,15 +1407,7 @@ fun PlayScreen(
                       // and the core's bottom screen shows BELOW it. Filling
                       // the height painted over exactly the area meant to
                       // display it.
-                      .then(
-                          // The column wraps only when it has to leave room
-                          // for something below it - the DS bottom screen.
-                          // With no camera and no DS panel there is nothing
-                          // to make room for, so it fills the space instead
-                          // of leaving a black gap under the tracker.
-                          if (dsStream) Modifier.wrapContentHeight()
-                          else Modifier.fillMaxHeight()
-                      )
+                      .fillMaxHeight()
                       .background(Pc.Page)
                       .verticalScroll(rememberScrollState())
               ) {
@@ -1615,20 +1609,6 @@ fun PlayScreen(
                 // The offset then slides the frame so the 2/3 mark lands on
                 // the tracker's left edge, putting the bottom screen and the
                 // tracker in one straight column.
-                dsStream -> {
-                    // PROPORTIONAL, not chased.
-                    //
-                    // Earlier versions tried to align the core's internal
-                    // bottom-screen position against the tracker by solving
-                    // for its framebuffer geometry. That fought the emulator
-                    // and kept landing wrong. The layout is just fractions of
-                    // the window: the frame spans the width, the core's hybrid
-                    // output puts the top screen left and the bottom screen
-                    // right, and the tracker column sits over the right
-                    // fraction with the bottom screen below it.
-                    Modifier.fillMaxWidth().fillMaxHeight()
-                        .background(com.ironmonone.app.gen3.Gen3.FrameDark)
-                }
                 fullscreen -> Modifier.fillMaxWidth().weight(1f).background(Color.Black)
                 dsScreens -> Modifier.fillMaxWidth().weight(1f)
                     .background(com.ironmonone.app.gen3.Gen3.FrameDark).padding(3.dp)
@@ -1919,12 +1899,15 @@ fun PlayScreen(
                                 val geo = when (dsLayoutName) {
                                     "top-bottom" -> floatArrayOf(256f / 384f, 0f, 0.5f, 1f, 1f)
                                     "bottom-top" -> floatArrayOf(256f / 384f, 0f, 0f, 1f, 0.5f)
-                                    "left-right", "hybrid-top", "hybrid-bottom" -> floatArrayOf(512f / 192f, 0.5f, 0f, 1f, 1f)
+                                    "left-right" -> floatArrayOf(512f / 192f, 0.5f, 0f, 1f, 1f)
+                                    // hybrid: the big screen is 512x384 at the left, the small one 256x192 at the right-bottom (768x384 in all)
+                                    "hybrid-top" -> floatArrayOf(768f / 384f, 2f / 3f, 0.5f, 1f, 1f)
+                                    "hybrid-bottom" -> floatArrayOf(768f / 384f, 0f, 0f, 2f / 3f, 1f)
                                     "right-left" -> floatArrayOf(512f / 192f, 0f, 0f, 0.5f, 1f)
                                     "bottom" -> floatArrayOf(256f / 192f, 0f, 0f, 1f, 1f)
                                     "top" -> floatArrayOf(256f / 192f, 2f, 2f, 3f, 3f)
                                     "rotate-left", "rotate-right" -> floatArrayOf(384f / 256f, 2f, 2f, 3f, 3f)
-                                    else -> if (landscape) floatArrayOf(512f / 192f, 0.5f, 0f, 1f, 1f) else floatArrayOf(256f / 384f, 0f, 0.5f, 1f, 1f)
+                                    else -> if (landscape) floatArrayOf(768f / 384f, 2f / 3f, 0.5f, 1f, 1f) else floatArrayOf(256f / 384f, 0f, 0.5f, 1f, 1f)
                                 }
                                 val aspect = geo[0]
                                 val contentW: Float
@@ -2091,17 +2074,7 @@ fun PlayScreen(
       // Landscape: the tracker sits BESIDE the game, the way BizHawk and the PC
       // tracker sit side by side, and collapses to an arrow tab so the game can
       // have the whole screen back.
-      if (landscape && !dsStream && !streamClean) trackerPane()
-    }
-    if (dsStream && !streamClean) {
-        Box(
-            Modifier.align(Alignment.TopEnd).wrapContentHeight()
-                .onGloballyPositioned {
-                    trackerLeftPx = it.positionInParent().x
-                }
-        ) {
-            trackerPane()
-        }
+      if (landscape && !streamClean) trackerPane()
     }
     }
 
