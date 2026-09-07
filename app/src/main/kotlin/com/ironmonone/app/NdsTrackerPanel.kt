@@ -108,7 +108,7 @@ private fun NdsPartyCard(
             abilityLine = p.abilityName,
             sprite = sprite,
             belowHead = if (healPercent >= 0) {
-                { PcHealsBlock(healPercent, healCount) }
+                { PcHealsBlock(healPercent, healCount, wholeHp = healPercent * m.maxHp / 100) }
             } else null,
         ) {
             PcStatRow("HP", "${m.maxHp}", p.statStages["HP"])
@@ -309,12 +309,16 @@ fun NdsTrackerPanel(
     revealedEnemyAbility: String? = null,
     movesSeenRunWide: List<StatMarks.SeenMove> = emptyList(),
     moveInfoFor: (Int) -> NdsMoveInfo? = { null },
+    /** Opens the tracker's gear (the reference's SettingsGear). */
+    onGear: (() -> Unit)? = null,
 ) {
     // Same reference canvas as the GBA panel. Without it this panel would keep
     // the shared boxes' new REFERENCE-pixel sizes at 1dp each, i.e. the right
     // proportions at the wrong scale - the two trackers must not drift apart.
     PcCanvas(modifier.fillMaxWidth()) {
       Column(Modifier.fillMaxWidth().background(Pc.Page).padding(PcRef.MARGIN.rp)) {
+          // The reference's gear sits at the top of the tracker screen; SETUP is its NavigationMenu.ButtonSetup.
+          onGear?.let { g -> Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) { PcSmallButton("SETUP") { g() } }; Spacer(Modifier.height(3.dp)) }
         when {
             state == null -> PcCard {
                 PixText("DS tracker: waiting for the game...", 8, Pc.Dim,

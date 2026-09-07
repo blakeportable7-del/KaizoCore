@@ -96,6 +96,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Demo.mode = intent?.getStringExtra("demo")
+        TrackerOptions.load(java.io.File(filesDir, "prep/tracker-options.txt"))
         (getSystemService(INPUT_SERVICE) as InputManager)
             .registerInputDeviceListener(deviceListener, null)
         Controllers.refresh()

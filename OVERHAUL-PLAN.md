@@ -222,7 +222,17 @@ Seen and not fixed: the black bars INSIDE the game box on the emulator are
 the core's own aspect handling and predate this; your phone shows the same
 thing as a band on the right. Separate item.
 
-### 2.3 Game-over popup - **S-M**
+### 2.3 Game-over popup - **DONE 2026-09-06**
+
+GameOverDialog.kt: the reference's GameOverScreen as a dialog over the
+game. Top box: the team icon (tap cycles the team and rolls a new announcer
+quote), GAME OVER, Attempt, the quote or CONGRATULATIONS!!. Bottom box:
+the final team, then CONTINUE PLAYING (the run stays as it is) and NEW RUN
+(the existing confirmation). Shown once per outcome, on every generation
+through RunView.outcome. BizHawk-only retry, save and notes-grading
+buttons not ported. Seen on Emerald and Black 2 through the staged modes.
+
+Original note:
 
 `readGameOver()` already returns WON / LOST (`GbaTracker.kt:1351`). Nothing
 listens to it. Add a centred dialog: attempt number, the final team as six
@@ -283,7 +293,20 @@ super-effective / neutral / resisted / immune breakdown against the current
 opponent. Both come from `TypeChart` which already exists (`CoverageTest.kt`
 proves it). Effort **S**.
 
-### 3.2 The gear menu - **M**
+### 3.2 The gear menu - **DONE 2026-09-06**
+
+SETUP at the top of both tracker panels (the reference's SettingsGear;
+SETUP is its NavigationMenu.ButtonSetup) opens TrackerGearDialog: the
+Setup and Gameplay options this panel honours, each wired where it takes
+effect (Show random ball picker, Show physical special icons, Show heals
+as whole number, and Game is considered over when: lead faints, highest
+level faints, entire party faints, which every tracker reads through
+LossCondition); the Notebook, every species marked or noted this run; and
+Manage Data's clear, with a confirmation. Kept in prep/tracker-options.txt.
+Theme, language, update, extension, streaming and quickload screens are
+not ported. Tests: LossConditionTest, TrackerOptionsTest.
+
+Original note:
 
 `NavigationMenu.lua` is the gear. Port the subset that has meaning on a
 phone: options, favourites, stat-marking mode, tracked data reset. Skip the

@@ -26,6 +26,9 @@ class GbcTracker(
     /** Which Gen 2 game's addresses to use; null when the header names none of them. */
     private val map: Gen2Map? = Gen2Map.forRom(rom),
 ) {
+    /** GameOverScreen.LossConditions: which faint ends the run. The app sets it from its options. */
+    @Volatile var lossCondition: LossCondition = LossCondition.LEAD
+
     companion object {
         const val RAM = 0x02000000L
 
@@ -283,7 +286,7 @@ class GbcTracker(
             badgeSet = "GSC",
             healPercent = heals.first,
             healCount = heals.second,
-            gameOver = lead?.let { if (it.mon.curHp == 0 && it.mon.level > 0) GameOver.LOST else null },
+            gameOver = if (lossCondition.lost(party.map { it.mon.level to it.mon.curHp })) GameOver.LOST else null,
             diagnostics = "${m.name}  party=%d mode=%d".format(party.size, mode),
             // A count of 0 is a game with no party yet (the title screen, the
             // intro): the panel says so. A count of 1..6 with no decodable mon,

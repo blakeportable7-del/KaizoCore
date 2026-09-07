@@ -330,6 +330,7 @@ class StatMarks(private val file: File) {
     fun hasAny(species: Int): Boolean = marks[species]?.any { it != 0 } == true
 
     fun markedSpecies(): Set<Int> = marks.filterValues { v -> v.any { it != 0 } }.keys
+    fun notedSpecies(): Set<Int> = notes.filterValues { it.isNotBlank() }.keys
 
     /** New Run: last attempt's notes describe a different randomization. */
     fun clear() {

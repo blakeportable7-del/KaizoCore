@@ -614,7 +614,7 @@ fun PcMovesSection(
  * written fresh - half the point of the screen is that IronMON players know
  * these lines.
  */
-private val GAME_OVER_QUOTES = listOf(
+internal val PcGameOverQuotes = listOf(
     "What's the matter trainer?",
     "What will the trainer do now?",
     "Oh! Another failure!",
@@ -659,9 +659,9 @@ fun PcGameOver(won: Boolean, attempt: Int, party: List<TrackedMon>) {
             Spacer(Modifier.height(5.dp))
             PixText(
                 if (won) "CONGRATULATIONS!!"
-                else GAME_OVER_QUOTES[
-                    ((attempt % GAME_OVER_QUOTES.size) + GAME_OVER_QUOTES.size) %
-                        GAME_OVER_QUOTES.size],
+                else PcGameOverQuotes[
+                    ((attempt % PcGameOverQuotes.size) + PcGameOverQuotes.size) %
+                        PcGameOverQuotes.size],
                 9, if (won) Pc.Positive else Pc.Negative,
             )
         }
@@ -815,7 +815,8 @@ fun PcCategoryIcon(category: String?) {
     // the icon is drawn in Theme.COLORS["Lower box text"], i.e. plain WHITE,
     // NOT the move's type colour; and a STATUS move gets no icon at all -
     // TrackerScreen.lua:1521 only ever draws these two.
-    val glyph = when (category) {
+    // "Show physical special icons" off: the slot is held, the glyph is not drawn.
+    val glyph = if (!TrackerOptions.showCategoryIcons) null else when (category) {
         "PHY" -> PcCategoryGlyphs.PHYSICAL
         "SPE" -> PcCategoryGlyphs.SPECIAL
         else -> null
@@ -1325,13 +1326,14 @@ fun PcHealsRow(percent: Int, count: Int) {
  * column of the head block. Same numbers as [PcHealsRow].
  */
 @Composable
-fun PcHealsBlock(percent: Int, count: Int) {
+fun PcHealsBlock(percent: Int, count: Int, wholeHp: Int? = null) {
     // TrackerScreen.lua:1276 draws both lines in Default text. The colour
     // ramp here was invented, and it painted "0% HP (0)" bright red as though
     // something were wrong rather than simply reporting an empty bag.
     Column(Modifier.fillMaxWidth().padding(horizontal = 2.rp, vertical = 1.rp)) {
         PixText("Heals:", PcRef.FONT, Pc.Text)
-        PixText("$percent% HP ($count)", PcRef.FONT, Pc.Text)
+        // "Show heals as whole number": the HP the bag would restore, instead of the share of max HP.
+        PixText(if (TrackerOptions.healsWhole && wholeHp != null) "$wholeHp HP ($count)" else "$percent% HP ($count)", PcRef.FONT, Pc.Text)
     }
 }
 

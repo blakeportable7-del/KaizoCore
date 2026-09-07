@@ -129,6 +129,8 @@ class NdsTracker(
     /** Which DS game's offsets to read. See NdsGameMap; detect() picks it by header. */
     val map: NdsGameMap = NdsGameMap.PLATINUM,
 ) {
+    /** GameOverScreen.LossConditions: which faint ends the run. The app sets it from its options. */
+    @Volatile var lossCondition: com.ironmonone.tracker.LossCondition = com.ironmonone.tracker.LossCondition.LEAD
     private val ramStart = 0x02000000L
     private val ramEnd = 0x02400000L
     private val chunk = 0x20000
@@ -560,7 +562,7 @@ class NdsTracker(
             badges = readBadges(),
             healPercent = heals.first,
             healCount = heals.second,
-            runOver = readRunOver(lead, battle?.first),
+            runOver = if (lossCondition.lost(party.map { it.mon.level to it.mon.curHp })) readRunOver(lead, battle?.first) else null,
         )
     }
 

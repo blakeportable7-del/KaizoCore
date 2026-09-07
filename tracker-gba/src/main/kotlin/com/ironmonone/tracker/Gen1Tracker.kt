@@ -35,6 +35,9 @@ class Gen1Tracker(
     private val rom: ByteArray,
     private val map: Gen1Map? = Gen1Map.forRom(rom),
 ) {
+    /** GameOverScreen.LossConditions: which faint ends the run. The app sets it from its options. */
+    @Volatile var lossCondition: LossCondition = LossCondition.LEAD
+
     companion object {
         const val RAM = GbcTracker.RAM
         const val PARTY_STRIDE = 44
@@ -235,7 +238,7 @@ class Gen1Tracker(
             inBattle = inBattle && enemy != null, isWildBattle = inBattle && mode == 1, enemy = enemy,
             badges = badges, badgeSet = "RBY",
             healPercent = heals.first, healCount = heals.second,
-            gameOver = lead?.let { if (it.mon.curHp == 0 && it.mon.level > 0) GameOver.LOST else null },
+            gameOver = if (lossCondition.lost(party.map { it.mon.level to it.mon.curHp })) GameOver.LOST else null,
             diagnostics = "${m.name}  party=%d mode=%d".format(party.size, mode),
             unreadable = party.isEmpty() && lastCount != 0,
         )

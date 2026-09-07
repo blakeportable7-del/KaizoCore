@@ -243,6 +243,8 @@ fun PlayScreen(
     var trackerRef by remember { mutableStateOf<com.ironmonone.tracker.GbaTracker?>(null) }
     // The Game Boy trackers' move table, for the enemy card's run-wide moves (trackerRef is Gen 3 only).
     var gbLookup by remember(session.id) { mutableStateOf<((Int) -> com.ironmonone.tracker.MoveRow?)?>(null) }
+    var gbNames by remember(session.id) { mutableStateOf<((Int) -> String)?>(null) }
+    var gearDialog by remember { mutableStateOf(false) }
     // The run, through one interface, whichever tracker is producing it.
     // Only one of the two states is ever non-null on a given platform.
     val view: com.ironmonone.tracker.RunView? = ndsState ?: trackerState
@@ -627,6 +629,7 @@ fun PlayScreen(
                 ndsTrackerRef = tracker
             }
             tracker?.let { t ->
+                t.lossCondition = TrackerOptions.lossCondition
                 ndsState = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
                     runCatching { t.read() }.getOrNull()
                 } ?: ndsState
@@ -651,10 +654,12 @@ fun PlayScreen(
             val gb1 = if (gbc == null) com.ironmonone.tracker.Gen1Tracker(reader, romBytes) else null
             val read: () -> com.ironmonone.tracker.TrackerState = { gbc?.read() ?: gb1!!.read() }
             gbLookup = { id -> gbc?.moveRowFor(id) ?: gb1?.moveRowFor(id) }
+            gbNames = { id -> gbc?.speciesName(id) ?: gb1?.speciesName(id) ?: "#$id" }
             while (true) {
                 val visible = lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)
                 if (!visible) { kotlinx.coroutines.delay(1000); continue }
                 kotlinx.coroutines.delay(if (trackerState?.inBattle == true) 250 else 700)
+                gbc?.lossCondition = TrackerOptions.lossCondition; gb1?.lossCondition = TrackerOptions.lossCondition
                 trackerState = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
                     runCatching { read() }.getOrNull()
                 } ?: trackerState
@@ -696,6 +701,7 @@ fun PlayScreen(
                 }
             }
             tracker?.let { t ->
+                t.lossCondition = TrackerOptions.lossCondition
                 val fresh = kotlinx.coroutines.withContext(
                     kotlinx.coroutines.Dispatchers.Default
                 ) { runCatching { t.read() }.getOrNull() }
@@ -1448,11 +1454,12 @@ fun PlayScreen(
                                   dsTopOnly = !dsTopOnly
                               }
                           }
+                          OverlayChip("SETUP") { gearDialog = true }
                           OverlayChip("▶") { trackerOpen = false }
                       }
                   }
                   if (dsScreens) NdsTrackerPanel(
-                      ndsState, onFlee = { flee() },
+                      ndsState, onFlee = { flee() }, onGear = { gearDialog = true },
                       enemyMarks = enemyMarks, enemyEncounters = enemyEncounters,
                       onCycleMark = { i ->
                           ndsState?.enemy?.let { statMarks.cycle(it.mon.species, i) }
@@ -1468,7 +1475,7 @@ fun PlayScreen(
                         moveInfoFor = { id -> ndsTrackerRef?.moveInfoFor(id) },
                   )
                   else TrackerPanel(
-                      trackerState, onFlee = { flee() }, ballCall = ballCall,
+                      trackerState, onFlee = { flee() }, ballCall = ballCall, onGear = { gearDialog = true },
                 onRerollBall = { ballReroll++ },
                 movesSeenRunWide = trackerState?.enemy
                     ?.let { statMarks.movesSeenFor(it.species) } ?: emptyList(),
@@ -1974,7 +1981,7 @@ fun PlayScreen(
                         .verticalScroll(rememberScrollState())
                 ) {
                     NdsTrackerPanel(
-                        ndsState, onFlee = { flee() },
+                        ndsState, onFlee = { flee() }, onGear = { gearDialog = true },
                         enemyMarks = enemyMarks, enemyEncounters = enemyEncounters,
                         onCycleMark = { i ->
                             ndsState?.enemy?.let { statMarks.cycle(it.mon.species, i) }
@@ -1999,7 +2006,7 @@ fun PlayScreen(
                 // is why `scrollable` had to go first.
                 Modifier.weight(1f).verticalScroll(rememberScrollState())
             ) { TrackerPanel(
-                trackerState, onFlee = { flee() }, ballCall = ballCall,
+                trackerState, onFlee = { flee() }, ballCall = ballCall, onGear = { gearDialog = true },
                 onRerollBall = { ballReroll++ },
                 movesSeenRunWide = trackerState?.enemy
                     ?.let { statMarks.movesSeenFor(it.species) } ?: emptyList(),
@@ -2170,6 +2177,37 @@ fun PlayScreen(
     // Confirming a new run. This wipes the seed, the randomization and every
     // stat note, so it asks - and it says what survives, because the whole
     // point of saving in-game first is that the save file is NOT wiped.
+    // 2.3: the reference's GameOverScreen, once per outcome. "Continue playing"
+    // leaves the run as it is (the tracker keeps its game-over card); NEW RUN
+    // goes through the usual confirmation. Shown again only after the outcome
+    // has cleared and returned, the way isDisplayed works in the reference.
+    val runOutcome = view?.outcome
+    var gameOverShownFor by remember(session.id) { mutableStateOf<com.ironmonone.tracker.RunOutcome?>(null) }
+    LaunchedEffect(runOutcome) { if (runOutcome == null) gameOverShownFor = null }
+    if (runOutcome != null && gameOverShownFor != runOutcome && !streamClean) {
+        val team: List<GameOverMon> = ndsState?.party?.map { GameOverMon(it.mon.species, it.speciesName, it.mon.level, it.mon.curHp == 0, it.mon.shiny) }
+            ?: trackerState?.party?.map { GameOverMon(it.mon.species, it.speciesName, it.mon.level, it.mon.curHp == 0, it.mon.shiny) }
+            ?: emptyList()
+        val ctx = androidx.compose.ui.platform.LocalContext.current
+        GameOverDialog(
+            won = runOutcome == com.ironmonone.tracker.RunOutcome.WON,
+            attempt = store.attempt(),
+            team = team,
+            spriteOf = { m -> if (ndsState != null) remember(m.species, m.shiny) { PcAssets.dsSprite(ctx, m.species, m.shiny) } else spriteFor(m.species) },
+            onContinue = { gameOverShownFor = runOutcome },
+            onNewRun = { gameOverShownFor = runOutcome; confirmNewRun = true },
+        )
+    }
+
+    if (gearDialog) {
+        TrackerGearDialog(
+            speciesName = { id -> trackerRef?.speciesName(id) ?: ndsTrackerRef?.speciesName(id) ?: gbNames?.invoke(id) ?: "#$id" },
+            marks = statMarks,
+            onCleared = { marksVersion++ },
+            onDismiss = { gearDialog = false },
+        )
+    }
+
     if (confirmNewRun) {
         androidx.compose.ui.window.Dialog(onDismissRequest = { confirmNewRun = false }) {
             Column(

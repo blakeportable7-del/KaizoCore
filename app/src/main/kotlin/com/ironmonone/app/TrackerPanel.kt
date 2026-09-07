@@ -98,7 +98,7 @@ private fun PartyCard(
             // the lead's max HP, so repeating it under every party member would
             // print the same percentage against six different Pokemon.
             belowHead = if (healPercent >= 0) {
-                { PcHealsBlock(healPercent, healCount) }
+                { PcHealsBlock(healPercent, healCount, wholeHp = healPercent * p.mon.maxHp / 100) }
             } else null,
         ) {
             PcStatRow("HP", "${m.maxHp}", p.statStages["HP"])
@@ -226,6 +226,8 @@ fun TrackerPanel(
     favoriteLine: String? = null,
     spriteFor: (Int) -> androidx.compose.ui.graphics.ImageBitmap? = { null },
     unsupportedNote: String? = null,
+    /** Opens the tracker's gear (the reference's SettingsGear). */
+    onGear: (() -> Unit)? = null,
     enemyMarks: IntArray = IntArray(StatMarks.COUNT),
     enemyEncounters: Int = 0,
     /** Level this species was at the previous time it was met, if ever. */
@@ -314,6 +316,8 @@ fun TrackerPanel(
     // happens to be. Reflowing is what wrapped "Golisopod-M" onto three lines.
     PcCanvas(modifier.fillMaxWidth()) {
       Column(Modifier.fillMaxWidth().background(Pc.Page).padding(PcRef.MARGIN.rp)) {
+          // The reference's gear sits at the top of the tracker screen; SETUP is its NavigationMenu.ButtonSetup.
+          onGear?.let { g -> Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) { PcSmallButton("SETUP") { g() } }; Spacer(Modifier.height(3.dp)) }
         when {
             unsupportedNote != null -> PcCard {
                 PixText(unsupportedNote, 8, Pc.Negative, Modifier.padding(6.dp))
@@ -351,7 +355,7 @@ fun TrackerPanel(
                     // Lab only, the way canShowBallPicker() gates it: in the
                     // lab, with no Pokemon. It used to show anywhere the party
                     // was empty.
-                    ballCall?.takeIf { state.inLab }?.let {
+                    ballCall?.takeIf { state.inLab && TrackerOptions.showBallPicker }?.let {
                         PcBallPicker(
                             when (it) { "LEFT" -> 0; "MIDDLE" -> 1; else -> 2 },
                             onReroll = onRerollBall)

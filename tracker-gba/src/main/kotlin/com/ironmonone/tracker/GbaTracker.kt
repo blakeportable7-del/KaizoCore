@@ -853,6 +853,9 @@ class GbaTracker(
     private val memory: MemoryReader,
     internal val map: GameMap = GameMap.EMERALD_U,
 ) {
+    /** GameOverScreen.LossConditions: which faint ends the run. The app sets it from its options. */
+    @Volatile var lossCondition: LossCondition = LossCondition.LEAD
+
     /**
      * Whether species ids follow the expansion's extended numbering, and so
      * whether the bundled sprite pack may be indexed with them. Exposed
@@ -1409,8 +1412,8 @@ class GbaTracker(
                 opp.u16(0) in map.finalTrainers
             ) return GameOver.WON
         }
-        // Level 0 means the slot has not been decoded yet, not a dead Pokemon.
-        if (lead.mon.curHp == 0 && lead.mon.level > 0) return GameOver.LOST
+        // Level 0 means the slot has not been decoded yet, not a dead Pokemon; LossCondition guards it.
+        if (lossCondition.lost(party.map { it.mon.level to it.mon.curHp })) return GameOver.LOST
         return null
     }
 
