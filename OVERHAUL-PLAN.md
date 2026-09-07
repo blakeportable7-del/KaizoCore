@@ -240,7 +240,22 @@ sprites with names and levels, and two buttons - NEW RUN (the existing path)
 and CONTINUE. Reference: `screens/GameOverScreen.lua`, which is exactly this
 and even carries the announcer quotes.
 
-### 2.4 The RULES button - **RESEARCH -> M**
+### 2.4 The RULES button - **DONE 2026-09-06**
+
+RULES in the FILE strip and in the tracker gear opens RulesDialog: the
+rules for the game family being played, the run's own mode preselected
+when it is a run, tabs for the other modes. The text is generated, not
+written: tools/rules/build_rules.py composes assets/rulesets/<family>/<mode>.md
+from three sources kept in tools/upr-settings/ (the IronMON rules gist,
+valiant-code, gist updated 2026-08-31; the game-specific rules gist,
+UTDZac, saved 2026-09-05; PyroMikeGit's Super Kaizo README, pushed
+2026-03-20). Each mode's file carries every ruleset it builds on in order,
+then the game's own updates for that mode, then the sources and dates.
+Nothing paraphrased: table rows become bullets. 41 files, one per preset's
+game and mode; RulesAssetsTest holds that and the em-dash rule. When a
+gist changes, refresh the copy and rerun the script.
+
+Original note:
 
 Every game and every mode has its own rules, and you want them readable
 mid-run: a RULES button that opens a box with the rules for the game and

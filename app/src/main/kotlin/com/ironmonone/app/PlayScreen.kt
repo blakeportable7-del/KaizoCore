@@ -245,6 +245,7 @@ fun PlayScreen(
     var gbLookup by remember(session.id) { mutableStateOf<((Int) -> com.ironmonone.tracker.MoveRow?)?>(null) }
     var gbNames by remember(session.id) { mutableStateOf<((Int) -> String)?>(null) }
     var gearDialog by remember { mutableStateOf(false) }
+    var rulesDialog by remember { mutableStateOf(false) }
     // The run, through one interface, whichever tracker is producing it.
     // Only one of the two states is ever non-null on a given platform.
     val view: com.ironmonone.tracker.RunView? = ndsState ?: trackerState
@@ -1215,6 +1216,8 @@ fun PlayScreen(
             com.ironmonone.app.gen3.Gen3Button("SAVE", onClick = { saveState() })
             com.ironmonone.app.gen3.Gen3Button("LOAD", onClick = { loadState() })
             com.ironmonone.app.gen3.Gen3Button("RESET", onClick = { retro?.reset() })
+            // 2.4: the rules for this game and mode, readable mid-run.
+            if (session.tracked) com.ironmonone.app.gen3.Gen3Button("RULES", onClick = { rulesDialog = true })
             if (rewindAllowed) HoldChip("REWIND", onDown = { startRewind() }, onUp = { stopRewind() }, big = true)
             // DS: collapse the touch screen so the top screen fills the frame.
             if (dsScreens) {
@@ -2199,11 +2202,18 @@ fun PlayScreen(
         )
     }
 
+    if (rulesDialog) {
+        val fam = session.kind?.family ?: ""
+        val runMode = if (session.isRun) store.loadLastRun()?.second?.let { RnqsInfo.parse(it).ruleset } else null
+        RulesDialog(family = fam, mode = runMode, onDismiss = { rulesDialog = false })
+    }
+
     if (gearDialog) {
         TrackerGearDialog(
             speciesName = { id -> trackerRef?.speciesName(id) ?: ndsTrackerRef?.speciesName(id) ?: gbNames?.invoke(id) ?: "#$id" },
             marks = statMarks,
             onCleared = { marksVersion++ },
+            onRules = { gearDialog = false; rulesDialog = true },
             onDismiss = { gearDialog = false },
         )
     }

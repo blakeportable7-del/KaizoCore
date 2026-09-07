@@ -38,6 +38,7 @@ fun TrackerGearDialog(
     speciesName: (Int) -> String,
     marks: StatMarks,
     onCleared: () -> Unit,
+    onRules: () -> Unit = {},
     onDismiss: () -> Unit,
 ) {
     var confirmClear by remember { mutableStateOf(false) }
@@ -47,6 +48,8 @@ fun TrackerGearDialog(
                 .verticalScroll(rememberScrollState()).padding(10.dp),
         ) {
             PixText("TRACKER SETUP", 10, Pc.Gold)
+            Spacer(Modifier.height(8.dp))
+            com.ironmonone.app.gen3.Gen3Button("RULES FOR THIS RUN") { onRules() }
             Spacer(Modifier.height(8.dp))
 
             PixText("Options", 8, Pc.Text)
