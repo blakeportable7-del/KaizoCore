@@ -70,6 +70,8 @@ import com.ironmonone.tracker.TrackerState
 
 @Composable
 private fun PartyCard(
+    onMoveHistory: ((Int, String, Int) -> Unit)? = null,
+    onTypeDefenses: ((String, Int, Int) -> Unit)? = null,
     p: TrackedMon,
     spriteFor: (Int) -> androidx.compose.ui.graphics.ImageBitmap?,
     healPercent: Int = -1,
@@ -89,6 +91,7 @@ private fun PartyCard(
                 p.base?.type2?.takeIf { it != p.base?.type1 }
                     ?.let { Gen3Types.name(it) to pcTypeColor(it) },
             ),
+            onTypesTap = p.base?.let { b -> onTypeDefenses?.let { cb -> { cb(p.speciesName, b.type1, b.type2) } } },
             itemLine = p.itemName.takeIf { it != "-" } ?: "",
             abilityLine = p.abilityName,
             onAbilityTap = onAbilityInfo?.let { cb -> { cb(p.abilityName) } },
@@ -128,12 +131,15 @@ private fun PartyCard(
                     (p.nextMoveLevel?.let { " ($it)" } ?: "")
             } else "Moves",
             onMoveTap = onMoveInfo,
+            onHeaderTap = onMoveHistory?.let { cb -> { cb(m.species, p.speciesName, m.level) } },
         )
     }
 }
 
 @Composable
 private fun EnemyCard(
+    onMoveHistory: ((Int, String, Int) -> Unit)? = null,
+    onTypeDefenses: ((String, Int, Int) -> Unit)? = null,
     e: EnemyInfo,
     revealedAbility: String?,
     spriteFor: (Int) -> androidx.compose.ui.graphics.ImageBitmap?,
@@ -156,6 +162,7 @@ private fun EnemyCard(
             encounterLine =
                 if (lastSeenLevel != null) "Last seen Lv.$lastSeenLevel"
                 else "New encounter",
+            onTypesTap = onTypeDefenses?.let { cb -> { cb(e.speciesName, e.type1, e.type2) } },
             typeChips = listOf(Gen3Types.name(e.type1) to pcTypeColor(e.type1))
                 + (if (e.type2 != e.type1)
                     listOf(Gen3Types.name(e.type2) to pcTypeColor(e.type2)) else emptyList()),
@@ -212,6 +219,7 @@ private fun EnemyCard(
                 )
             },
             header = if (seen.size > 4) "Moves *" else "Moves",
+            onHeaderTap = onMoveHistory?.let { cb -> { cb(e.species, e.speciesName, e.level) } },
             onMoveTap = onMoveInfo,
         )
     }
@@ -219,6 +227,10 @@ private fun EnemyCard(
 
 @Composable
 fun TrackerPanel(
+    /** Move History for a card: (species, name, level). */
+    onMoveHistory: ((Int, String, Int) -> Unit)? = null,
+    /** Type Defenses for a card: (name, type1, type2) in Gen 3 ids. */
+    onTypeDefenses: ((String, Int, Int) -> Unit)? = null,
     state: TrackerState?,
     onFlee: () -> Unit,
     modifier: Modifier = Modifier,
@@ -419,7 +431,7 @@ fun TrackerPanel(
                 // Your lead, i.e. the active battler: the tracker keeps slot 0
                 // as the viewed own Pokemon and puts its stat stages there.
                 state.party.take(if (enemy != null && !stackBoth) 0 else 1).forEach { p ->
-                    PartyCard(p, spriteFor,
+                    PartyCard(onMoveHistory = onMoveHistory, onTypeDefenses = onTypeDefenses, p, spriteFor,
                         healPercent = state.healPercent,
                         healCount = state.healCount,
                         onMoveInfo = { mv ->
@@ -431,7 +443,7 @@ fun TrackerPanel(
                         onNameInfo = { monInfo = p })
                 }
                 if (enemy != null) {
-                    EnemyCard(enemy, revealedEnemyAbility, spriteFor,
+                    EnemyCard(onMoveHistory = onMoveHistory, onTypeDefenses = onTypeDefenses, enemy, revealedEnemyAbility, spriteFor,
                         enemyMarks, onCycleMark, movesSeenRunWide, moveRowFor,
                         lastSeenLevel = enemyLastSeenLevel,
                         isWild = state.isWildBattle,

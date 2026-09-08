@@ -281,6 +281,33 @@ Seen and not fixed: the black bars INSIDE the game box on the emulator are
 the core's own aspect handling and predate this; your phone shows the same
 thing as a band on the right. Separate item.
 
+### 2.8 The side screens of every PC tracker - **OPEN 2026-09-08, IN PROGRESS**
+
+Blake, 2026-09-08: "why not? i told you to do it already". Nobody had put
+the side screens on this plan; the main tracker screen, the game over, the
+options, the rules, the favorites and the log viewer were cloned and
+checked off, and the rest went unmentioned. Written down here so it cannot
+hide again, from the reference file lists read the same day.
+
+Gen 3 (Ironmon-Tracker/screens), missing: BattleDetailsScreen,
+CatchRatesScreen, CoverageCalcScreen, TypeDefensesScreen, MoveHistoryScreen,
+TrainerInfoScreen, TrainersOnRouteScreen, NotebookIndexScreen +
+NotebookPokemonNoteView + NotebookPokemonSeen + NotebookTrainersByArea,
+RandomEvosScreen, StatsScreen, TeamViewArea, TimeMachineScreen,
+StatMarkingScoreSheet (Grade my notes), HealsInBagScreen, GachaMonOverlay,
+QuickloadScreen. Gen 1 and 2 (gen-tracker/screens), missing: MoveHistory,
+Stats, TeamView, TimeMachine, TypeDefenses, TrackedData. DS
+(NDS-Ironmon-Tracker/ui), missing: PastRunsScreen, StatisticsScreen,
+CoverageCalcScreen, EvoDataScreen, TrackedPokemonScreen, TrackedInfoScreen,
+RandomBallScreen, RestorePointsScreen, TimerScreen, TourneyTrackerScreen,
+the appearance and color options.
+
+Order: Type Defenses, Coverage Calc, Move History, Stats, Trainer Info and
+Trainers On Route, Team View, Battle Details, Catch Rates, the Notebook,
+Random Evos, Heals In Bag, Time Machine, Grade my notes; then the DS set.
+Each one read from its reference before it is built and checked on the
+emulator; shipped in batches. Progress is recorded under this heading.
+
 ### 2.7 Favorites, per game and as the PC trackers keep them - **DONE 2026-09-07**
 
 Blake, in order: names suggested as you type and narrowing; the count per

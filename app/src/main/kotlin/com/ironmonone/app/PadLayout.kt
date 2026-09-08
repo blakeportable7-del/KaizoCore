@@ -52,7 +52,7 @@ data class PadLayout(
         val LANDSCAPE = PadLayout(mapOf(
             Element.DPAD to Place(0.18f, 0.68f),
             Element.B to Place(0.78f, 0.60f), Element.A to Place(0.92f, 0.60f),
-            Element.SELECT to Place(0.72f, 0.88f), Element.START to Place(0.92f, 0.88f),
+            Element.SELECT to Place(0.70f, 0.88f), Element.START to Place(0.92f, 0.88f), // SELECT was 0.72: the clamp pushed START onto it on a 500dp column
             Element.L to Place(0.08f, 0.14f), Element.R to Place(0.94f, 0.14f),
         ), opacity = 0.55f, dsLayout = "hybrid-top")
 
@@ -64,19 +64,21 @@ data class PadLayout(
             Element.DPAD to Place(0.23f, 0.50f),
             Element.SELECT to Place(0.60f, 0.34f), Element.START to Place(0.60f, 0.56f),
             Element.L to Place(0.53f, 0.82f), Element.R to Place(0.68f, 0.82f),
-            Element.A to Place(0.91f, 0.30f), Element.B to Place(0.80f, 0.66f),
+            Element.A to Place(0.91f, 0.30f), Element.B to Place(0.85f, 0.66f), // B was 0.80 and touched R on a 360dp phone
         ), opacity = 1f, dsLayout = "top-bottom")
 
-        fun default(landscape: Boolean) = if (landscape) LANDSCAPE else PORTRAIT
+        /** The app's original GBA pads, kept for old layout files; no longer the default. */
+        fun legacy(landscape: Boolean) = if (landscape) LANDSCAPE else PORTRAIT
 
-        /** The DS defaults: the same layouts with X above and Y beside the A/B pair, the console's diamond. */
-        val LANDSCAPE_DS = LANDSCAPE.copy(places = LANDSCAPE.places +
-            mapOf(Element.X to Place(0.85f, 0.42f, 0.85f), Element.Y to Place(0.71f, 0.60f, 0.85f)))
-        val PORTRAIT_DS = PORTRAIT.copy(places = PORTRAIT.places +
-            // X above A, Y up and left of it: the console's diamond around A, clear of the SELECT/START stack at x 0.60 (Y sat on START, seen 2026-09-07).
-            mapOf(Element.X to Place(0.91f, 0.08f, 0.85f), Element.Y to Place(0.75f, 0.20f, 0.85f)))
+        /**
+         * The shipped defaults since 2026-09-08: the emulator layouts (My Boy for
+         * GBA and GB, SuperNDS for DS), not the app's original pads. They used to be
+         * chips in EDIT LAYOUT that nobody would find, so every phone still showed
+         * the old controls with X sitting on A in DS portrait. The original pads
+         * stay as presets for a layout file that predates this.
+         */
         fun default(landscape: Boolean, nds: Boolean) =
-            if (nds) (if (landscape) LANDSCAPE_DS else PORTRAIT_DS) else default(landscape)
+            if (nds) (if (landscape) SUPERNDS_LANDSCAPE else SUPERNDS_PORTRAIT) else myBoy(landscape)
 
         /**
          * 2.1, DS: the layout of the most-downloaded DS emulator on Google Play,
@@ -89,11 +91,30 @@ data class PadLayout(
          */
         val SUPERNDS_LANDSCAPE = PadLayout(mapOf(
             Element.DPAD to Place(0.11f, 0.79f),
-            Element.X to Place(0.90f, 0.66f, 0.75f), Element.Y to Place(0.83f, 0.79f, 0.75f),
-            Element.A to Place(0.96f, 0.79f, 0.75f), Element.B to Place(0.90f, 0.91f, 0.75f),
+            // The diamond is a button wide and a button tall each way; tighter than that and
+            // the hit areas sit on each other on a 500x300 column, whatever the circles look like.
+            Element.X to Place(0.87f, 0.60f, 0.75f), Element.Y to Place(0.78f, 0.76f, 0.75f),
+            Element.A to Place(0.96f, 0.76f, 0.75f), Element.B to Place(0.87f, 0.92f, 0.75f),
             Element.L to Place(0.07f, 0.08f), Element.R to Place(0.94f, 0.08f),
             Element.START to Place(0.40f, 0.94f), Element.SELECT to Place(0.64f, 0.94f),
         ), opacity = 0.55f, dsLayout = "left-right")
+
+        /**
+         * SuperNDS in portrait, laid into this app's 192dp control band under the
+         * stacked screens: the cross at the left, X Y A B in a diamond at the right,
+         * L and R pills in the top corners (L in the cross's empty corner cell),
+         * START and SELECT as two short pills along the bottom between them.
+         * Blake's portrait screenshot has not arrived; the element set and their
+         * corners are the landscape shot's, only the band is ours. Every rectangle
+         * is checked apart by PadLayoutTest over 360..480dp phones.
+         */
+        val SUPERNDS_PORTRAIT = PadLayout(mapOf(
+            Element.DPAD to Place(0.23f, 0.50f),
+            Element.X to Place(0.86f, 0.31f, 0.7f), Element.Y to Place(0.75f, 0.55f, 0.7f),
+            Element.A to Place(0.97f, 0.55f, 0.7f), Element.B to Place(0.86f, 0.79f, 0.7f),
+            Element.L to Place(0.08f, 0.12f, 0.9f), Element.R to Place(0.95f, 0.10f, 0.9f),
+            Element.SELECT to Place(0.43f, 0.88f), Element.START to Place(0.63f, 0.88f),
+        ), opacity = 1f, dsLayout = "top-bottom")
 
         /**
          * 2.1: the layout of the most-downloaded GBA emulator on Google Play, My Boy!
@@ -111,15 +132,19 @@ data class PadLayout(
          */
         val MYBOY_LANDSCAPE = PadLayout(mapOf(
             Element.DPAD to Place(0.13f, 0.78f),
-            Element.B to Place(0.84f, 0.82f), Element.A to Place(0.94f, 0.90f),
-            Element.L to Place(0.07f, 0.45f), Element.R to Place(0.94f, 0.45f),
-            Element.SELECT to Place(0.55f, 0.94f), Element.START to Place(0.64f, 0.94f),
+            // B a full button up and left of A, the pills a full pill apart: on a 500dp game
+            // column 0.10 of width is 50dp, less than a 60dp button (PadGeometryTest).
+            Element.B to Place(0.80f, 0.78f), Element.A to Place(0.94f, 0.90f),
+            Element.L to Place(0.06f, 0.45f), Element.R to Place(0.94f, 0.45f),
+            Element.SELECT to Place(0.40f, 0.94f), Element.START to Place(0.60f, 0.94f),
         ), opacity = 0.55f, dsLayout = "hybrid-top")
         val MYBOY_PORTRAIT = PadLayout(mapOf(
             Element.DPAD to Place(0.23f, 0.56f),
-            Element.L to Place(0.14f, 0.12f, 0.9f), Element.R to Place(0.86f, 0.12f, 0.9f),
+            // L in the cross's empty top-left cell, SELECT and START right of its down arrow: on a
+            // 360dp phone the cross reaches x 180, so 0.14 and 0.40 sat on the arrows (PadGeometryTest).
+            Element.L to Place(0.08f, 0.12f, 0.9f), Element.R to Place(0.86f, 0.12f, 0.9f),
             Element.A to Place(0.86f, 0.40f), Element.B to Place(0.86f, 0.72f),
-            Element.SELECT to Place(0.40f, 0.88f), Element.START to Place(0.62f, 0.88f),
+            Element.SELECT to Place(0.43f, 0.88f), Element.START to Place(0.63f, 0.88f),
         ), opacity = 1f, dsLayout = "top-bottom")
         fun myBoy(landscape: Boolean) = if (landscape) MYBOY_LANDSCAPE else MYBOY_PORTRAIT
 
@@ -170,4 +195,62 @@ class LayoutStore(private val dir: File) {
     }
 
     fun reset(key: String) { file(key).delete() }
+}
+
+/**
+ * The pad's real geometry in dp, the one source for FreePad's sizes and for the
+ * test that keeps the controls apart. Blake, 2026-09-08: "the buttons for the
+ * controls should never overlap each other." Positions are fractions of the
+ * area and sizes are dp, so two controls that read as apart in fractions can
+ * still sit on each other on a 192dp band; only rectangles tell.
+ */
+object PadGeometry {
+    /** A, B, X, Y: a 56dp disc; the d-pad's arrows are the same disc in a 60dp cell (the 2dp padding each side). */
+    const val BUTTON = 56f
+    const val PAD = 2f
+    /** L and R: a pill on the drawn skins, the classic 36dp square. */
+    fun shoulder(skin: PadSkin): Pair<Float, Float> = if (skin == PadSkin.CLASSIC) 36f to 36f else 48f to 30f
+    /** SELECT and START: the 96x44 landscape pill, or the portrait band's short bar. */
+    fun selectStart(landscape: Boolean, skin: PadSkin): Pair<Float, Float> =
+        if (landscape) 96f to 44f else 64f to (if (skin == PadSkin.MODERN) 26f else 32f)
+
+    data class Box(val l: Float, val t: Float, val r: Float, val b: Float) {
+        fun meets(o: Box) = l < o.r && o.l < r && t < o.b && o.t < b
+    }
+
+    /**
+     * Every rectangle the pad places for [layout] on an area of [areaW] x [areaH] dp,
+     * clamped inside the area exactly as FreePad clamps them. The d-pad is its two
+     * bars (the column and the row of the cross), so its empty corners are free
+     * for a shoulder pill.
+     */
+    fun rects(layout: PadLayout, areaW: Float, areaH: Float, landscape: Boolean, skin: PadSkin, baseScale: Float = 1f): Map<PadLayout.Element, List<Box>> {
+        val out = LinkedHashMap<PadLayout.Element, List<Box>>()
+        for (e in PadLayout.Element.entries) {
+            val p = layout.places[e] ?: continue
+            val s = p.scale * baseScale
+            val (w, h) = when (e) {
+                PadLayout.Element.DPAD -> (BUTTON + 2 * PAD) * 3 * s to (BUTTON + 2 * PAD) * 3 * s
+                PadLayout.Element.L, PadLayout.Element.R -> shoulder(skin).let { (it.first + 2 * PAD) * s to (it.second + 2 * PAD) * s }
+                PadLayout.Element.SELECT, PadLayout.Element.START -> selectStart(landscape, skin).let { (it.first + 2 * PAD) * s to (it.second + 2 * PAD) * s }
+                else -> (BUTTON + 2 * PAD) * s to (BUTTON + 2 * PAD) * s
+            }
+            val l = (p.x * areaW - w / 2).coerceIn(0f, (areaW - w).coerceAtLeast(0f))
+            val t = (p.y * areaH - h / 2).coerceIn(0f, (areaH - h).coerceAtLeast(0f))
+            out[e] = if (e == PadLayout.Element.DPAD) {
+                val c = w / 3
+                listOf(Box(l + c, t, l + 2 * c, t + h), Box(l, t + c, l + w, t + 2 * c))
+            } else listOf(Box(l, t, l + w, t + h))
+        }
+        return out
+    }
+
+    /** The pairs of controls whose rectangles touch, empty when the layout is clean. */
+    fun overlaps(layout: PadLayout, areaW: Float, areaH: Float, landscape: Boolean, skin: PadSkin, baseScale: Float = 1f): List<Pair<PadLayout.Element, PadLayout.Element>> {
+        val r = rects(layout, areaW, areaH, landscape, skin, baseScale).entries.toList()
+        val out = ArrayList<Pair<PadLayout.Element, PadLayout.Element>>()
+        for (i in r.indices) for (j in i + 1 until r.size)
+            if (r[i].value.any { a -> r[j].value.any { b -> a.meets(b) } }) out += r[i].key to r[j].key
+        return out
+    }
 }

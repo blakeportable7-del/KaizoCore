@@ -36,17 +36,17 @@ class PadLayoutTest {
         val key = PadLayout.key(true, Platform.NDS)
         assertEquals("landscape-nds", key)
         // A DS key carries X and Y (2.1); its default is the DS layout.
-        val edited = PadLayout.LANDSCAPE_DS.with(PadLayout.Element.A, PadLayout.Place(0.5f, 0.5f, 1.3f))
+        val edited = PadLayout.SUPERNDS_LANDSCAPE.with(PadLayout.Element.A, PadLayout.Place(0.5f, 0.5f, 1.3f))
             .copy(opacity = 0.8f, dsLayout = "left-right", dsGap = 32)
         s.save(key, edited)
         assertEquals(edited, s.load(key, landscape = true))
-        assertEquals(PadLayout.PORTRAIT_DS, s.load(PadLayout.key(false, Platform.NDS), landscape = false), "other key untouched")
+        assertEquals(PadLayout.SUPERNDS_PORTRAIT, s.load(PadLayout.key(false, Platform.NDS), landscape = false), "other key untouched")
         s.reset(key)
-        assertEquals(PadLayout.LANDSCAPE_DS, s.load(key, landscape = true))
+        assertEquals(PadLayout.SUPERNDS_LANDSCAPE, s.load(key, landscape = true))
         // A GBA key never picks up X or Y, even from a file that names them.
         val gba = PadLayout.key(true, Platform.GBA)
-        s.save(gba, PadLayout.LANDSCAPE_DS)
-        assertEquals(PadLayout.LANDSCAPE, s.load(gba, landscape = true))
+        s.save(gba, PadLayout.SUPERNDS_LANDSCAPE)
+        assertEquals(PadLayout.SUPERNDS_LANDSCAPE.places.filterKeys { it != PadLayout.Element.X && it != PadLayout.Element.Y }, s.load(gba, landscape = true).places)
     }
 
     @Test
@@ -54,7 +54,7 @@ class PadLayoutTest {
         val dir = Files.createTempDirectory("layouts").toFile()
         File(dir, "portrait-gba.properties").writeText("A.x=7\nA.y=0.5\nopacity=9\ndsLayout=sideways\ndsGap=13\nB.x=0.2\nB.y=0.3\nB.scale=1.1")
         val l = LayoutStore(dir).load("portrait-gba", landscape = false)
-        assertEquals(PadLayout.PORTRAIT[PadLayout.Element.A], l[PadLayout.Element.A], "out-of-range A is the default")
+        assertEquals(PadLayout.MYBOY_PORTRAIT[PadLayout.Element.A], l[PadLayout.Element.A], "out-of-range A is the default")
         assertEquals(PadLayout.Place(0.2f, 0.3f, 1.1f), l[PadLayout.Element.B], "valid B is kept")
         assertEquals(1f, l.opacity); assertEquals("top-bottom", l.dsLayout); assertEquals(0, l.dsGap)
     }
@@ -81,7 +81,7 @@ class PadLayoutTest {
     /** 2.1, DS: X and Y exist only where a layout places them; the SuperNDS preset has all nine, apart. */
     @Test
     fun `GBA layouts never draw X or Y, DS layouts and the SuperNDS preset do`() {
-        kotlin.test.assertFalse(PadLayout.Element.X in PadLayout.default(true).places)
+        kotlin.test.assertFalse(PadLayout.Element.X in PadLayout.default(true, nds = false).places)
         kotlin.test.assertFalse(PadLayout.Element.Y in PadLayout.myBoy(false).places)
         for (l in listOf(PadLayout.default(true, nds = true), PadLayout.default(false, nds = true), PadLayout.SUPERNDS_LANDSCAPE)) {
             kotlin.test.assertTrue(PadLayout.Element.X in l.places && PadLayout.Element.Y in l.places)

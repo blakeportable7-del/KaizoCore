@@ -17,7 +17,8 @@ enum class PadSkin(val label: String) {
     fun next(): PadSkin = entries[(ordinal + 1) % entries.size]
 
     companion object {
-        fun parse(s: String?): PadSkin = entries.firstOrNull { it.name.equals(s?.trim(), ignoreCase = true) } ?: CLASSIC
+        /** No file, or an unknown name, is the OUTLINE skin: the emulator look is the default since 2026-09-08. */
+        fun parse(s: String?): PadSkin = entries.firstOrNull { it.name.equals(s?.trim(), ignoreCase = true) } ?: OUTLINE
         fun load(f: File): PadSkin = parse(runCatching { f.readText() }.getOrNull())
         fun save(f: File, skin: PadSkin) { runCatching { f.parentFile?.mkdirs(); f.writeText(skin.name) } }
     }

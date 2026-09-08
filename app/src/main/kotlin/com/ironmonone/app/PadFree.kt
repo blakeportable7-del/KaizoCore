@@ -98,7 +98,7 @@ fun FreePad(
             ) {
                 when (e) {
                     PadLayout.Element.DPAD -> Box(contentAlignment = Alignment.Center) {
-                        val cell = (60 * s).dp
+                        val cell = ((PadGeometry.BUTTON + 2 * PadGeometry.PAD) * s).dp
                         val modern = skin == PadSkin.MODERN
                         if (modern) {
                             // One disc with a cross, the store-emulator d-pad. The four
@@ -200,7 +200,8 @@ fun LayoutToolbar(
         LayoutChip("SKIN: ${skin.label.uppercase()}") { onSkin(skin.next()) }
         // 2.1: the most-downloaded store emulator's layout, one tap. DS keeps its own until its reference is measured.
         if (!isDs) LayoutChip("MY BOY LAYOUT") { onEdit(PadLayout.myBoy(landscape)); onSkin(PadSkin.OUTLINE) }
-        if (isDs && landscape) LayoutChip("SUPERNDS LAYOUT") { onEdit(PadLayout.SUPERNDS_LANDSCAPE); onSkin(PadSkin.OUTLINE) }
+        if (isDs) LayoutChip("SUPERNDS LAYOUT") { onEdit(PadLayout.default(landscape, nds = true)); onSkin(PadSkin.OUTLINE) }
+        if (!isDs) LayoutChip("ORIGINAL PAD") { onEdit(PadLayout.legacy(landscape)); onSkin(PadSkin.CLASSIC) }
         LayoutChip("RESET", onClick = onReset)
         Text(
             if (selected == null) "DRAG A BUTTON · TAP TO PICK" else "DRAG TO MOVE",

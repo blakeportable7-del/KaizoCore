@@ -838,6 +838,8 @@ object Gen3Types {
         15 to "Ice", 16 to "Dragon", 17 to "Dark", 18 to "Fairy",
     )
     fun name(id: Int): String = names[id] ?: "T$id"
+    /** Id for a type name as the chips show it, or null. */
+    fun idOf(name: String): Int? = names.entries.firstOrNull { it.value.equals(name.trim(), ignoreCase = true) }?.key
 
     /** The 17 real types, in tracker display order. Excludes the unused slot 9. */
     val ALL = listOf(0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17)
@@ -886,6 +888,36 @@ object Gen3Types {
     /** Multiplier against a possibly dual-typed defender. */
     fun effect(attack: Int, t1: Int, t2: Int): Double =
         effect(attack, t1) * (if (t2 == t1) 1.0 else effect(attack, t2))
+
+    /**
+     * The Gen 1 tracker's chart (Ironmon-gen-tracker data/MoveData.lua,
+     * TypeToEffectiveness, read 2026-09-08) is this chart with three Gen 1
+     * rules kept: Poison hits Bug for 2x, Bug hits Poison for 2x, Ghost does
+     * nothing to Psychic. Everything else in that file matches Gen 3.
+     */
+    private val gen1Overrides: Map<Int, Map<Int, Double>> = mapOf(
+        3 to mapOf(6 to 2.0),    // POISON -> BUG
+        6 to mapOf(3 to 2.0),    // BUG -> POISON
+        7 to mapOf(14 to 0.0),   // GHOST -> PSYCHIC
+    )
+
+    fun effect(attack: Int, defend: Int, gen1: Boolean): Double =
+        if (gen1) gen1Overrides[attack]?.get(defend) ?: effect(attack, defend) else effect(attack, defend)
+
+    /**
+     * TypeDefensesScreen's buckets (PokemonData.getEffectiveness): every
+     * attacking type that is not neutral against a [t1]/[t2] defender, keyed
+     * by multiplier, in the screen's order 0x, 1/4x, 1/2x, 2x, 4x. Type names
+     * as the chips show them.
+     */
+    fun defenses(t1: Int, t2: Int, gen1: Boolean = false): Map<Double, List<String>> {
+        val out = linkedMapOf(0.0 to ArrayList<String>(), 0.25 to ArrayList(), 0.5 to ArrayList(), 2.0 to ArrayList(), 4.0 to ArrayList())
+        for (atk in ALL) {
+            val e = effect(atk, t1, gen1) * (if (t2 == t1) 1.0 else effect(atk, t2, gen1))
+            out[e]?.add(name(atk))
+        }
+        return out.filterValues { it.isNotEmpty() }
+    }
 }
 
 data class TrackerState(
@@ -1473,7 +1505,7 @@ class GbaTracker(
      * Types come from the live base-stat table, so a randomized type chart is
      * followed - but the effectiveness chart itself is the standard one.
      */
-    fun coverage(moveTypes: List<Int>): Map<Double, List<Int>> {
+    fun coverage(moveTypes: List<Int>, fullyEvolvedOnly: Boolean = false): Map<Double, List<Int>> {
         val out = linkedMapOf(
             0.0 to ArrayList<Int>(), 0.25 to ArrayList(), 0.5 to ArrayList(),
             1.0 to ArrayList(), 2.0 to ArrayList(), 4.0 to ArrayList(),
@@ -1486,6 +1518,8 @@ class GbaTracker(
             if (id in 252..276) continue
             val b = baseStats(id) ?: continue
             if (b.bst == 0) continue
+            // CoverageCalcScreen's OptionOnlyFullyEvolved: skip anything that still evolves.
+            if (fullyEvolvedOnly && evolution(id) != null) continue
             var best = 0.0
             for (t in moveTypes) {
                 val e = Gen3Types.effect(t, b.type1, b.type2)

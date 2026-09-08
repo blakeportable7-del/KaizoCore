@@ -420,6 +420,11 @@ class NdsTracker(
      * rather than vanilla typings. With no sidecar there are no types and the
      * honest answer is an empty table, not a confident wrong one.
      */
+    /** BST from the run's sidecar, for the Coverage Calc list's order (the DS reference sorts by BST). */
+    fun speciesBst(id: Int): Int = speciesInfo[id]?.bst ?: 0
+    /** True once the randomizer's sidecar has been read; types and BST come from nowhere else on DS. */
+    fun hasSpeciesData(): Boolean = speciesInfo.isNotEmpty()
+
     fun coverage(moveTypes: List<String>): Map<Double, List<Int>> {
         val out = linkedMapOf(
             0.0 to ArrayList<Int>(), 0.25 to ArrayList(), 0.5 to ArrayList(),

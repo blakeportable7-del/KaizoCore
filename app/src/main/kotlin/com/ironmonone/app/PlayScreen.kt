@@ -759,6 +759,12 @@ fun PlayScreen(
     }
 
     var confirmNewRun by remember { mutableStateOf(false) }
+    /** The Type Defenses screen for one Pokemon: its name and its buckets, or null. */
+    var typeDefenses by remember { mutableStateOf<Pair<String, Map<Double, List<String>>>?>(null) }
+    var coverageCalc by remember { mutableStateOf(false) }
+    var statsDialog by remember { mutableStateOf(false) }
+    /** Move History for one Pokemon: species, name, level. */
+    var moveHistory by remember { mutableStateOf<Triple<Int, String, Int>?>(null) }
     /** The randomizer log open full screen (the game-over screen's Inspect the log), or null. */
     var logViewerFile by remember { mutableStateOf<java.io.File?>(null) }
 
@@ -1395,8 +1401,9 @@ fun PlayScreen(
                       }
                   }
                   if (dsScreens) NdsTrackerPanel(
+                      state = ndsState, onFlee = { flee() }, onGear = { gearDialog = true },
                       favoriteLine = favoriteLine,
-                      ndsState, onFlee = { flee() }, onGear = { gearDialog = true },
+                      onTypeDefenses = { n, a, b -> typeDefenses = n to com.ironmonone.tracker.Gen3Types.defenses(com.ironmonone.tracker.nds.Gen4Types.idOf(a) ?: -1, com.ironmonone.tracker.nds.Gen4Types.idOf(b) ?: (com.ironmonone.tracker.nds.Gen4Types.idOf(a) ?: -1)) },
                       enemyMarks = enemyMarks, enemyEncounters = enemyEncounters,
                       onCycleMark = { i ->
                           ndsState?.enemy?.let { statMarks.cycle(it.mon.species, i) }
@@ -1410,8 +1417,11 @@ fun PlayScreen(
                             ?.let { statMarks.abilityFor(it.mon.species) },
                         movesSeenRunWide = ndsState?.enemy?.let { statMarks.movesSeenFor(it.mon.species) } ?: emptyList(),
                         moveInfoFor = { id -> ndsTrackerRef?.moveInfoFor(id) },
+                        onMoveHistory = { sp, n, lv -> moveHistory = Triple(sp, n, lv) },
                   )
                   else TrackerPanel(
+                      onMoveHistory = { sp, n, lv -> moveHistory = Triple(sp, n, lv) },
+                      onTypeDefenses = { n, a, b -> typeDefenses = n to com.ironmonone.tracker.Gen3Types.defenses(a, b, gen1 = session.kind?.generation == com.ironmonone.core.Generation.GB1) },
                       trackerState, onFlee = { flee() }, ballCall = ballCall, onGear = { gearDialog = true },
                 onRerollBall = { ballReroll++ },
                 movesSeenRunWide = trackerState?.enemy
@@ -1932,8 +1942,9 @@ fun PlayScreen(
                         .verticalScroll(rememberScrollState())
                 ) {
                     NdsTrackerPanel(
+                        state = ndsState, onFlee = { flee() }, onGear = { gearDialog = true },
                         favoriteLine = favoriteLine,
-                        ndsState, onFlee = { flee() }, onGear = { gearDialog = true },
+                        onTypeDefenses = { n, a, b -> typeDefenses = n to com.ironmonone.tracker.Gen3Types.defenses(com.ironmonone.tracker.nds.Gen4Types.idOf(a) ?: -1, com.ironmonone.tracker.nds.Gen4Types.idOf(b) ?: (com.ironmonone.tracker.nds.Gen4Types.idOf(a) ?: -1)) },
                         enemyMarks = enemyMarks, enemyEncounters = enemyEncounters,
                         onCycleMark = { i ->
                             ndsState?.enemy?.let { statMarks.cycle(it.mon.species, i) }
@@ -1947,6 +1958,7 @@ fun PlayScreen(
                             ?.let { statMarks.abilityFor(it.mon.species) },
                         movesSeenRunWide = ndsState?.enemy?.let { statMarks.movesSeenFor(it.mon.species) } ?: emptyList(),
                         moveInfoFor = { id -> ndsTrackerRef?.moveInfoFor(id) },
+                        onMoveHistory = { sp, n, lv -> moveHistory = Triple(sp, n, lv) },
                     )
                 }
             } else Box(
@@ -1958,6 +1970,8 @@ fun PlayScreen(
                 // is why `scrollable` had to go first.
                 Modifier.weight(1f).verticalScroll(rememberScrollState())
             ) { TrackerPanel(
+                onMoveHistory = { sp, n, lv -> moveHistory = Triple(sp, n, lv) },
+                onTypeDefenses = { n, a, b -> typeDefenses = n to com.ironmonone.tracker.Gen3Types.defenses(a, b, gen1 = session.kind?.generation == com.ironmonone.core.Generation.GB1) },
                 trackerState, onFlee = { flee() }, ballCall = ballCall, onGear = { gearDialog = true },
                 onRerollBall = { ballReroll++ },
                 movesSeenRunWide = trackerState?.enemy
@@ -2187,6 +2201,47 @@ fun PlayScreen(
     }
     logViewerFile?.let { f -> LogViewer(f, onClose = { logViewerFile = null }) }
 
+    typeDefenses?.let { (n, b) -> TypeDefensesDialog(n, b, onClose = { typeDefenses = null }) }
+
+    moveHistory?.let { (species, n, lv) ->
+        MoveHistoryDialog(
+            name = n, level = lv, seen = statMarks.movesSeenFor(species),
+            learnLevels = ndsTrackerRef?.moveLevelsOf(species) ?: trackerRef?.learnset(species)?.map { it.first } ?: emptyList(),
+            onClose = { moveHistory = null },
+        )
+    }
+    if (statsDialog) {
+        val gba = trackerRef
+        StatsDialog(StatsRows.build(store.attempt(), gba?.let { t -> { i: Int -> t.readGameStat(i) } }), onClose = { statsDialog = false })
+    }
+    if (coverageCalc) {
+        val ctx = androidx.compose.ui.platform.LocalContext.current
+        val nds = ndsTrackerRef
+        val gba = trackerRef
+        if (nds != null) {
+            CoverageCalcDialog(
+                seed = CoverageCalc.seedTypes(ndsState?.party?.firstOrNull()?.moves?.map { Triple(it.id, it.category, it.type) } ?: emptyList(), excluded = emptySet()),
+                allTypes = com.ironmonone.tracker.Gen3Types.ALL.map { com.ironmonone.tracker.Gen3Types.name(it) },
+                compute = { types, _ -> nds.coverage(types) },
+                name = { nds.speciesName(it) }, bst = { nds.speciesBst(it) },
+                sprite = { id -> remember(id) { PcAssets.dsSprite(ctx, id, false) } },
+                fullyEvolvedSupported = false, sortByBst = true,
+                noDataNote = if (nds.hasSpeciesData()) null else "No species data for this ROM yet. Randomize it on the RUN tab and the buckets fill in.",
+                onClose = { coverageCalc = false },
+            )
+        } else if (gba != null) {
+            CoverageCalcDialog(
+                seed = CoverageCalc.seedTypes(trackerState?.party?.firstOrNull()?.moveRows?.map { Triple(it.id, it.category ?: "", it.type?.let { t -> com.ironmonone.tracker.Gen3Types.name(t) } ?: "") } ?: emptyList()),
+                allTypes = com.ironmonone.tracker.Gen3Types.ALL.map { com.ironmonone.tracker.Gen3Types.name(it) },
+                compute = { types, fe -> gba.coverage(types.mapNotNull { com.ironmonone.tracker.Gen3Types.idOf(it) }, fe) },
+                name = { gba.speciesName(it) }, bst = { gba.baseStats(it)?.bst ?: 0 },
+                sprite = { id -> spriteFor(id) },
+                fullyEvolvedSupported = true, sortByBst = false,
+                onClose = { coverageCalc = false },
+            )
+        } else coverageCalc = false
+    }
+
     if (rulesDialog) {
         val fam = session.kind?.family ?: ""
         val runMode = if (session.isRun) store.loadLastRun()?.second?.let { RnqsInfo.parse(it).ruleset } else null
@@ -2199,6 +2254,8 @@ fun PlayScreen(
             marks = statMarks,
             onCleared = { marksVersion++ },
             onRules = { gearDialog = false; rulesDialog = true },
+            onCoverage = { gearDialog = false; coverageCalc = true },
+            onStats = if (platform == com.ironmonone.core.Platform.NDS) null else { { gearDialog = false; statsDialog = true } },
             onDismiss = { gearDialog = false },
         )
     }
@@ -2408,10 +2465,10 @@ internal fun PadButton(
             .padding(2.dp)
             .let {
                 when {
-                    mini -> if (modern || outline) it.width((48 * scale).dp).height((30 * scale).dp) else it.size((36 * scale).dp)
-                    small -> it.width((64 * scale).dp).height(((if (modern) 26 else 32) * scale).dp)
-                    wide -> it.width((96 * scale).dp).height((44 * scale).dp)
-                    else -> it.size((56 * scale).dp)
+                    mini -> PadGeometry.shoulder(skin).let { (w, h) -> it.width((w * scale).dp).height((h * scale).dp) }
+                    small -> PadGeometry.selectStart(false, skin).let { (w, h) -> it.width((w * scale).dp).height((h * scale).dp) }
+                    wide -> PadGeometry.selectStart(true, skin).let { (w, h) -> it.width((w * scale).dp).height((h * scale).dp) }
+                    else -> it.size((PadGeometry.BUTTON * scale).dp)
                 }
             }
             .let {

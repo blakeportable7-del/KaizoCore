@@ -39,6 +39,7 @@ libretrodroid/build/
 # Release artefacts are attached to GitHub releases, not committed.
 dist/
 
-# Cyan's files: bundled only with his permission, never committed here.
+.vendor/
+dist/
 app/src/main/assets/patches/
-app/src/main/assets/presets/*NatDex*
+presets/*NatDex*

@@ -39,6 +39,8 @@ fun TrackerGearDialog(
     marks: StatMarks,
     onCleared: () -> Unit,
     onRules: () -> Unit = {},
+    onCoverage: () -> Unit = {},
+    onStats: (() -> Unit)? = null,
     onDismiss: () -> Unit,
 ) {
     var confirmClear by remember { mutableStateOf(false) }
@@ -50,6 +52,8 @@ fun TrackerGearDialog(
             PixText("TRACKER SETUP", 10, Pc.Gold)
             Spacer(Modifier.height(8.dp))
             com.ironmonone.app.gen3.Gen3Button("RULES FOR THIS RUN") { onRules() }
+            com.ironmonone.app.gen3.Gen3Button("COVERAGE CALC") { onCoverage() }
+            onStats?.let { com.ironmonone.app.gen3.Gen3Button("STATS") { it() } }
             Spacer(Modifier.height(8.dp))
 
             PixText("Options", 8, Pc.Text)

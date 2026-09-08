@@ -89,6 +89,8 @@ private fun typeChipsOf(p: NdsTrackedMon): List<Pair<String, androidx.compose.ui
 
 @Composable
 private fun NdsPartyCard(
+    onMoveHistory: ((Int, String, Int) -> Unit)? = null,
+    onTypeDefenses: ((String, String, String) -> Unit)? = null,
     p: NdsTrackedMon,
     healPercent: Int = -1,
     healCount: Int = 0,
@@ -104,6 +106,7 @@ private fun NdsPartyCard(
                 (if (p.statusCondition.isNotEmpty()) "  [" + p.statusCondition + "]" else ""),
             level = m.level, curHp = m.curHp, maxHp = m.maxHp,
             typeChips = typeChipsOf(p),
+            onTypesTap = p.info?.let { i -> onTypeDefenses?.let { cb -> { cb(p.speciesName, i.type1, i.type2) } } },
             itemLine = p.itemName.takeIf { it != "-" } ?: "",
             abilityLine = p.abilityName,
             sprite = sprite,
@@ -128,12 +131,15 @@ private fun NdsPartyCard(
                 "Moves ${p.movesLearned}/${p.movesTotal}" +
                     (p.nextMoveLevel?.let { " ($it)" } ?: "")
             } else "Moves",
+            onHeaderTap = onMoveHistory?.let { cb -> { cb(p.mon.species, p.speciesName, p.mon.level) } },
         )
     }
 }
 
 @Composable
 private fun NdsEnemyCard(
+    onMoveHistory: ((Int, String, Int) -> Unit)? = null,
+    onTypeDefenses: ((String, String, String) -> Unit)? = null,
     e: NdsTrackedMon,
     revealedAbility: String?,
     marks: IntArray,
@@ -156,6 +162,7 @@ private fun NdsEnemyCard(
             level = e.mon.level,
             curHp = e.mon.curHp, maxHp = e.mon.maxHp,
             typeChips = typeChipsOf(e),
+            onTypesTap = e.info?.let { i -> onTypeDefenses?.let { cb -> { cb(e.speciesName, i.type1, i.type2) } } },
             itemLine = "",
             // Revealed-on-activation, like the PC tracker: until a battle
             // trigger shows the ability, the line stays unrevealed.
@@ -182,7 +189,7 @@ private fun NdsEnemyCard(
         androidx.compose.foundation.layout.Box(
             Modifier.fillMaxWidth().height(1.dp).background(Pc.Border))
         // The reference's tracked moves for this opponent: only what it has used, this run.
-        PcMovesSection(enemyMovesOf(e, movesSeenRunWide, moveInfoFor), header = "Moves")
+        PcMovesSection(enemyMovesOf(e, movesSeenRunWide, moveInfoFor), header = "Moves", onHeaderTap = onMoveHistory?.let { cb -> { cb(e.mon.species, e.speciesName, e.mon.level) } })
         PcNoteRow(note, onEditNote)
     }
 }
@@ -301,6 +308,10 @@ fun PcNdsRunOver(
 fun NdsTrackerPanel(
     /** The startup favorites line, shown before a party exists, as the DS tracker's title screen shows them. */
     favoriteLine: String? = null,
+    /** Move History for a card: (species, name, level). */
+    onMoveHistory: ((Int, String, Int) -> Unit)? = null,
+    /** Type Defenses for a card: (name, type1, type2) as the sidecar names them. */
+    onTypeDefenses: ((String, String, String) -> Unit)? = null,
     state: NdsTrackerState?,
     modifier: Modifier = Modifier,
     onFlee: () -> Unit = {},
@@ -360,13 +371,13 @@ fun NdsTrackerPanel(
                     PcBattleBanner(state.isWildBattle, onFlee)
                     Spacer(Modifier.height(4.dp))
                     state.enemy?.let {
-                        NdsEnemyCard(it, revealedEnemyAbility, enemyMarks,
+                        NdsEnemyCard(onMoveHistory = onMoveHistory, onTypeDefenses = onTypeDefenses, it, revealedEnemyAbility, enemyMarks,
                             enemyEncounters, onCycleMark, enemyNote, onEditNote,
                             movesSeenRunWide, moveInfoFor)
                     }
                 }
                 state.party.forEachIndexed { i, p ->
-                    NdsPartyCard(p,
+                    NdsPartyCard(onMoveHistory = onMoveHistory, onTypeDefenses = onTypeDefenses, p,
                         healPercent = if (i == 0) state.healPercent else -1,
                         healCount = state.healCount)
                 }

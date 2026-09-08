@@ -471,6 +471,8 @@ fun PcHeadBlock(
     abilityLine: String,
     onAbilityTap: (() -> Unit)? = null,
     onNameTap: (() -> Unit)? = null,
+    /** TrackerScreen.lua:76: tapping the type icons opens TypeDefensesScreen for this Pokemon. */
+    onTypesTap: (() -> Unit)? = null,
     sprite: ImageBitmap?,
     belowHead: (@Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit)? = null,
     statColumn: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit,
@@ -515,7 +517,7 @@ fun PcHeadBlock(
                 }
             }
             Row(Modifier.fillMaxWidth()) {
-                Column {
+                Column(if (onTypesTap != null) Modifier.clickable { onTypesTap() } else Modifier) {
                     typeChips.forEach { (label, color) -> PcTypeChip(label, color) }
                 }
                 Column(Modifier.padding(start = 2.rp, top = 1.rp)) {
@@ -562,6 +564,8 @@ fun PcMovesSection(
     rows: List<PcMove>,
     header: String = "Moves",
     onMoveTap: ((PcMove) -> Unit)? = null,
+    /** TrackerScreen.lua:352: the Moves header opens MoveHistoryScreen for the viewed Pokemon. */
+    onHeaderTap: (() -> Unit)? = null,
 ) {
     Box(Modifier.fillMaxWidth().height(1.dp).background(Pc.Border))
     Row(
@@ -570,7 +574,7 @@ fun PcMovesSection(
     ) {
         // Column widths are the gaps between the reference's own offsets:
         // name at 5, PP at 82, Pow at 102, Acc at 126, box ends at 145.
-        PixText(header, PcRef.FONT, Pc.Text, Modifier.weight(1f))
+        PixText(header, PcRef.FONT, Pc.Text, if (onHeaderTap != null) Modifier.weight(1f).clickable { onHeaderTap() } else Modifier.weight(1f))
         PixText("PP", PcRef.FONT, Pc.Text, Modifier.width(20.rp), TextAlign.End)
         PixText("Pow", PcRef.FONT, Pc.Text, Modifier.width(24.rp), TextAlign.End)
         PixText("Acc", PcRef.FONT, Pc.Text, Modifier.width(19.rp), TextAlign.End)
@@ -1424,6 +1428,48 @@ fun PcBattleBanner(
                 Spacer(Modifier.width(2.rp))
             }
             if (isWild) PcSmallButton("RUN", onFlee)
+        }
+    }
+}
+
+
+/**
+ * The reference's TypeDefensesScreen (Ironmon-Tracker screens/TypeDefensesScreen.lua,
+ * read 2026-09-08; the Gen 1 and 2 trackers carry the same file): a box headed by
+ * the Pokemon's name, then one row per bucket that has any types, in the order
+ * "0x Immunities", "1/4x Resistances", "1/2x Resistances", "2x Weaknesses",
+ * "4x Weaknesses", each with its type boxes four to a line. Reached by tapping
+ * the type icons on a Pokemon's card, which is where the reference puts it.
+ */
+@Composable
+fun TypeDefensesDialog(name: String, buckets: Map<Double, List<String>>, onClose: () -> Unit) {
+    val rows = listOf(0.0 to ("0x" to "Immunities"), 0.25 to ("1/4x" to "Resistances"), 0.5 to ("1/2x" to "Resistances"), 2.0 to ("2x" to "Weaknesses"), 4.0 to ("4x" to "Weaknesses"))
+    androidx.compose.ui.window.Dialog(onDismissRequest = onClose) {
+        Column(Modifier.width(300.dp).background(Pc.Page).border(1.dp, Pc.Border).padding(8.dp)) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                PixText(name.uppercase(), 10, Pc.Text, Modifier.weight(1f))
+                PixText("X", 9, Pc.Dim, Modifier.clickable { onClose() }.padding(horizontal = 6.dp, vertical = 2.dp))
+            }
+            Spacer(Modifier.height(6.dp))
+            var any = false
+            rows.forEach { (mult, label) ->
+                val types = buckets[mult] ?: return@forEach
+                if (types.isEmpty()) return@forEach
+                any = true
+                PixText("${label.first} ${label.second}", 8, Pc.Text)
+                Spacer(Modifier.height(2.dp))
+                types.chunked(4).forEach { line ->
+                    Row(Modifier.padding(start = 8.dp, bottom = 2.dp)) {
+                        line.forEach { t ->
+                            Box(Modifier.padding(end = 2.dp).border(1.dp, Pc.Border).background(Pc.Ground).padding(horizontal = 4.dp, vertical = 2.dp)) {
+                                PixText(t.uppercase(), 7, pcTypeColorByName(t))
+                            }
+                        }
+                    }
+                }
+                Spacer(Modifier.height(4.dp))
+            }
+            if (!any) PixText("No type has an edge either way.", 8, Pc.Dim)
         }
     }
 }
