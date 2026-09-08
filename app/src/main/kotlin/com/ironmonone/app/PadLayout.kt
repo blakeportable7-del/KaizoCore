@@ -22,6 +22,15 @@ data class PadLayout(
     val dsLayout: String? = null,
     /** melonDS screen gap in pixels: one of DS_GAPS. */
     val dsGap: Int = 0,
+    /**
+     * DS: X, Y, A and B are one diamond, spaced in dp, not in fractions of the
+     * area. Blake, 2026-09-08, on a tablet: "x y a b are too spread out on ds".
+     * Fractions grow with the screen; a diamond does not. With this on, the A
+     * place is the diamond's CENTRE and X, Y and B sit one button up, left and
+     * down from it (their own places are ignored); A's scale sizes all four.
+     * The editor drags the four as one.
+     */
+    val abxyDiamond: Boolean = false,
 ) {
     enum class Element(val label: String) {
         DPAD("D-pad"), A("A"), B("B"), L("L"), R("R"), SELECT("Select"), START("Start"),
@@ -36,10 +45,14 @@ data class PadLayout(
 
     operator fun get(e: Element): Place = places[e] ?: DEFAULT_PLACE
 
+    /** The diamond's members, which the editor moves together. */
+    fun inDiamond(e: Element) = abxyDiamond && e in DIAMOND
+
     fun with(e: Element, p: Place) = copy(places = places + (e to p))
 
     companion object {
         val DEFAULT_PLACE = Place(0.5f, 0.5f)
+        val DIAMOND = setOf(Element.X, Element.Y, Element.A, Element.B)
         val DS_LAYOUTS = listOf("top-bottom", "bottom-top", "left-right", "right-left",
             "hybrid-top", "hybrid-bottom", "top", "bottom", "rotate-left", "rotate-right")
         val DS_GAPS = listOf(0, 16, 32, 64, 128)
@@ -93,11 +106,15 @@ data class PadLayout(
             Element.DPAD to Place(0.11f, 0.79f),
             // The diamond is a button wide and a button tall each way; tighter than that and
             // the hit areas sit on each other on a 500x300 column, whatever the circles look like.
-            Element.X to Place(0.87f, 0.60f, 0.75f), Element.Y to Place(0.78f, 0.76f, 0.75f),
-            Element.A to Place(0.96f, 0.76f, 0.75f), Element.B to Place(0.87f, 0.92f, 0.75f),
+            // A is the diamond's centre (abxyDiamond); X, Y and B are placed from it in dp.
+            Element.A to Place(0.87f, 0.76f, 0.75f),
+            Element.X to Place(0.87f, 0.60f, 0.75f), Element.Y to Place(0.78f, 0.76f, 0.75f), Element.B to Place(0.87f, 0.92f, 0.75f),
             Element.L to Place(0.07f, 0.08f), Element.R to Place(0.94f, 0.08f),
             Element.START to Place(0.40f, 0.94f), Element.SELECT to Place(0.64f, 0.94f),
-        ), opacity = 0.55f, dsLayout = "left-right")
+        // dsLayout null: the screens fit themselves to the column (NdsScreens.autoLayout). On a
+        // tablet-shaped column "left-right" drew two small screens in a black field (Blake's
+        // screenshot, 2026-09-08); stacked they are a third bigger.
+        ), opacity = 0.55f, dsLayout = null, abxyDiamond = true)
 
         /**
          * SuperNDS in portrait, laid into this app's 192dp control band under the
@@ -110,11 +127,11 @@ data class PadLayout(
          */
         val SUPERNDS_PORTRAIT = PadLayout(mapOf(
             Element.DPAD to Place(0.23f, 0.50f),
-            Element.X to Place(0.86f, 0.31f, 0.7f), Element.Y to Place(0.75f, 0.55f, 0.7f),
-            Element.A to Place(0.97f, 0.55f, 0.7f), Element.B to Place(0.86f, 0.79f, 0.7f),
+            Element.A to Place(0.86f, 0.55f, 0.7f), // the diamond's centre
+            Element.X to Place(0.86f, 0.31f, 0.7f), Element.Y to Place(0.75f, 0.55f, 0.7f), Element.B to Place(0.86f, 0.79f, 0.7f),
             Element.L to Place(0.08f, 0.12f, 0.9f), Element.R to Place(0.95f, 0.10f, 0.9f),
             Element.SELECT to Place(0.43f, 0.88f), Element.START to Place(0.63f, 0.88f),
-        ), opacity = 1f, dsLayout = "top-bottom")
+        ), opacity = 1f, dsLayout = "top-bottom", abxyDiamond = true)
 
         /**
          * 2.1: the layout of the most-downloaded GBA emulator on Google Play, My Boy!
@@ -175,6 +192,7 @@ class LayoutStore(private val dir: File) {
             opacity = p.getProperty("opacity")?.toFloatOrNull()?.coerceIn(0.15f, 1f) ?: d.opacity,
             dsLayout = p.getProperty("dsLayout")?.takeIf { it in PadLayout.DS_LAYOUTS } ?: d.dsLayout,
             dsGap = p.getProperty("dsGap")?.toIntOrNull()?.takeIf { it in PadLayout.DS_GAPS } ?: d.dsGap,
+            abxyDiamond = p.getProperty("abxyDiamond")?.toBooleanStrictOrNull() ?: d.abxyDiamond,
         )
     }
 
@@ -187,6 +205,7 @@ class LayoutStore(private val dir: File) {
         p.setProperty("opacity", l.opacity.toString())
         l.dsLayout?.let { p.setProperty("dsLayout", it) }
         p.setProperty("dsGap", l.dsGap.toString())
+        p.setProperty("abxyDiamond", l.abxyDiamond.toString())
         runCatching {
             val f = file(key); val tmp = File(dir, f.name + ".tmp")
             tmp.outputStream().use { p.store(it, null) }
@@ -224,19 +243,54 @@ object PadGeometry {
      * bars (the column and the row of the cross), so its empty corners are free
      * for a shoulder pill.
      */
+    /** An element's size in dp for its scale. */
+    fun size(e: PadLayout.Element, s: Float, landscape: Boolean, skin: PadSkin): Pair<Float, Float> = when (e) {
+        PadLayout.Element.DPAD -> (BUTTON + 2 * PAD) * 3 * s to (BUTTON + 2 * PAD) * 3 * s
+        PadLayout.Element.L, PadLayout.Element.R -> shoulder(skin).let { (it.first + 2 * PAD) * s to (it.second + 2 * PAD) * s }
+        PadLayout.Element.SELECT, PadLayout.Element.START -> selectStart(landscape, skin).let { (it.first + 2 * PAD) * s to (it.second + 2 * PAD) * s }
+        else -> (BUTTON + 2 * PAD) * s to (BUTTON + 2 * PAD) * s
+    }
+
+    /** The scale an element draws at: a diamond member takes A's. */
+    fun scaleOf(layout: PadLayout, e: PadLayout.Element, baseScale: Float): Float =
+        (if (layout.inDiamond(e)) layout[PadLayout.Element.A].scale else layout[e].scale) * baseScale
+
+    /**
+     * Where an element's centre lands in dp, clamped inside the area the way
+     * FreePad clamps it. A diamond member is one button from A's centre, and the
+     * diamond is clamped as a unit so it keeps its shape at the edge.
+     */
+    fun centre(layout: PadLayout, e: PadLayout.Element, areaW: Float, areaH: Float, landscape: Boolean, skin: PadSkin, baseScale: Float = 1f): Pair<Float, Float> {
+        val s = scaleOf(layout, e, baseScale)
+        val (w, h) = size(e, s, landscape, skin)
+        if (layout.inDiamond(e)) {
+            val a = layout[PadLayout.Element.A]
+            val d = (BUTTON + 2 * PAD) * s
+            val half = w / 2
+            val cx = (a.x * areaW).coerceIn(d + half, (areaW - d - half).coerceAtLeast(d + half))
+            val cy = (a.y * areaH).coerceIn(d + half, (areaH - d - half).coerceAtLeast(d + half))
+            return when (e) {
+                PadLayout.Element.X -> cx to cy - d
+                PadLayout.Element.Y -> cx - d to cy
+                PadLayout.Element.A -> cx + d to cy
+                else -> cx to cy + d
+            }
+        }
+        val p = layout[e]
+        val l = (p.x * areaW - w / 2).coerceIn(0f, (areaW - w).coerceAtLeast(0f))
+        val t = (p.y * areaH - h / 2).coerceIn(0f, (areaH - h).coerceAtLeast(0f))
+        return l + w / 2 to t + h / 2
+    }
+
     fun rects(layout: PadLayout, areaW: Float, areaH: Float, landscape: Boolean, skin: PadSkin, baseScale: Float = 1f): Map<PadLayout.Element, List<Box>> {
         val out = LinkedHashMap<PadLayout.Element, List<Box>>()
         for (e in PadLayout.Element.entries) {
-            val p = layout.places[e] ?: continue
-            val s = p.scale * baseScale
-            val (w, h) = when (e) {
-                PadLayout.Element.DPAD -> (BUTTON + 2 * PAD) * 3 * s to (BUTTON + 2 * PAD) * 3 * s
-                PadLayout.Element.L, PadLayout.Element.R -> shoulder(skin).let { (it.first + 2 * PAD) * s to (it.second + 2 * PAD) * s }
-                PadLayout.Element.SELECT, PadLayout.Element.START -> selectStart(landscape, skin).let { (it.first + 2 * PAD) * s to (it.second + 2 * PAD) * s }
-                else -> (BUTTON + 2 * PAD) * s to (BUTTON + 2 * PAD) * s
-            }
-            val l = (p.x * areaW - w / 2).coerceIn(0f, (areaW - w).coerceAtLeast(0f))
-            val t = (p.y * areaH - h / 2).coerceIn(0f, (areaH - h).coerceAtLeast(0f))
+            if (e !in layout.places) continue
+            val s = scaleOf(layout, e, baseScale)
+            val (w, h) = size(e, s, landscape, skin)
+            val (cx, cy) = centre(layout, e, areaW, areaH, landscape, skin, baseScale)
+            val l = cx - w / 2
+            val t = cy - h / 2
             out[e] = if (e == PadLayout.Element.DPAD) {
                 val c = w / 3
                 listOf(Box(l + c, t, l + 2 * c, t + h), Box(l, t + c, l + w, t + 2 * c))

@@ -92,6 +92,6 @@ class PadLayoutTest {
                 kotlin.test.assertTrue(d > 0.06, "${buttons[i]} and ${buttons[j]} at $d")
             }
         }
-        kotlin.test.assertEquals("left-right", PadLayout.SUPERNDS_LANDSCAPE.dsLayout)
+        kotlin.test.assertEquals(null, PadLayout.SUPERNDS_LANDSCAPE.dsLayout, "auto: the column picks the arrangement")
     }
 }

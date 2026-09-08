@@ -72,6 +72,8 @@ data class NdsTrackerState(
      * dash means the chain itself did not resolve.
      */
     val resolvedBase: Long = 0,
+    /** What slot 0 of the party (and the enemy, in battle) decoded to, when neither produced a Pokemon. */
+    val probe: String? = null,
     /** Gym badges as 8 bits, badge 1 in bit 0. */
     val badges: Int = 0,
     /** Which badge art to draw: the map's BADGE_PREFIX (DPPT, HGSS). */
@@ -524,11 +526,14 @@ class NdsTracker(
         }
 
         val party = ArrayList<NdsTrackedMon>(6)
+        var probe: String? = null
         for (slot in 0 until 6) {
             val bytes = memory.read(
                 partyBase + slot.toLong() * map.entrySize, map.entrySize)
+            if (slot == 0 && bytes.size < map.entrySize) probe = "party @%08X: ".format(partyBase) + Gen4.probe(bytes, map.generation == 5)
             if (bytes.size < map.entrySize) break
-            val mon = Gen4.decodeParty(bytes, gen5 = map.generation == 5) ?: break
+            val mon = Gen4.decodeParty(bytes, gen5 = map.generation == 5)
+            if (mon == null) { if (slot == 0) probe = "party @%08X: ".format(partyBase) + Gen4.probe(bytes, map.generation == 5); break }
             // Gen 4 stores the rolled ability's own id in the mon, so decorate()
             // resolves it exactly rather than guessing a slot.
             party += decorate(mon)
@@ -538,6 +543,10 @@ class NdsTracker(
         if (party.isEmpty()) partyBase = 0L
 
         val battle = readBattle()
+        if (battle != null && battle.first == null && map.absolute) {
+            val eb = memory.read(ramStart + map.enemyBase, map.entrySize)
+            probe = (probe ?: "") + " | enemy @%08X: ".format(ramStart + map.enemyBase) + Gen4.probe(eb, map.generation == 5)
+        }
         var lead = party.firstOrNull()
         // In battle the LEAD also carries stage data; the reference draws
         // chevrons on both sides of the screen.
@@ -564,6 +573,7 @@ class NdsTracker(
             enemy = battle?.first,
             abilityRevealed = revealed,
             resolvedBase = partyBase,
+            probe = probe,
             badges = readBadges(),
             healPercent = heals.first,
             healCount = heals.second,

@@ -748,7 +748,10 @@ fun PlayScreen(
     // the view is keyed on gameKey, so a rotation alone would otherwise leave
     // the layout chosen at load time, and rebuilding the view on every
     // rotation would restart the game.
-    val dsLayoutName = padLayout.dsLayout ?: if (landscape) "hybrid-top" else "top-bottom"
+    // No layout chosen: in landscape the screens arrange themselves to the game column's
+    // shape (side by side on a phone, stacked on a tablet-shaped column), see NdsScreens.
+    var gameColumn by remember { mutableStateOf(androidx.compose.ui.unit.IntSize.Zero) }
+    val dsLayoutName = padLayout.dsLayout ?: if (landscape) NdsScreens.autoLayout(gameColumn.width, gameColumn.height) else "top-bottom"
     LaunchedEffect(dsLayoutName, retro, platform) {
         if (platform != com.ironmonone.core.Platform.NDS) return@LaunchedEffect
         retro?.updateVariables(
@@ -1667,10 +1670,10 @@ fun PlayScreen(
                 // The offset then slides the frame so the 2/3 mark lands on
                 // the tracker's left edge, putting the bottom screen and the
                 // tracker in one straight column.
-                fullscreen -> Modifier.fillMaxWidth().weight(1f).background(Color.Black)
+                fullscreen -> Modifier.fillMaxWidth().weight(1f).background(Color.Black).onSizeChanged { gameColumn = it }
                 dsScreens -> Modifier.fillMaxWidth().weight(1f)
                     .background(com.ironmonone.app.gen3.Gen3.FrameDark).padding(3.dp)
-                landscape -> Modifier.fillMaxSize()
+                landscape -> Modifier.fillMaxSize().onSizeChanged { gameColumn = it }
                     .background(com.ironmonone.app.gen3.Gen3.FrameDark).padding(3.dp)
                 else -> Modifier.fillMaxWidth(budget.gameFraction)
                     .align(Alignment.CenterHorizontally).aspectRatio(platform.aspect)

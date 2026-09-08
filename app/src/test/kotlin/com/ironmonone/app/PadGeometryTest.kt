@@ -45,6 +45,27 @@ class PadGeometryTest {
         assertTrue(bad.isEmpty(), bad.joinToString(System.lineSeparator()))
     }
 
+    /** The DS diamond is one button wide whatever the screen: on a 1000dp column and a 360dp phone alike. */
+    @Test
+    fun `the DS diamond keeps its dp spacing on any screen and moves as one`() {
+        for ((w, h, landscape) in listOf(Triple(1480f, 1509f, true), Triple(550f, 360f, true), Triple(360f, 192f, false), Triple(480f, 192f, false))) {
+            val l = PadLayout.default(landscape, nds = true)
+            assertTrue(l.abxyDiamond)
+            val a = PadGeometry.centre(l, PadLayout.Element.A, w, h, landscape, PadSkin.OUTLINE)
+            val y = PadGeometry.centre(l, PadLayout.Element.Y, w, h, landscape, PadSkin.OUTLINE)
+            val x = PadGeometry.centre(l, PadLayout.Element.X, w, h, landscape, PadSkin.OUTLINE)
+            val b = PadGeometry.centre(l, PadLayout.Element.B, w, h, landscape, PadSkin.OUTLINE)
+            val d = (PadGeometry.BUTTON + 2 * PadGeometry.PAD) * l[PadLayout.Element.A].scale
+            assertEquals(2 * d, a.first - y.first, 0.01f, "A to Y at ${w}x$h")
+            assertEquals(2 * d, b.second - x.second, 0.01f, "X to B at ${w}x$h")
+            assertEquals(a.second, y.second, 0.01f); assertEquals(x.first, b.first, 0.01f)
+        }
+        // Dragging Y moves A's place (the centre), so the four stay a diamond.
+        val l = PadLayout.SUPERNDS_LANDSCAPE
+        assertTrue(l.inDiamond(PadLayout.Element.Y)); assertTrue(!l.inDiamond(PadLayout.Element.L))
+        assertTrue(!PadLayout.MYBOY_PORTRAIT.abxyDiamond)
+    }
+
     @Test
     fun `the emulator layouts and the outline skin are what ships`() {
         assertEquals(PadLayout.MYBOY_PORTRAIT, PadLayout.default(false, nds = false))

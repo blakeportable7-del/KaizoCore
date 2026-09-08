@@ -78,15 +78,18 @@ fun FreePad(
     val rects = remember { HashMap<PadLayout.Element, Rect>() }
     Box(modifier.fillMaxSize().onSizeChanged { area = it }) {
         if (area.width == 0) return@Box
+        val density = androidx.compose.ui.platform.LocalDensity.current.density
         PadLayout.Element.entries.filter { it in layout.places }.forEach { e ->
-            val p = layout[e]
-            val s = p.scale * baseScale
+            val s = PadGeometry.scaleOf(layout, e, baseScale)
             Box(
                 Modifier.layout { measurable, constraints ->
                     val placeable = measurable.measure(constraints.copy(minWidth = 0, minHeight = 0))
                     layout(placeable.width, placeable.height) {
-                        val cx = (p.x * area.width).roundToInt() - placeable.width / 2
-                        val cy = (p.y * area.height).roundToInt() - placeable.height / 2
+                        // One geometry for the pad and for PadGeometryTest: centres in dp, the
+                        // diamond one button from A, everything clamped inside the area.
+                        val (cxDp, cyDp) = PadGeometry.centre(layout, e, area.width / density, area.height / density, translucent, skin, baseScale)
+                        val cx = (cxDp * density).roundToInt() - placeable.width / 2
+                        val cy = (cyDp * density).roundToInt() - placeable.height / 2
                         placeable.place(IntOffset(cx.coerceIn(0, (area.width - placeable.width).coerceAtLeast(0)),
                             cy.coerceIn(0, (area.height - placeable.height).coerceAtLeast(0))))
                     }
@@ -149,8 +152,10 @@ fun FreePad(
                             onDragCancel = { dragging = null },
                         ) { change, drag ->
                             change.consume()
-                            val e = dragging ?: return@detectDragGestures
+                            val d = dragging ?: return@detectDragGestures
                             val l = current
+                            // A diamond member drags the whole diamond: its A place is the centre.
+                            val e = if (l.inDiamond(d)) PadLayout.Element.A else d
                             onEdit(l.with(e, l[e].moved(drag.x / size.width, drag.y / size.height)))
                         }
                     }
@@ -191,8 +196,9 @@ fun LayoutToolbar(
             }
         }
         if (isDs) {
-            LayoutChip("SCREENS: ${layout.dsLayout ?: "default"}") {
-                val list = PadLayout.DS_LAYOUTS
+            LayoutChip("SCREENS: ${layout.dsLayout ?: "auto"}") {
+                // auto (fit the column) first, then every melonDS arrangement.
+                val list = listOf<String?>(null) + PadLayout.DS_LAYOUTS
                 val i = list.indexOf(layout.dsLayout)
                 onEdit(layout.copy(dsLayout = list[(i + 1) % list.size]))
             }

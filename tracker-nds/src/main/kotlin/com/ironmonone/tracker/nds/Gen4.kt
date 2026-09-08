@@ -104,6 +104,28 @@ object Gen4 {
      * Validation is the checksum first, then ranges — so this doubles as the
      * test used when scanning memory for the party.
      */
+    /**
+     * Why decodeParty refused an entry, for the tracker card. Blake's Black 2
+     * battle (2026-09-08) read the battle flag and no party, and nothing on
+     * screen said which step refused the bytes; this does.
+     */
+    fun probe(entry: ByteArray, gen5: Boolean = false): String {
+        val need = if (gen5) PARTY_ENTRY_SIZE_GEN5 else PARTY_ENTRY_SIZE
+        if (entry.size < need) return "read ${entry.size} of $need bytes"
+        val pid = entry.u32(0)
+        if (pid == 0L) return "pid 0 (empty slot)"
+        val checksum = entry.u16(6)
+        val blocks = decrypt(entry, 8, BLOCK_AREA, checksum)
+        var sum = 0
+        for (i in 0 until BLOCK_AREA step 2) sum = (sum + blocks.u16(i)) and 0xFFFF
+        val a = blockOffset(pid, 0)
+        val species = blocks.u16(a + 0x00)
+        val party = decrypt(entry, 8 + BLOCK_AREA, if (gen5) PARTY_AREA_GEN5 else PARTY_AREA, pid.toInt())
+        val head = entry.take(8).joinToString("") { "%02X".format(it) }
+        return "pid %08X sum %04X/%04X species %d lv %d hp %d/%d head %s".format(
+            pid, sum, checksum, species, party.u8(0x04), party.u16(0x06), party.u16(0x08), head)
+    }
+
     fun decodeParty(entry: ByteArray, gen5: Boolean = false): Mon? {
         if (entry.size < (if (gen5) PARTY_ENTRY_SIZE_GEN5 else PARTY_ENTRY_SIZE)) return null
         val pid = entry.u32(0)

@@ -179,6 +179,22 @@ Effort **S**.
 
 ### 2.1 Controls: match the most-downloaded emulators - **DONE 2026-09-07 (DS portrait waits on a screenshot)**
 
+**2026-09-08, they are the DEFAULT now.** Blake: "the buttons for the controls
+should never overlap each other" and "your DS controls look like the older
+builds". Both true: the My Boy and SuperNDS layouts were chips inside EDIT
+LAYOUT that nobody would find, so every phone still shipped the original pad
+with the CLASSIC skin, and its DS portrait put X on A. `PadLayout.default`
+now returns the emulator layouts (a new SUPERNDS_PORTRAIT laid into the 192dp
+band; his portrait screenshot is still welcome) and no skin file means OUTLINE.
+The original GBA pads stay behind an ORIGINAL PAD chip; the original DS pads
+are deleted. `PadGeometry` is the one source of the control sizes (PadButton
+and FreePad read it) and `PadGeometryTest` places every shipped layout on
+360..480dp portrait bands at full height and the 55% floor, and on 500x300
+to 1000x600 landscape columns, on all three skins, and fails on any two
+rectangles that touch. It caught nine collisions across the presets, including
+the SuperNDS diamond on a 500x300 column, all respaced. Seen on the emulator in
+both orientations on Black 2.
+
 Ranking read off the Play Store pages on 2026-09-07 (install band, last
 update): GBA: My Boy! Lite com.fastemulator.gbafree 50M+ (2019) and My Boy!
 com.fastemulator.gba 1M+ (Aug 2026), then John GBAC, Pizza Boy, My Retro
@@ -282,6 +298,18 @@ the core's own aspect handling and predate this; your phone shows the same
 thing as a band on the right. Separate item.
 
 ### 2.8 The side screens of every PC tracker - **OPEN 2026-09-08, IN PROGRESS**
+
+**Progress 2026-09-08, shipped (site + draft release + mirror):** Type Defenses
+(tap a type chip on any card), Coverage Calc (SETUP > COVERAGE CALC; on a DS
+ROM that was never randomized here it says so instead of six empty buckets,
+the sidecar is the only DS type table), Move History (tap the Moves header),
+Stats (SETUP > STATS, GBA and GB; DS has its own Statistics screen, still to
+do). Seen on the emulator on Black 2: Leavanny's Type Defenses buckets are
+right, Move History lists the two seen moves and the learn levels red/green.
+Stats is unit-tested only (no GBA ROM in the emulator's library that day).
+Next in the order: Trainer Info, Team View, Battle Details, Catch Rates,
+Notebook, Random Evos, Heals In Bag, Time Machine, Grade my notes; then the DS
+set.
 
 Blake, 2026-09-08: "why not? i told you to do it already". Nobody had put
 the side screens on this plan; the main tracker screen, the game over, the
