@@ -68,6 +68,7 @@ fun RomLibraryScreen(modifier: Modifier = Modifier, onPlay: () -> Unit = {}) {
     val patches = remember { mutableStateListOf<LibraryStore.PatchEntry>() }
     var busy by remember { mutableStateOf(false) }
     var status by remember { mutableStateOf<String?>(null) }
+    val progress = remember { FileProgress() }
     var selectedName by remember { mutableStateOf(store.library.selectedLibraryName()) }
 
     // Dialogs. One at a time; each is a small, named state.
@@ -114,14 +115,19 @@ fun RomLibraryScreen(modifier: Modifier = Modifier, onPlay: () -> Unit = {}) {
         val head = f.inputStream().use { i -> val b = ByteArray(8); val n = i.read(b); if (n > 0) b.copyOf(n) else ByteArray(0) }
         return when {
             ZipImport.isZip(name, head) -> {
-                val inside = f.inputStream().use { ZipImport.extractToFiles(it, java.io.File(f.parentFile, f.name + ".d")) }
+                progress.start("Unpacking $name", f.length())
+                val inside = f.inputStream().use { ZipImport.extractToFiles(it, java.io.File(f.parentFile, f.name + ".d")) { progress.at(it) } }
                 f.delete()
                 if (inside.isEmpty()) "$name holds no ROM or patch this app reads."
                 else inside.joinToString(Char(10).toString()) { (n, file) -> importFile(n, file) }.ifBlank { "" }
             }
             LibraryStore.looksLikePatch(name) || f.length() < 32L * 1024 * 1024 && store.library.peekPatch(f.readBytes()) != null ->
                 importOne(name, f.readBytes()).also { f.delete() }
-            else -> { val e = store.library.importFile(name, f); "Added ${e.name}: ${e.subtitle}" }
+            else -> {
+                progress.start("Checking $name", f.length())
+                val e = store.library.importFile(name, f) { d, t -> progress.at(d); if (t > 0) progress.total = t }
+                "Added ${e.name}: ${e.subtitle}" + (if (e.verified) ". Ready on the RUN tab." else "")
+            }
         }
     }
 
@@ -133,13 +139,16 @@ fun RomLibraryScreen(modifier: Modifier = Modifier, onPlay: () -> Unit = {}) {
                 uris.mapNotNull { uri ->
                     runCatching {
                         val tmp = java.io.File(context.cacheDir, "import-" + System.nanoTime())
-                        context.contentResolver.openInputStream(uri)!!.use { i -> tmp.outputStream().buffered(1 shl 20).use { o -> i.copyTo(o, 1 shl 20) } }
-                        importFile(context.displayNameOf(uri), tmp)
+                        val name = context.displayNameOf(uri)
+                        val size = runCatching { context.contentResolver.openAssetFileDescriptor(uri, "r")?.use { it.length } ?: -1L }.getOrDefault(-1L)
+                        progress.start("Copying $name", if (size > 0) size else 0L)
+                        context.contentResolver.openInputStream(uri)!!.use { i -> tmp.outputStream().buffered(1 shl 20).use { o -> copyWithProgress(i, o) { progress.at(it) } } }
+                        importFile(name, tmp)
                     }.getOrElse { (it as? com.ironmonone.patch.PatchException)?.message ?: "Could not read one file." }
                 }
             }
             status = lines.filter { it.isNotEmpty() }.joinToString("\n").ifBlank { null }
-            reload(); busy = false
+            reload(); progress.clear(); busy = false
         }
     }
 
@@ -175,7 +184,7 @@ fun RomLibraryScreen(modifier: Modifier = Modifier, onPlay: () -> Unit = {}) {
             }
         }
         Spacer(Modifier.height(8.dp))
-        if (busy) ShellBusy()
+        if (busy) { if (progress.phase.isNotEmpty()) FileProgressPanel(progress) else ShellBusy() }
 
         if (roms.isEmpty() && patches.isEmpty() && !busy) {
             EmptyState(

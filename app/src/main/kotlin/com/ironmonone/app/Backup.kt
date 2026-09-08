@@ -113,10 +113,16 @@ object ZipImport {
      * never holding an entry in memory: a 512 MB DS dump inside a zip is the
      * normal case, not the edge. Returns (entry name, file) pairs.
      */
-    fun extractToFiles(input: java.io.InputStream, dir: java.io.File): List<Pair<String, java.io.File>> {
+    fun extractToFiles(input: java.io.InputStream, dir: java.io.File, onProgress: ((Long) -> Unit)? = null): List<Pair<String, java.io.File>> {
         val out = ArrayList<Pair<String, java.io.File>>()
         dir.mkdirs()
-        ZipInputStream(input.buffered(1 shl 20)).use { zip ->
+        // Progress is measured on the COMPRESSED side, whose total the caller knows.
+        var consumed = 0L
+        val counted = object : java.io.FilterInputStream(input) {
+            override fun read(): Int = super.read().also { if (it >= 0) { consumed++; onProgress?.invoke(consumed) } }
+            override fun read(b: ByteArray, off: Int, len: Int): Int = super.read(b, off, len).also { if (it > 0) { consumed += it; onProgress?.invoke(consumed) } }
+        }
+        ZipInputStream(counted.buffered(1 shl 20)).use { zip ->
             var i = 0
             while (true) {
                 val e = zip.nextEntry ?: break

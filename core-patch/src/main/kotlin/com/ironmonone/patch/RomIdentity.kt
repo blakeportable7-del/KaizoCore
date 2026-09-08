@@ -174,7 +174,7 @@ object RomIdentity {
      * not fit in the heap (Black 2 threw OutOfMemoryError on import); the CRC
      * streams over the file and only [HEAD] bytes are held for the headers.
      */
-    fun identify(file: java.io.File): Result {
+    fun identify(file: java.io.File, onProgress: ((Long, Long) -> Unit)? = null): Result {
         val size = file.length()
         val head = ByteArray(minOf(size, HEAD.toLong()).toInt())
         val crc = java.util.zip.CRC32()
@@ -183,7 +183,8 @@ object RomIdentity {
             while (got < head.size) { val n = input.read(head, got, head.size - got); if (n < 0) break; got += n }
             crc.update(head, 0, got)
             val buf = ByteArray(1 shl 20)
-            while (true) { val n = input.read(buf); if (n < 0) break; crc.update(buf, 0, n) }
+            var read = got.toLong()
+            while (true) { val n = input.read(buf); if (n < 0) break; crc.update(buf, 0, n); read += n; onProgress?.invoke(read, size) }
         }
         return identify(head, size, crc.value)
     }

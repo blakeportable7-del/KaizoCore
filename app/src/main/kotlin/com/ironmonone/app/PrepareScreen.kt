@@ -68,6 +68,7 @@ fun PrepareScreen(modifier: Modifier = Modifier) {
     var message by remember { mutableStateOf<String?>(null) }
     var messageIsError by remember { mutableStateOf(false) }
     var needPatchImport by remember { mutableStateOf(false) }
+    val progress = remember { FileProgress() }
 
     fun say(text: String, error: Boolean = false) { message = text; messageIsError = error }
 
@@ -82,24 +83,28 @@ fun PrepareScreen(modifier: Modifier = Modifier) {
                     // Stream to a temp file; unzip on disk; identify from the file
                     // (RomIdentity.identify(File) reads the header and streams the CRC).
                     val tmp = java.io.File(context.cacheDir, "prep-" + System.nanoTime())
-                    context.contentResolver.openInputStream(uri)!!.use { i -> tmp.outputStream().buffered(1 shl 20).use { o -> i.copyTo(o, 1 shl 20) } }
                     var name = context.displayNameOf(uri)
+                    val size = runCatching { context.contentResolver.openAssetFileDescriptor(uri, "r")?.use { it.length } ?: -1L }.getOrDefault(-1L)
+                    progress.start("Copying $name", if (size > 0) size else 0L)
+                    context.contentResolver.openInputStream(uri)!!.use { i -> tmp.outputStream().buffered(1 shl 20).use { o -> copyWithProgress(i, o) { progress.at(it) } } }
                     var file = tmp
                     val head = tmp.inputStream().use { i -> val h = ByteArray(8); val n = i.read(h); if (n > 0) h.copyOf(n) else ByteArray(0) }
                     if (ZipImport.isZip(name, head)) {
-                        val inside = tmp.inputStream().use { ZipImport.extractToFiles(it, java.io.File(tmp.parentFile, tmp.name + ".d")) }
+                        progress.start("Unpacking $name", tmp.length())
+                        val inside = tmp.inputStream().use { ZipImport.extractToFiles(it, java.io.File(tmp.parentFile, tmp.name + ".d")) { progress.at(it) } }
                         tmp.delete()
                         val rom = inside.firstOrNull { (n, _) -> n.substringAfterLast('.').lowercase() in setOf("gba", "gbc", "gb", "nds") }
                             ?: inside.firstOrNull() ?: error("that zip holds no ROM")
                         name = rom.first; file = rom.second
                     }
-                    Triple(name, file, RomIdentity.identify(file))
+                    progress.start("Checking $name", file.length())
+                    Triple(name, file, RomIdentity.identify(file) { d, _ -> progress.at(d) })
                 }
             }.onSuccess { (n, f, id) ->
                 romFile?.delete(); romName = n; romFile = f; romId = id
                 if (!id.recognised) say(id.summary, error = true)
             }.onFailure { say("Could not read that file: ${it.message}", error = true); runCatching { context.cacheDir.listFiles()?.filter { f -> f.name.startsWith("prep-") }?.forEach { f -> f.deleteRecursively() } } }
-            busy = false
+            progress.clear(); busy = false
         }
     }
 
@@ -161,7 +166,7 @@ fun PrepareScreen(modifier: Modifier = Modifier) {
                         }
                     }
                 }
-            }.onSuccess { (msg, _) -> say("$msg Go to the Run tab."); romFile = null; romId = null }
+            }.onSuccess { (msg, _) -> say("$msg Ready on the RUN tab."); romFile = null; romId = null }
                 .onFailure {
                     if (it is NeedPatch) {
                         needPatchImport = true
@@ -234,9 +239,8 @@ fun PrepareScreen(modifier: Modifier = Modifier) {
 
         Spacer(Modifier.height(14.dp))
         if (busy) {
-            // Patching a 16MB ROM is not instant either; same panel as the
-            // randomizer so the app has one way of saying "working".
-            ProgressPanel(RunPhase.PATCHING)
+            // The pick shows its bytes; PREPARE shows the patch phase.
+            if (progress.phase.isNotEmpty()) FileProgressPanel(progress) else ProgressPanel(RunPhase.PATCHING)
             Spacer(Modifier.height(14.dp))
         }
 

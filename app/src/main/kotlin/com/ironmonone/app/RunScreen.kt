@@ -221,8 +221,13 @@ fun RunScreen(
       Column(
           Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(10.dp),
       ) {
-        val engineName = if (selectedRom?.first?.isNatDex == false) ZxEngine.DISPLAY_NAME
-        else NatDexEngine.DISPLAY_NAME
+        // The engine follows the game (Randomizers.randomize): the Nat. Dex fork for a
+        // Nat. Dex build, ZX for everything else. With no game picked there is no engine to name.
+        val engineName = when (selectedRom?.first?.isNatDex) {
+            null -> "chosen by the game you pick"
+            true -> NatDexEngine.DISPLAY_NAME
+            false -> ZxEngine.DISPLAY_NAME
+        }
         Gen3Box(Modifier.fillMaxWidth()) {
             Column {
         // The attempt count is the emotional core of IronMON and lived only

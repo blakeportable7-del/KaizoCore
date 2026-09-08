@@ -127,7 +127,7 @@ class LibraryStore(private val root: File) {
      * rename when it sits on the same filesystem, a streamed copy otherwise.
      * The identity is read off the file (RomIdentity.identify(File)).
      */
-    fun importFile(displayName: String, source: File, baseName: String? = null, patchName: String? = null): Entry {
+    fun importFile(displayName: String, source: File, baseName: String? = null, patchName: String? = null, onProgress: ((Long, Long) -> Unit)? = null): Entry {
         val target = unique(root, displayName)
         if (!source.renameTo(target)) {
             val tmp = File(target.parentFile, target.name + ".tmp")
@@ -135,7 +135,7 @@ class LibraryStore(private val root: File) {
             if (!tmp.renameTo(target)) { target.delete(); tmp.renameTo(target) }
             source.delete()
         }
-        return describe(target, RomIdentity.identify(target), baseName, patchName).also { write(it) }
+        return describe(target, RomIdentity.identify(target, onProgress), baseName, patchName).also { write(it) }
     }
 
     /** Copy [bytes] in as [displayName], never overwriting an existing entry. */
