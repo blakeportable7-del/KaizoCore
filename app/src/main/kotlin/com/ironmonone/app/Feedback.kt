@@ -52,7 +52,8 @@ object Feedback {
      * "GSC"), or null when there is none. [log] is the log tail, already
      * captured. Deterministic, so a test can pin the shape.
      */
-    fun compose(device: Device, family: String?, words: String, log: String, crash: String? = null): String = buildString {
+    fun compose(device: Device, family: String?, words: String, log: String, crash: String? = null, dump: String? = com.ironmonone.tracker.nds.NdsTracker.lastDump): String = buildString {
+        if (!dump.isNullOrBlank()) { appendLine("DS tracker raw read:"); appendLine(dump.trim()); appendLine() }
         appendLine("KaizoCore beta feedback")
         appendLine("App: ${device.appVersion}")
         appendLine("Device: ${device.model}, ${device.android}")

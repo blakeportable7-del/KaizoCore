@@ -424,6 +424,11 @@ class NdsTracker(
      */
     /** BST from the run's sidecar, for the Coverage Calc list's order (the DS reference sorts by BST). */
     fun speciesBst(id: Int): Int = speciesInfo[id]?.bst ?: 0
+
+    companion object {
+        /** The last raw party and enemy bytes read while nothing decoded, for the bug report. */
+        @Volatile var lastDump: String? = null
+    }
     /** True once the randomizer's sidecar has been read; types and BST come from nowhere else on DS. */
     fun hasSpeciesData(): Boolean = speciesInfo.isNotEmpty()
 
@@ -543,6 +548,17 @@ class NdsTracker(
         if (party.isEmpty()) partyBase = 0L
 
         val battle = readBattle()
+        if (party.isEmpty() && map.absolute) {
+            // The raw bytes for the bug report, so a phone that decodes nothing can
+            // still hand over what it read (Blake's Black 2 battle, 2026-09-08).
+            fun hex(addr: Long, n: Int) = memory.read(addr, n).joinToString("") { "%02X".format(it) }
+            lastDump = buildString {
+                appendLine("party @%08X: %s".format(partyBase, hex(partyBase, map.entrySize)))
+                appendLine("enemy @%08X: %s".format(ramStart + map.enemyBase, hex(ramStart + map.enemyBase, map.entrySize)))
+                appendLine("trainerId @%08X: %s  battleStatus @%08X: %s".format(ramStart + map.enemyTrainerId, hex(ramStart + map.enemyTrainerId, 4), ramStart + battleStatusGlobal, hex(ramStart + battleStatusGlobal, 4)))
+                appendLine("totalMonsParty @%08X: %s".format(ramStart + map.totalMonsParty, hex(ramStart + map.totalMonsParty, 4)))
+            }
+        }
         if (battle != null && battle.first == null && map.absolute) {
             val eb = memory.read(ramStart + map.enemyBase, map.entrySize)
             probe = (probe ?: "") + " | enemy @%08X: ".format(ramStart + map.enemyBase) + Gen4.probe(eb, map.generation == 5)
