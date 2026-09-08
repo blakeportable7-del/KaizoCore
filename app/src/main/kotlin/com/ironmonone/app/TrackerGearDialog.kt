@@ -42,6 +42,7 @@ fun TrackerGearDialog(
     onCoverage: () -> Unit = {},
     onStats: (() -> Unit)? = null,
     onTrainers: (() -> Unit)? = null,
+    onBattleDetails: (() -> Unit)? = null,
     onDismiss: () -> Unit,
 ) {
     var confirmClear by remember { mutableStateOf(false) }
@@ -56,6 +57,7 @@ fun TrackerGearDialog(
             com.ironmonone.app.gen3.Gen3Button("COVERAGE CALC") { onCoverage() }
             onStats?.let { com.ironmonone.app.gen3.Gen3Button("STATS") { it() } }
             onTrainers?.let { com.ironmonone.app.gen3.Gen3Button("TRAINERS ON ROUTE") { it() } }
+            onBattleDetails?.let { com.ironmonone.app.gen3.Gen3Button("BATTLE DETAILS") { it() } }
             Spacer(Modifier.height(8.dp))
 
             PixText("Options", 8, Pc.Text)

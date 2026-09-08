@@ -788,6 +788,7 @@ fun PlayScreen(
     var coverageCalc by remember { mutableStateOf(false) }
     var statsDialog by remember { mutableStateOf(false) }
     var trainersDialog by remember { mutableStateOf(false) }
+    var battleDetailsDialog by remember { mutableStateOf(false) }
     var trainerInfo by remember { mutableStateOf<com.ironmonone.tracker.GbaTracker.TrainerInfo?>(null) }
     /** Move History for one Pokemon: species, name, level. */
     var moveHistory by remember { mutableStateOf<Triple<Int, String, Int>?>(null) }
@@ -2240,6 +2241,12 @@ fun PlayScreen(
             onClose = { moveHistory = null },
         )
     }
+    if (battleDetailsDialog) {
+        val gba = trackerRef
+        // Re-read on every poll so counters move while the screen is open.
+        val details = remember(trackerState, gba) { runCatching { gba?.battleDetails() }.getOrNull() }
+        BattleDetailsDialog(details) { battleDetailsDialog = false }
+    }
     if (trainersDialog) {
         val gba = trackerRef; val st = trackerState
         val mapId = st?.mapId
@@ -2304,6 +2311,7 @@ fun PlayScreen(
             onCoverage = { gearDialog = false; coverageCalc = true },
             onStats = if (platform == com.ironmonone.core.Platform.NDS) null else { { gearDialog = false; statsDialog = true } },
             onTrainers = if (trackerRef?.hasTrainerData == true) { { gearDialog = false; trainersDialog = true } } else null,
+            onBattleDetails = if (trackerRef?.hasBattleDetails == true) { { gearDialog = false; battleDetailsDialog = true } } else null,
             onDismiss = { gearDialog = false },
         )
     }

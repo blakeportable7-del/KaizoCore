@@ -337,6 +337,20 @@ thing as a band on the right. Separate item.
 
 ### 2.8 The side screens of every PC tracker - **OPEN 2026-09-08, IN PROGRESS**
 
+**Battle Details, 2026-09-08 (Gen 3):** BattleDetailsScreen.lua cloned.
+GbaTracker.battleDetails() runs the reference's five readers over gBattleMons
+status2, gStatuses3, gSideStatuses and gSideTimers, gDisableStructs and
+gWishFutureKnock, plus terrain, weather with its turn counter, Pay Day money
+and the turn from gBattleResults, with the reference's words for every line
+(nine new map addresses per revision from GameAddresses; Ruby and Sapphire
+read the battle struct at gSharedMem as the reference does). One correction:
+the reference JSON puts Emerald's gPaydayMoney at gWishFutureKnock, which made
+Future Sight report Pay Day money in the test; it is 0x0202432E, derived from
+gBattleOutcome the same way FireRed's checks out. SETUP > BATTLE DETAILS shows
+every group at once, refreshed each poll, and says Not in a battle otherwise.
+BattleDetailsTest covers a synthetic battle; a live-battle check on the
+emulator is still owed.
+
 **Team View, 2026-09-08 (Gen 3):** TeamViewArea.lua cloned as PcTeamView, gated
 by the new "Show team view" option (Options["Show Team View"], off by default as
 in the reference). Six boxes, three to a row since the panel is 150 units wide

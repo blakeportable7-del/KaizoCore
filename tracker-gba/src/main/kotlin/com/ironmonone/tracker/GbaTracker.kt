@@ -100,6 +100,21 @@ data class GameMap(
     /** gBattleWeather (pret symbols; display is additionally gated on the bits
      *  matching a known weather mask so a wrong address shows nothing). */
     val weather: Long = 0,
+    /**
+     * BattleDetailsScreen.lua's addresses, from the reference's GameAddresses
+     * JSON per revision. battleTerrain at 0 turns the screen off. Ruby and
+     * Sapphire have no gBattleStructPtr; the struct sits at gSharedMem
+     * (0x02000000), which is what 0 means here.
+     */
+    val battleTerrain: Long = 0,
+    val battleStructPtr: Long = 0,
+    val statuses3: Long = 0,
+    val sideStatuses: Long = 0,
+    val sideTimers: Long = 0,
+    val disableStructs: Long = 0,
+    val lockedMoves: Long = 0,
+    val wishFutureKnock: Long = 0,
+    val paydayMoney: Long = 0,
     /** Front-pic and palette tables ({romPtr,size,tag} entries, LZ77 targets),
      *  located empirically by tools/find_sprites.py and eyeball-verified per
      *  game. 0 = no sprites. spriteCount bounds the species index. */
@@ -244,6 +259,12 @@ data class GameMap(
             itemNames = 0x085839A0,
             battleMoves = 0x0831C898,
             weather = 0x020243CC,
+            battleTerrain = 0x02022FF0, battleStructPtr = 0x0202449C, statuses3 = 0x020242AC,
+            sideStatuses = 0x0202428E, sideTimers = 0x02024294, disableStructs = 0x020242BC,
+            lockedMoves = 0x02024268, wishFutureKnock = 0x020243D0,
+            // The reference JSON lists gPaydayMoney at gWishFutureKnock, which makes Future Sight read Pay Day money. In battle_main.c
+            // gPaydayMoney, gRandomTurnNumber and gBattleCommunication[8] sit right before gBattleOutcome (0x0202433A), so 0x0202432E; FireRed fits the same pattern.
+            paydayMoney = 0x0202432E,
             frontPics = 0x08301418,
             palettes = 0x08303678,
             badgeOffset = 0x137C,
@@ -302,6 +323,9 @@ data class GameMap(
             itemNames = 0x083DB028,
             battleMoves = 0x08250C04,
             weather = 0x02023F1C,
+            battleTerrain = 0x02022B50, battleStructPtr = 0x02023FE8, statuses3 = 0x02023DFC,
+            sideStatuses = 0x02023DDE, sideTimers = 0x02023DE4, disableStructs = 0x02023E0C,
+            lockedMoves = 0x02023DB8, wishFutureKnock = 0x02023F20, paydayMoney = 0x02023E7E,
             frontPics = 0x082350AC,   // == pret gMonFrontPicTable
             palettes = 0x0823730C,    // == pret gMonPaletteTable
             badgeOffset = 0xFE4,
@@ -362,6 +386,9 @@ data class GameMap(
             itemNames = 0x083C5564,
             battleMoves = 0x081FB12C,
             weather = 0x02024DB8,
+            battleTerrain = 0x0300428C, statuses3 = 0x02024C98,
+            sideStatuses = 0x02024C7A, sideTimers = 0x02024C80, disableStructs = 0x02024CA8,
+            lockedMoves = 0x02024C54, wishFutureKnock = 0x02024DBC, paydayMoney = 0x02024D1A,
             frontPics = 0x081E8354,
             palettes = 0x081EA5B4,
             badgeOffset = 0x1320,
@@ -1286,6 +1313,7 @@ class GbaTracker(
         val heals = readHeals(party.firstOrNull()?.mon?.maxHp ?: 0)
 
         val inBattle = updateBattleStatus()
+        lastInBattle = inBattle
         // In battle, battler 0's stage block belongs to the player's active
         // mon; the panel shows chevrons on both sides like the reference.
         if (inBattle && party.isNotEmpty()) {
@@ -1474,6 +1502,9 @@ class GbaTracker(
 
     fun whichRival(trainerId: Int): String? = rivalOf[trainerId]
 
+    /** Whether BattleDetailsScreen's addresses are pinned for this build. */
+    val hasBattleDetails: Boolean get() = map.battleTerrain != 0L
+
     /** Whether this build's ROM map carries gTrainers, so the trainer screens can open. */
     val hasTrainerData: Boolean get() = map.gTrainers != 0L
 
@@ -1562,6 +1593,175 @@ class GbaTracker(
             }
         }
         return TrainerInfo(trainerId, className, name, party, aiFlags, doubleBattle, trainerDefeated(trainerId), items)
+    }
+
+    // ---- Battle Details (BattleDetailsScreen.lua) ----
+
+    /** One line of the screen; moveId or species say what it is about, for a future tap-through. */
+    data class BattleDetail(val text: String, val moveId: Int = 0, val species: Int = 0)
+
+    /**
+     * Everything BattleDetailsScreen.updateData reads: terrain, weather, the
+     * turn, field effects, each side's effects and each battler's. Battler
+     * indexes are the game's: 0 and 2 allied, 1 and 3 enemy.
+     */
+    data class BattleDetails(
+        val terrain: String,
+        val weather: String,
+        val turn: Int,
+        val battlers: Int,
+        val field: List<BattleDetail>,
+        val sides: List<List<BattleDetail>>,
+        val mons: List<List<BattleDetail>>,
+    ) {
+        /** BattleDetailsScreen.summarizeDetails: the first relevant line for a battler. */
+        fun summary(index: Int): String =
+            (mons.getOrNull(index)?.firstOrNull() ?: sides.getOrNull(index % 2)?.firstOrNull() ?: field.firstOrNull())?.text ?: ""
+    }
+
+    @Volatile private var lastInBattle = false
+    /** What the last read() decided about being in a battle; the battle screens key off it. */
+    fun inBattleNow(): Boolean = lastInBattle
+
+    private fun rb(a: Long): Int { val b = memory.read(a, 1); return if (b.size == 1) b[0].toInt() and 0xFF else 0 }
+    private fun rw(a: Long): Int { val b = memory.read(a, 2); return if (b.size == 2) b.u16(0) else 0 }
+    private fun rd(a: Long): Long { val b = memory.read(a, 4); return if (b.size == 4) b.u32(0) else 0 }
+
+    /** The species in gBattleMons slot [index], for the "(SOURCE)" suffixes; null when empty. */
+    private fun battlerSpeciesName(index: Int): String? {
+        if (index !in 0..3 || map.battleMons == 0L) return null
+        val sp = rw(map.battleMons + index.toLong() * map.battleMonSize)
+        return if (speciesIsValid(sp)) speciesName(sp) else null
+    }
+
+    private fun turns(n: Int) = "$n Turn" + (if (n == 1) "" else "s")
+
+    /**
+     * BattleDetailsScreen.updateData, all of GameFuncs in one read. Null when
+     * not in a battle or the addresses are not pinned for this build.
+     */
+    fun battleDetails(): BattleDetails? {
+        if (map.battleTerrain == 0L || !inBattleNow()) return null
+        val battlers = if (map.battlersCount != 0L) rb(map.battlersCount).coerceIn(2, 4) else 2
+        val field = ArrayList<BattleDetail>()
+        val sides = List(2) { ArrayList<BattleDetail>() }
+        val mons = List(4) { ArrayList<BattleDetail>() }
+
+        // readTerrain / readWeather
+        val terrain = when (rb(map.battleTerrain)) {
+            0 -> "Grass"; 1 -> "Long Grass"; 2 -> "Sand"; 3 -> "Underwater"; 4 -> "Water"
+            5 -> "Pond"; 6 -> "Mountain"; 7 -> "Cave"; else -> "Building"
+        }
+        var weather = "None"
+        val wb = if (map.weather == 0L) 0 else rb(map.weather)
+        if (wb != 0) {
+            var bit = 0; var v = wb
+            while (v > 1) { v = v shr 1; bit++ }
+            weather = when (bit) { 0, 1, 2 -> "Rain"; 3, 4 -> "Sandstorm"; 5, 6 -> "Sunlight"; 7 -> "Hail"; else -> "None" }
+            if (bit == 0 || bit == 3 || bit == 5 || bit == 7) {
+                val wt = rb(map.wishFutureKnock + 0x28)
+                field += BattleDetail("Weather turns Left: $wt")
+            } else field += BattleDetail("Weather: $weather")
+        }
+        // Pay Day
+        val payday = rw(map.paydayMoney)
+        if (payday != 0) field += BattleDetail("${moveName(6)} ($payday)", moveId = 6)
+
+        val battleStruct = if (map.battleStructPtr != 0L) rd(map.battleStructPtr) else 0x02000000L
+        var lockOn = BooleanArray(4); var perish = BooleanArray(4)
+        for (i in 0 until battlers) {
+            val m = mons[i]
+            // readStatus2: gBattleMons + 0x50
+            val s2 = rd(map.battleMons + i.toLong() * map.battleMonSize + 0x50)
+            fun b2(n: Int) = (s2 shr n) and 1L == 1L
+            if (b2(0) || b2(1) || b2(2)) m += BattleDetail("Confused (1- 4 Turns)")
+            if (b2(4) || b2(5) || b2(6)) m += BattleDetail(moveName(253), 253)
+            if (b2(8) || b2(9)) {
+                val t = (if (b2(8)) 1 else 0) + (if (b2(9)) 2 else 0)
+                m += BattleDetail("${moveName(117)}: ${turns(t)}", 117)
+            }
+            if (b2(12) && !(b2(8) || b2(9))) m += BattleDetail("Must Attack")
+            if (b2(13) || b2(14) || b2(15)) {
+                val src = rb(battleStruct + 0x14 + i)
+                battlerSpeciesName(src)?.let { m += BattleDetail("Trapped ($it)") }
+            }
+            if (b2(16) || b2(17) || b2(18) || b2(19)) {
+                val target = when { b2(16) -> 0; b2(17) -> 1; b2(18) -> 2; else -> 3 }
+                battlerSpeciesName(target)?.let { m += BattleDetail("${moveName(213)} ($it)", 213) }
+            }
+            if (b2(20)) m += BattleDetail(moveName(116), 116)
+            if (b2(21)) m += BattleDetail(moveName(144), 144)
+            if (b2(22)) m += BattleDetail("Recharging")
+            if (b2(23)) m += BattleDetail(moveName(99), 99)
+            if (b2(24)) m += BattleDetail(moveName(164), 164)
+            if (b2(25)) m += BattleDetail(moveName(194), 194)
+            if (b2(26)) m += BattleDetail("Can't Escape")
+            if (b2(27)) m += BattleDetail(moveName(171), 171)
+            if (b2(28)) m += BattleDetail(moveName(174), 174)
+            if (b2(29)) m += BattleDetail(moveName(193), 193)
+            if (b2(30)) m += BattleDetail(moveName(111), 111)
+            if (b2(31)) m += BattleDetail(moveName(259), 259)
+
+            // readStatus3
+            val s3 = rd(map.statuses3 + i.toLong() * 4)
+            fun b3(n: Int) = (s3 shr n) and 1L == 1L
+            if (b3(2)) {
+                val src = (if (b3(0)) 1 else 0) + (if (b3(1)) 2 else 0)
+                battlerSpeciesName(src)?.let { m += BattleDetail("${moveName(73)} ($it)", 73) }
+            }
+            if (b3(3) || b3(4)) lockOn[i] = true
+            if (b3(5)) perish[i] = true
+            when { b3(6) -> "Airborne"; b3(7) -> "Underground"; b3(18) -> "Underwater"; else -> null }?.let { m += BattleDetail(it) }
+            if (b3(8)) m += BattleDetail(moveName(107), 107)
+            if (b3(9)) m += BattleDetail(moveName(268), 268)
+            if (b3(10)) m += BattleDetail(moveName(275), 275)
+            if (b3(11) || b3(12)) m += BattleDetail("Drowsy", 281)
+            if (b3(13)) m += BattleDetail(moveName(286), 286)
+            if (b3(14)) m += BattleDetail(moveName(288), 288)
+            if (b3(16)) battlerSpeciesName(i)?.let { field += BattleDetail("${moveName(300)} ($it)", 300) }
+            if (b3(17)) battlerSpeciesName(i)?.let { field += BattleDetail("${moveName(346)} ($it)", 346) }
+
+            // readSideStatuses, once per side
+            if (i < 2) {
+                val side = sides[i]
+                val ss = rw(map.sideStatuses + i.toLong() * 2)
+                val tb = map.sideTimers + i.toLong() * 0xC
+                if (ss and 1 != 0) m.let { side += BattleDetail("${moveName(115)}: ${turns(rb(tb + 0))} Left", 115) }
+                if (ss and 2 != 0) side += BattleDetail("${moveName(113)}: ${turns(rb(tb + 2))} Left", 113)
+                if (ss and 0x10 != 0) side += BattleDetail("${moveName(191)}: ${rb(tb + 0xA)}", 191)
+                if (ss and 0x20 != 0) side += BattleDetail("${moveName(219)}: ${turns(rb(tb + 6))} Left", 219)
+                if (ss and 0x100 != 0) side += BattleDetail("${moveName(54)}: ${turns(rb(tb + 4))} Left", 54)
+            }
+
+            // readDisableStruct
+            val ds = map.disableStructs + i.toLong() * 0x1C
+            val disabled = rw(ds + 4); if (disabled != 0) m += BattleDetail("${moveName(50)} (${moveName(disabled)})", 50)
+            val encored = rw(ds + 6); if (encored != 0) m += BattleDetail("${moveName(227)} (${moveName(encored)})", 227)
+            val protect = rb(ds + 8); if (protect != 0) m += BattleDetail("Protection Uses: $protect", 182)
+            val stockpile = rb(ds + 9); if (stockpile != 0) m += BattleDetail("${moveName(254)}: $stockpile", 254)
+            if (perish[i]) m += BattleDetail("Perish Count: ${1 + (rb(ds + 0xF) and 0xF)}", 195)
+            val fury = rb(ds + 0x10); if (fury != 0) m += BattleDetail("${moveName(210)}: $fury", 210)
+            val rollout = rb(ds + 0x11) and 0xF
+            if (rollout != 0) m += BattleDetail("${moveName(rw(map.lockedMoves + i.toLong() * 2))}: ${turns(rollout)} Left", 205)
+            val taunt = rb(ds + 0x13) and 0xF; if (taunt != 0) m += BattleDetail("${moveName(269)}: ${turns(taunt)} Left", 269)
+            if (lockOn[i]) battlerSpeciesName(rb(ds + 0x15))?.let { m += BattleDetail("${moveName(199)} ($it)", 199) }
+            if (rb(ds + 0x18) and 1 == 1) {
+                // The reference shows Loafing only when Truant is already tracked; here, when the species can have it.
+                val sp = rw(map.battleMons + i.toLong() * map.battleMonSize)
+                val bs = if (speciesIsValid(sp)) baseStats(sp) else null
+                if (bs != null && (bs.ability1 == 54 || bs.ability2 == 54)) m += BattleDetail("Loafing")
+            }
+
+            // readWishStruct
+            val wk = map.wishFutureKnock
+            val fs = rb(wk + i)
+            if (fs != 0) battlerSpeciesName(rb(wk + 4 + i))?.let { m += BattleDetail("Future: ${turns(fs)} Left ($it)") }
+            val wish = rb(wk + 0x20 + i)
+            if (wish != 0) battlerSpeciesName(rb(wk + 0x24 + i))?.let { m += BattleDetail("${moveName(273)}: ${turns(fs)} Left ($it)", 273) }
+            if (rb(wk + 0x29 + i + (if (i < 2) 0 else 1)) != 0) m += BattleDetail(moveName(282), 282)
+        }
+        val turn = if (map.battleResults == 0L) 0 else rb(map.battleResults + 0x13) + 1
+        return BattleDetails(terrain, weather, turn, battlers, field, sides, mons)
     }
 
     /** Program.hasDefeatedTrainer: flag 0x500 + id in the save block's flags. */
