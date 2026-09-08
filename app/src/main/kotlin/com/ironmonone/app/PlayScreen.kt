@@ -531,6 +531,9 @@ fun PlayScreen(
     var battleStartState by remember(session.id) { mutableStateOf<ByteArray?>(null) }
     // TimeMachineScreen: a restore point every four minutes on a map, out of battle.
     val timeMachine = remember(session.id) { TimeMachine() }
+    // SeedLogger: the DS tracker's past runs, per game family, and when this run began for its playtime.
+    val pastRunStore = remember(ndsState?.badgeSet) { ndsState?.badgeSet?.let { PastRunStore(store.pastRunsFile(it)) } }
+    val runStartedAt = remember(session.id) { System.currentTimeMillis() }
     LaunchedEffect(session.id) {
         while (true) {
             kotlinx.coroutines.delay(15_000)
@@ -2200,6 +2203,15 @@ fun PlayScreen(
     val runOutcome = view?.outcome
     var gameOverShownFor by remember(session.id) { mutableStateOf<com.ironmonone.tracker.RunOutcome?>(null) }
     LaunchedEffect(runOutcome) { if (runOutcome == null) gameOverShownFor = null }
+    // Program.onRunEnded: log the run once per outcome, from the DS state that ended it.
+    var loggedRunFor by remember(session.id) { mutableStateOf<com.ironmonone.tracker.RunOutcome?>(null) }
+    LaunchedEffect(runOutcome) {
+        val nds = ndsState; val ps = pastRunStore
+        if (runOutcome != null && loggedRunFor != runOutcome && nds != null && ps != null && Demo.mode == null) {
+            loggedRunFor = runOutcome
+            PastRun.fromDs(nds, runOutcome == com.ironmonone.tracker.RunOutcome.WON, ((System.currentTimeMillis() - runStartedAt) / 1000).toInt())?.let { ps.log(it) }
+        }
+    }
     if (runOutcome != null && gameOverShownFor != runOutcome && !streamClean) {
         val team: List<GameOverMon> = ndsState?.party?.map { GameOverMon(it.mon.species, it.speciesName, it.mon.level, it.mon.curHp == 0, it.mon.shiny) }
             ?: trackerState?.party?.map { GameOverMon(it.mon.species, it.speciesName, it.mon.level, it.mon.curHp == 0, it.mon.shiny) }
@@ -2252,7 +2264,9 @@ fun PlayScreen(
         onRestore = { bytes ->
             if (raHardcore) status = "Loading a state is off in RetroAchievements hardcore."
             else status = if (retro?.unserializeState(bytes) == true) "Restored." else "Load failed - the core refused that state."
-        })
+        },
+        pastRunStore = pastRunStore,
+        dsSpriteOf = { sp -> val c = androidx.compose.ui.platform.LocalContext.current; remember(sp) { PcAssets.dsSprite(c, sp, false) } })
     if (coverageCalc) {
         val ctx = androidx.compose.ui.platform.LocalContext.current
         val nds = ndsTrackerRef
@@ -2301,6 +2315,9 @@ fun PlayScreen(
             onNotebook = if (platform == com.ironmonone.core.Platform.NDS) null else { { gearDialog = false; side.notebookDialog = true } },
             onHeals = if (trackerRef?.hasCatchRates == true) { { gearDialog = false; side.healsDialog = true } } else null,
             onTimeMachine = { gearDialog = false; side.timeMachineDialog = true },
+            onPastRuns = if (pastRunStore != null) { { gearDialog = false; side.pastRuns = true } } else null,
+            onStatistics = if (pastRunStore != null) { { gearDialog = false; side.statistics = true } } else null,
+            onEvoData = ndsState?.party?.firstOrNull()?.mon?.species?.let { sp -> { gearDialog = false; side.evoData = sp } },
             onDismiss = { gearDialog = false },
         )
     }

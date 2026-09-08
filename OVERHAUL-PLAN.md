@@ -337,6 +337,22 @@ thing as a band on the right. Separate item.
 
 ### 2.8 The side screens of every PC tracker - **OPEN 2026-09-08, IN PROGRESS**
 
+**DS set, part one, 2026-09-08: Past Runs, Statistics, Evo Data.** From the
+NDS-Ironmon-Tracker. PastRun / SeedLogger cloned as PastRunStore
+(prep/pastruns-<family>.tsv): a run is logged once per outcome from the DS
+state that ended it (the fainted Pokemon, the enemy, badges, progress, this
+session's seconds as playtime); the DS tracker now carries Tracker.getProgress
+(Past Lab when a battle ends against a lab rival id, Won against the champion;
+TrainerData LAB_IDS and FINAL_FIGHT_ID per game on NdsGameMap) and the enemy
+trainer id. PastRunsScreen: i/N with arrows, Swap, Newest / Oldest / A-Z, the
+minimum-badges row, Remove no-badge runs behind a confirm. StatisticsScreen:
+Total runs, Playtime, and the eleven statistic sets as bar graphs (Overall
+Progress, BST ranges, types, Pokemon, moves and abilities you ran and lost
+to, capped at ten). EvoDataScreen: EvoDataGen4/5.lua run through
+convert_evodata.py into gen4/evos.tsv and gen5/evos.tsv, sorted by Name, BST
+or Percent with the Evo N picker. All three under SETUP on the DS panel; seen
+on the HeartGold demo. PastRunsTest and EvoDataTest.
+
 **Grade my notes, 2026-09-08 (Gen 3):** StatMarkingScoreSheet.lua cloned as
 ScoreSheet.kt, opened from the game-over dialog's Grade my notes row as the
 reference does (GameOverScreen.NotesGrade). Marks on HP, ATK, DEF, SPA and SPD

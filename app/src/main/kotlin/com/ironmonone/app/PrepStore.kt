@@ -330,6 +330,9 @@ class PrepStore(context: Context) {
 
     fun marksFile(): File = File(root, "marks.txt")
 
+    /** SeedLogger's past runs for a game family (DS tracker): prep/pastruns-<badgeSet>.tsv. */
+    fun pastRunsFile(family: String): File = File(root, "pastruns-$family.tsv")
+
     /** Scratch space for writes that must not leave a half-file behind. */
     fun cacheDirFor(): File = File(root, "tmp").apply { mkdirs() }
 

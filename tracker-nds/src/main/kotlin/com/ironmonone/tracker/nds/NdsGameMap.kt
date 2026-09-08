@@ -38,6 +38,9 @@ data class NdsGameMap(
     val statStagesEnemy: Long,
     val battleSubscriptMsgs: Long,
     val itemStartNoBattle: Long,
+    /** TrainerData.TRAINERS[game].LAB_IDS and FINAL_FIGHT_ID: beating a lab rival is Past Lab, beating the champion is Won. */
+    val labTrainerIds: Set<Int> = emptySet(),
+    val finalTrainerId: Int = 0,
     val itemStartBattle: Long,
     val berryBagStart: Long,
     val berryBagStartBattle: Long,
@@ -119,6 +122,7 @@ data class NdsGameMap(
          */
         val DP = NdsGameMap(
             name = "Pokemon Diamond / Pearl",
+            labTrainerIds = setOf(247, 248, 249), finalTrainerId = 267,
             gameCodes = setOf(CODE_DIAMOND, CODE_PEARL),
             generation = 4, badgePrefix = "DPPT", absolute = false,
             dataDir = "gen4", moveLevelsResource = "/gen4/movelevels.tsv",
@@ -136,6 +140,7 @@ data class NdsGameMap(
         /** MemoryAddresses[PLATINUM]; GameInfo[PLATINUM].BADGE_PREFIX. */
         val PLATINUM = NdsGameMap(
             name = "Pokemon Platinum",
+            labTrainerIds = setOf(850, 851, 852), finalTrainerId = 267,
             gameCodes = setOf(CODE_PLATINUM),
             generation = 4, badgePrefix = "DPPT", absolute = false,
             dataDir = "gen4", moveLevelsResource = "/gen4/movelevels.tsv",
@@ -155,6 +160,7 @@ data class NdsGameMap(
          */
         val HGSS = NdsGameMap(
             name = "Pokemon HeartGold / SoulSilver",
+            labTrainerIds = setOf(495, 496, 497), finalTrainerId = 260,
             gameCodes = setOf(CODE_HEART_GOLD, CODE_SOUL_SILVER),
             generation = 4, badgePrefix = "HGSS", absolute = false,
             dataDir = "gen4", moveLevelsResource = "/gen4/movelevels.tsv",
@@ -178,6 +184,7 @@ data class NdsGameMap(
          */
         val BW = NdsGameMap(
             name = "Pokemon Black",
+            labTrainerIds = setOf(64), finalTrainerId = 232,
             gameCodes = setOf(CODE_BLACK),
             generation = 5, badgePrefix = "BW", absolute = true,
             dataDir = "gen5", moveLevelsResource = "/gen5/movelevels-bw.tsv",
@@ -200,6 +207,7 @@ data class NdsGameMap(
         /** MemoryAddresses[BLACK2].GLOBAL; VERSION_GROUP 5 with White 2, whose block is every address `+ 0x80` ([WHITE2]). No statStagesEnemy there. */
         val B2W2 = NdsGameMap(
             name = "Pokemon Black 2",
+            labTrainerIds = setOf(161, 162, 163), finalTrainerId = 341,
             gameCodes = setOf(CODE_BLACK2),
             generation = 5, badgePrefix = "BW2", absolute = true,
             dataDir = "gen5", moveLevelsResource = "/gen5/movelevels-b2w2.tsv",

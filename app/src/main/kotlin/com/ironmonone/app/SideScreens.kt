@@ -30,6 +30,9 @@ class SideScreenState {
     var statsDialog by mutableStateOf(false)
     var timeMachineDialog by mutableStateOf(false)
     var scoreSheet by mutableStateOf(false)
+    var pastRuns by mutableStateOf(false)
+    var statistics by mutableStateOf(false)
+    var evoData by mutableStateOf<Int?>(null)
 }
 
 /** The side screens themselves: Move History, Random Evos, Heals In Bag, Notebook, Catch Rates, Battle Details, Trainers On Route, Trainer Info, Stats. */
@@ -49,7 +52,12 @@ fun SideScreenDialogs(
     timeMachine: TimeMachine? = null,
     snapshot: () -> ByteArray? = { null },
     onRestore: (ByteArray) -> Unit = {},
+    pastRunStore: PastRunStore? = null,
+    dsSpriteOf: @Composable (Int) -> ImageBitmap? = { null },
 ) {
+    if (s.pastRuns && pastRunStore != null) PastRunsDialog(pastRunStore, dsSpriteOf) { s.pastRuns = false }
+    if (s.statistics && pastRunStore != null) StatisticsDialog(pastRunStore) { s.statistics = false }
+    s.evoData?.let { sp -> EvoDataDialog(sp, ndsTrackerRef, dsSpriteOf) { s.evoData = null } }
     if (s.scoreSheet) {
         val result = remember(statMarks, trackerRef) {
             ScoreSheet.build(statMarks, { trackerRef?.baseStats(it) }, { id -> trackerRef?.speciesName(id) ?: gbNames?.invoke(id) ?: "#$id" })

@@ -83,6 +83,10 @@ data class NdsTrackerState(
     val healCount: Int = 0,
     /** null while the run is alive; otherwise how it ended. */
     val runOver: NdsRunOver? = null,
+    /** PlaythroughConstants.PROGRESS: 0 nowhere, 1 past the lab, 2 won. */
+    val progress: Int = 0,
+    /** The opponent's trainer id, 0 for a wild battle, as last read. */
+    val enemyTrainerId: Int = 0,
     /**
      * Ability revealed by a battle trigger this tick: species to ability
      * name. The panel persists these per run; the reference's TrackAbility.
@@ -306,6 +310,37 @@ class NdsTracker(
 
     fun speciesName(id: Int): String =
         speciesInfo[id]?.name ?: speciesNames[id] ?: "#$id"
+
+    /** The ROM data's row for a species, for screens that need its BST, types and abilities. */
+    fun speciesInfoFor(id: Int): NdsSpeciesInfo? = speciesInfo[id]
+
+    /** Tracker.getProgress: 0 nowhere, 1 past the lab, 2 won. Set by the battle that ends against a lab or final trainer. */
+    var progress: Int = 0
+        private set
+    private var lastTrainerId = 0
+    private var wasInBattle = false
+
+    /** EvoDataScreen's EvoData.EVOLUTIONS[base]: target id -> (evo id, percent) in the reference's order, from gen4/evos.tsv or gen5/evos.tsv. */
+    private val evoData: Map<Int, Map<Int, List<Pair<Int, Double>>>> by lazy {
+        val out = HashMap<Int, LinkedHashMap<Int, List<Pair<Int, Double>>>>()
+        javaClass.getResourceAsStream("/${map.dataDir}/evos.tsv")?.bufferedReader(Charsets.UTF_8)?.useLines { lines ->
+            lines.forEach { line ->
+                if (line.startsWith("#")) return@forEach
+                val p = line.split('\t'); if (p.size < 3) return@forEach
+                val base = p[0].toIntOrNull() ?: return@forEach
+                val target = p[1].toIntOrNull() ?: return@forEach
+                out.getOrPut(base) { LinkedHashMap() }[target] = p[2].split(',').mapNotNull { e ->
+                    val c = e.indexOf(':'); if (c <= 0) null else {
+                        val id = e.substring(0, c).toIntOrNull(); val perc = e.substring(c + 1).toDoubleOrNull()
+                        if (id == null || perc == null) null else id to perc
+                    }
+                }
+            }
+        }
+        out
+    }
+
+    fun evoData(species: Int): Map<Int, List<Pair<Int, Double>>> = evoData[species] ?: emptyMap()
 
     private fun u32(addr: Long): Long {
         val b = memory.read(addr, 4)
@@ -652,6 +687,12 @@ class NdsTracker(
             else -> readAbilityTrigger(battle.third, lead, battle.first)
         }
         val heals = readHeals(lead?.mon?.maxHp ?: 0, battle != null)
+        // BattleHandlerBase._onEndOfBattle: a battle that just ended against a lab rival is Past Lab, against the champion is Won.
+        if (wasInBattle && battle == null) {
+            if (lastTrainerId in map.labTrainerIds && progress < 1) progress = 1
+            if (map.finalTrainerId != 0 && lastTrainerId == map.finalTrainerId) progress = 2
+        }
+        wasInBattle = battle != null
         return NdsTrackerState(
             badgeSet = map.badgePrefix,
             partyCount = party.size,
@@ -667,6 +708,8 @@ class NdsTracker(
             healPercent = heals.first,
             healCount = heals.second,
             runOver = if (lossCondition.lost(party.map { it.mon.level to it.mon.curHp })) readRunOver(lead, battle?.first) else null,
+            progress = progress,
+            enemyTrainerId = if (battle != null) lastTrainerId else 0,
         )
     }
 
@@ -687,6 +730,7 @@ class NdsTracker(
 
         val trainerBytes = memory.read(ramStart + versionRel + enemyTrainerIdOffset, 2)
         val isWild = trainerBytes.size == 2 && trainerBytes.u16(0) == 0
+        if (trainerBytes.size == 2) lastTrainerId = trainerBytes.u16(0)
 
         // The reference matches the active battle PID into the enemy party
         // (BattleHandlerGen4) rather than trusting slot 0, which is only the
@@ -754,6 +798,7 @@ class NdsTracker(
         if (battlePid == 0L || enemyPid == 0L || battlePid != leadPid) return Triple(null, false, 0L)
         val trainer = memory.read(ramStart + live.enemyTrainerId, 2)
         val isWild = trainer.size == 2 && trainer.u16(0) == 0
+        if (trainer.size == 2) lastTrainerId = trainer.u16(0)
 
         val battleDataBase = ptr(ramStart + live.mainBattleDataPtr + 0x1C)
             ?: return Triple(null, isWild, 0L)
