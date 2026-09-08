@@ -337,6 +337,20 @@ thing as a band on the right. Separate item.
 
 ### 2.8 The side screens of every PC tracker - **OPEN 2026-09-08, IN PROGRESS**
 
+**Trainers On Route and Trainer Info, 2026-09-08 (Gen 3):** TrainersOnRouteScreen.lua
+and TrainerInfoScreen.lua cloned. GbaTracker.trainer(id) reads the 0x28-byte
+gTrainers entry, the class name table and the party in all four layouts (the
+reference's Program.readTrainerGameData), IVs as iv*31/255, the AI label from
+the script flags, and defeated from flag 0x500+id in SaveBlock1 (new map
+fields gTrainers, gTrainerClassNames, gameFlagsOffset per revision; zero
+turns the screens off). The rival tables (rivals-frlg.tsv, rivals-rse.tsv, from
+convert_rivals.py running the reference's TrainerData.lua) drop the other two
+rivals once the first rival battle names this run's. SETUP > TRAINERS ON ROUTE
+lists the map's trainers with defeated counts; tapping the TRAINER BATTLE banner
+opens the opponent. Verified on the Emerald demo against the ROM: Wattson's
+Voltorb 20, Electrike 20, Magneton 22, Manectric 24 with a Sitrus Berry, Smart.
+TrainerInfoTest covers the reader over a hand-built ROM.
+
 **Random Ball, 2026-09-08 (DS set):** RandomBallScreen.lua cloned. NdsTracker
 rolls 1..3 once per game boot; the no-party card shows three balls with the
 rolled one lit and "Random ball: Left / Middle / Right"; HGSS draws its blue,

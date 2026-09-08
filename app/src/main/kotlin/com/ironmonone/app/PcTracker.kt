@@ -1404,6 +1404,8 @@ fun PcBattleBanner(
     onFlee: () -> Unit,
     viewingOwn: Boolean = false,
     onSwapView: (() -> Unit)? = null,
+    /** TrainersOnRouteScreen: the TRAINER BATTLE banner opens Trainer Info for the opponent. */
+    onTrainerTap: (() -> Unit)? = null,
 ) {
     Row(
         Modifier.fillMaxWidth().background(Pc.Ground).border(1.rp, Pc.Border)
@@ -1414,6 +1416,7 @@ fun PcBattleBanner(
         PixText(
             if (isWild) "WILD BATTLE" else "TRAINER BATTLE", PcRef.FONT,
             if (isWild) Pc.Positive else Pc.Negative,
+            if (!isWild && onTrainerTap != null) Modifier.clickable { onTrainerTap() } else Modifier,
         )
         Row(verticalAlignment = Alignment.CenterVertically) {
             // The reference swaps between your Pokemon and the enemy's with a

@@ -78,6 +78,8 @@ object Demo {
             enemyTeam = listOf(false, false, true, true), enemy = enemy,
             badges = 0b11, badgeSet = "RSE", healPercent = 62, healCount = 4,
             routeName = "Mauville City", steps = 18422,
+            // Mauville Gym, against Wattson, so the trainer screens read the real ROM.
+            mapId = 89, opponentTrainerId = 267,
         )
     }
 

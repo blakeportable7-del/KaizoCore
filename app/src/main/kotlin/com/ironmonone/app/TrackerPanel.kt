@@ -227,6 +227,8 @@ private fun EnemyCard(
 
 @Composable
 fun TrackerPanel(
+    /** Trainer Info for the opponent, from the TRAINER BATTLE banner. */
+    onTrainerInfo: (() -> Unit)? = null,
     /** Move History for a card: (species, name, level). */
     onMoveHistory: ((Int, String, Int) -> Unit)? = null,
     /** Type Defenses for a card: (name, type1, type2) in Gen 3 ids. */
@@ -415,6 +417,7 @@ fun TrackerPanel(
                         // it would toggle a view that is not hidden.
                         onSwapView = if (state.enemy != null && !stackBoth)
                             { { viewingOwn = !viewingOwn } } else null,
+                        onTrainerTap = onTrainerInfo,
                     )
                     Spacer(Modifier.height(1.rp))
                 }

@@ -199,6 +199,14 @@ data class GameMap(
     /** gTrainerBattleOpponent_A: which trainer the last battle was against. */
     val trainerOpponent: Long = 0,
     /**
+     * gTrainers, gTrainerClassNames and the save block's flags offset, from the
+     * reference's GameAddresses JSON per revision (2026-09-08). Zero means the
+     * trainer screens are off for this build.
+     */
+    val gTrainers: Long = 0,
+    val gTrainerClassNames: Long = 0,
+    val gameFlagsOffset: Long = 0,
+    /**
      * Beating one of these IS the win condition - the run is over and won.
      * FRLG has three because the champion's team depends on your starter.
      */
@@ -254,6 +262,7 @@ data class GameMap(
             handleTurnAction = 0x0803BE75,
             returnToOverworld = 0x0803DF71,
             trainerOpponent = 0x02038BCA,
+            gTrainers = 0x08310030, gTrainerClassNames = 0x0830FCD4, gameFlagsOffset = 0x1270,
             finalTrainers = setOf(804),
             encryptionKeyOffset = 0xAC,
         )
@@ -310,6 +319,7 @@ data class GameMap(
             handleTurnAction = 0x08014041,
             returnToOverworld = 0x08015B59,
             trainerOpponent = 0x020386AE,
+            gTrainers = 0x0823EAC8, gTrainerClassNames = 0x0823E558, gameFlagsOffset = 0xEE0,
             finalTrainers = setOf(438, 439, 440),
             encryptionKeyOffset = 0xF20,
         )
@@ -369,6 +379,7 @@ data class GameMap(
             handleTurnAction = 0x08012325,
             returnToOverworld = 0x08013EB1,
             trainerOpponent = 0x0202FF5E,
+            gTrainers = 0x081F04FC, gTrainerClassNames = 0x081F0208, gameFlagsOffset = 0x1220,
             finalTrainers = setOf(335),      // Steven, TrainerData.setupTrainersAsRubySapphire
             encryptionKeyOffset = 0,         // Ruby and Sapphire store quantities in the clear
         )
@@ -386,6 +397,7 @@ data class GameMap(
             frontPics = 0x081E82E4,
             palettes = 0x081EA544,
             levelUpLearnsets = 0x08207B58,
+            gTrainers = 0x081F048C, gTrainerClassNames = 0x081F0198,
         )
 
         /**
@@ -405,6 +417,7 @@ data class GameMap(
             frontPics = 0x08235088,
             palettes = 0x082372E8,
             levelUpLearnsets = 0x0825D794,
+            gTrainers = 0x0823EAA4, gTrainerClassNames = 0x0823E534,
             startersBase = 0, starter2Off = 0, starter3Off = 0,
         )
 
@@ -666,6 +679,10 @@ data class GameMap(
                 handleTurnAction = ptr(0x080002F4),
                 returnToOverworld = ptr(0x080002F8),
                 trainerOpponent = ewramPtr(ptr(0x08000294)),
+                // The Nat. Dex builds move both tables (GameAddresses: gTrainers_NatDex_113).
+                gTrainers = if (isEmeraldHeader(memory)) 0x08311190 else 0x0823D818,
+                gTrainerClassNames = if (isEmeraldHeader(memory)) 0x0830C120 else 0x0823D2A8,
+                gameFlagsOffset = if (isEmeraldHeader(memory)) 0x1270 else 0xEE0,
                 finalTrainers = if (isEmeraldHeader(memory)) setOf(804) else setOf(438, 439, 440),
             )
             // A loud failure beats a blank tracker: if the pointer table did not
@@ -959,6 +976,8 @@ data class TrackerState(
     val routeTrainers: List<Int> = emptyList(),
     /** How many of those are gym leaders, Elite 4 or bosses. */
     val routeBosses: Int = 0,
+    /** gTrainerBattleOpponent_A during a trainer battle, for the Trainer Info screen. */
+    val opponentTrainerId: Int? = null,
     /** Total steps walked this run, game stat 5. */
     val steps: Int = 0,
     /** True only in the map where the starter is chosen. */
@@ -1269,6 +1288,7 @@ class GbaTracker(
             routeName = mapId?.let { routeInfo(it)?.first },
             routeSpecies = mapId?.let { routeInfo(it)?.second } ?: emptyList(),
             routeTrainers = mapId?.let { trainersOnRoute(it) } ?: emptyList(),
+            opponentTrainerId = if (inBattle && trainer) readOpponentTrainerId()?.also { id -> whichRival(id)?.let { rivalChoice = it } } else null,
             routeBosses = mapId?.let { m ->
                 trainersOnRoute(m).count { trainerGroup(it) in BOSS_GROUPS }
             } ?: 0,
@@ -1403,6 +1423,124 @@ class GbaTracker(
     fun trainerGroup(trainerId: Int): String = trainerClass[trainerId]?.second ?: "Other"
 
     fun trainerClassName(trainerId: Int): String? = trainerClass[trainerId]?.first
+
+    // ---- Trainer Info and Trainers On Route (TrainerInfoScreen.lua, TrainersOnRouteScreen.lua) ----
+
+    /** TrainerData.Trainers[id].whichRival, from rivals-<table>.tsv (tools/trainer-data/convert_rivals.py). */
+    private val rivalOf: Map<Int, String> by lazy {
+        val out = HashMap<Int, String>()
+        if (map.routeTable.isEmpty()) return@lazy out
+        javaClass.getResourceAsStream("/gen3/rivals-${map.routeTable}.tsv")
+            ?.bufferedReader(Charsets.UTF_8)?.useLines { lines ->
+                lines.forEach { line ->
+                    if (line.startsWith("#")) return@forEach
+                    val p = line.split('\t')
+                    if (p.size >= 2) p[0].toIntOrNull()?.let { out[it] = p[1].trim() }
+                }
+            }
+        out
+    }
+
+    fun whichRival(trainerId: Int): String? = rivalOf[trainerId]
+
+    /** Whether this build's ROM map carries gTrainers, so the trainer screens can open. */
+    val hasTrainerData: Boolean get() = map.gTrainers != 0L
+
+    /**
+     * Tracker.Data.whichRival: which of the three rivals this run has, learned
+     * from the first rival battle. Until then every rival is listed, as the
+     * reference does (TrainerData.shouldUseTrainer).
+     */
+    var rivalChoice: String? = null
+        private set
+
+    /** TrainersOnRouteScreen's list for a map: the route's trainers, minus the rivals that are not this run's. */
+    fun trainersForRoute(mapId: Int): List<Int> =
+        trainersOnRoute(mapId).filter { id -> val r = rivalOf[id]; r == null || rivalChoice == null || r == rivalChoice }
+
+    private fun readOpponentTrainerId(): Int? {
+        if (map.trainerOpponent == 0L) return null
+        val b = memory.read(map.trainerOpponent, 2)
+        return if (b.size == 2) b.u16(0).takeIf { it != 0 } else null
+    }
+
+    data class TrainerMon(val species: Int, val level: Int, val ivs: Int, val heldItem: Int, val moves: List<Int>)
+
+    data class TrainerInfo(
+        val id: Int,
+        val className: String,
+        val name: String,
+        val party: List<TrainerMon>,
+        val aiFlags: Int,
+        val doubleBattle: Boolean,
+        val defeated: Boolean,
+        val items: List<Int>,
+    ) {
+        /** TrainerInfoScreen's AI label from the script flags. */
+        val aiLabel: String get() = when {
+            aiFlags and 4 != 0 -> "Smart"
+            aiFlags and 2 != 0 -> "Semi-Smart"
+            aiFlags and 1 != 0 -> "Normal"
+            aiFlags == 0 -> "Dumb"
+            else -> "Complex"
+        }
+        val minLevel: Int get() = party.minOfOrNull { it.level } ?: 0
+        val maxLevel: Int get() = party.maxOfOrNull { it.level } ?: 0
+        /** TrainerInfoScreen: the party's average IV, floor of the mean. */
+        val avgIvs: Int get() = if (party.isEmpty()) 0 else (party.sumOf { it.ivs } / party.size).coerceAtLeast(0)
+    }
+
+    /**
+     * Program.readTrainerGameData: the 0x28-byte gTrainers entry, its class
+     * name, its name (the rival's from the save block on FRLG, as the reference
+     * does, since the ROM's name for the rival is a placeholder), and the party
+     * in whichever of the four layouts the flags say. IVs are the 0..255 byte
+     * scaled to 31, the reference's `iv * 31 / 255`.
+     */
+    fun trainer(trainerId: Int): TrainerInfo? {
+        if (map.gTrainers == 0L || trainerId <= 0) return null
+        val base = map.gTrainers + trainerId.toLong() * 0x28
+        val t = memory.read(base, 0x28)
+        if (t.size < 0x28) return null
+        val partyFlags = t[0].toInt() and 0xFF
+        val classId = t[1].toInt() and 0xFF
+        val partySize = t[0x20].toInt() and 0xFF
+        val aiFlags = t.u32(0x1C).toInt()
+        val doubleBattle = t[0x18].toInt() != 0
+        val items = (0 until 4).map { t.u16(0x10 + it * 2) }
+        val className = if (map.gTrainerClassNames == 0L) "" else
+            Gen3Text.decode(memory.read(map.gTrainerClassNames + classId.toLong() * 13, 13))
+        val nameBytes = if (map.badgeSet == "FRLG" && rivalOf[trainerId] != null)
+            saveBlock1()?.let { memory.read(it + 0x3A4C, 8) } ?: t.copyOfRange(4, 16)
+        else t.copyOfRange(4, 16)
+        val name = Gen3Text.decode(nameBytes)
+        val partyPtr = t.u32(0x24)
+        val entry = if (partyFlags and 1 != 0) 16 else 8
+        val party = ArrayList<TrainerMon>()
+        if (partyPtr in 0x08000000L..0x09FFFFFFL && partySize in 1..6) {
+            val pb = memory.read(partyPtr, entry * partySize)
+            if (pb.size == entry * partySize) for (i in 0 until partySize) {
+                val o = i * entry
+                val iv = pb.u16(o); val level = pb[o + 2].toInt() and 0xFF; val species = pb.u16(o + 4)
+                val item = if (partyFlags and 2 != 0) pb.u16(o + 6) else 0
+                val moves = if (partyFlags and 1 != 0) {
+                    val m0 = if (partyFlags and 2 != 0) o + 8 else o + 6
+                    (0 until 4).map { pb.u16(m0 + it * 2) }
+                } else emptyList()
+                party += TrainerMon(species, level, iv * 31 / 255, item, moves)
+            }
+        }
+        return TrainerInfo(trainerId, className, name, party, aiFlags, doubleBattle, trainerDefeated(trainerId), items)
+    }
+
+    /** Program.hasDefeatedTrainer: flag 0x500 + id in the save block's flags. */
+    fun trainerDefeated(trainerId: Int): Boolean {
+        if (map.gameFlagsOffset == 0L) return false
+        val sb1 = saveBlock1() ?: return false
+        val flag = 0x500 + trainerId
+        val b = memory.read(sb1 + map.gameFlagsOffset + (flag / 8), 1)
+        return b.size == 1 && ((b[0].toInt() shr (flag % 8)) and 1) == 1
+    }
 
     /**
      * Move and ability descriptions, from the reference's English resources.
