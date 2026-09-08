@@ -180,6 +180,24 @@ JNIEXPORT jboolean JNICALL LibretroDroid::unserializeSRAM(int8_t* data, size_t s
 
 // IronMON One patch: see the header. Descriptors first, then SYSTEM_RAM.
 size_t LibretroDroid::readMemory(uint64_t address, size_t length, unsigned char* output) {
+    // The core's LIVE system RAM first (2026-09-08). melonDS DS publishes memory
+    // descriptors at load time and then rebuilds its console, so the descriptor
+    // pointers go stale: a 4 MB dump read through them carried the cartridge
+    // header and the ROM's static data but no trainer name and no Pokemon,
+    // while the game was in a battle. retro_get_memory_data is asked each time
+    // and always points at the console that is running.
+    {
+        std::lock_guard<std::mutex> lock(coreLock);
+        if (core != nullptr && gameLoaded && framesRun >= 120) {
+            const uint64_t systemRamBase = 0x02000000;
+            size_t ramSize = core->retro_get_memory_size(RETRO_MEMORY_SYSTEM_RAM);
+            auto* ram = static_cast<unsigned char*>(core->retro_get_memory_data(RETRO_MEMORY_SYSTEM_RAM));
+            if (ram != nullptr && ramSize > 0 && address >= systemRamBase && address + length <= systemRamBase + ramSize) {
+                memcpy(output, ram + (address - systemRamBase), length);
+                return length;
+            }
+        }
+    }
     size_t read = Environment::getInstance().readMemoryRegion(address, length, output);
     if (read > 0) return read;
 
@@ -210,6 +228,18 @@ size_t LibretroDroid::readMemory(uint64_t address, size_t length, unsigned char*
 // core that publishes no descriptors (melonDS) would otherwise accept writes
 // that silently go nowhere.
 size_t LibretroDroid::writeMemory(uint64_t address, size_t length, const unsigned char* input) {
+    {
+        std::lock_guard<std::mutex> lock(coreLock);
+        if (core != nullptr && gameLoaded && framesRun >= 120) {
+            const uint64_t systemRamBase = 0x02000000;
+            size_t ramSize = core->retro_get_memory_size(RETRO_MEMORY_SYSTEM_RAM);
+            auto* ram = static_cast<unsigned char*>(core->retro_get_memory_data(RETRO_MEMORY_SYSTEM_RAM));
+            if (ram != nullptr && ramSize > 0 && address >= systemRamBase && address + length <= systemRamBase + ramSize) {
+                memcpy(ram + (address - systemRamBase), input, length);
+                return length;
+            }
+        }
+    }
     size_t written = Environment::getInstance().writeMemoryRegion(address, length, input);
     if (written > 0) return written;
 

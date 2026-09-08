@@ -63,7 +63,8 @@ fun PrepareScreen(modifier: Modifier = Modifier) {
     // dumps are 16 to 32 MB.
     var romFile by remember { mutableStateOf<java.io.File?>(null) }
     var romId by remember { mutableStateOf<RomIdentity.Result?>(null) }
-    var wantNatDex by remember { mutableStateOf(true) }
+    /** The PREP option chosen for this dump; null means the game's first (default) option. */
+    var chosenOption by remember { mutableStateOf<String?>(null) }
     var busy by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
     var messageIsError by remember { mutableStateOf(false) }
@@ -135,19 +136,29 @@ fun PrepareScreen(modifier: Modifier = Modifier) {
         scope.launch {
             runCatching {
                 withContext(Dispatchers.IO) {
-                    when {
-                        kind.isNatDex ->
-                            "Already Nat. Dex. Stored as ready to randomize." to
+                    val options = PrepOptions.forKind(kind)
+                    val opt = options.firstOrNull { it.id == chosenOption } ?: options.first()
+                    when (opt.mode) {
+                        PrepOptions.Mode.STANDARD ->
+                            (if (kind.isNatDex || kind.patchTag != null) "Already patched. Stored as is." else "Stored as a standard (vanilla) base.") to
                                 store.savePrepared(kind, file)
 
-                        // A ROM that cannot take Nat. Dex (e.g. FireRed v1.0) is always
-                        // a standard base - the hidden radio's default must never route
-                        // it into the patch path.
-                        !wantNatDex || !kind.natDexCapable ->
-                            "Stored as a standard (vanilla) base." to
-                                store.savePrepared(kind, file)
+                        PrepOptions.Mode.PATCH -> {
+                            val outKind = opt.out ?: error("no output kind for ${opt.label}")
+                            val patchFile = store.bundledPatch(context, opt.asset ?: error("no patch for ${opt.label}"))
+                                ?: error("The ${opt.label} is not in this build of the app.")
+                            val tmp = java.io.File(context.cacheDir, "prep-patched-${outKind.id}.${outKind.fileExtension}")
+                            progress.phase = "Patching"
+                            val crc = Patcher.applyFiles(patchFile, file, tmp, kind.displayName) { done, total -> progress.done = done; progress.total = total }
+                            if (outKind.expectedCrc != RomKind.CRC_UNKNOWN && crc != outKind.expectedCrc) {
+                                tmp.delete()
+                                error("The patch applied but the result is not the build this app knows (checksum %08x, expected %08x). The dump is probably a different revision.".format(crc, outKind.expectedCrc))
+                            }
+                            file.delete()
+                            "Patched to ${outKind.displayName}. Ready to randomize." to store.savePrepared(outKind, tmp)
+                        }
 
-                        else -> {
+                        PrepOptions.Mode.NATDEX -> {
                             // Bundled patch is used unless the user imported one.
                             val patchFile = store.patchFileOrBundled(context, kind)
                                 ?: throw NeedPatch()
@@ -212,27 +223,24 @@ fun PrepareScreen(modifier: Modifier = Modifier) {
             }
         }
 
-        if (romId?.kind?.natDexCapable == true) {
-            Spacer(Modifier.height(14.dp))
-            // The whole row is the touch target, not just the radio circle. A label
-            // that ignores taps is the bug the emulator test caught on 2026-08-30.
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Row(
-                    Modifier.clickable { wantNatDex = true },
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    ShellRadio(wantNatDex)
-                    Spacer(Modifier.width(10.dp))
-                    Text("Nat. Dex", fontWeight = FontWeight.SemiBold)
-                }
-                Spacer(Modifier.width(16.dp))
-                Row(
-                    Modifier.clickable { wantNatDex = false },
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    ShellRadio(!wantNatDex)
-                    Spacer(Modifier.width(10.dp))
-                    Text("Standard")
+        romId?.kind?.let { k ->
+            val options = PrepOptions.forKind(k)
+            if (options.size > 1) {
+                Spacer(Modifier.height(14.dp))
+                val current = options.firstOrNull { it.id == chosenOption } ?: options.first()
+                // The whole row is the touch target, not just the radio circle. A label
+                // that ignores taps is the bug the emulator test caught on 2026-08-30.
+                Column {
+                    options.forEach { o ->
+                        Row(
+                            Modifier.fillMaxWidth().clickable { chosenOption = o.id }.padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            ShellRadio(current.id == o.id)
+                            Spacer(Modifier.width(10.dp))
+                            Text(o.label, fontWeight = if (current.id == o.id) FontWeight.SemiBold else FontWeight.Normal)
+                        }
+                    }
                 }
             }
         }

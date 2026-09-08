@@ -111,41 +111,36 @@ object CoreOptions {
         Option("gambatte_gb_link_network_port", "Port", range(56400, 56420), "56400", LINK_GROUP),
     ) + (1..12).map { Option(LinkIp.key(it), "Server address digit $it", range(0, 9), "0", LINK_IP_GROUP) }
 
+    /**
+     * The classic libretro melonDS core (libretro/melonDS), since 2026-09-08.
+     * The app shipped melonDS DS (JesseTG) until then; its system RAM did not
+     * carry the running game (a 4 MB dump held the cartridge header and the
+     * ROM's static data but no trainer name and no Pokemon, in a battle),
+     * so no DS tracker read ever worked. The classic core's RAM has the game
+     * where the PC tracker's addresses say. Its option names and values are
+     * its own (src/libretro/libretro_core_options.h); they are not the melonDS
+     * DS names, and a stale value from the old core is simply unknown to it.
+     */
     val NDS: List<Option> = listOf(
         Option(FILTER_KEY, "Video filter", FILTERS, "Default", "Video"),
-        Option("melonds_render_mode", "Renderer", listOf("software", "opengl"), "software", "Video", restart = true,
-            hint = "OpenGL is the path to upscaling, if this core build has it."),
-        Option("melonds_opengl_filtering", "OpenGL filtering", listOf("nearest", "linear"), "nearest", "Video"),
         Option("melonds_threaded_renderer", "Threaded software renderer", listOf("enabled", "disabled"), "enabled", "Performance", restart = true),
+        Option("melonds_jit_enable", "JIT recompiler", listOf("enabled", "disabled"), "enabled", "Performance", restart = true,
+            hint = "Off is slower but is the fallback if a game misbehaves."),
         Option("melonds_hybrid_ratio", "Hybrid big screen ratio", listOf("2", "3"), "2", "Video"),
-        // melonDS DS parses exactly two values here (config/parse.hpp, ParseHybridSideScreenDisplay): "one" shows only the
-        // other screen small, "both" shows both screens small. Anything else makes the core fall back to both, which is
-        // how the top screen came to be drawn twice beside the tracker (2026-09-06).
-        Option("melonds_hybrid_small_screen", "Hybrid small screen", listOf("one", "both"), "one", "Video"),
-        Option("melonds_audio_interpolation", "Audio interpolation", listOf("disabled", "linear", "cosine", "cubic", "gaussian"), "disabled", "Audio"),
-        Option("melonds_audio_bitdepth", "Audio bit depth", listOf("auto", "10bit", "16bit"), "auto", "Audio"),
-        Option("melonds_mic_input", "Microphone input", listOf("silence", "blow", "noise"), "silence", "Hardware",
-            hint = "blow answers any mic prompt with a breath; noise with static. The phone's own mic is not used."),
-        Option("melonds_solar_sensor_host_sensor", "Solar sensor from the phone", listOf("disabled", "enabled"), "disabled", "Hardware"),
-        Option("melonds_slot2_device", "Slot-2 device", listOf("auto", "rumble-pak", "expansion-pak"), "auto", "Hardware", restart = true,
-            hint = "rumble-pak for games that use it."),
+        Option("melonds_hybrid_small_screen", "Hybrid small screen", listOf("Bottom", "Top", "Duplicate"), "Bottom", "Video"),
+        Option("melonds_touch_mode", "Touch", listOf("Touch", "Mouse", "Joystick", "disabled"), "Touch", "Hardware",
+            hint = "Touch: the stylus is your finger on the bottom screen. Leave it."),
+        Option("melonds_mic_input", "Microphone input", listOf("Blow Noise", "White Noise", "Microphone Input", "None"), "Blow Noise", "Hardware",
+            hint = "Blow Noise answers any mic prompt with a breath."),
         RUMBLE_ROW, SENSORS_ROW,
-        Option("melonds_console_mode", "Console", listOf("ds", "dsi"), "ds", "System", restart = true,
-            hint = "DSi needs your own NAND and DSi firmware imported below."),
-        Option("melonds_boot_mode", "Boot", listOf("direct", "native"), "direct", "System", restart = true,
-            hint = "native shows the DS menu first; needs real firmware."),
-        Option("melonds_sysfile_mode", "System files", listOf("builtin", "native"), "builtin", "System", restart = true,
-            hint = "native uses bios7.bin, bios9.bin and firmware.bin imported below."),
-        Option("melonds_firmware_language", "Firmware language", listOf("auto", "en", "ja", "fr", "de", "it", "es"), "auto", "System", restart = true),
-        Option("melonds_start_time_mode", "Clock", listOf("sync", "relative", "absolute"), "sync", "System", restart = true,
-            hint = "sync follows the phone's clock."),
-        // DSi: the file-path options the core discovers by scanning the system
-        // folder. Our import names are the only values; sent to the core only
-        // while console mode is dsi (PlayScreen.coreVariables), so a plain DS
-        // never hears about files it does not have.
-        Option("melonds_dsi_nand_path", "DSi NAND", listOf("dsi_nand.bin"), "dsi_nand.bin", DSI_GROUP, restart = true),
-        Option("melonds_firmware_dsi_path", "DSi firmware", listOf("dsi_firmware.bin"), "dsi_firmware.bin", DSI_GROUP, restart = true),
-        Option("melonds_firmware_nds_path", "DS firmware", listOf("firmware.bin"), "firmware.bin", DSI_GROUP, restart = true),
+        Option("melonds_console_mode", "Console", listOf("DS", "DSi"), "DS", "System", restart = true,
+            hint = "DSi needs your own DSi BIOS, firmware and NAND imported below."),
+        Option("melonds_boot_directly", "Boot straight into the game", listOf("enabled", "disabled"), "enabled", "System", restart = true,
+            hint = "disabled shows the DS menu first; needs real firmware."),
+        Option("melonds_use_fw_settings", "Use firmware settings", listOf("disabled", "enabled"), "disabled", "System", restart = true,
+            hint = "enabled reads your name, colour and language from an imported firmware.bin."),
+        Option("melonds_language", "Language", listOf("English", "Japanese", "French", "German", "Italian", "Spanish"), "English", "System", restart = true),
+        Option("melonds_randomize_mac_address", "Random MAC address", listOf("disabled", "enabled"), "disabled", "System", restart = true),
         Option("melonds_dsi_sdcard", "DSi virtual SD card", listOf("disabled", "enabled"), "disabled", DSI_GROUP, restart = true),
     )
 

@@ -47,6 +47,7 @@ object Patcher {
         patch.size > 4 && patch.startsWith("BPS1") -> PatchFormat.BPS
         patch.size > 5 && patch.startsWith("PATCH") -> PatchFormat.IPS
         patch.size > 4 && patch.startsWith("UPS1") -> PatchFormat.UPS
+        Xdelta.isXdelta(patch) -> PatchFormat.XDELTA
         else -> null
     }
 
@@ -58,8 +59,27 @@ object Patcher {
             PatchFormat.BPS -> Bps.apply(patch, source, romName)
             PatchFormat.IPS -> Ips.apply(patch, source)
             PatchFormat.UPS -> Ups.apply(patch, source, romName)
-            else -> throw CorruptPatch("it is not an IPS, BPS or UPS patch")
+            PatchFormat.XDELTA -> throw CorruptPatch("an xdelta patch is applied file to file (applyFiles), not in memory")
+            else -> throw CorruptPatch("it is not an IPS, BPS, UPS or xdelta patch")
         }
+
+    /**
+     * Applies a patch file to a ROM file, writing [target]. xdelta streams (a
+     * 128 MB DS dump never sits in the heap); the small formats go through
+     * memory. Returns the target's CRC32.
+     */
+    fun applyFiles(patch: java.io.File, source: java.io.File, target: java.io.File, romName: String = "that ROM", onProgress: ((Long, Long) -> Unit)? = null): Long {
+        val head = patch.inputStream().use { it.readNBytes(8) }
+        if (Xdelta.isXdelta(head)) {
+            Xdelta.apply(patch, source, target, onProgress)
+        } else {
+            val out = apply(patch.readBytes(), source.readBytes(), romName)
+            target.parentFile?.mkdirs(); target.writeBytes(out)
+        }
+        val crc = java.util.zip.CRC32()
+        target.inputStream().buffered(1 shl 20).use { input -> val b = ByteArray(1 shl 20); while (true) { val n = input.read(b); if (n < 0) break; crc.update(b, 0, n) } }
+        return crc.value
+    }
 
     private fun ByteArray.startsWith(magic: String): Boolean =
         magic.indices.all { this[it].toInt() == magic[it].code }

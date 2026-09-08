@@ -63,7 +63,7 @@ class LibraryStore(private val root: File) {
         /** Header says a supported game but the CRC is not pinned yet: shelved as clean, labelled unverified. */
         val unverified: Boolean get() = kind != null && kind.expectedCrc == RomKind.CRC_UNKNOWN
         val category: Category get() = when {
-            verified && kind!!.isNatDex -> Category.PATCHED
+            verified && (kind!!.isNatDex || kind.patchTag != null) -> Category.PATCHED
             // Made by a patch and not a known build: a hack, even if the header
             // still names a game whose CRC is not pinned.
             patchName != null -> if (platform != null) Category.HACK else Category.OTHER
@@ -75,7 +75,7 @@ class LibraryStore(private val root: File) {
         }
         /** What the card says under the name. */
         val subtitle: String get() = when {
-            verified && kind!!.isNatDex -> kind.displayName + " · verified"
+            verified && (kind!!.isNatDex || kind.patchTag != null) -> kind.displayName + " · verified"
             patchName != null -> "$patchName on ${baseName ?: "?"}"
             verified -> kind!!.displayName + " · verified"
             unverified -> kind!!.displayName + " · unverified (CRC not pinned yet)"

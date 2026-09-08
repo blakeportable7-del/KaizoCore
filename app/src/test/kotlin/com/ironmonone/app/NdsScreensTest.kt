@@ -5,6 +5,14 @@ import kotlin.test.assertEquals
 
 class NdsScreensTest {
     @Test
+    fun `every stored layout name maps to a value the classic core accepts`() {
+        val accepted = setOf("Top/Bottom", "Bottom/Top", "Left/Right", "Right/Left", "Top Only", "Bottom Only", "Hybrid Top", "Hybrid Bottom")
+        for (l in PadLayout.DS_LAYOUTS) assertEquals(true, NdsScreens.classicName(l) in accepted, l)
+        assertEquals("Left/Right", NdsScreens.classicName("left-right"))
+        assertEquals("126", NdsScreens.classicGap(128)); assertEquals("0", NdsScreens.classicGap(0))
+    }
+
+    @Test
     fun `a phone column goes side by side, a tablet column stacks, no size is side by side`() {
         assertEquals("left-right", NdsScreens.autoLayout(550, 360))
         assertEquals("left-right", NdsScreens.autoLayout(640, 400))

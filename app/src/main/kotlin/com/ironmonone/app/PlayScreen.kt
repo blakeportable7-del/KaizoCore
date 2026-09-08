@@ -645,6 +645,18 @@ fun PlayScreen(
             }
             tracker?.let { t ->
                 com.ironmonone.tracker.nds.NdsTracker.lastDump?.let { d -> runCatching { context.getExternalFilesDir(null)?.let { dir -> java.io.File(dir, "ds-dump.txt").writeText(d) } } }
+                // Debug: a file named dump-ram in the external files dir asks for the whole 4 MB of DS main RAM once.
+                runCatching {
+                    val dir = context.getExternalFilesDir(null)
+                    val flag = dir?.let { java.io.File(it, "dump-ram") }
+                    if (flag != null && flag.exists()) {
+                        flag.delete()
+                        java.io.File(dir, "ram.bin").outputStream().buffered(1 shl 20).use { out ->
+                            var a = 0x02000000L
+                            while (a < 0x02400000L) { val b = reader.read(a, 0x10000); if (b.isEmpty()) break; out.write(b); a += b.size }
+                        }
+                    }
+                }
                 t.lossCondition = TrackerOptions.lossCondition
                 ndsState = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
                     runCatching { t.read() }.getOrNull()
@@ -756,9 +768,8 @@ fun PlayScreen(
     LaunchedEffect(dsLayoutName, retro, platform) {
         if (platform != com.ironmonone.core.Platform.NDS) return@LaunchedEffect
         retro?.updateVariables(
-            com.swordfish.libretrodroid.Variable(
-                "melonds_number_of_screen_layouts", "1"),
-            com.swordfish.libretrodroid.Variable("melonds_screen_layout1", dsLayoutName),
+            com.swordfish.libretrodroid.Variable("melonds_screen_layout", NdsScreens.classicName(dsLayoutName)),
+            com.swordfish.libretrodroid.Variable("melonds_screen_gap", NdsScreens.classicGap(padLayout.dsGap)),
         )
     }
 
@@ -1719,8 +1730,8 @@ fun PlayScreen(
                             // Portrait keeps the stacked layout, which is the
                             // right shape for a tall window.
                             variables = (coreVariables() + if (dsScreens) listOf(
-                                com.swordfish.libretrodroid.Variable("melonds_number_of_screen_layouts", "1"),
-                                com.swordfish.libretrodroid.Variable("melonds_screen_layout1", dsLayoutName),
+                                com.swordfish.libretrodroid.Variable("melonds_screen_layout", NdsScreens.classicName(dsLayoutName)),
+                                com.swordfish.libretrodroid.Variable("melonds_screen_gap", NdsScreens.classicGap(padLayout.dsGap)),
                             ) else emptyList()).toTypedArray()
                             shader = shaderFor(coreValues[CoreOptions.FILTER_KEY])
                             // Restore the battery save. melonDS manages its

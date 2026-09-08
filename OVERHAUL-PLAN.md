@@ -253,6 +253,26 @@ CC-BY-4.0). Their actual artwork is proprietary and is not copied. This is
 skin, not logic: the pad's hit-testing stays, only the drawing changes.
 Attribution goes in NOTICE. Effort **M**, mostly asset work.
 
+### 2.1b The DS core, 2026-09-08: melonDS DS replaced by the classic libretro melonDS
+
+No DS tracker read had ever worked on a live game; every DS card the app
+showed came from the staged demo. Blake's Black 2 battle read the battle flag
+and decoded garbage at the PC tracker's party and enemy addresses. Chasing it:
+the decryption matches the PC tracker line for line and PKHeX; the addresses
+match; a 16-bit seed brute force and every plain reading of the bytes fail;
+and a 4 MB dump of what the app read held the cartridge header and the ROM's
+static data but no trainer name, no rival name, no dialogue and no Pokemon,
+in a game that was standing in a battle. melonDS DS (JesseTG) hands out a
+system RAM that is not the running game's. The classic libretro/melonDS core,
+dropped in on the emulator, shows the trainer name at 0x0221E9E8, Hugh, Bianca
+and the box names, in the layout the PC addresses describe, and the stylus
+types on the name screen. It is the DS core now, for both ABIs
+(app/src/main/jniLibs/*/libmelonds_libretro_android.so, from the libretro
+buildbot nightly of 2026-09-07). CoreOptions.NDS, DsiMode and the screen
+layout variables speak its vocabulary (NdsScreens.classicName). Not yet seen
+with the new core: a live party decode on a phone; the scan, the probe line
+and the raw-bytes bug report stay in until Blake's first screenshot.
+
 ### 2.2 Floating, movable, resizable tracker - **DONE 2026-09-06**
 
 The tracker gear's "Landscape tracker" choice: docked beside the game
@@ -298,6 +318,18 @@ the core's own aspect handling and predate this; your phone shows the same
 thing as a band on the right. Separate item.
 
 ### 2.8 The side screens of every PC tracker - **OPEN 2026-09-08, IN PROGRESS**
+
+**PREP patches, 2026-09-08 (shipped with the core switch):** PREPARE offers the
+ruleset patches per game, from the official page and the Super Kaizo repo:
+pseudo-fluctuating for Red, Blue, Yellow, Gold, Silver and Crystal (default;
+the page requires it for Crystal), the Smart AI patch for FireRed 1.0,
+LeafGreen and Emerald, and the Super Kaizo 0.0.3 xdelta for HeartGold.
+Patched builds are RomKinds of their own (RomKind.allPatched) pinned by CRC;
+core-patch/Xdelta.kt decodes VCDIFF streaming and passed every Adler-32
+window on the real HeartGold patch; PrepOptionsTest applies each bundled
+patch to a real dump when IRONMON_ROMS points at them (five checked). Not
+offered yet: FireRed 1.1 Smart AI and Platinum Super Kaizo, which need those
+dumps to pin.
 
 **Progress 2026-09-08, shipped (site + draft release + mirror):** Type Defenses
 (tap a type chip on any card), Coverage Calc (SETUP > COVERAGE CALC; on a DS

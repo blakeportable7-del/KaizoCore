@@ -25,23 +25,18 @@ object DsiMode {
     fun missing(present: (String) -> Boolean): List<String> = FILES.map { it.first }.filterNot(present)
     fun ready(present: (String) -> Boolean): Boolean = missing(present).isEmpty()
 
-    fun isOn(values: Map<String, String>): Boolean = values["melonds_console_mode"] == "dsi"
+    fun isOn(values: Map<String, String>): Boolean = values["melonds_console_mode"] == "DSi"
 
     /** The option values that turn DSi mode on. Applied together; the core reads them at the next boot. */
     val ON: Map<String, String> = mapOf(
-        "melonds_console_mode" to "dsi",
-        "melonds_sysfile_mode" to "native",
-        "melonds_boot_mode" to "direct",
-        "melonds_dsi_nand_path" to "dsi_nand.bin",
-        "melonds_firmware_dsi_path" to "dsi_firmware.bin",
-        "melonds_firmware_nds_path" to "firmware.bin",
+        "melonds_console_mode" to "DSi",
+        "melonds_boot_directly" to "enabled",
         "melonds_dsi_sdcard" to "enabled",
     )
 
     /** Back to a plain DS with the built-in system files. */
     val OFF: Map<String, String> = mapOf(
-        "melonds_console_mode" to "ds",
-        "melonds_sysfile_mode" to "builtin",
+        "melonds_console_mode" to "DS",
         "melonds_dsi_sdcard" to "disabled",
     )
 }

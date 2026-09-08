@@ -44,6 +44,15 @@ data class RomKind(
      * would have disabled the guard that stops a vanilla .rnqs reaching a NatDex ROM.
      */
     val isNatDex: Boolean = false,
+    /**
+     * A ruleset patch this build carries: "pseudofluct" (Gen 1 and 2), "smartai"
+     * (Super Kaizo, Gen 3), "superkaizo" (Gen 4). Null for a clean dump and for
+     * Nat. Dex, which has its own flag. PREP applies the bundled patch and stores
+     * the result under this kind; the library shows it as patched.
+     */
+    val patchTag: String? = null,
+    /** The clean kind this was patched from, so the tracker and the presets treat it as that game. */
+    val baseId: String? = null,
 ) {
     /** The console, and with it the core and the turbo cap. Never the extension. */
     val platform: Platform get() = generation.platform
@@ -53,7 +62,7 @@ data class RomKind(
 
     companion object {
         /** Every kind the app knows, so a stored id can be turned back into one. */
-        val all: List<RomKind> get() = allV1 + allNatDex
+        val all: List<RomKind> get() = allV1 + allNatDex + allPatched
 
         fun byId(id: String?): RomKind? = id?.let { k -> all.firstOrNull { it.id == k } }
 
@@ -303,6 +312,23 @@ data class RomKind(
             BLACK_U, WHITE_U, BLACK2_U, WHITE2_U, CRYSTAL_U, GOLD_U, SILVER_U, RED_U, BLUE_U, YELLOW_U,
         )
         val allNatDex = listOf(EMERALD_NATDEX_121, FIRERED_NATDEX_121)
+
+        // ---- Ruleset patches, 2026-09-08. CRCs: the BPS target CRC carried by the
+        // patch itself (Gen 1 and 2), or measured by applying the IPS / xdelta to
+        // the pinned dump (Gen 3, HeartGold). FireRed 1.1 and Platinum wait on dumps.
+        private fun patched(base: RomKind, id: String, name: String, crc: Long, tag: String) =
+            base.copy(id = id, displayName = name, expectedCrc = crc, natDexCapable = false, patchTag = tag, baseId = base.id)
+        val RED_PF = patched(RED_U, "red-u-pf", "Pokémon Red + Pseudo-fluctuating", 0x9ECDA39DL, "pseudofluct")
+        val BLUE_PF = patched(BLUE_U, "blue-u-pf", "Pokémon Blue + Pseudo-fluctuating", 0x7BBF24C6L, "pseudofluct")
+        val YELLOW_PF = patched(YELLOW_U, "yellow-u-pf", "Pokémon Yellow + Pseudo-fluctuating", 0xE33CE3B4L, "pseudofluct")
+        val GOLD_PF = patched(GOLD_U, GOLD_U.id + "-pf", "Pokémon Gold + Pseudo-fluctuating", 0x68E45C1CL, "pseudofluct")
+        val SILVER_PF = patched(SILVER_U, SILVER_U.id + "-pf", "Pokémon Silver + Pseudo-fluctuating", 0x73E0D96CL, "pseudofluct")
+        val CRYSTAL_PF = patched(CRYSTAL_U, CRYSTAL_U.id + "-pf", "Pokémon Crystal + Pseudo-fluctuating", 0xAE865839L, "pseudofluct")
+        val FIRERED_V10_SMARTAI = patched(FIRERED_U_V10, "firered-u-v10-smartai", "Pokémon FireRed 1.0 + Smart AI (Super Kaizo)", 0xF83A3D9FL, "smartai")
+        val LEAFGREEN_SMARTAI = patched(LEAFGREEN_U, LEAFGREEN_U.id + "-smartai", "Pokémon LeafGreen + Smart AI (Super Kaizo)", 0xBFE458AAL, "smartai")
+        val EMERALD_SMARTAI = patched(EMERALD_U, EMERALD_U.id + "-smartai", "Pokémon Emerald + Smart AI (Super Kaizo)", 0xB5E0EDE9L, "smartai")
+        val HEARTGOLD_SUPERKAIZO = patched(HEARTGOLD_U, HEARTGOLD_U.id + "-superkaizo", "Pokémon HeartGold + Super Kaizo 0.0.3", 0x4A585DD8L, "superkaizo")
+        val allPatched = listOf(RED_PF, BLUE_PF, YELLOW_PF, GOLD_PF, SILVER_PF, CRYSTAL_PF, FIRERED_V10_SMARTAI, LEAFGREEN_SMARTAI, EMERALD_SMARTAI, HEARTGOLD_SUPERKAIZO)
     }
 }
 

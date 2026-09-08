@@ -117,6 +117,16 @@ class PrepStore(context: Context) {
         }.getOrNull()
     }
 
+    /** A ruleset patch shipped in the APK (assets/patches/<name>), materialised on first use. */
+    fun bundledPatch(context: Context, name: String): File? {
+        val dest = File(patches, name)
+        if (dest.exists() && dest.length() > 0) return dest
+        return runCatching {
+            context.assets.open("patches/$name").use { input -> dest.outputStream().use { input.copyTo(it) } }
+            dest
+        }.getOrNull()
+    }
+
     /** Returns the stored location, or a plain-English refusal. */
     fun importPatch(bytes: ByteArray): Result<File> {
         val info = runCatching { Bps.info(bytes) }.getOrElse {
