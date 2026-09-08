@@ -337,6 +337,19 @@ thing as a band on the right. Separate item.
 
 ### 2.8 The side screens of every PC tracker - **OPEN 2026-09-08, IN PROGRESS**
 
+**Catch Rates, 2026-09-08 (Gen 3):** CatchRatesScreen.lua and
+PokemonData.calcCatchRate cloned. GbaTracker.catchRates() reads the enemy from
+gBattleMons slot 1 (HP, level, status), the species' catch rate from
+SpeciesInfo +8, the Poke Balls pocket (new map fields bagBallsOffset/Slots
+per game, decrypted like Items), the terrain for the Dive Ball, the turn for
+the Timer Ball and the Pokedex owned bit for the Repeat Ball, and runs the
+reference's arithmetic to a percent for all twelve balls, owned balls first,
+best rate first. Toxic counts for nothing on Ruby and Sapphire, as in the
+reference. SETUP > CATCH RATES, with the +/- 10% HP adjusters, refreshed each
+poll. CatchRatesTest works the formula by hand (45 catch rate: Poke Ball 5%,
+Ultra 12%, Master 100%) and reads a Ruby battle end to end. Live-battle check
+on the emulator still owed, same as Battle Details.
+
 **Battle Details, 2026-09-08 (Gen 3):** BattleDetailsScreen.lua cloned.
 GbaTracker.battleDetails() runs the reference's five readers over gBattleMons
 status2, gStatuses3, gSideStatuses and gSideTimers, gDisableStructs and

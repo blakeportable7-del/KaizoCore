@@ -152,6 +152,9 @@ data class GameMap(
      */
     val bagBerriesOffset: Long = 0,
     val bagBerriesSlots: Int = 0,
+    /** The Poke Balls pocket (bagPocket_Balls in GameAddresses): Emerald 0x650 x16, FRLG 0x430 x13, RS 0x600 x16. */
+    val bagBallsOffset: Long = 0,
+    val bagBallsSlots: Int = 0,
     /**
      * gMapHeader. The current map id is a word at +0x12 (mapLayoutId), which is
      * how the reference reads it in Program.updateMapLocation.
@@ -274,6 +277,7 @@ data class GameMap(
             bagItemsOffset = 0x560,
             bagItemsSlots = 30,
             bagBerriesOffset = 0x790,
+            bagBallsOffset = 0x650, bagBallsSlots = 16,
             bagBerriesSlots = 46,
             mapHeader = 0x02037318,
             labMapIds = setOf(17),
@@ -335,6 +339,7 @@ data class GameMap(
             bagItemsOffset = 0x310,
             bagItemsSlots = 42,
             bagBerriesOffset = 0x54C,
+            bagBallsOffset = 0x430, bagBallsSlots = 13,
             bagBerriesSlots = 43,
             mapHeader = 0x02036DFC,
             labMapIds = setOf(5),
@@ -398,6 +403,7 @@ data class GameMap(
             bagItemsOffset = 0x560,
             bagItemsSlots = 20,
             bagBerriesOffset = 0x740,
+            bagBallsOffset = 0x600, bagBallsSlots = 16,
             bagBerriesSlots = 46,
             mapHeader = 0x0202E828,
             labMapIds = setOf(17),
@@ -739,6 +745,8 @@ data class BaseStats(
     val type1: Int, val type2: Int, val ability1: Int, val ability2: Int,
     /** Growth rate index, SpeciesInfo +0x13 on the vanilla struct; 0 where the layout is not pinned. */
     val growthRate: Int = 0,
+    /** SpeciesInfo +8, PokemonData's catchRate. */
+    val catchRate: Int = 0,
     /** Gen 1: one Special stat, carried in both spAtk and spDef so damage code reads it either way.
      *  The panel shows it once and the BST counts it once, as the Gen 1 reference tracker does. */
     val singleSpecial: Boolean = false,
@@ -1215,6 +1223,7 @@ class GbaTracker(
             ability1 = if (map.abilitiesAreU16) b.u16(0x16) else b.u8(22),
             ability2 = if (map.abilitiesAreU16) b.u16(0x18) else b.u8(23),
             growthRate = if (stride == 28) b.u8(0x13) else 0,
+            catchRate = b.u8(8),
         )
     }.takeIf { it.bst > 0 }
 
@@ -1502,6 +1511,9 @@ class GbaTracker(
 
     fun whichRival(trainerId: Int): String? = rivalOf[trainerId]
 
+    /** Whether the Poke Balls pocket is pinned for this build, so Catch Rates can open. */
+    val hasCatchRates: Boolean get() = map.bagBallsOffset != 0L
+
     /** Whether BattleDetailsScreen's addresses are pinned for this build. */
     val hasBattleDetails: Boolean get() = map.battleTerrain != 0L
 
@@ -1593,6 +1605,112 @@ class GbaTracker(
             }
         }
         return TrainerInfo(trainerId, className, name, party, aiFlags, doubleBattle, trainerDefeated(trainerId), items)
+    }
+
+    // ---- Catch Rates (CatchRatesScreen.lua, PokemonData.calcCatchRate) ----
+
+    data class CatchRow(val ballId: Int, val name: String, val quantity: Int, val rate: Int)
+
+    data class CatchRates(
+        val speciesName: String,
+        /** The reference's estimate: HP rounded up to the nearest tenth, as a percent. */
+        val hpPercent: Int,
+        val status: String,
+        val rows: List<CatchRow>,
+    )
+
+    /** The Poke Balls pocket as ball id to quantity, decrypted like the Items pocket. */
+    fun bagBalls(): Map<Int, Int> {
+        if (map.bagBallsOffset == 0L) return emptyMap()
+        val sb1 = saveBlock1() ?: return emptyMap()
+        val key = readSecurityKey()
+        val out = HashMap<Int, Int>()
+        for (slot in 0 until map.bagBallsSlots) {
+            val b = memory.read(sb1 + map.bagBallsOffset + slot * 4L, 4)
+            if (b.size < 4) break
+            val id = b.u16(0); if (id !in 1..12) continue
+            val qty = b.u16(2) xor key
+            if (qty in 1..999) out[id] = qty
+        }
+        return out
+    }
+
+    /** Program.Addresses.offsetPokedex + offsetPokedexOwned: whether the species has been caught before, for the Repeat Ball. */
+    fun dexOwned(species: Int): Boolean {
+        val sb2 = saveBlock2() ?: return false
+        val b = memory.read(sb2 + 0x18 + 0x10 + ((species - 1) / 8), 1)
+        return b.size == 1 && ((b[0].toInt() shr ((species - 1) % 8)) and 1) == 1
+    }
+
+    /**
+     * PokemonData.calcCatchRate, the reference's estimate of the Gen 3
+     * formula: HP rounded up to the tenth, the ball bonus with its four
+     * conditional balls, the status bonus (Toxic counts for nothing on Ruby
+     * and Sapphire), then the game's own shake arithmetic to a percent.
+     */
+    fun calcCatchRate(baseCatchRate: Int, hpMax: Int, hpCurrent: Int, level: Int, status: Long, ball: Int,
+                      isWaterOrBug: Boolean, terrain: Int, owned: Boolean, battleTurn: Int): Int {
+        if (hpMax <= 0 || hpCurrent <= 0) return 0
+        val estimatedCurrHp = Math.floor(Math.ceil(hpCurrent.toDouble() / hpMax * 10) / 10 * hpMax)
+        val hpMultiplier = (hpMax * 3 - estimatedCurrHp * 2) / (hpMax * 3.0)
+        val bonusMap = mapOf(1 to 255, 2 to 20, 3 to 15, 4 to 10, 5 to 15, 6 to 30, 7 to 35, 8 to 40, 9 to 30, 10 to 10, 11 to 10, 12 to 10)
+        val ballBonus = when {
+            ball <= 5 || ball >= 11 -> bonusMap[ball] ?: 10
+            ball == 6 && isWaterOrBug -> 30
+            ball == 7 && terrain == 3 -> 35
+            ball == 8 -> maxOf(10, 40 - level)
+            ball == 9 && owned -> 30
+            ball == 10 -> minOf(10 + battleTurn, 40)
+            else -> 10
+        } / 10.0
+        val statusBonus = when {
+            status and 0x07L != 0L -> 2.0          // sleep
+            status and 0x20L != 0L -> 2.0          // freeze
+            status and 0x80L != 0L -> if (map.rsMapShift) 1.0 else 1.5   // toxic: no bonus in R/S
+            status and 0x08L != 0L || status and 0x10L != 0L || status and 0x40L != 0L -> 1.5
+            else -> 1.0
+        }
+        val raw = Math.floor(Math.floor(baseCatchRate * ballBonus * hpMultiplier) * statusBonus).toInt()
+        val percentage = when {
+            raw <= 0 -> 0
+            raw > 254 -> 100
+            else -> {
+                var processed = Math.floor(1048560.0 / Math.floor(Math.sqrt(Math.floor(Math.sqrt(Math.floor(16711680.0 / raw))))))
+                processed = Math.floor(processed / 65535 * 100) / 100
+                Math.floor(processed * processed * processed * processed * 100).toInt()
+            }
+        }
+        return percentage.coerceIn(0, 100)
+    }
+
+    /**
+     * CatchRatesScreen.buildScreen for the enemy in gBattleMons slot 1:
+     * the twelve balls, the bag's count of each, and the rate at the
+     * estimated HP plus [hpAdjust] (the screen's +/- 10% buttons), owned
+     * balls first and best rate first, as the reference sorts them.
+     */
+    fun catchRates(hpAdjust: Int = 0): CatchRates? {
+        if (!inBattleNow() || map.battleMons == 0L) return null
+        val b = memory.read(map.battleMons + map.battleMonSize, map.battleMonSize)
+        if (b.size < 0x50) return null
+        val species = b.u16(0)
+        if (!speciesIsValid(species)) return null
+        val hpMax = b.u16(0x2C); val hpCur = b.u16(0x28); val level = b.u8(0x2A); val status = b.u32(0x4C)
+        if (hpMax <= 0) return null
+        val base = baseStats(species)
+        val estimatedCurrHp = Math.floor(Math.ceil(hpCur.toDouble() / hpMax * 10) / 10 * hpMax)
+        val hpPercent = Math.floor(estimatedCurrHp / hpMax * 100).toInt()
+        val estimatedHp = Math.floor(hpMax * (hpPercent + hpAdjust) / 100.0 + 0.5).toInt()
+        val terrain = if (map.battleTerrain == 0L) 0 else rw(map.battleTerrain)
+        val turn = if (map.battleResults == 0L) 0 else rb(map.battleResults + 0x13)
+        val waterOrBug = base != null && (base.type1 == 11 || base.type2 == 11 || base.type1 == 6 || base.type2 == 6)
+        val owned = dexOwned(species)
+        val bag = bagBalls()
+        val rows = (1..12).map { ball ->
+            CatchRow(ball, itemName(ball), bag[ball] ?: 0,
+                calcCatchRate(base?.catchRate ?: 0, hpMax, estimatedHp, level, status, ball, waterOrBug, terrain, owned, turn))
+        }.sortedWith(compareByDescending<CatchRow> { it.quantity > 0 }.thenByDescending { it.rate }.thenBy { it.ballId })
+        return CatchRates(speciesName(species), hpPercent, statusName(status), rows)
     }
 
     // ---- Battle Details (BattleDetailsScreen.lua) ----

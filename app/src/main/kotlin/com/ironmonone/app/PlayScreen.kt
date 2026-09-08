@@ -789,6 +789,8 @@ fun PlayScreen(
     var statsDialog by remember { mutableStateOf(false) }
     var trainersDialog by remember { mutableStateOf(false) }
     var battleDetailsDialog by remember { mutableStateOf(false) }
+    var catchRatesDialog by remember { mutableStateOf(false) }
+    var catchHpAdjust by remember { mutableStateOf(0) }
     var trainerInfo by remember { mutableStateOf<com.ironmonone.tracker.GbaTracker.TrainerInfo?>(null) }
     /** Move History for one Pokemon: species, name, level. */
     var moveHistory by remember { mutableStateOf<Triple<Int, String, Int>?>(null) }
@@ -2241,6 +2243,11 @@ fun PlayScreen(
             onClose = { moveHistory = null },
         )
     }
+    if (catchRatesDialog) {
+        val gba = trackerRef
+        val rates = remember(trackerState, gba, catchHpAdjust) { runCatching { gba?.catchRates(catchHpAdjust) }.getOrNull() }
+        CatchRatesDialog(rates, catchHpAdjust, onAdjust = { catchHpAdjust = it }) { catchRatesDialog = false }
+    }
     if (battleDetailsDialog) {
         val gba = trackerRef
         // Re-read on every poll so counters move while the screen is open.
@@ -2312,6 +2319,7 @@ fun PlayScreen(
             onStats = if (platform == com.ironmonone.core.Platform.NDS) null else { { gearDialog = false; statsDialog = true } },
             onTrainers = if (trackerRef?.hasTrainerData == true) { { gearDialog = false; trainersDialog = true } } else null,
             onBattleDetails = if (trackerRef?.hasBattleDetails == true) { { gearDialog = false; battleDetailsDialog = true } } else null,
+            onCatchRates = if (trackerRef?.hasCatchRates == true) { { gearDialog = false; catchHpAdjust = 0; catchRatesDialog = true } } else null,
             onDismiss = { gearDialog = false },
         )
     }

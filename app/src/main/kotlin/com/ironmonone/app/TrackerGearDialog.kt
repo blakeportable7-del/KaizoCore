@@ -43,6 +43,7 @@ fun TrackerGearDialog(
     onStats: (() -> Unit)? = null,
     onTrainers: (() -> Unit)? = null,
     onBattleDetails: (() -> Unit)? = null,
+    onCatchRates: (() -> Unit)? = null,
     onDismiss: () -> Unit,
 ) {
     var confirmClear by remember { mutableStateOf(false) }
@@ -58,6 +59,7 @@ fun TrackerGearDialog(
             onStats?.let { com.ironmonone.app.gen3.Gen3Button("STATS") { it() } }
             onTrainers?.let { com.ironmonone.app.gen3.Gen3Button("TRAINERS ON ROUTE") { it() } }
             onBattleDetails?.let { com.ironmonone.app.gen3.Gen3Button("BATTLE DETAILS") { it() } }
+            onCatchRates?.let { com.ironmonone.app.gen3.Gen3Button("CATCH RATES") { it() } }
             Spacer(Modifier.height(8.dp))
 
             PixText("Options", 8, Pc.Text)
