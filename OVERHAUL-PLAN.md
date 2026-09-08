@@ -337,6 +337,12 @@ thing as a band on the right. Separate item.
 
 ### 2.8 The side screens of every PC tracker - **OPEN 2026-09-08, IN PROGRESS**
 
+**Random Ball, 2026-09-08 (DS set):** RandomBallScreen.lua cloned. NdsTracker
+rolls 1..3 once per game boot; the no-party card shows three balls with the
+rolled one lit and "Random ball: Left / Middle / Right"; HGSS draws its blue,
+green and red balls with the middle one raised. Gated by the existing "Show
+random ball picker" toggle. Seen on the emulator on Black 2.
+
 **PREP patches, 2026-09-08 (shipped with the core switch):** PREPARE offers the
 ruleset patches per game, from the official page and the Super Kaizo repo:
 pseudo-fluctuating for Red, Blue, Yellow, Gold, Silver and Crystal (default;

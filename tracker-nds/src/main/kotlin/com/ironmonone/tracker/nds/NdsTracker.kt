@@ -131,6 +131,13 @@ class NdsTracker(
     /** Which DS game's offsets to read. See NdsGameMap; detect() picks it by header. */
     val map: NdsGameMap = NdsGameMap.PLATINUM,
 ) {
+    /**
+     * RandomBallScreen.lua: `math.random(1, 3)` once when the tracker starts,
+     * labelled Left / Middle / Right, shown until the first Pokemon exists.
+     * 1, 2 or 3.
+     */
+    val randomBall: Int = (1..3).random()
+
     /** GameOverScreen.LossConditions: which faint ends the run. The app sets it from its options. */
     @Volatile var lossCondition: com.ironmonone.tracker.LossCondition = com.ironmonone.tracker.LossCondition.LEAD
     private val ramStart = 0x02000000L

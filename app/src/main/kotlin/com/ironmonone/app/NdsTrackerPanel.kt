@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -308,6 +309,8 @@ fun PcNdsRunOver(
 fun NdsTrackerPanel(
     /** The startup favorites line, shown before a party exists, as the DS tracker's title screen shows them. */
     favoriteLine: String? = null,
+    /** RandomBallScreen: 1, 2 or 3 for Left, Middle, Right; null hides it (option off, or no tracker yet). */
+    randomBall: Int? = null,
     /** Move History for a card: (species, name, level). */
     onMoveHistory: ((Int, String, Int) -> Unit)? = null,
     /** Type Defenses for a card: (name, type1, type2) as the sidecar names them. */
@@ -355,6 +358,7 @@ fun NdsTrackerPanel(
                         7, Pc.Dim,
                     )
                     state.probe?.let { PixText("build " + appBuildId() + " " + it, 6, Pc.Negative, wrap = true) }
+                    randomBall?.let { Spacer(Modifier.height(4.dp)); RandomBallRow(it, hgss = state.badgeSet == "HGSS") }
                     favoriteLine?.let { Spacer(Modifier.height(3.dp)); PixText(it, 7, Pc.Gold, wrap = true) }
                 }
             }
@@ -403,4 +407,36 @@ fun NdsTrackerPanel(
 private fun appBuildId(): String {
     val ctx = androidx.compose.ui.platform.LocalContext.current
     return runCatching { ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName }.getOrNull()?.substringAfter("+", "?") ?: "?"
+}
+
+/**
+ * RandomBallScreen.lua, drawn here: three balls with the rolled one lit, and
+ * "Random ball: Left" under them. HGSS shows its three coloured balls (blue,
+ * green, red) with the middle one raised, as the lab table has them; the
+ * other DS games show three red balls in a row.
+ */
+@androidx.compose.runtime.Composable
+fun RandomBallRow(pick: Int, hgss: Boolean) {
+    val labels = listOf("Left", "Middle", "Right")
+    val colours = if (hgss) listOf(androidx.compose.ui.graphics.Color(0xFF3F7FD6), androidx.compose.ui.graphics.Color(0xFF3FA65A), androidx.compose.ui.graphics.Color(0xFFD63F3F))
+        else List(3) { androidx.compose.ui.graphics.Color(0xFFD63F3F) }
+    Column {
+        Row(verticalAlignment = Alignment.Bottom) {
+            for (i in 1..3) {
+                val lit = i == pick
+                val raise = if (hgss && i == 2) 8.dp else 0.dp
+                androidx.compose.foundation.Canvas(Modifier.padding(start = if (i == 1) 0.dp else 10.dp, bottom = raise).size(16.dp)) {
+                    val r = size.minDimension / 2f
+                    val c = androidx.compose.ui.geometry.Offset(r, r)
+                    val body = if (lit) colours[i - 1] else Pc.Dim
+                    drawCircle(body, r, c)
+                    drawArc(if (lit) androidx.compose.ui.graphics.Color.White else Pc.Page, 0f, 180f, true, androidx.compose.ui.geometry.Offset(0f, 0f), androidx.compose.ui.geometry.Size(size.width, size.height))
+                    drawCircle(Pc.Ground, r * 0.28f, c)
+                    drawCircle(if (lit) androidx.compose.ui.graphics.Color.White else Pc.Dim, r * 0.16f, c)
+                }
+            }
+        }
+        Spacer(Modifier.height(2.dp))
+        PixText("Random ball: " + labels[pick - 1], 7, Pc.Text)
+    }
 }

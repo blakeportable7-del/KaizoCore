@@ -1427,6 +1427,7 @@ fun PlayScreen(
                   if (dsScreens) NdsTrackerPanel(
                       state = ndsState, onFlee = { flee() }, onGear = { gearDialog = true },
                       favoriteLine = favoriteLine,
+                      randomBall = ndsTrackerRef?.randomBall?.takeIf { TrackerOptions.showBallPicker },
                       onTypeDefenses = { n, a, b -> typeDefenses = n to com.ironmonone.tracker.Gen3Types.defenses(com.ironmonone.tracker.nds.Gen4Types.idOf(a) ?: -1, com.ironmonone.tracker.nds.Gen4Types.idOf(b) ?: (com.ironmonone.tracker.nds.Gen4Types.idOf(a) ?: -1)) },
                       enemyMarks = enemyMarks, enemyEncounters = enemyEncounters,
                       onCycleMark = { i ->
@@ -1968,6 +1969,7 @@ fun PlayScreen(
                     NdsTrackerPanel(
                         state = ndsState, onFlee = { flee() }, onGear = { gearDialog = true },
                         favoriteLine = favoriteLine,
+                        randomBall = ndsTrackerRef?.randomBall?.takeIf { TrackerOptions.showBallPicker },
                         onTypeDefenses = { n, a, b -> typeDefenses = n to com.ironmonone.tracker.Gen3Types.defenses(com.ironmonone.tracker.nds.Gen4Types.idOf(a) ?: -1, com.ironmonone.tracker.nds.Gen4Types.idOf(b) ?: (com.ironmonone.tracker.nds.Gen4Types.idOf(a) ?: -1)) },
                         enemyMarks = enemyMarks, enemyEncounters = enemyEncounters,
                         onCycleMark = { i ->
