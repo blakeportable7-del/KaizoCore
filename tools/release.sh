@@ -9,15 +9,16 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-VERSION=$(grep -o 'versionName = "[^"]*"' app/build.gradle* | head -1 | sed 's/.*"\(.*\)"/\1/')
+VERSION=$(grep -o 'baseVersion = "[^"]*"' app/build.gradle* | head -1 | sed 's/.*"\(.*\)"/\1/')
+BUILD_ID=$(git rev-parse --short=8 HEAD 2>/dev/null || echo local)
 [ -n "$VERSION" ] || { echo "versionName not found"; exit 1; }
 OUT=dist; mkdir -p "$OUT"
 APK="$OUT/KaizoCore-$VERSION.apk"
 
 echo "== tests"
-./gradlew test --console=plain -q
-echo "== build $VERSION"
-./gradlew :app:assembleRelease --console=plain -q
+./gradlew test --console=plain -q -PbuildId=$BUILD_ID
+echo "== build $VERSION+$BUILD_ID"
+./gradlew :app:assembleRelease --console=plain -q -PbuildId=$BUILD_ID
 cp app/build/outputs/apk/release/app-release.apk "$APK"
 ( cd "$OUT" && sha256sum "$(basename "$APK")" > "$(basename "$APK").sha256" )
 echo "== $APK"

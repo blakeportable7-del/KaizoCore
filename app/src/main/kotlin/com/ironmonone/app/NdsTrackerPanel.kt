@@ -354,7 +354,7 @@ fun NdsTrackerPanel(
                         else "address chain not resolved yet",
                         7, Pc.Dim,
                     )
-                    state.probe?.let { PixText(it, 6, Pc.Negative, wrap = true) }
+                    state.probe?.let { PixText("build " + appBuildId() + " " + it, 6, Pc.Negative, wrap = true) }
                     favoriteLine?.let { Spacer(Modifier.height(3.dp)); PixText(it, 7, Pc.Gold, wrap = true) }
                 }
             }
@@ -369,7 +369,7 @@ fun NdsTrackerPanel(
 
             else -> {
                 if (state.inBattle) {
-                    if (state.party.isEmpty()) state.probe?.let { PixText(it, 6, Pc.Negative, wrap = true) }
+                    if (state.party.isEmpty()) state.probe?.let { PixText("build " + appBuildId() + " " + it, 6, Pc.Negative, wrap = true) }
                     PcBattleBanner(state.isWildBattle, onFlee)
                     Spacer(Modifier.height(4.dp))
                     state.enemy?.let {
@@ -396,4 +396,11 @@ fun NdsTrackerPanel(
         }
     }
     }
+}
+
+/** The part of the version after "+": the commit this build came from. */
+@androidx.compose.runtime.Composable
+private fun appBuildId(): String {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    return runCatching { ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName }.getOrNull()?.substringAfter("+", "?") ?: "?"
 }

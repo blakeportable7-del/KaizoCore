@@ -581,6 +581,7 @@ class NdsTracker(
             fun hex(addr: Long, n: Int) = memory.read(addr, n).joinToString("") { "%02X".format(it) }
             lastDump = buildString {
                 appendLine("party @%08X: %s".format(partyBaseRead, hex(partyBaseRead, map.entrySize)))
+                appendLine("probe: " + (probe ?: "-"))
                 appendLine("header @023FFE00: %s  header @027FFE00: %s".format(hex(0x023FFE00L, 16), hex(0x027FFE00L, 16)))
                 appendLine("ram @02000000: %s  ram @02200000: %s".format(hex(0x02000000L, 16), hex(0x02200000L, 16)))
                 appendLine("enemy @%08X: %s".format(ramStart + map.enemyBase, hex(ramStart + map.enemyBase, map.entrySize)))
