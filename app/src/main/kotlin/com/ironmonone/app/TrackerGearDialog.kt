@@ -54,6 +54,8 @@ fun TrackerGearDialog(
     onTourney: (() -> Unit)? = null,
     showTimerToggle: Boolean = false,
     onColorTheme: (() -> Unit)? = null,
+    /** HGSS only: the reference's Badges Appearance choices that apply here. */
+    showBadgeOptions: Boolean = false,
     onDismiss: () -> Unit,
 ) {
     var confirmClear by remember { mutableStateOf(false) }
@@ -87,6 +89,10 @@ fun TrackerGearDialog(
             GearToggle("Show heals as whole number", TrackerOptions.healsWhole) { TrackerOptions.healsWhole = it; TrackerOptions.save() }
             GearToggle("Show team view", TrackerOptions.showTeamView) { TrackerOptions.showTeamView = it; TrackerOptions.save() }
             if (showTimerToggle) GearToggle("Show timer", TrackerOptions.showTimer) { TrackerOptions.showTimer = it; TrackerOptions.save() }
+            if (showBadgeOptions) {
+                GearToggle("Show both badge sets", TrackerOptions.showBothBadgeSets) { TrackerOptions.showBothBadgeSets = it; TrackerOptions.save() }
+                GearToggle("Kanto badges first", TrackerOptions.kantoBadgesFirst) { TrackerOptions.kantoBadgesFirst = it; TrackerOptions.save() }
+            }
             Spacer(Modifier.height(8.dp))
 
             PixText("Landscape tracker", 8, Pc.Text)

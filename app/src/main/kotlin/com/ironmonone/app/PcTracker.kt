@@ -1293,9 +1293,12 @@ fun PcBadgeRow(badges: Int, set: String) {
     // HGSS_K, art already bundled). The Kanto row appears once the first
     // Kanto badge is earned, so Johto-only runs keep the one-row shape.
     if (set == "HGSS" && (badges shr 8) != 0) {
+        // badgesAppearance: which set leads, and whether the other is drawn at all.
+        val johto = (badges and 0xFF) to "HGSS_J"
+        val kanto = (badges shr 8) to "HGSS_K"
+        val order = if (TrackerOptions.kantoBadgesFirst) listOf(kanto, johto) else listOf(johto, kanto)
         Column {
-            PcBadgeRow(badges and 0xFF, "HGSS_J")
-            PcBadgeRow(badges shr 8, "HGSS_K")
+            (if (TrackerOptions.showBothBadgeSets) order else order.take(1)).forEach { (bits, art) -> PcBadgeRow(bits, art) }
         }
         return
     }

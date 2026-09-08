@@ -160,6 +160,7 @@ class TourneyTracker(private val file: File) {
         val SPROUT_TOWER = setOf(110, 155, 156)
         val LIGHTHOUSE = setOf(115, 220, 221, 222, 223, 224, 225, 446)
         val ROCKET_HQ = setOf(247, 248, 249)
+        /** Defined by the reference and, like the reference, not attached to a milestone: the Radio Tower full clear goes on its trainers alone. */
         val RADIO_TOWER = setOf(118, 199, 112, 186, 187, 188, 189, 190, 447)
         val MILESTONES: List<Milestone> = listOf(
             Milestone("Beat Rival 1", 1, listOf(495, 496, 497), isRival = true),

@@ -2311,6 +2311,7 @@ fun PlayScreen(
             onTourney = if (ndsState?.badgeSet == "HGSS") { { gearDialog = false; side.tourney = true } } else null,
             showTimerToggle = ndsState != null,
             onColorTheme = { gearDialog = false; side.colorTheme = true },
+            showBadgeOptions = ndsState?.badgeSet == "HGSS",
             onDismiss = { gearDialog = false },
         )
     }

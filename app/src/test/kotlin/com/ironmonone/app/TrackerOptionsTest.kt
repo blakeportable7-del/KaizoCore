@@ -27,7 +27,7 @@ class TrackerOptionsTest {
         TrackerOptions.save()
         TrackerOptions.landscapeTracker = LandscapeTracker.FLOATING
         TrackerOptions.save()
-        assertEquals("showBallPicker=false\nshowCategoryIcons=true\nhealsWhole=true\nshowTeamView=false\nrestorePoints=true\nshowTimer=false\ntourneyTracker=false\nlossCondition=EntirePartyFaints\nlandscapeTracker=FLOATING\n", f.readText())
+        assertEquals("showBallPicker=false\nshowCategoryIcons=true\nhealsWhole=true\nshowTeamView=false\nrestorePoints=true\nshowTimer=false\ntourneyTracker=false\nkantoBadgesFirst=false\nshowBothBadgeSets=true\nlossCondition=EntirePartyFaints\nlandscapeTracker=FLOATING\n", f.readText())
         TrackerOptions.showBallPicker = true; TrackerOptions.healsWhole = false; TrackerOptions.lossCondition = LossCondition.LEAD
         TrackerOptions.load(f)
         assertFalse(TrackerOptions.showBallPicker); assertTrue(TrackerOptions.healsWhole)

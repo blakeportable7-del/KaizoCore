@@ -30,6 +30,10 @@ object TrackerOptions {
     var showTimer by mutableStateOf(false)
     /** settings.tourneyTracker.ENABLED (DS TourneyTracker), off by default. */
     var tourneyTracker by mutableStateOf(false)
+    /** badgesAppearance.PRIMARY_BADGE_SET (HGSS): Johto first by default, as in the reference. */
+    var kantoBadgesFirst by mutableStateOf(false)
+    /** badgesAppearance.SHOW_BOTH_BADGES: both rows once Kanto has begun. Default on, as in the reference. */
+    var showBothBadgeSets by mutableStateOf(true)
     var lossCondition by mutableStateOf(LossCondition.LEAD)
 
     private var file: File? = null
@@ -49,6 +53,8 @@ object TrackerOptions {
                     "restorePoints" -> restorePoints = v == "true"
                     "showTimer" -> showTimer = v == "true"
                     "tourneyTracker" -> tourneyTracker = v == "true"
+                    "kantoBadgesFirst" -> kantoBadgesFirst = v == "true"
+                    "showBothBadgeSets" -> showBothBadgeSets = v == "true"
                     "lossCondition" -> lossCondition = LossCondition.byKey(v)
                     "landscapeTracker" -> landscapeTracker = LandscapeTracker.entries.firstOrNull { it.name == v } ?: LandscapeTracker.DOCKED
                 }
@@ -64,5 +70,5 @@ object TrackerOptions {
         }
     }
 
-    fun text(): String = "showBallPicker=$showBallPicker\nshowCategoryIcons=$showCategoryIcons\nhealsWhole=$healsWhole\nshowTeamView=$showTeamView\nrestorePoints=$restorePoints\nshowTimer=$showTimer\ntourneyTracker=$tourneyTracker\nlossCondition=${lossCondition.key}\nlandscapeTracker=${landscapeTracker.name}\n"
+    fun text(): String = "showBallPicker=$showBallPicker\nshowCategoryIcons=$showCategoryIcons\nhealsWhole=$healsWhole\nshowTeamView=$showTeamView\nrestorePoints=$restorePoints\nshowTimer=$showTimer\ntourneyTracker=$tourneyTracker\nkantoBadgesFirst=$kantoBadgesFirst\nshowBothBadgeSets=$showBothBadgeSets\nlossCondition=${lossCondition.key}\nlandscapeTracker=${landscapeTracker.name}\n"
 }
