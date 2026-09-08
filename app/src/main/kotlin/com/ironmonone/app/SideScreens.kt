@@ -33,6 +33,9 @@ class SideScreenState {
     var pastRuns by mutableStateOf(false)
     var statistics by mutableStateOf(false)
     var evoData by mutableStateOf<Int?>(null)
+    var trackedPokemon by mutableStateOf(false)
+    var tourney by mutableStateOf(false)
+    var colorTheme by mutableStateOf(false)
 }
 
 /** The side screens themselves: Move History, Random Evos, Heals In Bag, Notebook, Catch Rates, Battle Details, Trainers On Route, Trainer Info, Stats. */
@@ -54,7 +57,12 @@ fun SideScreenDialogs(
     onRestore: (ByteArray) -> Unit = {},
     pastRunStore: PastRunStore? = null,
     dsSpriteOf: @Composable (Int) -> ImageBitmap? = { null },
+    tourney: TourneyTracker? = null,
+    currentSeed: String = "",
 ) {
+    if (s.colorTheme) ColorThemeDialog { s.colorTheme = false }
+    if (s.trackedPokemon) TrackedPokemonDialog(statMarks, encounters.keys, ndsTrackerRef, dsSpriteOf) { s.trackedPokemon = false }
+    if (s.tourney && tourney != null) TourneyDialog(tourney, currentSeed) { s.tourney = false }
     if (s.pastRuns && pastRunStore != null) PastRunsDialog(pastRunStore, dsSpriteOf) { s.pastRuns = false }
     if (s.statistics && pastRunStore != null) StatisticsDialog(pastRunStore) { s.statistics = false }
     s.evoData?.let { sp -> EvoDataDialog(sp, ndsTrackerRef, dsSpriteOf) { s.evoData = null } }

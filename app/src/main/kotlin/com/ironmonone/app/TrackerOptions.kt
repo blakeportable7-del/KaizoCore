@@ -26,6 +26,10 @@ object TrackerOptions {
     var showTeamView by mutableStateOf(false)
     /** Options["Enable restore points"] (TimeMachineScreen): on by default, as in the reference. */
     var restorePoints by mutableStateOf(true)
+    /** settings.timer.ENABLED (DS TimerScreen), off by default. */
+    var showTimer by mutableStateOf(false)
+    /** settings.tourneyTracker.ENABLED (DS TourneyTracker), off by default. */
+    var tourneyTracker by mutableStateOf(false)
     var lossCondition by mutableStateOf(LossCondition.LEAD)
 
     private var file: File? = null
@@ -43,6 +47,8 @@ object TrackerOptions {
                     "healsWhole" -> healsWhole = v == "true"
                     "showTeamView" -> showTeamView = v == "true"
                     "restorePoints" -> restorePoints = v == "true"
+                    "showTimer" -> showTimer = v == "true"
+                    "tourneyTracker" -> tourneyTracker = v == "true"
                     "lossCondition" -> lossCondition = LossCondition.byKey(v)
                     "landscapeTracker" -> landscapeTracker = LandscapeTracker.entries.firstOrNull { it.name == v } ?: LandscapeTracker.DOCKED
                 }
@@ -58,5 +64,5 @@ object TrackerOptions {
         }
     }
 
-    fun text(): String = "showBallPicker=$showBallPicker\nshowCategoryIcons=$showCategoryIcons\nhealsWhole=$healsWhole\nshowTeamView=$showTeamView\nrestorePoints=$restorePoints\nlossCondition=${lossCondition.key}\nlandscapeTracker=${landscapeTracker.name}\n"
+    fun text(): String = "showBallPicker=$showBallPicker\nshowCategoryIcons=$showCategoryIcons\nhealsWhole=$healsWhole\nshowTeamView=$showTeamView\nrestorePoints=$restorePoints\nshowTimer=$showTimer\ntourneyTracker=$tourneyTracker\nlossCondition=${lossCondition.key}\nlandscapeTracker=${landscapeTracker.name}\n"
 }

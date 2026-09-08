@@ -150,15 +150,21 @@ fun PcCanvas(
     }
 }
 
+/**
+ * The tracker's palette, the DS tracker's default colour scheme
+ * (MiscConstants.colorScheme) key for key. Mutable so the Edit Color Theme
+ * screen (ColorSchemeScreen.lua) can change it live; ThemeStore holds the
+ * saved theme.
+ */
 object Pc {
-    val Page = Color(0xFF000000)
-    val Ground = Color(0xFF222222)
-    val Border = Color(0xFFAAAAAA)
-    val Text = Color(0xFFFFFFFF)
-    val Positive = Color(0xFF00FF00)
-    val Negative = Color(0xFFFF0000)
-    val Gold = Color(0xFFFFFF00)      // "Intermediate text": item + ability
-    val Dim = Color(0xFFAAAAAA)
+    var Page by mutableStateOf(Color(0xFF000000))        // Main background color
+    var Ground by mutableStateOf(Color(0xFF222222))      // Top box background color
+    var Border by mutableStateOf(Color(0xFFAAAAAA))      // Top box border color
+    var Text by mutableStateOf(Color(0xFFFFFFFF))        // Top box text color
+    var Positive by mutableStateOf(Color(0xFF00FF00))    // Positive text color
+    var Negative by mutableStateOf(Color(0xFFFF0000))    // Negative text color
+    var Gold by mutableStateOf(Color(0xFFFFFF00))        // Intermediate text color: item + ability
+    var Dim by mutableStateOf(Color(0xFFAAAAAA))         // Bottom box text color, used for the quiet lines
 }
 
 /** Constants.MoveTypeColors, verbatim. */

@@ -337,6 +337,34 @@ thing as a band on the right. Separate item.
 
 ### 2.8 The side screens of every PC tracker - **OPEN 2026-09-08, IN PROGRESS**
 
+**Appearance, 2026-09-08: Edit Color Theme.** ColorSchemeScreen.lua cloned as
+ThemeStore + ColorThemeDialog (SETUP > EDIT COLOR THEME on both panels). The
+Pc palette is now mutable state named by the DS tracker's colour keys (its
+defaults are the palette the panels already used, key for key); each colour
+is edited as hex and applied live, saved to prep/theme.txt and loaded at
+start; Export theme gives the eight-value string and Import theme takes one;
+Reset restores the default scheme. Seen on the Emerald demo with an imported
+blue theme, then reset. Badges Appearance and Pokemon Icon Sets are not
+cloned: the app ships one badge set per game and one icon set, so there is
+nothing to choose between. ThemeStoreTest.
+
+**DS set, part two, 2026-09-08: Tracked Pokemon, Timer, Tourney Tracker.**
+TrackedPokemonScreen: every species with tracked data in name order, i/N with
+arrows, a search box, and the card (types, BST, abilities, marks, moves seen,
+note); SETUP > TRACKED POKEMON on the DS panel. The faint-detection rows are
+the gear's existing Game is considered over when. TimerScreen: RunTimer, an
+HH:MM:SS clock from run start that pauses on a tap and stops at run over,
+under SETUP on the DS panel behind the new Show timer option (off by default
+as settings.timer.ENABLED). TourneyTracker: the 36 HeartGold / SoulSilver
+milestones with their points, checked against the trainers this session's
+battles ended against (the DS tracker now keeps _defeatedTrainerList), the
+three Evo bonuses added and removed by hand, scores per seed in
+prep/tourney.tsv, cumulative score, export lines and clear; SETUP > TOURNEY
+TRACKER on HGSS behind the Tourney tracker option. The reference also
+requires leaving four dungeons' map sets; the DS tracker does not read the
+map id, so those milestones count on the trainers alone. Seen on the
+HeartGold demo. DsExtrasTest.
+
 **DS set, part one, 2026-09-08: Past Runs, Statistics, Evo Data.** From the
 NDS-Ironmon-Tracker. PastRun / SeedLogger cloned as PastRunStore
 (prep/pastruns-<family>.tsv): a run is logged once per outcome from the DS

@@ -331,6 +331,8 @@ fun NdsTrackerPanel(
     moveInfoFor: (Int) -> NdsMoveInfo? = { null },
     /** Opens the tracker's gear (the reference's SettingsGear). */
     onGear: (() -> Unit)? = null,
+    /** TimerScreen: the run clock, when the option is on. */
+    timer: RunTimer? = null,
 ) {
     // Same reference canvas as the GBA panel. Without it this panel would keep
     // the shared boxes' new REFERENCE-pixel sizes at 1dp each, i.e. the right
@@ -339,6 +341,7 @@ fun NdsTrackerPanel(
       Column(Modifier.fillMaxWidth().background(Pc.Page).padding(PcRef.MARGIN.rp)) {
           // The reference's gear sits at the top of the tracker screen; SETUP is its NavigationMenu.ButtonSetup.
           onGear?.let { g -> Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) { PcSmallButton("SETUP") { g() } }; Spacer(Modifier.height(3.dp)) }
+          timer?.let { RunTimerLine(it); Spacer(Modifier.height(3.dp)) }
         when {
             state == null -> PcCard {
                 PixText("DS tracker: waiting for the game...", 8, Pc.Dim,

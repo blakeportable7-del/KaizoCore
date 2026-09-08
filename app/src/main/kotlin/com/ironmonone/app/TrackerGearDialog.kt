@@ -50,6 +50,10 @@ fun TrackerGearDialog(
     onPastRuns: (() -> Unit)? = null,
     onStatistics: (() -> Unit)? = null,
     onEvoData: (() -> Unit)? = null,
+    onTrackedPokemon: (() -> Unit)? = null,
+    onTourney: (() -> Unit)? = null,
+    showTimerToggle: Boolean = false,
+    onColorTheme: (() -> Unit)? = null,
     onDismiss: () -> Unit,
 ) {
     var confirmClear by remember { mutableStateOf(false) }
@@ -71,6 +75,9 @@ fun TrackerGearDialog(
             onPastRuns?.let { com.ironmonone.app.gen3.Gen3Button("PAST RUNS") { it() } }
             onStatistics?.let { com.ironmonone.app.gen3.Gen3Button("STATISTICS") { it() } }
             onEvoData?.let { com.ironmonone.app.gen3.Gen3Button("EVO DATA") { it() } }
+            onTrackedPokemon?.let { com.ironmonone.app.gen3.Gen3Button("TRACKED POKEMON") { it() } }
+            onTourney?.let { com.ironmonone.app.gen3.Gen3Button("TOURNEY TRACKER") { it() } }
+            onColorTheme?.let { com.ironmonone.app.gen3.Gen3Button("EDIT COLOR THEME") { it() } }
             Spacer(Modifier.height(8.dp))
 
             PixText("Options", 8, Pc.Text)
@@ -79,6 +86,7 @@ fun TrackerGearDialog(
             GearToggle("Show physical special icons", TrackerOptions.showCategoryIcons) { TrackerOptions.showCategoryIcons = it; TrackerOptions.save() }
             GearToggle("Show heals as whole number", TrackerOptions.healsWhole) { TrackerOptions.healsWhole = it; TrackerOptions.save() }
             GearToggle("Show team view", TrackerOptions.showTeamView) { TrackerOptions.showTeamView = it; TrackerOptions.save() }
+            if (showTimerToggle) GearToggle("Show timer", TrackerOptions.showTimer) { TrackerOptions.showTimer = it; TrackerOptions.save() }
             Spacer(Modifier.height(8.dp))
 
             PixText("Landscape tracker", 8, Pc.Text)

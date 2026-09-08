@@ -101,6 +101,7 @@ class MainActivity : ComponentActivity() {
         // 512 MB a DS dump, fills a phone. Swept every launch.
         runCatching { cacheDir.listFiles()?.filter { it.name.startsWith("prep-") || it.name.startsWith("import-") }?.forEach { it.deleteRecursively() } }
         TrackerOptions.load(java.io.File(filesDir, "prep/tracker-options.txt"))
+        ThemeStore.load(java.io.File(filesDir, "prep/theme.txt"))
         (getSystemService(INPUT_SERVICE) as InputManager)
             .registerInputDeviceListener(deviceListener, null)
         Controllers.refresh()

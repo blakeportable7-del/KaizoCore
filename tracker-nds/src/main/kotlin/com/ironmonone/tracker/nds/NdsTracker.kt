@@ -319,6 +319,8 @@ class NdsTracker(
         private set
     private var lastTrainerId = 0
     private var wasInBattle = false
+    /** BattleHandlerBase._defeatedTrainerList: every trainer a battle has ended against this session. */
+    val defeatedTrainers: MutableSet<Int> = HashSet()
 
     /** EvoDataScreen's EvoData.EVOLUTIONS[base]: target id -> (evo id, percent) in the reference's order, from gen4/evos.tsv or gen5/evos.tsv. */
     private val evoData: Map<Int, Map<Int, List<Pair<Int, Double>>>> by lazy {
@@ -689,6 +691,7 @@ class NdsTracker(
         val heals = readHeals(lead?.mon?.maxHp ?: 0, battle != null)
         // BattleHandlerBase._onEndOfBattle: a battle that just ended against a lab rival is Past Lab, against the champion is Won.
         if (wasInBattle && battle == null) {
+            if (lastTrainerId != 0) defeatedTrainers.add(lastTrainerId)
             if (lastTrainerId in map.labTrainerIds && progress < 1) progress = 1
             if (map.finalTrainerId != 0 && lastTrainerId == map.finalTrainerId) progress = 2
         }

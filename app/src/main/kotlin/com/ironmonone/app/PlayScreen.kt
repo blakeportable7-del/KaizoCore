@@ -534,6 +534,16 @@ fun PlayScreen(
     // SeedLogger: the DS tracker's past runs, per game family, and when this run began for its playtime.
     val pastRunStore = remember(ndsState?.badgeSet) { ndsState?.badgeSet?.let { PastRunStore(store.pastRunsFile(it)) } }
     val runStartedAt = remember(session.id) { System.currentTimeMillis() }
+    val runTimer = remember(session.id) { RunTimer(runStartedAt) }
+    // TourneyTracker, HeartGold / SoulSilver only, keyed on the seed as the reference keys on the ROM hash.
+    val tourney = remember { TourneyTracker(store.tourneyFile()) }
+    LaunchedEffect(ndsState?.inBattle, ndsState?.badgeSet) {
+        val nds = ndsTrackerRef
+        if (TrackerOptions.tourneyTracker && ndsState?.badgeSet == "HGSS" && nds != null && Demo.mode == null) {
+            val done = tourney.update(store.lastSeedText().ifEmpty { session.id }, nds.defeatedTrainers)
+            if (done.isNotEmpty()) status = "Milestone: ${done.joinToString(", ") { it.name }}. New total: ${tourney.points(tourney.scoreFor(store.lastSeedText().ifEmpty { session.id }))} points"
+        }
+    }
     LaunchedEffect(session.id) {
         while (true) {
             kotlinx.coroutines.delay(15_000)
@@ -1439,7 +1449,7 @@ fun PlayScreen(
                       }
                   }
                   if (dsScreens) NdsTrackerPanel(
-                      state = ndsState, onFlee = { flee() }, onGear = { gearDialog = true },
+                      state = ndsState, onFlee = { flee() }, onGear = { gearDialog = true }, timer = if (TrackerOptions.showTimer) runTimer else null,
                       favoriteLine = favoriteLine,
                       randomBall = ndsTrackerRef?.randomBall?.takeIf { TrackerOptions.showBallPicker },
                       onTypeDefenses = { n, a, b -> typeDefenses = n to com.ironmonone.tracker.Gen3Types.defenses(com.ironmonone.tracker.nds.Gen4Types.idOf(a) ?: -1, com.ironmonone.tracker.nds.Gen4Types.idOf(b) ?: (com.ironmonone.tracker.nds.Gen4Types.idOf(a) ?: -1)) },
@@ -1984,7 +1994,7 @@ fun PlayScreen(
                         .verticalScroll(rememberScrollState())
                 ) {
                     NdsTrackerPanel(
-                        state = ndsState, onFlee = { flee() }, onGear = { gearDialog = true },
+                        state = ndsState, onFlee = { flee() }, onGear = { gearDialog = true }, timer = if (TrackerOptions.showTimer) runTimer else null,
                         favoriteLine = favoriteLine,
                         randomBall = ndsTrackerRef?.randomBall?.takeIf { TrackerOptions.showBallPicker },
                         onTypeDefenses = { n, a, b -> typeDefenses = n to com.ironmonone.tracker.Gen3Types.defenses(com.ironmonone.tracker.nds.Gen4Types.idOf(a) ?: -1, com.ironmonone.tracker.nds.Gen4Types.idOf(b) ?: (com.ironmonone.tracker.nds.Gen4Types.idOf(a) ?: -1)) },
@@ -2202,7 +2212,7 @@ fun PlayScreen(
     // has cleared and returned, the way isDisplayed works in the reference.
     val runOutcome = view?.outcome
     var gameOverShownFor by remember(session.id) { mutableStateOf<com.ironmonone.tracker.RunOutcome?>(null) }
-    LaunchedEffect(runOutcome) { if (runOutcome == null) gameOverShownFor = null }
+    LaunchedEffect(runOutcome) { if (runOutcome == null) gameOverShownFor = null else runTimer.stop() }
     // Program.onRunEnded: log the run once per outcome, from the DS state that ended it.
     var loggedRunFor by remember(session.id) { mutableStateOf<com.ironmonone.tracker.RunOutcome?>(null) }
     LaunchedEffect(runOutcome) {
@@ -2266,6 +2276,7 @@ fun PlayScreen(
             else status = if (retro?.unserializeState(bytes) == true) "Restored." else "Load failed - the core refused that state."
         },
         pastRunStore = pastRunStore,
+        tourney = tourney, currentSeed = store.lastSeedText().ifEmpty { session.id },
         dsSpriteOf = { sp -> val c = androidx.compose.ui.platform.LocalContext.current; remember(sp) { PcAssets.dsSprite(c, sp, false) } })
     if (coverageCalc) {
         val ctx = androidx.compose.ui.platform.LocalContext.current
@@ -2318,6 +2329,10 @@ fun PlayScreen(
             onPastRuns = if (pastRunStore != null) { { gearDialog = false; side.pastRuns = true } } else null,
             onStatistics = if (pastRunStore != null) { { gearDialog = false; side.statistics = true } } else null,
             onEvoData = ndsState?.party?.firstOrNull()?.mon?.species?.let { sp -> { gearDialog = false; side.evoData = sp } },
+            onTrackedPokemon = if (ndsState != null) { { gearDialog = false; side.trackedPokemon = true } } else null,
+            onTourney = if (ndsState?.badgeSet == "HGSS") { { gearDialog = false; side.tourney = true } } else null,
+            showTimerToggle = ndsState != null,
+            onColorTheme = { gearDialog = false; side.colorTheme = true },
             onDismiss = { gearDialog = false },
         )
     }
