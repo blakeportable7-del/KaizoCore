@@ -337,6 +337,36 @@ thing as a band on the right. Separate item.
 
 ### 2.8 The side screens of every PC tracker - **OPEN 2026-09-08, IN PROGRESS**
 
+**Real-ROM tests, 2026-09-08.** RomDataTest reads an actual cartridge dump
+(IRONMON_ROMS, skipped without it, as PrepOptionsTest is) and checks the
+ROM-side halves of the new screens with no emulator: Emerald's Wattson comes
+out as LEADER WATTSON with Voltorb 20, Electrike 20, Magneton 22 and
+Manectric 24 holding a Sitrus Berry, Smart, with custom moves; every trainer
+id in the route tables (300+) decodes to a sane party, class name, level and
+IV range; the catch-rate byte reads 45 for the starters, 255 for Caterpie and
+3 for the birds, and a Poke Ball on a full-health Articuno rounds to nothing;
+the experience tables span rising amounts per level for every growth rate the
+ROM uses, and level 100 has no next level; FireRed's own tables decode at
+their own addresses. Between this and AddressAuditTest, both halves of
+Trainers On Route, Trainer Info, Catch Rates and the EXP bar are verified
+without driving a game. What stays unproven is the live battle structs, which
+need a real fight.
+
+Two notes from writing it, both cases of the data disagreeing with an
+assumption: the Emerald species table uses four growth rates, not all six, so
+the test iterates whatever the ROM holds; and Medium Slow spans LESS
+experience at level 3 than at level 2, so "every level costs more than the
+last" is false and the test compares level 20 against level 80 instead.
+
+**Badges Appearance, 2026-09-08.** The part of the DS tracker's screen that
+applies here: Show both badge sets and Kanto badges first
+(badgesAppearance.SHOW_BOTH_BADGES and PRIMARY_BADGE_SET), on the gear for
+HGSS only, defaulting to both rows with Johto first as the reference does.
+Its alignment and spacer options describe a layout this panel does not have,
+and Pokemon Icon Sets needs icon sets the app does not ship. The Tourney
+Tracker's Radio Tower full clear runs on its trainers alone because the
+reference does not gate it on a map set either, though it defines the set.
+
 **The address audit, 2026-09-08, and what it caught.** The side screens are
 twenty-odd hand-typed addresses each, and a wrong digit reads plausible
 rubbish instead of failing. tools/trainer-data/convert_addresses.py snapshots
