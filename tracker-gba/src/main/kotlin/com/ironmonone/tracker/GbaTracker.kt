@@ -519,6 +519,8 @@ data class GameMap(
             returnToOverworld = 0x08015B6D,
             baseStats = 0x082547F4,
             expTables = 0x08253B54,
+            // The trainer tables move with the rest of the data by +0x70; inheriting v1.0 through the copy() read the wrong trainers (caught by AddressAuditTest).
+            gTrainers = 0x0823EB38, gTrainerClassNames = 0x0823E5C8,
             battleMoves = 0x08250C74,
             levelUpLearnsets = 0x0825D824,
             abilityScriptTable = "firered11",

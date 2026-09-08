@@ -337,6 +337,21 @@ thing as a band on the right. Separate item.
 
 ### 2.8 The side screens of every PC tracker - **OPEN 2026-09-08, IN PROGRESS**
 
+**The address audit, 2026-09-08, and what it caught.** The side screens are
+twenty-odd hand-typed addresses each, and a wrong digit reads plausible
+rubbish instead of failing. tools/trainer-data/convert_addresses.py snapshots
+BOTH reference trackers address tables as fixtures (Ironmon-Tracker
+GameAddresses/*.json into tracker-gba/src/test/resources/gen3/addresses.tsv,
+NDS-Ironmon-Tracker MemoryAddresses.lua into
+tracker-nds/src/test/resources/nds-addresses.tsv) and AddressAuditTest /
+NdsAddressAuditTest compare every copied field on every map against them, 120+
+and 40+ comparisons respectively. It failed the first time it ran: FireRed
+v1.1 is a copy() of v1.0 and inherited v1.0 gTrainers and gTrainerClassNames,
+so Trainers On Route would have read the wrong table on that revision. Fixed
+to 0x0823EB38 / 0x0823E5C8. gPaydayMoney is the one address deliberately NOT
+equal to the reference (see Battle Details above); a second test pins it and
+the reason, so a later correction back to the JSON is a red test.
+
 **DS location and the diagnostics, 2026-09-08.** Program.updateLocation cloned:
 NdsGameMap carries childMapHeader / parentMapHeader per game (MemoryAddresses,
 White and White 2 by their shifts) and a LocationData table

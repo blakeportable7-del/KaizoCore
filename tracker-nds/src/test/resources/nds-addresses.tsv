@@ -1,0 +1,181 @@
+# map	symbol	value  (NDS-Ironmon-Tracker MemoryAddresses.lua, converted by tools/trainer-data/convert_addresses.py)
+Pokemon Diamond / Pearl	badges	0x00000292
+Pokemon Diamond / Pearl	battleSubscriptMsgs	0x000458F0
+Pokemon Diamond / Pearl	berryBagStart	0x00000DF4
+Pokemon Diamond / Pearl	berryBagStartBattle	0x0004550C
+Pokemon Diamond / Pearl	childMapHeader	0x0000144C
+Pokemon Diamond / Pearl	enemyBase	0x0004CD88
+Pokemon Diamond / Pearl	enemyBattleMonPID	0x000486A8
+Pokemon Diamond / Pearl	enemyPokemonID	0x00048640
+Pokemon Diamond / Pearl	enemyTrainerID	0x00042A8E
+Pokemon Diamond / Pearl	facingDirection	0x00024A5C
+Pokemon Diamond / Pearl	itemStartBattle	0x0004546C
+Pokemon Diamond / Pearl	itemStartNoBattle	0x00000D54
+Pokemon Diamond / Pearl	parentMapHeader	0x0000144C
+Pokemon Diamond / Pearl	playerBase	0x000002AC
+Pokemon Diamond / Pearl	playerBattleBase	0x0004C7D8
+Pokemon Diamond / Pearl	playerBattleMonPID	0x000485E8
+Pokemon Diamond / Pearl	repelSteps	0x0000764C
+Pokemon Diamond / Pearl	statStagesEnemy	0x00048658
+Pokemon Diamond / Pearl	statStagesPlayer	0x00048598
+Pokemon Diamond / Pearl	battleStatus	0x0023BB38
+Pokemon Diamond / Pearl	GLOBAL_POINTER	0x00000B70
+Pokemon Diamond / Pearl	VERSION_POINTER_OFFSET	0x00000020
+Pokemon Platinum	badges	0x00000096
+Pokemon Platinum	battleSubscriptMsgs	0x00044928
+Pokemon Platinum	berryBagStart	0x00000C00
+Pokemon Platinum	berryBagStartBattle	0x0004435C
+Pokemon Platinum	childMapHeader	0x000239B0
+Pokemon Platinum	enemyBase	0x0004BE5C
+Pokemon Platinum	enemyBattleMonPID	0x000476E0
+Pokemon Platinum	enemyPokemonID	0x00047678
+Pokemon Platinum	enemyTrainerID	0x0004189E
+Pokemon Platinum	facingDirection	0x000238A4
+Pokemon Platinum	itemStartBattle	0x000442BC
+Pokemon Platinum	itemStartNoBattle	0x00000B60
+Pokemon Platinum	parentMapHeader	0x000239B0
+Pokemon Platinum	playerBase	0x000000B4
+Pokemon Platinum	playerBattleBase	0x0004B8AC
+Pokemon Platinum	playerBattleMonPID	0x00047620
+Pokemon Platinum	repelSteps	0x00008087
+Pokemon Platinum	statStagesEnemy	0x00047690
+Pokemon Platinum	statStagesPlayer	0x000475D0
+Pokemon Platinum	battleStatus	0x0024A55A
+Pokemon Platinum	GLOBAL_POINTER	0x00000BA8
+Pokemon Platinum	VERSION_POINTER_OFFSET	0x00000020
+Pokemon HeartGold / SoulSilver	abilityMessage	0x000471C8
+Pokemon HeartGold / SoulSilver	battleSubscriptMsgs	0x00047184
+Pokemon HeartGold / SoulSilver	berryBagStart	0x00000C14
+Pokemon HeartGold / SoulSilver	berryBagStartBattle	0x00046B78
+Pokemon HeartGold / SoulSilver	childMapHeader	0x00025FE4
+Pokemon HeartGold / SoulSilver	dayOfWeek	0x00000DF4
+Pokemon HeartGold / SoulSilver	enemyBase	0x0004F068
+Pokemon HeartGold / SoulSilver	enemyBattleMonPID	0x00049F3C
+Pokemon HeartGold / SoulSilver	enemyPokemonID	0x00049ED4
+Pokemon HeartGold / SoulSilver	enemyTrainerID	0x000440AA
+Pokemon HeartGold / SoulSilver	facingDirection	0x00025DA8
+Pokemon HeartGold / SoulSilver	itemStartBattle	0x00046AD8
+Pokemon HeartGold / SoulSilver	itemStartNoBattle	0x00000B74
+Pokemon HeartGold / SoulSilver	johtoBadges	0x0000008E
+Pokemon HeartGold / SoulSilver	kantoBadges	0x00000093
+Pokemon HeartGold / SoulSilver	leagueBeaten	0x00001000
+Pokemon HeartGold / SoulSilver	parentMapHeader	0x00025FE4
+Pokemon HeartGold / SoulSilver	playerBase	0x000000A8
+Pokemon HeartGold / SoulSilver	playerBattleBase	0x0004EA98
+Pokemon HeartGold / SoulSilver	playerBattleMonPID	0x00049E7C
+Pokemon HeartGold / SoulSilver	repelSteps	0x00006919
+Pokemon HeartGold / SoulSilver	statStagesEnemy	0x00049EEC
+Pokemon HeartGold / SoulSilver	statStagesPlayer	0x00049E2C
+Pokemon HeartGold / SoulSilver	battleStatus	0x00246F48
+Pokemon HeartGold / SoulSilver	GLOBAL_POINTER	0x00000BA8
+Pokemon HeartGold / SoulSilver	VERSION_POINTER_OFFSET	0x00000020
+Pokemon Black	HPBattlePlayer	0x0026D6B2
+Pokemon Black	abilityTriggerStart	0x002A6354
+Pokemon Black	badges	0x0023CDB0
+Pokemon Black	battleStatus	0x001D0798
+Pokemon Black	berryBagStart	0x00234844
+Pokemon Black	berryBagStartBattle	0x00234844
+Pokemon Black	childMapHeader	0x002592B2
+Pokemon Black	curBattleLevel	0x0026D6BC
+Pokemon Black	curBattleStats	0x0026D792
+Pokemon Black	curHPBattlePlayer	0x0026D6B4
+Pokemon Black	doubleTripleFlag	0x002A62F8
+Pokemon Black	enemyBase	0x0026B254
+Pokemon Black	enemyBattleMonPID	0x002A7E70
+Pokemon Black	enemyTrainerID	0x002697BE
+Pokemon Black	facingDirection	0x002521FC
+Pokemon Black	itemStartBattle	0x00234784
+Pokemon Black	itemStartNoBattle	0x00234784
+Pokemon Black	mainBattleDataPtr	0x00269838
+Pokemon Black	mapNPCIDStart	0x002521EC
+Pokemon Black	parentMapHeader	0x002592B4
+Pokemon Black	playerBase	0x002349B4
+Pokemon Black	playerBattleBase	0x0026A794
+Pokemon Black	playerBattleMonPID	0x002A7E14
+Pokemon Black	repelSteps	0x0023D6DD
+Pokemon Black	someBattleUIPtr	0x00294854
+Pokemon Black	statStagesEnemy	0x0026D9C4
+Pokemon Black	statStagesStart	0x0026D7A0
+Pokemon Black	totalMonsParty	0x002349B0
+Pokemon White	HPBattlePlayer	0x0026D6D2
+Pokemon White	abilityTriggerStart	0x002A6374
+Pokemon White	badges	0x0023CDD0
+Pokemon White	battleStatus	0x001D07B8
+Pokemon White	berryBagStart	0x00234864
+Pokemon White	berryBagStartBattle	0x00234864
+Pokemon White	childMapHeader	0x002592D2
+Pokemon White	curBattleLevel	0x0026D6DC
+Pokemon White	curBattleStats	0x0026D7B2
+Pokemon White	curHPBattlePlayer	0x0026D6D4
+Pokemon White	doubleTripleFlag	0x002A6318
+Pokemon White	enemyBase	0x0026B274
+Pokemon White	enemyBattleMonPID	0x002A7E90
+Pokemon White	enemyTrainerID	0x002697DE
+Pokemon White	facingDirection	0x0025221C
+Pokemon White	itemStartBattle	0x002347A4
+Pokemon White	itemStartNoBattle	0x002347A4
+Pokemon White	mainBattleDataPtr	0x00269858
+Pokemon White	mapNPCIDStart	0x0025220C
+Pokemon White	parentMapHeader	0x002592D4
+Pokemon White	playerBase	0x002349D4
+Pokemon White	playerBattleBase	0x0026A7B4
+Pokemon White	playerBattleMonPID	0x002A7E34
+Pokemon White	repelSteps	0x0023D6FD
+Pokemon White	someBattleUIPtr	0x00294874
+Pokemon White	statStagesEnemy	0x0026D9E4
+Pokemon White	statStagesStart	0x0026D7C0
+Pokemon White	totalMonsParty	0x002349D0
+Pokemon Black 2	HPBattlePlayer	0x0025B232
+Pokemon Black 2	abilityTriggerStart	0x00294E08
+Pokemon Black 2	badges	0x00226728
+Pokemon Black 2	battleStatus	0x001B5138
+Pokemon Black 2	berryBagStart	0x0021E2BC
+Pokemon Black 2	berryBagStartBattle	0x0021E2BC
+Pokemon Black 2	childMapHeader	0x00246860
+Pokemon Black 2	curBattleLevel	0x0025B23C
+Pokemon Black 2	curBattleStats	0x0025B312
+Pokemon Black 2	curHPBattlePlayer	0x0025B234
+Pokemon Black 2	doubleTripleFlag	0x00294DA4
+Pokemon Black 2	enemyBase	0x00258874
+Pokemon Black 2	enemyBattleMonPID	0x00296930
+Pokemon Black 2	enemyTrainerID	0x00257332
+Pokemon Black 2	facingDirection	0x0023D9FC
+Pokemon Black 2	itemStartBattle	0x0021E1FC
+Pokemon Black 2	itemStartNoBattle	0x0021E1FC
+Pokemon Black 2	mainBattleDataPtr	0x002573AC
+Pokemon Black 2	mapNPCIDStart	0x0023D9EC
+Pokemon Black 2	parentMapHeader	0x00246848
+Pokemon Black 2	playerBase	0x0021E42C
+Pokemon Black 2	playerBattleBase	0x00258314
+Pokemon Black 2	playerBattleMonPID	0x002968D4
+Pokemon Black 2	repelSteps	0x00226F51
+Pokemon Black 2	someBattleUIPtr	0x00294D8C
+Pokemon Black 2	statStagesStart	0x0025B320
+Pokemon Black 2	totalMonsParty	0x0021E428
+Pokemon White 2	HPBattlePlayer	0x0025B2B2
+Pokemon White 2	abilityTriggerStart	0x00294E88
+Pokemon White 2	badges	0x002267A8
+Pokemon White 2	battleStatus	0x001B5178
+Pokemon White 2	berryBagStart	0x0021E33C
+Pokemon White 2	berryBagStartBattle	0x0021E33C
+Pokemon White 2	childMapHeader	0x002468E0
+Pokemon White 2	curBattleLevel	0x0025B2BC
+Pokemon White 2	curBattleStats	0x0025B392
+Pokemon White 2	curHPBattlePlayer	0x0025B2B4
+Pokemon White 2	doubleTripleFlag	0x00294E24
+Pokemon White 2	enemyBase	0x002588F4
+Pokemon White 2	enemyBattleMonPID	0x002969B0
+Pokemon White 2	enemyTrainerID	0x002573B2
+Pokemon White 2	facingDirection	0x0023DA7C
+Pokemon White 2	itemStartBattle	0x0021E27C
+Pokemon White 2	itemStartNoBattle	0x0021E27C
+Pokemon White 2	mainBattleDataPtr	0x0025742C
+Pokemon White 2	mapNPCIDStart	0x0023DA6C
+Pokemon White 2	parentMapHeader	0x002468C8
+Pokemon White 2	playerBase	0x0021E4AC
+Pokemon White 2	playerBattleBase	0x00258394
+Pokemon White 2	playerBattleMonPID	0x00296954
+Pokemon White 2	repelSteps	0x00226FD1
+Pokemon White 2	someBattleUIPtr	0x00294E0C
+Pokemon White 2	statStagesStart	0x0025B3A0
+Pokemon White 2	totalMonsParty	0x0021E4A8

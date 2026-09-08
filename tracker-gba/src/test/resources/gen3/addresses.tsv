@@ -1,0 +1,181 @@
+# revision	symbol	value  (Ironmon-Tracker GameAddresses/*.json, converted by tools/trainer-data/convert_addresses.py)
+Emerald (U)	gBattleTerrain	0x02022FF0
+Emerald (U)	gBattleWeather	0x020243CC
+Emerald (U)	gBattleStructPtr	0x0202449C
+Emerald (U)	gStatuses3	0x020242AC
+Emerald (U)	gSideStatuses	0x0202428E
+Emerald (U)	gSideTimers	0x02024294
+Emerald (U)	gDisableStructs	0x020242BC
+Emerald (U)	gLockedMoves	0x02024268
+Emerald (U)	gWishFutureKnock	0x020243D0
+Emerald (U)	gPaydayMoney	0x020243D0
+Emerald (U)	gBattleResults	0x03005D10
+Emerald (U)	gTrainers	0x08310030
+Emerald (U)	gTrainerClassNames	0x0830FCD4
+Emerald (U)	gExperienceTables	0x0831F72C
+Emerald (U)	gBaseStats	0x083203CC
+Emerald (U)	gPlayerPartyCount	0x020244E9
+Emerald (U)	gBattleTypeFlags	0x02022FEC
+Emerald (U)	gBattleMons	0x02024084
+Emerald (U)	gBattlersCount	0x0202406C
+Emerald (U)	gBattleOutcome	0x0202433A
+Emerald (U)	gBattleMainFunc	0x03005D04
+Emerald (U)	gMapHeader	0x02037318
+Emerald (U)	gLevelUpLearnsets	0x0832937C
+Emerald (U)	gSaveBlock1ptr	0x03005D8C
+Emerald (U)	gSaveBlock2ptr	0x03005D90
+Emerald (U)	bagPocket_Items_offset	0x00000560
+Emerald (U)	bagPocket_Berries_offset	0x00000790
+Emerald (U)	bagPocket_Balls_offset	0x00000650
+Emerald (U)	bagPocket_Balls_Size	0x00000010
+Emerald (U)	HandleTurnActionSelectionState	0x0803BE75
+Emerald (U)	ReturnFromBattleToOverworld	0x0803DF71
+FireRed (U) v1.0	gBattleTerrain	0x02022B50
+FireRed (U) v1.0	gBattleWeather	0x02023F1C
+FireRed (U) v1.0	gBattleStructPtr	0x02023FE8
+FireRed (U) v1.0	gStatuses3	0x02023DFC
+FireRed (U) v1.0	gSideStatuses	0x02023DDE
+FireRed (U) v1.0	gSideTimers	0x02023DE4
+FireRed (U) v1.0	gDisableStructs	0x02023E0C
+FireRed (U) v1.0	gLockedMoves	0x02023DB8
+FireRed (U) v1.0	gWishFutureKnock	0x02023F20
+FireRed (U) v1.0	gPaydayMoney	0x02023E7E
+FireRed (U) v1.0	gBattleResults	0x03004F90
+FireRed (U) v1.0	gTrainers	0x0823EAC8
+FireRed (U) v1.0	gTrainerClassNames	0x0823E558
+FireRed (U) v1.0	gExperienceTables	0x08253AE4
+FireRed (U) v1.0	gBaseStats	0x08254784
+FireRed (U) v1.0	gPlayerPartyCount	0x02024029
+FireRed (U) v1.0	gBattleTypeFlags	0x02022B4C
+FireRed (U) v1.0	gBattleMons	0x02023BE4
+FireRed (U) v1.0	gBattlersCount	0x02023BCC
+FireRed (U) v1.0	gBattleOutcome	0x02023E8A
+FireRed (U) v1.0	gBattleMainFunc	0x03004F84
+FireRed (U) v1.0	gMapHeader	0x02036DFC
+FireRed (U) v1.0	gLevelUpLearnsets	0x0825D7B4
+FireRed (U) v1.0	gSaveBlock1ptr	0x03005008
+FireRed (U) v1.0	gSaveBlock2ptr	0x0300500C
+FireRed (U) v1.0	bagPocket_Items_offset	0x00000310
+FireRed (U) v1.0	bagPocket_Berries_offset	0x0000054C
+FireRed (U) v1.0	bagPocket_Balls_offset	0x00000430
+FireRed (U) v1.0	bagPocket_Balls_Size	0x0000000D
+FireRed (U) v1.0	HandleTurnActionSelectionState	0x08014041
+FireRed (U) v1.0	ReturnFromBattleToOverworld	0x08015B59
+FireRed (U) v1.1	gBattleTerrain	0x02022B50
+FireRed (U) v1.1	gBattleWeather	0x02023F1C
+FireRed (U) v1.1	gBattleStructPtr	0x02023FE8
+FireRed (U) v1.1	gStatuses3	0x02023DFC
+FireRed (U) v1.1	gSideStatuses	0x02023DDE
+FireRed (U) v1.1	gSideTimers	0x02023DE4
+FireRed (U) v1.1	gDisableStructs	0x02023E0C
+FireRed (U) v1.1	gLockedMoves	0x02023DB8
+FireRed (U) v1.1	gWishFutureKnock	0x02023F20
+FireRed (U) v1.1	gPaydayMoney	0x02023E7E
+FireRed (U) v1.1	gBattleResults	0x03004F90
+FireRed (U) v1.1	gTrainers	0x0823EB38
+FireRed (U) v1.1	gTrainerClassNames	0x0823E5C8
+FireRed (U) v1.1	gExperienceTables	0x08253B54
+FireRed (U) v1.1	gBaseStats	0x082547F4
+FireRed (U) v1.1	gPlayerPartyCount	0x02024029
+FireRed (U) v1.1	gBattleTypeFlags	0x02022B4C
+FireRed (U) v1.1	gBattleMons	0x02023BE4
+FireRed (U) v1.1	gBattlersCount	0x02023BCC
+FireRed (U) v1.1	gBattleOutcome	0x02023E8A
+FireRed (U) v1.1	gBattleMainFunc	0x03004F84
+FireRed (U) v1.1	gMapHeader	0x02036DFC
+FireRed (U) v1.1	gLevelUpLearnsets	0x0825D824
+FireRed (U) v1.1	gSaveBlock1ptr	0x03005008
+FireRed (U) v1.1	gSaveBlock2ptr	0x0300500C
+FireRed (U) v1.1	bagPocket_Items_offset	0x00000310
+FireRed (U) v1.1	bagPocket_Berries_offset	0x0000054C
+FireRed (U) v1.1	bagPocket_Balls_offset	0x00000430
+FireRed (U) v1.1	bagPocket_Balls_Size	0x0000000D
+FireRed (U) v1.1	HandleTurnActionSelectionState	0x08014055
+FireRed (U) v1.1	ReturnFromBattleToOverworld	0x08015B6D
+LeafGreen (U) v1.0	gBattleTerrain	0x02022B50
+LeafGreen (U) v1.0	gBattleWeather	0x02023F1C
+LeafGreen (U) v1.0	gBattleStructPtr	0x02023FE8
+LeafGreen (U) v1.0	gStatuses3	0x02023DFC
+LeafGreen (U) v1.0	gSideStatuses	0x02023DDE
+LeafGreen (U) v1.0	gSideTimers	0x02023DE4
+LeafGreen (U) v1.0	gDisableStructs	0x02023E0C
+LeafGreen (U) v1.0	gLockedMoves	0x02023DB8
+LeafGreen (U) v1.0	gWishFutureKnock	0x02023F20
+LeafGreen (U) v1.0	gPaydayMoney	0x02023E7E
+LeafGreen (U) v1.0	gBattleResults	0x03004F90
+LeafGreen (U) v1.0	gTrainers	0x0823EAA4
+LeafGreen (U) v1.0	gTrainerClassNames	0x0823E534
+LeafGreen (U) v1.0	gExperienceTables	0x08253AC0
+LeafGreen (U) v1.0	gBaseStats	0x08254760
+LeafGreen (U) v1.0	gPlayerPartyCount	0x02024029
+LeafGreen (U) v1.0	gBattleTypeFlags	0x02022B4C
+LeafGreen (U) v1.0	gBattleMons	0x02023BE4
+LeafGreen (U) v1.0	gBattlersCount	0x02023BCC
+LeafGreen (U) v1.0	gBattleOutcome	0x02023E8A
+LeafGreen (U) v1.0	gBattleMainFunc	0x03004F84
+LeafGreen (U) v1.0	gMapHeader	0x02036DFC
+LeafGreen (U) v1.0	gLevelUpLearnsets	0x0825D794
+LeafGreen (U) v1.0	gSaveBlock1ptr	0x03005008
+LeafGreen (U) v1.0	gSaveBlock2ptr	0x0300500C
+LeafGreen (U) v1.0	bagPocket_Items_offset	0x00000310
+LeafGreen (U) v1.0	bagPocket_Berries_offset	0x0000054C
+LeafGreen (U) v1.0	bagPocket_Balls_offset	0x00000430
+LeafGreen (U) v1.0	bagPocket_Balls_Size	0x0000000D
+LeafGreen (U) v1.0	HandleTurnActionSelectionState	0x08014041
+LeafGreen (U) v1.0	ReturnFromBattleToOverworld	0x08015B59
+Ruby (U) v1.0	gBattleTerrain	0x0300428C
+Ruby (U) v1.0	gBattleWeather	0x02024DB8
+Ruby (U) v1.0	gStatuses3	0x02024C98
+Ruby (U) v1.0	gSideStatuses	0x02024C7A
+Ruby (U) v1.0	gSideTimers	0x02024C80
+Ruby (U) v1.0	gDisableStructs	0x02024CA8
+Ruby (U) v1.0	gLockedMoves	0x02024C54
+Ruby (U) v1.0	gWishFutureKnock	0x02024DBC
+Ruby (U) v1.0	gPaydayMoney	0x02024D1A
+Ruby (U) v1.0	gBattleResults	0x030042E0
+Ruby (U) v1.0	gTrainers	0x081F04FC
+Ruby (U) v1.0	gTrainerClassNames	0x081F0208
+Ruby (U) v1.0	gExperienceTables	0x081FDF78
+Ruby (U) v1.0	gBaseStats	0x081FEC18
+Ruby (U) v1.0	gPlayerPartyCount	0x03004350
+Ruby (U) v1.0	gBattleTypeFlags	0x020239F8
+Ruby (U) v1.0	gBattleMons	0x02024A80
+Ruby (U) v1.0	gBattlersCount	0x02024A68
+Ruby (U) v1.0	gBattleOutcome	0x02024D26
+Ruby (U) v1.0	gBattleMainFunc	0x030042D4
+Ruby (U) v1.0	gMapHeader	0x0202E828
+Ruby (U) v1.0	gLevelUpLearnsets	0x08207BC8
+Ruby (U) v1.0	bagPocket_Items_offset	0x00000560
+Ruby (U) v1.0	bagPocket_Berries_offset	0x00000740
+Ruby (U) v1.0	bagPocket_Balls_offset	0x00000600
+Ruby (U) v1.0	bagPocket_Balls_Size	0x00000010
+Ruby (U) v1.0	HandleTurnActionSelectionState	0x08012325
+Ruby (U) v1.0	ReturnFromBattleToOverworld	0x08013EB1
+Sapphire (U) v1.0	gBattleTerrain	0x0300428C
+Sapphire (U) v1.0	gBattleWeather	0x02024DB8
+Sapphire (U) v1.0	gStatuses3	0x02024C98
+Sapphire (U) v1.0	gSideStatuses	0x02024C7A
+Sapphire (U) v1.0	gSideTimers	0x02024C80
+Sapphire (U) v1.0	gDisableStructs	0x02024CA8
+Sapphire (U) v1.0	gLockedMoves	0x02024C54
+Sapphire (U) v1.0	gWishFutureKnock	0x02024DBC
+Sapphire (U) v1.0	gPaydayMoney	0x02024D1A
+Sapphire (U) v1.0	gBattleResults	0x030042E0
+Sapphire (U) v1.0	gTrainers	0x081F048C
+Sapphire (U) v1.0	gTrainerClassNames	0x081F0198
+Sapphire (U) v1.0	gExperienceTables	0x081FDF08
+Sapphire (U) v1.0	gBaseStats	0x081FEBA8
+Sapphire (U) v1.0	gPlayerPartyCount	0x03004350
+Sapphire (U) v1.0	gBattleTypeFlags	0x020239F8
+Sapphire (U) v1.0	gBattleMons	0x02024A80
+Sapphire (U) v1.0	gBattlersCount	0x02024A68
+Sapphire (U) v1.0	gBattleOutcome	0x02024D26
+Sapphire (U) v1.0	gBattleMainFunc	0x030042D4
+Sapphire (U) v1.0	gMapHeader	0x0202E828
+Sapphire (U) v1.0	gLevelUpLearnsets	0x08207B58
+Sapphire (U) v1.0	bagPocket_Items_offset	0x00000560
+Sapphire (U) v1.0	bagPocket_Berries_offset	0x00000740
+Sapphire (U) v1.0	bagPocket_Balls_offset	0x00000600
+Sapphire (U) v1.0	bagPocket_Balls_Size	0x00000010
+Sapphire (U) v1.0	HandleTurnActionSelectionState	0x08012325
+Sapphire (U) v1.0	ReturnFromBattleToOverworld	0x08013EB1
