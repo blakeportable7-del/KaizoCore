@@ -537,10 +537,10 @@ fun PlayScreen(
     val runTimer = remember(session.id) { RunTimer(runStartedAt) }
     // TourneyTracker, HeartGold / SoulSilver only, keyed on the seed as the reference keys on the ROM hash.
     val tourney = remember { TourneyTracker(store.tourneyFile()) }
-    LaunchedEffect(ndsState?.inBattle, ndsState?.badgeSet) {
+    LaunchedEffect(ndsState?.inBattle, ndsState?.badgeSet, ndsState?.mapId) {
         val nds = ndsTrackerRef
         if (TrackerOptions.tourneyTracker && ndsState?.badgeSet == "HGSS" && nds != null && Demo.mode == null) {
-            val done = tourney.update(store.lastSeedText().ifEmpty { session.id }, nds.defeatedTrainers)
+            val done = tourney.update(store.lastSeedText().ifEmpty { session.id }, nds.defeatedTrainers, ndsState?.mapId ?: 0)
             if (done.isNotEmpty()) status = "Milestone: ${done.joinToString(", ") { it.name }}. New total: ${tourney.points(tourney.scoreFor(store.lastSeedText().ifEmpty { session.id }))} points"
         }
     }
@@ -668,28 +668,6 @@ fun PlayScreen(
                 ndsTrackerRef = tracker
             }
             tracker?.let { t ->
-                com.ironmonone.tracker.nds.NdsTracker.lastDump?.let { d -> runCatching { context.getExternalFilesDir(null)?.let { dir -> java.io.File(dir, "ds-dump.txt").writeText(d) } } }
-                // Debug: a file named dump-ram in the external files dir asks for the whole 4 MB of DS main RAM once.
-                runCatching {
-                    val dir = context.getExternalFilesDir(null)
-                    val flag = dir?.let { java.io.File(it, "dump-ram") }
-                    val inj = dir?.let { java.io.File(it, "inject-scan") }
-                    if (inj != null && inj.exists()) {
-                        val at = runCatching { inj.readText().trim().removePrefix("0x").toLong(16) }.getOrNull() ?: 0x02300000L
-                        val msg = t.injectAt({ addr, data -> retro?.writeMemory(addr, data) ?: 0 }, at) +
-                            if (at == 0x0221E42CL) { retro?.writeMemory(0x0221E428L, byteArrayOf(1, 0, 0, 0)); " count=1" } else ""
-
-                        java.io.File(dir, "inject.txt").writeText(msg)
-                        inj.delete()
-                    }
-                    if (flag != null && flag.exists()) {
-                        flag.delete()
-                        java.io.File(dir, "ram.bin").outputStream().buffered(1 shl 20).use { out ->
-                            var a = 0x02000000L
-                            while (a < 0x02400000L) { val b = reader.read(a, 0x10000); if (b.isEmpty()) break; out.write(b); a += b.size }
-                        }
-                    }
-                }
                 t.lossCondition = TrackerOptions.lossCondition
                 ndsState = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
                     runCatching { t.read() }.getOrNull()

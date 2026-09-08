@@ -87,6 +87,9 @@ data class NdsTrackerState(
     val progress: Int = 0,
     /** The opponent's trainer id, 0 for a wild battle, as last read. */
     val enemyTrainerId: Int = 0,
+    /** Program.updateLocation: the child map header id and the area name it (or the parent) maps to. */
+    val mapId: Int = 0,
+    val areaName: String = "",
     /**
      * Ability revealed by a battle trigger this tick: species to ability
      * name. The panel persists these per run; the reference's TrackAbility.
@@ -321,6 +324,33 @@ class NdsTracker(
     private var wasInBattle = false
     /** BattleHandlerBase._defeatedTrainerList: every trainer a battle has ended against this session. */
     val defeatedTrainers: MutableSet<Int> = HashSet()
+
+    private val locations: Map<Int, String> by lazy {
+        val out = HashMap<Int, String>()
+        if (map.locationsResource.isNotEmpty()) javaClass.getResourceAsStream(map.locationsResource)?.bufferedReader(Charsets.UTF_8)?.useLines { lines ->
+            lines.forEach { line -> if (!line.startsWith("#")) { val p = line.split('\t'); if (p.size >= 2) p[0].toIntOrNull()?.let { out[it] = p[1] } } }
+        }
+        out
+    }
+    private var lastMapId = 0
+    private var lastAreaName = ""
+
+    /**
+     * Program.updateLocation: the child map header, then the parent, looked up
+     * in LocationData; the Mystery Zone (id 0's name) never replaces a known
+     * area. The HGSS bug-catching weekday rename is not read.
+     */
+    private fun updateLocation() {
+        if (map.childMapHeader == 0L) return
+        val versionRel = if (map.absolute) 0L else versionPointer()
+        if (!map.absolute && versionRel == 0L) return
+        val cb = memory.read(ramStart + versionRel + map.childMapHeader, 2); if (cb.size < 2) return
+        val pb = memory.read(ramStart + versionRel + map.parentMapHeader, 2)
+        val child = cb.u16(0); val parent = if (pb.size == 2) pb.u16(0) else 0
+        val name = locations[child] ?: locations[parent] ?: return
+        lastMapId = child
+        if (name != locations[0]) lastAreaName = name
+    }
 
     /** EvoDataScreen's EvoData.EVOLUTIONS[base]: target id -> (evo id, percent) in the reference's order, from gen4/evos.tsv or gen5/evos.tsv. */
     private val evoData: Map<Int, Map<Int, List<Pair<Int, Double>>>> by lazy {
@@ -689,6 +719,7 @@ class NdsTracker(
             else -> readAbilityTrigger(battle.third, lead, battle.first)
         }
         val heals = readHeals(lead?.mon?.maxHp ?: 0, battle != null)
+        runCatching { updateLocation() }
         // BattleHandlerBase._onEndOfBattle: a battle that just ended against a lab rival is Past Lab, against the champion is Won.
         if (wasInBattle && battle == null) {
             if (lastTrainerId != 0) defeatedTrainers.add(lastTrainerId)
@@ -713,6 +744,8 @@ class NdsTracker(
             runOver = if (lossCondition.lost(party.map { it.mon.level to it.mon.curHp })) readRunOver(lead, battle?.first) else null,
             progress = progress,
             enemyTrainerId = if (battle != null) lastTrainerId else 0,
+            mapId = lastMapId,
+            areaName = lastAreaName,
         )
     }
 

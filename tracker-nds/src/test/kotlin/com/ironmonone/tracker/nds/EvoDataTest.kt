@@ -14,5 +14,6 @@ class EvoDataTest {
         assertEquals(33 to 6.75, bulba[2]!!.first())
         assertTrue(t.evoData(151).isEmpty())
         assertEquals(setOf(161, 162, 163), NdsGameMap.B2W2.labTrainerIds); assertEquals(341, NdsGameMap.B2W2.finalTrainerId)
+        assertEquals(0x2592D2L, NdsGameMap.WHITE.childMapHeader); assertEquals(0x246848L, NdsGameMap.B2W2.parentMapHeader)
     }
 }

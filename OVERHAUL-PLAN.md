@@ -337,6 +337,19 @@ thing as a band on the right. Separate item.
 
 ### 2.8 The side screens of every PC tracker - **OPEN 2026-09-08, IN PROGRESS**
 
+**DS location and the diagnostics, 2026-09-08.** Program.updateLocation cloned:
+NdsGameMap carries childMapHeader / parentMapHeader per game (MemoryAddresses,
+White and White 2 by their shifts) and a LocationData table
+(convert_locations.py into gen4/locations-pt.tsv, locations-hgss.tsv,
+gen5/locations-bw.tsv, locations-b2w2.tsv); NdsTrackerState.mapId and
+areaName follow the child then parent header, the Mystery Zone never
+replacing a known area. Past runs now carry the area, and the Tourney
+Tracker's three dungeon milestones wait for the player to leave the
+dungeon's map set as the reference's TrainerMilestone does. The Black 2
+diagnostics are gone: the build/probe line on the DS card, ds-dump.txt, the
+dump-ram and inject-scan flag files and the raw read in bug reports. The scan
+itself (the heap-shift fix) stays.
+
 **Appearance, 2026-09-08: Edit Color Theme.** ColorSchemeScreen.lua cloned as
 ThemeStore + ColorThemeDialog (SETUP > EDIT COLOR THEME on both panels). The
 Pc palette is now mutable state named by the DS tracker's colour keys (its

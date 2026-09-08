@@ -41,6 +41,10 @@ data class NdsGameMap(
     /** TrainerData.TRAINERS[game].LAB_IDS and FINAL_FIGHT_ID: beating a lab rival is Past Lab, beating the champion is Won. */
     val labTrainerIds: Set<Int> = emptySet(),
     val finalTrainerId: Int = 0,
+    /** childMapHeader / parentMapHeader (MemoryAddresses) and the LocationData table for Program.updateLocation. */
+    val childMapHeader: Long = 0,
+    val parentMapHeader: Long = 0,
+    val locationsResource: String = "",
     val itemStartBattle: Long,
     val berryBagStart: Long,
     val berryBagStartBattle: Long,
@@ -92,6 +96,7 @@ data class NdsGameMap(
             mainBattleDataPtr = mv(mainBattleDataPtr), doubleTripleFlag = mv(doubleTripleFlag),
             abilityTriggerStart = mv(abilityTriggerStart), totalMonsParty = mv(totalMonsParty),
             playerBattleBase = mv(playerBattleBase),
+            childMapHeader = mv(childMapHeader), parentMapHeader = mv(parentMapHeader),
         )
     }
     val maxSpecies: Int get() = if (generation == 5) 649 else 493
@@ -123,6 +128,7 @@ data class NdsGameMap(
         val DP = NdsGameMap(
             name = "Pokemon Diamond / Pearl",
             labTrainerIds = setOf(247, 248, 249), finalTrainerId = 267,
+            childMapHeader = 0x144C, parentMapHeader = 0x144C, locationsResource = "/gen4/locations-pt.tsv",
             gameCodes = setOf(CODE_DIAMOND, CODE_PEARL),
             generation = 4, badgePrefix = "DPPT", absolute = false,
             dataDir = "gen4", moveLevelsResource = "/gen4/movelevels.tsv",
@@ -141,6 +147,7 @@ data class NdsGameMap(
         val PLATINUM = NdsGameMap(
             name = "Pokemon Platinum",
             labTrainerIds = setOf(850, 851, 852), finalTrainerId = 267,
+            childMapHeader = 0x239B0, parentMapHeader = 0x239B0, locationsResource = "/gen4/locations-pt.tsv",
             gameCodes = setOf(CODE_PLATINUM),
             generation = 4, badgePrefix = "DPPT", absolute = false,
             dataDir = "gen4", moveLevelsResource = "/gen4/movelevels.tsv",
@@ -161,6 +168,7 @@ data class NdsGameMap(
         val HGSS = NdsGameMap(
             name = "Pokemon HeartGold / SoulSilver",
             labTrainerIds = setOf(495, 496, 497), finalTrainerId = 260,
+            childMapHeader = 0x25FE4, parentMapHeader = 0x25FE4, locationsResource = "/gen4/locations-hgss.tsv",
             gameCodes = setOf(CODE_HEART_GOLD, CODE_SOUL_SILVER),
             generation = 4, badgePrefix = "HGSS", absolute = false,
             dataDir = "gen4", moveLevelsResource = "/gen4/movelevels.tsv",
@@ -185,6 +193,7 @@ data class NdsGameMap(
         val BW = NdsGameMap(
             name = "Pokemon Black",
             labTrainerIds = setOf(64), finalTrainerId = 232,
+            childMapHeader = 0x2592B2, parentMapHeader = 0x2592B4, locationsResource = "/gen5/locations-bw.tsv",
             gameCodes = setOf(CODE_BLACK),
             generation = 5, badgePrefix = "BW", absolute = true,
             dataDir = "gen5", moveLevelsResource = "/gen5/movelevels-bw.tsv",
@@ -208,6 +217,7 @@ data class NdsGameMap(
         val B2W2 = NdsGameMap(
             name = "Pokemon Black 2",
             labTrainerIds = setOf(161, 162, 163), finalTrainerId = 341,
+            childMapHeader = 0x246860, parentMapHeader = 0x246848, locationsResource = "/gen5/locations-b2w2.tsv",
             gameCodes = setOf(CODE_BLACK2),
             generation = 5, badgePrefix = "BW2", absolute = true,
             dataDir = "gen5", moveLevelsResource = "/gen5/movelevels-b2w2.tsv",

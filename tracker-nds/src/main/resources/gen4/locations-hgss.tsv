@@ -1,0 +1,541 @@
+# map id	name  (NDS-Ironmon-Tracker LocationData.lua, converted by tools/trainer-data/convert_locations.py)
+0	Mystery Zone
+1	Mystery Zone
+2	Mystery Zone
+3	Mystery Zone
+4	Mystery Zone
+5	Mystery Zone
+6	Bellchime Trail
+7	Burned Tower
+8	Ruins of Alph
+9	Route 1
+10	Route 2
+11	Route 3
+12	Route 4
+13	Route 5
+14	Route 6
+15	Route 7
+16	Route 8
+17	Route 9
+18	Route 10
+19	Route 11
+20	Route 12
+21	Route 13
+22	Route 14
+23	Route 15
+24	Route 16
+25	Route 17
+26	Route 18
+27	Route 22
+28	Route 24
+29	Route 25
+30	Route 26
+31	Route 27
+32	Route 28
+33	Route 29
+34	Route 30
+35	Route 31
+36	Route 32
+37	Route 33
+38	Route 34
+39	Route 35
+40	Route 36
+41	Route 37
+42	Route 38
+43	Route 39
+44	Route 42
+45	Route 43
+46	Route 44
+47	Route 45
+48	Route 46
+49	Pallet Town
+50	Viridian City
+51	Pewter City
+52	Cerulean City
+53	Lavender Town
+54	Vermilion City
+55	Celadon City
+56	Fuchsia City
+57	Cinnarbar Island
+58	Indigo Plateau
+59	Saffron City
+60	New Bark Town
+61	Lab
+62	New Bark Town
+63	New Bark Town
+64	New Bark Town
+65	New Bark Town
+66	New Bark Town
+67	Cherrygrove City
+68	Cherrygrove City
+69	Cherrygrove City
+70	Cherrygrove City
+71	Cherrygrove City
+72	Cherrygrove City
+73	Violet City
+74	Azalea Town
+75	Cianwood City
+76	Goldenrod City
+77	Olivine City
+78	Ecruteak City
+79	Ecruteak City
+80	Ecruteak City's gym
+81	Ecruteak City
+82	Jubilife City
+83	Ecruteak City
+84	Ecruteak City
+85	Ecruteak City
+86	Ecruteak City
+87	Mahogany Town
+88	Lake of Rage
+89	Blackthorn City
+90	Mt. Silver
+91	Route 19
+92	Route 20
+93	Route 21
+94	Route 40
+95	Route 41
+96	National Park
+97	Route 31
+98	Route 32
+99	Union Cave
+100	Azalea Town
+101	Route 35
+102	Route 35
+103	Route 36
+104	Route 36
+105	Jubilife City
+106	Diglett Cave
+107	Mt. Moon
+108	Rock Tunnel
+109	Pal Park
+110	Sprout Tower
+111	Bell Tower
+112	Radio Tower
+113	Ruins of Alph
+114	Slowpoke Well
+115	Lighthouse
+116	Mahogany Town
+117	Ilex Forest
+118	Goldenrod Tunnel
+119	Mr. Mortar
+120	Ice Path
+121	Whirl Islands
+122	Mt. Silver Cave
+123	Dark Cave
+124	Victory Road
+125	Dragon's Den
+126	Tohjo Falls
+127	Route 30
+128	Ecruteak City
+129	Ecruteak City
+130	Ecruteak City
+131	Ecruteak City
+132	Route 42
+133	Mahogany Town
+134	Route 29
+135	Violet City's gym
+136	Azalea Town's gym
+137	Goldenrod City's gym
+138	Olivine City's gym
+139	Cianwood City's gym
+140	Mahogany Town's gym
+141	Blackthorn City's gym
+142	Route 43
+143	Route 30
+144	Cherrygrove City
+145	Cerulean Cave
+146	Seafoam Islands
+147	Viridian Forest
+148	Power Plant
+149	Route 36
+150	Pokéathlon Dome
+151	Route 47
+152	Route 48
+153	Union Cave
+154	Union Cave
+155	Sprout Tower 1F
+156	Sprout Tower 2F
+157	Violet City
+158	Violet City
+159	Violet City
+160	Violet City
+161	Jubilife City
+162	Violet City
+163	Azalea Town
+164	Azalea Town
+165	Azalea Town
+166	Azalea Town
+167	Violet City
+168	Azalea Town
+169	Route 32
+170	Route 32
+171	Route 34
+172	Route 38
+173	Safari Zone Gate
+174	Safari Zone Gate
+175	Jubilife City
+176	Dark Cave
+177	Slowpoke Well
+178	Victory Road
+179	Victory Road
+180	Azalea Town's gym
+181	Slowpoke Well
+182	Goldenrod City
+183	Goldenrod City
+184	Goldenrod City
+185	Goldenrod City
+186	Radio Tower
+187	Radio Tower
+188	Radio Tower
+189	Radio Tower
+190	Radio Tower
+191	Goldenrod City
+192	Goldenrod City
+193	Goldenrod City
+194	Goldenrod City
+195	Goldenrod City
+196	Goldenrod City
+197	Goldenrod City
+198	Goldenrod City
+199	Goldenrod Tunnel
+200	Goldenrod City
+201	Goldenrod City
+202	Goldenrod City
+203	Goldenrod City
+204	Goldenrod City
+205	Goldenrod City
+206	Goldenrod City
+207	Global Terminal
+208	Goldenrod City
+209	Goldenrod City
+210	Goldenrod City
+211	Goldenrod City
+212	Goldenrod City
+213	Goldenrod City
+214	Route 39
+215	Route 39
+216	Ecruteak City
+217	Burned Tower
+218	Ruins of Alph
+219	Goldenrod City
+220	Lighthouse
+221	Lighthouse
+222	Lighthouse
+223	Lighthouse
+224	Lighthouse
+225	Lighthouse
+226	Olivine City
+227	Olivine City
+228	Olivine City
+229	Olivine City
+230	Olivine City
+231	Olivine City
+232	Cianwood City
+233	Cianwood City
+234	Cianwood City
+235	Cianwood City
+236	Cianwood City
+237	Ice Path
+238	Ice Path
+239	Ice Path
+240	Olivine City
+241	Cianwood City
+242	Whirl Islands
+243	Whirl Islands
+244	Whirl Islands
+245	Route 43
+246	Mahogany Town
+247	Team Rocket HQ
+248	Team Rocket HQ
+249	Team Rocket HQ
+250	Mt. Mortar
+251	Mt. Mortar
+252	Mt. Mortar
+253	Dragon's Den
+254	Fight Area
+255	Fight Area
+256	Fight Area
+257	Fight Area
+258	Fight Area
+259	Fight Area
+260	Fight Area
+261	Fight Area
+262	Fight Area
+263	Battle Park
+264	Battle Park
+265	Battle Tower
+266	Battle Tower
+267	Battle Tower
+268	Battle Tower
+269	Battle Tower
+270	Battle Tower
+271	Battle Tower
+272	Battle Frontier
+273	Battle Frontier
+274	Battle Tower
+275	Battle Factory
+276	Battle Hall
+277	Battle Castle
+278	Battle Arcade
+279	Cliff Edge Gate
+280	Pokéathlon Dome
+281	Pokéathlon Dome
+282	Pokéathlon Dome
+283	Pokéathlon Dome
+284	Pokéathlon Dome
+285	Pokéathlon Dome
+286	Pokéathlon Dome
+287	Pokéathlon Dome
+288	Dragon's Den
+289	Blackthorn City
+290	Blackthorn City
+291	Blackthorn City
+292	Blackthorn City
+293	Blackthorn City
+294	Lake of Rage
+295	Lake of Rage
+296	Route 26
+297	Route 26
+298	Tohjo Falls
+299	Route 26
+300	Pokémon League
+301	Pokémon League
+302	Pokémon League
+303	Pokémon League
+304	Pokémon League
+305	Pokémon League
+306	Pokémon League
+307	S.S. Aqua
+308	S.S. Aqua
+309	S.S. Aqua
+310	S.S. Aqua
+311	S.S. Aqua
+312	Ruins of Alph
+313	Ruins of Alph
+314	Ruins of Alph
+315	Ruins of Alph
+316	Ruins of Alph
+317	Ruins of Alph
+318	Ruins of Alph
+319	Ruins of Alph
+320	Ruins of Alph
+321	Ruins of Alph
+322	Route 27
+323	Ruins of Alph
+324	Ruins of Alph
+325	Ruins of Alph
+326	Ruins of Alph
+327	Ruins of Alph
+328	S.S. Aqua
+329	S.S. Aqua
+330	Olivine City
+331	Route 34
+332	Bell Tower
+333	Bell Tower
+334	Bell Tower
+335	Bell Tower
+336	Bell Tower
+337	Bell Tower
+338	Bell Tower
+339	Bell Tower
+340	Bell Tower
+341	Bell Tower
+342	Cliff Cave
+343	Safari Zone
+344	Safari Zone
+345	Safari Zone
+346	Safari Zone
+347	Safari Zone
+348	Safari Zone
+349	Safari Zone
+350	Safari Zone
+351	Safari Zone
+352	Safari Zone
+353	Safari Zone
+354	Safari Zone
+355	Safari Zone
+356	Safari Zone
+357	Safari Zone
+358	Vermilion City
+359	Vermilion City
+360	Vermilion City
+361	Vermilion City
+362	Vermilion City
+363	Vermilion City
+364	Vermilion City
+365	Vermilion City's gym
+366	Route 40
+367	Olivine City
+368	Mahogany Town
+369	Blackthorn City
+370	Celadon City
+371	Celadon City
+372	Celadon City
+373	Celadon City
+374	Celadon City
+375	Celadon City
+376	Celadon City
+377	Celadon City
+378	Celadon City
+379	Celadon City
+380	Celadon City
+381	Celadon City
+382	Celadon City
+383	Celadon City
+384	New Bark Town
+385	Cianwood City
+386	Vermilion City
+387	Vermilion City
+388	Route 10
+389	Route 6
+390	Route 8
+391	Route 5
+392	Route 15
+393	Celadon City
+394	Celadon City
+395	Celadon City's gym
+396	Mahogany Town's gym
+397	Mahogany Town's gym
+398	Saffron City
+399	Saffron City
+400	Saffron City
+401	Saffron City
+402	Saffron City
+403	Rotom Room
+404	Saffron City
+405	Saffron City
+406	Saffron City
+407	Saffron City
+408	Saffron City
+409	Saffron City
+410	Saffron City's gym
+411	Frontier Access
+412	Global Terminal
+413	Global Terminal
+414	Route 2
+415	Route 16
+416	Route 20
+417	Route 2
+418	Route 2
+419	Route 2
+420	Route 2
+421	Route 16
+422	Route 16
+423	Route 18
+424	Route 19
+425	Route 11
+426	Cerulean City
+427	Cerulean City's gym
+428	Cerulean City
+429	Cerulean City
+430	Cerulean City
+431	Cerulean City
+432	Cerulean City
+433	Lavender Town
+434	Lavender Town
+435	Lavender Town
+436	Lavender Town
+437	Lavender Town
+438	Lavender Town
+439	Lavender Town
+440	Route 25
+441	Goldenrod City
+442	Celadon City
+443	Celadon City
+444	Celadon City
+445	Saffron City
+446	Lighthouse
+447	Radio Tower
+448	Mt. Moon
+449	Mt. Moon
+450	Cerulean Cave
+451	Cerulean Cave
+452	Rock Tunnel
+453	Seafoam Islands
+454	Seafoam Islands
+455	Seafoam Islands
+456	Seafoam Islands
+457	Seafoam Islands
+458	Seafoam Islands
+459	Mt. Silver Cave
+460	Mt. Silver Cave
+461	Mt. Silver Cave
+462	Mt. Silver Cave
+463	Mt. Silver Cave
+464	Mt. Silver Cave
+465	Mt. Silver Cave
+466	Route 10
+467	Power Plant
+468	Route 5
+469	Route 5
+470	Route 6
+471	Pewter City
+472	Pewter City
+473	Pewter City's gym
+474	Pewter City
+475	Pewter City
+476	Pewter City
+477	Pewter City
+478	Fuchsia City
+479	Pal Park
+480	Fuchsia City's gym
+481	Fuchsia City
+482	Fuchsia City
+483	Fuchsia City
+484	Route 10
+485	Fuchsia City
+486	Whirl Islands
+487	Bug Catching
+488	National Park
+489	Power Plant
+490	Ruins of Alph
+491	Ruins of Alph
+492	Ruins of Alph
+493	Route 7
+494	Lavender Town
+495	Cerulean City
+496	Viridian City's gym
+497	Viridian City
+498	Viridian City
+499	Viridian City
+500	Viridian City
+501	Viridian City
+502	Viridian City
+503	Pallet Town
+504	Pallet Town
+505	Pallet Town
+506	Pallet Town
+507	Pallet Town
+508	Cinnabar Island
+509	Cinnabar Island
+510	Route 28
+511	Route 3
+512	Route 3
+513	Mt. Moon
+514	Mt. Silver
+515	Mt. Silver
+516	Mystery Zone
+517	Route 5
+518	Mt. Moon
+519	Goldenrod City
+520	Saffron City
+521	Sinjoh Ruins
+522	Sinjoh Ruins
+523	Sinjoh Ruins
+524	Embedded Tower
+525	Embedded Tower
+526	Embedded Tower
+527	Route 1
+528	Frontier Access
+529	Frontier Access
+530	Frontier Access
+531	Frontier Access
+532	Route 5
+533	Route 12
+534	Safari Zone Gate
+535	Safari Zone Gate
+536	Goldenrod City
+537	Celadon City
+538	Mystery Zone
+539	Pokémon League

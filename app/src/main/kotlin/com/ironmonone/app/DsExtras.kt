@@ -141,33 +141,38 @@ fun TrackedPokemonDialog(marks: StatMarks, seen: Set<Int>, tracker: NdsTracker?,
  * reference's milestone list with its points, checked against the trainers
  * this session's battles have ended against, plus the three Evo bonuses
  * added by hand. Scores are kept per seed in prep/tourney.tsv and summed as
- * the cumulative score. The reference also requires leaving a dungeon's
- * map set for four of the milestones; this tracker does not read the DS
- * map id, so those count on the trainers alone.
+ * the cumulative score. Three dungeon milestones also wait for the player
+ * to leave the dungeon's map set, as the reference does.
  */
 class TourneyTracker(private val file: File) {
-    class Milestone(val name: String, val points: Int, val trainerIds: List<Int> = emptyList(), val isRival: Boolean = false, val milestones: List<Int> = emptyList()) {
-        fun completed(defeated: Set<Int>, done: Set<Int>): Boolean = when {
+    class Milestone(val name: String, val points: Int, val trainerIds: List<Int> = emptyList(), val isRival: Boolean = false, val milestones: List<Int> = emptyList(), val mapAreas: Set<Int> = emptySet()) {
+        /** TrainerMilestone.completed: the trainers beaten (any one for a rival) and, for a dungeon, the player out of its map set. */
+        fun completed(defeated: Set<Int>, done: Set<Int>, mapId: Int): Boolean = when {
             milestones.isNotEmpty() -> milestones.all { it in done }
             isRival -> trainerIds.any { it in defeated }
-            else -> trainerIds.all { it in defeated }
+            else -> trainerIds.all { it in defeated } && (mapAreas.isEmpty() || mapId !in mapAreas)
         }
     }
     class Score(val seed: String, val milestones: MutableList<Int>, val bonuses: MutableList<Int>)
 
     companion object {
+        /** TourneyTracker.DUNGEON_MAP_SETS. */
+        val SPROUT_TOWER = setOf(110, 155, 156)
+        val LIGHTHOUSE = setOf(115, 220, 221, 222, 223, 224, 225, 446)
+        val ROCKET_HQ = setOf(247, 248, 249)
+        val RADIO_TOWER = setOf(118, 199, 112, 186, 187, 188, 189, 190, 447)
         val MILESTONES: List<Milestone> = listOf(
             Milestone("Beat Rival 1", 1, listOf(495, 496, 497), isRival = true),
-            Milestone("Beat Sprout Tower", 1, listOf(290)),
+            Milestone("Beat Sprout Tower", 1, listOf(290), mapAreas = SPROUT_TOWER),
             Milestone("Beat Falkner", 1, listOf(20)),
             Milestone("Beat Rival 2", 1, listOf(1, 266, 269), isRival = true),
             Milestone("Beat Bugsy", 2, listOf(21)),
             Milestone("Beat Whitney", 1, listOf(30)),
-            Milestone("Beat Lighthouse", 1, listOf(212)),
+            Milestone("Beat Lighthouse", 1, listOf(212), mapAreas = LIGHTHOUSE),
             Milestone("Full Cleared Lighthouse", 1, listOf(401, 211, 73, 213, 217, 37, 215, 212, 214)),
             Milestone("Beat Rival 3", 1, listOf(263, 267, 270), isRival = true),
             Milestone("Beat Morty", 2, listOf(31)),
-            Milestone("Beat Rocket Hideout", 1, listOf(479)),
+            Milestone("Beat Rocket Hideout", 1, listOf(479), mapAreas = ROCKET_HQ),
             Milestone("Beat Chuck", 1, listOf(34)),
             Milestone("Beat Jasmine", 1, listOf(33)),
             Milestone("Beat Pryce", 1, listOf(32)),
@@ -227,11 +232,11 @@ class TourneyTracker(private val file: File) {
     fun cumulative(): Int = scores.sumOf { points(it) }
 
     /** TourneyTracker.updateMilestones: returns the milestones newly completed, in order. */
-    fun update(seed: String, defeated: Set<Int>): List<Milestone> {
+    fun update(seed: String, defeated: Set<Int>, mapId: Int = 0): List<Milestone> {
         val s = scoreFor(seed); val done = s.milestones.toMutableSet(); val out = ArrayList<Milestone>()
         MILESTONES.forEachIndexed { i, m ->
             val id = i + 1
-            if (id !in done && m.completed(defeated, done)) { s.milestones += id; done += id; out += m }
+            if (id !in done && m.completed(defeated, done, mapId)) { s.milestones += id; done += id; out += m }
         }
         if (out.isNotEmpty()) save()
         return out

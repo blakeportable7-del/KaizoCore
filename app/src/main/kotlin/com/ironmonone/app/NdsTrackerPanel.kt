@@ -360,7 +360,6 @@ fun NdsTrackerPanel(
                         else "address chain not resolved yet",
                         7, Pc.Dim,
                     )
-                    state.probe?.let { PixText("build " + appBuildId() + " " + it, 6, Pc.Negative, wrap = true) }
                     randomBall?.let { Spacer(Modifier.height(4.dp)); RandomBallRow(it, hgss = state.badgeSet == "HGSS") }
                     favoriteLine?.let { Spacer(Modifier.height(3.dp)); PixText(it, 7, Pc.Gold, wrap = true) }
                 }
@@ -376,7 +375,6 @@ fun NdsTrackerPanel(
 
             else -> {
                 if (state.inBattle) {
-                    if (state.party.isEmpty()) state.probe?.let { PixText("build " + appBuildId() + " " + it, 6, Pc.Negative, wrap = true) }
                     PcBattleBanner(state.isWildBattle, onFlee)
                     Spacer(Modifier.height(4.dp))
                     state.enemy?.let {

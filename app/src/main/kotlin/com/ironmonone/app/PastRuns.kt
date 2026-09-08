@@ -71,7 +71,7 @@ class PastRun(
             val fainted = state.party.firstOrNull { it.mon.curHp <= 0 } ?: state.party.firstOrNull() ?: return null
             val enemy = state.enemy ?: fainted
             val progress = if (won) WON else maxOf(state.progress, if (state.located) PAST_LAB else NOWHERE)
-            return PastRun(System.currentTimeMillis(), seconds, runMon(fainted), runMon(enemy), "", Integer.bitCount(state.badges), progress)
+            return PastRun(System.currentTimeMillis(), seconds, runMon(fainted), runMon(enemy), state.areaName, Integer.bitCount(state.badges), progress)
         }
     }
 }
