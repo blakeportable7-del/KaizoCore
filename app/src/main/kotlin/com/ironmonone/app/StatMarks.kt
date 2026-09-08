@@ -331,6 +331,8 @@ class StatMarks(private val file: File) {
 
     fun markedSpecies(): Set<Int> = marks.filterValues { v -> v.any { it != 0 } }.keys
     fun notedSpecies(): Set<Int> = notes.filterValues { it.isNotBlank() }.keys
+    fun movesSeenSpecies(): Set<Int> = movesSeen.filterValues { it.isNotEmpty() }.keys
+    fun abilitySeenSpecies(): Set<Int> = abilitiesSeen.keys
 
     /** New Run: last attempt's notes describe a different randomization. */
     fun clear() {

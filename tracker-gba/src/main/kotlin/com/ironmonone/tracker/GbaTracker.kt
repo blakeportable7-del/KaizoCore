@@ -1511,6 +1511,9 @@ class GbaTracker(
 
     fun whichRival(trainerId: Int): String? = rivalOf[trainerId]
 
+    /** Ruby, Sapphire or Emerald, as opposed to FireRed and LeafGreen (Sevii only exists on the latter). */
+    val isRse: Boolean get() = map.routeTable == "rse"
+
     /** Whether the Poke Balls pocket is pinned for this build, so Catch Rates can open. */
     val hasCatchRates: Boolean get() = map.bagBallsOffset != 0L
 
@@ -1605,6 +1608,73 @@ class GbaTracker(
             }
         }
         return TrainerInfo(trainerId, className, name, party, aiFlags, doubleBattle, trainerDefeated(trainerId), items)
+    }
+
+    // ---- Notebook (NotebookIndexScreen.lua, NotebookTrainersByArea.lua) ----
+
+    /**
+     * TrainerData.getExcludedTrainers: dummy trainers and VS Seeker rematches,
+     * per game family, so the counts match the PC tracker's.
+     */
+    private val excludedTrainers: Set<Int> by lazy {
+        val ranges: List<IntRange> = when (map.routeTable) {
+            "rse" -> listOf(40..43, 47..50, 54..56, 60..63, 67..70, 84..87, 101..104, 110..113, 117..117,
+                120..123, 132..135, 139..142, 147..150, 173..173, 175..178, 184..187, 197..200,
+                207..210, 219..222, 228..231, 239..242, 250..253, 257..260, 276..279, 282..285,
+                288..291, 295..298, 303..306, 308..311, 314..317, 328..331, 341..341, 346..349,
+                354..357, 360..363, 365..368, 370..373, 379..382, 388..391, 393..396, 409..412,
+                421..424, 430..433, 437..440, 456..456, 462..462, 466..468, 477..480, 482..482, 485..489,
+                497..500, 515..518, 541..544, 548..551, 555..558, 562..565, 607..610, 622..625,
+                633..634, 636..639, 643..646, 657..660, 682..685, 688..691, 770..801, 805..847,
+                851..855)
+            "frlg" -> listOf(1..88, 101..101, 147..147, 200..200, 263..263, 454..461, 492..515, 530..530, 621..741)
+            else -> emptyList()
+        }
+        ranges.flatMapTo(HashSet()) { it }
+    }
+
+    /** TrainerData.shouldUseTrainer minus getExcludedTrainers: a trainer the notebook counts. */
+    fun trainerCounts(trainerId: Int): Boolean {
+        if (trainerId in excludedTrainers) return false
+        val r = rivalOf[trainerId] ?: return true
+        return rivalChoice == null || r == rivalChoice
+    }
+
+    data class AreaRow(val routeId: Int, val name: String, val defeated: Int, val total: Int)
+
+    /**
+     * NotebookTrainersByArea.buildScreen, one row per map with trainers: the
+     * usable trainers there and how many are beaten. Sevii Islands (route ids
+     * 230 and up on FRLG) are out unless asked for, as are finished areas.
+     * The reference also merges a few maps into one named area; this lists
+     * each map on its own.
+     */
+    fun notebookAreas(includeSevii: Boolean, includeCompleted: Boolean): List<AreaRow> {
+        val out = ArrayList<AreaRow>()
+        for ((routeId, ids) in routeTrainerIds.entries.sortedBy { it.key }) {
+            if (map.routeTable == "frlg" && routeId >= 230 && !includeSevii) continue
+            val usable = ids.filter { trainerCounts(it) }
+            if (usable.isEmpty()) continue
+            val defeated = usable.count { trainerDefeated(it) }
+            if (!includeCompleted && defeated == usable.size) continue
+            out += AreaRow(routeId, routeInfo(routeId)?.first ?: "Map $routeId", defeated, usable.size)
+        }
+        return out
+    }
+
+    /** NotebookIndexScreen: trainers defeated and total, over every area. */
+    fun notebookTrainerTotals(includeSevii: Boolean): Pair<Int, Int> {
+        val rows = notebookAreas(includeSevii, includeCompleted = true)
+        return rows.sumOf { it.defeated } to rows.sumOf { it.total }
+    }
+
+    /** NotebookIndexScreen's denominator: every species id but the 252-276 placeholders, 386 in Gen 3. */
+    fun notebookSpeciesTotal(): Int = (1 until 412).count { it !in 252..276 }
+
+    /** The species' two possible abilities from the base stats table, for the note view. */
+    fun possibleAbilities(species: Int): List<String> {
+        val b = baseStats(species) ?: return emptyList()
+        return listOf(b.ability1, b.ability2).filter { it != 0 }.distinct().map { abilityName(it) }
     }
 
     // ---- Catch Rates (CatchRatesScreen.lua, PokemonData.calcCatchRate) ----

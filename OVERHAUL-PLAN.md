@@ -337,6 +337,21 @@ thing as a band on the right. Separate item.
 
 ### 2.8 The side screens of every PC tracker - **OPEN 2026-09-08, IN PROGRESS**
 
+**Notebook, 2026-09-08 (Gen 3):** NotebookIndexScreen, NotebookPokemonSeen,
+NotebookTrainersByArea and NotebookPokemonNoteView cloned into one dialog
+(SETUP > OPEN NOTEBOOK). The index counts species with any tracked record this
+run against the reference's 386 and trainers beaten against every usable
+trainer (TrainerData.getExcludedTrainers' id ranges per game, the rival
+filter, Sevii out of FRLG unless asked); Pokemon Seen lists them
+alphabetically with marks, note and encounter count and the include-unseen
+checkbox; Trainers By Area lists each map with usable trainers and its beaten
+count with the show-completed and Sevii checkboxes (the reference merges a few
+maps into named areas; this lists maps); the note view shows types, BST, last
+level, abilities (the revealed one, else both possible), encounters, marks,
+moves seen with levels and the note. Encounter counts and last levels are the
+session's, as before. Seen on the Emerald demo: 1 / 386, 0 / 495, Route 102
+0 / 4, Magneton's page. NotebookTest covers the counting rules.
+
 **Catch Rates, 2026-09-08 (Gen 3):** CatchRatesScreen.lua and
 PokemonData.calcCatchRate cloned. GbaTracker.catchRates() reads the enemy from
 gBattleMons slot 1 (HP, level, status), the species' catch rate from

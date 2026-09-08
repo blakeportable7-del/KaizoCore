@@ -44,6 +44,7 @@ fun TrackerGearDialog(
     onTrainers: (() -> Unit)? = null,
     onBattleDetails: (() -> Unit)? = null,
     onCatchRates: (() -> Unit)? = null,
+    onNotebook: (() -> Unit)? = null,
     onDismiss: () -> Unit,
 ) {
     var confirmClear by remember { mutableStateOf(false) }
@@ -90,6 +91,7 @@ fun TrackerGearDialog(
 
             PixText("Notebook", 8, Pc.Text)
             Spacer(Modifier.height(4.dp))
+            onNotebook?.let { com.ironmonone.app.gen3.Gen3Button("OPEN NOTEBOOK") { it() }; Spacer(Modifier.height(4.dp)) }
             val noted = remember(marks) { (marks.markedSpecies() + marks.notedSpecies()).sorted() }
             if (noted.isEmpty()) PixText("Nothing marked or noted this run.", 7, Pc.Dim)
             noted.forEach { sp ->
@@ -128,7 +130,7 @@ fun TrackerGearDialog(
 
 /** A reference-style checkbox row: an 8px box with the label beside it. */
 @Composable
-private fun GearToggle(label: String, on: Boolean, radio: Boolean = false, onChange: (Boolean) -> Unit) {
+internal fun GearToggle(label: String, on: Boolean, radio: Boolean = false, onChange: (Boolean) -> Unit) {
     Row(
         Modifier.fillMaxWidth().clickable { onChange(if (radio) true else !on) }.padding(vertical = 3.dp),
         verticalAlignment = Alignment.CenterVertically,

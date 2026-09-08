@@ -790,6 +790,7 @@ fun PlayScreen(
     var trainersDialog by remember { mutableStateOf(false) }
     var battleDetailsDialog by remember { mutableStateOf(false) }
     var catchRatesDialog by remember { mutableStateOf(false) }
+    var notebookDialog by remember { mutableStateOf(false) }
     var catchHpAdjust by remember { mutableStateOf(0) }
     var trainerInfo by remember { mutableStateOf<com.ironmonone.tracker.GbaTracker.TrainerInfo?>(null) }
     /** Move History for one Pokemon: species, name, level. */
@@ -2243,6 +2244,15 @@ fun PlayScreen(
             onClose = { moveHistory = null },
         )
     }
+    if (notebookDialog) {
+        NotebookDialog(
+            tracker = trackerRef, marks = statMarks,
+            encountersOf = { encounters[it] ?: 0 }, seenSpecies = encounters.keys.toSet(),
+            lastLevelOf = { lastSeenLevel[it] }, lastSeenSpecies = enemySpecies.takeIf { it > 0 },
+            speciesName = { id -> trackerRef?.speciesName(id) ?: gbNames?.invoke(id) ?: "#$id" },
+            spriteFor = spriteFor,
+        ) { notebookDialog = false }
+    }
     if (catchRatesDialog) {
         val gba = trackerRef
         val rates = remember(trackerState, gba, catchHpAdjust) { runCatching { gba?.catchRates(catchHpAdjust) }.getOrNull() }
@@ -2320,6 +2330,7 @@ fun PlayScreen(
             onTrainers = if (trackerRef?.hasTrainerData == true) { { gearDialog = false; trainersDialog = true } } else null,
             onBattleDetails = if (trackerRef?.hasBattleDetails == true) { { gearDialog = false; battleDetailsDialog = true } } else null,
             onCatchRates = if (trackerRef?.hasCatchRates == true) { { gearDialog = false; catchHpAdjust = 0; catchRatesDialog = true } } else null,
+            onNotebook = if (platform == com.ironmonone.core.Platform.NDS) null else { { gearDialog = false; notebookDialog = true } },
             onDismiss = { gearDialog = false },
         )
     }
