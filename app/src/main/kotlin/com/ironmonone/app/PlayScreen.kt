@@ -1457,6 +1457,7 @@ fun PlayScreen(
                   )
                   else TrackerPanel(
                       onTrainerInfo = { trackerState?.opponentTrainerId?.let { id -> trackerRef?.trainer(id)?.let { side.trainerInfo = it } } },
+                      onGradeNotes = { side.scoreSheet = true },
                       onRandomEvos = { sp -> side.randomEvos = sp }, hasRandomEvos = { sp -> trackerRef?.hasRandomEvos(sp) == true },
                       onMoveHistory = { sp, n, lv -> side.moveHistory = Triple(sp, n, lv) },
                       onTypeDefenses = { n, a, b -> typeDefenses = n to com.ironmonone.tracker.Gen3Types.defenses(a, b, gen1 = session.kind?.generation == com.ironmonone.core.Generation.GB1) },
@@ -2010,6 +2011,7 @@ fun PlayScreen(
                 Modifier.weight(1f).verticalScroll(rememberScrollState())
             ) { TrackerPanel(
                 onTrainerInfo = { trackerState?.opponentTrainerId?.let { id -> trackerRef?.trainer(id)?.let { side.trainerInfo = it } } },
+                      onGradeNotes = { side.scoreSheet = true },
                       onRandomEvos = { sp -> side.randomEvos = sp }, hasRandomEvos = { sp -> trackerRef?.hasRandomEvos(sp) == true },
                 onMoveHistory = { sp, n, lv -> side.moveHistory = Triple(sp, n, lv) },
                 onTypeDefenses = { n, a, b -> typeDefenses = n to com.ironmonone.tracker.Gen3Types.defenses(a, b, gen1 = session.kind?.generation == com.ironmonone.core.Generation.GB1) },
@@ -2238,6 +2240,7 @@ fun PlayScreen(
                 else store.saveAttempt(kind, store.attempt(), store.lastSeedText(), runCatching { retro?.serializeState() }.getOrNull())
             },
             onNewGame = { gameOverShownFor = runOutcome; confirmNewRun = true },
+            onGrade = if (ndsState == null) { { side.scoreSheet = true } } else null,
         )
     }
     logViewerFile?.let { f -> LogViewer(f, onClose = { logViewerFile = null }) }

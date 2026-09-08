@@ -337,6 +337,15 @@ thing as a band on the right. Separate item.
 
 ### 2.8 The side screens of every PC tracker - **OPEN 2026-09-08, IN PROGRESS**
 
+**Grade my notes, 2026-09-08 (Gen 3):** StatMarkingScoreSheet.lua cloned as
+ScoreSheet.kt, opened from the game-over dialog's Grade my notes row as the
+reference does (GameOverScreen.NotesGrade). Marks on HP, ATK, DEF, SPA and SPD
+are graded against the ROM's base stats with the reference's ranges and 25
+margin, Huge Power, Pure Power, Hustle and Thick Fat exceptions, +1 / -10
+scoring worst first, percentage and letter. Seen on the Emerald game-over
+demo with planted marks: 3 great, 1 poor, 75.0%, C. ScoreSheetTest covers
+the rules.
+
 **Random Evos, Heals In Bag, Time Machine, 2026-09-08:** RandomEvosScreen
 (PokemonRevoData.lua run through convert_revos.py into gen3/revos.tsv, 184
 rows; VIEW EVOS on Pokemon info, the Evo N picker for species with two

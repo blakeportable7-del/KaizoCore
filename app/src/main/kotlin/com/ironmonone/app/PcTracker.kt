@@ -655,7 +655,7 @@ internal val PcGameOverQuotes = listOf(
  * flickering on every tracker poll.
  */
 @Composable
-fun PcGameOver(won: Boolean, attempt: Int, party: List<TrackedMon>) {
+fun PcGameOver(won: Boolean, attempt: Int, party: List<TrackedMon>, onGrade: (() -> Unit)? = null) {
     PcCard {
         Column(Modifier.fillMaxWidth().padding(6.dp)) {
             PixText("G a m e  O v e r", 11, Pc.Gold)
@@ -672,6 +672,8 @@ fun PcGameOver(won: Boolean, attempt: Int, party: List<TrackedMon>) {
                         PcGameOverQuotes.size],
                 9, if (won) Pc.Positive else Pc.Negative,
             )
+            // GameOverScreen.NotesGrade: the score sheet, from here only.
+            onGrade?.let { Spacer(Modifier.height(5.dp)); PcSmallButton("GRADE MY NOTES") { it() } }
         }
         Box(Modifier.fillMaxWidth().height(1.dp).background(Pc.Border))
         // The rundown: what the team actually was when the run ended.

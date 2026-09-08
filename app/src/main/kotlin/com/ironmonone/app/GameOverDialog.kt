@@ -77,6 +77,8 @@ fun GameOverDialog(
     /** Returns whether the attempt was saved; the button reports it in place, as the reference does. */
     onSaveAttempt: () -> Boolean,
     onNewGame: () -> Unit,
+    /** GameOverScreen.NotesGrade: the Stat Marking Score Sheet. Null hides it (no marks to grade). */
+    onGrade: (() -> Unit)? = null,
 ) {
     var teamIndex by remember { mutableIntStateOf(0) }
     val quotes = when (family) {
@@ -155,6 +157,7 @@ fun GameOverDialog(
                     },
                     onClick = { if (saveStatus == SaveAttemptStatus.NOT_CLICKED) saveStatus = if (onSaveAttempt()) SaveAttemptStatus.SUCCESS else SaveAttemptStatus.FAILED },
                 )
+                if (onGrade != null) GameOverAction(Glyph.PLUS, "Grade my notes", onClick = onGrade)
                 if (onInspectLog != null) {
                     GameOverAction(Glyph.MAGNIFIER, if (family == GameOverFamily.DS) "Open the log" else "Inspect the log", onClick = onInspectLog)
                 }

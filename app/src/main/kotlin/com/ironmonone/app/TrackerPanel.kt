@@ -229,6 +229,8 @@ private fun EnemyCard(
 fun TrackerPanel(
     /** Trainer Info for the opponent, from the TRAINER BATTLE banner. */
     onTrainerInfo: (() -> Unit)? = null,
+    /** StatMarkingScoreSheet, from the game-over card. */
+    onGradeNotes: (() -> Unit)? = null,
     /** RandomEvosScreen for a species, from Pokemon info; null when there is no table for it. */
     onRandomEvos: ((Int) -> Unit)? = null,
     hasRandomEvos: (Int) -> Boolean = { false },
@@ -403,6 +405,7 @@ fun TrackerPanel(
                     won = state.gameOver == com.ironmonone.tracker.GameOver.WON,
                     attempt = attempt,
                     party = state.party,
+                    onGrade = onGradeNotes,
                 )
             }
 
