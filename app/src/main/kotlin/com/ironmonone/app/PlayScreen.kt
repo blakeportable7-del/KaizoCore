@@ -649,6 +649,15 @@ fun PlayScreen(
                 runCatching {
                     val dir = context.getExternalFilesDir(null)
                     val flag = dir?.let { java.io.File(it, "dump-ram") }
+                    val inj = dir?.let { java.io.File(it, "inject-scan") }
+                    if (inj != null && inj.exists()) {
+                        val at = runCatching { inj.readText().trim().removePrefix("0x").toLong(16) }.getOrNull() ?: 0x02300000L
+                        val msg = t.injectAt({ addr, data -> retro?.writeMemory(addr, data) ?: 0 }, at) +
+                            if (at == 0x0221E42CL) { retro?.writeMemory(0x0221E428L, byteArrayOf(1, 0, 0, 0)); " count=1" } else ""
+
+                        java.io.File(dir, "inject.txt").writeText(msg)
+                        inj.delete()
+                    }
                     if (flag != null && flag.exists()) {
                         flag.delete()
                         java.io.File(dir, "ram.bin").outputStream().buffered(1 shl 20).use { out ->

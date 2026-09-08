@@ -273,6 +273,24 @@ layout variables speak its vocabulary (NdsScreens.classicName). Not yet seen
 with the new core: a live party decode on a phone; the scan, the probe line
 and the raw-bytes bug report stay in until Blake's first screenshot.
 
+### 2.1c Black 2 on the phone, found and fixed 2026-09-08
+
+The core swap in 2.1b was not the cause. With the clean Black 2 the tracker
+read Oshawott live at the PC address on the emulator; with a Kaizo-randomized
+Black 2 it read garbage there, on the emulator and on Blake's phone alike. A
+4 MB dump of the randomized run in the first rival battle put the starter at
+0x0221E3EC, exactly 0x40 below the PC tracker's party address, and the enemy
+party, the trainer id, the battle pointers and the battle PIDs all 0x40 below
+theirs: a randomized Gen 5 ROM lays its heap out a constant distance from the
+clean ROM's (0x40 on one seed, 0x54 on Blake's), while the battle flag in
+static memory stays put. The tracker's scan would have found it, except it
+ran once at the intro before any Pokemon existed and latched. Now: the scan
+runs on a cooldown whenever the fixed address holds nothing, and the whole
+map follows the shift it measures (NdsTracker.live). NdsDumpReplayTest replays
+the tracker over the real dumps in .vendor/dumps (IRONMON_DUMPS) and reads
+Dialga Lv5 19/19 against Larvitar Lv8 as a trainer battle. The classic core
+stays: it is what the PC tracker's users run.
+
 ### 2.2 Floating, movable, resizable tracker - **DONE 2026-09-06**
 
 The tracker gear's "Landscape tracker" choice: docked beside the game

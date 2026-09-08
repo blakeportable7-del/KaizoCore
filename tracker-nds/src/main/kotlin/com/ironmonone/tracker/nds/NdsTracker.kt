@@ -135,8 +135,14 @@ class NdsTracker(
     @Volatile var lossCondition: com.ironmonone.tracker.LossCondition = com.ironmonone.tracker.LossCondition.LEAD
     private val ramStart = 0x02000000L
     private val ramEnd = 0x02400000L
-    /** Absolute maps only: one scan per lock loss, and where it landed relative to the PC address. */
-    private var scannedOnce = false
+    /**
+     * Absolute maps: a scan whenever the fixed address holds nothing, on a
+     * cooldown so the 4 MB walk runs about once every few seconds, never once
+     * and never again (a latch here hid the party on Blake's phone for a whole
+     * evening: the first scan ran before the starter existed and nothing ever
+     * rescanned). [scanShift] is where the party sat relative to the PC address.
+     */
+    private var readsSinceScan = SCAN_EVERY
     var scanShift: Long = 0
         private set
     private val chunk = 0x20000
@@ -147,26 +153,39 @@ class NdsTracker(
     private val versionPointerOffset = NdsGameMap.VERSION_POINTER_OFFSET
     private val playerBaseOffset = map.playerBase
     private val enemyBaseOffset = map.enemyBase
-    private val enemyTrainerIdOffset = map.enemyTrainerId
+    /**
+     * The map the reads use. A randomized Gen 5 ROM lays its heap out a
+     * constant number of bytes away from the clean ROM's (measured 2026-09-08:
+     * the party, the enemy party, the trainer id, the battle pointers and the
+     * battle PIDs all sat 0x40 below the PC tracker's addresses on one
+     * randomized Black 2, 0x54 on another; the clean ROM sat exactly on
+     * them). The battle flag lives in static memory and never moves. When
+     * the fixed party address holds no Pokemon, findParty() scans, and the
+     * whole map follows the shift it finds.
+     */
+    var live: NdsGameMap = map
+        private set
+
+    private val enemyTrainerIdOffset get() = live.enemyTrainerId
     /** PID of the enemy Pokemon actually on the field (VERSION_POINTER_OFFSETS
      *  enemyBattleMonPID). Slot 0 of the enemy party is only the LEAD; after a
      *  trainer switches, the mon fighting you is whichever party slot carries
      *  this PID. Without the match the panel kept showing the first Pokemon
      *  for the whole battle. */
-    private val enemyBattleMonPidOffset = map.enemyBattleMonPid
+    private val enemyBattleMonPidOffset get() = live.enemyBattleMonPid
     /** VERSION_POINTER_OFFSETS.playerBattleMonPID / statStages / subscript. */
-    private val playerBattleMonPidOffset = map.playerBattleMonPid
-    private val statStagesPlayerOffset = map.statStagesPlayer
-    private val statStagesEnemyOffset = map.statStagesEnemy
-    private val battleSubscriptMsgsOffset = map.battleSubscriptMsgs
+    private val playerBattleMonPidOffset = live.playerBattleMonPid
+    private val statStagesPlayerOffset = live.statStagesPlayer
+    private val statStagesEnemyOffset = live.statStagesEnemy
+    private val battleSubscriptMsgsOffset = live.battleSubscriptMsgs
     /** GLOBAL (not pointer-relative) in that project's table. */
     private val battleStatusGlobal = map.battleStatus
     // Bag pockets, Platinum. Items and berries are separate lists, and both
     // move to a different address while a battle is running.
-    private val itemStartNoBattle = map.itemStartNoBattle
-    private val itemStartBattle = map.itemStartBattle
-    private val berryBagStart = map.berryBagStart
-    private val berryBagStartBattle = map.berryBagStartBattle
+    private val itemStartNoBattle = live.itemStartNoBattle
+    private val itemStartBattle = live.itemStartBattle
+    private val berryBagStart = live.berryBagStart
+    private val berryBagStartBattle = live.berryBagStartBattle
 
     /**
      * Battle-status words, from BattleHandlerBase.BATTLE_STATUS_TYPES: 0x2100 and
@@ -307,6 +326,16 @@ class NdsTracker(
      * It proves the tracker reads what is there; it does not prove the game put
      * it there. Returns a human-readable result either way.
      */
+    /** Debug: a distinctive test Pokemon written at [address] in this game's entry format, to prove the scan finds it. */
+    fun injectAt(writer: NdsMemoryWriter, address: Long): String {
+        val bytes = Gen4.encodeParty(pid = 0x0BADF00DL, species = 464, level = 42, curHp = 77, maxHp = 130,
+            moves = listOf(224, 89, 157, 0), abilityId = 31, heldItem = 13, gen5 = map.generation == 5)
+        val n = writer.write(address, bytes)
+        writer.write(address + bytes.size, ByteArray(8))
+        partyBase = 0L; readsSinceScan = SCAN_EVERY
+        return "injected %d bytes at 0x%08X".format(n, address)
+    }
+
     fun injectTestMon(writer: NdsMemoryWriter): String {
         val base = rawPointerChain()
         if (base == 0L) return "address chain did not resolve — nothing written"
@@ -430,6 +459,8 @@ class NdsTracker(
     fun speciesBst(id: Int): Int = speciesInfo[id]?.bst ?: 0
 
     companion object {
+        /** Reads between scans while no party decodes; the tracker reads a few times a second. */
+        const val SCAN_EVERY = 20
         /** The last raw party and enemy bytes read while nothing decoded, for the bug report. */
         @Volatile var lastDump: String? = null
     }
@@ -464,7 +495,7 @@ class NdsTracker(
         // Platinum: one byte. HGSS: Johto then Kanto, combined so the badge
         // row keeps one shape (Johto bits 0-7, Kanto 8-15).
         var bits = 0
-        map.badgeOffsets.forEachIndexed { i, off ->
+        live.badgeOffsets.forEachIndexed { i, off ->
             val b = memory.read(ramStart + versionRel + off, 1)
             if (b.isNotEmpty()) bits = bits or (b.u8(0) shl (8 * i))
         }
@@ -536,7 +567,7 @@ class NdsTracker(
 
     fun read(): NdsTrackerState {
         if (partyBase == 0L) {
-            partyBase = if (map.absolute) ramStart + map.playerBase
+            partyBase = if (map.absolute) ramStart + live.playerBase
                 else resolvePartyViaPointers().takeIf { it != 0L } ?: findParty()
             if (partyBase == 0L) {
                 return NdsTrackerState(
@@ -555,12 +586,17 @@ class NdsTracker(
             if (mon == null) {
                 if (slot == 0) {
                     probe = "party @%08X: ".format(partyBase) + Gen4.probe(bytes, map.generation == 5)
-                    if (map.absolute && !scannedOnce) {
-                        scannedOnce = true
+                    if (map.absolute && readsSinceScan >= SCAN_EVERY) {
+                        readsSinceScan = 0
                         val found = findParty()
-                        probe += if (found != 0L) " | scan found a party at %08X (shift %s%X from the PC address)".format(found, if (found >= ramStart + map.playerBase) "+" else "-", kotlin.math.abs(found - (ramStart + map.playerBase)))
+                        probe += if (found != 0L) " | scan found a party at %08X (shift %s%X from the PC address)".format(found, if (found >= ramStart + live.playerBase) "+" else "-", kotlin.math.abs(found - (ramStart + live.playerBase)))
                             else " | scan found no party in RAM"
-                        if (found != 0L) { partyBase = found; scanShift = found - (ramStart + map.playerBase); return read() }
+                        if (found != 0L) {
+                            partyBase = found
+                            scanShift = found - (ramStart + map.playerBase)
+                            live = if (scanShift == 0L) map else map.shifted(scanShift, map.name, map.gameCodes)
+                            return read()
+                        }
                     }
                 }
                 break
@@ -572,7 +608,7 @@ class NdsTracker(
 
         val partyBaseRead = partyBase
         // Party gone (New Run, reset, or the pointer moved): re-resolve next tick.
-        if (party.isEmpty()) partyBase = 0L else scannedOnce = false
+        if (party.isEmpty()) { partyBase = 0L; readsSinceScan++ }
 
         val battle = readBattle()
         if (party.isEmpty() && map.absolute) {
@@ -584,21 +620,21 @@ class NdsTracker(
                 appendLine("probe: " + (probe ?: "-"))
                 appendLine("header @023FFE00: %s  header @027FFE00: %s".format(hex(0x023FFE00L, 16), hex(0x027FFE00L, 16)))
                 appendLine("ram @02000000: %s  ram @02200000: %s".format(hex(0x02000000L, 16), hex(0x02200000L, 16)))
-                appendLine("enemy @%08X: %s".format(ramStart + map.enemyBase, hex(ramStart + map.enemyBase, map.entrySize)))
-                appendLine("trainerId @%08X: %s  battleStatus @%08X: %s".format(ramStart + map.enemyTrainerId, hex(ramStart + map.enemyTrainerId, 4), ramStart + battleStatusGlobal, hex(ramStart + battleStatusGlobal, 4)))
-                appendLine("totalMonsParty @%08X: %s".format(ramStart + map.totalMonsParty, hex(ramStart + map.totalMonsParty, 4)))
+                appendLine("enemy @%08X: %s".format(ramStart + live.enemyBase, hex(ramStart + live.enemyBase, map.entrySize)))
+                appendLine("trainerId @%08X: %s  battleStatus @%08X: %s".format(ramStart + live.enemyTrainerId, hex(ramStart + live.enemyTrainerId, 4), ramStart + battleStatusGlobal, hex(ramStart + battleStatusGlobal, 4)))
+                appendLine("totalMonsParty @%08X: %s".format(ramStart + live.totalMonsParty, hex(ramStart + live.totalMonsParty, 4)))
             }
         }
         if (battle != null && battle.first == null && map.absolute) {
-            val eb = memory.read(ramStart + map.enemyBase, map.entrySize)
-            probe = (probe ?: "") + " | enemy @%08X: ".format(ramStart + map.enemyBase) + Gen4.probe(eb, map.generation == 5)
+            val eb = memory.read(ramStart + live.enemyBase, map.entrySize)
+            probe = (probe ?: "") + " | enemy @%08X: ".format(ramStart + live.enemyBase) + Gen4.probe(eb, map.generation == 5)
         }
         var lead = party.firstOrNull()
         // In battle the LEAD also carries stage data; the reference draws
         // chevrons on both sides of the screen.
         if (battle != null && lead != null && battle.third != 0L) {
             lead = lead.copy(statStages =
-                if (map.absolute) ptr(ramStart + map.mainBattleDataPtr)
+                if (map.absolute) ptr(ramStart + live.mainBattleDataPtr)
                     ?.let { readStatStagesGen5(it + 0xFC) } ?: emptyMap()
                 else readStatStages(battle.third, isEnemy = false))
             party[0] = lead
@@ -705,14 +741,14 @@ class NdsTracker(
      * lead's and the enemy side has a PID at all, exactly the reference's guard.
      */
     private fun readBattleGen5(): Triple<NdsTrackedMon?, Boolean, Long>? {
-        val leadPid = u32(ramStart + map.playerBase)
-        val battlePid = u32(ramStart + map.playerBattleBase)
-        val enemyPid = u32(ramStart + map.enemyBase)
+        val leadPid = u32(ramStart + live.playerBase)
+        val battlePid = u32(ramStart + live.playerBattleBase)
+        val enemyPid = u32(ramStart + live.enemyBase)
         if (battlePid == 0L || enemyPid == 0L || battlePid != leadPid) return Triple(null, false, 0L)
-        val trainer = memory.read(ramStart + map.enemyTrainerId, 2)
+        val trainer = memory.read(ramStart + live.enemyTrainerId, 2)
         val isWild = trainer.size == 2 && trainer.u16(0) == 0
 
-        val battleDataBase = ptr(ramStart + map.mainBattleDataPtr + 0x1C)
+        val battleDataBase = ptr(ramStart + live.mainBattleDataPtr + 0x1C)
             ?: return Triple(null, isWild, 0L)
         var pokemonDataBase = ptr(battleDataBase) ?: return Triple(null, isWild, 0L)
         ptr(battleDataBase + 4)?.let { pokemonDataBase = it }
@@ -841,9 +877,9 @@ class NdsTracker(
      * state, none lost.
      */
     private fun readAbilityTriggerGen5(player: NdsTrackedMon?, enemy: NdsTrackedMon?): Pair<Int, String>? {
-        if (map.abilityTriggerStart == 0L) return null
+        if (live.abilityTriggerStart == 0L) return null
         fun slot(index: Int, mon: NdsTrackedMon?, isEnemy: Boolean): Pair<Int, String>? {
-            val b = memory.read(ramStart + map.abilityTriggerStart + 4L * index, 2)
+            val b = memory.read(ramStart + live.abilityTriggerStart + 4L * index, 2)
             if (b.size < 2) return null
             val word = b.u16(0).toLong()
             if (word == lastAbilityTrigger[index] || word == 0L) return null
