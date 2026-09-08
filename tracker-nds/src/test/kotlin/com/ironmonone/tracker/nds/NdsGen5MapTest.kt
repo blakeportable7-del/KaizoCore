@@ -200,7 +200,12 @@ class NdsGen5MapTest {
         assertEquals(649, assertNotNull(s.enemy).mon.species)
         assertEquals(77, s.enemy!!.mon.curHp)
         // And the same RAM read with Black's map is off by 0x20: no party.
-        assertTrue(!NdsTracker(r.reader(RAM), null, map).read().located)
+        // The wrong map used to read nothing. Since 2026-09-08 an absolute map whose fixed
+        // address holds no Pokemon scans for the party, so it locates it anyway and
+        // reports the shift (Black 2 on melonDS DS keeps static data at the PC address).
+        val wrong = NdsTracker(r.reader(RAM), null, map)
+        assertTrue(wrong.read().located)
+        assertEquals(0x20L, wrong.scanShift)
     }
 
     @Test

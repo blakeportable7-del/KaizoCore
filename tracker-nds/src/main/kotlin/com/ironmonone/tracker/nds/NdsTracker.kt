@@ -135,6 +135,10 @@ class NdsTracker(
     @Volatile var lossCondition: com.ironmonone.tracker.LossCondition = com.ironmonone.tracker.LossCondition.LEAD
     private val ramStart = 0x02000000L
     private val ramEnd = 0x02400000L
+    /** Absolute maps only: one scan per lock loss, and where it landed relative to the PC address. */
+    private var scannedOnce = false
+    var scanShift: Long = 0
+        private set
     private val chunk = 0x20000
 
     // Offsets come from the game's NdsGameMap (copied from NDS-Ironmon-Tracker's
@@ -488,7 +492,18 @@ class NdsTracker(
      * Fallback: sweep main RAM for a valid party entry. Two-stage — a cheap
      * species-only decrypt rejects almost everything, then the checksum decides.
      */
+    /**
+     * Scans main RAM for the first decodable party entry and walks back to
+     * slot 0. Gen 4 and Gen 5 (220-byte entries, 649 species). Used when a
+     * pointer chain fails and, since 2026-09-08, when an absolute map's fixed
+     * address holds no Pokemon: Black 2 on this core keeps static data at the
+     * PC tracker's party address (identical bytes on two devices), so the
+     * party is found instead of assumed.
+     */
     fun findParty(): Long {
+        val gen5 = map.generation == 5
+        val size = map.entrySize
+        val maxSpecies = if (gen5) Gen4.MAX_SPECIES_GEN5 else Gen4.MAX_SPECIES
         var addr = ramStart
         while (addr < ramEnd) {
             val len = minOf(chunk, (ramEnd - addr).toInt())
@@ -496,26 +511,25 @@ class NdsTracker(
             if (buf.isEmpty()) { addr += chunk; continue }
 
             var i = 0
-            while (i + Gen4.PARTY_ENTRY_SIZE <= buf.size) {
-                if (Gen4.quickSpecies(buf, i) in 1..Gen4.MAX_SPECIES) {
-                    val entry = buf.copyOfRange(i, i + Gen4.PARTY_ENTRY_SIZE)
-                    val mon = Gen4.decodeParty(entry)
+            while (i + size <= buf.size) {
+                if (Gen4.quickSpecies(buf, i) in 1..maxSpecies) {
+                    val entry = buf.copyOfRange(i, i + size)
+                    val mon = Gen4.decodeParty(entry, gen5)
                     if (mon != null && !mon.isEgg) {
                         // Walk back to slot 0 so party order is right.
                         var base = addr + i
-                        while (base - Gen4.PARTY_ENTRY_SIZE >= ramStart) {
-                            val prev = memory.read(
-                                base - Gen4.PARTY_ENTRY_SIZE, Gen4.PARTY_ENTRY_SIZE)
-                            if (prev.size < Gen4.PARTY_ENTRY_SIZE) break
-                            if (Gen4.decodeParty(prev) == null) break
-                            base -= Gen4.PARTY_ENTRY_SIZE
+                        while (base - size >= ramStart) {
+                            val prev = memory.read(base - size, size)
+                            if (prev.size < size) break
+                            if (Gen4.decodeParty(prev, gen5) == null) break
+                            base -= size
                         }
                         return base
                     }
                 }
                 i += 4
             }
-            addr += (chunk - Gen4.PARTY_ENTRY_SIZE)   // overlap, so nothing straddles
+            addr += (chunk - size)   // overlap, so nothing straddles
         }
         return 0
     }
@@ -538,14 +552,27 @@ class NdsTracker(
             if (slot == 0 && bytes.size < map.entrySize) probe = "party @%08X: ".format(partyBase) + Gen4.probe(bytes, map.generation == 5)
             if (bytes.size < map.entrySize) break
             val mon = Gen4.decodeParty(bytes, gen5 = map.generation == 5)
-            if (mon == null) { if (slot == 0) probe = "party @%08X: ".format(partyBase) + Gen4.probe(bytes, map.generation == 5); break }
+            if (mon == null) {
+                if (slot == 0) {
+                    probe = "party @%08X: ".format(partyBase) + Gen4.probe(bytes, map.generation == 5)
+                    if (map.absolute && !scannedOnce) {
+                        scannedOnce = true
+                        val found = findParty()
+                        probe += if (found != 0L) " | scan found a party at %08X (shift %s%X from the PC address)".format(found, if (found >= ramStart + map.playerBase) "+" else "-", kotlin.math.abs(found - (ramStart + map.playerBase)))
+                            else " | scan found no party in RAM"
+                        if (found != 0L) { partyBase = found; scanShift = found - (ramStart + map.playerBase); return read() }
+                    }
+                }
+                break
+            }
             // Gen 4 stores the rolled ability's own id in the mon, so decorate()
             // resolves it exactly rather than guessing a slot.
             party += decorate(mon)
         }
 
+        val partyBaseRead = partyBase
         // Party gone (New Run, reset, or the pointer moved): re-resolve next tick.
-        if (party.isEmpty()) partyBase = 0L
+        if (party.isEmpty()) partyBase = 0L else scannedOnce = false
 
         val battle = readBattle()
         if (party.isEmpty() && map.absolute) {
@@ -553,7 +580,9 @@ class NdsTracker(
             // still hand over what it read (Blake's Black 2 battle, 2026-09-08).
             fun hex(addr: Long, n: Int) = memory.read(addr, n).joinToString("") { "%02X".format(it) }
             lastDump = buildString {
-                appendLine("party @%08X: %s".format(partyBase, hex(partyBase, map.entrySize)))
+                appendLine("party @%08X: %s".format(partyBaseRead, hex(partyBaseRead, map.entrySize)))
+                appendLine("header @023FFE00: %s  header @027FFE00: %s".format(hex(0x023FFE00L, 16), hex(0x027FFE00L, 16)))
+                appendLine("ram @02000000: %s  ram @02200000: %s".format(hex(0x02000000L, 16), hex(0x02200000L, 16)))
                 appendLine("enemy @%08X: %s".format(ramStart + map.enemyBase, hex(ramStart + map.enemyBase, map.entrySize)))
                 appendLine("trainerId @%08X: %s  battleStatus @%08X: %s".format(ramStart + map.enemyTrainerId, hex(ramStart + map.enemyTrainerId, 4), ramStart + battleStatusGlobal, hex(ramStart + battleStatusGlobal, 4)))
                 appendLine("totalMonsParty @%08X: %s".format(ramStart + map.totalMonsParty, hex(ramStart + map.totalMonsParty, 4)))

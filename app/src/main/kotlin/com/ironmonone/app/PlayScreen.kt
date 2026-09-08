@@ -644,6 +644,7 @@ fun PlayScreen(
                 ndsTrackerRef = tracker
             }
             tracker?.let { t ->
+                com.ironmonone.tracker.nds.NdsTracker.lastDump?.let { d -> runCatching { context.getExternalFilesDir(null)?.let { dir -> java.io.File(dir, "ds-dump.txt").writeText(d) } } }
                 t.lossCondition = TrackerOptions.lossCondition
                 ndsState = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
                     runCatching { t.read() }.getOrNull()
