@@ -529,6 +529,17 @@ fun PlayScreen(
     // game-over screen can offer "Retry the battle". Held in memory only, for
     // the current battle; a new battle replaces it, a new run drops it.
     var battleStartState by remember(session.id) { mutableStateOf<ByteArray?>(null) }
+    // TimeMachineScreen: a restore point every four minutes on a map, out of battle.
+    val timeMachine = remember(session.id) { TimeMachine() }
+    LaunchedEffect(session.id) {
+        while (true) {
+            kotlinx.coroutines.delay(15_000)
+            if (Demo.mode != null) continue
+            val inBattle = trackerState?.inBattle == true || ndsState?.inBattle == true
+            val mapKnown = trackerState?.mapId != null || ndsState != null
+            timeMachine.tick(System.currentTimeMillis(), TrackerOptions.restorePoints, inBattle, mapKnown, trackerState?.routeName) { runCatching { retro?.serializeState() }.getOrNull() }
+        }
+    }
     LaunchedEffect(inBattleNow) {
         if (!inBattleNow) battleEndedAt = android.os.SystemClock.uptimeMillis()
         else battleStartState = runCatching { retro?.serializeState() }.getOrNull()?.takeIf { it.isNotEmpty() }
@@ -786,15 +797,8 @@ fun PlayScreen(
     /** The Type Defenses screen for one Pokemon: its name and its buckets, or null. */
     var typeDefenses by remember { mutableStateOf<Pair<String, Map<Double, List<String>>>?>(null) }
     var coverageCalc by remember { mutableStateOf(false) }
-    var statsDialog by remember { mutableStateOf(false) }
-    var trainersDialog by remember { mutableStateOf(false) }
-    var battleDetailsDialog by remember { mutableStateOf(false) }
-    var catchRatesDialog by remember { mutableStateOf(false) }
-    var notebookDialog by remember { mutableStateOf(false) }
-    var catchHpAdjust by remember { mutableStateOf(0) }
-    var trainerInfo by remember { mutableStateOf<com.ironmonone.tracker.GbaTracker.TrainerInfo?>(null) }
+    val side = remember { SideScreenState() }
     /** Move History for one Pokemon: species, name, level. */
-    var moveHistory by remember { mutableStateOf<Triple<Int, String, Int>?>(null) }
     /** The randomizer log open full screen (the game-over screen's Inspect the log), or null. */
     var logViewerFile by remember { mutableStateOf<java.io.File?>(null) }
 
@@ -884,6 +888,7 @@ fun PlayScreen(
                 ndsState = null
                 ndsTrackerRef = null
                 battleStartState = null   // a state from another randomization must never be restored
+                timeMachine.clear()
                 statMarks.clear()
                 encounters.clear()
             lastSeenLevel.clear()
@@ -1448,11 +1453,12 @@ fun PlayScreen(
                             ?.let { statMarks.abilityFor(it.mon.species) },
                         movesSeenRunWide = ndsState?.enemy?.let { statMarks.movesSeenFor(it.mon.species) } ?: emptyList(),
                         moveInfoFor = { id -> ndsTrackerRef?.moveInfoFor(id) },
-                        onMoveHistory = { sp, n, lv -> moveHistory = Triple(sp, n, lv) },
+                        onMoveHistory = { sp, n, lv -> side.moveHistory = Triple(sp, n, lv) },
                   )
                   else TrackerPanel(
-                      onTrainerInfo = { trackerState?.opponentTrainerId?.let { id -> trackerRef?.trainer(id)?.let { trainerInfo = it } } },
-                      onMoveHistory = { sp, n, lv -> moveHistory = Triple(sp, n, lv) },
+                      onTrainerInfo = { trackerState?.opponentTrainerId?.let { id -> trackerRef?.trainer(id)?.let { side.trainerInfo = it } } },
+                      onRandomEvos = { sp -> side.randomEvos = sp }, hasRandomEvos = { sp -> trackerRef?.hasRandomEvos(sp) == true },
+                      onMoveHistory = { sp, n, lv -> side.moveHistory = Triple(sp, n, lv) },
                       onTypeDefenses = { n, a, b -> typeDefenses = n to com.ironmonone.tracker.Gen3Types.defenses(a, b, gen1 = session.kind?.generation == com.ironmonone.core.Generation.GB1) },
                       trackerState, onFlee = { flee() }, ballCall = ballCall, onGear = { gearDialog = true },
                 onRerollBall = { ballReroll++ },
@@ -1991,7 +1997,7 @@ fun PlayScreen(
                             ?.let { statMarks.abilityFor(it.mon.species) },
                         movesSeenRunWide = ndsState?.enemy?.let { statMarks.movesSeenFor(it.mon.species) } ?: emptyList(),
                         moveInfoFor = { id -> ndsTrackerRef?.moveInfoFor(id) },
-                        onMoveHistory = { sp, n, lv -> moveHistory = Triple(sp, n, lv) },
+                        onMoveHistory = { sp, n, lv -> side.moveHistory = Triple(sp, n, lv) },
                     )
                 }
             } else Box(
@@ -2003,8 +2009,9 @@ fun PlayScreen(
                 // is why `scrollable` had to go first.
                 Modifier.weight(1f).verticalScroll(rememberScrollState())
             ) { TrackerPanel(
-                onTrainerInfo = { trackerState?.opponentTrainerId?.let { id -> trackerRef?.trainer(id)?.let { trainerInfo = it } } },
-                onMoveHistory = { sp, n, lv -> moveHistory = Triple(sp, n, lv) },
+                onTrainerInfo = { trackerState?.opponentTrainerId?.let { id -> trackerRef?.trainer(id)?.let { side.trainerInfo = it } } },
+                      onRandomEvos = { sp -> side.randomEvos = sp }, hasRandomEvos = { sp -> trackerRef?.hasRandomEvos(sp) == true },
+                onMoveHistory = { sp, n, lv -> side.moveHistory = Triple(sp, n, lv) },
                 onTypeDefenses = { n, a, b -> typeDefenses = n to com.ironmonone.tracker.Gen3Types.defenses(a, b, gen1 = session.kind?.generation == com.ironmonone.core.Generation.GB1) },
                 trackerState, onFlee = { flee() }, ballCall = ballCall, onGear = { gearDialog = true },
                 onRerollBall = { ballReroll++ },
@@ -2237,54 +2244,12 @@ fun PlayScreen(
 
     typeDefenses?.let { (n, b) -> TypeDefensesDialog(n, b, onClose = { typeDefenses = null }) }
 
-    moveHistory?.let { (species, n, lv) ->
-        MoveHistoryDialog(
-            name = n, level = lv, seen = statMarks.movesSeenFor(species),
-            learnLevels = ndsTrackerRef?.moveLevelsOf(species) ?: trackerRef?.learnset(species)?.map { it.first } ?: emptyList(),
-            onClose = { moveHistory = null },
-        )
-    }
-    if (notebookDialog) {
-        NotebookDialog(
-            tracker = trackerRef, marks = statMarks,
-            encountersOf = { encounters[it] ?: 0 }, seenSpecies = encounters.keys.toSet(),
-            lastLevelOf = { lastSeenLevel[it] }, lastSeenSpecies = enemySpecies.takeIf { it > 0 },
-            speciesName = { id -> trackerRef?.speciesName(id) ?: gbNames?.invoke(id) ?: "#$id" },
-            spriteFor = spriteFor,
-        ) { notebookDialog = false }
-    }
-    if (catchRatesDialog) {
-        val gba = trackerRef
-        val rates = remember(trackerState, gba, catchHpAdjust) { runCatching { gba?.catchRates(catchHpAdjust) }.getOrNull() }
-        CatchRatesDialog(rates, catchHpAdjust, onAdjust = { catchHpAdjust = it }) { catchRatesDialog = false }
-    }
-    if (battleDetailsDialog) {
-        val gba = trackerRef
-        // Re-read on every poll so counters move while the screen is open.
-        val details = remember(trackerState, gba) { runCatching { gba?.battleDetails() }.getOrNull() }
-        BattleDetailsDialog(details) { battleDetailsDialog = false }
-    }
-    if (trainersDialog) {
-        val gba = trackerRef; val st = trackerState
-        val mapId = st?.mapId
-        if (gba != null && mapId != null) {
-            val list = remember(mapId, st.routeTrainers) { gba.trainersForRoute(mapId).mapNotNull { gba.trainer(it) } }
-            TrainersOnRouteDialog(st.routeName ?: "This map", list, onTrainer = { trainerInfo = it; trainersDialog = false }, onClose = { trainersDialog = false })
-        } else trainersDialog = false
-    }
-    trainerInfo?.let { t ->
-        val gba = trackerRef
-        TrainerInfoDialog(
-            t, routeName = trackerState?.mapId?.let { m -> gba?.routeInfo(m)?.first },
-            leadLevel = trackerState?.party?.firstOrNull()?.mon?.level,
-            speciesName = { gba?.speciesName(it) ?: "#$it" }, itemName = { gba?.itemName(it) ?: "#$it" }, moveName = { gba?.moveName(it) ?: "#$it" },
-            onClose = { trainerInfo = null },
-        )
-    }
-    if (statsDialog) {
-        val gba = trackerRef
-        StatsDialog(StatsRows.build(store.attempt(), gba?.let { t -> { i: Int -> t.readGameStat(i) } }), onClose = { statsDialog = false })
-    }
+    SideScreenDialogs(side, trackerRef, ndsTrackerRef, trackerState, statMarks, encounters, lastSeenLevel, enemySpecies, gbNames, spriteFor, store.attempt(),
+        timeMachine = timeMachine, snapshot = { runCatching { retro?.serializeState() }.getOrNull() },
+        onRestore = { bytes ->
+            if (raHardcore) status = "Loading a state is off in RetroAchievements hardcore."
+            else status = if (retro?.unserializeState(bytes) == true) "Restored." else "Load failed - the core refused that state."
+        })
     if (coverageCalc) {
         val ctx = androidx.compose.ui.platform.LocalContext.current
         val nds = ndsTrackerRef
@@ -2326,11 +2291,13 @@ fun PlayScreen(
             onCleared = { marksVersion++ },
             onRules = { gearDialog = false; rulesDialog = true },
             onCoverage = { gearDialog = false; coverageCalc = true },
-            onStats = if (platform == com.ironmonone.core.Platform.NDS) null else { { gearDialog = false; statsDialog = true } },
-            onTrainers = if (trackerRef?.hasTrainerData == true) { { gearDialog = false; trainersDialog = true } } else null,
-            onBattleDetails = if (trackerRef?.hasBattleDetails == true) { { gearDialog = false; battleDetailsDialog = true } } else null,
-            onCatchRates = if (trackerRef?.hasCatchRates == true) { { gearDialog = false; catchHpAdjust = 0; catchRatesDialog = true } } else null,
-            onNotebook = if (platform == com.ironmonone.core.Platform.NDS) null else { { gearDialog = false; notebookDialog = true } },
+            onStats = if (platform == com.ironmonone.core.Platform.NDS) null else { { gearDialog = false; side.statsDialog = true } },
+            onTrainers = if (trackerRef?.hasTrainerData == true) { { gearDialog = false; side.trainersDialog = true } } else null,
+            onBattleDetails = if (trackerRef?.hasBattleDetails == true) { { gearDialog = false; side.battleDetailsDialog = true } } else null,
+            onCatchRates = if (trackerRef?.hasCatchRates == true) { { gearDialog = false; side.catchHpAdjust = 0; side.catchRatesDialog = true } } else null,
+            onNotebook = if (platform == com.ironmonone.core.Platform.NDS) null else { { gearDialog = false; side.notebookDialog = true } },
+            onHeals = if (trackerRef?.hasCatchRates == true) { { gearDialog = false; side.healsDialog = true } } else null,
+            onTimeMachine = { gearDialog = false; side.timeMachineDialog = true },
             onDismiss = { gearDialog = false },
         )
     }

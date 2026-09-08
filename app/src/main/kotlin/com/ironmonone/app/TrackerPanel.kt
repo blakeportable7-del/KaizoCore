@@ -229,6 +229,9 @@ private fun EnemyCard(
 fun TrackerPanel(
     /** Trainer Info for the opponent, from the TRAINER BATTLE banner. */
     onTrainerInfo: (() -> Unit)? = null,
+    /** RandomEvosScreen for a species, from Pokemon info; null when there is no table for it. */
+    onRandomEvos: ((Int) -> Unit)? = null,
+    hasRandomEvos: (Int) -> Boolean = { false },
     /** Move History for a card: (species, name, level). */
     onMoveHistory: ((Int, String, Int) -> Unit)? = null,
     /** Type Defenses for a card: (name, type1, type2) in Gen 3 ids. */
@@ -317,6 +320,7 @@ fun TrackerPanel(
             // Coverage lives here now, not beside the card: the reference
             // keeps it on its own CoverageCalcScreen.
             coverage = coverage,
+            onRandomEvos = if (onRandomEvos != null && hasRandomEvos(p.mon.species)) { { onRandomEvos(p.mon.species) } } else null,
         ) { monInfo = null }
     }
     moveInfo?.let { PcMoveInfoDialog(it) { moveInfo = null } }

@@ -859,6 +859,19 @@ data class EnemyInfo(
  * id -> (amount, isPercentage), from the reference tracker's
  * MiscData.HealingItems so the numbers match what the PC tracker shows.
  */
+/** MiscData.PPItems: Ether, Max Ether, Elixir, Max Elixir, Leppa Berry. */
+internal val PP_ITEMS: Set<Int> = setOf(34, 35, 36, 37, 138)
+
+/** MiscData.BattleItems: Guard Spec., Dire Hit, X Attack. */
+internal val BATTLE_ITEMS: Set<Int> = setOf(39, 40, 41)
+
+/** MiscData.StatusItems: item id to the status it cures, "All" for the cure-alls. */
+internal val STATUS_ITEMS: Map<Int, String> = mapOf(
+    14 to "Poison", 15 to "Burn", 16 to "Freeze", 17 to "Sleep", 18 to "Paralyze",
+    19 to "All", 23 to "All", 32 to "All", 38 to "All",
+    133 to "Paralyze", 134 to "Sleep", 135 to "Poison", 136 to "Burn", 137 to "Freeze", 140 to "Confusion", 141 to "All",
+)
+
 internal val HEAL_ITEMS: Map<Int, Pair<Double, Boolean>> = mapOf(
     13 to (20.0 to false),      // Potion
     19 to (100.0 to true),      // Full Restore
@@ -1608,6 +1621,106 @@ class GbaTracker(
             }
         }
         return TrainerInfo(trainerId, className, name, party, aiFlags, doubleBattle, trainerDefeated(trainerId), items)
+    }
+
+    // ---- Random Evos (RandomEvosScreen.lua, PokemonRevoData.lua) ----
+
+    /** revos.tsv: base id -> (target id, or 0 for a single evolution) -> (evo id, percent) in the reference's order. */
+    private val revos: Map<Int, Map<Int, List<Pair<Int, Double>>>> by lazy {
+        val out = HashMap<Int, LinkedHashMap<Int, List<Pair<Int, Double>>>>()
+        javaClass.getResourceAsStream("/gen3/revos.tsv")?.bufferedReader(Charsets.UTF_8)?.useLines { lines ->
+            lines.forEach { line ->
+                if (line.startsWith("#")) return@forEach
+                val p = line.split('\t'); if (p.size < 3) return@forEach
+                val base = p[0].toIntOrNull() ?: return@forEach
+                val target = p[1].toIntOrNull() ?: return@forEach
+                val list = p[2].split(',').mapNotNull { e ->
+                    val c = e.indexOf(':'); if (c <= 0) null else {
+                        val id = e.substring(0, c).toIntOrNull(); val perc = e.substring(c + 1).toDoubleOrNull()
+                        if (id == null || perc == null) null else id to perc
+                    }
+                }
+                out.getOrPut(base) { LinkedHashMap() }[target] = list
+            }
+        }
+        out
+    }
+
+    /** PokemonRevoData.getEvoOptions: the regular evolutions to pick between, or empty for a single one. */
+    fun randomEvoOptions(species: Int): List<Int> = revos[species]?.keys?.filter { it != 0 } ?: emptyList()
+
+    fun hasRandomEvos(species: Int): Boolean = revos.containsKey(species)
+
+    /** PokemonRevoData.getEvoTable: the possible randomized evolutions with their chances. */
+    fun randomEvos(species: Int, target: Int? = null): List<Pair<Int, Double>>? {
+        val entry = revos[species] ?: return null
+        entry[0]?.let { return it }
+        val t = target ?: entry.keys.firstOrNull() ?: return null
+        return entry[t]
+    }
+
+    // ---- Heals In Bag (HealsInBagScreen.lua) ----
+
+    data class BagRow(val id: Int, val name: String, val quantity: Int, val category: String, val helpful: Boolean, val sortValue: Int)
+
+    /** Program.updateBagItems: Items, Berries and Poke Balls pockets, decrypted, id to quantity. */
+    fun readBag(): Map<Int, Int> {
+        val sb1 = saveBlock1() ?: return emptyMap()
+        val key = readSecurityKey()
+        val out = LinkedHashMap<Int, Int>()
+        for ((offset, slots) in listOf(map.bagItemsOffset to map.bagItemsSlots, map.bagBerriesOffset to map.bagBerriesSlots, map.bagBallsOffset to map.bagBallsSlots)) {
+            if (offset == 0L) continue
+            for (slot in 0 until slots) {
+                val b = memory.read(sb1 + offset + slot * 4L, 4)
+                if (b.size < 4) break
+                val id = b.u16(0); if (id == 0) continue
+                val qty = b.u16(2) xor key
+                if (qty in 1..999) out[id] = (out[id] ?: 0) + qty
+            }
+        }
+        return out
+    }
+
+    /**
+     * HealsInBagScreen.buildPagedButtons for every tab at once: each item in
+     * the bag with its category, whether it helps the lead right now (the
+     * reference's rules: an HP heal whose two thirds fit the missing HP, a PP
+     * item when a move is down to a point, a status heal matching the lead's
+     * status or a cure-all while it has one) and the reference's sort value.
+     */
+    fun healsInBag(lead: TrackedMon?): List<BagRow> {
+        val bag = readBag()
+        val maxHp = lead?.mon?.maxHp ?: 0
+        val missing = if (lead != null) maxOf(maxHp - lead.mon.curHp, 0) else 0
+        val status = lead?.statusCondition ?: ""
+        val statusType = when (status) { "SLP" -> "Sleep"; "PSN" -> "Poison"; "BRN" -> "Burn"; "FRZ" -> "Freeze"; "PAR" -> "Paralyze"; else -> "" }
+        val ppEmpty = lead != null && lead.mon.moves.indices.any { i -> lead.mon.moves[i] != 0 && lead.mon.moves[i] != 166 && (lead.mon.pp.getOrNull(i) ?: 99) <= 1 }
+        val rows = ArrayList<BagRow>()
+        for ((id, qty) in bag) {
+            val heal = HEAL_ITEMS[id]
+            val statusKind = STATUS_ITEMS[id]
+            val category: String; var helpful = false; var sort: Int
+            when {
+                heal != null -> {
+                    category = "HP"
+                    val amt = if (heal.second) Math.floor(maxHp * heal.first / 100).toInt() else heal.first.toInt()
+                    helpful = lead != null && amt * 2.0 / 3 <= missing
+                    sort = 50000 + heal.first.toInt() + (if (heal.second) 1000 else 0)
+                }
+                statusKind != null -> {
+                    category = "Status"
+                    helpful = statusType.isNotEmpty() && (statusKind == statusType || statusKind == "All")
+                    sort = 40000 + (if (statusKind == "All") 2 else 1)
+                }
+                id in PP_ITEMS -> { category = "PP"; helpful = ppEmpty; sort = 30000 }
+                id in BATTLE_ITEMS -> { category = "Battle"; sort = 20000 }
+                id in 1..12 -> { category = "Balls"; sort = 10000 }
+                id in 93..98 -> { category = "Evo"; sort = 5000 }
+                else -> { category = "Other"; sort = 0 }
+            }
+            rows += BagRow(id, itemName(id), qty, category, helpful, sort)
+        }
+        return rows.sortedWith(compareByDescending<BagRow> { it.sortValue }.thenBy { it.name })
     }
 
     // ---- Notebook (NotebookIndexScreen.lua, NotebookTrainersByArea.lua) ----

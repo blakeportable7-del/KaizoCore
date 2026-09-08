@@ -337,6 +337,26 @@ thing as a band on the right. Separate item.
 
 ### 2.8 The side screens of every PC tracker - **OPEN 2026-09-08, IN PROGRESS**
 
+**Random Evos, Heals In Bag, Time Machine, 2026-09-08:** RandomEvosScreen
+(PokemonRevoData.lua run through convert_revos.py into gen3/revos.tsv, 184
+rows; VIEW EVOS on Pokemon info, the Evo N picker for species with two
+evolutions, under 0.1% in red), HealsInBagScreen (SETUP > HEALS IN BAG; HP,
+PP, Status, Battle and All tabs over Items, Berries and Balls, green when it
+helps the lead by the reference's rules) and TimeMachineScreen (SETUP > TIME
+MACHINE; an in-memory state every four minutes on a map out of battle, ten
+kept, Create, confirm-to-restore, the Return back to the future point, the
+Enable restore points option; capped at 96 MB in total for DS states). All
+three seen on the Emerald demo. Tests: RandomEvosTest, HealsInBagTest,
+TimeMachineTest.
+
+**PlayScreen is at the verifier's limit, 2026-09-08.** Adding the side screen
+states to PlayScreen() pushed its bytecode past what ART accepts (VerifyError,
+copy1 v7<-v304) and the play screen died on open in the debug build. The
+states and dialogs now live in SideScreens.kt (SideScreenState,
+SideScreenDialogs). Put nothing more in PlayScreen(); add to SideScreens or a
+new file. The Notebook release build (1c12f483) may carry the same fault; this
+build replaces it.
+
 **Notebook, 2026-09-08 (Gen 3):** NotebookIndexScreen, NotebookPokemonSeen,
 NotebookTrainersByArea and NotebookPokemonNoteView cloned into one dialog
 (SETUP > OPEN NOTEBOOK). The index counts species with any tracked record this

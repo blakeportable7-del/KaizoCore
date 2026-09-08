@@ -1112,6 +1112,8 @@ fun PcPokemonInfo(
      * screen rather than taking permanent space beside the card.
      */
     coverage: Map<Double, List<Int>> = emptyMap(),
+    /** InfoScreen's ViewRandomEvos button, only when the species has revo data. */
+    onRandomEvos: (() -> Unit)? = null,
     onDismiss: () -> Unit,
 ) {
     androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
@@ -1139,6 +1141,7 @@ fun PcPokemonInfo(
                     else -> evolution.lowercase()
                 },
             )
+            onRandomEvos?.let { Spacer(Modifier.height(4.dp)); PcSmallButton("VIEW EVOS") { it() } }
 
             Spacer(Modifier.height(8.dp))
             Box(Modifier.fillMaxWidth().height(1.dp).background(Pc.Border))

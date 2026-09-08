@@ -24,6 +24,8 @@ object TrackerOptions {
     var healsWhole by mutableStateOf(false)
     /** Options["Show Team View"]: the six-box party strip (TeamViewArea.lua). Off by default, as in the reference. */
     var showTeamView by mutableStateOf(false)
+    /** Options["Enable restore points"] (TimeMachineScreen): on by default, as in the reference. */
+    var restorePoints by mutableStateOf(true)
     var lossCondition by mutableStateOf(LossCondition.LEAD)
 
     private var file: File? = null
@@ -40,6 +42,7 @@ object TrackerOptions {
                     "showCategoryIcons" -> showCategoryIcons = v == "true"
                     "healsWhole" -> healsWhole = v == "true"
                     "showTeamView" -> showTeamView = v == "true"
+                    "restorePoints" -> restorePoints = v == "true"
                     "lossCondition" -> lossCondition = LossCondition.byKey(v)
                     "landscapeTracker" -> landscapeTracker = LandscapeTracker.entries.firstOrNull { it.name == v } ?: LandscapeTracker.DOCKED
                 }
@@ -55,5 +58,5 @@ object TrackerOptions {
         }
     }
 
-    fun text(): String = "showBallPicker=$showBallPicker\nshowCategoryIcons=$showCategoryIcons\nhealsWhole=$healsWhole\nshowTeamView=$showTeamView\nlossCondition=${lossCondition.key}\nlandscapeTracker=${landscapeTracker.name}\n"
+    fun text(): String = "showBallPicker=$showBallPicker\nshowCategoryIcons=$showCategoryIcons\nhealsWhole=$healsWhole\nshowTeamView=$showTeamView\nrestorePoints=$restorePoints\nlossCondition=${lossCondition.key}\nlandscapeTracker=${landscapeTracker.name}\n"
 }

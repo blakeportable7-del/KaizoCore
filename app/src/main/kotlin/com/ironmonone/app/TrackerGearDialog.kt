@@ -45,6 +45,8 @@ fun TrackerGearDialog(
     onBattleDetails: (() -> Unit)? = null,
     onCatchRates: (() -> Unit)? = null,
     onNotebook: (() -> Unit)? = null,
+    onHeals: (() -> Unit)? = null,
+    onTimeMachine: (() -> Unit)? = null,
     onDismiss: () -> Unit,
 ) {
     var confirmClear by remember { mutableStateOf(false) }
@@ -61,6 +63,8 @@ fun TrackerGearDialog(
             onTrainers?.let { com.ironmonone.app.gen3.Gen3Button("TRAINERS ON ROUTE") { it() } }
             onBattleDetails?.let { com.ironmonone.app.gen3.Gen3Button("BATTLE DETAILS") { it() } }
             onCatchRates?.let { com.ironmonone.app.gen3.Gen3Button("CATCH RATES") { it() } }
+            onHeals?.let { com.ironmonone.app.gen3.Gen3Button("HEALS IN BAG") { it() } }
+            onTimeMachine?.let { com.ironmonone.app.gen3.Gen3Button("TIME MACHINE") { it() } }
             Spacer(Modifier.height(8.dp))
 
             PixText("Options", 8, Pc.Text)
