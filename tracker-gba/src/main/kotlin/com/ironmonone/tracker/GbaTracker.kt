@@ -34,6 +34,8 @@ data class GameMap(
      *  expansion struct: 0x24 bytes, u16 abilities at 0x16/0x18 — derived empirically
      *  from the real 1.2.1 ROM (Bulbasaur/Ivysaur/Charmander/Pikachu fingerprints). */
     val baseStatsStride: Int = 28,
+    /** gExperienceTables: 6 growth rates x 101 levels x u32 (0x194 per rate). 0 = no EXP bar. */
+    val expTables: Long = 0,
     val abilitiesAreU16: Boolean = false,
     /** gActionSelectionCursor (pret symbols; exact for vanilla). 0 = unknown — the
      *  write-based flee fallback stays disabled and only the input macro is used. */
@@ -231,6 +233,7 @@ data class GameMap(
             battlerTarget = 0x0202420C,
             abilityScriptTable = "emerald",
             baseStats = 0x083203CC,
+            expTables = 0x0831F72C,
             speciesNames = 0x083185C8,
             moveNames = 0x0831977C,
             actionCursor = 0x020244AC,
@@ -286,6 +289,7 @@ data class GameMap(
             battlerTarget = 0x02023D6C,
             abilityScriptTable = "firered",
             baseStats = 0x08254784,
+            expTables = 0x08253AE4,
             speciesNames = 0x08245EE0,
             moveNames = 0x08247094,
             battleResults = 0x03004F90,
@@ -348,6 +352,7 @@ data class GameMap(
             battlerTarget = 0x02024C08,
             abilityScriptTable = "ruby",
             baseStats = 0x081FEC18,
+            expTables = 0x081FDF78,
             speciesNames = 0x081F716C,
             moveNames = 0x081F8320,
             battleResults = 0x030042E0,
@@ -389,6 +394,7 @@ data class GameMap(
             name = "Sapphire (U) v1.0",
             abilityScriptTable = "sapphire",
             baseStats = 0x081FEBA8,
+            expTables = 0x081FDF08,
             speciesNames = 0x081F70FC,
             moveNames = 0x081F82B0,
             abilityNames = 0x081FA1D8,
@@ -409,6 +415,7 @@ data class GameMap(
             name = "LeafGreen (U) v1.0",
             abilityScriptTable = "leafgreen",
             baseStats = 0x08254760,
+            expTables = 0x08253AC0,
             speciesNames = 0x08245EBC,
             moveNames = 0x08247070,
             abilityNames = 0x0824FC1C,
@@ -478,6 +485,7 @@ data class GameMap(
             handleTurnAction = 0x08014055,
             returnToOverworld = 0x08015B6D,
             baseStats = 0x082547F4,
+            expTables = 0x08253B54,
             battleMoves = 0x08250C74,
             levelUpLearnsets = 0x0825D824,
             abilityScriptTable = "firered11",
@@ -702,6 +710,8 @@ data class GameMap(
 data class BaseStats(
     val hp: Int, val atk: Int, val def: Int, val spe: Int, val spAtk: Int, val spDef: Int,
     val type1: Int, val type2: Int, val ability1: Int, val ability2: Int,
+    /** Growth rate index, SpeciesInfo +0x13 on the vanilla struct; 0 where the layout is not pinned. */
+    val growthRate: Int = 0,
     /** Gen 1: one Special stat, carried in both spAtk and spDef so damage code reads it either way.
      *  The panel shows it once and the BST counts it once, as the Gen 1 reference tracker does. */
     val singleSpecial: Boolean = false,
@@ -764,6 +774,9 @@ data class TrackedMon(
     val statStages: StatStages = emptyMap(),
     /** SLP/PSN/BRN/FRZ/PAR, or empty when healthy. */
     val statusCondition: String = "",
+    /** Program.getNextLevelExp: experience earned into this level, and the level's total. 0 total = unknown. */
+    val expNow: Int = 0,
+    val expTotal: Int = 0,
 )
 
 /**
@@ -1149,6 +1162,21 @@ class GbaTracker(
         return abilityName(id)
     }
 
+    /**
+     * Program.getNextLevelExp: (experience into this level, experience the
+     * level spans), from gExperienceTables[growthRate][level..level+1]. Null
+     * at level 100, or where the table is not pinned for this build.
+     */
+    fun expProgress(mon: PokemonDecoder.Mon, base: BaseStats?): Pair<Int, Int>? {
+        if (map.expTables == 0L || base == null || mon.level !in 1..99) return null
+        val at = map.expTables + base.growthRate.toLong() * 0x194 + mon.level.toLong() * 4
+        val b = memory.read(at, 8)
+        if (b.size < 8) return null
+        val lv = b.u32(0); val next = b.u32(4)
+        if (next <= lv) return null
+        return ((mon.exp - lv).coerceIn(0, next - lv).toInt()) to (next - lv).toInt()
+    }
+
     fun baseStats(species: Int): BaseStats? = baseStatsCache.getOrPut(species) {
         val stride = map.baseStatsStride
         val b = memory.read(map.baseStats + species.toLong() * stride, stride)
@@ -1159,6 +1187,7 @@ class GbaTracker(
             type1 = b.u8(6), type2 = b.u8(7),
             ability1 = if (map.abilitiesAreU16) b.u16(0x16) else b.u8(22),
             ability2 = if (map.abilitiesAreU16) b.u16(0x18) else b.u8(23),
+            growthRate = if (stride == 28) b.u8(0x13) else 0,
         )
     }.takeIf { it.bst > 0 }
 
@@ -1226,6 +1255,8 @@ class GbaTracker(
                         movesTotal = learn.size,
                         nextMoveLevel = learn.firstOrNull { it.first > mon.level }?.first,
                         statusCondition = statusName(mon.status),
+                        expNow = expProgress(mon, base)?.first ?: 0,
+                        expTotal = expProgress(mon, base)?.second ?: 0,
                     )
                 }
             }

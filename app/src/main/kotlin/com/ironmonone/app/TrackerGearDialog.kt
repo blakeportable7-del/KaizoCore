@@ -63,6 +63,7 @@ fun TrackerGearDialog(
             GearToggle("Show random ball picker", TrackerOptions.showBallPicker) { TrackerOptions.showBallPicker = it; TrackerOptions.save() }
             GearToggle("Show physical special icons", TrackerOptions.showCategoryIcons) { TrackerOptions.showCategoryIcons = it; TrackerOptions.save() }
             GearToggle("Show heals as whole number", TrackerOptions.healsWhole) { TrackerOptions.healsWhole = it; TrackerOptions.save() }
+            GearToggle("Show team view", TrackerOptions.showTeamView) { TrackerOptions.showTeamView = it; TrackerOptions.save() }
             Spacer(Modifier.height(8.dp))
 
             PixText("Landscape tracker", 8, Pc.Text)

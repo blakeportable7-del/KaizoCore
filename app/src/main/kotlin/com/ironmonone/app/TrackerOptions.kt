@@ -22,6 +22,8 @@ object TrackerOptions {
     var showBallPicker by mutableStateOf(true)
     var showCategoryIcons by mutableStateOf(true)
     var healsWhole by mutableStateOf(false)
+    /** Options["Show Team View"]: the six-box party strip (TeamViewArea.lua). Off by default, as in the reference. */
+    var showTeamView by mutableStateOf(false)
     var lossCondition by mutableStateOf(LossCondition.LEAD)
 
     private var file: File? = null
@@ -37,6 +39,7 @@ object TrackerOptions {
                     "showBallPicker" -> showBallPicker = v == "true"
                     "showCategoryIcons" -> showCategoryIcons = v == "true"
                     "healsWhole" -> healsWhole = v == "true"
+                    "showTeamView" -> showTeamView = v == "true"
                     "lossCondition" -> lossCondition = LossCondition.byKey(v)
                     "landscapeTracker" -> landscapeTracker = LandscapeTracker.entries.firstOrNull { it.name == v } ?: LandscapeTracker.DOCKED
                 }
@@ -52,5 +55,5 @@ object TrackerOptions {
         }
     }
 
-    fun text(): String = "showBallPicker=$showBallPicker\nshowCategoryIcons=$showCategoryIcons\nhealsWhole=$healsWhole\nlossCondition=${lossCondition.key}\nlandscapeTracker=${landscapeTracker.name}\n"
+    fun text(): String = "showBallPicker=$showBallPicker\nshowCategoryIcons=$showCategoryIcons\nhealsWhole=$healsWhole\nshowTeamView=$showTeamView\nlossCondition=${lossCondition.key}\nlandscapeTracker=${landscapeTracker.name}\n"
 }

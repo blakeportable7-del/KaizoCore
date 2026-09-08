@@ -332,6 +332,16 @@ fun TrackerPanel(
       Column(Modifier.fillMaxWidth().background(Pc.Page).padding(PcRef.MARGIN.rp)) {
           // The reference's gear sits at the top of the tracker screen; SETUP is its NavigationMenu.ButtonSetup.
           onGear?.let { g -> Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) { PcSmallButton("SETUP") { g() } }; Spacer(Modifier.height(3.dp)) }
+          // TeamViewArea: the reference draws it under the game; here it heads the panel.
+          if (TrackerOptions.showTeamView && state != null && !state.unreadable && state.party.isNotEmpty()) {
+              PcTeamView(
+                  party = state.party, spriteFor = spriteFor,
+                  onMon = { monInfo = it },
+                  onTypes = onTypeDefenses?.let { cb -> { p -> p.base?.let { b -> cb(p.speciesName, b.type1, b.type2) } } },
+                  onAbility = { p -> info = Triple(p.abilityName, "Ability", onAbilityDescription?.invoke(p.abilityName)) },
+              )
+              Spacer(Modifier.height(3.dp))
+          }
         when {
             unsupportedNote != null -> PcCard {
                 PixText(unsupportedNote, 8, Pc.Negative, Modifier.padding(6.dp))

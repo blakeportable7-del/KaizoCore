@@ -99,6 +99,8 @@ object PokemonDecoder {
         val abilitySlot: Int, val nature: Int, val shiny: Boolean,
         val status: Long, val curHp: Int, val maxHp: Int,
         val atk: Int, val def: Int, val spe: Int, val spAtk: Int, val spDef: Int,
+        /** Total experience, growth substructure +4. TeamViewArea's EXP bar reads it. */
+        val exp: Long = 0,
     )
 
     fun isEmpty(mon: ByteArray): Boolean = mon.u32(PID) == 0L
@@ -133,6 +135,7 @@ object PokemonDecoder {
             curHp = mon.u16(layout.curHp), maxHp = mon.u16(layout.maxHp),
             atk = mon.u16(0x5A), def = mon.u16(0x5C), spe = mon.u16(0x5E),
             spAtk = mon.u16(0x60), spDef = mon.u16(0x62),
+            exp = plain.u32(g + 4),
         )
     }
 }

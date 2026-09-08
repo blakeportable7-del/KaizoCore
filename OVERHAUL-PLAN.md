@@ -337,6 +337,17 @@ thing as a band on the right. Separate item.
 
 ### 2.8 The side screens of every PC tracker - **OPEN 2026-09-08, IN PROGRESS**
 
+**Team View, 2026-09-08 (Gen 3):** TeamViewArea.lua cloned as PcTeamView, gated
+by the new "Show team view" option (Options["Show Team View"], off by default as
+in the reference). Six boxes, three to a row since the panel is 150 units wide
+against the reference's 390: nickname, icon (opens Pokemon info), status or FNT,
+types (open Type Defenses), level, HP bar at the 50%/20% colours, EXP bar, held
+item and ability (opens its description). The EXP bar needed experience from
+the decoder (growth substructure +4, Mon.exp), the growth rate byte from
+SpeciesInfo +0x13, and gExperienceTables per game (new map field expTables;
+ExpProgressTest). Seen on the Emerald demo: Scyther, Bug/Flying, Lv.25, Oran
+Berry, Swarm.
+
 **Trainers On Route and Trainer Info, 2026-09-08 (Gen 3):** TrainersOnRouteScreen.lua
 and TrainerInfoScreen.lua cloned. GbaTracker.trainer(id) reads the 0x28-byte
 gTrainers entry, the class name table and the party in all four layouts (the
