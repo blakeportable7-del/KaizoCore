@@ -337,6 +337,25 @@ thing as a band on the right. Separate item.
 
 ### 2.8 The side screens of every PC tracker - **OPEN 2026-09-08, IN PROGRESS**
 
+**The game-over popup latch, 2026-09-10.** Blake, Black 2: the popup
+"popped up and then disappeared". It was drawn for as long as the tracker's
+live outcome was non-null, and a loss whites out to a Pokemon Center that heals
+the party, so the outcome cleared seconds later and closed it. A tap outside
+the box also closed it, which pressing the pad as it opened would do. Both
+references latch the screen instead and close it only on a button: the DS
+tracker's Program.onRunEnded fires once per run (tracker.setRunOver,
+hasRunEnded), and Ironmon-Tracker's checkForGameOver refuses while
+GameOverScreen.isDisplayed, which Battle.beginNewBattle clears. GameOverLatch.kt
+carries both rules (DS once per run; Gen 1 to 3 re-armed when the next battle
+begins; Retry re-arms either), the popup shows the outcome and cause as the run
+ended rather than the live read, the run is logged exactly once, and only the
+X, Continue or New game close it (dismissOnClickOutside = false; back still
+closes, as Continue). The dialog wiring moved out of PlayScreen() into
+GameOverHost.kt, which shrinks the method that sits at ART's verifier limit.
+GameOverLatchTest covers each rule, the first test being the whiteout heal.
+Not changed: the timer still stops at game over and does not resume on
+Continue, where the Gen 3 reference unpauses it.
+
 **Real-ROM tests, 2026-09-08.** RomDataTest reads an actual cartridge dump
 (IRONMON_ROMS, skipped without it, as PrepOptionsTest is) and checks the
 ROM-side halves of the new screens with no emulator: Emerald's Wattson comes

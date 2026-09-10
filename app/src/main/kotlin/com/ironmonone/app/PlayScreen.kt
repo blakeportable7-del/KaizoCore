@@ -529,6 +529,7 @@ fun PlayScreen(
     // game-over screen can offer "Retry the battle". Held in memory only, for
     // the current battle; a new battle replaces it, a new run drops it.
     var battleStartState by remember(session.id) { mutableStateOf<ByteArray?>(null) }
+    val gameOverLatch = remember(session.id) { GameOverLatch(gameOverFamily(platform)) }
     // TimeMachineScreen: a restore point every four minutes on a map, out of battle.
     val timeMachine = remember(session.id) { TimeMachine() }
     // SeedLogger: the DS tracker's past runs, per game family, and when this run began for its playtime.
@@ -555,7 +556,10 @@ fun PlayScreen(
     }
     LaunchedEffect(inBattleNow) {
         if (!inBattleNow) battleEndedAt = android.os.SystemClock.uptimeMillis()
-        else battleStartState = runCatching { retro?.serializeState() }.getOrNull()?.takeIf { it.isNotEmpty() }
+        else {
+            battleStartState = runCatching { retro?.serializeState() }.getOrNull()?.takeIf { it.isNotEmpty() }
+            gameOverLatch.onBattleBegan()   // Battle.beginNewBattle: GameOverScreen.isDisplayed = false
+        }
     }
     val wildBattleNow = view?.let { it.inBattle && it.isWildBattle } == true
 
@@ -879,6 +883,7 @@ fun PlayScreen(
                 ndsState = null
                 ndsTrackerRef = null
                 battleStartState = null   // a state from another randomization must never be restored
+                gameOverLatch.reset()
                 timeMachine.clear()
                 statMarks.clear()
                 encounters.clear()
@@ -2184,65 +2189,26 @@ fun PlayScreen(
     // Confirming a new run. This wipes the seed, the randomization and every
     // stat note, so it asks - and it says what survives, because the whole
     // point of saving in-game first is that the save file is NOT wiped.
-    // 2.3: the reference's GameOverScreen, once per outcome. "Continue playing"
-    // leaves the run as it is (the tracker keeps its game-over card); NEW RUN
-    // goes through the usual confirmation. Shown again only after the outcome
-    // has cleared and returned, the way isDisplayed works in the reference.
-    val runOutcome = view?.outcome
-    var gameOverShownFor by remember(session.id) { mutableStateOf<com.ironmonone.tracker.RunOutcome?>(null) }
-    LaunchedEffect(runOutcome) { if (runOutcome == null) gameOverShownFor = null else runTimer.stop() }
-    // Program.onRunEnded: log the run once per outcome, from the DS state that ended it.
-    var loggedRunFor by remember(session.id) { mutableStateOf<com.ironmonone.tracker.RunOutcome?>(null) }
-    LaunchedEffect(runOutcome) {
-        val nds = ndsState; val ps = pastRunStore
-        if (runOutcome != null && loggedRunFor != runOutcome && nds != null && ps != null && Demo.mode == null) {
-            loggedRunFor = runOutcome
-            PastRun.fromDs(nds, runOutcome == com.ironmonone.tracker.RunOutcome.WON, ((System.currentTimeMillis() - runStartedAt) / 1000).toInt())?.let { ps.log(it) }
+    // 2.3: the game-over popup, latched the way each reference latches it
+    // (GameOverLatch.kt). Blake, 2026-09-10: it used to follow the live outcome,
+    // so the heal after a whiteout closed it. The dialog is in GameOverHost.kt.
+    LaunchedEffect(view?.outcome, ndsState?.runOver, gameOverLatch.armed) {
+        if (gameOverLatch.onRead(view?.outcome, ndsState?.runOver)) {
+            runTimer.stop()
+            // Program.onRunEnded: log the run once, from the DS state that ended it.
+            val nds = ndsState; val ps = pastRunStore
+            if (nds != null && ps != null && Demo.mode == null)
+                PastRun.fromDs(nds, gameOverLatch.outcome == com.ironmonone.tracker.RunOutcome.WON, ((System.currentTimeMillis() - runStartedAt) / 1000).toInt())?.let { ps.log(it) }
         }
     }
-    if (runOutcome != null && gameOverShownFor != runOutcome && !streamClean) {
-        val team: List<GameOverMon> = ndsState?.party?.map { GameOverMon(it.mon.species, it.speciesName, it.mon.level, it.mon.curHp == 0, it.mon.shiny) }
-            ?: trackerState?.party?.map { GameOverMon(it.mon.species, it.speciesName, it.mon.level, it.mon.curHp == 0, it.mon.shiny) }
-            ?: emptyList()
-        val ctx = androidx.compose.ui.platform.LocalContext.current
-        val family = when (platform) {
-            com.ironmonone.core.Platform.NDS -> GameOverFamily.DS
-            com.ironmonone.core.Platform.GBC -> GameOverFamily.GEN12
-            else -> GameOverFamily.GEN3
-        }
-        // The staged screenshot modes have no run and no battle: they read a log
-        // from the app's external files dir and offer Retry, so the popup shows
-        // every action it can carry. Never taken outside Demo.mode.
-        val logFile = (if (session.isRun) session.kind?.let { store.currentRunLogFor(it) } else null)
-            ?: Demo.mode?.let { ctx.getExternalFilesDir(null)?.let { d -> java.io.File(d, "demo.log") }?.takeIf { it.isFile } }
-        GameOverDialog(
-            family = family,
-            won = runOutcome == com.ironmonone.tracker.RunOutcome.WON,
-            attempt = store.attempt(),
-            team = team,
-            spriteOf = { m -> if (ndsState != null) remember(m.species, m.shiny) { PcAssets.dsSprite(ctx, m.species, m.shiny) } else spriteFor(m.species) },
-            dsCause = ndsState?.runOver,
-            canRetry = (battleStartState != null || Demo.mode != null) && !raHardcore,
-            onInspectLog = logFile?.let { f -> { logViewerFile = f } },
-            onContinue = { gameOverShownFor = runOutcome },
-            onRetry = {
-                // The reference's loadTempSaveState: back to the moment the battle began.
-                val st = battleStartState
-                gameOverShownFor = runOutcome
-                if (st != null) {
-                    val ok = retro?.unserializeState(st) == true
-                    status = if (ok) "Back to the start of the battle." else "Could not restore the battle."
-                }
-            },
-            onSaveAttempt = {
-                val kind = session.kind
-                if (kind == null || !session.isRun) false
-                else store.saveAttempt(kind, store.attempt(), store.lastSeedText(), runCatching { retro?.serializeState() }.getOrNull())
-            },
-            onNewGame = { gameOverShownFor = runOutcome; confirmNewRun = true },
-            onGrade = if (ndsState == null) { { side.scoreSheet = true } } else null,
-        )
-    }
+    GameOverHost(
+        gameOverLatch, gameOverFamily(platform), hidden = streamClean,
+        ndsState = ndsState, trackerState = trackerState, store = store, session = session, retro = retro,
+        battleStartState = battleStartState, raHardcore = raHardcore, spriteFor = spriteFor,
+        onStatus = { status = it }, onInspectLog = { logViewerFile = it },
+        onNewGame = { confirmNewRun = true },
+        onGrade = if (ndsState == null) { { side.scoreSheet = true } } else null,
+    )
     logViewerFile?.let { f -> LogViewer(f, onClose = { logViewerFile = null }) }
 
     typeDefenses?.let { (n, b) -> TypeDefensesDialog(n, b, onClose = { typeDefenses = null }) }

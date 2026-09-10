@@ -88,7 +88,12 @@ fun GameOverDialog(
     var quoteIndex by remember { mutableIntStateOf(((attempt % quotes.size) + quotes.size) % quotes.size) }
     var retryConfirm by remember { mutableStateOf(false) }
     var saveStatus by remember { mutableStateOf(SaveAttemptStatus.NOT_CLICKED) }
-    androidx.compose.ui.window.Dialog(onDismissRequest = onContinue) {
+    // Blake, 2026-09-10: the X, Continue or New game closes it. A tap outside
+    // the box used to close it too, so pressing the pad as it opened threw it away.
+    androidx.compose.ui.window.Dialog(
+        onDismissRequest = onContinue,
+        properties = androidx.compose.ui.window.DialogProperties(dismissOnClickOutside = false),
+    ) {
         Column(Modifier.width(300.dp).background(Pc.Ground).border(1.dp, Pc.Border)) {
             // Top box: title, attempt, the team icon, the quote.
             Column(Modifier.fillMaxWidth().background(Pc.Page).border(1.dp, Pc.Border).padding(8.dp)) {
