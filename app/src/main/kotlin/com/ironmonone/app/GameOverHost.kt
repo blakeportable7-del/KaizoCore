@@ -28,6 +28,8 @@ internal fun GameOverHost(
     onInspectLog: (java.io.File) -> Unit,
     onNewGame: () -> Unit,
     onGrade: (() -> Unit)?,
+    /** The game picture's bounds on screen: the popup sits over it. */
+    gameFrame: androidx.compose.ui.geometry.Rect? = null,
 ) {
     if (!latch.open || hidden) return
     val team: List<GameOverMon> = ndsState?.party?.map { GameOverMon(it.mon.species, it.speciesName, it.mon.level, it.mon.curHp == 0, it.mon.shiny) }
@@ -64,5 +66,6 @@ internal fun GameOverHost(
         },
         onNewGame = { latch.close(); onNewGame() },
         onGrade = onGrade,
+        gameFrame = gameFrame,
     )
 }

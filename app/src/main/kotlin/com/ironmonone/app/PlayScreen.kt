@@ -50,6 +50,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalContext
@@ -796,6 +797,8 @@ fun PlayScreen(
     /** Move History for one Pokemon: species, name, level. */
     /** The randomizer log open full screen (the game-over screen's Inspect the log), or null. */
     var logViewerFile by remember { mutableStateOf<java.io.File?>(null) }
+    // Where the game picture sits on screen, so the game-over popup sits over it (GameOverHost).
+    var gameFrame by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
 
     /**
      * The GBA battery save, persisted per game.
@@ -1715,6 +1718,7 @@ fun PlayScreen(
             if (gameActive) androidx.compose.runtime.key(gameKey) {
                 AndroidView(
                     modifier = Modifier.fillMaxSize()
+                        .onGloballyPositioned { gameFrame = it.boundsInWindow() }
                         // DS bottom-screen collapse: scale 2x about the top edge
                         // and clip, so the top screen fills the frame. The core
                         // still renders both; this only changes what is shown,
@@ -2208,6 +2212,7 @@ fun PlayScreen(
         onStatus = { status = it }, onInspectLog = { logViewerFile = it },
         onNewGame = { confirmNewRun = true },
         onGrade = if (ndsState == null) { { side.scoreSheet = true } } else null,
+        gameFrame = gameFrame,
     )
     logViewerFile?.let { f -> LogViewer(f, onClose = { logViewerFile = null }) }
 

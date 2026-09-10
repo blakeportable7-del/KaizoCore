@@ -79,6 +79,8 @@ fun GameOverDialog(
     onNewGame: () -> Unit,
     /** GameOverScreen.NotesGrade: the Stat Marking Score Sheet. Null hides it (no marks to grade). */
     onGrade: (() -> Unit)? = null,
+    /** Where the game picture is on screen. The popup sits over it, scaled to fit; null centres it on the window. */
+    gameFrame: androidx.compose.ui.geometry.Rect? = null,
 ) {
     var teamIndex by remember { mutableIntStateOf(0) }
     val quotes = when (family) {
@@ -88,12 +90,17 @@ fun GameOverDialog(
     var quoteIndex by remember { mutableIntStateOf(((attempt % quotes.size) + quotes.size) % quotes.size) }
     var retryConfirm by remember { mutableStateOf(false) }
     var saveStatus by remember { mutableStateOf(SaveAttemptStatus.NOT_CLICKED) }
-    // Blake, 2026-09-10: the X, Continue or New game closes it. A tap outside
-    // the box used to close it too, so pressing the pad as it opened threw it away.
-    androidx.compose.ui.window.Dialog(
+    // Blake, 2026-09-10: "game over is a popup over the game screen". It sits on
+    // the game picture, scaled down when the picture is shorter than the card, and
+    // leaves the tracker below it undimmed. It is its own window, so it draws above
+    // the emulator's GL surface. Only the X, Continue or New game close it (Back
+    // counts as Continue); a tap outside it does nothing.
+    androidx.compose.ui.window.Popup(
+        popupPositionProvider = remember(gameFrame) { OverGameFrame(gameFrame) },
         onDismissRequest = onContinue,
-        properties = androidx.compose.ui.window.DialogProperties(dismissOnClickOutside = false),
+        properties = androidx.compose.ui.window.PopupProperties(focusable = true, dismissOnBackPress = true, dismissOnClickOutside = false),
     ) {
+        FitInside(gameFrame) {
         Column(Modifier.width(300.dp).background(Pc.Ground).border(1.dp, Pc.Border)) {
             // Top box: title, attempt, the team icon, the quote.
             Column(Modifier.fillMaxWidth().background(Pc.Page).border(1.dp, Pc.Border).padding(8.dp)) {
@@ -169,6 +176,7 @@ fun GameOverDialog(
                 GameOverAction(Glyph.PLUS, "New game (new seed)", color = Pc.Gold, onClick = onNewGame)
             }
         }
+        }
     }
 }
 
@@ -214,5 +222,47 @@ private fun GameOverAction(glyph: Glyph, label: String, color: Color = Pc.Text, 
         }
         Spacer(Modifier.width(8.dp))
         PixText(label, 8, color)
+    }
+}
+
+/** Centres the popup on the game picture, kept inside the window. Null frame: the window's centre. */
+private class OverGameFrame(private val frame: androidx.compose.ui.geometry.Rect?) : androidx.compose.ui.window.PopupPositionProvider {
+    override fun calculatePosition(
+        anchorBounds: androidx.compose.ui.unit.IntRect,
+        windowSize: androidx.compose.ui.unit.IntSize,
+        layoutDirection: androidx.compose.ui.unit.LayoutDirection,
+        popupContentSize: androidx.compose.ui.unit.IntSize,
+    ): androidx.compose.ui.unit.IntOffset {
+        val left = frame?.left ?: 0f
+        val top = frame?.top ?: 0f
+        val w = frame?.width ?: windowSize.width.toFloat()
+        val h = frame?.height ?: windowSize.height.toFloat()
+        val x = (left + (w - popupContentSize.width) / 2f).toInt().coerceIn(0, maxOf(0, windowSize.width - popupContentSize.width))
+        val y = (top + (h - popupContentSize.height) / 2f).toInt().coerceIn(0, maxOf(0, windowSize.height - popupContentSize.height))
+        return androidx.compose.ui.unit.IntOffset(x, y)
+    }
+}
+
+/**
+ * Lays the card out at its natural size, then scales it down (never up) so it
+ * fits inside the game picture with a small margin. A portrait GBA picture is
+ * about 266dp tall and the card with every action is taller, so without this it
+ * spilled onto the tracker. Taps follow the scale.
+ */
+@Composable
+private fun FitInside(frame: androidx.compose.ui.geometry.Rect?, content: @Composable () -> Unit) {
+    androidx.compose.ui.layout.Layout(content) { measurables, _ ->
+        val p = measurables.first().measure(androidx.compose.ui.unit.Constraints())
+        val margin = 6.dp.toPx()
+        val maxW = frame?.let { it.width - 2 * margin } ?: p.width.toFloat()
+        val maxH = frame?.let { it.height - 2 * margin } ?: p.height.toFloat()
+        val s = minOf(1f, maxW / p.width, maxH / p.height).coerceAtLeast(0.4f)
+        layout((p.width * s).toInt(), (p.height * s).toInt()) {
+            p.placeWithLayer(0, 0) {
+                scaleX = s
+                scaleY = s
+                transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0f, 0f)
+            }
+        }
     }
 }

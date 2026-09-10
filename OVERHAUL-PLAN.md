@@ -356,6 +356,17 @@ GameOverLatchTest covers each rule, the first test being the whiteout heal.
 Not changed: the timer still stops at game over and does not resume on
 Continue, where the Gen 3 reference unpauses it.
 
+Later that day, Blake: "game over is a popup over the game screen". It had
+been a centred Dialog that straddled the bottom of the picture and covered the
+tracker. It is now a Popup window anchored to the game picture's bounds
+(PlayScreen reads them with onGloballyPositioned on the emulator's AndroidView),
+scaled down to fit when the picture is shorter than the card (a portrait GBA
+picture is about 266dp; the card with every action is taller), with no dim, so
+the tracker stays readable. Being its own window it draws above the GL surface.
+Checked on the emulator: portrait card [189,328]-[910,949] inside the frame
+[8,312]-[1072,1016]; landscape card [528,166]-[1331,857] inside [136,0]-[1701,1080];
+rotating with it open keeps it open; pressing A outside it does nothing; X closes it.
+
 **Real-ROM tests, 2026-09-08.** RomDataTest reads an actual cartridge dump
 (IRONMON_ROMS, skipped without it, as PrepOptionsTest is) and checks the
 ROM-side halves of the new screens with no emulator: Emerald's Wattson comes
