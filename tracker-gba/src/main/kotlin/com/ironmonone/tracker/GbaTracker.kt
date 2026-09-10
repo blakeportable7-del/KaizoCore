@@ -1502,6 +1502,29 @@ class GbaTracker(
 
     fun trainersOnRoute(mapId: Int): List<Int> = routeTrainerIds[mapId] ?: emptyList()
 
+    /** Every map the route tables know, with wild data or trainers (RouteData.Info's keys). */
+    fun routeMapIds(): Set<Int> = routes.keys + routeTrainerIds.keys
+
+    /**
+     * RandomizerLog.RouteSetNumToIdMap: the map each "Set #N" of a randomizer log's
+     * wild encounters belongs to, per game (gen3/routesets-*.tsv, converted from the
+     * reference's three setup functions by tools/trainer-data/convert_routesets.py).
+     */
+    fun logRouteSets(): Map<Int, Int> {
+        val key = when { map.badgeSet == "FRLG" -> "frlg"; map.rsMapShift -> "rs"; else -> "e" }
+        val out = HashMap<Int, Int>()
+        javaClass.getResourceAsStream("/gen3/routesets-$key.tsv")?.bufferedReader(Charsets.UTF_8)?.useLines { lines ->
+            lines.forEach { l ->
+                if (l.startsWith("#")) return@forEach
+                val p = l.split('\t')
+                val set = p.getOrNull(0)?.trim()?.toIntOrNull()
+                val mapId = p.getOrNull(1)?.trim()?.toIntOrNull()
+                if (set != null && mapId != null) out[set] = mapId
+            }
+        }
+        return out
+    }
+
     /** "Gym", "Elite4", "Rival", "Boss" or "Other". */
     fun trainerGroup(trainerId: Int): String = trainerClass[trainerId]?.second ?: "Other"
 

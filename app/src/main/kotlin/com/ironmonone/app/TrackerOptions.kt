@@ -34,6 +34,12 @@ object TrackerOptions {
     var kantoBadgesFirst by mutableStateOf(false)
     /** badgesAppearance.SHOW_BOTH_BADGES: both rows once Kanto has begun. Default on, as in the reference. */
     var showBothBadgeSets by mutableStateOf(true)
+    /** LogOverlay's "Custom Trainer Names": the log viewer shows the randomizer's names instead of the game's. */
+    var logCustomTrainerNames by mutableStateOf(false)
+    /** Options["Show unlearnable Gym TMs"], on by default in the reference. */
+    var logShowUnlearnableGymTms by mutableStateOf(true)
+    /** Options["Show Pre Evolutions"], off by default in the reference. */
+    var logShowPreEvolutions by mutableStateOf(false)
     var lossCondition by mutableStateOf(LossCondition.LEAD)
 
     private var file: File? = null
@@ -55,6 +61,9 @@ object TrackerOptions {
                     "tourneyTracker" -> tourneyTracker = v == "true"
                     "kantoBadgesFirst" -> kantoBadgesFirst = v == "true"
                     "showBothBadgeSets" -> showBothBadgeSets = v == "true"
+                    "logCustomTrainerNames" -> logCustomTrainerNames = v == "true"
+                    "logShowUnlearnableGymTms" -> logShowUnlearnableGymTms = v == "true"
+                    "logShowPreEvolutions" -> logShowPreEvolutions = v == "true"
                     "lossCondition" -> lossCondition = LossCondition.byKey(v)
                     "landscapeTracker" -> landscapeTracker = LandscapeTracker.entries.firstOrNull { it.name == v } ?: LandscapeTracker.DOCKED
                 }
@@ -70,5 +79,5 @@ object TrackerOptions {
         }
     }
 
-    fun text(): String = "showBallPicker=$showBallPicker\nshowCategoryIcons=$showCategoryIcons\nhealsWhole=$healsWhole\nshowTeamView=$showTeamView\nrestorePoints=$restorePoints\nshowTimer=$showTimer\ntourneyTracker=$tourneyTracker\nkantoBadgesFirst=$kantoBadgesFirst\nshowBothBadgeSets=$showBothBadgeSets\nlossCondition=${lossCondition.key}\nlandscapeTracker=${landscapeTracker.name}\n"
+    fun text(): String = "showBallPicker=$showBallPicker\nshowCategoryIcons=$showCategoryIcons\nhealsWhole=$healsWhole\nshowTeamView=$showTeamView\nrestorePoints=$restorePoints\nshowTimer=$showTimer\ntourneyTracker=$tourneyTracker\nkantoBadgesFirst=$kantoBadgesFirst\nshowBothBadgeSets=$showBothBadgeSets\nlogCustomTrainerNames=$logCustomTrainerNames\nlogShowUnlearnableGymTms=$logShowUnlearnableGymTms\nlogShowPreEvolutions=$logShowPreEvolutions\nlossCondition=${lossCondition.key}\nlandscapeTracker=${landscapeTracker.name}\n"
 }

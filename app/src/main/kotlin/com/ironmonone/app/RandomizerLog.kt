@@ -58,6 +58,14 @@ class RandomizerLog private constructor(
 
     class Trainer(val number: Int, val originalName: String, val name: String, val party: List<PartyMon>) {
         val fullName: String get() = if (name.isBlank()) originalName else name
+        /** RandomizerLog.splitTrainerClassAndName on the game's name: "LEADER ROXANNE" is LEADER and ROXANNE. */
+        val cls: String get() = splitClassAndName(originalName).first
+        val shortName: String get() = splitClassAndName(originalName).second
+        /** The same split of the randomizer's custom name ("Chief Kate"). */
+        val customCls: String get() = splitClassAndName(name).first
+        val customShortName: String get() = splitClassAndName(name).second
+        /** RandomizerLog's trainer.maxlevel, which the Rival and Boss filters sort by. */
+        val maxLevel: Int get() = party.maxOfOrNull { it.level } ?: 0
     }
 
     class Encounter(val name: String, val minLevel: Int, val maxLevel: Int)
@@ -66,7 +74,36 @@ class RandomizerLog private constructor(
 
     fun pokemonNamed(name: String): Pokemon? = pokemon.firstOrNull { it.name.equals(name, ignoreCase = true) }
 
+    /**
+     * RandomizerLog.parseTrainers' moveIds: a Pokemon forgets its oldest move
+     * first, so the four it knows at [level] are the last four it learned at or
+     * below it, in the order it learned them.
+     */
+    fun movesAt(p: Pokemon, level: Int): List<String> {
+        val out = ArrayList<String>()
+        for ((lv, mv) in p.moves.asReversed()) {
+            if (lv <= level) { out.add(0, mv); if (out.size >= 4) break }
+        }
+        return out
+    }
+
     companion object {
+        /**
+         * RandomizerLog.splitTrainerClassAndName: the last word is the name, except
+         * that a couple ("YOUNG COUPLE GIA & JES") keeps both names and "LT. SURGE"
+         * keeps two words.
+         */
+        fun splitClassAndName(full: String): Pair<String, String> {
+            val f = full.trim()
+            val re = when {
+                f.contains("&") -> Regex("^(.*?)\\s*(\\S+\\s*&\\s*\\S+)$")
+                f.contains("Lt. ", ignoreCase = true) -> Regex("^(.*?)\\s*(\\S+\\s\\S+)$")
+                else -> Regex("^(.*?)\\s*(\\S+)$")
+            }
+            val m = re.find(f) ?: return "" to f
+            return m.groupValues[1].trim() to m.groupValues[2].trim()
+        }
+
         fun parse(file: File): RandomizerLog? = runCatching { parse(file.readText(Charsets.UTF_8)) }.getOrNull()
 
         fun parse(text: String): RandomizerLog {

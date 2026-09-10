@@ -337,6 +337,25 @@ thing as a band on the right. Separate item.
 
 ### 2.8 The side screens of every PC tracker - **OPEN 2026-09-08, IN PROGRESS**
 
+**Gen 3 log viewer, 2026-09-10.** The log stays reachable only from the
+game-over popup (Blake: "view log is only available after a loss"), so the
+Extras "Logs" button and its warning screen were not cloned. Inside it,
+Ironmon-Tracker's LogOverlay is cloned: Trainers (filter by All, Rival, Gym,
+Elite 4, Boss; the trainer page with each Pokemon's four moves at its level,
+same-type moves green, held item, gym badge), Routes (each "Set #N" put on its
+map through RouteSetNumToIdMap, extracted by running the reference's Lua into
+gen3/routesets-*.tsv; the route page with its encounter tabs, slot rates, the
+rods split), TMs (the gym TMs with their leaders, or every TM by number),
+Pokemon (the grid; the page with abilities, evolutions, the stat graph, Your
+IVs and EVs for a team member, Levelup and TM moves with the gym TMs first and
+the unlearnable ones struck through), the search screen's filters and sorts
+per tab, and Misc (three checkboxes, Share Seed, the four fields). Not cloned:
+trainer portraits and route icons (no art shipped), the physical and special
+icons on the Pokemon page, evolution methods, the stat graph's nature marks,
+nicknames on the page. Starters, statics and pickup stay below Misc, marked as
+the app's own. Tested on real Emerald and FireRed logs in .vendor/logs and
+walked on the emulator.
+
 **The game-over popup latch, 2026-09-10.** Blake, Black 2: the popup
 "popped up and then disappeared". It was drawn for as long as the tracker's
 live outcome was non-null, and a loss whites out to a Pokemon Center that heals
