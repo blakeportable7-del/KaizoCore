@@ -50,6 +50,12 @@ class RandomizerLog private constructor(
         var evoMoves: List<String> = emptyList(); internal set
         var eggMoves: List<String> = emptyList(); internal set
         var tmsLearnable: List<Int> = emptyList(); internal set
+        /**
+         * The ability columns as the log writes them, a slot with none as "---"
+         * (AbilityData's entry 0): the DS viewer numbers them and marks the third
+         * as the hidden ability, so an empty second slot has to keep its place.
+         */
+        var abilitySlots: List<String> = emptyList(); internal set
     }
 
     class Tm(val number: Int, val move: String)
@@ -72,7 +78,9 @@ class RandomizerLog private constructor(
 
     class RouteSet(val number: Int, val name: String, val rate: Int, val encounters: List<Encounter>)
 
-    fun pokemonNamed(name: String): Pokemon? = pokemon.firstOrNull { it.name.equals(name, ignoreCase = true) }
+    fun pokemonNamed(name: String): Pokemon? =
+        pokemon.firstOrNull { it.name.equals(name, ignoreCase = true) }
+            ?: NAME_ALIASES[name.trim().uppercase()]?.let { alias -> pokemon.firstOrNull { it.name.equals(alias, ignoreCase = true) } }
 
     /**
      * RandomizerLog.parseTrainers' moveIds: a Pokemon forgets its oldest move
@@ -88,6 +96,13 @@ class RandomizerLog private constructor(
     }
 
     companion object {
+        /**
+         * Names a log uses for a Pokemon its own stats table lists under another name.
+         * Black and White 2's trainers carry "Keldeo-R" where the table says Keldeo;
+         * the DS tracker's parser maps it the same way (pokemonIDMappings["keldeo-r"] = 647).
+         */
+        private val NAME_ALIASES = mapOf("KELDEO-R" to "KELDEO")
+
         /**
          * RandomizerLog.splitTrainerClassAndName: the last word is the name, except
          * that a couple ("YOUNG COUPLE GIA & JES") keeps both names and "LT. SURGE"
@@ -151,6 +166,8 @@ class RandomizerLog private constructor(
                         statNames = statCols.map { STAT_LABELS[it] ?: it }, stats = stats,
                         abilities = abilities, item = cell("ITEM"),
                     )
+                    p.abilitySlots = listOf("ABILITY1", "ABILITY2", "ABILITY3").filter { it in cols }
+                        .map { cell(it).let { a -> if (a.isBlank() || a.all { c -> c == '-' }) "---" else a } }
                     pokemon += p; byName[p.name.uppercase()] = p
                 }
             }

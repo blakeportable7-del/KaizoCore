@@ -2214,7 +2214,7 @@ fun PlayScreen(
         onGrade = if (ndsState == null) { { side.scoreSheet = true } } else null,
         gameFrame = gameFrame,
     )
-    logViewerFile?.let { f -> LogViewer(f, onClose = { logViewerFile = null }, tracker = trackerRef, badgeSet = trackerState?.badgeSet, spriteFor = spriteFor, party = trackerState?.party) }
+    logViewerFile?.let { f -> LogViewer(f, onClose = { logViewerFile = null }, tracker = trackerRef, badgeSet = trackerState?.badgeSet, spriteFor = spriteFor, party = trackerState?.party, nds = ndsTrackerRef, ndsParty = ndsState?.party) }
 
     typeDefenses?.let { (n, b) -> TypeDefensesDialog(n, b, onClose = { typeDefenses = null }) }
 

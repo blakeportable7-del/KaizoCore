@@ -356,6 +356,35 @@ nicknames on the page. Starters, statics and pickup stay below Misc, marked as
 the app's own. Tested on real Emerald and FireRed logs in .vendor/logs and
 walked on the emulator.
 
+**DS log viewer, 2026-09-10.** Same door (the game-over popup's "Open the
+log"), and on a DS game the viewer is NDS-Ironmon-Tracker's LogViewer instead
+of Ironmon-Tracker's: Pokemon (search by the start of a name; the page with
+"Base Stats (N total)", "Evos:" with each evolution's method from
+PokemonData and EVO_LONGER_NAMES, Moves with the level padded as the
+reference pads it and same-type moves green, Gym TMs struck through where it
+cannot learn one, abilities numbered with Gen 5's third marked (HA); the
+Stats button's six rankings, ten each), Trainers (the game's
+IMPORTANT_GROUPS: rival cards by location with a ball per Pokemon, gym and
+Elite 4 cards with their badge; the team page walks the group's battles and
+the team, stats estimated from the trainer's IVs as TeamInfoScreen does,
+first ability, item, the four moves at its level), Pivots (encounterAreaOrder
+and parseRouteData: the slot odds per encounter type, the duplicate-set and
+excluded-pivot tables, Doubles Grass as Dark Grass, Sprout Tower's floors,
+Headbutt split Common and Rare, the three Bug Catching days), Gym TMs (the
+leader opens the team; HeartGold's spacer and Kanto badges), Info with
+"Copy info", and Search (Pokemon or Trainers with a Move or an Ability;
+"Lv. a - b", "Only ability", "N Pokemon"). The rival's teams and Black
+and White's first gym are picked by the starter: NdsTracker.firstPokemonId
+(Tracker.getFirstPokemonID), then the party and what it evolved from. The
+tables come from running the tracker's Lua
+(tools/trainer-data/convert_nds_log_tables.py into tracker-nds resources/nds).
+A log from another game gets the reference's "Game does not match" line.
+Not cloned: trainer portraits and card art, the type-matchup hover on a
+picture, the bookmark filter (the app has no marked Pokemon); the phone's
+keyboard stands in for the on-screen one, and a move's details open on a tap
+where the reference shows them on hover. Tested on real Black 2 and Platinum
+logs and a HeartGold log made by the bundled randomizer (HgssLogFixture).
+
 **The game-over popup latch, 2026-09-10.** Blake, Black 2: the popup
 "popped up and then disappeared". It was drawn for as long as the tracker's
 live outcome was non-null, and a loss whites out to a Pokemon Center that heals

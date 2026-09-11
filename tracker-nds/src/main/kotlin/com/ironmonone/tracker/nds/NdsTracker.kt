@@ -159,6 +159,13 @@ class NdsTracker(
     private var readsSinceScan = SCAN_EVERY
     var scanShift: Long = 0
         private set
+    /**
+     * Tracker.getFirstPokemonID: the first Pokemon this tracker saw in the
+     * party. The log viewer matches it against the log's starters to pick the
+     * rival's teams and Black and White's first gym. 0 until one exists.
+     */
+    @Volatile var firstPokemonId: Int = 0
+        private set
     private val chunk = 0x20000
 
     // Offsets come from the game's NdsGameMap (copied from NDS-Ironmon-Tracker's
@@ -316,6 +323,12 @@ class NdsTracker(
 
     /** The ROM data's row for a species, for screens that need its BST, types and abilities. */
     fun speciesInfoFor(id: Int): NdsSpeciesInfo? = speciesInfo[id]
+
+    /** Every move in the game's table, for the log viewer's move details and search. */
+    fun moveTable(): List<NdsMoveInfo> = moveInfo.values.sortedBy { it.id }
+
+    /** Every ability name in the game's table, for the log viewer's search. */
+    fun abilityTable(): List<String> = abilityNames.toSortedMap().values.toList()
 
     /** Tracker.getProgress: 0 nowhere, 1 past the lab, 2 won. Set by the battle that ends against a lab or final trainer. */
     var progress: Int = 0
@@ -727,6 +740,7 @@ class NdsTracker(
             if (map.finalTrainerId != 0 && lastTrainerId == map.finalTrainerId) progress = 2
         }
         wasInBattle = battle != null
+        if (firstPokemonId == 0) party.firstOrNull()?.let { firstPokemonId = it.mon.species }
         return NdsTrackerState(
             badgeSet = map.badgePrefix,
             partyCount = party.size,

@@ -1,0 +1,10 @@
+# game code	version	name	gen	version group	badge prefix	gym TMs	pivot types	trainer table code	location table code
+45414441	DIAMOND	Pokemon Diamond	4	1	DPPT	76,86,60,55,65,91,72,57	Grass/Cave,Old Rod	45414441	45555043
+45415041	PEARL	Pokemon Pearl	4	1	DPPT	76,86,60,55,65,91,72,57	Grass/Cave,Old Rod	45414441	45555043
+45475049	SOUL_SILVER	Pokemon SoulSilver	4	3	HGSS	51,89,45,30,1,23,7,59,-1,80,3,34,19,84,48,50,92	Bug Catching,Grass/Cave,Headbutt	454B5049	454B5049
+454B5049	HEART_GOLD	Pokemon HeartGold	4	3	HGSS	51,89,45,30,1,23,7,59,-1,80,3,34,19,84,48,50,92	Bug Catching,Grass/Cave,Headbutt	454B5049	454B5049
+45555043	PLATINUM	Pokemon Platinum	4	2	DPPT	76,86,60,55,65,91,72,57	Grass/Cave,Old Rod	45555043	45555043
+4F415249	WHITE	Pokemon White	5	4	BW	83,67,76,72,78,62,79,82	Doubles Grass,Grass/Cave,Shaking Spots	4F415249	4F425249
+4F425249	BLACK	Pokemon Black	5	4	BW	83,67,76,72,78,62,79,82	Doubles Grass,Grass/Cave,Shaking Spots	4F425249	4F425249
+4F445249	WHITE2	Pokemon White 2	5	5	BW2	83,9,76,72,78,62,82,55	Doubles Grass,Grass/Cave	4F455249	4F455249
+4F455249	BLACK2	Pokemon Black 2	5	5	BW2	83,9,76,72,78,62,82,55	Doubles Grass,Ext. Grass,Grass/Cave,Int. Grass	4F455249	4F455249

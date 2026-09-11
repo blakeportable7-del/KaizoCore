@@ -48,6 +48,9 @@ import java.io.File
  * TM by number). Misc is the run's version, seed, settings string, starters and
  * static encounters.
  *
+ * On a DS game it is NDS-Ironmon-Tracker's LogViewer instead (DsLogViewer):
+ * the Pokemon, Trainers, Pivots, Gym TMs, Info and Search tabs.
+ *
  * Opened from the game-over screen only (Blake, 2026-09-10: the log is for
  * after a loss), it reads the log
  * the randomizer wrote beside the current run's ROM.
@@ -63,7 +66,11 @@ fun LogViewer(
     spriteFor: ((Int) -> androidx.compose.ui.graphics.ImageBitmap?)? = null,
     /** The run's party, for "Your IVs" and "Your EVs" on a team member's page. */
     party: List<com.ironmonone.tracker.TrackedMon>? = null,
+    /** DS: the tracker that played the run, which picks the game's tables; the viewer becomes the DS tracker's. */
+    nds: com.ironmonone.tracker.nds.NdsTracker? = null,
+    ndsParty: List<com.ironmonone.tracker.nds.NdsTrackedMon>? = null,
 ) {
+    if (nds != null) { DsLogViewer(file, nds, ndsParty, onClose); return }
     val log = remember(file) { RandomizerLog.parse(file) }
     var tab by remember { mutableStateOf(LogTab.POKEMON) }
     var query by remember { mutableStateOf("") }

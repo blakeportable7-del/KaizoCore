@@ -1,0 +1,154 @@
+# game code	group	group name	type (0 standard, 1 rival, 2 gym leaders)	battle	alt (1-3 by starter, 0 none)	name or location	ids (by starter when three)	badge	iv
+45414441	1	Barry	1	1	0	Route 203	248,249,247		3
+45414441	1	Barry	1	2	0	Hearthorne City	471,472,470		6
+45414441	1	Barry	1	3	0	Pastoria City	474,475,473		9
+45414441	1	Barry	1	4	0	Canalave City	477,478,476		12
+45414441	1	Barry	1	5	0	Victory Road	480,481,479		24
+45414441	2	Gym Leaders	2	1	0	Roark	246	1	6
+45414441	2	Gym Leaders	2	2	0	Gardenia	315	2	6
+45414441	2	Gym Leaders	2	3	0	Maylene	317	3	12
+45414441	2	Gym Leaders	2	4	0	Wake	316	4	12
+45414441	2	Gym Leaders	2	5	0	Fantina	318	5	18
+45414441	2	Gym Leaders	2	6	0	Byron	250	6	18
+45414441	2	Gym Leaders	2	7	0	Candice	319	7	24
+45414441	2	Gym Leaders	2	8	0	Volkner	320	8	24
+45414441	3	Elite 4	0	1	0	Aaron	261		30
+45414441	3	Elite 4	0	2	0	Bertha	262		30
+45414441	3	Elite 4	0	3	0	Flint	263		30
+45414441	3	Elite 4	0	4	0	Lucian	264		30
+45414441	3	Elite 4	0	5	0	Cynthia	267		30
+454B5049	1	Silver	1	1	0	Lab	496,497,495		0
+454B5049	1	Silver	1	2	0	Azalea Town	266,269,1		3
+454B5049	1	Silver	1	3	0	Burned Tower	267,270,263		6
+454B5049	1	Silver	1	4	0	Goldenrod	289,271,288		14
+454B5049	1	Silver	1	5	0	Victory Road	268,272,264		19
+454B5049	1	Silver	1	6	0	Mt. Moon	286,287,285		24
+454B5049	2	Johto Gyms	2	1	0	Falkner	20	1	6
+454B5049	2	Johto Gyms	2	2	0	Bugsy	21	2	9
+454B5049	2	Johto Gyms	2	3	0	Whitney	30	3	12
+454B5049	2	Johto Gyms	2	4	0	Morty	31	4	12
+454B5049	2	Johto Gyms	2	5	0	Chuck	34	5	18
+454B5049	2	Johto Gyms	2	6	0	Jasmine	33	6	18
+454B5049	2	Johto Gyms	2	7	0	Pryce	32	7	18
+454B5049	2	Johto Gyms	2	8	0	Clair	35	8	24
+454B5049	3	Kanto Gyms	2	1	0	Brock	253	1	24
+454B5049	3	Kanto Gyms	2	2	0	Misty	254	2	24
+454B5049	3	Kanto Gyms	2	3	0	Lt. Surge	255	3	24
+454B5049	3	Kanto Gyms	2	4	0	Erika	256	4	24
+454B5049	3	Kanto Gyms	2	5	0	Janine	257	5	24
+454B5049	3	Kanto Gyms	2	6	0	Sabrina	258	6	24
+454B5049	3	Kanto Gyms	2	7	0	Blaine	259	7	24
+454B5049	3	Kanto Gyms	2	8	0	Blue	261	8	30
+454B5049	4	Elite 4 / Bosses	0	1	0	Will	245		30
+454B5049	4	Elite 4 / Bosses	0	2	0	Koga	247		30
+454B5049	4	Elite 4 / Bosses	0	3	0	Bruno	418		30
+454B5049	4	Elite 4 / Bosses	0	4	0	Karen	246		30
+454B5049	4	Elite 4 / Bosses	0	5	0	Lance	244		30
+454B5049	4	Elite 4 / Bosses	0	6	0	Red	260		30
+454B5049	4	Elite 4 / Bosses	0	7	0	Petrel	487		12
+454B5049	4	Elite 4 / Bosses	0	8	0	Archer	485		24
+45555043	1	Barry	1	1	0	Lab	851,852,850		0
+45555043	1	Barry	1	2	0	Route 203	248,249,247		3
+45555043	1	Barry	1	3	0	Hearthorne City	471,472,470		6
+45555043	1	Barry	1	4	0	Pastoria City	474,475,473		9
+45555043	1	Barry	1	5	0	Canalave City	477,478,476		12
+45555043	1	Barry	1	6	0	Victory Road	480,481,479		24
+45555043	2	Gym Leaders	2	1	0	Roark	246	1	6
+45555043	2	Gym Leaders	2	2	0	Gardenia	315	2	6
+45555043	2	Gym Leaders	2	3	0	Maylene	317	3	12
+45555043	2	Gym Leaders	2	4	0	Wake	316	4	12
+45555043	2	Gym Leaders	2	5	0	Fantina	318	5	18
+45555043	2	Gym Leaders	2	6	0	Byron	250	6	18
+45555043	2	Gym Leaders	2	7	0	Candice	319	7	24
+45555043	2	Gym Leaders	2	8	0	Volkner	320	8	24
+45555043	3	Elite 4	0	1	0	Aaron	261		30
+45555043	3	Elite 4	0	2	0	Bertha	262		30
+45555043	3	Elite 4	0	3	0	Flint	263		30
+45555043	3	Elite 4	0	4	0	Lucian	264		30
+45555043	3	Elite 4	0	5	0	Cynthia	267		30
+4F415249	1	Bianca	1	1	0	Lab	59,60,61		0
+4F415249	1	Bianca	1	2	0	Route 2	498,499,500		3
+4F415249	1	Bianca	1	3	0	After Burgh	507,508,509		6
+4F415249	1	Bianca	1	4	0	After Clay	491,492,493		12
+4F415249	1	Bianca	1	5	0	Pre Tubeline	494,495,496		18
+4F415249	2	Cheren	1	1	0	Lab	53,54,55		0
+4F415249	2	Cheren	1	2	0	Striaton City	287,288,289		3
+4F415249	2	Cheren	1	3	0	Route 3	56,57,58		6
+4F415249	2	Cheren	1	4	0	After Burgh	403,404,405		9
+4F415249	2	Cheren	1	5	0	After Elesa	90,91,92		12
+4F415249	2	Cheren	1	6	0	Route 7	539,540,541		24
+4F415249	2	Cheren	1	7	0	Route 10	588,589,590		30
+4F415249	3	N	1	1	0	Accumula Town	64		6
+4F415249	3	N	1	2	0	Nacrene City	65		12
+4F415249	3	N	1	3	0	Nimbasa City	89		18
+4F415249	3	N	1	4	0	Chargestone	218		24
+4F415249	3	N	1	5	0	N's Castle	587		30
+4F415249	4	Gym Leaders	2	1	1	Chili	11	1	0
+4F415249	4	Gym Leaders	2	1	2	Cress	13	1	0
+4F415249	4	Gym Leaders	2	1	3	Cilan	12	1	0
+4F415249	4	Gym Leaders	2	2	0	Lenora	21	2	6
+4F415249	4	Gym Leaders	2	3	0	Burgh	22	3	12
+4F415249	4	Gym Leaders	2	4	0	Elesa	23	4	12
+4F415249	4	Gym Leaders	2	5	0	Clay	24	5	12
+4F415249	4	Gym Leaders	2	6	0	Skyla	25	6	12
+4F415249	4	Gym Leaders	2	7	0	Brycen	131	7	18
+4F415249	4	Gym Leaders	2	8	0	Iris	132	8	18
+4F415249	5	Elite 4	0	1	0	Shauntal	228		24
+4F415249	5	Elite 4	0	2	0	Marshal	229		24
+4F415249	5	Elite 4	0	3	0	Grimsley	230		24
+4F415249	5	Elite 4	0	4	0	Caitlin	231		24
+4F415249	5	Elite 4	0	5	0	N	586		30
+4F415249	5	Elite 4	0	6	0	Ghetsis	232		30
+4F425249	1	Bianca	1	1	0	Lab	59,60,61		0
+4F425249	1	Bianca	1	2	0	Route 2	498,499,500		3
+4F425249	1	Bianca	1	3	0	After Burgh	507,508,509		6
+4F425249	1	Bianca	1	4	0	After Clay	491,492,493		12
+4F425249	1	Bianca	1	5	0	Pre Tubeline	494,495,496		18
+4F425249	2	Cheren	1	1	0	Lab	53,54,55		0
+4F425249	2	Cheren	1	2	0	Striaton City	287,288,289		3
+4F425249	2	Cheren	1	3	0	Route 3	56,57,58		6
+4F425249	2	Cheren	1	4	0	After Burgh	403,404,405		9
+4F425249	2	Cheren	1	5	0	After Elesa	90,91,92		12
+4F425249	2	Cheren	1	6	0	Route 7	539,540,541		24
+4F425249	2	Cheren	1	7	0	Route 10	588,589,590		30
+4F425249	3	N	1	1	0	Accumula Town	64		6
+4F425249	3	N	1	2	0	Nacrene City	65		12
+4F425249	3	N	1	3	0	Nimbasa City	89		18
+4F425249	3	N	1	4	0	Chargestone	218		24
+4F425249	3	N	1	5	0	N's Castle	587		30
+4F425249	4	Gym Leaders	2	1	1	Chili	11	1	0
+4F425249	4	Gym Leaders	2	1	2	Cress	13	1	0
+4F425249	4	Gym Leaders	2	1	3	Cilan	12	1	0
+4F425249	4	Gym Leaders	2	2	0	Lenora	21	2	6
+4F425249	4	Gym Leaders	2	3	0	Burgh	22	3	12
+4F425249	4	Gym Leaders	2	4	0	Elesa	23	4	12
+4F425249	4	Gym Leaders	2	5	0	Clay	24	5	12
+4F425249	4	Gym Leaders	2	6	0	Skyla	25	6	12
+4F425249	4	Gym Leaders	2	7	0	Brycen	131	7	18
+4F425249	4	Gym Leaders	2	8	0	Drayden	133	8	18
+4F425249	5	Elite 4	0	1	0	Shauntal	228		24
+4F425249	5	Elite 4	0	2	0	Marshal	229		24
+4F425249	5	Elite 4	0	3	0	Grimsley	230		24
+4F425249	5	Elite 4	0	4	0	Caitlin	231		24
+4F425249	5	Elite 4	0	5	0	N	587		30
+4F425249	5	Elite 4	0	6	0	Ghetsis	232		30
+4F455249	1	Hugh	1	1	0	Lab	161,162,163		0
+4F455249	1	Hugh	1	2	0	Floccesy Ranch	166,167,168		0
+4F455249	1	Hugh	1	3	0	Plasma Frigate	368,369,370		30
+4F455249	1	Hugh	1	4	0	Undella Town	378,379,380		12
+4F455249	1	Hugh	1	5	0	Victory Road	684,685,686		24
+4F455249	2	Gym Leaders	2	1	0	Cheren	156	1	6
+4F455249	2	Gym Leaders	2	2	0	Roxie	157	2	6
+4F455249	2	Gym Leaders	2	3	0	Burgh	154	3	6
+4F455249	2	Gym Leaders	2	4	0	Elesa	153	4	12
+4F455249	2	Gym Leaders	2	5	0	Clay	158	5	12
+4F455249	2	Gym Leaders	2	6	0	Skyla	155	6	18
+4F455249	2	Gym Leaders	2	7	0	Drayden	159	7	18
+4F455249	2	Gym Leaders	2	8	0	Marlon	160	8	24
+4F455249	3	Elite 4	0	1	0	Shauntal	38		24
+4F455249	3	Elite 4	0	2	0	Marshal	39		24
+4F455249	3	Elite 4	0	3	0	Grimsley	40		24
+4F455249	3	Elite 4	0	4	0	Caitlin	41		24
+4F455249	3	Elite 4	0	5	0	Iris	341		30
+4F455249	4	Team Plasma	0	1	0	Colres	344		24
+4F455249	4	Team Plasma	0	2	0	Ghetsis	345		24
