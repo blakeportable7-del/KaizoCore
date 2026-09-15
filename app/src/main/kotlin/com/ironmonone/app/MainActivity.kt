@@ -148,6 +148,7 @@ class MainActivity : ComponentActivity() {
         if (fromPad && event.keyCode in PAD_KEYS) {
             LibretroDroid.onKeyEvent(0, event.action, event.keyCode)
             NewRunCombo.track(event.action, event.keyCode)
+            SpriteMotion.key(event.action, event.keyCode)
             FleeOnB.handle(event.action, event.keyCode)
             return true
         }
@@ -163,6 +164,7 @@ class MainActivity : ComponentActivity() {
             KeyBindings.active[event.keyCode]?.let { mapped ->
                 LibretroDroid.onKeyEvent(0, event.action, mapped)
                 NewRunCombo.track(event.action, mapped)
+                SpriteMotion.key(event.action, mapped)
                 FleeOnB.handle(event.action, mapped)
                 return true
             }
@@ -188,6 +190,8 @@ class MainActivity : ComponentActivity() {
                     0, KeyEvent.ACTION_UP, if (old < 0) neg else pos)
                 if (new != 0) LibretroDroid.onKeyEvent(
                     0, KeyEvent.ACTION_DOWN, if (new < 0) neg else pos)
+                if (old != 0) SpriteMotion.key(KeyEvent.ACTION_UP, if (old < 0) neg else pos)
+                if (new != 0) SpriteMotion.key(KeyEvent.ACTION_DOWN, if (new < 0) neg else pos)
             }
             swap(hatX, nx, KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT)
             swap(hatY, ny, KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN)

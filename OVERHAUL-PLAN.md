@@ -385,6 +385,46 @@ keyboard stands in for the on-screen one, and a move's details open on a tap
 where the reference shows them on hover. Tested on real Black 2 and Platinum
 logs and a HeartGold log made by the bundled randomizer (HgssLogFixture).
 
+**Look and feel, 2026-09-15.** Blake, from his phone (FireRed, Nat. Dex):
+
+- Game-over popup: "so ugly and the text is all too small", "lots of wasted
+  space". It was a fixed 300dp card of five full-width rows, taller than a
+  portrait game picture, so FitInside shrank it to about 60% and its 8-unit
+  text landed near 5. It now takes the picture's width, dims the picture
+  behind it, and lays the actions two to a row: a red (loss) or gold (win)
+  header with the lead's sprite, the title in the pixel face, the attempt and
+  the rest of the team (fainted in grey); the quote at 13; tiles at 12 with
+  Continue filled. Same words and actions as before.
+- Move and info popups (InfoSheet.kt): at most 440dp wide, the name in the
+  pixel face with its type and category beside it and the X on the same row;
+  PP, power, accuracy and contact as a strip of large figures; text 12 to 16.
+- Status: the reference's status images (TrackerScreen STATUS ICON, 16x8 over
+  the icon's top right) replace the "[PSN]" after the name, FNT at 0 HP.
+- Landscape: the chip strip over the game shows only while the FILE toggle
+  is on ("I want the top row of buttons to hide"). Landscape has no app bar,
+  so that FILE is a chip in the tracker's header beside the collapse arrow
+  (HIDE while the strip is up); without it the strip, and SAVE, LOAD and
+  STATES with it, could not be reached in landscape at all.
+- Badges: every badge set the app shipped was a placeholder (numbered
+  circles). FRLG and RSE now come from Ironmon-Tracker's images/badges, the
+  DS sets from NDS-Ironmon-Tracker's images/icons, and GSC (missing before)
+  from the Gen 2 tracker's 01-16, renamed to GSC_badge1-8 and GSC_K_badge1-8.
+- Animated sprites: Ironmon-Tracker's Walking Pals icon set on Gen 1 to 3
+  (Blake: "add the gen 1-gen 3 animations"). SpriteData.WalkingPals was
+  extracted by running the Lua (tools/trainer-data/convert_walking_pals.py:
+  387 species, 1,224 sheets, 11 MB). Idle; walk while a direction is held
+  outside battle, facing it (Input.getSpriteFacingDirection); sleep when
+  SLP or after 55 seconds without input; faint once at 0 HP. Two options in
+  the tracker setup, both on. The sprites are the PMD Sprite Collab's, CC
+  BY-NC 4.0: credited on the About screen; KaizoCore is free.
+
+Verified on the emulator (Emerald and HeartGold demos): both popups, the
+move popup, the animation on both cards (frames differ between captures and
+match the PMD sheets, not the old icons), the status image, and the hidden
+strip in landscape. Not seen live: the badge row outside battle (the art
+files are byte-identical to the references), walking and sleeping (driven
+by input and a timer; the frame and facing rules are unit-tested).
+
 **The game-over popup latch, 2026-09-10.** Blake, Black 2: the popup
 "popped up and then disappeared". It was drawn for as long as the tracker's
 live outcome was non-null, and a loss whites out to a Pokemon Center that heals

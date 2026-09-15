@@ -224,6 +224,14 @@ object PcAssets {
             "badges/${set}_badge$index${if (earned) "" else "_OFF"}.png",
         )
 
+    /**
+     * Status condition art, the reference's images/status (BRN, FNT, FRZ, PAR,
+     * PSN, SLP), drawn 16x8 over the Pokemon icon (Drawing.drawStatusIcon).
+     * Bad poison is PSN, as the reference's StatusCodeMap has it.
+     */
+    fun status(context: android.content.Context, code: String): ImageBitmap? =
+        code.takeIf { it.isNotBlank() }?.let { load(context, "status/${if (it == "TOX") "PSN" else it}.png") }
+
     /** A full-screen scene from assets/backgrounds. */
     fun background(context: android.content.Context, name: String): ImageBitmap? =
         load(context, "backgrounds/$name.png")
@@ -480,6 +488,10 @@ fun PcHeadBlock(
     /** TrackerScreen.lua:76: tapping the type icons opens TypeDefensesScreen for this Pokemon. */
     onTypesTap: (() -> Unit)? = null,
     sprite: ImageBitmap?,
+    /** BRN, FNT, FRZ, PAR, PSN or SLP, drawn as the reference's status image over the icon; empty for none. */
+    status: String = "",
+    /** Gen 1-3: the species id the Walking Pals icon set is keyed by; 0 draws the still sprite. */
+    iconSpecies: Int = 0,
     belowHead: (@Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit)? = null,
     statColumn: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit,
 ) {
@@ -487,7 +499,23 @@ fun PcHeadBlock(
     Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
         Column(Modifier.weight(1f)) {
             Row(Modifier.padding(2.rp)) {
-                PcSprite(sprite)
+                Box {
+                    val animated = iconSpecies in 1..411 && TrackerOptions.animatedSprites &&
+                        WalkingPalsIcon(iconSpecies, status, 1.rp, PcRef.ICON.rp)
+                    if (!animated) PcSprite(sprite)
+                    // TrackerScreen.lua, STATUS ICON: 16x8 at the card's x + 30 - 16 + 1, y + 1,
+                    // over the icon's top right (the icon sits 2 in from the card here).
+                    if (status.isNotEmpty()) {
+                        val ctx = androidx.compose.ui.platform.LocalContext.current
+                        remember(status) { PcAssets.status(ctx, status) }?.let { art ->
+                            androidx.compose.foundation.Image(
+                                bitmap = art, contentDescription = status,
+                                modifier = Modifier.padding(start = 13.rp).width(16.rp).height(8.rp),
+                                filterQuality = androidx.compose.ui.graphics.FilterQuality.None,
+                            )
+                        }
+                    }
+                }
                 Column(Modifier.padding(start = 2.rp)) {
                     PixText(
                         name, PcRef.FONT, Pc.Text,
@@ -1063,34 +1091,18 @@ fun PcInfoDialog(
     body: String?,
     onDismiss: () -> Unit,
 ) {
-    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
-        Column(
-            // Capped and scrollable: on a landscape phone these dialogs grew
-            // past the window and pushed CLOSE off the bottom, leaving no
-            // visible way out.
-            Modifier.fillMaxWidth().heightIn(max = 420.dp)
-                .background(Pc.Ground).border(1.dp, Pc.Border)
-                .verticalScroll(rememberScrollState())
-                .padding(14.dp)
-        ) {
-            PixText(title, 11, Pc.Gold)
-            if (!subtitle.isNullOrBlank()) {
-                Spacer(Modifier.height(5.dp))
-                PixText(subtitle, 8, Pc.Text)
-            }
+    // The shared compact card (InfoSheet, 2026-09-15): capped height and
+    // scrollable, as before, so a long description never pushes the X off.
+    InfoSheet(title, onDismiss) {
+        if (!subtitle.isNullOrBlank()) {
+            PixText(subtitle, 12, Pc.Text, wrap = true)
             Spacer(Modifier.height(8.dp))
-            Box(Modifier.fillMaxWidth().height(1.dp).background(Pc.Border))
-            Spacer(Modifier.height(8.dp))
-            PixText(
-                body?.takeIf { it.isNotBlank() } ?: "No description for this one.",
-                8, if (body.isNullOrBlank()) Pc.Dim else Pc.Text,
-                wrap = true,
-            )
-            Spacer(Modifier.height(12.dp))
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                PcSmallButton("CLOSE") { onDismiss() }
-            }
         }
+        InfoParagraph(
+            null,
+            body?.takeIf { it.isNotBlank() } ?: "No description for this one.",
+            if (body.isNullOrBlank()) Pc.Dim else Pc.Text,
+        )
     }
 }
 

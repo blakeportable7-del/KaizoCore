@@ -103,8 +103,8 @@ private fun NdsPartyCard(
     }
     PcCard {
         PcHeadBlock(
-            name = p.speciesName + (if (m.shiny) " *" else "") +
-                (if (p.statusCondition.isNotEmpty()) "  [" + p.statusCondition + "]" else ""),
+            name = p.speciesName + (if (m.shiny) " *" else ""),
+            status = if (m.curHp <= 0) "FNT" else p.statusCondition,
             level = m.level, curHp = m.curHp, maxHp = m.maxHp,
             typeChips = typeChipsOf(p),
             onTypesTap = p.info?.let { i -> onTypeDefenses?.let { cb -> { cb(p.speciesName, i.type1, i.type2) } } },
@@ -158,8 +158,8 @@ private fun NdsEnemyCard(
     }
     PcCard {
         PcHeadBlock(
-            name = e.speciesName +
-                (if (e.statusCondition.isNotEmpty()) "  [" + e.statusCondition + "]" else ""),
+            name = e.speciesName,
+            status = if (e.mon.curHp <= 0) "FNT" else e.statusCondition,
             level = e.mon.level,
             curHp = e.mon.curHp, maxHp = e.mon.maxHp,
             typeChips = typeChipsOf(e),

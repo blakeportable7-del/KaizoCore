@@ -83,8 +83,8 @@ private fun PartyCard(
     val m = p.mon
     PcCard {
         PcHeadBlock(
-            name = p.speciesName + (if (m.shiny) " *" else "") +
-                (if (p.statusCondition.isNotEmpty()) "  [" + p.statusCondition + "]" else ""),
+            name = p.speciesName + (if (m.shiny) " *" else ""),
+            status = if (m.curHp <= 0) "FNT" else p.statusCondition,
             level = m.level, curHp = m.curHp, maxHp = m.maxHp,
             typeChips = listOfNotNull(
                 p.base?.type1?.let { Gen3Types.name(it) to pcTypeColor(it) },
@@ -97,6 +97,7 @@ private fun PartyCard(
             onAbilityTap = onAbilityInfo?.let { cb -> { cb(p.abilityName) } },
             onNameTap = onNameInfo,
             sprite = spriteFor(m.species),
+            iconSpecies = m.species,
             // Only the lead carries the Heals strip: the number is a share of
             // the lead's max HP, so repeating it under every party member would
             // print the same percentage against six different Pokemon.
@@ -156,8 +157,8 @@ private fun EnemyCard(
 ) {
     PcCard {
         PcHeadBlock(
-            name = e.speciesName +
-                (if (e.statusCondition.isNotEmpty()) "  [" + e.statusCondition + "]" else ""),
+            name = e.speciesName,
+            status = if (e.curHp <= 0) "FNT" else e.statusCondition,
             level = e.level, curHp = e.curHp, maxHp = e.maxHp,
             encounterLine =
                 if (lastSeenLevel != null) "Last seen Lv.$lastSeenLevel"
@@ -175,6 +176,7 @@ private fun EnemyCard(
             abilityLine = if (revealedAbility != null) ""
                 else e.abilityGuess.substringAfter(" / ", ""),
             sprite = spriteFor(e.species),
+            iconSpecies = e.species,
             // The box under the card: how often this has been seen, and for a
             // trainer the row of pokeballs showing how many they have left.
             belowHead = {
@@ -421,6 +423,8 @@ fun TrackerPanel(
                 //
                 // In battle it opens on the ENEMY, matching the reference's
                 // "Auto swap to enemy" default.
+                // Battle.inActiveBattle: the animated icons do not walk in battle.
+                androidx.compose.runtime.SideEffect { SpriteMotion.inBattle = state.inBattle }
                 var viewingOwn by remember(state.inBattle) {
                     mutableStateOf(!state.inBattle)
                 }

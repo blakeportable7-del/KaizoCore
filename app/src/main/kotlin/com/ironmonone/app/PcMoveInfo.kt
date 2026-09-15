@@ -1,21 +1,15 @@
 package com.ironmonone.app
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 /**
@@ -44,81 +38,73 @@ data class MoveDetail(
 )
 
 /**
- * The move info screen: a clone of InfoScreen.drawMoveInfoScreen
- * (InfoScreen.lua:861), in the reference's order - name, type, category,
- * contact, PP, power, accuracy, priority only when it is not 0, then the
- * "Move summary" box - with one line the reference does not have, the matchup
- * against the current opponent, which Blake asked for on 2026-09-05.
+ * The move info screen: InfoScreen.drawMoveInfoScreen (InfoScreen.lua:861)'s
+ * facts - name, type, category, contact, PP, power, accuracy, priority only
+ * when it is not 0, the "Move summary" - plus the type's matchups, which Blake
+ * asked for on 2026-09-05. Laid out 2026-09-15 as a compact card (InfoCard):
+ * the name with its type and category in the header, the numbers as a strip
+ * of large figures, then the matchups and the summary at a readable size.
  *
  * Split from the Dialog wrapper so the render harness can draw the CONTENT:
  * a Dialog is its own window and never appears in a captured root.
  */
 @Composable
 fun PcMoveInfoContent(d: MoveDetail, onDismiss: () -> Unit) {
-    Column(
-        Modifier.fillMaxWidth().heightIn(max = 460.dp)
-            .background(Pc.Ground).border(1.dp, Pc.Border)
-            .verticalScroll(rememberScrollState())
-            .padding(14.dp)
+    val category = when (d.category) { "PHY" -> "PHYSICAL"; "SPE" -> "SPECIAL"; "STA" -> "STATUS"; else -> null }
+    InfoCard(
+        title = d.name.uppercase(), onDismiss = onDismiss,
+        headerExtra = {
+            if (d.typeName != null) {
+                InfoTypeTag(d.typeName, d.typeId?.let { pcTypeColor(it) } ?: pcTypeColorByName(d.typeName))
+                Spacer(Modifier.width(6.dp))
+            }
+            if (category != null) InfoTag(category, when (d.category) {
+                "PHY" -> Color(0xFFF08030); "SPE" -> Color(0xFF6890F0); else -> Pc.Dim
+            })
+        },
     ) {
-        // MOVE NAME, as the reference's header: upper case.
-        PixText(d.name.uppercase(), 11, Pc.Gold)
-        Spacer(Modifier.height(6.dp))
-        // TYPE ICON
-        if (d.typeName != null) {
-            PcTypeChip(d.typeName, d.typeId?.let { pcTypeColor(it) } ?: pcTypeColorByName(d.typeName))
-            Spacer(Modifier.height(6.dp))
-        }
-        Fact("Category", when (d.category) {
-            "PHY" -> "Physical"; "SPE" -> "Special"; "STA" -> "Status"; else -> "-"
-        })
-        Fact("Contact", when (d.contact) { true -> "Yes"; false -> "No"; null -> "-" })
-        Fact("PP", d.ppMax?.let { "${d.pp}/$it" } ?: "${d.pp}")
-        Fact("Power", d.power?.takeIf { it > 0 }?.toString() ?: "-")
-        Fact("Accuracy", d.acc?.takeIf { it > 0 }?.let { "$it%" } ?: "-")
-        // PRIORITY: only takes a line when it is helpful (exists and non-zero).
-        d.priority?.takeIf { it != 0 }?.let {
-            Fact("Priority", if (it > 0) "+$it" else "$it")
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            InfoStat("PP", d.ppMax?.let { "${d.pp}/$it" } ?: "${d.pp}")
+            InfoStat("POWER", d.power?.takeIf { it > 0 }?.toString() ?: "-")
+            InfoStat("ACCURACY", d.acc?.takeIf { it > 0 }?.let { "$it%" } ?: "-")
+            InfoStat("CONTACT", when (d.contact) { true -> "Yes"; false -> "No"; null -> "-" })
+            // PRIORITY: only takes a place when it is helpful (exists and non-zero).
+            d.priority?.takeIf { it != 0 }?.let { InfoStat("PRIORITY", if (it > 0) "+$it" else "$it", Pc.Gold) }
         }
         // The type chart for this move's type, in general. No opponent here.
         d.typeChart?.let { g ->
-            Spacer(Modifier.height(6.dp))
-            if (g.strongAgainst.isNotEmpty())
-                PixText("Strong against: " + g.strongAgainst.joinToString(", "), 8, Pc.Text, wrap = true)
-            if (g.resistedBy.isNotEmpty())
-                PixText("Resisted by: " + g.resistedBy.joinToString(", "), 8, Pc.Dim, wrap = true)
-            if (g.noEffectOn.isNotEmpty())
-                PixText("No effect on: " + g.noEffectOn.joinToString(", "), 8, Pc.Dim, wrap = true)
+            Spacer(Modifier.height(10.dp))
+            if (g.strongAgainst.isNotEmpty()) Matchup("Strong against", g.strongAgainst, Pc.Positive)
+            if (g.resistedBy.isNotEmpty()) Matchup("Resisted by", g.resistedBy, Pc.Gold)
+            if (g.noEffectOn.isNotEmpty()) Matchup("No effect on", g.noEffectOn, Pc.Negative)
         }
-        Spacer(Modifier.height(8.dp))
-        Box(Modifier.fillMaxWidth().height(1.dp).background(Pc.Border))
-        Spacer(Modifier.height(6.dp))
-        // SUMMARY box
-        PixText("Move summary:", 8, Pc.Gold)
-        Spacer(Modifier.height(4.dp))
-        PixText(
+        Spacer(Modifier.height(10.dp))
+        InfoParagraph(
+            "Move summary",
             d.summary?.takeIf { it.isNotBlank() } ?: "No description for this one.",
-            8, if (d.summary.isNullOrBlank()) Pc.Dim else Pc.Text, wrap = true,
+            if (d.summary.isNullOrBlank()) Pc.Dim else Pc.Text,
         )
-        Spacer(Modifier.height(12.dp))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-            PcSmallButton("CLOSE") { onDismiss() }
-        }
     }
 }
 
-/** One "Label:   value" line, the reference's two-column layout (offsetColumnX). */
+/** "Strong against  Fire, Ground, Rock": the label in its colour, the types after it. */
 @Composable
-private fun Fact(label: String, value: String) {
-    Row(Modifier.fillMaxWidth().padding(vertical = 1.dp)) {
-        Box(Modifier.width(72.dp)) { PixText("$label:", 8, Pc.Text) }
-        PixText(value, 8, Pc.Text)
+private fun Matchup(label: String, types: List<String>, color: Color) {
+    Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
+        PixText(label, 12, color, Modifier.width(118.dp))
+        PixText(types.joinToString(", "), 12, Pc.Text, Modifier.weight(1f), wrap = true)
     }
 }
 
 @Composable
 fun PcMoveInfoDialog(d: MoveDetail, onDismiss: () -> Unit) {
-    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
-        PcMoveInfoContent(d, onDismiss)
+    androidx.compose.ui.window.Dialog(
+        onDismissRequest = onDismiss,
+        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+    ) {
+        androidx.compose.foundation.layout.Box(
+            Modifier.fillMaxWidth().padding(16.dp),
+            contentAlignment = androidx.compose.ui.Alignment.Center,
+        ) { PcMoveInfoContent(d, onDismiss) }
     }
 }

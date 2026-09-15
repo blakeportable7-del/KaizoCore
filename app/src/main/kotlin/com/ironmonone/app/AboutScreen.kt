@@ -337,6 +337,21 @@ fun AboutScreen(modifier: Modifier = Modifier) {
             modifier = Modifier.padding(top = 4.dp).clickable { open(TRACKER_URL) },
         )
 
+        Spacer(Modifier.height(16.dp))
+
+        Text(
+            "The animated Pok\u00e9mon (the Walking Pals icon set) are sprites from the PMD Sprite " +
+                "Collab, by its artists, used under the Creative Commons BY-NC 4.0 licence.",
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        Text(
+            "https://sprites.pmdcollab.org",
+            style = MaterialTheme.typography.bodySmall,
+            color = Shell.linkOnPaper,
+            textDecoration = TextDecoration.Underline,
+            modifier = Modifier.padding(top = 4.dp).clickable { open("https://sprites.pmdcollab.org") },
+        )
+
         Spacer(Modifier.height(20.dp))
         ShellDivider()
         Spacer(Modifier.height(20.dp))

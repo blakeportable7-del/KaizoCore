@@ -88,6 +88,8 @@ fun TrackerGearDialog(
             GearToggle("Show physical special icons", TrackerOptions.showCategoryIcons) { TrackerOptions.showCategoryIcons = it; TrackerOptions.save() }
             GearToggle("Show heals as whole number", TrackerOptions.healsWhole) { TrackerOptions.healsWhole = it; TrackerOptions.save() }
             GearToggle("Show team view", TrackerOptions.showTeamView) { TrackerOptions.showTeamView = it; TrackerOptions.save() }
+            GearToggle("Animated Pok\u00e9mon (Walking Pals)", TrackerOptions.animatedSprites) { TrackerOptions.animatedSprites = it; TrackerOptions.save() }
+            if (TrackerOptions.animatedSprites) GearToggle("Allow sprites to walk", TrackerOptions.spritesWalk) { TrackerOptions.spritesWalk = it; TrackerOptions.save() }
             if (showTimerToggle) GearToggle("Show timer", TrackerOptions.showTimer) { TrackerOptions.showTimer = it; TrackerOptions.save() }
             if (showBadgeOptions) {
                 GearToggle("Show both badge sets", TrackerOptions.showBothBadgeSets) { TrackerOptions.showBothBadgeSets = it; TrackerOptions.save() }

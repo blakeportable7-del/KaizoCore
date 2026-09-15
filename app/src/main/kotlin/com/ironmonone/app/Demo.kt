@@ -69,6 +69,8 @@ object Demo {
         val eb = t.baseStats(82)
         val enemy = EnemyInfo(
             species = 82, speciesName = t.speciesName(82), level = 22, curHp = 44, maxHp = 63,
+            // Paralysed, so the staged card shows the status image over the icon.
+            statusCondition = "PAR",
             type1 = eb?.type1 ?: 13, type2 = eb?.type2 ?: 8, base = eb,
             movesSeen = listOf(t.moveName(49), t.moveName(86)), moveRows = t.moveRowsOf(magneton).take(2),
             abilityGuess = eb?.let { b -> listOf(b.ability1, b.ability2).filter { it != 0 }.joinToString("/") { t.abilityName(it) } } ?: "?",

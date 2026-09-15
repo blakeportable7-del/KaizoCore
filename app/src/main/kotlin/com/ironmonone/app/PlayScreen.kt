@@ -1431,6 +1431,9 @@ fun PlayScreen(
                                   dsTopOnly = !dsTopOnly
                               }
                           }
+                          // Landscape has no app bar, so its FILE lives here: it shows and hides the
+                          // row of SAVE / LOAD / STATES chips over the game (hidden by default).
+                          OverlayChip(if (menuOpen) "HIDE" else "FILE") { menuOpen = !menuOpen }
                           OverlayChip("▶") { trackerOpen = false }
                       }
                   }
@@ -1913,7 +1916,7 @@ fun PlayScreen(
                 // Bounded and scrollable: the strip is as wide as the game
                 // column, and adding MENU pushed it past that edge.
                 if (editingLayout) layoutToolbar(Modifier.align(Alignment.TopStart))
-                if (!streamClean && !editingLayout) Row(
+                if (menuOpen && !streamClean && !editingLayout) Row(
                     Modifier.align(Alignment.TopStart).fillMaxWidth().systemGestureExclusion().padding(6.dp)
                         .horizontalScroll(rememberScrollState())
                         .alpha(chipAlpha),
@@ -2419,11 +2422,13 @@ private fun corePress(keyCode: Int) {
     heldCoreKeys.add(keyCode)
     com.swordfish.libretrodroid.LibretroDroid.onKeyEvent(0, KeyEvent.ACTION_DOWN, keyCode)
     NewRunCombo.track(KeyEvent.ACTION_DOWN, keyCode)
+    SpriteMotion.key(KeyEvent.ACTION_DOWN, keyCode)
 }
 private fun coreRelease(keyCode: Int) {
     heldCoreKeys.remove(keyCode)
     com.swordfish.libretrodroid.LibretroDroid.onKeyEvent(0, KeyEvent.ACTION_UP, keyCode)
     NewRunCombo.track(KeyEvent.ACTION_UP, keyCode)
+    SpriteMotion.key(KeyEvent.ACTION_UP, keyCode)
 }
 
 /** GBA-hardware-flavoured key: framed square/pill, pixel label, hold semantics. */
