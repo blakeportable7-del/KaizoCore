@@ -9,6 +9,10 @@ import kotlin.test.assertTrue
  * every one of them: everything fits, the pad never goes below its floor, and
  * the tracker gets its minimum unless the game is already at ITS floor.
  *
+ * Since 2026-09-15 the GAME is what yields to a short screen, not the pad, so
+ * the two cases below that used to read "the pad shrank" now read "the buttons
+ * stayed and the game gave up the pixels".
+ *
  * Heights are the PLAY AREA (between the top bar and the tab bar), which is
  * what the screen measures, not the display.
  */
@@ -48,26 +52,32 @@ class PortraitBudgetTest {
     }
 
     @Test
-    fun `Blake's phone keeps buttons near full size`() {
+    fun `Blake's phone keeps buttons at full size`() {
         // Play area estimated from his portrait screenshot: ~1540px at 2.625.
+        // Under the old rule this came out at padScale 0.87, a 48dp button,
+        // which is the screenshot he called unplayable.
         val p = PortraitBudget.plan(1080, 1540, 2.625f, false)
-        assertEquals(1f, p.gameFraction, "the game should not have to shrink: $p")
-        assertTrue(p.padScale > 0.85f, "buttons too small: $p")
+        assertEquals(1f, p.padScale, "buttons must not shrink on his phone: $p")
+        // The game pays for it, and barely: about a tenth of its width.
+        assertTrue(p.gameFraction > 0.85f, "game gave up too much: $p")
     }
 
     @Test
-    fun `a short phone shrinks the pad to its floor and then the game`() {
+    fun `a short phone keeps the buttons and shrinks the game to its floor`() {
         val p = check(1080, 1280)          // 1080x1700 minus chrome
-        assertEquals(PortraitBudget.PAD_FLOOR, p.padScale)
+        assertEquals(1f, p.padScale, "the pad no longer yields to height: $p")
         assertTrue(p.gameFraction < 1f, "game did not yield: $p")
-        assertTrue(p.gameFraction >= PortraitBudget.GAME_MIN_FRACTION)
+        assertEquals(PortraitBudget.GAME_MIN_FRACTION, p.gameFraction)
     }
 
     @Test
     fun `the open FILE menu is charged to the budget`() {
+        // It comes off the GAME now, not the pad, so assert on the piece that
+        // actually pays: a test on padScale here would pass with 1f == 1f and
+        // prove nothing at all.
         val closed = check(1080, 1500)
         val open = check(1080, 1500, menu = true)
-        assertTrue(open.padScale <= closed.padScale)
+        assertTrue(open.gameFraction < closed.gameFraction, "menu was free: $open vs $closed")
     }
 
     @Test

@@ -11,10 +11,15 @@ package com.ironmonone.app
  * fell off the screen with it (Blake's phone, 2026-09-05; reproduced at
  * 1080x1700). Something has to yield, in a fixed order:
  *
- *  1. The PAD scales down, to a floor of [PAD_FLOOR]. Buttons at 55% are
- *     still 31dp; below that they stop being buttons.
- *  2. If the tracker still cannot have [TRACKER_MIN_DP], the GAME shrinks,
- *     centred, to a floor of [GAME_MIN_FRACTION] of the width.
+ *  1. The GAME shrinks, centred, to a floor of [GAME_MIN_FRACTION] of the
+ *     width, until the tracker can have [TRACKER_MIN_DP].
+ *  2. The PAD only ever yields to a NARROW screen, down to [PAD_FLOOR].
+ *
+ * The pad used to yield first, which is backwards: on Blake's phone that put
+ * the buttons at 87% while the game kept every pixel, and the buttons are the
+ * part you hold (2026-09-15, "the game is unplayable in portrait, buttons are
+ * too small etc"). A game box a tenth narrower is a trade worth making for
+ * full-size buttons; a 48dp button is not.
  *
  * A Fold's cover screen is the opposite shape, tall and narrow, and the same
  * arithmetic gives it a small game box, a large tracker and a full-size pad.
@@ -51,12 +56,12 @@ object PortraitBudget {
         val trackerMin = TRACKER_MIN_DP * density
         val padNatural = PAD_NATURAL_DP * density
 
-        // 1. The pad yields first - to the height, and to a narrow screen.
-        val byHeight = (heightPx - gamePx(widthPx, 1f, density) - menu - trackerMin) / padNatural
-        val byWidth = widthPx / (PAD_WIDTH_DP * density)
-        val padScale = minOf(byHeight, byWidth).coerceIn(PAD_FLOOR, 1f)
+        // 1. The pad keeps its designed size. It yields to the WIDTH only, so
+        // a narrow screen fits the band instead of clipping its middle column;
+        // height is not its problem any more.
+        val padScale = (widthPx / (PAD_WIDTH_DP * density)).coerceIn(PAD_FLOOR, 1f)
 
-        // 2. Then, only if the tracker still cannot have its minimum, the game.
+        // 2. The game is what yields, until the tracker has its minimum.
         val roomForGame = heightPx - menu - trackerMin - padNatural * padScale
         val gameFraction =
             if (roomForGame >= gamePx(widthPx, 1f, density)) 1f

@@ -385,6 +385,41 @@ keyboard stands in for the on-screen one, and a move's details open on a tap
 where the reference shows them on hover. Tested on real Black 2 and Platinum
 logs and a HeartGold log made by the bundled randomizer (HgssLogFixture).
 
+**Holding B beside a direction, 2026-09-15.** Blake: "I can't hold B on gen 3
+games, holding b is how the player stops while riding the bike", then the real
+diagnosis: "it doesn't hold while you're holding down the directional pad".
+
+- PointerEvent.type is the type of the WHOLE event, not of the node's own
+  pointer. pressHold read it in a when, so ANY finger's release ran the
+  Release branch and lifted a button whose finger had never moved. Two
+  fingers on the pad were one gesture as far as each button was concerned.
+- It is awaitEachGesture + awaitFirstDown + waitForUpOrCancellation now: one
+  gesture is one finger on THIS button. waitForUpOrCancellation still returns
+  on a consumed or cancelled gesture, so the old defect that guard was written
+  for (a core key latched DOWN, the character walking forever) stays fixed.
+- Proved with two real pointers, because adb shell input is single-pointer and
+  cannot see this bug at all: sendevent protocol B, two slots, with a probe
+  logging heldCoreKeys. DOWN 21 [21], DOWN 97 [97,21], UP 97 [21], UP 21 [].
+  The old code gave [] on that third line.
+- The emulator exposes ELEVEN virtio_input_multi_touch nodes that all claim
+  TOUCHSCREEN and only /dev/input/event2 reaches the app. Sweep for it; the
+  highest-numbered one is a stylus node and swallows everything silently.
+
+**Portrait is the pad's screen, 2026-09-15.** Blake: "the game is unplayable in
+portrait, buttons are too small etc, the tracker should be below the buttons".
+
+- Order is game, pad, tracker. The pad sits under the game where the thumbs
+  already are and the TRACKER takes the leftover height, scrolled. The DS
+  panel's 300dp cap is gone with it: that cap existed so the pad below it
+  stayed reachable, and the pad is above it now.
+- PortraitBudget yields the GAME first, not the pad. The old order put the
+  buttons at 87% on his phone while the game kept every pixel, which is
+  backwards: a game box a tenth narrower is worth it, a 48dp button is not.
+  The pad still scales to a NARROW screen (a Fold cover) down to PAD_FLOOR.
+- The tests changed with the rule rather than being loosened; the FILE menu
+  case now asserts on gameFraction, since a padScale assertion there would
+  pass with 1f == 1f and prove nothing.
+
 **Repel usage, 2026-09-15.** Blake: "need to track when using repel just like
 the pc tracker". Ironmon-Tracker's Program.ActiveRepel and the DS tracker's
 RepelDrawer, cloned.

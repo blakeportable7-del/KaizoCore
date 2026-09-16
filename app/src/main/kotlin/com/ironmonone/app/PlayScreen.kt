@@ -41,13 +41,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.boundsInWindow
@@ -1973,14 +1975,57 @@ fun PlayScreen(
             // drops down when opened, so nothing sits between game and tracker.
             if (menuOpen) { FileMenu() }
 
+            // Blake, 2026-09-15: "the game is unplayable in portrait, buttons
+            // are too small etc, the tracker should be below the buttons". So
+            // the order is game, pad, tracker: the buttons sit under the game
+            // where the thumbs already are, and the TRACKER is the piece that
+            // takes whatever height is left over.
+            if (streamClean || !session.tracked) Spacer(Modifier.weight(1f))
+
+            if (streamClean) {
+                // Capture layout: no pad, no notice.
+            } else if (!showPad && !editingLayout) {
+                // Tappable, not just a notice: detection counts any paired
+                // keyboard as a controller, so this was a dead end with no way
+                // back to touch controls.
+                Column(
+                    Modifier.fillMaxWidth().padding(14.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(
+                        "CONTROLLER CONNECTED — PAD HIDDEN",
+                        fontFamily = com.ironmonone.app.gen3.Gen3.PixelFont,
+                        fontSize = 9.sp,
+                        color = Shell.hintOnNight,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    com.ironmonone.app.gen3.Gen3Button("SHOW PAD ANYWAY") {
+                        padForced = true
+                        store.setPadForced(true)
+                    }
+                }
+            } else {
+                if (editingLayout) layoutToolbar(Modifier)
+                // The band is the pad area the layout's fractions refer to:
+                // the designed 192dp, shrunk by the portrait budget.
+                Box(Modifier.fillMaxWidth().height((PortraitBudget.PAD_NATURAL_DP * budget.padScale).dp)) {
+                    FreePad(
+                        layout = padLayout, onB = { if (wildBattleNow) flee() },
+                        translucent = false, skin = padSkin, baseScale = budget.padScale,
+                        editing = editingLayout, selected = selectedElement,
+                        onSelect = { selectedElement = it }, onEdit = { padLayout = it },
+                    )
+                }
+            }
             if (streamClean || !session.tracked) {
-                // Untracked, or the capture layout: nothing but the game.
-                Spacer(Modifier.weight(1f))
+                // Nothing here: the weighted spacer that holds the pad at the
+                // bottom is now ABOVE the pad, because the pad comes first.
             } else if (dsScreens) {
-                // Bounded: a full party of six is taller than the screen, and the
-                // pad must stay reachable without scrolling past it.
+                // Whatever height is left under the pad, scrolled: a full
+                // party of six is taller than any phone screen.
                 Box(
-                    Modifier.heightIn(max = 300.dp)
+                    Modifier.weight(1f)
                         .verticalScroll(rememberScrollState())
                 ) {
                     NdsTrackerPanel(
@@ -2065,42 +2110,6 @@ fun PlayScreen(
                 coverage = coverage,
             ) }
 
-            if (streamClean) {
-                // Capture layout: no pad, no notice.
-            } else if (!showPad && !editingLayout) {
-                // Tappable, not just a notice: detection counts any paired
-                // keyboard as a controller, so this was a dead end with no way
-                // back to touch controls.
-                Column(
-                    Modifier.fillMaxWidth().padding(14.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Text(
-                        "CONTROLLER CONNECTED — PAD HIDDEN",
-                        fontFamily = com.ironmonone.app.gen3.Gen3.PixelFont,
-                        fontSize = 9.sp,
-                        color = Shell.hintOnNight,
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    com.ironmonone.app.gen3.Gen3Button("SHOW PAD ANYWAY") {
-                        padForced = true
-                        store.setPadForced(true)
-                    }
-                }
-            } else {
-                if (editingLayout) layoutToolbar(Modifier)
-                // The band is the pad area the layout's fractions refer to:
-                // the designed 192dp, shrunk by the portrait budget.
-                Box(Modifier.fillMaxWidth().height((PortraitBudget.PAD_NATURAL_DP * budget.padScale).dp)) {
-                    FreePad(
-                        layout = padLayout, onB = { if (wildBattleNow) flee() },
-                        translucent = false, skin = padSkin, baseScale = budget.padScale,
-                        editing = editingLayout, selected = selectedElement,
-                        onSelect = { selectedElement = it }, onEdit = { padLayout = it },
-                    )
-                }
-            }
         }
       }
 
@@ -2724,25 +2733,27 @@ private fun OverlayChip(label: String, onClick: () -> Unit) {
     }
 }
 
-/** Press-and-hold semantics for a game button: down on touch, up on release. */
+/**
+ * Press-and-hold semantics for a game button: down on touch, up on release.
+ *
+ * One gesture is ONE finger on THIS button, and that is the whole point.
+ * PointerEvent.type is the type of the WHOLE event, not of this node's own
+ * pointer, so the old loop lifted this button whenever any other finger was
+ * released: B could not be held while a direction was, and holding B is how
+ * the player brakes the bike in Gen 3 (Blake, 2026-09-15). awaitEachGesture
+ * follows only the pointer that went down here, and waitForUpOrCancellation
+ * returns on a consumed or cancelled gesture as well as on the release, so a
+ * core key is still never left latched DOWN with the character walking on.
+ */
 private fun Modifier.pressHold(onDown: () -> Unit, onUp: () -> Unit): Modifier =
     this.pointerInput(Unit) {
-        awaitPointerEventScope {
-            var held = false
-            while (true) {
-                val event = awaitPointerEvent()
-                when (event.type) {
-                    PointerEventType.Press -> { held = true; onDown() }
-                    PointerEventType.Release -> { if (held) onUp(); held = false }
-                    else -> {
-                        // A consumed or cancelled gesture never delivers
-                        // Release; without this the core key stayed latched
-                        // DOWN and the character walked forever.
-                        if (held && event.changes.all { it.isConsumed }) {
-                            held = false; onUp()
-                        }
-                    }
-                }
+        awaitEachGesture {
+            awaitFirstDown(requireUnconsumed = false)
+            onDown()
+            try {
+                waitForUpOrCancellation()
+            } finally {
+                onUp()
             }
         }
     }
