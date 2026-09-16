@@ -98,4 +98,52 @@ class AddressAuditTest {
         assertEquals(GameMap.FIRERED_U_V10.paydayMoney, reference["FireRed (U) v1.0" to "gPaydayMoney"])
         assertEquals(GameMap.EMERALD_U.battleOutcome - GameMap.EMERALD_U.paydayMoney, GameMap.FIRERED_U_V10.battleOutcome - GameMap.FIRERED_U_V10.paydayMoney)
     }
+
+    /**
+     * Not one ROM address may survive the v1.0 -> v1.1 copy() unchanged.
+     *
+     * Every ROM table and every ROM code address moves between the revisions,
+     * so an address EQUAL on both maps was inherited by accident. Seven were:
+     * speciesNames, moveNames, abilityNames, itemNames, frontPics, palettes
+     * and startersBase, and a v1.1 ROM read all of them 112 bytes early. The
+     * numbers stayed right while the words went wrong, so FLAAFFY displayed as
+     * CHINCHOU and SUPERPOWER as "E POWER" with no error anywhere (Blake,
+     * 2026-09-16, from a trainer-battle screenshot).
+     *
+     * The fields list above could not catch it: it is hand-maintained and the
+     * name tables were never added to it, the same reason the trainer tables
+     * slipped through before. This reads the fields off the data class itself,
+     * so a field added later is covered without anyone remembering to.
+     */
+    @Test
+    fun `no ROM address is inherited unshifted between FireRed revisions`() {
+        val v10 = longFields(GameMap.FIRERED_U_V10)
+        val v11 = longFields(GameMap.FIRERED_U_V11)
+        val rom = v10.filterValues { it in 0x08000000L..0x09FFFFFFL }
+        // Non-vacuous: if the sweep ever stops seeing fields, fail loudly
+        // instead of passing on an empty set.
+        assertTrue(rom.size >= 17, "only ${rom.size} ROM addresses parsed; the field sweep broke")
+        val inherited = rom.keys.filter { v11[it] == v10[it] }.sorted()
+        assertTrue(inherited.isEmpty(), "inherited from v1.0 unshifted: $inherited")
+    }
+
+    /** Every Long-valued field, read off the data class's own toString(). */
+    private fun longFields(m: GameMap): Map<String, Long> =
+        Regex("""(\w+)=(-?\d+)""").findAll(m.toString())
+            .associate { it.groupValues[1] to it.groupValues[2].toLong() }
+
+    /** The v1.1 tables, located in Blake's own dump (tools/find_tables.py). */
+    @Test
+    fun `FireRed v1_1 name and graphics tables sit 0x70 past v1_0`() {
+        val a = GameMap.FIRERED_U_V10
+        val b = GameMap.FIRERED_U_V11
+        assertEquals(0x70L, b.speciesNames - a.speciesNames)
+        assertEquals(0x70L, b.moveNames - a.moveNames)
+        assertEquals(0x70L, b.abilityNames - a.abilityNames)
+        assertEquals(0x70L, b.itemNames - a.itemNames)
+        assertEquals(0x70L, b.frontPics - a.frontPics)
+        assertEquals(0x70L, b.palettes - a.palettes)
+        // Code, not data, and it does NOT take the +0x70 the tables take.
+        assertEquals(0x78L, b.startersBase - a.startersBase)
+    }
 }

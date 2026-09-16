@@ -385,6 +385,35 @@ keyboard stands in for the on-screen one, and a move's details open on a tap
 where the reference shows them on hover. Tested on real Black 2 and Platinum
 logs and a HeartGold log made by the bundled randomizer (HgssLogFixture).
 
+**FireRed v1.1 read every name 0x70 early, 2026-09-16.** Blake, from a trainer
+battle screenshot: "the move sets are wrong, there is random characters etc".
+
+- FIRERED_U_V11 is a copy() of v1.0 and overrode ten addresses. SEVEN ROM
+  addresses were inherited unshifted: speciesNames, moveNames, abilityNames,
+  itemNames, frontPics, palettes and startersBase. Every ROM table moves by
+  +0x70 between the revisions, so all seven read 112 bytes early.
+- The shape of it is the danger. The tables that WERE shifted carry the
+  numbers, so PP, power, accuracy, stats and BST stayed correct while the
+  words went wrong, and nothing errored. Species landed on the previous
+  record's 0x00 padding, which Gen 3 text decodes as spaces, then on the name
+  ten records back, so FLAAFFY displayed as a clean CHINCHOU. Moves landed
+  nine records back and five bytes in: SUPERPOWER read as E POWER, the tail
+  of NATURE POWER, next to its own correct 5/120/100.
+- Addresses located in Blake's own v1.1 dump with tools/find_tables.py, the
+  v1.0 run reproducing all four shipped v1.0 addresses as the control.
+  startersBase is code, not data, and moves by +0x78, NOT +0x70: assuming one
+  number for everything would have put that one wrong.
+- Only FireRed was exposed. Emerald has one revision, and Ruby, Sapphire and
+  LeafGreen refuse anything past v1.0 by name rather than guessing a map.
+  Nat. Dex builds its own map and takes names from lists, so it never read
+  these.
+- AddressAuditTest could not have caught it: its field list is hand-written
+  and the name tables were never in it, which is how the trainer tables
+  slipped through before. The new guard reads every Long field off the data
+  class's own toString() and fails if ANY ROM-region address is equal on both
+  revisions, so a field added later is covered by default. Proved by putting
+  the old address back: both new tests go red.
+
 **Holding B beside a direction, 2026-09-15.** Blake: "I can't hold B on gen 3
 games, holding b is how the player stops while riding the bike", then the real
 diagnosis: "it doesn't hold while you're holding down the directional pad".

@@ -532,6 +532,27 @@ data class GameMap(
             gTrainers = 0x0823EB38, gTrainerClassNames = 0x0823E5C8,
             battleMoves = 0x08250C74,
             levelUpLearnsets = 0x0825D824,
+            // The NAME and GRAPHICS tables move by the same +0x70 and every one
+            // of them was INHERITED from v1.0 through the copy(), so a v1.1 ROM
+            // read them 112 bytes early while its numbers stayed right - which
+            // is the worst shape a bug can take here, because nothing looks
+            // broken. Species landed on the previous record's 0x00 padding,
+            // which Gen 3 text decodes as SPACES, and then on the name ten
+            // records back: FLAAFFY displayed as a clean "CHINCHOU". Moves
+            // landed nine records back and five bytes in, so SUPERPOWER read as
+            // "E POWER" (the tail of NATURE POWER) beside its own correct PP,
+            // power and accuracy. Blake caught it on a trainer battle screenshot.
+            //
+            // Found in his own v1.1 dump with tools/find_tables.py, the v1.0 run
+            // reproducing all four shipped v1.0 addresses as the control.
+            speciesNames = 0x08245F50,
+            moveNames = 0x08247104,
+            abilityNames = 0x0824FCB0,
+            itemNames = 0x083DB098,
+            frontPics = 0x0823511C,
+            palettes = 0x0823737C,
+            // Code, not data: verified at +0x78, NOT the +0x70 the tables take.
+            startersBase = 0x08169C2D,
             abilityScriptTable = "firered11",
         )
 
