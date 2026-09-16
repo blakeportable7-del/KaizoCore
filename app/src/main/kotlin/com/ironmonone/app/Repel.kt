@@ -69,8 +69,10 @@ fun PcRepelBar(steps: Int, duration: Int, dsIcons: Boolean = false) {
         if (art != null) {
             Image(art, "Repel", Modifier.size(if (dsIcons) 14.rp else 20.rp), filterQuality = FilterQuality.None)
         }
-        Box(Modifier.width(4.rp).height(21.rp)) {
-            Canvas(Modifier.width(4.rp).height(21.rp)) {
+        val icon = if (dsIcons) 14 else 20
+        val bar = (icon * 21) / 24
+        Box(Modifier.width(4.rp).height(icon.rp), contentAlignment = Alignment.Center) {
+            Canvas(Modifier.width(4.rp).height(bar.rp)) {
                 // The outer bar (the reference draws a black outline over the box colour),
                 // then the coloured remainder growing up from the bottom.
                 drawRect(Pc.Page)
