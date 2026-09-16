@@ -57,6 +57,8 @@ data class NdsGameMap(
     val badgeOffsets: List<Long>,
     /** Absolute address of the battle-status word (GLOBAL.battleStatus). */
     val battleStatus: Long,
+    /** MemoryAddresses repelSteps: the steps the active repel has left (0 for none). */
+    val repelSteps: Long = 0,
     /**
      * Main-RAM offset of the global pointer that starts the Gen 4 chain
      * (MemoryAddresses[game].GLOBAL_POINTER). Platinum and HGSS use 0xBA8;
@@ -92,7 +94,7 @@ data class NdsGameMap(
             battleSubscriptMsgs = mv(battleSubscriptMsgs),
             itemStartNoBattle = mv(itemStartNoBattle), itemStartBattle = mv(itemStartBattle),
             berryBagStart = mv(berryBagStart), berryBagStartBattle = mv(berryBagStartBattle),
-            badgeOffsets = badgeOffsets.map { mv(it) }, battleStatus = mv(battleStatus),
+            badgeOffsets = badgeOffsets.map { mv(it) }, battleStatus = mv(battleStatus), repelSteps = mv(repelSteps),
             mainBattleDataPtr = mv(mainBattleDataPtr), doubleTripleFlag = mv(doubleTripleFlag),
             abilityTriggerStart = mv(abilityTriggerStart), totalMonsParty = mv(totalMonsParty),
             playerBattleBase = mv(playerBattleBase),
@@ -140,6 +142,7 @@ data class NdsGameMap(
             berryBagStart = 0xDF4, berryBagStartBattle = 0x4550C,
             badgeOffsets = listOf(0x292),
             battleStatus = 0x23BB38,
+            repelSteps = 0x764C,
             globalPointer = 0xB70,
         )
 
@@ -159,6 +162,7 @@ data class NdsGameMap(
             berryBagStart = 0xC00, berryBagStartBattle = 0x4435C,
             badgeOffsets = listOf(0x96),
             battleStatus = 0x24A55A,
+            repelSteps = 0x8087,
         )
 
         /**
@@ -180,6 +184,7 @@ data class NdsGameMap(
             berryBagStart = 0xC14, berryBagStartBattle = 0x46B78,
             badgeOffsets = listOf(0x8E, 0x93),     // johtoBadges, kantoBadges
             battleStatus = 0x246F48,
+            repelSteps = 0x6919,
         )
 
         /**
@@ -205,6 +210,7 @@ data class NdsGameMap(
             berryBagStart = 0x234844, berryBagStartBattle = 0x234844,
             badgeOffsets = listOf(0x23CDB0),
             battleStatus = 0x1D0798,
+            repelSteps = 0x23D6DD,
             mainBattleDataPtr = 0x269838, doubleTripleFlag = 0x2A62F8,
             abilityTriggerStart = 0x2A6354, totalMonsParty = 0x2349B0,
             playerBattleBase = 0x26A794,
@@ -229,6 +235,7 @@ data class NdsGameMap(
             berryBagStart = 0x21E2BC, berryBagStartBattle = 0x21E2BC,
             badgeOffsets = listOf(0x226728),
             battleStatus = 0x1B5138,
+            repelSteps = 0x226F51,
             mainBattleDataPtr = 0x2573AC, doubleTripleFlag = 0x294DA4,
             abilityTriggerStart = 0x294E08, totalMonsParty = 0x21E428,
             playerBattleBase = 0x258314,

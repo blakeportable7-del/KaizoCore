@@ -58,7 +58,11 @@ object Demo {
         val scyther = gen3Mon(123, 25, 61, 78, listOf(17, 163, 14, 228), listOf(31, 20, 18, 20), 139, 0, 3, intArrayOf(66, 50, 63, 38, 50))
         val party = listOf(tracked(t, scyther, 6, 11, 29))
         // The lab, before the first Pokemon: the ball picker with its die.
-        if (mode == "gba-lab") return TrackerState(partyCount = 0, party = emptyList(), inBattle = false, isWildBattle = false, inLab = true, badgeSet = "RSE")
+        // A Super Repel part-way down, so the staged lab shows the repel bar.
+        if (mode == "gba-lab") return TrackerState(
+            partyCount = 0, party = emptyList(), inBattle = false, isWildBattle = false, inLab = true, badgeSet = "RSE",
+            mapId = 17, repelSteps = 124, repelDuration = 200,
+        )
         if (mode == "gba-over") return TrackerState(
             partyCount = 1, party = listOf(tracked(t, scyther.copy(curHp = 0), 6, 11, 29)),
             inBattle = false, isWildBattle = false, badges = 0b11, badgeSet = "RSE",

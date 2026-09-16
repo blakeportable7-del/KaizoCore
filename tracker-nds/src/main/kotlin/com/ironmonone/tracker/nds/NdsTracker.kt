@@ -76,6 +76,9 @@ data class NdsTrackerState(
     val probe: String? = null,
     /** Gym badges as 8 bits, badge 1 in bit 0. */
     val badges: Int = 0,
+    /** Steps left on the active repel, 0 when none is running, and the length it was (RepelDrawer). */
+    val repelSteps: Int = 0,
+    val repelDuration: Int = 100,
     /** Which badge art to draw: the map's BADGE_PREFIX (DPPT, HGSS). */
     val badgeSet: String = "DPPT",
     /** Carried healing as a share of the lead's max HP, and the item count. */
@@ -576,6 +579,23 @@ class NdsTracker(
     }
 
     /** Gym badges, from the same pointer chain (offset 0x96). */
+    /** RepelDrawer: the repel that was used, kept while it counts down. */
+    private var repelDuration = com.ironmonone.tracker.RepelRules.DEFAULT_DURATION
+
+    /**
+     * RepelDrawer.Update: the steps the active repel has left. Gen 4 keeps it
+     * among the version-pointer offsets, Gen 5 at a fixed address; a byte past
+     * 250 is not a repel and reads as none.
+     */
+    internal fun readRepelSteps(): Int {
+        if (live.repelSteps == 0L) return 0
+        val versionRel = versionPointer()
+        if (!map.absolute && versionRel == 0L) return 0
+        val b = memory.read(ramStart + versionRel + live.repelSteps, 1)
+        val steps = if (b.isEmpty()) 0 else b.u8(0)
+        return com.ironmonone.tracker.RepelRules.stepsOf(steps)
+    }
+
     internal fun readBadges(): Int {
         val versionRel = versionPointer()
         if (!map.absolute && versionRel == 0L) return 0
@@ -753,6 +773,8 @@ class NdsTracker(
             resolvedBase = partyBase,
             probe = probe,
             badges = readBadges(),
+            repelSteps = readRepelSteps().also { repelDuration = com.ironmonone.tracker.RepelRules.duration(it, repelDuration) },
+            repelDuration = repelDuration,
             healPercent = heals.first,
             healCount = heals.second,
             runOver = if (lossCondition.lost(party.map { it.mon.level to it.mon.curHp })) readRunOver(lead, battle?.first) else null,

@@ -340,7 +340,17 @@ fun NdsTrackerPanel(
     PcCanvas(modifier.fillMaxWidth()) {
       Column(Modifier.fillMaxWidth().background(Pc.Page).padding(PcRef.MARGIN.rp)) {
           // The reference's gear sits at the top of the tracker screen; SETUP is its NavigationMenu.ButtonSetup.
-          onGear?.let { g -> Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) { PcSmallButton("SETUP") { g() } }; Spacer(Modifier.height(3.dp)) }
+          onGear?.let { g ->
+              Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
+                  // RepelDrawer: the DS tracker draws its own three item icons.
+                  if (TrackerOptions.showRepel && state != null && !state.inBattle && state.repelSteps > 0) {
+                      PcRepelBar(state.repelSteps, state.repelDuration, dsIcons = true)
+                      Spacer(Modifier.width(6.dp))
+                  }
+                  PcSmallButton("SETUP") { g() }
+              }
+              Spacer(Modifier.height(3.dp))
+          }
           timer?.let { RunTimerLine(it); Spacer(Modifier.height(3.dp)) }
         when {
             state == null -> PcCard {

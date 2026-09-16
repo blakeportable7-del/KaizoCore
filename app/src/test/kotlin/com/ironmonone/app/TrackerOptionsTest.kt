@@ -16,6 +16,7 @@ class TrackerOptionsTest {
         TrackerOptions.healsWhole = false; TrackerOptions.lossCondition = LossCondition.LEAD
         TrackerOptions.landscapeTracker = LandscapeTracker.DOCKED
         TrackerOptions.animatedSprites = true; TrackerOptions.spritesWalk = true
+        TrackerOptions.showRepel = false
     }
 
     @Test
@@ -28,12 +29,15 @@ class TrackerOptionsTest {
         TrackerOptions.save()
         TrackerOptions.landscapeTracker = LandscapeTracker.FLOATING
         TrackerOptions.spritesWalk = false
+        TrackerOptions.showRepel = true
         TrackerOptions.save()
-        assertEquals("showBallPicker=false\nshowCategoryIcons=true\nhealsWhole=true\nshowTeamView=false\nrestorePoints=true\nshowTimer=false\ntourneyTracker=false\nkantoBadgesFirst=false\nshowBothBadgeSets=true\nlogCustomTrainerNames=false\nlogShowUnlearnableGymTms=true\nlogShowPreEvolutions=false\nlossCondition=EntirePartyFaints\nlandscapeTracker=FLOATING\nanimatedSprites=true\nspritesWalk=false\n", f.readText())
+        assertEquals("showBallPicker=false\nshowCategoryIcons=true\nhealsWhole=true\nshowTeamView=false\nrestorePoints=true\nshowTimer=false\ntourneyTracker=false\nkantoBadgesFirst=false\nshowBothBadgeSets=true\nlogCustomTrainerNames=false\nlogShowUnlearnableGymTms=true\nlogShowPreEvolutions=false\nlossCondition=EntirePartyFaints\nlandscapeTracker=FLOATING\nshowRepel=true\nanimatedSprites=true\nspritesWalk=false\n", f.readText())
         TrackerOptions.showBallPicker = true; TrackerOptions.healsWhole = false; TrackerOptions.lossCondition = LossCondition.LEAD
         TrackerOptions.spritesWalk = true
+        TrackerOptions.showRepel = false
         TrackerOptions.load(f)
         assertFalse(TrackerOptions.spritesWalk)
+        assertTrue(TrackerOptions.showRepel)
         assertFalse(TrackerOptions.showBallPicker); assertTrue(TrackerOptions.healsWhole)
         assertEquals(LossCondition.ENTIRE_PARTY, TrackerOptions.lossCondition)
         assertEquals(LandscapeTracker.FLOATING, TrackerOptions.landscapeTracker)

@@ -125,6 +125,12 @@ data class GameMap(
      *  reference tracker's GameAddresses JSONs. */
     val badgeOffset: Long = 0,
     val badgeIsWord: Boolean = false,
+    /**
+     * Steps left on the active repel, inside SaveBlock1: the reference's
+     * gameVarsOffset plus 0x40 (FireRed, LeafGreen) or 0x42 (Ruby, Sapphire,
+     * Emerald), from its GameAddresses JSONs. 0 when the game is not read here.
+     */
+    val repelStepsOffset: Long = 0,
     /** Which badge art to draw: FRLG, RSE or DPPT. */
     val badgeSet: String = "FRLG",
     /** gLevelUpLearnsets: one pointer per species to a 0xFFFF-terminated list of
@@ -258,6 +264,7 @@ data class GameMap(
             battleResults = 0x03005D10,
             saveBlock1Ptr = 0x03005D8C,
             saveBlock2Ptr = 0x03005D90,
+            repelStepsOffset = 0x13DE,
             abilityNames = 0x0831B6DB,
             itemNames = 0x085839A0,
             battleMoves = 0x0831C898,
@@ -320,6 +327,7 @@ data class GameMap(
             battleResults = 0x03004F90,
             saveBlock1Ptr = 0x03005008,
             saveBlock2Ptr = 0x0300500C,
+            repelStepsOffset = 0x1040,
             startersBase = 0x08169BB5,
             starter2Off = 515,
             starter3Off = 461,
@@ -387,6 +395,7 @@ data class GameMap(
             battleResults = 0x030042E0,
             saveBlock1Fixed = 0x02025734,
             saveBlock2Fixed = 0x02024EA4,
+            repelStepsOffset = 0x1382,
             abilityNames = 0x081FA248,
             itemNames = 0x083C5564,
             battleMoves = 0x081FB12C,
@@ -681,6 +690,7 @@ data class GameMap(
                 badgeOffset = slotOffset(0x080002B8,
                     if (isEmeraldHeader(memory)) 0x137C else 0xFE4),
                 badgeIsWord = isEmeraldHeader(memory),
+                repelStepsOffset = if (isEmeraldHeader(memory)) 0x13DE else 0x1040,
                 badgeSet = if (isEmeraldHeader(memory)) "RSE" else "FRLG",
                 bagItemsOffset = slotOffset(0x080002BC,
                     if (isEmeraldHeader(memory)) 0x560 else 0x310),
@@ -1025,6 +1035,9 @@ data class TrackerState(
     /** Gym badges as 8 bits, badge 1 in bit 0. */
     val badges: Int = 0,
     val badgeSet: String = "FRLG",
+    /** Steps left on the active repel, 0 when none is running, and the length it was (Program.ActiveRepel). */
+    val repelSteps: Int = 0,
+    val repelDuration: Int = 100,
     /** Healing carried, as a percentage of the lead's max HP, and item count -
      *  the PC tracker's "Heals: 44% HP (7)" line. */
     val healPercent: Int = 0,
@@ -1364,6 +1377,8 @@ class GbaTracker(
             weather = if (inBattle) readWeather() else null,
             badges = readBadges(),
             badgeSet = map.badgeSet,
+            repelSteps = readRepelSteps().also { repelDuration = RepelRules.duration(it, repelDuration) },
+            repelDuration = repelDuration,
             healPercent = heals.first,
             healCount = heals.second,
             mapId = mapId,
@@ -2410,6 +2425,22 @@ class GbaTracker(
      * FireRed keeps them in a byte; Emerald packs them into a word starting at
      * bit 7, which is why this is not simply "read a byte" for both.
      */
+    /** Program.ActiveRepel.duration: grows to the repel that was used, back to 100 when it ends. */
+    private var repelDuration = RepelRules.DEFAULT_DURATION
+
+    /**
+     * Program.updateRepelSteps: the save variable holding the steps the active
+     * repel has left, 0 when none is running. A byte past a Max Repel's 250 is
+     * not a repel (a wrong address, a hack's different layout), and reads as none.
+     */
+    internal fun readRepelSteps(): Int {
+        if (map.repelStepsOffset == 0L) return 0
+        val sb1 = saveBlock1() ?: return 0
+        val b = memory.read(sb1 + map.repelStepsOffset, 1)
+        val steps = if (b.isEmpty()) 0 else b.u8(0)
+        return RepelRules.stepsOf(steps)
+    }
+
     internal fun readBadges(): Int {
         if (map.badgeOffset == 0L) return 0
         val sb1 = saveBlock1() ?: return 0

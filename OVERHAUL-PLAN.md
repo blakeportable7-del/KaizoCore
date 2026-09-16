@@ -385,6 +385,37 @@ keyboard stands in for the on-screen one, and a move's details open on a tap
 where the reference shows them on hover. Tested on real Black 2 and Platinum
 logs and a HeartGold log made by the bundled randomizer (HgssLogFixture).
 
+**Repel usage, 2026-09-15.** Blake: "need to track when using repel just like
+the pc tracker". Ironmon-Tracker's Program.ActiveRepel and the DS tracker's
+RepelDrawer, cloned.
+
+- The games keep the steps the active repel has left in one variable, 0 when
+  none is running. Gen 3 reads SaveBlock1 + gameVarsOffset + 0x40 (FireRed,
+  LeafGreen) or + 0x42 (Ruby, Sapphire, Emerald); the offsets come from the
+  reference's own GameAddresses JSONs (0x1000, 0x1340, 0x139C), so the map
+  carries 0x1040, 0x1382 and 0x13DE. Nat. Dex keeps the base game's save
+  layout and uses the same two. The DS games have a fixed address each
+  (MemoryAddresses repelSteps): Platinum 0x8087, HGSS 0x6919 and D/P 0x764C
+  among the version-pointer offsets, Black 0x23D6DD and Black 2 0x226F51
+  absolute, so repelSteps joins shifted() with the rest.
+- How LONG the repel was is not stored. The reference infers it from the
+  highest count it has seen (100, Super 200, Max 250), holds that while it
+  counts down and resets at 0; RepelRules.duration is that rule, kept beside
+  the trackers (tracker-gba) because the DS tracker builds on them and
+  neither module can see the app's UI code.
+- A byte past 250 is not a repel and reads as none: a wrong address on a hack
+  goes quiet instead of drawing nonsense.
+- Drawn where the reference draws it, the tracker's top right beside SETUP:
+  the item icon and a 4 by 21 bar, green, the intermediate colour at or below
+  a half, red at or below a quarter. The DS panel uses that tracker's three
+  item icons (Repel, SuperRepel, MaxRepel), Gen 3 its one repelUsage.png.
+- Hidden in battle, off the map (isValidMapLocation) and when nothing is
+  running. "Display repel usage" sits in the tracker setup and is OFF by
+  default, as it is in the reference.
+- Gen 1 and Gen 2 are NOT included: both trackers carry drawRepelUsage but
+  never call their update (`if false and Options[...]` in Program.lua), so
+  there is nothing to clone. Adding it there would be our own feature.
+
 **Look and feel, 2026-09-15.** Blake, from his phone (FireRed, Nat. Dex):
 
 - Game-over popup: "so ugly and the text is all too small", "lots of wasted

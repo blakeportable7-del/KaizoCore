@@ -41,6 +41,8 @@ object TrackerOptions {
     /** Options["Show Pre Evolutions"], off by default in the reference. */
     var logShowPreEvolutions by mutableStateOf(false)
     var lossCondition by mutableStateOf(LossCondition.LEAD)
+    /** Options["Display repel usage"], off by default in the reference. */
+    var showRepel by mutableStateOf(false)
     /** Options["Pokemon icon set"] = Walking Pals, on Gen 1-3 (Blake, 2026-09-15: on by default). */
     var animatedSprites by mutableStateOf(true)
     /** Options["Allow sprites to walk"], on by default in the reference. */
@@ -69,6 +71,7 @@ object TrackerOptions {
                     "logShowUnlearnableGymTms" -> logShowUnlearnableGymTms = v == "true"
                     "logShowPreEvolutions" -> logShowPreEvolutions = v == "true"
                     "lossCondition" -> lossCondition = LossCondition.byKey(v)
+                    "showRepel" -> showRepel = v == "true"
                     "animatedSprites" -> animatedSprites = v == "true"
                     "spritesWalk" -> spritesWalk = v == "true"
                     "landscapeTracker" -> landscapeTracker = LandscapeTracker.entries.firstOrNull { it.name == v } ?: LandscapeTracker.DOCKED
@@ -85,5 +88,5 @@ object TrackerOptions {
         }
     }
 
-    fun text(): String = "showBallPicker=$showBallPicker\nshowCategoryIcons=$showCategoryIcons\nhealsWhole=$healsWhole\nshowTeamView=$showTeamView\nrestorePoints=$restorePoints\nshowTimer=$showTimer\ntourneyTracker=$tourneyTracker\nkantoBadgesFirst=$kantoBadgesFirst\nshowBothBadgeSets=$showBothBadgeSets\nlogCustomTrainerNames=$logCustomTrainerNames\nlogShowUnlearnableGymTms=$logShowUnlearnableGymTms\nlogShowPreEvolutions=$logShowPreEvolutions\nlossCondition=${lossCondition.key}\nlandscapeTracker=${landscapeTracker.name}\nanimatedSprites=$animatedSprites\nspritesWalk=$spritesWalk\n"
+    fun text(): String = "showBallPicker=$showBallPicker\nshowCategoryIcons=$showCategoryIcons\nhealsWhole=$healsWhole\nshowTeamView=$showTeamView\nrestorePoints=$restorePoints\nshowTimer=$showTimer\ntourneyTracker=$tourneyTracker\nkantoBadgesFirst=$kantoBadgesFirst\nshowBothBadgeSets=$showBothBadgeSets\nlogCustomTrainerNames=$logCustomTrainerNames\nlogShowUnlearnableGymTms=$logShowUnlearnableGymTms\nlogShowPreEvolutions=$logShowPreEvolutions\nlossCondition=${lossCondition.key}\nlandscapeTracker=${landscapeTracker.name}\nshowRepel=$showRepel\nanimatedSprites=$animatedSprites\nspritesWalk=$spritesWalk\n"
 }

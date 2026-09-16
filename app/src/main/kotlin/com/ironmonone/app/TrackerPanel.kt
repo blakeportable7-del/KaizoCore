@@ -339,7 +339,18 @@ fun TrackerPanel(
     PcCanvas(modifier.fillMaxWidth()) {
       Column(Modifier.fillMaxWidth().background(Pc.Page).padding(PcRef.MARGIN.rp)) {
           // The reference's gear sits at the top of the tracker screen; SETUP is its NavigationMenu.ButtonSetup.
-          onGear?.let { g -> Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) { PcSmallButton("SETUP") { g() } }; Spacer(Modifier.height(3.dp)) }
+          onGear?.let { g ->
+              Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
+                  // Program.ActiveRepel:shouldDisplay - only while one is running, never in
+                  // battle or off the map, and the reference puts it in the top right.
+                  if (TrackerOptions.showRepel && state != null && !state.inBattle && state.mapId != null && state.repelSteps > 0) {
+                      PcRepelBar(state.repelSteps, state.repelDuration)
+                      Spacer(Modifier.width(6.dp))
+                  }
+                  PcSmallButton("SETUP") { g() }
+              }
+              Spacer(Modifier.height(3.dp))
+          }
           // TeamViewArea: the reference draws it under the game; here it heads the panel.
           if (TrackerOptions.showTeamView && state != null && !state.unreadable && state.party.isNotEmpty()) {
               PcTeamView(

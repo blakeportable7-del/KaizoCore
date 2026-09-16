@@ -232,6 +232,9 @@ object PcAssets {
     fun status(context: android.content.Context, code: String): ImageBitmap? =
         code.takeIf { it.isNotBlank() }?.let { load(context, "status/${if (it == "TOX") "PSN" else it}.png") }
 
+    /** A tracker icon from assets/icons (the repel items). */
+    fun icon(context: android.content.Context, name: String): ImageBitmap? = load(context, "icons/$name.png")
+
     /** A full-screen scene from assets/backgrounds. */
     fun background(context: android.content.Context, name: String): ImageBitmap? =
         load(context, "backgrounds/$name.png")
