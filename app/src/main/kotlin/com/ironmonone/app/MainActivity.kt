@@ -102,6 +102,8 @@ class MainActivity : ComponentActivity() {
         runCatching { cacheDir.listFiles()?.filter { it.name.startsWith("prep-") || it.name.startsWith("import-") }?.forEach { it.deleteRecursively() } }
         TrackerOptions.load(java.io.File(filesDir, "prep/tracker-options.txt"))
         HiddenPowerTypes.load(java.io.File(filesDir, "prep/hidden-power.txt"))
+        PcHeals.load(java.io.File(filesDir, "prep/pc-heals.txt"))
+        SummaryChecks.load(java.io.File(filesDir, "prep/summary-checked.txt"))
         ThemeStore.load(java.io.File(filesDir, "prep/theme.txt"))
         (getSystemService(INPUT_SERVICE) as InputManager)
             .registerInputDeviceListener(deviceListener, null)

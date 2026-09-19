@@ -26,10 +26,10 @@ missing, or does not apply to a phone. Screens were checked the same way
 - [x] Count the enemy's PP use ("Count enemy PP usage"): its real remaining PP from the battle struct. Logic built; needs a live battle to be seen
 - [x] Last damage calcs ("Show last damage calcs"): "Wing Attack: 23 damage" with the sword, red when lethal. Line seen on the device; the gTakenDmg tracking is unit-tested and needs a live battle
 - [x] Move stars on the opponent's moves (Utils.calculateMoveStars), with the last-seen level now recorded. Unit-tested; needs run history to be seen
-- [ ] "Reveal info if randomized" (semantics to read)
-- [ ] "Show data for vanilla game" (semantics to read)
+- [x] "Reveal info if randomized": off hides an opponent's randomized move type, PP, power, accuracy; own effectiveness when types are randomized (InfoRules)
+- [x] "Show data for vanilla game": unrandomized opponent shows both abilities, base stats, actual moves (InfoRules)
 - [ ] Tap a trainer on the game screen for its info ("Can click trainers on screen")
-- [ ] Carousel: rotation on/off, which items, speed; the reference's rotation order
+- [x] Carousel: rotation on/off, which items, speed, the reference's order; Trainers defeated X/Y for 5s after a trainer battle; early-game route info under Lv13
 - [x] "Auto swap to enemy": switch added
 
 ## OFF by default in the PC, missing here
@@ -38,12 +38,15 @@ missing, or does not apply to a phone. Screens were checked the same way
 - [x] Show experience points bar
 - [x] Color stat numbers by nature
 - [x] Right justified numbers, and the default fixed: numbers start at their column as the reference draws them (Gen 1-3 panel)
-- [ ] Hide stats until summary shown
-- [ ] Open Book Play Mode
-- [ ] Track PC Heals, and PC heals count downward
-- [ ] Show starter ball info (partly here: the three balls)
+- [x] Hide stats until summary shown: per attempt, revealed when sMonSummaryScreen goes non-zero; only on a randomized game
+- [x] Randomization check (PokemonData / MoveData checkIfDataIsRandomized), validated vanilla on the FireRed and Emerald dumps
+- [x] Open Book Play Mode
+- [x] Track PC Heals, and PC heals count downward: the heart toggle, the coloured count, +/-, auto-tracking from game statistics 15 and 16, per attempt
+- [ ] GachaMon stars in the heals box (the reference's default there when PC heals are off; part of GachaMon)
+- Not built by decision: the log viewer quick-access button in that spot. Blake: the log opens only after a loss.
+- [x] Show starter ball info: the offered starter's info screen while its ball is confirmed (FRLG special var, RSE confirm task + rival party); addresses audited, not yet seen on a live lab
 - [ ] Pokemon icon set: the other sets (Walking Pals is here)
-- [ ] Pedometer step goal and reset
+- [x] Pedometer step goal and reset (clock, Goal prompt, Reset/Total, green at the goal; in memory like the reference)
 
 ## Features
 - [ ] GachaMon: the overlay, the collection, the ratings, its carousel item and six options

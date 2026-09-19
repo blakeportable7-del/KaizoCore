@@ -85,6 +85,7 @@ fun TrackerGearDialog(
             PixText("Options", 8, Pc.Text)
             Spacer(Modifier.height(4.dp))
             GearToggle("Show random ball picker", TrackerOptions.showBallPicker) { TrackerOptions.showBallPicker = it; TrackerOptions.save() }
+            GearToggle("Show starter ball info", TrackerOptions.showStarterBallInfo) { TrackerOptions.showStarterBallInfo = it; TrackerOptions.save() }
             GearToggle("Show physical special icons", TrackerOptions.showCategoryIcons) { TrackerOptions.showCategoryIcons = it; TrackerOptions.save() }
             GearToggle("Show heals as whole number", TrackerOptions.healsWhole) { TrackerOptions.healsWhole = it; TrackerOptions.save() }
             GearToggle("Show team view", TrackerOptions.showTeamView) { TrackerOptions.showTeamView = it; TrackerOptions.save() }
@@ -102,6 +103,29 @@ fun TrackerGearDialog(
             GearToggle("Show experience points bar", TrackerOptions.showExpBar) { TrackerOptions.showExpBar = it; TrackerOptions.save() }
             GearToggle("Color stat numbers by nature", TrackerOptions.colorStatNumbers) { TrackerOptions.colorStatNumbers = it; TrackerOptions.save() }
             GearToggle("Right justified numbers", TrackerOptions.rightJustifiedNumbers) { TrackerOptions.rightJustifiedNumbers = it; TrackerOptions.save() }
+            GearToggle("Track PC Heals", TrackerOptions.trackPcHeals) { TrackerOptions.trackPcHeals = it; TrackerOptions.save() }
+            GearToggle("Hide stats until summary shown", TrackerOptions.hideStatsUntilSummary) { TrackerOptions.hideStatsUntilSummary = it; TrackerOptions.save() }
+            GearToggle("Show data for vanilla game", TrackerOptions.showDataForVanillaGame) { TrackerOptions.showDataForVanillaGame = it; TrackerOptions.save() }
+            GearToggle("Reveal info if randomized", TrackerOptions.revealInfoIfRandomized) { TrackerOptions.revealInfoIfRandomized = it; TrackerOptions.save() }
+            GearToggle("Open Book Play Mode", TrackerOptions.openBookPlayMode) { TrackerOptions.openBookPlayMode = it; TrackerOptions.save() }
+            Spacer(Modifier.height(8.dp))
+            PixText("Carousel", 8, Pc.Text)
+            GearToggle("Allow bottom box rotation", TrackerOptions.allowCarouselRotation) { TrackerOptions.allowCarouselRotation = it; TrackerOptions.save() }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                PixText("Speed:", 7, Pc.Text)
+                for (sp in listOf("1/2", "1", "2", "3", "4")) {
+                    val on = TrackerOptions.carouselSpeed == sp
+                    PixText("${sp}x", 7, if (on) Pc.Gold else Pc.Text,
+                        Modifier.clickable { TrackerOptions.carouselSpeed = sp; TrackerOptions.save() }.padding(horizontal = 8.dp, vertical = 6.dp))
+                }
+            }
+            PixText("Info to show:", 7, Pc.Dim)
+            for ((key, label) in listOf(
+                "Badges" to "Gym badges", "Notes" to "Notes on Pok" + "\u00E9" + "mon", "RouteInfo" to "Wild encounters in area",
+                "Trainers" to "Trainers defeated in area", "LastAttack" to "Last attack damage",
+                "BattleDetails" to "Additional battle details", "Pedometer" to "Step pedometer",
+            )) GearToggle(label, TrackerOptions.carouselShows(key)) { TrackerOptions.setCarouselItem(key, it); TrackerOptions.save() }
+            if (TrackerOptions.trackPcHeals) GearToggle("PC heals count downward", TrackerOptions.pcHealsCountDownward) { TrackerOptions.pcHealsCountDownward = it; TrackerOptions.save() }
             GearToggle("Animated Pok\u00e9mon (Walking Pals)", TrackerOptions.animatedSprites) { TrackerOptions.animatedSprites = it; TrackerOptions.save() }
             if (TrackerOptions.animatedSprites) GearToggle("Allow sprites to walk", TrackerOptions.spritesWalk) { TrackerOptions.spritesWalk = it; TrackerOptions.save() }
             if (showTimerToggle) GearToggle("Show timer", TrackerOptions.showTimer) { TrackerOptions.showTimer = it; TrackerOptions.save() }

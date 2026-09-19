@@ -80,8 +80,16 @@ private fun PartyCard(
     onAbilityInfo: ((String) -> Unit)? = null,
     onNameInfo: (() -> Unit)? = null,
     moveCtx: MoveContext? = null,
+    /** Which attempt this is, for the PC heal counter. */
+    attempt: Int = 0,
+    /**
+     * "Hide stats until summary shown", before this attempt has opened a
+     * summary: icon, name and level only, as the reference's default Pokemon.
+     */
+    hidden: Boolean = false,
 ) {
     val m = p.mon
+    val dash = "---"
     PcCard {
         PcHeadBlock(
             // "Show nicknames": the nickname in place of the species when it has one
@@ -90,48 +98,50 @@ private fun PartyCard(
                 else p.speciesName) + (if (m.shiny) " *" else ""),
             status = if (m.curHp <= 0) "FNT" else p.statusCondition,
             level = m.level, curHp = m.curHp, maxHp = m.maxHp,
-            typeChips = listOfNotNull(
+            typeChips = if (hidden) emptyList() else listOfNotNull(
                 p.base?.type1?.let { Gen3Types.name(it) to pcTypeColor(it) },
                 p.base?.type2?.takeIf { it != p.base?.type1 }
                     ?.let { Gen3Types.name(it) to pcTypeColor(it) },
             ),
             onTypesTap = p.base?.let { b -> onTypeDefenses?.let { cb -> { cb(p.speciesName, b.type1, b.type2) } } },
-            itemLine = p.itemName.takeIf { it != "-" } ?: "",
-            abilityLine = p.abilityName,
+            itemLine = if (hidden) "" else p.itemName.takeIf { it != "-" } ?: "",
+            abilityLine = if (hidden) dash else p.abilityName,
+            hpText = dash.takeIf { hidden },
             onAbilityTap = onAbilityInfo?.let { cb -> { cb(p.abilityName) } },
             onNameTap = onNameInfo,
             sprite = spriteFor(m.species),
             iconSpecies = m.species,
-            evo = p.evo,
+            evo = p.evo.takeIf { !hidden },
             gender = if (TrackerOptions.displayGender) com.ironmonone.tracker.Gender3.of(p.base?.genderRatio ?: 255, m.pid) else null,
             expFraction = if (TrackerOptions.showExpBar && p.expTotal > 0) p.expNow.toFloat() / p.expTotal else null,
             // Only the lead carries the Heals strip: the number is a share of
             // the lead's max HP, so repeating it under every party member would
             // print the same percentage against six different Pokemon.
             belowHead = if (healPercent >= 0) {
-                { PcHealsBlock(healPercent, healCount, wholeHp = healPercent * p.mon.maxHp / 100) }
+                { PcHealsBlock(healPercent, healCount, wholeHp = healPercent * p.mon.maxHp / 100,
+                    pcHealsAttempt = attempt.takeIf { TrackerOptions.trackPcHeals }) }
             } else null,
         ) {
-            PcStatRow("HP", "${m.maxHp}", p.statStages["HP"], nature = m.nature, rightJustify = TrackerOptions.rightJustifiedNumbers, colorNumber = TrackerOptions.colorStatNumbers)
-            PcStatRow("ATK", "${m.atk}", p.statStages["ATK"], nature = m.nature, rightJustify = TrackerOptions.rightJustifiedNumbers, colorNumber = TrackerOptions.colorStatNumbers)
-            PcStatRow("DEF", "${m.def}", p.statStages["DEF"], nature = m.nature, rightJustify = TrackerOptions.rightJustifiedNumbers, colorNumber = TrackerOptions.colorStatNumbers)
+            PcStatRow("HP", if (hidden) dash else "${m.maxHp}", p.statStages["HP"], nature = m.nature.takeIf { !hidden }, rightJustify = TrackerOptions.rightJustifiedNumbers, colorNumber = TrackerOptions.colorStatNumbers)
+            PcStatRow("ATK", if (hidden) dash else "${m.atk}", p.statStages["ATK"], nature = m.nature.takeIf { !hidden }, rightJustify = TrackerOptions.rightJustifiedNumbers, colorNumber = TrackerOptions.colorStatNumbers)
+            PcStatRow("DEF", if (hidden) dash else "${m.def}", p.statStages["DEF"], nature = m.nature.takeIf { !hidden }, rightJustify = TrackerOptions.rightJustifiedNumbers, colorNumber = TrackerOptions.colorStatNumbers)
             if (p.base?.singleSpecial == true) {
                 // Gen 1: one Special stat. The Gen 1 reference tracker lists it as SPA, once.
-                PcStatRow("SPA", "${m.spAtk}", p.statStages["SPA"], nature = m.nature, rightJustify = TrackerOptions.rightJustifiedNumbers, colorNumber = TrackerOptions.colorStatNumbers)
+                PcStatRow("SPA", if (hidden) dash else "${m.spAtk}", p.statStages["SPA"], nature = m.nature.takeIf { !hidden }, rightJustify = TrackerOptions.rightJustifiedNumbers, colorNumber = TrackerOptions.colorStatNumbers)
             } else {
-                PcStatRow("SPA", "${m.spAtk}", p.statStages["SPA"], nature = m.nature, rightJustify = TrackerOptions.rightJustifiedNumbers, colorNumber = TrackerOptions.colorStatNumbers)
-                PcStatRow("SPD", "${m.spDef}", p.statStages["SPD"], nature = m.nature, rightJustify = TrackerOptions.rightJustifiedNumbers, colorNumber = TrackerOptions.colorStatNumbers)
+                PcStatRow("SPA", if (hidden) dash else "${m.spAtk}", p.statStages["SPA"], nature = m.nature.takeIf { !hidden }, rightJustify = TrackerOptions.rightJustifiedNumbers, colorNumber = TrackerOptions.colorStatNumbers)
+                PcStatRow("SPD", if (hidden) dash else "${m.spDef}", p.statStages["SPD"], nature = m.nature.takeIf { !hidden }, rightJustify = TrackerOptions.rightJustifiedNumbers, colorNumber = TrackerOptions.colorStatNumbers)
             }
-            PcStatRow("SPE", "${m.spe}", p.statStages["SPE"], nature = m.nature, rightJustify = TrackerOptions.rightJustifiedNumbers, colorNumber = TrackerOptions.colorStatNumbers)
-            PcStatRow("BST", p.base?.bst?.toString() ?: "?", rightJustify = TrackerOptions.rightJustifiedNumbers)
+            PcStatRow("SPE", if (hidden) dash else "${m.spe}", p.statStages["SPE"], nature = m.nature.takeIf { !hidden }, rightJustify = TrackerOptions.rightJustifiedNumbers, colorNumber = TrackerOptions.colorStatNumbers)
+            PcStatRow("BST", if (hidden) dash else p.base?.bst?.toString() ?: "?", rightJustify = TrackerOptions.rightJustifiedNumbers)
         }
         // "Moves 3/11 (17)" - learned so far / total this species learns, and
         // the level the next one arrives at, exactly as the PC tracker shows it.
         PcMovesSection(
-            p.moveRows.map { it.toPcMove(moveCtx) },
+            if (hidden) emptyList() else p.moveRows.map { it.toPcMove(moveCtx) },
             referenceColumns = true, rightJustify = TrackerOptions.rightJustifiedNumbers,
-            header = if (p.movesTotal > 0) "Moves ${p.movesLearned}/${p.movesTotal}" else "Moves",
-            nextLevel = p.nextMoveLevel.takeIf { p.movesTotal > 0 },
+            header = if (p.movesTotal > 0 && !hidden) "Moves ${p.movesLearned}/${p.movesTotal}" else "Moves",
+            nextLevel = p.nextMoveLevel.takeIf { p.movesTotal > 0 && !hidden },
             nextHot = p.nextMoveLevel?.let { m.level + 1 >= it } == true,
             onMoveTap = onMoveInfo,
             onHeaderTap = onMoveHistory?.let { cb -> { cb(m.species, p.speciesName, m.level) } },
@@ -159,6 +169,8 @@ private fun EnemyCard(
     /** The species' learnset levels from the ROM, for the move count. */
     moveLevels: List<Int> = emptyList(),
     moveCtx: MoveContext? = null,
+    /** Which parts were randomized, for what may be shown (InfoRules). */
+    rand: com.ironmonone.tracker.RandomizedFlags? = null,
     catchText: String? = null,
     onCatchTap: (() -> Unit)? = null,
 ) {
@@ -177,11 +189,20 @@ private fun EnemyCard(
             // DataHelper.lua:234 puts the two possible abilities on the two
             // lines, the first suffixed " /" - it does not join them with a
             // slash onto one line, which is what made this overflow.
-            itemLine = revealedAbility
-                ?: e.abilityGuess.substringBefore(" / ")
-                    .let { if (" / " in e.abilityGuess) "$it /" else it },
-            abilityLine = if (revealedAbility != null) ""
-                else e.abilityGuess.substringAfter(" / ", ""),
+            //
+            // Only where abilities are not randomized, or in Open Book. Otherwise the
+            // reference shows the tracked ones: nothing yet reads "---" twice, one
+            // revealed reads "Name /" over "?" (DataHelper.lua:242).
+            itemLine = when {
+                InfoRules.canShowAbilities(rand) -> e.abilityGuess.substringBefore(" / ").let { if (" / " in e.abilityGuess) "$it /" else it }
+                revealedAbility != null -> "$revealedAbility /"
+                else -> "---"
+            },
+            abilityLine = when {
+                InfoRules.canShowAbilities(rand) -> e.abilityGuess.substringAfter(" / ", "---")
+                revealedAbility != null -> "?"
+                else -> "---"
+            },
             sprite = spriteFor(e.species),
             iconSpecies = e.species,
             evo = e.evo,
@@ -199,7 +220,18 @@ private fun EnemyCard(
                 }
             },
         ) {
-            PcMarkColumn(marks, onCycleMark, singleSpecial = e.base?.singleSpecial == true)
+            // DataHelper.lua:186: an unrandomized opponent (or Open Book) shows its
+            // base stats, in Intermediate text; otherwise the marking boxes.
+            val b = e.base
+            if (b != null && InfoRules.canShowStats(rand)) {
+                val rj = TrackerOptions.rightJustifiedNumbers
+                PcStatRow("HP", "${b.hp}", rightJustify = rj, valueColor = Pc.Gold)
+                PcStatRow("ATK", "${b.atk}", rightJustify = rj, valueColor = Pc.Gold)
+                PcStatRow("DEF", "${b.def}", rightJustify = rj, valueColor = Pc.Gold)
+                PcStatRow("SPA", "${b.spAtk}", rightJustify = rj, valueColor = Pc.Gold)
+                if (!b.singleSpecial) PcStatRow("SPD", "${b.spDef}", rightJustify = rj, valueColor = Pc.Gold)
+                PcStatRow("SPE", "${b.spe}", rightJustify = rj, valueColor = Pc.Gold)
+            } else PcMarkColumn(marks, onCycleMark, singleSpecial = e.base?.singleSpecial == true)
             PcStatRow("BST", e.base?.bst?.toString() ?: "?", rightJustify = TrackerOptions.rightJustifiedNumbers)
             // Live stage chevrons for the enemy, when any stat has moved.
             e.statStages.filterKeys { it != "ACC" && it != "EVA" }
@@ -220,9 +252,14 @@ private fun EnemyCard(
             thisBattle).distinctBy { it.id }
         val learned = com.ironmonone.tracker.LearnedMoves.of(moveLevels, e.level)
         // Utils.calculateMoveStars: a tracked move it may have forgotten since.
-        val starred = com.ironmonone.tracker.MoveStars.of(movesSeenRunWide.map { it.id to it.lastLv }, e.level, moveLevels)
+        // DataHelper.lua:258: an unrandomized learnset (or Open Book) shows its
+        // actual moves at their live PP; otherwise the tracked ones, with stars.
+        val actual = InfoRules.canShowMoves(rand)
+        val starred = if (actual) emptySet() else com.ironmonone.tracker.MoveStars.of(movesSeenRunWide.map { it.id to it.lastLv }, e.level, moveLevels)
+        val shownRows = if (actual) e.moves.mapIndexedNotNull { i, id -> if (id == 0) null else moveRowFor(id)?.copy(pp = e.movePps.getOrElse(i) { 0 }) }
+            else seen.take(4)
         PcMovesSection(
-            rows = seen.take(4).map { r -> r.toPcMove(moveCtx).let { if (r.id in starred) it.copy(name = it.name + "*") else it } },
+            rows = shownRows.map { r -> r.toPcMove(moveCtx).let { if (r.id in starred) it.copy(name = it.name + "*") else it } },
             referenceColumns = true, rightJustify = TrackerOptions.rightJustifiedNumbers,
             catchText = catchText,
             onCatchTap = onCatchTap,
@@ -230,7 +267,7 @@ private fun EnemyCard(
             // Utils.getMovesLearnedHeader counts for the opponent too, at ITS
             // level: "Moves* 1/5 (9)", the asterisk (no space) once more than
             // four of its moves have been seen. This read "Moves *" with no count.
-            header = "Moves" + (if (seen.size > 4) "*" else "") +
+            header = "Moves" + (if (!actual && seen.size > 4) "*" else "") +
                 (if (learned.total > 0) " ${learned.learned}/${learned.total}" else ""),
             onHeaderTap = onMoveHistory?.let { cb -> { cb(e.species, e.speciesName, e.level) } },
             onMoveTap = onMoveInfo,
@@ -341,6 +378,28 @@ fun TrackerPanel(
         ) { monInfo = null }
     }
     moveInfo?.let { PcMoveInfoDialog(it) { moveInfo = null } }
+    // Program.checkForStarterSelection: while a starter's ball is being
+    // confirmed, its info screen; back to the tracker once the choice closes.
+    val starter = state?.starterOffered?.takeIf { TrackerOptions.showStarterBallInfo }
+    var starterClosed by remember { mutableStateOf<Int?>(null) }
+    if (starter == null) starterClosed = null
+    if (starter != null && starter != starterClosed) {
+        val base = state?.starterBase
+        PcPokemonInfo(
+            name = onSpeciesName?.invoke(starter) ?: "#$starter",
+            types = listOfNotNull(
+                base?.type1?.let { Gen3Types.name(it) to pcTypeColor(it) },
+                base?.type2?.takeIf { it != base.type1 }?.let { Gen3Types.name(it) to pcTypeColor(it) },
+            ),
+            bst = base?.bst?.toString() ?: "?",
+            weight = onWeight?.invoke(starter),
+            evolution = onEvolution?.invoke(starter),
+            effectiveness = onEffectiveness?.invoke(starter) ?: emptyMap(),
+            moveLevels = onMoveLevels?.invoke(starter) ?: emptyList(),
+            level = 5,
+            note = onSpeciesNote?.invoke(starter) ?: "",
+        ) { starterClosed = starter }
+    }
     info?.let { (title, sub, body) ->
         PcInfoDialog(title, sub, body) { info = null }
     }
@@ -448,7 +507,13 @@ fun TrackerPanel(
                 // In battle it opens on the ENEMY, matching the reference's
                 // "Auto swap to enemy" default.
                 // Battle.inActiveBattle: the animated icons do not walk in battle.
-                androidx.compose.runtime.SideEffect { SpriteMotion.inBattle = state.inBattle }
+                androidx.compose.runtime.SideEffect {
+                    SpriteMotion.inBattle = state.inBattle
+                    // "Track PC Heals" auto-tracking watches the game's heal statistics.
+                    PcHeals.observe(attempt, state.centerHealsStat)
+                    // Program.lua:552: opening a summary in the game reveals the card for this attempt.
+                    if (state.summaryOpen) SummaryChecks.mark(attempt)
+                }
                 var viewingOwn by remember(state.inBattle) {
                     mutableStateOf(!(state.inBattle && TrackerOptions.autoSwapToEnemy))
                 }
@@ -491,7 +556,10 @@ fun TrackerPanel(
                             info = Triple(name, "Ability", onAbilityDescription?.invoke(name))
                         },
                         onNameInfo = { monInfo = p },
-                        moveCtx = ownMoveContext(p, state.enemy?.takeIf { state.inBattle }, state.weather, onWeight))
+                        moveCtx = ownMoveContext(p, state.enemy?.takeIf { state.inBattle }, state.weather, onWeight)
+                            .copy(hideEffectiveness = InfoRules.hideOwnEffectiveness(state.randomized)),
+                        attempt = attempt,
+                        hidden = TrackerOptions.hideStatsUntilSummary && state.gameDataRandomized && !SummaryChecks.checked(attempt))
                 }
                 if (enemy != null) {
                     EnemyCard(onMoveHistory = onMoveHistory, onTypeDefenses = onTypeDefenses, enemy, revealedEnemyAbility, spriteFor,
@@ -502,7 +570,9 @@ fun TrackerPanel(
                         routeName = routeName,
                         team = state.enemyTeam,
                         moveLevels = onMoveLevels?.invoke(enemy.species) ?: emptyList(),
-                        moveCtx = enemyMoveContext(enemy, state.party.firstOrNull(), state.weather, onWeight),
+                        moveCtx = enemyMoveContext(enemy, state.party.firstOrNull(), state.weather, onWeight)
+                            .copy(hide = InfoRules.hiddenMoveInfo(state.randomized)),
+                        rand = state.randomized,
                         catchText = state.catchPercent?.takeIf { state.isWildBattle && TrackerOptions.showCatchRate }?.let { "~ $it%  to catch" },
                         onCatchTap = onCatchRates,
                         onMoveInfo = { mv ->
@@ -513,6 +583,10 @@ fun TrackerPanel(
                 // of permanent rows.
                 PcCarousel(
                     inBattle = state.inBattle,
+                    viewingOwn = !state.inBattle || viewingOwn,
+                    isWildBattle = state.isWildBattle,
+                    leadLevel = state.party.firstOrNull()?.mon?.level ?: 0,
+                    routeTrainersDefeated = state.routeTrainersDefeated,
                     badges = state.badges,
                     badgeSet = state.badgeSet,
                     note = enemyNote,

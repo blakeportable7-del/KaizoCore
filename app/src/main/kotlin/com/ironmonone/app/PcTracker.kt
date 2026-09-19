@@ -318,6 +318,8 @@ data class PcMove(
     val blank: Boolean = false,
     /** The power column when the PC tracker's rules replace the ROM number (MoveRules); "0" draws a dash. */
     val powerText: String? = null,
+    /** "?" when "Reveal info if randomized" hides a randomized PP. */
+    val ppText: String? = null,
     val accText: String? = null,
     /** Same-type attack bonus in battle: the power draws green (TrackerScreen.lua:1536). */
     val stab: Boolean = false,
@@ -406,6 +408,8 @@ fun PcStatRow(
     rightJustify: Boolean = true,
     /** "Color stat numbers by nature": the number takes the label's colour. */
     colorNumber: Boolean = false,
+    /** A colour for the number alone: the opponent's revealed base stats are Intermediate text. */
+    valueColor: Color? = null,
 ) {
     // Reference geometry: label at statOffsetX, value drawn at statOffsetX+25,
     // row pitch 10, inside a stats box 44 wide. Same pitch as the enemy's
@@ -428,7 +432,7 @@ fun PcStatRow(
                 PcRef.FONT - 2, if (delta > 0) Pc.Positive else Pc.Negative)
         }
         Spacer(Modifier.weight(1f))
-        PixText(value, PcRef.FONT, if (colorNumber) labelColor else Pc.Text, Modifier.width(19.rp),
+        PixText(value, PcRef.FONT, valueColor ?: if (colorNumber) labelColor else Pc.Text, Modifier.width(19.rp),
             if (rightJustify) TextAlign.End else TextAlign.Start)
     }
 }
@@ -516,6 +520,8 @@ fun PcHeadBlock(
     gender: Int? = null,
     /** "Show experience points bar": your Pokemon's progress through its level, 0 to 1. */
     expFraction: Float? = null,
+    /** In place of "cur/max" when the HP must not show ("Hide stats until summary shown"). */
+    hpText: String? = null,
     belowHead: (@Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit)? = null,
     statColumn: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit,
 ) {
@@ -571,7 +577,7 @@ fun PcHeadBlock(
                     Row {
                         PixText("HP:", PcRef.FONT, Pc.Text, Modifier.width(16.rp))
                         PixText(
-                            "$curHp/$maxHp", PcRef.FONT,
+                            hpText ?: "$curHp/$maxHp", PcRef.FONT,
                             when {
                                 maxHp <= 0 -> Pc.Text
                                 curHp * 5 <= maxHp -> Pc.Negative
@@ -705,7 +711,7 @@ fun PcMovesSection(
                 // took the Pow and Acc columns off the right edge with it.
                 if (referenceColumns) {
                     Row(Modifier.width(20.rp), verticalAlignment = Alignment.CenterVertically) {
-                        PixText(if (r.blank) "---" else "${r.pp}", PcRef.FONT, Pc.Text, Modifier.width(12.rp), numAlign)
+                        PixText(if (r.blank) "---" else r.ppText ?: "${r.pp}", PcRef.FONT, Pc.Text, Modifier.width(12.rp), numAlign)
                         Spacer(Modifier.width(3.rp))
                         Box(Modifier.width(5.rp), contentAlignment = Alignment.Center) {
                             r.effect?.let { PcEffectGlyph(it, Modifier.wrapContentWidth(unbounded = true)) }
@@ -1068,6 +1074,12 @@ object PcCategoryGlyphs {
 @Composable
 fun PcCarousel(
     inBattle: Boolean,
+    /** Battle.isViewingOwn: true outside battle, and in battle when your side is on screen. */
+    viewingOwn: Boolean = !inBattle,
+    isWildBattle: Boolean = false,
+    /** The lead's level: under 13, the route's wild encounters replace the badges. */
+    leadLevel: Int = 0,
+    routeTrainersDefeated: Int = 0,
     badges: Int,
     badgeSet: String,
     note: String,
@@ -1088,43 +1100,65 @@ fun PcCarousel(
     pedometerAllowed: Boolean = false,
     onRouteTap: (() -> Unit)? = null,
 ) {
-    // Build the list of what can show, in the reference's own order.
-    data class Item(val ms: Long, val key: String)
-    val items = buildList {
-        if (!inBattle) {
-            add(Item(3500, "badges"))
-            // TRAINERS: who is still standing between you and the next town.
-            // 420 frames, the longest item in the reference.
-            if (routeTrainers > 0) add(Item(7000, "trainers"))
-            // PEDOMETER: 210 frames, and only with "Display pedometer" on.
-            if (TrackerOptions.displayPedometer && pedometerAllowed) add(Item(3500, "pedometer"))
-        }
-        if (inBattle) {
-            add(Item(3000, "notes"))
-            // ROUTE_INFO: the reference shows it during a WILD encounter only.
-            if (!routeName.isNullOrBlank()) add(Item(3000, "route"))
-            if (!lastAttack.isNullOrBlank()) add(Item(3000, "lastAttack"))
-            if (weather != null || encounters > 1) add(Item(3000, "battleDetails"))
+    // TrackerScreen.getCurrentCarouselItem, item for item. The order is
+    // CarouselTypes': BADGES, TRAINERS, LAST_ATTACK, ROUTE_INFO, NOTES,
+    // BATTLE_DETAILS, PEDOMETER. Each shows only while its Setup toggle is on
+    // and its own condition holds; the current one stays until its frames run
+    // out (with rotation allowed) or it can no longer show.
+    val now = remember { mutableStateOf(System.currentTimeMillis()) }
+    // Battle.lua:836: a trainer battle ending shows TRAINERS for 300 frames.
+    var trainersUntil by remember { mutableStateOf(0L) }
+    var wasTrainerBattle by remember { mutableStateOf(false) }
+    var index by remember { mutableStateOf(0) }
+    var shownSince by remember { mutableStateOf(0L) }
+    LaunchedEffect(inBattle) {
+        if (inBattle) wasTrainerBattle = !isWildBattle
+        else if (wasTrainerBattle) {
+            wasTrainerBattle = false
+            trainersUntil = System.currentTimeMillis() + 5000
+            if (TrackerOptions.carouselShows("Trainers")) { index = 1; shownSince = System.currentTimeMillis() }
         }
     }
-    if (items.isEmpty()) return
-
-    var index by remember(inBattle, items.size) { mutableStateOf(0) }
-    val safe = index.coerceIn(0, items.lastIndex)
-    LaunchedEffect(inBattle, items.size, safe) {
-        kotlinx.coroutines.delay(items[safe].ms)
-        index = (safe + 1) % items.size
+    val earlyRoute = (!inBattle || isWildBattle) && leadLevel in 1..12 && routeTotal > 0
+    val pedometerShows = TrackerOptions.carouselShows("Pedometer") && viewingOwn && !inBattle &&
+        TrackerOptions.displayPedometer && pedometerAllowed
+    // (key, frames at 60fps, speed locked, can show)
+    val items = listOf(
+        Triple("badges", 210, TrackerOptions.carouselShows("Badges") && viewingOwn && !earlyRoute &&
+            (TrackerOptions.allowCarouselRotation || !pedometerShows)),
+        Triple("trainers", 420, TrackerOptions.carouselShows("Trainers") && !inBattle &&
+            now.value < trainersUntil && routeTrainers > 0),
+        Triple("lastAttack", 180, TrackerOptions.carouselShows("LastAttack") && inBattle && !lastAttack.isNullOrBlank()),
+        Triple("route", 180, TrackerOptions.carouselShows("RouteInfo") &&
+            (earlyRoute || (inBattle && isWildBattle && !routeName.isNullOrBlank()))),
+        Triple("notes", 180, TrackerOptions.carouselShows("Notes") && !viewingOwn),
+        Triple("battleDetails", 180, TrackerOptions.carouselShows("BattleDetails") && inBattle &&
+            (weather != null || encounters > 1)),
+        Triple("pedometer", 210, pedometerShows),
+    )
+    fun rotate() {
+        for (step in 1..items.size) {
+            val i = (index + step) % items.size
+            if (items[i].third) { index = i; break }
+        }
+        shownSince = System.currentTimeMillis()
     }
+    val speed = mapOf("1/2" to 2.0, "1" to 1.0, "2" to 0.5, "3" to 1.0 / 3, "4" to 0.25)[TrackerOptions.carouselSpeed] ?: 1.0
+    val cur = items[index]
+    val ms = (cur.second * 1000L / 60 * (if (cur.first == "trainers") 1.0 else speed)).toLong()
+    if (!cur.third) { if (items.any { it.third }) rotate() }
+    else if (TrackerOptions.allowCarouselRotation && now.value - shownSince > ms && shownSince != 0L) rotate()
+    if (shownSince == 0L) shownSince = now.value
+    LaunchedEffect(Unit) {
+        while (true) { kotlinx.coroutines.delay(100); now.value = System.currentTimeMillis() }
+    }
+    val shown = items[index]
+    if (!shown.third) return
 
-    when (items[safe].key) {
+    when (shown.first) {
         "badges" -> PcBadgeRow(badges, badgeSet)
-        "pedometer" -> PcCarouselLine("Steps:", "%,d".format(steps), Pc.Text)
-        "trainers" -> PcCarouselLine(
-            routeName ?: "Here:",
-            "$routeTrainers trainers" +
-                (if (routeBosses > 0) ", $routeBosses major" else ""),
-            if (routeBosses > 0) Pc.Gold else Pc.Text,
-        )
+        "pedometer" -> PcPedometerLine(steps)
+        "trainers" -> PcCarouselLine("Trainers defeated:", "$routeTrainersDefeated/$routeTrainers", Pc.Text)
         "notes" -> PcNoteRow(note, onEditNote)
         "lastAttack" -> PcLastAttackLine(lastAttack ?: "", lastAttackLethal)
         "route" -> PcCarouselLine(
@@ -1448,14 +1482,18 @@ fun PcHealsRow(percent: Int, count: Int) {
  * column of the head block. Same numbers as [PcHealsRow].
  */
 @Composable
-fun PcHealsBlock(percent: Int, count: Int, wholeHp: Int? = null) {
+fun PcHealsBlock(percent: Int, count: Int, wholeHp: Int? = null, pcHealsAttempt: Int? = null) {
     // TrackerScreen.lua:1276 draws both lines in Default text. The colour
     // ramp here was invented, and it painted "0% HP (0)" bright red as though
     // something were wrong rather than simply reporting an empty bag.
-    Column(Modifier.fillMaxWidth().padding(horizontal = 2.rp, vertical = 1.rp)) {
-        PixText("Heals:", PcRef.FONT, Pc.Text)
-        // "Show heals as whole number": the HP the bag would restore, instead of the share of max HP.
-        PixText(if (TrackerOptions.healsWhole && wholeHp != null) "$wholeHp HP ($count)" else "$percent% HP ($count)", PcRef.FONT, Pc.Text)
+    Row(Modifier.fillMaxWidth().padding(horizontal = 2.rp, vertical = 1.rp), verticalAlignment = Alignment.Top) {
+        Column(Modifier.weight(1f)) {
+            PixText("Heals:", PcRef.FONT, Pc.Text)
+            // "Show heals as whole number": the HP the bag would restore, instead of the share of max HP.
+            PixText(if (TrackerOptions.healsWhole && wholeHp != null) "$wholeHp HP ($count)" else "$percent% HP ($count)", PcRef.FONT, Pc.Text)
+        }
+        // "Track PC Heals": the counter at the box's right edge.
+        if (pcHealsAttempt != null) PcHealCounter(pcHealsAttempt)
     }
 }
 

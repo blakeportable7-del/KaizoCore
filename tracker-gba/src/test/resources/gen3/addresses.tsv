@@ -30,6 +30,10 @@ Emerald (U)	bagPocket_Balls_offset	0x00000650
 Emerald (U)	bagPocket_Balls_Size	0x00000010
 Emerald (U)	HandleTurnActionSelectionState	0x0803BE75
 Emerald (U)	ReturnFromBattleToOverworld	0x0803DF71
+Emerald (U)	gSpecialVar_Result	0x020375F0
+Emerald (U)	gameVarsOffset	0x0000139C
+Emerald (U)	gTasks	0x03005E00
+Emerald (U)	Task_HandleConfirmStarterInput	0x08134400
 FireRed (U) v1.0	gBattleTerrain	0x02022B50
 FireRed (U) v1.0	gBattleWeather	0x02023F1C
 FireRed (U) v1.0	gBattleStructPtr	0x02023FE8
@@ -61,6 +65,9 @@ FireRed (U) v1.0	bagPocket_Balls_offset	0x00000430
 FireRed (U) v1.0	bagPocket_Balls_Size	0x0000000D
 FireRed (U) v1.0	HandleTurnActionSelectionState	0x08014041
 FireRed (U) v1.0	ReturnFromBattleToOverworld	0x08015B59
+FireRed (U) v1.0	gSpecialVar_Result	0x020370D0
+FireRed (U) v1.0	gameVarsOffset	0x00001000
+FireRed (U) v1.0	gTasks	0x03005090
 FireRed (U) v1.1	gBattleTerrain	0x02022B50
 FireRed (U) v1.1	gBattleWeather	0x02023F1C
 FireRed (U) v1.1	gBattleStructPtr	0x02023FE8
@@ -92,6 +99,9 @@ FireRed (U) v1.1	bagPocket_Balls_offset	0x00000430
 FireRed (U) v1.1	bagPocket_Balls_Size	0x0000000D
 FireRed (U) v1.1	HandleTurnActionSelectionState	0x08014055
 FireRed (U) v1.1	ReturnFromBattleToOverworld	0x08015B6D
+FireRed (U) v1.1	gSpecialVar_Result	0x020370D0
+FireRed (U) v1.1	gameVarsOffset	0x00001000
+FireRed (U) v1.1	gTasks	0x03005090
 LeafGreen (U) v1.0	gBattleTerrain	0x02022B50
 LeafGreen (U) v1.0	gBattleWeather	0x02023F1C
 LeafGreen (U) v1.0	gBattleStructPtr	0x02023FE8
@@ -123,6 +133,9 @@ LeafGreen (U) v1.0	bagPocket_Balls_offset	0x00000430
 LeafGreen (U) v1.0	bagPocket_Balls_Size	0x0000000D
 LeafGreen (U) v1.0	HandleTurnActionSelectionState	0x08014041
 LeafGreen (U) v1.0	ReturnFromBattleToOverworld	0x08015B59
+LeafGreen (U) v1.0	gSpecialVar_Result	0x020370D0
+LeafGreen (U) v1.0	gameVarsOffset	0x00001000
+LeafGreen (U) v1.0	gTasks	0x03005090
 Ruby (U) v1.0	gBattleTerrain	0x0300428C
 Ruby (U) v1.0	gBattleWeather	0x02024DB8
 Ruby (U) v1.0	gStatuses3	0x02024C98
@@ -151,6 +164,10 @@ Ruby (U) v1.0	bagPocket_Balls_offset	0x00000600
 Ruby (U) v1.0	bagPocket_Balls_Size	0x00000010
 Ruby (U) v1.0	HandleTurnActionSelectionState	0x08012325
 Ruby (U) v1.0	ReturnFromBattleToOverworld	0x08013EB1
+Ruby (U) v1.0	gSpecialVar_Result	0x0202E8DC
+Ruby (U) v1.0	gameVarsOffset	0x00001340
+Ruby (U) v1.0	gTasks	0x03004B20
+Ruby (U) v1.0	Task_HandleConfirmStarterInput	0x0810A330
 Sapphire (U) v1.0	gBattleTerrain	0x0300428C
 Sapphire (U) v1.0	gBattleWeather	0x02024DB8
 Sapphire (U) v1.0	gStatuses3	0x02024C98
@@ -179,3 +196,7 @@ Sapphire (U) v1.0	bagPocket_Balls_offset	0x00000600
 Sapphire (U) v1.0	bagPocket_Balls_Size	0x00000010
 Sapphire (U) v1.0	HandleTurnActionSelectionState	0x08012325
 Sapphire (U) v1.0	ReturnFromBattleToOverworld	0x08013EB1
+Sapphire (U) v1.0	gSpecialVar_Result	0x0202E8DC
+Sapphire (U) v1.0	gameVarsOffset	0x00001340
+Sapphire (U) v1.0	gTasks	0x03004B20
+Sapphire (U) v1.0	Task_HandleConfirmStarterInput	0x0810A330

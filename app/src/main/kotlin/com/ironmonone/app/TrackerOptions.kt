@@ -84,6 +84,35 @@ object TrackerOptions {
     var colorStatNumbers by mutableStateOf(false)
     /** "Right justified numbers": off, the numbers start at their column, as the reference draws them. */
     var rightJustifiedNumbers by mutableStateOf(false)
+    /** "Track PC Heals": the Pokemon Center heal counter in the heals box (PcHeals). Off, as in the reference. */
+    var trackPcHeals by mutableStateOf(false)
+    /** "PC heals count downward": from 10 to 0, as the reference defaults; off, up from 0. */
+    var pcHealsCountDownward by mutableStateOf(true)
+    /** "Hide stats until summary shown": off, as in the reference (SummaryChecks). */
+    var hideStatsUntilSummary by mutableStateOf(false)
+    // The information rules (InfoRules), at the reference's defaults.
+    /** "Show data for vanilla game": an unrandomized part of the opponent is shown in full. */
+    var showDataForVanillaGame by mutableStateOf(true)
+    /** "Open Book Play Mode": the opponent's abilities, stats and moves, randomized or not. */
+    var openBookPlayMode by mutableStateOf(false)
+    /** "Reveal info if randomized": off, the opponent's randomized move facts show as "?". */
+    var revealInfoIfRandomized by mutableStateOf(true)
+    /** "Show starter ball info": the Pokemon info screen for the ball being confirmed in the lab. */
+    var showStarterBallInfo by mutableStateOf(false)
+    // The carousel tab, at the reference's defaults (Options.lua 5-7).
+    const val CAROUSEL_DEFAULT = "Badges,Notes,RouteInfo,Trainers,LastAttack,BattleDetails,Pedometer,GachaMon"
+    /** "Allow carousel rotation" ("Allow bottom box rotation"). */
+    var allowCarouselRotation by mutableStateOf(true)
+    /** "CarouselItems": the reference's own keys, comma separated. */
+    var carouselItems by mutableStateOf(CAROUSEL_DEFAULT)
+    /** "CarouselSpeed": 1/2, 1, 2, 3 or 4. */
+    var carouselSpeed by mutableStateOf("1")
+    fun carouselShows(key: String) = key in carouselItems.split(",")
+    fun setCarouselItem(key: String, on: Boolean) {
+        // SetupScreen's saveCarouselSettings: the list in the setup's own order.
+        val keys = listOf("Badges", "Notes", "RouteInfo", "Trainers", "LastAttack", "BattleDetails", "Pedometer", "GachaMon")
+        carouselItems = keys.filter { if (it == key) on else carouselShows(it) }.joinToString(",")
+    }
 
     private var file: File? = null
 
@@ -124,6 +153,16 @@ object TrackerOptions {
                     "showExpBar" -> showExpBar = v == "true"
                     "colorStatNumbers" -> colorStatNumbers = v == "true"
                     "rightJustifiedNumbers" -> rightJustifiedNumbers = v == "true"
+                    "trackPcHeals" -> trackPcHeals = v == "true"
+                    "pcHealsCountDownward" -> pcHealsCountDownward = v == "true"
+                    "hideStatsUntilSummary" -> hideStatsUntilSummary = v == "true"
+                    "showDataForVanillaGame" -> showDataForVanillaGame = v == "true"
+                    "openBookPlayMode" -> openBookPlayMode = v == "true"
+                    "revealInfoIfRandomized" -> revealInfoIfRandomized = v == "true"
+                    "showStarterBallInfo" -> showStarterBallInfo = v == "true"
+                    "allowCarouselRotation" -> allowCarouselRotation = v == "true"
+                    "carouselItems" -> carouselItems = v
+                    "carouselSpeed" -> if (v in listOf("1/2", "1", "2", "3", "4")) carouselSpeed = v
                     "landscapeTracker" -> landscapeTracker = LandscapeTracker.entries.firstOrNull { it.name == v } ?: LandscapeTracker.DOCKED
                 }
             }
@@ -138,5 +177,5 @@ object TrackerOptions {
         }
     }
 
-    fun text(): String = "showBallPicker=$showBallPicker\nshowCategoryIcons=$showCategoryIcons\nhealsWhole=$healsWhole\nshowTeamView=$showTeamView\nrestorePoints=$restorePoints\nshowTimer=$showTimer\ntourneyTracker=$tourneyTracker\nkantoBadgesFirst=$kantoBadgesFirst\nshowBothBadgeSets=$showBothBadgeSets\nlogCustomTrainerNames=$logCustomTrainerNames\nlogShowUnlearnableGymTms=$logShowUnlearnableGymTms\nlogShowPreEvolutions=$logShowPreEvolutions\nlossCondition=${lossCondition.key}\nlandscapeTracker=${landscapeTracker.name}\nshowRepel=$showRepel\nanimatedSprites=$animatedSprites\nspritesWalk=$spritesWalk\ndetermineFriendship=$determineFriendship\ndisplayPedometer=$displayPedometer\nshowMoveEffectiveness=$showMoveEffectiveness\nshowCatchRate=$showCatchRate\ncalculateVariableDamage=$calculateVariableDamage\ncountEnemyPp=$countEnemyPp\nshowLastDamage=$showLastDamage\nautoSwapToEnemy=$autoSwapToEnemy\nshowNicknames=$showNicknames\ndisplayGender=$displayGender\nshowExpBar=$showExpBar\ncolorStatNumbers=$colorStatNumbers\nrightJustifiedNumbers=$rightJustifiedNumbers\n"
+    fun text(): String = "showBallPicker=$showBallPicker\nshowCategoryIcons=$showCategoryIcons\nhealsWhole=$healsWhole\nshowTeamView=$showTeamView\nrestorePoints=$restorePoints\nshowTimer=$showTimer\ntourneyTracker=$tourneyTracker\nkantoBadgesFirst=$kantoBadgesFirst\nshowBothBadgeSets=$showBothBadgeSets\nlogCustomTrainerNames=$logCustomTrainerNames\nlogShowUnlearnableGymTms=$logShowUnlearnableGymTms\nlogShowPreEvolutions=$logShowPreEvolutions\nlossCondition=${lossCondition.key}\nlandscapeTracker=${landscapeTracker.name}\nshowRepel=$showRepel\nanimatedSprites=$animatedSprites\nspritesWalk=$spritesWalk\ndetermineFriendship=$determineFriendship\ndisplayPedometer=$displayPedometer\nshowMoveEffectiveness=$showMoveEffectiveness\nshowCatchRate=$showCatchRate\ncalculateVariableDamage=$calculateVariableDamage\ncountEnemyPp=$countEnemyPp\nshowLastDamage=$showLastDamage\nautoSwapToEnemy=$autoSwapToEnemy\nshowNicknames=$showNicknames\ndisplayGender=$displayGender\nshowExpBar=$showExpBar\ncolorStatNumbers=$colorStatNumbers\nrightJustifiedNumbers=$rightJustifiedNumbers\ntrackPcHeals=$trackPcHeals\npcHealsCountDownward=$pcHealsCountDownward\nhideStatsUntilSummary=$hideStatsUntilSummary\nshowDataForVanillaGame=$showDataForVanillaGame\nopenBookPlayMode=$openBookPlayMode\nrevealInfoIfRandomized=$revealInfoIfRandomized\nallowCarouselRotation=$allowCarouselRotation\ncarouselItems=$carouselItems\ncarouselSpeed=$carouselSpeed\nshowStarterBallInfo=$showStarterBallInfo\n"
 }

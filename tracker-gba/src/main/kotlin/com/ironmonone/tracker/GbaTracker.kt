@@ -140,6 +140,8 @@ data class GameMap(
     val friendshipRequiredAddr: Long = 0,
     /** gTakenDmg: the damage your Pokemon has taken, for the last-attack line (DamageWatch). 0 = not tracked. */
     val takenDmg: Long = 0,
+    /** sMonSummaryScreen: non-zero while a Pokemon summary is open in the game. 0 = not watched. */
+    val monSummaryScreen: Long = 0,
     /** Which badge art to draw: FRLG, RSE or DPPT. */
     val badgeSet: String = "FRLG",
     /** gLevelUpLearnsets: one pointer per species to a 0xFFFF-terminated list of
@@ -242,6 +244,17 @@ data class GameMap(
     val gTrainerClassNames: Long = 0,
     val gameFlagsOffset: Long = 0,
     /**
+     * Program.checkForStarterSelection's addresses, from the GameAddresses
+     * JSONs. FRLG: gSpecialVar_Result, and the offered species at
+     * gameVarsOffset + 4 in SaveBlock1. RSE: gTasks, whose first task runs
+     * Task_HandleConfirmStarterInput while the choice is on screen. Zero where
+     * this build does not read it (Nat. Dex).
+     */
+    val specialVarResult: Long = 0,
+    val gameVarsOffset: Long = 0,
+    val gTasks: Long = 0,
+    val confirmStarterTask: Long = 0,
+    /**
      * Beating one of these IS the win condition - the run is over and won.
      * FRLG has three because the champion's team depends on your starter.
      */
@@ -276,6 +289,7 @@ data class GameMap(
             repelStepsOffset = 0x13DE,
             friendshipRequiredAddr = 0x0806D1D6,
             takenDmg = 0x020241F8,
+            monSummaryScreen = 0x0203CF1C,
             abilityNames = 0x0831B6DB,
             itemNames = 0x085839A0,
             battleMoves = 0x0831C898,
@@ -309,6 +323,7 @@ data class GameMap(
             returnToOverworld = 0x0803DF71,
             trainerOpponent = 0x02038BCA,
             gTrainers = 0x08310030, gTrainerClassNames = 0x0830FCD4, gameFlagsOffset = 0x1270,
+            gTasks = 0x03005E00, confirmStarterTask = 0x08134400,
             finalTrainers = setOf(804),
             encryptionKeyOffset = 0xAC,
         )
@@ -342,6 +357,7 @@ data class GameMap(
             friendshipRequiredAddr = 0x08043002,
             // RAM, so FireRed v1.1 and LeafGreen share it through their copy().
             takenDmg = 0x02023D58,
+            monSummaryScreen = 0x0203B140,
             startersBase = 0x08169BB5,
             starter2Off = 515,
             starter3Off = 461,
@@ -375,6 +391,7 @@ data class GameMap(
             returnToOverworld = 0x08015B59,
             trainerOpponent = 0x020386AE,
             gTrainers = 0x0823EAC8, gTrainerClassNames = 0x0823E558, gameFlagsOffset = 0xEE0,
+            specialVarResult = 0x020370D0, gameVarsOffset = 0x1000,
             finalTrainers = setOf(438, 439, 440),
             encryptionKeyOffset = 0xF20,
         )
@@ -412,6 +429,7 @@ data class GameMap(
             repelStepsOffset = 0x1382,
             friendshipRequiredAddr = 0x0803F5CA,
             takenDmg = 0x02024BF4,
+            monSummaryScreen = 0x02018076,
             abilityNames = 0x081FA248,
             itemNames = 0x083C5564,
             battleMoves = 0x081FB12C,
@@ -443,6 +461,7 @@ data class GameMap(
             returnToOverworld = 0x08013EB1,
             trainerOpponent = 0x0202FF5E,
             gTrainers = 0x081F04FC, gTrainerClassNames = 0x081F0208, gameFlagsOffset = 0x1220,
+            gTasks = 0x03004B20, confirmStarterTask = 0x0810A330,
             finalTrainers = setOf(335),      // Steven, TrainerData.setupTrainersAsRubySapphire
             encryptionKeyOffset = 0,         // Ruby and Sapphire store quantities in the clear
         )
@@ -909,6 +928,13 @@ data class EnemyInfo(
     /** Its personality value (BattlePokemon +0x48), for its gender. */
     val pid: Long = 0,
     /**
+     * Its actual four moves and their PP (BattlePokemon +0x0C, +0x24), in slot
+     * order. Shown only where the reference allows it: an unrandomized
+     * learnset, or Open Book.
+     */
+    val moves: List<Int> = emptyList(),
+    val movePps: List<Int> = emptyList(),
+    /**
      * The rolled ability id from the battle struct. INTERNAL: the panel
      * must not display it directly - the reference reveals an enemy
      * ability only when a battle script shows it activating, and the
@@ -1080,6 +1106,14 @@ data class TrackerState(
     val enemy: EnemyInfo? = null,
     /** A wild battle: the Poke Ball chance the move header shows, 0-100. Null otherwise. */
     val catchPercent: Int? = null,
+    /** Pokemon Center heals plus rests at home, from the game's statistics; PcHeals watches it. */
+    val centerHealsStat: Int = 0,
+    /** A Pokemon summary is open in the game right now (sMonSummaryScreen). */
+    val summaryOpen: Boolean = false,
+    /** PokemonData.isGameDataRandomized; true where it cannot be told. */
+    val gameDataRandomized: Boolean = true,
+    /** Which parts the randomizer changed; null while unknown. The information rules read it. */
+    val randomized: RandomizedFlags? = null,
     /** The carousel's last attack (DamageWatch): the enemy's move, and the damage it did; null when it is not time to show it. */
     val lastAttackMove: String? = null,
     val lastAttackDamage: Int = 0,
@@ -1109,6 +1143,8 @@ data class TrackerState(
     val routeSpecies: List<Int> = emptyList(),
     /** Trainer ids stationed on this map, from the reference's route data. */
     val routeTrainers: List<Int> = emptyList(),
+    /** How many of those are beaten (Program.getDefeatedTrainersByLocation), for the carousel. */
+    val routeTrainersDefeated: Int = 0,
     /** How many of those are gym leaders, Elite 4 or bosses. */
     val routeBosses: Int = 0,
     /** gTrainerBattleOpponent_A during a trainer battle, for the Trainer Info screen. */
@@ -1117,6 +1153,9 @@ data class TrackerState(
     val steps: Int = 0,
     /** True only in the map where the starter is chosen. */
     val inLab: Boolean = false,
+    /** The starter whose ball is being confirmed in the lab, for "Show starter ball info". */
+    val starterOffered: Int? = null,
+    val starterBase: BaseStats? = null,
     /** Ability revealed by a battle-script activation this tick:
      *  species to ability name. The reference's Tracker.TrackAbility. */
     val abilityRevealed: Pair<Int, String>? = null,
@@ -1461,14 +1500,22 @@ class GbaTracker(
             healCount = heals.second,
             mapId = mapId,
             inLab = mapId != null && mapId in map.labMapIds,
+            starterOffered = if (count == 0 && mapId != null && mapId in map.labMapIds) starterOffered() else null,
+            starterBase = if (count == 0 && mapId != null && mapId in map.labMapIds) starterOffered()?.let { baseStats(it) } else null,
             routeName = mapId?.let { routeInfo(it)?.first },
             routeSpecies = mapId?.let { routeInfo(it)?.second } ?: emptyList(),
             routeTrainers = mapId?.let { trainersOnRoute(it) } ?: emptyList(),
+            routeTrainersDefeated = mapId?.let { m -> trainersOnRoute(m).count { trainerDefeated(it) } } ?: 0,
             opponentTrainerId = if (inBattle && trainer) readOpponentTrainerId()?.also { id -> whichRival(id)?.let { rivalChoice = it } } else null,
             routeBosses = mapId?.let { m ->
                 trainersOnRoute(m).count { trainerGroup(it) in BOSS_GROUPS }
             } ?: 0,
             steps = readGameStat(5),
+            // Constants.GAME_STATS USED_POKECENTER (15) + RESTED_AT_HOME (16), for "Track PC Heals".
+            centerHealsStat = readGameStat(15) + readGameStat(16),
+            summaryOpen = map.monSummaryScreen != 0L && rb(map.monSummaryScreen) != 0,
+            gameDataRandomized = randomized()?.gameData ?: true,
+            randomized = randomized(),
             gameOver = readGameOver(party),
             diagnostics = "%s  party=%08X count=%08X base=%08X"
                 .format(map.name, map.party, map.partyCount, map.baseStats),
@@ -2183,6 +2230,31 @@ class GbaTracker(
         return BattleDetails(terrain, weather, turn, battlers, field, sides, mons)
     }
 
+    /**
+     * Program.checkForStarterSelection: the species in the ball the player is
+     * being asked to confirm, or null. FRLG reads it from a game var while the
+     * yes/no is open (result 1 or 255); RSE finds the confirm task running and
+     * takes the matching rival's first Pokemon (choice 0, 1, 2 -> trainers 520,
+     * 523, 526).
+     */
+    fun starterOffered(): Int? {
+        val species = when {
+            map.confirmStarterTask != 0L && map.gTasks != 0L -> {
+                val func = rd(map.gTasks)
+                if (func >= map.confirmStarterTask && func < map.confirmStarterTask + 10) {
+                    val rival = mapOf(0 to 520, 1 to 523, 2 to 526)[rw(map.gTasks + 0x8)] ?: 0
+                    trainer(rival)?.party?.firstOrNull()?.species
+                } else null
+            }
+            map.specialVarResult != 0L -> {
+                val r = rw(map.specialVarResult)
+                if (r == 1 || r == 255) saveBlock1()?.let { rw(it + map.gameVarsOffset + 0x4) } else null
+            }
+            else -> null
+        }
+        return species?.takeIf { it in 1..411 && baseStats(it) != null }
+    }
+
     /** Program.hasDefeatedTrainer: flag 0x500 + id in the save block's flags. */
     fun trainerDefeated(trainerId: Int): Boolean {
         if (map.gameFlagsOffset == 0L) return false
@@ -2242,6 +2314,31 @@ class GbaTracker(
     fun evolution(species: Int): String? = EvoText.clean(speciesExtra[species]?.second)
 
     private val damageWatch = DamageWatch()
+    private var randomizedCache: RandomizedFlags? = null
+
+    /**
+     * PokemonData / MoveData checkIfDataIsRandomized, from the ROM. Computed once
+     * the ROM answers (Bulbasaur's stats all zero means it has not loaded yet);
+     * null on a layout it does not know (Nat. Dex), which callers read as randomized.
+     */
+    fun randomized(): RandomizedFlags? {
+        randomizedCache?.let { return it }
+        if (map.baseStatsStride != 28 || map.baseStats == 0L) return null
+        fun mon(sp: Int): RandomizedFlags.Mon? {
+            val b = memory.read(map.baseStats + sp * 28L, 28)
+            if (b.size < 28) return null
+            return RandomizedFlags.Mon(List(6) { b.u8(it) }, b.u8(6) to b.u8(7), b.u8(22) to b.u8(23),
+                b.u8(0x12), b.u8(9), learnset(sp).map { (level, move) -> move to level })
+        }
+        fun move(id: Int): RandomizedFlags.Move? = moveData(id)?.let { RandomizedFlags.Move(it[0], it[1], it[2], it[3]) }
+        val b = mon(1) ?: return null
+        if (b.stats.all { it == 0 }) return null
+        val l = mon(131) ?: return null
+        val s = mon(213) ?: return null
+        val a = move(314) ?: return null
+        val c = move(128) ?: return null
+        return RandomizedFlags.detect(b, l, s, a, c).also { randomizedCache = it }
+    }
     private var friendshipRequiredCache = 0
 
     /**
@@ -2745,6 +2842,8 @@ class GbaTracker(
             speciesName = speciesName(species),
             evo = EvoText.forEnemy(evolution(species)),
             pid = b.u32(0x48),
+            moves = List(4) { b.u16(0x0C + it * 2) },
+            movePps = List(4) { b.u8(0x24 + it) },
             level = b.u8(0x2A),
             curHp = b.u16(0x28),
             maxHp = b.u16(0x2C),

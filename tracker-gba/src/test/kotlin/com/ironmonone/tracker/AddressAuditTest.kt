@@ -62,6 +62,10 @@ class AddressAuditTest {
         "bagPocket_Berries_offset" to { m: GameMap -> m.bagBerriesOffset },
         "bagPocket_Balls_offset" to { m: GameMap -> m.bagBallsOffset },
         "bagPocket_Balls_Size" to { m: GameMap -> m.bagBallsSlots.toLong() },
+        "gSpecialVar_Result" to { m: GameMap -> m.specialVarResult },
+        "gameVarsOffset" to { m: GameMap -> m.gameVarsOffset },
+        "gTasks" to { m: GameMap -> m.gTasks },
+        "Task_HandleConfirmStarterInput" to { m: GameMap -> m.confirmStarterTask },
     )
 
     @Test

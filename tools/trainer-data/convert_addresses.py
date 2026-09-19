@@ -22,7 +22,8 @@ WANT = ["gBattleTerrain", "gBattleWeather", "gBattleStructPtr", "gStatuses3", "g
         "gBaseStats", "gPlayerParty", "gPlayerPartyCount", "gEnemyParty", "gBattleTypeFlags", "gBattleMons", "gBattlersCount",
         "gBattleOutcome", "gBattleMainFunc", "gMapHeader", "gLevelUpLearnsets", "gSaveBlock1ptr", "gSaveBlock2ptr",
         "bagPocket_Items_offset", "bagPocket_Berries_offset", "bagPocket_Balls_offset", "bagPocket_Balls_Size",
-        "HandleTurnActionSelectionState", "ReturnFromBattleToOverworld"]
+        "HandleTurnActionSelectionState", "ReturnFromBattleToOverworld",
+        "gSpecialVar_Result", "gameVarsOffset", "gTasks", "Task_HandleConfirmStarterInput"]
 out = root / "tracker-gba/src/test/resources/gen3/addresses.tsv"
 out.parent.mkdir(parents=True, exist_ok=True)
 n = 0

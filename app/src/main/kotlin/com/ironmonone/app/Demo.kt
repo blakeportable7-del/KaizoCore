@@ -76,6 +76,13 @@ object Demo {
         if (mode == "gba-lab") return TrackerState(
             partyCount = 0, party = emptyList(), inBattle = false, isWildBattle = false, inLab = true, badgeSet = "RSE",
             mapId = 17, repelSteps = 124, repelDuration = 200,
+            // Torchic's ball on the confirm prompt, for "Show starter ball info".
+            starterOffered = 280, starterBase = t.baseStats(280),
+        )
+        // Walking a town between battles: the badges and the pedometer take turns.
+        if (mode == "gba-walk") return TrackerState(
+            partyCount = 1, party = party, inBattle = false, isWildBattle = false, badges = 0b11, badgeSet = "RSE",
+            healPercent = 62, healCount = 4, routeName = "Mauville City", steps = 18422, mapId = 89,
         )
         if (mode == "gba-over") return TrackerState(
             partyCount = 1, party = listOf(tracked(t, scyther.copy(curHp = 0))),
@@ -93,6 +100,7 @@ object Demo {
                 species = 74, speciesName = t.speciesName(74), level = 20, curHp = 40, maxHp = 40,
                 type1 = gb?.type1 ?: 5, type2 = gb?.type2 ?: 4, base = gb,
                 movesSeen = emptyList(), moveRows = emptyList(),
+                moves = listOf(33, 111, 88, 0), movePps = listOf(35, 40, 15, 0),
                 evo = com.ironmonone.tracker.EvoText.forEnemy(t.evolution(74)),
             )
             return TrackerState(
@@ -113,7 +121,9 @@ object Demo {
             statusCondition = "PAR",
             type1 = eb?.type1 ?: 13, type2 = eb?.type2 ?: 8, base = eb,
             movesSeen = listOf(t.moveName(49), t.moveName(86)), moveRows = t.moveRowsOf(magneton).take(2),
-            abilityGuess = eb?.let { b -> listOf(b.ability1, b.ability2).filter { it != 0 }.joinToString("/") { t.abilityName(it) } } ?: "?",
+            abilityGuess = eb?.let { b -> listOf(b.ability1, b.ability2).filter { it != 0 }.joinToString(" / ") { t.abilityName(it) } } ?: "?",
+            // Its actual moveset, which Open Book or a vanilla game shows in place of those seen.
+            moves = listOf(49, 86, 84, 48), movePps = listOf(19, 20, 30, 40),
         )
         return TrackerState(
             partyCount = 1, party = party, inBattle = true, isWildBattle = false,

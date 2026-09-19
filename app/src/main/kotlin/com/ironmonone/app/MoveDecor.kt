@@ -38,6 +38,10 @@ internal data class MoveContext(
     val weather: String?,
     /** Your Pokemon's Hidden Power type as set (HiddenPowerTypes); null for the opponent or unset. */
     val hiddenPowerType: Int? = null,
+    /** "Reveal info if randomized" off: the randomized facts to hide on these moves (InfoRules). */
+    val hide: com.ironmonone.tracker.RandomizedFlags? = null,
+    /** Off, and your own moves: no effectiveness while the types are randomized. */
+    val hideEffectiveness: Boolean = false,
 )
 
 private fun kg(s: String?): Double? = s?.trim()?.toDoubleOrNull()
@@ -90,6 +94,24 @@ internal fun MoveRow.toPcMove(ctx: MoveContext?): PcMove {
         else -> category
     }
     val battling = ctx != null && ctx.inBattle
+    // DataHelper.lua:340: with "Reveal info if randomized" off, an opponent's
+    // randomized move type, PP, power and accuracy are not shown, and without
+    // a known type there is no colour, category or effectiveness either.
+    val h = ctx?.hide?.takeIf { !ctx.viewingOwn }
+    if (h != null) {
+        val t = if (h.moveType) null else adj.type
+        return PcMove(
+            id = id, name = name, pp = pp, ppMax = ppMax, power = power, acc = acc,
+            color = t?.let { pcTypeColor(it) } ?: Pc.Text,
+            category = if (h.moveType) null else cat,
+            type = t, typeName = t?.let(com.ironmonone.tracker.Gen3Types::name),
+            priority = priority, contact = contact,
+            ppText = "?".takeIf { h.movePP },
+            powerText = if (h.movePower && adj.power != "0") "?" else adj.power,
+            accText = if (h.moveAccuracy && adj.acc != "0") "?" else adj.acc,
+            effect = if (battling && t != null && TrackerOptions.showMoveEffectiveness) MoveRules.effectiveness(id, t, cat, ctx.targetTypes).takeIf { it != 1.0 } else null,
+        )
+    }
     return PcMove(
         id = id, name = name, pp = pp, ppMax = ppMax, power = power, acc = acc,
         color = adj.type?.let { pcTypeColor(it) } ?: Pc.Text,
@@ -98,7 +120,7 @@ internal fun MoveRow.toPcMove(ctx: MoveContext?): PcMove {
         priority = priority, contact = contact,
         powerText = adj.power, accText = adj.acc,
         stab = battling && MoveRules.isStab(id, adj.type, cat, adj.power, ctx!!.attackerTypes),
-        effect = if (battling && TrackerOptions.showMoveEffectiveness) MoveRules.effectiveness(id, adj.type, cat, ctx!!.targetTypes).takeIf { it != 1.0 } else null,
+        effect = if (battling && TrackerOptions.showMoveEffectiveness && !ctx!!.hideEffectiveness) MoveRules.effectiveness(id, adj.type, cat, ctx.targetTypes).takeIf { it != 1.0 } else null,
     )
 }
 
@@ -145,6 +167,16 @@ private val SWORD = listOf(
     "10101100000000",
     "11000110000000",
 )
+
+/** A pixel image in several colours: each digit in [rows] maps to a colour; unmapped digits are clear. */
+@Composable
+internal fun PcPixelImageColors(rows: List<String>, colors: Map<Char, Color>, modifier: Modifier = Modifier) {
+    val w = rows.maxOf { it.length }; val h = rows.size
+    Canvas(modifier.width(w.rp).height(h.rp)) {
+        val u = size.width / w
+        rows.forEachIndexed { y, r -> r.forEachIndexed { x, c -> colors[c]?.let { drawRect(it, Offset(x * u, y * u), Size(u, u)) } } }
+    }
+}
 
 @Composable
 internal fun PcPixelImage(rows: List<String>, color: Color, modifier: Modifier = Modifier) {
