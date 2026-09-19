@@ -138,6 +138,8 @@ data class GameMap(
      * 219 there, so 220 on all six games.
      */
     val friendshipRequiredAddr: Long = 0,
+    /** gTakenDmg: the damage your Pokemon has taken, for the last-attack line (DamageWatch). 0 = not tracked. */
+    val takenDmg: Long = 0,
     /** Which badge art to draw: FRLG, RSE or DPPT. */
     val badgeSet: String = "FRLG",
     /** gLevelUpLearnsets: one pointer per species to a 0xFFFF-terminated list of
@@ -273,6 +275,7 @@ data class GameMap(
             saveBlock2Ptr = 0x03005D90,
             repelStepsOffset = 0x13DE,
             friendshipRequiredAddr = 0x0806D1D6,
+            takenDmg = 0x020241F8,
             abilityNames = 0x0831B6DB,
             itemNames = 0x085839A0,
             battleMoves = 0x0831C898,
@@ -337,6 +340,8 @@ data class GameMap(
             saveBlock2Ptr = 0x0300500C,
             repelStepsOffset = 0x1040,
             friendshipRequiredAddr = 0x08043002,
+            // RAM, so FireRed v1.1 and LeafGreen share it through their copy().
+            takenDmg = 0x02023D58,
             startersBase = 0x08169BB5,
             starter2Off = 515,
             starter3Off = 461,
@@ -406,6 +411,7 @@ data class GameMap(
             saveBlock2Fixed = 0x02024EA4,
             repelStepsOffset = 0x1382,
             friendshipRequiredAddr = 0x0803F5CA,
+            takenDmg = 0x02024BF4,
             abilityNames = 0x081FA248,
             itemNames = 0x083C5564,
             battleMoves = 0x081FB12C,
@@ -797,6 +803,8 @@ data class BaseStats(
     val catchRate: Int = 0,
     /** SpeciesInfo +0x12 on the vanilla struct (PokemonData.Addresses.offsetBaseFriendship); 70 where the layout is not pinned. */
     val baseFriendship: Int = EvoText.DEFAULT_BASE,
+    /** SpeciesInfo +0x10 (PokemonData.Addresses.offsetGenderRatio); 255 = genderless or unknown. */
+    val genderRatio: Int = 255,
     /** Gen 1: one Special stat, carried in both spAtk and spDef so damage code reads it either way.
      *  The panel shows it once and the BST counts it once, as the Gen 1 reference tracker does. */
     val singleSpecial: Boolean = false,
@@ -898,6 +906,8 @@ data class EnemyInfo(
     val abilityGuess: String = "?",
     /** The same evolution text, in the default colour: the reference gives an opponent no readiness. */
     val evo: EvoText.Label? = null,
+    /** Its personality value (BattlePokemon +0x48), for its gender. */
+    val pid: Long = 0,
     /**
      * The rolled ability id from the battle struct. INTERNAL: the panel
      * must not display it directly - the reference reveals an enemy
@@ -1070,6 +1080,11 @@ data class TrackerState(
     val enemy: EnemyInfo? = null,
     /** A wild battle: the Poke Ball chance the move header shows, 0-100. Null otherwise. */
     val catchPercent: Int? = null,
+    /** The carousel's last attack (DamageWatch): the enemy's move, and the damage it did; null when it is not time to show it. */
+    val lastAttackMove: String? = null,
+    val lastAttackDamage: Int = 0,
+    /** A double battle, where the reference reads "Total received" in place of the move. */
+    val lastAttackTeams: Boolean = false,
     /** Player overworld tile coordinates, or null when unreadable. */
     val playerX: Int? = null,
     val playerY: Int? = null,
@@ -1296,6 +1311,7 @@ class GbaTracker(
             ability2 = if (map.abilitiesAreU16) b.u16(0x18) else b.u8(23),
             growthRate = if (stride == 28) b.u8(0x13) else 0,
             baseFriendship = if (stride == 28) b.u8(0x12) else EvoText.DEFAULT_BASE,
+            genderRatio = if (stride == 28) b.u8(0x10) else 255,
             catchRate = b.u8(8),
         )
     }.takeIf { it.bst > 0 }
@@ -1403,7 +1419,11 @@ class GbaTracker(
         val heals = readHeals(party.firstOrNull()?.mon?.maxHp ?: 0)
 
         val inBattle = updateBattleStatus()
+        if (inBattle && !lastInBattle) damageWatch.reset()
         lastInBattle = inBattle
+        if (inBattle && map.takenDmg != 0L && map.battleResults != 0L && map.battlerAttacker != 0L) {
+            damageWatch.tick(rb(map.battleResults + 0x13), rb(map.battlerAttacker), rw(map.takenDmg), rw(map.battleResults + 0x24))
+        }
         // In battle, battler 0's stage block belongs to the player's active
         // mon; the panel shows chevrons on both sides like the reference.
         if (inBattle && party.isNotEmpty()) {
@@ -1424,6 +1444,9 @@ class GbaTracker(
             isWildBattle = inBattle && !trainer,
             // data.x.catchrate: PokemonData.calcCatchRate with its default ball, the Poke Ball.
             catchPercent = if (inBattle && !trainer) runCatching { catchRates()?.rows?.firstOrNull { it.ballId == 4 }?.rate }.getOrNull() else null,
+            lastAttackMove = if (inBattle && damageWatch.ready) moveName(damageWatch.lastEnemyMoveId) else null,
+            lastAttackDamage = damageWatch.damageReceived,
+            lastAttackTeams = inBattle && map.battlersCount != 0L && rb(map.battlersCount) > 2,
             enemyTeam = if (inBattle && trainer) readEnemyTeam() else emptyList(),
             enemy = if (inBattle) readEnemy() else run { seenForSpecies = -1; movesSeen.clear(); null },
             abilityRevealed = if (inBattle) readAbilityTrigger() else null,
@@ -2218,6 +2241,7 @@ class GbaTracker(
     /** Evolution method, or null when this species does not evolve. */
     fun evolution(species: Int): String? = EvoText.clean(speciesExtra[species]?.second)
 
+    private val damageWatch = DamageWatch()
     private var friendshipRequiredCache = 0
 
     /**
@@ -2720,6 +2744,7 @@ class GbaTracker(
             species = species,
             speciesName = speciesName(species),
             evo = EvoText.forEnemy(evolution(species)),
+            pid = b.u32(0x48),
             level = b.u8(0x2A),
             curHp = b.u16(0x28),
             maxHp = b.u16(0x2C),
@@ -2732,7 +2757,10 @@ class GbaTracker(
                 MoveRow(
                     id = id,
                     name = moveName(id),
-                    pp = d?.get(3) ?: 0,
+                    // "Count enemy PP usage", on by default: the opponent's real
+                    // remaining PP from its battle struct (moves at 0x0C, PP at
+                    // 0x24) for a move in its moveset now; base PP otherwise.
+                    pp = (0 until 4).firstOrNull { TrackerPrefs.countEnemyPp && b.u16(0x0C + it * 2) == id }?.let { b.u8(0x24 + it) } ?: d?.get(3) ?: 0,
                     ppMax = null,          // an enemy's used PP is not readable
                     power = d?.get(0),
                     acc = d?.get(2),

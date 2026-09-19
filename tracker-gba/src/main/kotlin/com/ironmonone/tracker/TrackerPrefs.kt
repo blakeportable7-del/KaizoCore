@@ -8,4 +8,6 @@ package com.ironmonone.tracker
 object TrackerPrefs {
     /** Options["Determine friendship readiness"]: on by default in the reference (Options.lua). */
     @Volatile var determineFriendship: Boolean = true
+    /** Options["Count enemy PP usage"]: on by default. Off, the opponent's moves show base PP. */
+    @Volatile var countEnemyPp: Boolean = true
 }

@@ -66,10 +66,11 @@ object MoveRules {
     private val OHKO = setOf(GUILLOTINE, HORN_DRILL, FISSURE, SHEER_COLD)
 
     /**
-     * Hidden Power's type is not the ROM's Normal: the reference leaves it
-     * unknown until the player sets it, so it is neither STAB nor effective.
+     * Hidden Power's type is not the ROM's Normal: it is the type the player
+     * set, and unknown until then - so neither STAB nor effective.
      */
-    fun shownType(id: Int, romType: Int?): Int? = if (id == HIDDEN_POWER) null else romType
+    fun shownType(id: Int, romType: Int?, hiddenPowerType: Int? = null): Int? =
+        if (id == HIDDEN_POWER) hiddenPowerType else romType
 
     /** The power column before any adjustment: the variable-power label, else the ROM number. "0" = none. */
     fun basePower(id: Int, romPower: Int?): String = VARIABLE_POWER[id] ?: (romPower ?: 0).toString()

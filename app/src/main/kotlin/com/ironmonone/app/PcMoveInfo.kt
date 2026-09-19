@@ -35,6 +35,10 @@ data class MoveDetail(
      * Blake on 2026-09-05. See MoveMatchup.
      */
     val typeChart: MoveMatchup.General? = null,
+    /** The table's power label when the rules replace the ROM number (VAR, >FR, WT...); "0" is none. */
+    val powerText: String? = null,
+    /** Your own Pokemon's Hidden Power: its personality value, for InfoScreen's type arrows. */
+    val hiddenPowerPid: Long? = null,
 )
 
 /**
@@ -54,18 +58,36 @@ fun PcMoveInfoContent(d: MoveDetail, onDismiss: () -> Unit) {
     InfoCard(
         title = d.name.uppercase(), onDismiss = onDismiss,
         headerExtra = {
-            if (d.typeName != null) {
-                InfoTypeTag(d.typeName, d.typeId?.let { pcTypeColor(it) } ?: pcTypeColorByName(d.typeName))
-                Spacer(Modifier.width(6.dp))
+            // Hidden Power's type and category go on their own row below, so the
+            // arrows do not squeeze the move's name onto two lines.
+            if (d.hiddenPowerPid == null) {
+                if (d.typeName != null) {
+                    InfoTypeTag(d.typeName, d.typeId?.let { pcTypeColor(it) } ?: pcTypeColorByName(d.typeName))
+                    Spacer(Modifier.width(6.dp))
+                }
+                if (category != null) InfoTag(category, when (d.category) {
+                    "PHY" -> Color(0xFFF08030); "SPE" -> Color(0xFF6890F0); else -> Pc.Dim
+                })
             }
-            if (category != null) InfoTag(category, when (d.category) {
-                "PHY" -> Color(0xFFF08030); "SPE" -> Color(0xFF6890F0); else -> Pc.Dim
-            })
         },
     ) {
+        if (d.hiddenPowerPid != null) {
+            // Read live, so the tag and category follow the arrows as they are tapped.
+            val hp = HiddenPowerTypes.of(d.hiddenPowerPid)
+            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                HiddenPowerPicker(d.hiddenPowerPid)
+                Spacer(Modifier.width(8.dp))
+                when {
+                    hp == null -> {}
+                    hp <= 8 -> InfoTag("PHYSICAL", Color(0xFFF08030))
+                    else -> InfoTag("SPECIAL", Color(0xFF6890F0))
+                }
+            }
+            Spacer(Modifier.height(10.dp))
+        }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             InfoStat("PP", d.ppMax?.let { "${d.pp}/$it" } ?: "${d.pp}")
-            InfoStat("POWER", d.power?.takeIf { it > 0 }?.toString() ?: "-")
+            InfoStat("POWER", d.powerText?.let { if (it == "0") "-" else it } ?: d.power?.takeIf { it > 0 }?.toString() ?: "-")
             InfoStat("ACCURACY", d.acc?.takeIf { it > 0 }?.let { "$it%" } ?: "-")
             InfoStat("CONTACT", when (d.contact) { true -> "Yes"; false -> "No"; null -> "-" })
             // PRIORITY: only takes a place when it is helpful (exists and non-zero).

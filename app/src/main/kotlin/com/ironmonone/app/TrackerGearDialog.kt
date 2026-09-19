@@ -91,6 +91,17 @@ fun TrackerGearDialog(
             GearToggle("Display repel usage", TrackerOptions.showRepel) { TrackerOptions.showRepel = it; TrackerOptions.save() }
             GearToggle("Display pedometer", TrackerOptions.displayPedometer) { TrackerOptions.displayPedometer = it; TrackerOptions.save() }
             GearToggle("Determine friendship readiness", TrackerOptions.determineFriendship) { TrackerOptions.determineFriendship = it; TrackerOptions.save() }
+            GearToggle("Show move effectiveness", TrackerOptions.showMoveEffectiveness) { TrackerOptions.showMoveEffectiveness = it; TrackerOptions.save() }
+            GearToggle("Calculate variable damage", TrackerOptions.calculateVariableDamage) { TrackerOptions.calculateVariableDamage = it; TrackerOptions.save() }
+            GearToggle("Count enemy PP usage", TrackerOptions.countEnemyPp) { TrackerOptions.countEnemyPp = it; TrackerOptions.save() }
+            GearToggle("Show Pok\u00e9 Ball catch rate", TrackerOptions.showCatchRate) { TrackerOptions.showCatchRate = it; TrackerOptions.save() }
+            GearToggle("Show last damage calcs", TrackerOptions.showLastDamage) { TrackerOptions.showLastDamage = it; TrackerOptions.save() }
+            GearToggle("Auto swap to enemy", TrackerOptions.autoSwapToEnemy) { TrackerOptions.autoSwapToEnemy = it; TrackerOptions.save() }
+            GearToggle("Show nicknames", TrackerOptions.showNicknames) { TrackerOptions.showNicknames = it; TrackerOptions.save() }
+            GearToggle("Display gender", TrackerOptions.displayGender) { TrackerOptions.displayGender = it; TrackerOptions.save() }
+            GearToggle("Show experience points bar", TrackerOptions.showExpBar) { TrackerOptions.showExpBar = it; TrackerOptions.save() }
+            GearToggle("Color stat numbers by nature", TrackerOptions.colorStatNumbers) { TrackerOptions.colorStatNumbers = it; TrackerOptions.save() }
+            GearToggle("Right justified numbers", TrackerOptions.rightJustifiedNumbers) { TrackerOptions.rightJustifiedNumbers = it; TrackerOptions.save() }
             GearToggle("Animated Pok\u00e9mon (Walking Pals)", TrackerOptions.animatedSprites) { TrackerOptions.animatedSprites = it; TrackerOptions.save() }
             if (TrackerOptions.animatedSprites) GearToggle("Allow sprites to walk", TrackerOptions.spritesWalk) { TrackerOptions.spritesWalk = it; TrackerOptions.save() }
             if (showTimerToggle) GearToggle("Show timer", TrackerOptions.showTimer) { TrackerOptions.showTimer = it; TrackerOptions.save() }

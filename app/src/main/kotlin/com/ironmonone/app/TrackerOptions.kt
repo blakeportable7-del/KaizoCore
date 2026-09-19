@@ -57,6 +57,33 @@ object TrackerOptions {
      * stays out of the carousel until it is turned on (Program.Pedometer:isInUse).
      */
     var displayPedometer by mutableStateOf(false)
+    // Six switches for behaviours on by default in the reference (Options.lua).
+    /** "Show move effectiveness": the chevrons and X beside a move's power in battle. */
+    var showMoveEffectiveness by mutableStateOf(true)
+    /** "Show Poke Ball catch rate": the wild battle's "~ 33%  to catch" header. */
+    var showCatchRate by mutableStateOf(true)
+    /** "Calculate variable damage": Return, Low Kick, Weather Ball and the rest as numbers. */
+    var calculateVariableDamage by mutableStateOf(true)
+    private val countEnemyPpState = mutableStateOf(true)
+    /** "Count enemy PP usage": the opponent's real remaining PP. Mirrored to the tracker. */
+    var countEnemyPp: Boolean
+        get() = countEnemyPpState.value
+        set(v) { countEnemyPpState.value = v; com.ironmonone.tracker.TrackerPrefs.countEnemyPp = v }
+    /** "Show last damage calcs": the carousel's "Wing Attack: 23 damage". */
+    var showLastDamage by mutableStateOf(true)
+    /** "Auto swap to enemy": a battle opens on the opponent's card. */
+    var autoSwapToEnemy by mutableStateOf(true)
+    // Off by default in the reference (Options.lua).
+    /** "Show nicknames": your Pokemon's nickname in place of its species, when it has one. */
+    var showNicknames by mutableStateOf(false)
+    /** "Display gender": the male or female symbol after the name. */
+    var displayGender by mutableStateOf(false)
+    /** "Show experience points bar": a bar under your Pokemon's level. */
+    var showExpBar by mutableStateOf(false)
+    /** "Color stat numbers by nature": the number takes the nature colour as well as the label. */
+    var colorStatNumbers by mutableStateOf(false)
+    /** "Right justified numbers": off, the numbers start at their column, as the reference draws them. */
+    var rightJustifiedNumbers by mutableStateOf(false)
 
     private var file: File? = null
 
@@ -86,6 +113,17 @@ object TrackerOptions {
                     "spritesWalk" -> spritesWalk = v == "true"
                     "determineFriendship" -> determineFriendship = v == "true"
                     "displayPedometer" -> displayPedometer = v == "true"
+                    "showMoveEffectiveness" -> showMoveEffectiveness = v == "true"
+                    "showCatchRate" -> showCatchRate = v == "true"
+                    "calculateVariableDamage" -> calculateVariableDamage = v == "true"
+                    "countEnemyPp" -> countEnemyPp = v == "true"
+                    "showLastDamage" -> showLastDamage = v == "true"
+                    "autoSwapToEnemy" -> autoSwapToEnemy = v == "true"
+                    "showNicknames" -> showNicknames = v == "true"
+                    "displayGender" -> displayGender = v == "true"
+                    "showExpBar" -> showExpBar = v == "true"
+                    "colorStatNumbers" -> colorStatNumbers = v == "true"
+                    "rightJustifiedNumbers" -> rightJustifiedNumbers = v == "true"
                     "landscapeTracker" -> landscapeTracker = LandscapeTracker.entries.firstOrNull { it.name == v } ?: LandscapeTracker.DOCKED
                 }
             }
@@ -100,5 +138,5 @@ object TrackerOptions {
         }
     }
 
-    fun text(): String = "showBallPicker=$showBallPicker\nshowCategoryIcons=$showCategoryIcons\nhealsWhole=$healsWhole\nshowTeamView=$showTeamView\nrestorePoints=$restorePoints\nshowTimer=$showTimer\ntourneyTracker=$tourneyTracker\nkantoBadgesFirst=$kantoBadgesFirst\nshowBothBadgeSets=$showBothBadgeSets\nlogCustomTrainerNames=$logCustomTrainerNames\nlogShowUnlearnableGymTms=$logShowUnlearnableGymTms\nlogShowPreEvolutions=$logShowPreEvolutions\nlossCondition=${lossCondition.key}\nlandscapeTracker=${landscapeTracker.name}\nshowRepel=$showRepel\nanimatedSprites=$animatedSprites\nspritesWalk=$spritesWalk\ndetermineFriendship=$determineFriendship\ndisplayPedometer=$displayPedometer\n"
+    fun text(): String = "showBallPicker=$showBallPicker\nshowCategoryIcons=$showCategoryIcons\nhealsWhole=$healsWhole\nshowTeamView=$showTeamView\nrestorePoints=$restorePoints\nshowTimer=$showTimer\ntourneyTracker=$tourneyTracker\nkantoBadgesFirst=$kantoBadgesFirst\nshowBothBadgeSets=$showBothBadgeSets\nlogCustomTrainerNames=$logCustomTrainerNames\nlogShowUnlearnableGymTms=$logShowUnlearnableGymTms\nlogShowPreEvolutions=$logShowPreEvolutions\nlossCondition=${lossCondition.key}\nlandscapeTracker=${landscapeTracker.name}\nshowRepel=$showRepel\nanimatedSprites=$animatedSprites\nspritesWalk=$spritesWalk\ndetermineFriendship=$determineFriendship\ndisplayPedometer=$displayPedometer\nshowMoveEffectiveness=$showMoveEffectiveness\nshowCatchRate=$showCatchRate\ncalculateVariableDamage=$calculateVariableDamage\ncountEnemyPp=$countEnemyPp\nshowLastDamage=$showLastDamage\nautoSwapToEnemy=$autoSwapToEnemy\nshowNicknames=$showNicknames\ndisplayGender=$displayGender\nshowExpBar=$showExpBar\ncolorStatNumbers=$colorStatNumbers\nrightJustifiedNumbers=$rightJustifiedNumbers\n"
 }

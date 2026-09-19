@@ -68,7 +68,9 @@ object Demo {
     fun gba(t: GbaTracker, mode: String): TrackerState {
         // Scyther 123: Wing Attack 17, Slash 163, Swords Dance 14, Pursuit 228. Oran Berry is item 139 (Cheri is 133).
         val scyther = gen3Mon(123, 25, 61, 78, listOf(17, 163, 14, 228), listOf(31, 20, 18, 20), 139, 0, 3, intArrayOf(66, 50, 63, 38, 50))
-        val party = listOf(tracked(t, scyther))
+        // A nickname and part of a level's EXP, so the off-by-default "Show
+        // nicknames" and "Show experience points bar" have something to show.
+        val party = listOf(tracked(t, scyther.copy(nickname = "RAZOR")).copy(expNow = 1200, expTotal = 1951))
         // The lab, before the first Pokemon: the ball picker with its die.
         // A Super Repel part-way down, so the staged lab shows the repel bar.
         if (mode == "gba-lab") return TrackerState(
@@ -84,7 +86,7 @@ object Demo {
         // once: Return at full friendship, Flail at low HP, Low Kick into a
         // Geodude (20 kg), Weather Ball in rain, and the catch rate header.
         if (mode == "gba-wild") {
-            val wildScyther = gen3Mon(123, 25, 20, 78, listOf(216, 175, 67, 311), listOf(20, 15, 20, 10), 0, 0, 3, intArrayOf(66, 50, 63, 38, 50))
+            val wildScyther = gen3Mon(123, 25, 20, 78, listOf(216, 237, 67, 311), listOf(20, 15, 20, 10), 0, 0, 3, intArrayOf(66, 50, 63, 38, 50))
                 .copy(friendship = 255)
             val gb = t.baseStats(74)
             val geodude = EnemyInfo(
@@ -120,6 +122,8 @@ object Demo {
             routeName = "Mauville City", steps = 18422,
             // Mauville Gym, against Wattson, so the trainer screens read the real ROM.
             mapId = 89, opponentTrainerId = 267,
+            // Its Sonic Boom hit for its fixed 20, shown between turns as the reference does.
+            lastAttackMove = t.moveName(49), lastAttackDamage = 20,
         )
     }
 

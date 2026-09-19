@@ -60,7 +60,11 @@ class StatMarks(private val file: File) {
     private val routeFile = File(file.parentFile, "routes.txt")
 
     /** One tracked move, the reference's `{ id, level, minLv, maxLv }` (Tracker.TrackMove). */
-    data class SeenMove(val id: Int, val name: String, val minLv: Int, val maxLv: Int)
+    data class SeenMove(
+        val id: Int, val name: String, val minLv: Int, val maxLv: Int,
+        /** The level it was last seen at (Tracker.TrackMove's level), which the move stars read. */
+        val lastLv: Int = maxLv,
+    )
 
     /** Per species, most recently seen FIRST, the way Tracker.TrackMove keeps its list. */
     private val movesSeen = HashMap<Int, MutableList<SeenMove>>()
@@ -206,6 +210,8 @@ class StatMarks(private val file: File) {
                             // id~name~min~max; a record without '~' is the old names-only file.
                             val f = rec.split('~')
                             if (f.size >= 4) SeenMove(f[0].toIntOrNull() ?: 0, f[1], f[2].toIntOrNull() ?: 0, f[3].toIntOrNull() ?: 0)
+                                // Saved before lastLv existed: the highest level stands in.
+                                .let { m -> if (f.size >= 5) m.copy(lastLv = f[4].toIntOrNull() ?: m.maxLv) else m }
                             else SeenMove(0, rec, 0, 0)
                         }.toMutableList()
                 }
@@ -219,7 +225,7 @@ class StatMarks(private val file: File) {
             movesFile.bufferedWriter().use { w ->
                 movesSeen.forEach { (sp, moves) ->
                     if (moves.isNotEmpty()) {
-                        w.write(sp.toString() + ":" + moves.joinToString("|") { "${it.id}~${it.name.replace('|', ' ').replace('~', ' ')}~${it.minLv}~${it.maxLv}" })
+                        w.write(sp.toString() + ":" + moves.joinToString("|") { "${it.id}~${it.name.replace('|', ' ').replace('~', ' ')}~${it.minLv}~${it.maxLv}~${it.lastLv}" })
                         w.newLine()
                     }
                 }
@@ -278,7 +284,7 @@ class StatMarks(private val file: File) {
             val at = list.indexOfFirst { it.id == id }
             if (at < 0) { list.add(0, SeenMove(id, name, level, level)); changed = true; continue }
             val old = list[at]
-            val upd = old.copy(minLv = minOf(old.minLv, level), maxLv = maxOf(old.maxLv, level))
+            val upd = old.copy(minLv = minOf(old.minLv, level), maxLv = maxOf(old.maxLv, level), lastLv = level)
             if (upd != old) { list[at] = upd; changed = true }
             if (at > 3) { list.removeAt(at); list.add(0, upd); changed = true }
         }

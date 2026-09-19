@@ -21,22 +21,23 @@ missing, or does not apply to a phone. Screens were checked the same way
 - [x] Variable damage: Return, Frustration, Low Kick and the rest ("Calculate variable damage")
 - [x] Variable-power moves show the reference's label (>FR, WT, <HP, RNG...), not the ROM placeholder
 - [x] STAB power drawn green; the next move's level highlighted when one level away
-- [ ] Hidden Power type: set by tapping the move, remembered per Pokemon (shown as unknown until then)
-- [ ] Toggles for "Show move effectiveness", "Show Poke Ball catch rate", "Calculate variable damage"
-- [ ] Count the enemy's PP use ("Count enemy PP usage")
-- [ ] Last damage calcs ("Show last damage calcs")
+- [x] Hidden Power type: set with the arrows in the move's info, remembered per Pokemon, typeless (no colour, category, STAB or effectiveness) until set
+- [x] Switches for "Show move effectiveness", "Show Poke Ball catch rate", "Calculate variable damage", "Count enemy PP usage", "Show last damage calcs"
+- [x] Count the enemy's PP use ("Count enemy PP usage"): its real remaining PP from the battle struct. Logic built; needs a live battle to be seen
+- [x] Last damage calcs ("Show last damage calcs"): "Wing Attack: 23 damage" with the sword, red when lethal. Line seen on the device; the gTakenDmg tracking is unit-tested and needs a live battle
+- [x] Move stars on the opponent's moves (Utils.calculateMoveStars), with the last-seen level now recorded. Unit-tested; needs run history to be seen
 - [ ] "Reveal info if randomized" (semantics to read)
 - [ ] "Show data for vanilla game" (semantics to read)
 - [ ] Tap a trainer on the game screen for its info ("Can click trainers on screen")
 - [ ] Carousel: rotation on/off, which items, speed; the reference's rotation order
-- [ ] "Auto swap to enemy": the behaviour is here, the toggle is not
+- [x] "Auto swap to enemy": switch added
 
 ## OFF by default in the PC, missing here
-- [ ] Show nicknames
-- [ ] Display gender
-- [ ] Show experience points bar
-- [ ] Color stat numbers by nature
-- [ ] Right justified numbers
+- [x] Show nicknames
+- [x] Display gender (beside the name, or over the icon for a long name, by the reference's own width table)
+- [x] Show experience points bar
+- [x] Color stat numbers by nature
+- [x] Right justified numbers, and the default fixed: numbers start at their column as the reference draws them (Gen 1-3 panel)
 - [ ] Hide stats until summary shown
 - [ ] Open Book Play Mode
 - [ ] Track PC Heals, and PC heals count downward

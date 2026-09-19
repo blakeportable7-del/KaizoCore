@@ -119,7 +119,12 @@ class StatMarksTest {
         assertEquals(3 to 7, m.movesSeenFor(261).first { it.id == 33 }.let { it.minLv to it.maxLv })
         // Struggle is never tracked, and nothing already known is a change.
         assertFalse(m.addMovesSeen(261, listOf(StatMarks.STRUGGLE to "Struggle"), 7))
-        assertFalse(m.addMovesSeen(261, listOf(33 to "Tackle"), 5), "level 5 is inside Tackle's 3..7, nothing to widen")
+        // Level 5 is inside Tackle's 3..7, so the range stays - but the level it
+        // was LAST seen at moves from 7 to 5, as Tracker.TrackMove records it on
+        // every sighting, and the move stars read that.
+        assertTrue(m.addMovesSeen(261, listOf(33 to "Tackle"), 5), "last seen moves 7 -> 5")
+        m.movesSeenFor(261).first { it.id == 33 }.let { assertEquals(3 to 7, it.minLv to it.maxLv); assertEquals(5, it.lastLv) }
+        assertFalse(m.addMovesSeen(261, listOf(33 to "Tackle"), 5), "the same level again changes nothing")
         assertTrue(m.addMovesSeen(261, listOf(44 to "Bite"), 5), "Bite was only seen at 3, so 5 widens it")
         // A move pushed past the top four comes back to the front when used again.
         m.addMovesSeen(261, listOf(45 to "Growl", 46 to "Roar", 47 to "Sing"), 9)
@@ -130,6 +135,7 @@ class StatMarksTest {
         val again = marks()
         assertEquals(m.movesSeenFor(261), again.movesSeenFor(261))
         assertEquals(3 to 9, again.movesSeenFor(261).first { it.id == 33 }.let { it.minLv to it.maxLv })
+        assertEquals(9, again.movesSeenFor(261).first { it.id == 33 }.lastLv, "last-seen level survives a restart")
     }
 
     @Test

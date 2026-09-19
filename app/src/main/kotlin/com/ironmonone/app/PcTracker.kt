@@ -18,6 +18,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.setValue
@@ -399,7 +400,13 @@ fun PcSprite(bmp: ImageBitmap?) {
 
 
 @Composable
-fun PcStatRow(label: String, value: String, stage: Int? = null, nature: Int? = null) {
+fun PcStatRow(
+    label: String, value: String, stage: Int? = null, nature: Int? = null,
+    /** Drawing.drawNumber: off, the reference starts the number at its column. */
+    rightJustify: Boolean = true,
+    /** "Color stat numbers by nature": the number takes the label's colour. */
+    colorNumber: Boolean = false,
+) {
     // Reference geometry: label at statOffsetX, value drawn at statOffsetX+25,
     // row pitch 10, inside a stats box 44 wide. Same pitch as the enemy's
     // mark rows so the two columns line up with each other.
@@ -421,7 +428,8 @@ fun PcStatRow(label: String, value: String, stage: Int? = null, nature: Int? = n
                 PcRef.FONT - 2, if (delta > 0) Pc.Positive else Pc.Negative)
         }
         Spacer(Modifier.weight(1f))
-        PixText(value, PcRef.FONT, Pc.Text, Modifier.width(19.rp), TextAlign.End)
+        PixText(value, PcRef.FONT, if (colorNumber) labelColor else Pc.Text, Modifier.width(19.rp),
+            if (rightJustify) TextAlign.End else TextAlign.Start)
     }
 }
 
@@ -504,6 +512,10 @@ fun PcHeadBlock(
     iconSpecies: Int = 0,
     /** The evolution in brackets after the level, "Lv.5 (30)" (EvoText). */
     evo: com.ironmonone.tracker.EvoText.Label? = null,
+    /** "Display gender": Gender3.MALE or FEMALE; null draws nothing. */
+    gender: Int? = null,
+    /** "Show experience points bar": your Pokemon's progress through its level, 0 to 1. */
+    expFraction: Float? = null,
     belowHead: (@Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit)? = null,
     statColumn: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit,
 ) {
@@ -515,6 +527,11 @@ fun PcHeadBlock(
                     val animated = iconSpecies in 1..411 && TrackerOptions.animatedSprites &&
                         WalkingPalsIcon(iconSpecies, status, 1.rp, PcRef.ICON.rp)
                     if (!animated) PcSprite(sprite)
+                    // A name too wide for the symbol beside it: TrackerScreen.lua
+                    // draws it over the icon instead, at the card's x + 23, y + 20.
+                    if (gender != null && !genderFitsAfter(name)) {
+                        PcGenderSymbol(gender, Modifier.padding(start = (21 + if (gender == com.ironmonone.tracker.Gender3.FEMALE) 3 else 0).rp, top = 18.rp))
+                    }
                     // TrackerScreen.lua, STATUS ICON: 16x8 at the card's x + 30 - 16 + 1, y + 1,
                     // over the icon's top right (the icon sits 2 in from the card here).
                     if (status.isNotEmpty()) {
@@ -529,11 +546,17 @@ fun PcHeadBlock(
                     }
                 }
                 Column(Modifier.padding(start = 2.rp)) {
-                    PixText(
-                        name, PcRef.FONT, Pc.Text,
-                        if (onNameTap != null) Modifier.clickable { onNameTap() }
-                        else Modifier,
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        PixText(
+                            name, PcRef.FONT, Pc.Text,
+                            if (onNameTap != null) Modifier.clickable { onNameTap() }
+                            else Modifier,
+                        )
+                        if (gender != null && genderFitsAfter(name)) {
+                            Spacer(Modifier.width(4.rp))
+                            PcGenderSymbol(gender)
+                        }
+                    }
                     Spacer(Modifier.height(1.rp))
                     if (encounterLine != null) {
                         PcLevelLine(level, evo)
@@ -559,6 +582,8 @@ fun PcHeadBlock(
                     }
                     Spacer(Modifier.height(1.rp))
                     PcLevelLine(level, evo)
+                    // TrackerScreen.lua:1242, 60 by 3, just under the level.
+                    expFraction?.let { Spacer(Modifier.height(2.rp)); PcExpBar(it) }
                     }
                 }
             }
@@ -619,7 +644,17 @@ fun PcMovesSection(
     /** A wild battle's "~ 42%  to catch", in place of the PP, Pow and Acc labels (TrackerScreen.lua:1474). */
     catchText: String? = null,
     onCatchTap: (() -> Unit)? = null,
+    /**
+     * The reference's own columns (TrackerScreen.lua drawMovesArea): headers
+     * at PP 82, Pow 102, Acc 126, left-aligned; the effectiveness mark at 97,
+     * between the PP number and the power. The DS panel keeps its layout.
+     */
+    referenceColumns: Boolean = false,
+    /** "Right justified numbers", for [referenceColumns]. */
+    rightJustify: Boolean = true,
 ) {
+    val numAlign = if (!referenceColumns || rightJustify) TextAlign.End else TextAlign.Start
+    val headAlign = if (referenceColumns) TextAlign.Start else TextAlign.End
     Box(Modifier.fillMaxWidth().height(1.dp).background(Pc.Border))
     Row(
         Modifier.fillMaxWidth().padding(vertical = 1.rp, horizontal = 2.rp),
@@ -638,9 +673,9 @@ fun PcMovesSection(
         if (catchText != null) {
             PixText(catchText, PcRef.FONT, Pc.Text, if (onCatchTap != null) Modifier.clickable { onCatchTap() } else Modifier)
         } else {
-            PixText("PP", PcRef.FONT, Pc.Text, Modifier.width(20.rp), TextAlign.End)
-            PixText("Pow", PcRef.FONT, Pc.Text, Modifier.width(24.rp), TextAlign.End)
-            PixText("Acc", PcRef.FONT, Pc.Text, Modifier.width(19.rp), TextAlign.End)
+            PixText("PP", PcRef.FONT, Pc.Text, Modifier.width(20.rp), headAlign)
+            PixText("Pow", PcRef.FONT, Pc.Text, Modifier.width(24.rp), headAlign)
+            PixText("Acc", PcRef.FONT, Pc.Text, Modifier.width(19.rp), headAlign)
         }
     }
     Box(Modifier.fillMaxWidth().height(1.rp).background(Pc.Border))
@@ -668,20 +703,30 @@ fun PcMovesSection(
                 // CURRENT pp for your own Pokemon. "15/15" was this app's
                 // invention and it does not fit: it truncated to "15/1" and
                 // took the Pow and Acc columns off the right edge with it.
-                PixText(
+                if (referenceColumns) {
+                    Row(Modifier.width(20.rp), verticalAlignment = Alignment.CenterVertically) {
+                        PixText(if (r.blank) "---" else "${r.pp}", PcRef.FONT, Pc.Text, Modifier.width(12.rp), numAlign)
+                        Spacer(Modifier.width(3.rp))
+                        Box(Modifier.width(5.rp), contentAlignment = Alignment.Center) {
+                            r.effect?.let { PcEffectGlyph(it, Modifier.wrapContentWidth(unbounded = true)) }
+                        }
+                    }
+                } else PixText(
                     if (r.blank) "---" else "${r.pp}",
                     PcRef.FONT, Pc.Text, Modifier.width(20.rp), TextAlign.End)
                 val shownPower = r.powerText?.let { if (it == "0") "---" else it }
                     ?: if (r.power == null || r.power == 0) "---" else "${r.power}"
                 // The effectiveness mark sits just left of the power digits, as
                 // the reference draws it at movePowerOffset - 5.
-                Row(Modifier.width(24.rp), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
+                if (referenceColumns) {
+                    PixText(shownPower, PcRef.FONT, if (r.stab) Pc.Positive else Pc.Text, Modifier.width(24.rp), numAlign)
+                } else Row(Modifier.width(24.rp), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
                     r.effect?.let { PcEffectGlyph(it); Spacer(Modifier.width(1.rp)) }
                     PixText(shownPower, PcRef.FONT, if (r.stab) Pc.Positive else Pc.Text)
                 }
                 val shownAcc = r.accText?.let { if (it == "0") "---" else it }
                     ?: if (r.acc == null || r.acc == 0) "---" else "${r.acc}"
-                PixText(shownAcc, PcRef.FONT, Pc.Text, Modifier.width(19.rp), TextAlign.End)
+                PixText(shownAcc, PcRef.FONT, Pc.Text, Modifier.width(19.rp), numAlign)
             }
         }
     }
@@ -1027,7 +1072,10 @@ fun PcCarousel(
     badgeSet: String,
     note: String,
     onEditNote: () -> Unit,
-    lastMove: String? = null,
+    /** "Wing Attack: 23 damage" (DamageWatch), or null when it is not time to show it. */
+    lastAttack: String? = null,
+    /** The hit would knock your Pokemon out: the sword turns red. */
+    lastAttackLethal: Boolean = false,
     weather: String? = null,
     encounters: Int = 0,
     routeName: String? = null,
@@ -1055,7 +1103,7 @@ fun PcCarousel(
             add(Item(3000, "notes"))
             // ROUTE_INFO: the reference shows it during a WILD encounter only.
             if (!routeName.isNullOrBlank()) add(Item(3000, "route"))
-            if (!lastMove.isNullOrBlank()) add(Item(3000, "lastAttack"))
+            if (!lastAttack.isNullOrBlank()) add(Item(3000, "lastAttack"))
             if (weather != null || encounters > 1) add(Item(3000, "battleDetails"))
         }
     }
@@ -1078,7 +1126,7 @@ fun PcCarousel(
             if (routeBosses > 0) Pc.Gold else Pc.Text,
         )
         "notes" -> PcNoteRow(note, onEditNote)
-        "lastAttack" -> PcCarouselLine("Last attack:", lastMove ?: "", Pc.Text)
+        "lastAttack" -> PcLastAttackLine(lastAttack ?: "", lastAttackLethal)
         "route" -> PcCarouselLine(
             routeName ?: "",
             if (routeTotal > 0) "seen $routeSeen of $routeTotal here"
