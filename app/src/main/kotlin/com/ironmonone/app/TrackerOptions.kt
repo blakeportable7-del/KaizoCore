@@ -47,6 +47,16 @@ object TrackerOptions {
     var animatedSprites by mutableStateOf(true)
     /** Options["Allow sprites to walk"], on by default in the reference. */
     var spritesWalk by mutableStateOf(true)
+    private val determineFriendshipState = mutableStateOf(true)
+    /** Options["Determine friendship readiness"]: on, as in the reference. Mirrored to the tracker (TrackerPrefs). */
+    var determineFriendship: Boolean
+        get() = determineFriendshipState.value
+        set(v) { determineFriendshipState.value = v; com.ironmonone.tracker.TrackerPrefs.determineFriendship = v }
+    /**
+     * Options["Display pedometer"]: off, as in the reference, where the pedometer
+     * stays out of the carousel until it is turned on (Program.Pedometer:isInUse).
+     */
+    var displayPedometer by mutableStateOf(false)
 
     private var file: File? = null
 
@@ -74,6 +84,8 @@ object TrackerOptions {
                     "showRepel" -> showRepel = v == "true"
                     "animatedSprites" -> animatedSprites = v == "true"
                     "spritesWalk" -> spritesWalk = v == "true"
+                    "determineFriendship" -> determineFriendship = v == "true"
+                    "displayPedometer" -> displayPedometer = v == "true"
                     "landscapeTracker" -> landscapeTracker = LandscapeTracker.entries.firstOrNull { it.name == v } ?: LandscapeTracker.DOCKED
                 }
             }
@@ -88,5 +100,5 @@ object TrackerOptions {
         }
     }
 
-    fun text(): String = "showBallPicker=$showBallPicker\nshowCategoryIcons=$showCategoryIcons\nhealsWhole=$healsWhole\nshowTeamView=$showTeamView\nrestorePoints=$restorePoints\nshowTimer=$showTimer\ntourneyTracker=$tourneyTracker\nkantoBadgesFirst=$kantoBadgesFirst\nshowBothBadgeSets=$showBothBadgeSets\nlogCustomTrainerNames=$logCustomTrainerNames\nlogShowUnlearnableGymTms=$logShowUnlearnableGymTms\nlogShowPreEvolutions=$logShowPreEvolutions\nlossCondition=${lossCondition.key}\nlandscapeTracker=${landscapeTracker.name}\nshowRepel=$showRepel\nanimatedSprites=$animatedSprites\nspritesWalk=$spritesWalk\n"
+    fun text(): String = "showBallPicker=$showBallPicker\nshowCategoryIcons=$showCategoryIcons\nhealsWhole=$healsWhole\nshowTeamView=$showTeamView\nrestorePoints=$restorePoints\nshowTimer=$showTimer\ntourneyTracker=$tourneyTracker\nkantoBadgesFirst=$kantoBadgesFirst\nshowBothBadgeSets=$showBothBadgeSets\nlogCustomTrainerNames=$logCustomTrainerNames\nlogShowUnlearnableGymTms=$logShowUnlearnableGymTms\nlogShowPreEvolutions=$logShowPreEvolutions\nlossCondition=${lossCondition.key}\nlandscapeTracker=${landscapeTracker.name}\nshowRepel=$showRepel\nanimatedSprites=$animatedSprites\nspritesWalk=$spritesWalk\ndetermineFriendship=$determineFriendship\ndisplayPedometer=$displayPedometer\n"
 }

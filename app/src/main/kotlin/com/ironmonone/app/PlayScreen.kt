@@ -1512,6 +1512,7 @@ fun PlayScreen(
                       coverage = coverage,
                       // Landscape: your lead and the enemy together.
                       stackBoth = true,
+                      onCatchRates = { side.catchHpAdjust = 0; side.catchRatesDialog = true },
                   )
                   }
 
@@ -2108,6 +2109,7 @@ fun PlayScreen(
                 onEditNote = { noteDialog = true },
                 attempt = store.attempt(),
                 coverage = coverage,
+                onCatchRates = { side.catchHpAdjust = 0; side.catchRatesDialog = true },
             ) }
 
         }

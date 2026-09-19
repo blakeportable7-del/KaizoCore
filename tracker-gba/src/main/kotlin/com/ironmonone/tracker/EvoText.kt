@@ -75,8 +75,12 @@ object EvoText {
     fun forOwn(
         evo: String?, level: Int, bagIds: () -> Set<Int>,
         friendship: Int, friendshipBase: Int, friendshipRequired: Int,
+        determineFriendship: Boolean = true,
     ): Label? {
         val e = clean(evo) ?: return null
+        // With "Determine friendship readiness" off the reference leaves the
+        // method as FRIEND, drawn like any other method still waiting.
+        if (e == "FRIEND" && !determineFriendship) return Label("FRIEND", Tone.WAITING)
         if (e == "FRIEND") {
             // DataHelper.lua:211: at the requirement the method becomes READY, drawn green.
             if (friendship >= friendshipRequired) return Label("READY", Tone.READY)

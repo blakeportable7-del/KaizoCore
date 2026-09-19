@@ -166,12 +166,15 @@ class AddressAuditTest {
     /**
      * LeafGreen is a copy() of FireRed v1.0, like v1.1 was, and inherits its four
      * battle code addresses. That is correct: they are byte-identical in both
-     * dumps. Its starter table is switched off (0), so it inherits nothing there.
+     * dumps. Its starter table is its own: 0x24 earlier, FireRed's spacing, and
+     * Blake's LeafGreen dump reads 1, 4, 7 there.
      */
     @Test
     fun `LeafGreen shares FireRed's battle code addresses`() {
         val fr = GameMap.FIRERED_U_V10; val lg = GameMap.LEAFGREEN_U
-        assertEquals(0L, lg.startersBase)
+        assertEquals(0x08169B91L, lg.startersBase)
+        assertEquals(fr.starter2Off, lg.starter2Off)
+        assertEquals(fr.starter3Off, lg.starter3Off)
         assertEquals(fr.handleTurnAction, lg.handleTurnAction)
         assertEquals(fr.introDrawPartySummary, lg.introDrawPartySummary)
         assertEquals(fr.introOpponentSendsOut, lg.introOpponentSendsOut)

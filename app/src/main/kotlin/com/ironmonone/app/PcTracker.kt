@@ -315,6 +315,13 @@ data class PcMove(
      * absent id means "not known here", not "no move".
      */
     val blank: Boolean = false,
+    /** The power column when the PC tracker's rules replace the ROM number (MoveRules); "0" draws a dash. */
+    val powerText: String? = null,
+    val accText: String? = null,
+    /** Same-type attack bonus in battle: the power draws green (TrackerScreen.lua:1536). */
+    val stab: Boolean = false,
+    /** Effectiveness against the target when not neutral; null draws nothing. */
+    val effect: Double? = null,
 )
 
 @Composable
@@ -605,6 +612,13 @@ fun PcMovesSection(
     onMoveTap: ((PcMove) -> Unit)? = null,
     /** TrackerScreen.lua:352: the Moves header opens MoveHistoryScreen for the viewed Pokemon. */
     onHeaderTap: (() -> Unit)? = null,
+    /** The next move's level, drawn after the header in brackets. */
+    nextLevel: Int? = null,
+    /** TrackerScreen.lua:1492: your Pokemon one level from it, so the number takes the highlight colour. */
+    nextHot: Boolean = false,
+    /** A wild battle's "~ 42%  to catch", in place of the PP, Pow and Acc labels (TrackerScreen.lua:1474). */
+    catchText: String? = null,
+    onCatchTap: (() -> Unit)? = null,
 ) {
     Box(Modifier.fillMaxWidth().height(1.dp).background(Pc.Border))
     Row(
@@ -613,10 +627,21 @@ fun PcMovesSection(
     ) {
         // Column widths are the gaps between the reference's own offsets:
         // name at 5, PP at 82, Pow at 102, Acc at 126, box ends at 145.
-        PixText(header, PcRef.FONT, Pc.Text, if (onHeaderTap != null) Modifier.weight(1f).clickable { onHeaderTap() } else Modifier.weight(1f))
-        PixText("PP", PcRef.FONT, Pc.Text, Modifier.width(20.rp), TextAlign.End)
-        PixText("Pow", PcRef.FONT, Pc.Text, Modifier.width(24.rp), TextAlign.End)
-        PixText("Acc", PcRef.FONT, Pc.Text, Modifier.width(19.rp), TextAlign.End)
+        Row(if (onHeaderTap != null) Modifier.weight(1f).clickable { onHeaderTap() } else Modifier.weight(1f)) {
+            PixText(header, PcRef.FONT, Pc.Text)
+            if (nextLevel != null) {
+                PixText(" (", PcRef.FONT, Pc.Text)
+                PixText("$nextLevel", PcRef.FONT, if (nextHot) Pc.Gold else Pc.Text)
+                PixText(")", PcRef.FONT, Pc.Text)
+            }
+        }
+        if (catchText != null) {
+            PixText(catchText, PcRef.FONT, Pc.Text, if (onCatchTap != null) Modifier.clickable { onCatchTap() } else Modifier)
+        } else {
+            PixText("PP", PcRef.FONT, Pc.Text, Modifier.width(20.rp), TextAlign.End)
+            PixText("Pow", PcRef.FONT, Pc.Text, Modifier.width(24.rp), TextAlign.End)
+            PixText("Acc", PcRef.FONT, Pc.Text, Modifier.width(19.rp), TextAlign.End)
+        }
     }
     Box(Modifier.fillMaxWidth().height(1.rp).background(Pc.Border))
     Column(Modifier.padding(vertical = 1.rp)) {
@@ -646,10 +671,17 @@ fun PcMovesSection(
                 PixText(
                     if (r.blank) "---" else "${r.pp}",
                     PcRef.FONT, Pc.Text, Modifier.width(20.rp), TextAlign.End)
-                PixText(if (r.power == null || r.power == 0) "---" else "${r.power}",
-                    PcRef.FONT, Pc.Text, Modifier.width(24.rp), TextAlign.End)
-                PixText(if (r.acc == null || r.acc == 0) "---" else "${r.acc}",
-                    PcRef.FONT, Pc.Text, Modifier.width(19.rp), TextAlign.End)
+                val shownPower = r.powerText?.let { if (it == "0") "---" else it }
+                    ?: if (r.power == null || r.power == 0) "---" else "${r.power}"
+                // The effectiveness mark sits just left of the power digits, as
+                // the reference draws it at movePowerOffset - 5.
+                Row(Modifier.width(24.rp), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
+                    r.effect?.let { PcEffectGlyph(it); Spacer(Modifier.width(1.rp)) }
+                    PixText(shownPower, PcRef.FONT, if (r.stab) Pc.Positive else Pc.Text)
+                }
+                val shownAcc = r.accText?.let { if (it == "0") "---" else it }
+                    ?: if (r.acc == null || r.acc == 0) "---" else "${r.acc}"
+                PixText(shownAcc, PcRef.FONT, Pc.Text, Modifier.width(19.rp), TextAlign.End)
             }
         }
     }
@@ -985,7 +1017,7 @@ object PcCategoryGlyphs {
  * taller than the real thing and never shows the in-battle items at all.
  *
  * Durations are the reference's own framesToShow at 60fps: 210 frames for
- * badges, 180 for the battle items. Items that cannot show are skipped rather
+ * badges and the pedometer, 420 for trainers, 180 for the battle items. Items that cannot show are skipped rather
  * than rendered blank, exactly as rotateToNextItem does.
  */
 @Composable
@@ -1004,6 +1036,8 @@ fun PcCarousel(
     routeTrainers: Int = 0,
     routeBosses: Int = 0,
     steps: Int = 0,
+    /** The pedometer needs a real step count on a real map, out of a game over. */
+    pedometerAllowed: Boolean = false,
     onRouteTap: (() -> Unit)? = null,
 ) {
     // Build the list of what can show, in the reference's own order.
@@ -1012,9 +1046,10 @@ fun PcCarousel(
         if (!inBattle) {
             add(Item(3500, "badges"))
             // TRAINERS: who is still standing between you and the next town.
-            if (routeTrainers > 0) add(Item(3500, "trainers"))
-            // PEDOMETER runs longest in the reference: 420 frames, 7 seconds.
-            if (steps > 0) add(Item(7000, "pedometer"))
+            // 420 frames, the longest item in the reference.
+            if (routeTrainers > 0) add(Item(7000, "trainers"))
+            // PEDOMETER: 210 frames, and only with "Display pedometer" on.
+            if (TrackerOptions.displayPedometer && pedometerAllowed) add(Item(3500, "pedometer"))
         }
         if (inBattle) {
             add(Item(3000, "notes"))

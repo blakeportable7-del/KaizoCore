@@ -79,6 +79,7 @@ private fun PartyCard(
     onMoveInfo: ((PcMove) -> Unit)? = null,
     onAbilityInfo: ((String) -> Unit)? = null,
     onNameInfo: (() -> Unit)? = null,
+    moveCtx: MoveContext? = null,
 ) {
     val m = p.mon
     PcCard {
@@ -122,16 +123,10 @@ private fun PartyCard(
         // "Moves 3/11 (17)" - learned so far / total this species learns, and
         // the level the next one arrives at, exactly as the PC tracker shows it.
         PcMovesSection(
-            p.moveRows.map { r ->
-                PcMove(r.id, r.name, r.pp, r.ppMax, r.power, r.acc,
-                    r.type?.let { pcTypeColor(it) } ?: Pc.Text, r.category,
-                    type = r.type, typeName = r.type?.let(com.ironmonone.tracker.Gen3Types::name),
-                    priority = r.priority, contact = r.contact)
-            },
-            header = if (p.movesTotal > 0) {
-                "Moves ${p.movesLearned}/${p.movesTotal}" +
-                    (p.nextMoveLevel?.let { " ($it)" } ?: "")
-            } else "Moves",
+            p.moveRows.map { it.toPcMove(moveCtx) },
+            header = if (p.movesTotal > 0) "Moves ${p.movesLearned}/${p.movesTotal}" else "Moves",
+            nextLevel = p.nextMoveLevel.takeIf { p.movesTotal > 0 },
+            nextHot = p.nextMoveLevel?.let { m.level + 1 >= it } == true,
             onMoveTap = onMoveInfo,
             onHeaderTap = onMoveHistory?.let { cb -> { cb(m.species, p.speciesName, m.level) } },
         )
@@ -157,6 +152,9 @@ private fun EnemyCard(
     onMoveInfo: ((PcMove) -> Unit)? = null,
     /** The species' learnset levels from the ROM, for the move count. */
     moveLevels: List<Int> = emptyList(),
+    moveCtx: MoveContext? = null,
+    catchText: String? = null,
+    onCatchTap: (() -> Unit)? = null,
 ) {
     PcCard {
         PcHeadBlock(
@@ -213,25 +211,17 @@ private fun EnemyCard(
         val thisBattle = e.moveRows.distinctBy { it.id }
         val seen = (movesSeenRunWide.mapNotNull { sm -> thisBattle.firstOrNull { it.id == sm.id } ?: moveRowFor(sm.id) } +
             thisBattle).distinctBy { it.id }
+        val learned = com.ironmonone.tracker.LearnedMoves.of(moveLevels, e.level)
         PcMovesSection(
-            rows = seen.take(4).map { r ->
-                PcMove(
-                    id = r.id, name = r.name, pp = r.pp, ppMax = r.ppMax,
-                    power = r.power, acc = r.acc,
-                    color = r.type?.let { pcTypeColor(it) } ?: Pc.Text,
-                    category = r.category,
-                    type = r.type, typeName = r.type?.let(com.ironmonone.tracker.Gen3Types::name),
-                    priority = r.priority, contact = r.contact,
-                )
-            },
+            rows = seen.take(4).map { it.toPcMove(moveCtx) },
+            catchText = catchText,
+            onCatchTap = onCatchTap,
+            nextLevel = learned.next.takeIf { learned.total > 0 },
             // Utils.getMovesLearnedHeader counts for the opponent too, at ITS
             // level: "Moves* 1/5 (9)", the asterisk (no space) once more than
             // four of its moves have been seen. This read "Moves *" with no count.
-            header = run {
-                val h = com.ironmonone.tracker.LearnedMoves.of(moveLevels, e.level)
-                "Moves" + (if (seen.size > 4) "*" else "") +
-                    (if (h.total > 0) " ${h.learned}/${h.total}" + (h.next?.let { " ($it)" } ?: "") else "")
-            },
+            header = "Moves" + (if (seen.size > 4) "*" else "") +
+                (if (learned.total > 0) " ${learned.learned}/${learned.total}" else ""),
             onHeaderTap = onMoveHistory?.let { cb -> { cb(e.species, e.speciesName, e.level) } },
             onMoveTap = onMoveInfo,
         )
@@ -297,6 +287,8 @@ fun TrackerPanel(
     onSpeciesName: ((Int) -> String)? = null,
     attempt: Int = 0,
     coverage: Map<Double, List<Int>> = emptyMap(),
+    /** Tapping a wild battle's catch rate opens Catch Rates, as the reference's header button does. */
+    onCatchRates: (() -> Unit)? = null,
 ) {
     // What the info screen is currently explaining, if anything.
     var info by remember {
@@ -486,7 +478,8 @@ fun TrackerPanel(
                         onAbilityInfo = { name ->
                             info = Triple(name, "Ability", onAbilityDescription?.invoke(name))
                         },
-                        onNameInfo = { monInfo = p })
+                        onNameInfo = { monInfo = p },
+                        moveCtx = ownMoveContext(p, state.enemy?.takeIf { state.inBattle }, state.weather, onWeight))
                 }
                 if (enemy != null) {
                     EnemyCard(onMoveHistory = onMoveHistory, onTypeDefenses = onTypeDefenses, enemy, revealedEnemyAbility, spriteFor,
@@ -497,6 +490,9 @@ fun TrackerPanel(
                         routeName = routeName,
                         team = state.enemyTeam,
                         moveLevels = onMoveLevels?.invoke(enemy.species) ?: emptyList(),
+                        moveCtx = enemyMoveContext(enemy, state.party.firstOrNull(), state.weather, onWeight),
+                        catchText = state.catchPercent?.takeIf { state.isWildBattle }?.let { "~ $it%  to catch" },
+                        onCatchTap = onCatchRates,
                         onMoveInfo = { mv ->
                             moveInfo = detailOf(mv, onMoveDescription?.invoke(mv.id))
                         })
@@ -518,6 +514,7 @@ fun TrackerPanel(
                     routeTrainers = routeTrainers,
                     routeBosses = routeBosses,
                     steps = steps,
+                    pedometerAllowed = state.mapId != null && state.gameOver == null,
                     onRouteTap = { routeInfoOpen = true },
                 )
             }

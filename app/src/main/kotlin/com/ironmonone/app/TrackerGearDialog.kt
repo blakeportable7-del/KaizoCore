@@ -89,6 +89,8 @@ fun TrackerGearDialog(
             GearToggle("Show heals as whole number", TrackerOptions.healsWhole) { TrackerOptions.healsWhole = it; TrackerOptions.save() }
             GearToggle("Show team view", TrackerOptions.showTeamView) { TrackerOptions.showTeamView = it; TrackerOptions.save() }
             GearToggle("Display repel usage", TrackerOptions.showRepel) { TrackerOptions.showRepel = it; TrackerOptions.save() }
+            GearToggle("Display pedometer", TrackerOptions.displayPedometer) { TrackerOptions.displayPedometer = it; TrackerOptions.save() }
+            GearToggle("Determine friendship readiness", TrackerOptions.determineFriendship) { TrackerOptions.determineFriendship = it; TrackerOptions.save() }
             GearToggle("Animated Pok\u00e9mon (Walking Pals)", TrackerOptions.animatedSprites) { TrackerOptions.animatedSprites = it; TrackerOptions.save() }
             if (TrackerOptions.animatedSprites) GearToggle("Allow sprites to walk", TrackerOptions.spritesWalk) { TrackerOptions.spritesWalk = it; TrackerOptions.save() }
             if (showTimerToggle) GearToggle("Show timer", TrackerOptions.showTimer) { TrackerOptions.showTimer = it; TrackerOptions.save() }

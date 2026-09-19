@@ -17,6 +17,8 @@ class TrackerOptionsTest {
         TrackerOptions.landscapeTracker = LandscapeTracker.DOCKED
         TrackerOptions.animatedSprites = true; TrackerOptions.spritesWalk = true
         TrackerOptions.showRepel = false
+        TrackerOptions.determineFriendship = true; TrackerOptions.displayPedometer = false
+        com.ironmonone.tracker.TrackerPrefs.determineFriendship = true
     }
 
     @Test
@@ -30,14 +32,19 @@ class TrackerOptionsTest {
         TrackerOptions.landscapeTracker = LandscapeTracker.FLOATING
         TrackerOptions.spritesWalk = false
         TrackerOptions.showRepel = true
+        TrackerOptions.determineFriendship = false; TrackerOptions.displayPedometer = true
         TrackerOptions.save()
-        assertEquals("showBallPicker=false\nshowCategoryIcons=true\nhealsWhole=true\nshowTeamView=false\nrestorePoints=true\nshowTimer=false\ntourneyTracker=false\nkantoBadgesFirst=false\nshowBothBadgeSets=true\nlogCustomTrainerNames=false\nlogShowUnlearnableGymTms=true\nlogShowPreEvolutions=false\nlossCondition=EntirePartyFaints\nlandscapeTracker=FLOATING\nshowRepel=true\nanimatedSprites=true\nspritesWalk=false\n", f.readText())
+        assertEquals("showBallPicker=false\nshowCategoryIcons=true\nhealsWhole=true\nshowTeamView=false\nrestorePoints=true\nshowTimer=false\ntourneyTracker=false\nkantoBadgesFirst=false\nshowBothBadgeSets=true\nlogCustomTrainerNames=false\nlogShowUnlearnableGymTms=true\nlogShowPreEvolutions=false\nlossCondition=EntirePartyFaints\nlandscapeTracker=FLOATING\nshowRepel=true\nanimatedSprites=true\nspritesWalk=false\ndetermineFriendship=false\ndisplayPedometer=true\n", f.readText())
         TrackerOptions.showBallPicker = true; TrackerOptions.healsWhole = false; TrackerOptions.lossCondition = LossCondition.LEAD
         TrackerOptions.spritesWalk = true
         TrackerOptions.showRepel = false
+        TrackerOptions.determineFriendship = true; TrackerOptions.displayPedometer = false
         TrackerOptions.load(f)
         assertFalse(TrackerOptions.spritesWalk)
         assertTrue(TrackerOptions.showRepel)
+        assertFalse(TrackerOptions.determineFriendship); assertTrue(TrackerOptions.displayPedometer)
+        // The tracker module sees the loaded value, not just the app.
+        assertFalse(com.ironmonone.tracker.TrackerPrefs.determineFriendship)
         assertFalse(TrackerOptions.showBallPicker); assertTrue(TrackerOptions.healsWhole)
         assertEquals(LossCondition.ENTIRE_PARTY, TrackerOptions.lossCondition)
         assertEquals(LandscapeTracker.FLOATING, TrackerOptions.landscapeTracker)

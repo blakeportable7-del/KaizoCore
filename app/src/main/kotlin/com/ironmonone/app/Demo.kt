@@ -59,6 +59,7 @@ object Demo {
             evo = com.ironmonone.tracker.EvoText.forOwn(
                 t.evolution(mon.species), mon.level, { emptySet() }, mon.friendship,
                 base?.baseFriendship ?: com.ironmonone.tracker.EvoText.DEFAULT_BASE, t.friendshipRequired(),
+                com.ironmonone.tracker.TrackerPrefs.determineFriendship,
             ),
         )
     }
@@ -79,6 +80,27 @@ object Demo {
             inBattle = false, isWildBattle = false, badges = 0b11, badgeSet = "RSE",
             healPercent = 0, healCount = 0, routeName = "Mauville City", steps = 18422, gameOver = GameOver.LOST,
         )
+        // A wild battle in the rain, staged so every move-table rule shows at
+        // once: Return at full friendship, Flail at low HP, Low Kick into a
+        // Geodude (20 kg), Weather Ball in rain, and the catch rate header.
+        if (mode == "gba-wild") {
+            val wildScyther = gen3Mon(123, 25, 20, 78, listOf(216, 175, 67, 311), listOf(20, 15, 20, 10), 0, 0, 3, intArrayOf(66, 50, 63, 38, 50))
+                .copy(friendship = 255)
+            val gb = t.baseStats(74)
+            val geodude = EnemyInfo(
+                species = 74, speciesName = t.speciesName(74), level = 20, curHp = 40, maxHp = 40,
+                type1 = gb?.type1 ?: 5, type2 = gb?.type2 ?: 4, base = gb,
+                movesSeen = emptyList(), moveRows = emptyList(),
+                evo = com.ironmonone.tracker.EvoText.forEnemy(t.evolution(74)),
+            )
+            return TrackerState(
+                partyCount = 1, party = listOf(tracked(t, wildScyther)), inBattle = true, isWildBattle = true,
+                enemy = geodude, weather = "RAIN", badges = 0b11, badgeSet = "RSE",
+                healPercent = 62, healCount = 4, routeName = "Route 111", steps = 18422, mapId = 89,
+                // The real formula (the Catch Rates screen's), with the reference's default ball.
+                catchPercent = t.calcCatchRate(gb?.catchRate ?: 255, 40, 40, 20, 0, 4, false, 0, false, 0),
+            )
+        }
         // Magneton 82, level 22 in Emerald: Sonic Boom 49 and Thunder Wave 86 seen so far.
         val magneton = gen3Mon(82, 22, 44, 63, listOf(49, 86, 84, 48), listOf(20, 20, 30, 40), 0, 0, 0, intArrayOf(45, 50, 38, 58, 40))
         val eb = t.baseStats(82)

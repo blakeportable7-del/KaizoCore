@@ -477,7 +477,10 @@ data class GameMap(
             palettes = 0x082372E8,
             levelUpLearnsets = 0x0825D794,
             gTrainers = 0x0823EAA4, gTrainerClassNames = 0x0823E534,
-            startersBase = 0, starter2Off = 0, starter3Off = 0,
+            // Switched off (0) until 2026-09-19. FireRed's starter code sits 0x24
+            // earlier on LeafGreen and keeps FireRed's spacing: Blake's dump reads
+            // Bulbasaur, Charmander, Squirtle (1, 4, 7) at +0, +515 and +461.
+            startersBase = 0x08169B91, starter2Off = 515, starter3Off = 461,
         )
 
         /** Nat. Dex bakes 1258 into ROM at this address; vanilla has other bytes here. */
@@ -1065,6 +1068,8 @@ data class TrackerState(
      */
     val enemyTeam: List<Boolean> = emptyList(),
     val enemy: EnemyInfo? = null,
+    /** A wild battle: the Poke Ball chance the move header shows, 0-100. Null otherwise. */
+    val catchPercent: Int? = null,
     /** Player overworld tile coordinates, or null when unreadable. */
     val playerX: Int? = null,
     val playerY: Int? = null,
@@ -1367,6 +1372,7 @@ class GbaTracker(
                         evo = EvoText.forOwn(
                             evolution(mon.species), mon.level, evoBag,
                             mon.friendship, base?.baseFriendship ?: EvoText.DEFAULT_BASE, friendshipRequired(),
+                            TrackerPrefs.determineFriendship,
                         ),
                     )
                 }
@@ -1416,6 +1422,8 @@ class GbaTracker(
             party = party,
             inBattle = inBattle,
             isWildBattle = inBattle && !trainer,
+            // data.x.catchrate: PokemonData.calcCatchRate with its default ball, the Poke Ball.
+            catchPercent = if (inBattle && !trainer) runCatching { catchRates()?.rows?.firstOrNull { it.ballId == 4 }?.rate }.getOrNull() else null,
             enemyTeam = if (inBattle && trainer) readEnemyTeam() else emptyList(),
             enemy = if (inBattle) readEnemy() else run { seenForSpecies = -1; movesSeen.clear(); null },
             abilityRevealed = if (inBattle) readAbilityTrigger() else null,

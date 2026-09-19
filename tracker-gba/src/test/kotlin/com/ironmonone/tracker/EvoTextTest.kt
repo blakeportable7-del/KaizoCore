@@ -51,6 +51,13 @@ class EvoTextTest {
     }
 
     @Test
+    fun `with friendship readiness off, FRIEND waits and never reads READY`() {
+        val off = { f: Int -> EvoText.forOwn("FRIEND", 30, { emptySet() }, f, 70, 220, determineFriendship = false) }
+        assertEquals(Label("FRIEND", Tone.WAITING), off(145))
+        assertEquals(Label("FRIEND", Tone.WAITING), off(255))
+    }
+
+    @Test
     fun `nothing is drawn when it does not evolve`() {
         assertNull(own(null)); assertNull(own("")); assertNull(own("NONE"))
         assertNull(EvoText.forEnemy(null))
