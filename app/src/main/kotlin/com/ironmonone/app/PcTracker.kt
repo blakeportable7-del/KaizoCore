@@ -495,6 +495,8 @@ fun PcHeadBlock(
     status: String = "",
     /** Gen 1-3: the species id the Walking Pals icon set is keyed by; 0 draws the still sprite. */
     iconSpecies: Int = 0,
+    /** The evolution in brackets after the level, "Lv.5 (30)" (EvoText). */
+    evo: com.ironmonone.tracker.EvoText.Label? = null,
     belowHead: (@Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit)? = null,
     statColumn: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit,
 ) {
@@ -527,7 +529,7 @@ fun PcHeadBlock(
                     )
                     Spacer(Modifier.height(1.rp))
                     if (encounterLine != null) {
-                        PixText("Lv.$level", PcRef.FONT, Pc.Text)
+                        PcLevelLine(level, evo)
                         Spacer(Modifier.height(1.rp))
                         PixText(encounterLine, PcRef.FONT, Pc.Gold)
                     } else {
@@ -549,7 +551,7 @@ fun PcHeadBlock(
                         )
                     }
                     Spacer(Modifier.height(1.rp))
-                    PixText("Lv.$level", PcRef.FONT, Pc.Text)
+                    PcLevelLine(level, evo)
                     }
                 }
             }
@@ -1502,6 +1504,32 @@ fun TypeDefensesDialog(name: String, buckets: Map<Double, List<String>>, onClose
                 Spacer(Modifier.height(4.dp))
             }
             if (!any) PixText("No type has an edge either way.", 8, Pc.Dim)
+        }
+    }
+}
+
+/**
+ * "Lv.5 (30)": TrackerScreen.lua draws the level and brackets in the default
+ * colour, then redraws the method in its own: green when ready, the
+ * intermediate colour otherwise. A friendship evolution instead fills green
+ * one letter at a time over the default-coloured word.
+ */
+@Composable
+private fun PcLevelLine(level: Int, evo: com.ironmonone.tracker.EvoText.Label?) {
+    Row {
+        PixText("Lv.$level", PcRef.FONT, Pc.Text)
+        if (evo != null) {
+            val t = evo.text
+            val n = evo.highlighted.coerceIn(0, t.length)
+            val rest = when (evo.tone) {
+                com.ironmonone.tracker.EvoText.Tone.READY -> Pc.Positive
+                com.ironmonone.tracker.EvoText.Tone.WAITING -> Pc.Gold
+                com.ironmonone.tracker.EvoText.Tone.PLAIN -> Pc.Text
+            }
+            PixText(" (", PcRef.FONT, Pc.Text)
+            if (n > 0) PixText(t.substring(0, n), PcRef.FONT, Pc.Positive)
+            if (n < t.length) PixText(t.substring(n), PcRef.FONT, rest)
+            PixText(")", PcRef.FONT, Pc.Text)
         }
     }
 }

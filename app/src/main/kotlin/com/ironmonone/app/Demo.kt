@@ -43,12 +43,23 @@ object Demo {
             atk = st[0], def = st[1], spe = st[2], spAtk = st[3], spDef = st[4],
         )
 
-    private fun tracked(t: GbaTracker, mon: PokemonDecoder.Mon, learned: Int, total: Int, next: Int?, status: String = ""): TrackedMon {
+    /**
+     * The staged card goes through the same two rules as a live one: the move
+     * count from the ROM learnset (LearnedMoves) and the evolution text
+     * (EvoText), rather than numbers typed in here.
+     */
+    private fun tracked(t: GbaTracker, mon: PokemonDecoder.Mon, status: String = ""): TrackedMon {
         val base = t.baseStats(mon.species)
+        val header = com.ironmonone.tracker.LearnedMoves.of(t.learnset(mon.species).map { it.first }, mon.level)
         return TrackedMon(
             mon = mon, speciesName = t.speciesName(mon.species), moveNames = mon.moves.map { t.moveName(it) }, base = base,
             abilityName = t.abilityNameOf(mon, base), itemName = if (mon.heldItem == 0) "-" else t.itemName(mon.heldItem),
-            moveRows = t.moveRowsOf(mon), movesLearned = learned, movesTotal = total, nextMoveLevel = next, statusCondition = status,
+            moveRows = t.moveRowsOf(mon), movesLearned = header.learned, movesTotal = header.total, nextMoveLevel = header.next,
+            statusCondition = status,
+            evo = com.ironmonone.tracker.EvoText.forOwn(
+                t.evolution(mon.species), mon.level, { emptySet() }, mon.friendship,
+                base?.baseFriendship ?: com.ironmonone.tracker.EvoText.DEFAULT_BASE, t.friendshipRequired(),
+            ),
         )
     }
 
@@ -56,7 +67,7 @@ object Demo {
     fun gba(t: GbaTracker, mode: String): TrackerState {
         // Scyther 123: Wing Attack 17, Slash 163, Swords Dance 14, Pursuit 228. Oran Berry is item 139 (Cheri is 133).
         val scyther = gen3Mon(123, 25, 61, 78, listOf(17, 163, 14, 228), listOf(31, 20, 18, 20), 139, 0, 3, intArrayOf(66, 50, 63, 38, 50))
-        val party = listOf(tracked(t, scyther, 6, 11, 29))
+        val party = listOf(tracked(t, scyther))
         // The lab, before the first Pokemon: the ball picker with its die.
         // A Super Repel part-way down, so the staged lab shows the repel bar.
         if (mode == "gba-lab") return TrackerState(
@@ -64,7 +75,7 @@ object Demo {
             mapId = 17, repelSteps = 124, repelDuration = 200,
         )
         if (mode == "gba-over") return TrackerState(
-            partyCount = 1, party = listOf(tracked(t, scyther.copy(curHp = 0), 6, 11, 29)),
+            partyCount = 1, party = listOf(tracked(t, scyther.copy(curHp = 0))),
             inBattle = false, isWildBattle = false, badges = 0b11, badgeSet = "RSE",
             healPercent = 0, healCount = 0, routeName = "Mauville City", steps = 18422, gameOver = GameOver.LOST,
         )
@@ -73,6 +84,7 @@ object Demo {
         val eb = t.baseStats(82)
         val enemy = EnemyInfo(
             species = 82, speciesName = t.speciesName(82), level = 22, curHp = 44, maxHp = 63,
+            evo = com.ironmonone.tracker.EvoText.forEnemy(t.evolution(82)),
             // Paralysed, so the staged card shows the status image over the icon.
             statusCondition = "PAR",
             type1 = eb?.type1 ?: 13, type2 = eb?.type2 ?: 8, base = eb,

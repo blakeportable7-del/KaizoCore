@@ -146,4 +146,35 @@ class AddressAuditTest {
         // Code, not data, and it does NOT take the +0x70 the tables take.
         assertEquals(0x78L, b.startersBase - a.startersBase)
     }
+
+    /**
+     * GameSettings.FriendshipRequiredToEvo from the reference's GameAddresses
+     * JSONs. The byte there reads 219 in every one of Blake's six dumps, so
+     * each game requires 220. Ruby and Sapphire share one address, and so do
+     * FireRed v1.0 and LeafGreen; v1.1 moves with the code, by +0x14.
+     */
+    @Test
+    fun `friendship requirement addresses match the reference`() {
+        assertEquals(0x0806D1D6L, GameMap.EMERALD_U.friendshipRequiredAddr)
+        assertEquals(0x08043002L, GameMap.FIRERED_U_V10.friendshipRequiredAddr)
+        assertEquals(0x08043016L, GameMap.FIRERED_U_V11.friendshipRequiredAddr)
+        assertEquals(0x08043002L, GameMap.LEAFGREEN_U.friendshipRequiredAddr)
+        assertEquals(0x0803F5CAL, GameMap.RUBY_U.friendshipRequiredAddr)
+        assertEquals(0x0803F5CAL, GameMap.SAPPHIRE_U.friendshipRequiredAddr)
+    }
+
+    /**
+     * LeafGreen is a copy() of FireRed v1.0, like v1.1 was, and inherits its four
+     * battle code addresses. That is correct: they are byte-identical in both
+     * dumps. Its starter table is switched off (0), so it inherits nothing there.
+     */
+    @Test
+    fun `LeafGreen shares FireRed's battle code addresses`() {
+        val fr = GameMap.FIRERED_U_V10; val lg = GameMap.LEAFGREEN_U
+        assertEquals(0L, lg.startersBase)
+        assertEquals(fr.handleTurnAction, lg.handleTurnAction)
+        assertEquals(fr.introDrawPartySummary, lg.introDrawPartySummary)
+        assertEquals(fr.introOpponentSendsOut, lg.introOpponentSendsOut)
+        assertEquals(fr.returnToOverworld, lg.returnToOverworld)
+    }
 }

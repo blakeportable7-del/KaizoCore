@@ -131,6 +131,13 @@ data class GameMap(
      * Emerald), from its GameAddresses JSONs. 0 when the game is not read here.
      */
     val repelStepsOffset: Long = 0,
+    /**
+     * GameSettings.FriendshipRequiredToEvo: the ROM byte the evolution code
+     * compares friendship against. The requirement is that byte plus one
+     * (Program.lua:343). 0 = unknown, and the tracker uses 220. Every dump reads
+     * 219 there, so 220 on all six games.
+     */
+    val friendshipRequiredAddr: Long = 0,
     /** Which badge art to draw: FRLG, RSE or DPPT. */
     val badgeSet: String = "FRLG",
     /** gLevelUpLearnsets: one pointer per species to a 0xFFFF-terminated list of
@@ -265,6 +272,7 @@ data class GameMap(
             saveBlock1Ptr = 0x03005D8C,
             saveBlock2Ptr = 0x03005D90,
             repelStepsOffset = 0x13DE,
+            friendshipRequiredAddr = 0x0806D1D6,
             abilityNames = 0x0831B6DB,
             itemNames = 0x085839A0,
             battleMoves = 0x0831C898,
@@ -328,6 +336,7 @@ data class GameMap(
             saveBlock1Ptr = 0x03005008,
             saveBlock2Ptr = 0x0300500C,
             repelStepsOffset = 0x1040,
+            friendshipRequiredAddr = 0x08043002,
             startersBase = 0x08169BB5,
             starter2Off = 515,
             starter3Off = 461,
@@ -396,6 +405,7 @@ data class GameMap(
             saveBlock1Fixed = 0x02025734,
             saveBlock2Fixed = 0x02024EA4,
             repelStepsOffset = 0x1382,
+            friendshipRequiredAddr = 0x0803F5CA,
             abilityNames = 0x081FA248,
             itemNames = 0x083C5564,
             battleMoves = 0x081FB12C,
@@ -553,6 +563,8 @@ data class GameMap(
             palettes = 0x0823737C,
             // Code, not data: verified at +0x78, NOT the +0x70 the tables take.
             startersBase = 0x08169C2D,
+            // Code, like startersBase: +0x14, the battle functions' shift.
+            friendshipRequiredAddr = 0x08043016,
             abilityScriptTable = "firered11",
         )
 
@@ -780,6 +792,8 @@ data class BaseStats(
     val growthRate: Int = 0,
     /** SpeciesInfo +8, PokemonData's catchRate. */
     val catchRate: Int = 0,
+    /** SpeciesInfo +0x12 on the vanilla struct (PokemonData.Addresses.offsetBaseFriendship); 70 where the layout is not pinned. */
+    val baseFriendship: Int = EvoText.DEFAULT_BASE,
     /** Gen 1: one Special stat, carried in both spAtk and spDef so damage code reads it either way.
      *  The panel shows it once and the BST counts it once, as the Gen 1 reference tracker does. */
     val singleSpecial: Boolean = false,
@@ -845,6 +859,8 @@ data class TrackedMon(
     /** Program.getNextLevelExp: experience earned into this level, and the level's total. 0 total = unknown. */
     val expNow: Int = 0,
     val expTotal: Int = 0,
+    /** The evolution in brackets after the level (EvoText). Null when it does not evolve. */
+    val evo: EvoText.Label? = null,
 )
 
 /**
@@ -877,6 +893,8 @@ data class EnemyInfo(
     /** The enemy's POSSIBLE abilities (both base-stat slots) - a legal
      *  hint, never the rolled one. What the panel may always show. */
     val abilityGuess: String = "?",
+    /** The same evolution text, in the default colour: the reference gives an opponent no readiness. */
+    val evo: EvoText.Label? = null,
     /**
      * The rolled ability id from the battle struct. INTERNAL: the panel
      * must not display it directly - the reference reveals an enemy
@@ -1272,6 +1290,7 @@ class GbaTracker(
             ability1 = if (map.abilitiesAreU16) b.u16(0x16) else b.u8(22),
             ability2 = if (map.abilitiesAreU16) b.u16(0x18) else b.u8(23),
             growthRate = if (stride == 28) b.u8(0x13) else 0,
+            baseFriendship = if (stride == 28) b.u8(0x12) else EvoText.DEFAULT_BASE,
             catchRate = b.u8(8),
         )
     }.takeIf { it.bst > 0 }
@@ -1307,6 +1326,8 @@ class GbaTracker(
 
         var unreadable = false
         val party = ArrayList<TrackedMon>(count)
+        var bagIds: Set<Int>? = null
+        val evoBag = { bagIds ?: readBag().keys.also { bagIds = it } }
         if (count > 0) {
             // Stride is the ROM's own struct size, not a constant: Nat. Dex
             // is 104 bytes, so a 100-byte stride walked into the middle of
@@ -1328,6 +1349,7 @@ class GbaTracker(
                     }
                     val base = baseStats(mon.species)
                     val learn = learnset(mon.species)
+                    val header = LearnedMoves.of(learn.map { it.first }, mon.level)
                     party += TrackedMon(
                         mon = mon,
                         speciesName = speciesName(mon.species),
@@ -1336,12 +1358,16 @@ class GbaTracker(
                         abilityName = abilityOf(mon, base),
                         itemName = itemName(mon.heldItem),
                         moveRows = moveRows(mon),
-                        movesLearned = learn.count { it.first <= mon.level },
-                        movesTotal = learn.size,
-                        nextMoveLevel = learn.firstOrNull { it.first > mon.level }?.first,
+                        movesLearned = header.learned,
+                        movesTotal = header.total,
+                        nextMoveLevel = header.next,
                         statusCondition = statusName(mon.status),
                         expNow = expProgress(mon, base)?.first ?: 0,
                         expTotal = expProgress(mon, base)?.second ?: 0,
+                        evo = EvoText.forOwn(
+                            evolution(mon.species), mon.level, evoBag,
+                            mon.friendship, base?.baseFriendship ?: EvoText.DEFAULT_BASE, friendshipRequired(),
+                        ),
                     )
                 }
             }
@@ -2182,8 +2208,24 @@ class GbaTracker(
     }
 
     /** Evolution method, or null when this species does not evolve. */
-    fun evolution(species: Int): String? =
-        speciesExtra[species]?.second?.takeIf { it.isNotBlank() }
+    fun evolution(species: Int): String? = EvoText.clean(speciesExtra[species]?.second)
+
+    private var friendshipRequiredCache = 0
+
+    /**
+     * Program.lua:343: the byte plus one, kept only once the ROM gives a real
+     * byte. A ROM still loading reads 0, and latching that would stick at the
+     * fallback for the whole session.
+     */
+    fun friendshipRequired(): Int {
+        if (friendshipRequiredCache != 0) return friendshipRequiredCache
+        if (map.friendshipRequiredAddr == 0L) return EvoText.DEFAULT_REQUIRED
+        val b = memory.read(map.friendshipRequiredAddr, 1)
+        val v = if (b.isEmpty()) 0 else (b[0].toInt() and 0xFF)
+        if (v == 0) return EvoText.DEFAULT_REQUIRED
+        friendshipRequiredCache = v + 1
+        return friendshipRequiredCache
+    }
 
     /** Weight in kg, as the reference records it. */
     fun weight(species: Int): String? =
@@ -2669,6 +2711,7 @@ class GbaTracker(
         return EnemyInfo(
             species = species,
             speciesName = speciesName(species),
+            evo = EvoText.forEnemy(evolution(species)),
             level = b.u8(0x2A),
             curHp = b.u16(0x28),
             maxHp = b.u16(0x2C),

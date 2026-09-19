@@ -98,6 +98,7 @@ private fun PartyCard(
             onNameTap = onNameInfo,
             sprite = spriteFor(m.species),
             iconSpecies = m.species,
+            evo = p.evo,
             // Only the lead carries the Heals strip: the number is a share of
             // the lead's max HP, so repeating it under every party member would
             // print the same percentage against six different Pokemon.
@@ -154,6 +155,8 @@ private fun EnemyCard(
     routeName: String? = null,
     team: List<Boolean> = emptyList(),
     onMoveInfo: ((PcMove) -> Unit)? = null,
+    /** The species' learnset levels from the ROM, for the move count. */
+    moveLevels: List<Int> = emptyList(),
 ) {
     PcCard {
         PcHeadBlock(
@@ -177,6 +180,7 @@ private fun EnemyCard(
                 else e.abilityGuess.substringAfter(" / ", ""),
             sprite = spriteFor(e.species),
             iconSpecies = e.species,
+            evo = e.evo,
             // The box under the card: how often this has been seen, and for a
             // trainer the row of pokeballs showing how many they have left.
             belowHead = {
@@ -220,7 +224,14 @@ private fun EnemyCard(
                     priority = r.priority, contact = r.contact,
                 )
             },
-            header = if (seen.size > 4) "Moves *" else "Moves",
+            // Utils.getMovesLearnedHeader counts for the opponent too, at ITS
+            // level: "Moves* 1/5 (9)", the asterisk (no space) once more than
+            // four of its moves have been seen. This read "Moves *" with no count.
+            header = run {
+                val h = com.ironmonone.tracker.LearnedMoves.of(moveLevels, e.level)
+                "Moves" + (if (seen.size > 4) "*" else "") +
+                    (if (h.total > 0) " ${h.learned}/${h.total}" + (h.next?.let { " ($it)" } ?: "") else "")
+            },
             onHeaderTap = onMoveHistory?.let { cb -> { cb(e.species, e.speciesName, e.level) } },
             onMoveTap = onMoveInfo,
         )
@@ -485,6 +496,7 @@ fun TrackerPanel(
                         encounters = enemyEncounters,
                         routeName = routeName,
                         team = state.enemyTeam,
+                        moveLevels = onMoveLevels?.invoke(enemy.species) ?: emptyList(),
                         onMoveInfo = { mv ->
                             moveInfo = detailOf(mv, onMoveDescription?.invoke(mv.id))
                         })

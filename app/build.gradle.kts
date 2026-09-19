@@ -13,10 +13,10 @@ android {
         // module later would raise this to 29, which is a decision, not an accident.
         minSdk = 26
         targetSdk = 34
-        versionCode = 25
+        versionCode = 26
         // The build id rides on the version so INFO and the bug report say WHICH rc15:
         // three same-named builds went to Blake's phone in one evening (2026-09-08).
-        val baseVersion = "1.0.0-rc16"
+        val baseVersion = "1.0.0-rc17"
         versionName = baseVersion + "+" + (project.findProperty("buildId")?.toString()?.takeIf { it.isNotBlank() } ?: "local")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
