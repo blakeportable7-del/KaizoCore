@@ -328,7 +328,18 @@ data class RomKind(
         val LEAFGREEN_SMARTAI = patched(LEAFGREEN_U, LEAFGREEN_U.id + "-smartai", "Pokémon LeafGreen + Smart AI (Super Kaizo)", 0xBFE458AAL, "smartai")
         val EMERALD_SMARTAI = patched(EMERALD_U, EMERALD_U.id + "-smartai", "Pokémon Emerald + Smart AI (Super Kaizo)", 0xB5E0EDE9L, "smartai")
         val HEARTGOLD_SUPERKAIZO = patched(HEARTGOLD_U, HEARTGOLD_U.id + "-superkaizo", "Pokémon HeartGold + Super Kaizo 0.0.3", 0x4A585DD8L, "superkaizo")
-        val allPatched = listOf(RED_PF, BLUE_PF, YELLOW_PF, GOLD_PF, SILVER_PF, CRYSTAL_PF, FIRERED_V10_SMARTAI, LEAFGREEN_SMARTAI, EMERALD_SMARTAI, HEARTGOLD_SUPERKAIZO)
+        /**
+         * Faster FireRed 1.3.2 (DrMaple), the IronMON quality-of-life patch for
+         * FireRed Rev 1: marked hidden items, instant PC, shortened errands.
+         * The patch is the player's own file, never bundled; this pins what the
+         * patched ROM IS, so the app can randomize and track it. Measured by
+         * applying the 1.3.2 IPS to the pinned v1.1 dump (2026-09-23), and
+         * checked by FasterFireRedTest when both files are to hand. Every ROM
+         * table the tracker reads is byte-identical to vanilla v1.1, so it
+         * tracks on the base game's addresses.
+         */
+        val FIRERED_V11_FASTER = patched(FIRERED_U_V11, FIRERED_U_V11.id + "-faster", "Pokémon FireRed 1.1 + Faster FireRed 1.3.2", 0x33A9FB54L, "faster")
+        val allPatched = listOf(RED_PF, BLUE_PF, YELLOW_PF, GOLD_PF, SILVER_PF, CRYSTAL_PF, FIRERED_V10_SMARTAI, LEAFGREEN_SMARTAI, EMERALD_SMARTAI, HEARTGOLD_SUPERKAIZO, FIRERED_V11_FASTER)
     }
 }
 

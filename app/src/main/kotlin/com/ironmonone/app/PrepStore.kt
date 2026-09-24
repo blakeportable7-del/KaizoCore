@@ -205,7 +205,7 @@ class PrepStore(context: Context) {
 
     /** Every prepared ROM on hand, identified by CRC so a stale file cannot lie. */
     fun listPrepared(): List<Pair<RomKind, File>> {
-        val prepared = (RomKind.allV1 + RomKind.allNatDex).mapNotNull { kind ->
+        val prepared = (RomKind.allV1 + RomKind.allNatDex + RomKind.allPatched).mapNotNull { kind ->
             val f = preparedFile(kind)
             if (f.exists() && cachedCrc(f) == kind.expectedCrc) kind to f else null
         }
@@ -457,7 +457,7 @@ class PrepStore(context: Context) {
      */
     private fun runExtension(): String =
         loadLastRun()?.first?.let { id ->
-            (RomKind.allV1 + RomKind.allNatDex).firstOrNull { it.id == id }?.fileExtension
+            (RomKind.allV1 + RomKind.allNatDex + RomKind.allPatched).firstOrNull { it.id == id }?.fileExtension
         } ?: "gba"
 
     val currentRun: File get() = File(runs, "current.${runExtension()}")

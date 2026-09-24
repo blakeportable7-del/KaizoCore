@@ -162,7 +162,11 @@ object RomIdentity {
         }
     }
 
-    private val known: List<RomKind> get() = RomKind.allV1 + RomKind.allNatDex
+    // The ruleset and quality-of-life patches belong here too. Without them a
+    // patched build (Smart AI, pseudo-fluctuating, Super Kaizo, Faster FireRed)
+    // read as "FireRed, but modified": shelved as a hack, and the RUN tab, which
+    // only offers verified ROMs, never listed it.
+    private val known: List<RomKind> get() = RomKind.allV1 + RomKind.allNatDex + RomKind.allPatched
 
     fun identify(bytes: ByteArray): Result = identify(bytes, bytes.size.toLong(), Crc32.of(bytes))
 
