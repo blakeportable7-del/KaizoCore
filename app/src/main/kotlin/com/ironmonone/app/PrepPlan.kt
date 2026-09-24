@@ -14,7 +14,14 @@ object PrepPlan {
         val family = "Settings files: ${k.family}."
         return when {
             k.isNatDex -> listOf("Already a Nat. Dex build. Stored as is, ready to randomize.", "Settings files: ${k.family} Nat. Dex.")
-            k.natDexCapable -> listOf("Nat. Dex: the 1.2.1 patch is applied and the result stored. Standard: the clean dump is stored.", family)
+            // FireRed 1.1 is the one dump with three: Nat. Dex, clean, and the
+            // Faster FireRed quality-of-life patch.
+            k.natDexCapable -> listOf(
+                "Nat. Dex: the 1.2.1 patch is applied and the result stored. Standard: the clean dump is stored." +
+                    (if (PrepOptions.forKind(k).any { it.out?.patchTag == "faster" })
+                        " Faster FireRed: the quality-of-life patch is applied instead (marked hidden items, instant PC)." else ""),
+                family,
+            )
             k.id == "firered-u-v10" -> listOf("Standard only: Nat. Dex needs FireRed v1.1, and this is v1.0.", family)
             k.patchTag != null -> listOf("Already carries the ${k.displayName.substringAfter(" + ")} patch. Stored as is, ready to randomize.", family)
             k.generation == Generation.GB1 -> listOf("Kaizo: the pseudo-fluctuating growth patch is applied first, as the official page requires. Vanilla: the clean dump is stored.", "Every Gen 1 run is randomized in two passes (PART 1, then PART 2), as the page requires.", family)

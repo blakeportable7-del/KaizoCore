@@ -35,6 +35,25 @@ https://github.com/CyanSMP64/NatDexExtension
   as a Kotlin port and as bundled files. It does NOT extend to anything else.
 
 
+DrMaple / Faster-FireRed — ALL RIGHTS RESERVED, BUNDLED ON BLAKE'S DECISION, NO GRANT
+https://github.com/DrMaple/Faster-FireRed
+
+  The repository carries no LICENSE file (GitHub API reports license: null), so all
+  rights are reserved by default. NO permission has been asked for or given. Blake
+  was shown that and chose to bundle it anyway on 2026-09-23:
+  app/src/main/assets/patches/faster-firered-u-v11.ips is Faster.FireRed.1.3.2.ips,
+  unmodified (sha256 44bd14d4..a075d1218), shipped in the APK and offered on the PREP
+  tab for FireRed 1.1.
+
+  This entry records a known gap, not a permission. DrMaple is credited by name and
+  linked in the About screen and the README. If he objects, the fix is one file and
+  one line: delete the asset and the PrepOptions entry. The patched build stays
+  identified either way, because that is a pinned checksum, not his file, and the
+  ROMS tab keeps importing anyone's own copy.
+
+  The patch is the author's own work, not game content. No ROM is bundled.
+
+
 billgreenwald / ironmon_emu — NO LICENSE, PERMISSION REPORTED SECURED
 https://github.com/billgreenwald/ironmon_emu
 
@@ -186,5 +205,12 @@ BINDING RELEASE CONDITIONS — verify every one before any public build
        the final name.
 [ ] 5. Vendored randomizer stays GPL-3.0 with copyright notices intact.
 [ ] 6. ironmon_emu grant wording captured above, or nothing of theirs is used.
-[ ] 7. Bundled Nat. Dex .bps/.rnqs assets: grant extended in writing, or assets
+[~] 7. Bundled Nat. Dex .bps/.rnqs assets: grant extended in writing, or assets
        removed and one-time import restored. See BUNDLED IN THE APK above.
+       2026-09-23: Blake says "cyan is cool with it". Reported, not captured: the
+       wording and scope are written down nowhere, the way the first grant is quoted
+       at the top of this file. Blake's call on his own risk. Paste Cyan's actual
+       words here when they are to hand.
+[ ] 8. Faster FireRed (faster-firered-u-v11.ips) ships with NO permission, by
+       Blake's decision of 2026-09-23. See the DrMaple entry above. The credit and
+       link in the About screen and the README must stay.

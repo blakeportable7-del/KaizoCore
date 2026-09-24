@@ -120,7 +120,10 @@ the x86_64 emulator.
 
 Nat. Dex support uses the Pokémon and move data and sprites from the **Nat. Dex
 Extension** by **CyanSixFour / CyanSMP64**, used with the author's permission:
-https://github.com/CyanSMP64/NatDexExtension
+https://github.com/CyanSMP64/NatDexExtension
+
+Faster FireRed, the FireRed quality-of-life patch bundled for PREP, is by DrMaple:
+https://github.com/DrMaple/Faster-FireRed
 
 Tracker constants and behaviour derive from the **IronMON Tracker** (MIT) by besteon
 and contributors: https://github.com/besteon/Ironmon-Tracker

@@ -9,6 +9,8 @@ class PrepPlanTest {
     @Test
     fun `each family gets its own plan`() {
         assertTrue(PrepPlan.lines(RomKind.EMERALD_U).first().startsWith("Nat. Dex:"))
+        assertTrue(PrepPlan.lines(RomKind.FIRERED_U_V11).first().contains("Faster FireRed"), "FireRed 1.1 has three choices, and the screen must name the third")
+        assertTrue(!PrepPlan.lines(RomKind.EMERALD_U).first().contains("Faster FireRed"), "Emerald has no such patch")
         assertTrue(PrepPlan.lines(RomKind.LEAFGREEN_U).first().contains("Smart AI"), "Super Kaizo is offered where its patch exists")
         assertTrue(PrepPlan.lines(RomKind.RUBY_U).first().contains("No patch applies"))
         assertTrue(PrepPlan.lines(RomKind.FIRERED_U_V10).first().startsWith("Standard only"))

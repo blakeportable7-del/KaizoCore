@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
 private const val NATDEX_URL = "https://github.com/CyanSMP64/NatDexExtension"
+private const val FASTER_URL = "https://github.com/DrMaple/Faster-FireRed"
 private const val TRACKER_URL = "https://github.com/besteon/Ironmon-Tracker"
 
 /**
@@ -320,6 +321,21 @@ fun AboutScreen(modifier: Modifier = Modifier) {
             color = Shell.linkOnPaper,
             textDecoration = TextDecoration.Underline,
             modifier = Modifier.padding(top = 4.dp).clickable { open(NATDEX_URL) },
+        )
+
+        Spacer(Modifier.height(12.dp))
+
+        Text(
+            "The FireRed quality-of-life patch is Faster FireRed by DrMaple. " +
+                "It is bundled so a run can be prepared without hunting for the file.",
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        Text(
+            FASTER_URL,
+            style = MaterialTheme.typography.bodySmall,
+            color = Shell.linkOnPaper,
+            textDecoration = TextDecoration.Underline,
+            modifier = Modifier.padding(top = 4.dp).clickable { open(FASTER_URL) },
         )
 
         Spacer(Modifier.height(16.dp))

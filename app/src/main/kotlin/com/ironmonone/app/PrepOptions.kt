@@ -34,10 +34,12 @@ object PrepOptions {
         val pf = RomKind.allPatched.firstOrNull { it.baseId == k.id && it.patchTag == "pseudofluct" }
         val smart = RomKind.allPatched.firstOrNull { it.baseId == k.id && it.patchTag == "smartai" }
         val sk = RomKind.allPatched.firstOrNull { it.baseId == k.id && it.patchTag == "superkaizo" }
+        val faster = RomKind.allPatched.firstOrNull { it.baseId == k.id && it.patchTag == "faster" }
         return buildList {
             if (pf != null) add(patch("Kaizo: pseudo-fluctuating patch", pf, "bps"))
             if (k.natDexCapable) add(Option(Mode.NATDEX, "Nat. Dex"))
             add(standard)
+            if (faster != null) add(patch("Faster FireRed: quality-of-life patch", faster, "ips"))
             if (smart != null) add(patch("Super Kaizo: Smart AI patch", smart, "ips"))
             if (sk != null) add(patch("Super Kaizo 0.0.3 patch", sk, "xdelta"))
         }

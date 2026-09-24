@@ -21,7 +21,8 @@ class PrepOptionsTest {
     fun `Gen 3 offers Smart AI beside the existing choices, never on Nat Dex`() {
         assertEquals(listOf("NATDEX", "STANDARD", RomKind.EMERALD_SMARTAI.id), PrepOptions.forKind(RomKind.EMERALD_U).map { it.id })
         assertEquals(listOf("STANDARD", RomKind.FIRERED_V10_SMARTAI.id), PrepOptions.forKind(RomKind.FIRERED_U_V10).map { it.id })
-        assertEquals(listOf("NATDEX", "STANDARD"), PrepOptions.forKind(RomKind.FIRERED_U_V11).map { it.id }, "1.1 waits on a dump to pin")
+        assertEquals(listOf("NATDEX", "STANDARD", RomKind.FIRERED_V11_FASTER.id), PrepOptions.forKind(RomKind.FIRERED_U_V11).map { it.id })
+        assertEquals("faster-${RomKind.FIRERED_U_V11.id}.ips", PrepOptions.forKind(RomKind.FIRERED_U_V11)[2].asset)
         assertEquals(1, PrepOptions.forKind(RomKind.EMERALD_NATDEX_121).size)
         assertEquals(1, PrepOptions.forKind(RomKind.EMERALD_SMARTAI).size)
     }
