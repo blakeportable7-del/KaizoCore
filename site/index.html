@@ -27,18 +27,40 @@
   textarea { min-height:120px }
   .warn { border-color:#8a3a2a }
   footer { margin-top:60px; color:var(--dim); font-size:.9rem }
+  .hero { display:grid; grid-template-columns:1fr auto; grid-template-areas:"title qr" "intro qr"; column-gap:32px; align-items:start }
+  .hero h1 { grid-area:title }
+  .intro { grid-area:intro }
+  .qr { grid-area:qr; width:198px; margin:6px 0 0; padding:16px; background:var(--card); border:1px solid var(--rule); text-align:center }
+  .qr img { display:block; width:100%; height:auto }
+  .qr figcaption { margin-top:10px; font-size:.85rem; line-height:1.4 }
+  .qr figcaption b { display:block; color:var(--gold); font-size:.75rem; text-transform:uppercase; letter-spacing:.08em; text-wrap:balance }
+  .qr figcaption span { display:block; overflow-wrap:anywhere }
+  @media (max-width:640px) {
+    .hero { grid-template-columns:1fr; grid-template-areas:"title" "qr" "intro" }
+    .qr { width:auto; display:flex; align-items:center; gap:14px; margin:8px 0 16px; padding:12px; text-align:left }
+    .qr img { width:123px; flex:none }
+    .qr figcaption { margin-top:0 }
+  }
 </style>
 </head>
 <body>
 <main>
-  <h1>KaizoCore</h1>
-  <p class="lead">Kaizo IronMON and Pokémon ROM hacks on your phone. The library checks your dump, the patcher refuses the wrong patch, the presets are the official rulesets, the randomizer runs on the device, the tracker reads the game live, and each screen goes into OBS as a browser source. One app instead of six.</p>
-  <p class="dim">Android, free, open source. Beta: it will have bugs, and the whole point of this page is to hear about them.</p>
-  <p>
-    <a class="btn solid" href="RELEASES_URL">Download the latest build</a>
-    <a class="btn" href="#feedback">Report a problem</a>
-    <a class="btn" href="SUPPORT_URL">Support the project</a>
-  </p>
+  <header class="hero">
+    <h1>KaizoCore</h1>
+    <figure class="qr">
+      <img src="img/kaizocore-qr.svg" width="164" height="164" alt="QR code that opens willowcreek.group/kaizocore">
+      <figcaption><b>Scan to open on your phone</b><span class="dim">willowcreek.group/<wbr>kaizocore</span></figcaption>
+    </figure>
+    <div class="intro">
+      <p class="lead">Kaizo IronMON and Pokémon ROM hacks on your phone. The library checks your dump, the patcher refuses the wrong patch, the presets are the official rulesets, the randomizer runs on the device, the tracker reads the game live, and each screen goes into OBS as a browser source. One app instead of six.</p>
+      <p class="dim">Android, free, open source. Beta: it will have bugs, and the whole point of this page is to hear about them.</p>
+      <p>
+        <a class="btn solid" href="RELEASES_URL">Download the latest build</a>
+        <a class="btn" href="#feedback">Report a problem</a>
+        <a class="btn" href="SUPPORT_URL">Support the project</a>
+      </p>
+    </div>
+  </header>
 
   <h2>What it does</h2>
   <div class="card">

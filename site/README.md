@@ -21,3 +21,8 @@ on purpose. `thanks.html` is the post-submit page.
 
 `img/` takes the screenshot set (see tools/screenshots.sh) and `video/`
 the 45-second cut; both are produced, not hand-made.
+
+`img/kaizocore-qr.svg` is the QR code at the top of the page. It opens
+https://willowcreek.group/kaizocore; if the page moves, regenerate it from
+the repo root with
+`npx qrcode@1.5.4 -e Q -t svg -o site/img/kaizocore-qr.svg <new URL>`.
