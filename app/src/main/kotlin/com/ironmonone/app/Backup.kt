@@ -29,11 +29,18 @@ object Backup {
         "saves/",
         "prep/attempts/", "prep/games/", "prep/cheats/", "prep/layouts/", "prep/coreopts/",
         "prep/library/notes/", "prep/runs/", "prep/settings/",
+        // Per-game favourites and the DS past-runs logs (prep/pastruns-<family>.tsv).
+        "prep/favorites/", "prep/pastruns-",
     )
     private val FILES = setOf(
         "prep/marks.txt", "prep/notes.txt", "prep/routes.txt", "prep/moves.txt", "prep/abilities.txt",
         "prep/favorites.txt", "prep/lastrun.txt", "prep/lastseed.txt", "prep/keys.txt", "prep/skin.txt",
         "prep/padforce.txt", "prep/playspeed.txt", "prep/playmute.txt", "prep/library/session.txt",
+        // Left out until 2026-09-27, so a restore silently lost them (audit): the
+        // tracker's settings, Hidden Power choices, PC heal counts, the summary
+        // checks, the theme, the attempt counter and the tourney table.
+        "prep/tracker-options.txt", "prep/hidden-power.txt", "prep/pc-heals.txt", "prep/summary-checked.txt",
+        "prep/theme.txt", "prep/attempts.txt", "prep/tourney.tsv",
     )
 
     fun admits(rel: String): Boolean {
@@ -100,7 +107,7 @@ object Backup {
  * is bigger than any DS cartridge, so a zip bomb stops there.
  */
 object ZipImport {
-    private val ROM_EXT = setOf("gba", "gbc", "gb", "nds", "bps", "ips", "ups")
+    private val ROM_EXT = setOf("gba", "gbc", "gb", "nds", "bps", "ips", "ups", "xdelta", "vcdiff")
     /** Bigger than any DS cartridge (512 MB), so a zip bomb still stops. */
     private const val CAP = 600L * 1024 * 1024
 

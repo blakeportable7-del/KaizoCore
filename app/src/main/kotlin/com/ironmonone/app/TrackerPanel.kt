@@ -476,9 +476,10 @@ fun TrackerPanel(
                             onReroll = onRerollBall)
                         Spacer(Modifier.height(3.dp))
                     }
-                    state.playerX?.let {
-                        Spacer(Modifier.height(2.dp))
-                        PixText("pos $it,${state.playerY}", 7, Pc.Dim)
+                    // This used to print the player's map position ("pos 0,0"),
+                    // a debug readout, as the only line a new player saw here.
+                    if (!(state.inLab && TrackerOptions.showBallPicker && ballCall != null)) {
+                        PixText("No Pokemon yet. The tracker fills in when you get your first one.", 8, Pc.Dim)
                     }
                 }
             }
@@ -548,7 +549,7 @@ fun TrackerPanel(
                         healPercent = state.healPercent,
                         healCount = state.healCount,
                         onMoveInfo = { mv ->
-                            moveInfo = detailOf(mv, onMoveDescription?.invoke(mv.id))
+                            moveInfo = detailOf(mv, onMoveDescription?.invoke(mv.id), noRomData = moveRowFor(mv.id)?.let { it.pp == 0 && (it.power ?: 0) == 0 } == true)
                                 // Your own Hidden Power: the info screen gets the type arrows.
                                 .copy(hiddenPowerPid = p.mon.pid.takeIf { mv.id == com.ironmonone.tracker.MoveRules.HIDDEN_POWER })
                         },
@@ -576,7 +577,7 @@ fun TrackerPanel(
                         catchText = state.catchPercent?.takeIf { state.isWildBattle && TrackerOptions.showCatchRate }?.let { "~ $it%  to catch" },
                         onCatchTap = onCatchRates,
                         onMoveInfo = { mv ->
-                            moveInfo = detailOf(mv, onMoveDescription?.invoke(mv.id))
+                            moveInfo = detailOf(mv, onMoveDescription?.invoke(mv.id), noRomData = moveRowFor(mv.id)?.let { it.pp == 0 && (it.power ?: 0) == 0 } == true)
                         })
                 }
                 // The PC tracker's fourth area: one rotating strip, not a stack
@@ -619,10 +620,11 @@ fun TrackerPanel(
  * are general facts about a damaging move's type - never about the opponent,
  * which is the player's to work out (Blake, 2026-09-05).
  */
-private fun detailOf(mv: PcMove, summary: String?): MoveDetail =
+private fun detailOf(mv: PcMove, summary: String?, noRomData: Boolean = false): MoveDetail =
     MoveDetail(
-        name = mv.name, typeId = mv.type, typeName = mv.typeName,
-        category = mv.category, contact = mv.contact,
+        name = mv.name, typeId = mv.type.takeUnless { noRomData }, typeName = mv.typeName.takeUnless { noRomData },
+        category = mv.category.takeUnless { noRomData }, contact = mv.contact,
+        noRomData = noRomData,
         pp = mv.pp, ppMax = mv.ppMax, power = mv.power, acc = mv.acc,
         priority = mv.priority, summary = summary,
         typeChart = if ((mv.power ?: 0) > 0) MoveMatchup.general(mv.type) else null,

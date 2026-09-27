@@ -976,9 +976,10 @@ fun PlayScreen(
                 val f = slotFile(slot).apply { parentFile?.mkdirs() }
                 // The state being overwritten survives as the slot's backup (UNDO).
                 if (slot != StateSlots.AUTO) target.keepBackup()
-                val tmp = File(f.parentFile, f.name + ".tmp")
-                tmp.writeBytes(st)
-                if (!tmp.renameTo(f)) { f.delete(); tmp.renameTo(f) }
+                StateSlots.writeAtomic(f, st)?.let { err ->
+                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) { status = err }
+                    return@launch
+                }
                 runCatching { slotStamp(slot).writeText(store.stateStamp(session)) }
                 // Thumbnail: 240 wide, aspect kept. Missing is fine; the row shows a dash.
                 val thumb = StateSlots.thumbFile(f)
@@ -1039,7 +1040,7 @@ fun PlayScreen(
             return
         }
         if (got == null) {
-            status = "Slot $which predates run stamping - not loaded."
+            status = "Slot $which is from an older version. Not loaded."
             return
         }
         val slot = which
@@ -1047,14 +1048,15 @@ fun PlayScreen(
         scope.launch(kotlinx.coroutines.Dispatchers.IO) {
             // DS states run tens of MB; reading them on the main thread froze
             // the UI for seconds per tap.
-            val bytes = f.readBytes()
+            val bytes = StateSlots.readOrNull(f)
             kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                if (bytes == null) { status = "Could not read slot $slot."; return@withContext }
                 // The core reports whether it accepted the state; claiming
                 // "Loaded" when it refused left the player mid-game with no
                 // idea the rewind never happened.
                 val ok = retro?.unserializeState(bytes) == true
                 status = if (ok) (if (slot == StateSlots.AUTO) "Resumed from the auto-save." else "Loaded slot $slot.")
-                else "Load failed - the core refused that state."
+                else "Could not load slot $slot. The save may be damaged."
             }
         }
     }
@@ -1184,7 +1186,7 @@ fun PlayScreen(
             if (!session.isRun) { raBusy = "Looking up this game..."; com.swordfish.libretrodroid.LibretroDroid.cheevosLoadGame(rom.absolutePath, RetroAchievements.consoleId(platform)) }
         } else raStore.load()?.let { (u, t) -> raBusy = "Signing in..."; com.swordfish.libretrodroid.LibretroDroid.cheevosLogin(u, t, true) }
         StateSlots.auto(context.filesDir, session).takeIf { it.exists }?.let {
-            status = "Auto-save from ${it.savedLabel()}: FILE > STATES > RESUME."
+            status = "Auto-save from ${it.savedLabel()}: File > States > Resume."
         }
     }
 
@@ -1245,7 +1247,7 @@ fun PlayScreen(
         Column {
         if (streamOn) {
             Text("Stream: " + com.ironmonone.app.stream.StreamHub.url() + "  (Back leaves CLEAN VIEW)",
-                fontFamily = com.ironmonone.app.gen3.Gen3.PixelFont, fontSize = 8.sp,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.Medium, fontSize = 12.sp,
                 color = Pc.Gold, modifier = Modifier.padding(horizontal = 8.dp))
         }
         Row(
@@ -1424,8 +1426,8 @@ fun PlayScreen(
                       // seed is not something you act on mid-run.
                       Text(
                           "ATTEMPT ${store.attempt()}",
-                          fontFamily = com.ironmonone.app.gen3.Gen3.PixelFont,
-                          fontSize = 8.sp, color = Pc.Text,
+                          fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
+                          fontSize = 12.sp, color = Pc.Text,
                       )
                       Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                           if (dsScreens) {
@@ -1607,8 +1609,8 @@ fun PlayScreen(
                       .clickable { trackerOpen = true; TrackerOptions.landscapeTracker = LandscapeTracker.DOCKED; TrackerOptions.save() },
                   contentAlignment = Alignment.Center,
               ) {
-                  Text("◀", fontFamily = com.ironmonone.app.gen3.Gen3.PixelFont,
-                      fontSize = 12.sp, color = Color.White)
+                  Text("◀", fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
+                      fontSize = 17.sp, color = Color.White)
               }
           }
         }
@@ -1919,6 +1921,8 @@ fun PlayScreen(
                 // Bounded and scrollable: the strip is as wide as the game
                 // column, and adding MENU pushed it past that edge.
                 if (editingLayout) layoutToolbar(Modifier.align(Alignment.TopStart))
+                if (!session.tracked && !menuOpen && !streamClean && !editingLayout)
+                    LandscapeMenuChip(Modifier.align(Alignment.TopCenter)) { menuOpen = true }
                 if (menuOpen && !streamClean && !editingLayout) Row(
                     Modifier.align(Alignment.TopStart).fillMaxWidth().systemGestureExclusion().padding(6.dp)
                         .horizontalScroll(rememberScrollState())
@@ -1966,6 +1970,7 @@ fun PlayScreen(
                     // only way back to the rest of the app was to rotate the
                     // phone - impossible with rotation locked.
                     OverlayChip("MENU") { onExitFullscreen() }
+                    if (!session.tracked) OverlayChip("HIDE") { menuOpen = false }
                 }
             }
 
@@ -1995,8 +2000,8 @@ fun PlayScreen(
                 ) {
                     Text(
                         "CONTROLLER CONNECTED — PAD HIDDEN",
-                        fontFamily = com.ironmonone.app.gen3.Gen3.PixelFont,
-                        fontSize = 9.sp,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
+                        fontSize = 13.sp,
                         color = Shell.hintOnNight,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                     )
@@ -2236,7 +2241,7 @@ fun PlayScreen(
         timeMachine = timeMachine, snapshot = { runCatching { retro?.serializeState() }.getOrNull() },
         onRestore = { bytes ->
             if (raHardcore) status = "Loading a state is off in RetroAchievements hardcore."
-            else status = if (retro?.unserializeState(bytes) == true) "Restored." else "Load failed - the core refused that state."
+            else status = if (retro?.unserializeState(bytes) == true) "Restored." else "Could not restore. The save may be damaged."
         },
         pastRunStore = pastRunStore,
         tourney = tourney, currentSeed = store.lastSeedText().ifEmpty { session.id },
@@ -2253,7 +2258,7 @@ fun PlayScreen(
                 name = { nds.speciesName(it) }, bst = { nds.speciesBst(it) },
                 sprite = { id -> remember(id) { PcAssets.dsSprite(ctx, id, false) } },
                 fullyEvolvedSupported = false, sortByBst = true,
-                noDataNote = if (nds.hasSpeciesData()) null else "No species data for this ROM yet. Randomize it on the RUN tab and the buckets fill in.",
+                noDataNote = if (nds.hasSpeciesData()) null else "No species data for this ROM yet. Randomize it on the Run tab and the buckets fill in.",
                 onClose = { coverageCalc = false },
             )
         } else if (gba != null) {
@@ -2495,7 +2500,7 @@ internal fun PadButton(
     val outline = skin == PadSkin.OUTLINE
     val shape = when {
         outline && (mini || small || wide) -> androidx.compose.foundation.shape.RoundedCornerShape(50)
-        outline && keyCode in DPAD_KEYS -> androidx.compose.ui.graphics.RectangleShape
+        outline && keyCode in DPAD_KEYS -> androidx.compose.foundation.shape.RoundedCornerShape(14.dp)
         outline -> androidx.compose.foundation.shape.CircleShape
         !modern -> androidx.compose.ui.graphics.RectangleShape
         mini || small || wide -> androidx.compose.foundation.shape.RoundedCornerShape(50)
@@ -2699,7 +2704,7 @@ private fun HoldChip(label: String, onDown: () -> Unit, onUp: () -> Unit, big: B
             .pressHold({ held = true; onDown() }, { held = false; onUp() }),
         contentAlignment = Alignment.Center,
     ) {
-        Text("\u25C0\u25C0 " + label, fontFamily = g.PixelFont, fontSize = 9.sp,
+        Text("\u25C0\u25C0 " + label, fontWeight = androidx.compose.ui.text.font.FontWeight.Medium, fontSize = 13.sp,
             color = if (big) g.Ink else Color.White)
     }
 }
@@ -2729,7 +2734,7 @@ private fun OverlayChip(label: String, onClick: () -> Unit) {
         // its label into a vertical column of letters ("M E N U") instead of
         // staying on one line.
         Text(
-            label, fontFamily = g.PixelFont, fontSize = 8.sp, color = Color.White,
+            label, fontWeight = androidx.compose.ui.text.font.FontWeight.Medium, fontSize = 12.sp, color = Color.White,
             maxLines = 1, softWrap = false,
         )
     }

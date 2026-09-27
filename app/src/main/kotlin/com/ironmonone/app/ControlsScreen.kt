@@ -40,6 +40,7 @@ import java.io.File
  * screen listens for the next physical key rather than asking you to pick from
  * a list, so what you press is exactly what gets bound.
  */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun ControlsScreen(modifier: Modifier = Modifier) {
     val context = LocalContext.current
@@ -56,7 +57,17 @@ fun ControlsScreen(modifier: Modifier = Modifier) {
         val target = listening
         val targetAction = listeningAction
         if (activity != null && (target != null || targetAction != null)) {
-            activity.keyCapture = { code ->
+            activity.keyCapture = capture@{ code ->
+                // Back cancels; the phone's own keys pass through to the phone.
+                if (code == android.view.KeyEvent.KEYCODE_BACK) {
+                    listening = null; listeningAction = null
+                    lastCaptured = null
+                    return@capture true
+                }
+                if (KeyBindings.isSystemKey(code)) {
+                    lastCaptured = "That key belongs to the phone. Press another, or Back to cancel."
+                    return@capture false
+                }
                 if (target != null) {
                     bindings.bind(target, code)
                     lastCaptured = "${target.label} = ${KeyBindings.keyName(code)}"
@@ -86,9 +97,9 @@ fun ControlsScreen(modifier: Modifier = Modifier) {
         Gen3Box(Modifier.fillMaxWidth()) {
             Column {
                 Text(
-                    "CONTROLS",
-                    fontFamily = Gen3.PixelFont,
-                    fontSize = 11.sp,
+                    "Keys and buttons",
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
+                    fontSize = 16.sp,
                     color = Shell.inkOnPaper,
                 )
                 Spacer(Modifier.height(8.dp))
@@ -113,7 +124,7 @@ fun ControlsScreen(modifier: Modifier = Modifier) {
                     if (idx > 0) ShellDivider()
                     ShellListRow(
                         label = button.label,
-                        value = if (isListening) "press a key..."
+                        value = if (isListening) "press a key (Back cancels)"
                             else map[button]?.takeIf { it != 0 }
                                 ?.let { KeyBindings.keyName(it) } ?: "unbound",
                         valueColor = when {
@@ -126,7 +137,7 @@ fun ControlsScreen(modifier: Modifier = Modifier) {
                 }
 
                 Spacer(Modifier.height(14.dp))
-                Text("EMULATOR ACTIONS", fontFamily = Gen3.PixelFont, fontSize = 10.sp, color = Shell.inkOnPaper)
+                Text("Emulator actions", fontWeight = androidx.compose.ui.text.font.FontWeight.Medium, fontSize = 14.sp, color = Shell.inkOnPaper)
                 Spacer(Modifier.height(4.dp))
                 Text("Give a pad button or key to an action. It stops being a game button until unbound.",
                     style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper)
@@ -137,7 +148,7 @@ fun ControlsScreen(modifier: Modifier = Modifier) {
                     if (idx > 0) ShellDivider()
                     ShellListRow(
                         label = a.label,
-                        value = if (isListening) "press a key..." else bound?.let { KeyBindings.keyName(it) } ?: "unbound",
+                        value = if (isListening) "press a key (Back cancels)" else bound?.let { KeyBindings.keyName(it) } ?: "unbound",
                         valueColor = if (isListening) Shell.goodOnPaper else Shell.inkOnPaper,
                         onClick = { listening = null; listeningAction = if (isListening) null else a },
                     )
@@ -145,15 +156,23 @@ fun ControlsScreen(modifier: Modifier = Modifier) {
                 Spacer(Modifier.height(12.dp))
                 lastCaptured?.let {
                     Text(
-                        "bound: $it",
+                        if (it.startsWith("That key")) it else "Bound: $it",
                         style = MaterialTheme.typography.bodySmall,
                         color = Shell.goodOnPaper,
                     )
                     Spacer(Modifier.height(8.dp))
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Gen3Button("RESET TO DEFAULTS") {
-                        bindings.resetToDefaults(); version++; lastCaptured = null
+                var resetArmed by remember { mutableStateOf(false) }
+                androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // Two taps: this throws away every binding the player made.
+                    Gen3Button(if (resetArmed) "SURE? RESET ALL" else "RESET TO DEFAULTS", accent = resetArmed) {
+                        if (resetArmed) { bindings.resetToDefaults(); version++; lastCaptured = "Every key is back to its default."; resetArmed = false }
+                        else resetArmed = true
+                    }
+                    listeningAction?.let { a ->
+                        if (bindings.keyForAction(a) != null) Gen3Button("CLEAR ${a.label.uppercase()}") {
+                            bindings.unbindAction(a); listeningAction = null; version++; lastCaptured = "${a.label} is unbound."
+                        }
                     }
                     if (listening != null || listeningAction != null) Gen3Button("CANCEL") { listening = null; listeningAction = null }
                 }

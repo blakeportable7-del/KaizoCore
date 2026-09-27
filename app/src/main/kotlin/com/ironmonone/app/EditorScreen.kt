@@ -101,6 +101,7 @@ fun EditorScreen(
     }
 
     if (loaded == null) {
+        androidx.activity.compose.BackHandler { onClose() }
         ScreenBackground(null) {
             Column(modifier.fillMaxSize().padding(16.dp)) {
                 EmptyState(
@@ -174,6 +175,30 @@ fun EditorScreen(
     }
 
     val changedCount = allOptions.count { changed(it) }
+    // Leaving with changes that were never saved asks first. The phone's Back
+    // used to leave the editor (and the app) with no word, losing every edit
+    // (audit, 2026-09-27). What was last saved is kept as its settings string.
+    var savedString by remember { mutableStateOf<String?>(null) }
+    val dirty = changedCount > 0 && runCatching { settings.toString() }.getOrNull() != savedString
+    var confirmLeave by remember { mutableStateOf(false) }
+    fun leave() { if (dirty) confirmLeave = true else onClose() }
+    androidx.activity.compose.BackHandler { leave() }
+    if (confirmLeave) {
+        ShellDialog("Leave without saving?", onDismiss = { confirmLeave = false }) {
+            Column {
+                Text("You changed $changedCount setting(s). They are lost if you leave now.",
+                    style = MaterialTheme.typography.bodyMedium, color = Gen3.Ink)
+                Spacer(Modifier.height(10.dp))
+                // Two rows: three buttons in one clipped the last at phone width.
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Gen3Button("SAVE AS", accent = true) { confirmLeave = false; saveDialog = true }
+                    Gen3Button("STAY") { confirmLeave = false }
+                }
+                Spacer(Modifier.height(8.dp))
+                Gen3Button("LEAVE WITHOUT SAVING") { confirmLeave = false; onClose() }
+            }
+        }
+    }
 
     ScreenBackground(null) {
         Column(modifier.fillMaxSize()) {
@@ -187,8 +212,8 @@ fun EditorScreen(
                         Column {
                             Text(
                                 file.name.removeSuffix(".rnqs"),
-                                fontFamily = Gen3.PixelFont,
-                                fontSize = 11.sp,
+                                fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
+                                fontSize = 16.sp,
                                 color = Shell.inkOnPaper,
                             )
                             Spacer(Modifier.height(6.dp))
@@ -275,8 +300,8 @@ fun EditorScreen(
                             ) {
                                 Text(
                                     if (openSection == section) "v" else ">",
-                                    fontFamily = Gen3.PixelFont,
-                                    fontSize = 9.sp,
+                                    fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
+                                    fontSize = 13.sp,
                                     color = Shell.hintOnPaper,
                                     modifier = Modifier.width(20.dp),
                                 )
@@ -294,8 +319,8 @@ fun EditorScreen(
                                     Spacer(Modifier.width(6.dp))
                                     Text(
                                         "$sectionChanged",
-                                        fontFamily = Gen3.PixelFont,
-                                        fontSize = 9.sp,
+                                        fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
+                                        fontSize = 13.sp,
                                         color = Shell.inkOnPaper,
                                     )
                                     Spacer(Modifier.width(4.dp))
@@ -344,8 +369,8 @@ fun EditorScreen(
                     Text(
                         if (changedCount == 0) "no changes"
                         else "$changedCount changed",
-                        fontFamily = Gen3.PixelFont,
-                        fontSize = 9.sp,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
+                        fontSize = 13.sp,
                         color = Shell.hintOnNight,
                     )
                 }
@@ -362,7 +387,7 @@ fun EditorScreen(
                     Spacer(Modifier.width(6.dp))
                     Gen3Button("PASTE") { pasteDialog = true }
                     Spacer(Modifier.width(6.dp))
-                    Gen3Button("BACK") { onClose() }
+                    Gen3Button("BACK") { leave() }
                 }
             }
         }
@@ -413,6 +438,7 @@ fun EditorScreen(
                     tmp.delete()
                 }
             }.onSuccess {
+                savedString = runCatching { settings.toString() }.getOrNull()
                 status = "Saved. Pick it on the Run tab."; statusError = false
             }.onFailure {
                 status = "Save failed: ${it.message}"; statusError = true
@@ -506,8 +532,8 @@ private fun OptionRow(
                         ) {
                             Text(
                                 "?",
-                                fontFamily = Gen3.PixelFont,
-                                fontSize = 10.sp,
+                                fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
+                                fontSize = 14.sp,
                                 color = Shell.hintOnPaper,
                             )
                         }
@@ -545,8 +571,8 @@ private fun OptionRow(
                 ) {
                     Text(
                         "<",
-                        fontFamily = Gen3.PixelFont,
-                        fontSize = 11.sp,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
+                        fontSize = 16.sp,
                         color = Shell.inkOnPaper,
                     )
                 }
@@ -597,8 +623,8 @@ private fun OptionRow(
                 ) {
                     Text(
                         SettingsReflector.prettifyEnum(current),
-                        fontFamily = Gen3.PixelFont,
-                        fontSize = 9.sp,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
+                        fontSize = 13.sp,
                         color = Shell.inkOnPaper,
                     )
                 }

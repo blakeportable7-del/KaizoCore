@@ -132,6 +132,16 @@ fun PrepareScreen(modifier: Modifier = Modifier) {
         val file = romFile ?: return
         val id = romId ?: return
         val kind = id.kind ?: return
+        // A game recognised by its title but whose exact copy the app has not
+        // checked yet (Pokemon Black, today) cannot be listed on RUN: the
+        // tracker's addresses are per build and RUN only offers checked ones.
+        // PREP used to store it anyway and say "Ready on the RUN tab", which
+        // was never true (audit, 2026-09-27).
+        if (kind.expectedCrc == com.ironmonone.core.RomKind.CRC_UNKNOWN) {
+            say("This copy of ${kind.displayName} has not been checked by the app yet, so it cannot be randomized here. " +
+                "It plays from Library, All files, without the tracker. Nothing was changed.", error = true)
+            return
+        }
         busy = true; message = null
         scope.launch {
             runCatching {
@@ -177,7 +187,7 @@ fun PrepareScreen(modifier: Modifier = Modifier) {
                         }
                     }
                 }
-            }.onSuccess { (msg, _) -> say("$msg Ready on the RUN tab."); romFile = null; romId = null }
+            }.onSuccess { (msg, _) -> say("$msg Ready on the Run tab."); romFile = null; romId = null }
                 .onFailure {
                     if (it is NeedPatch) {
                         needPatchImport = true
@@ -195,7 +205,7 @@ fun PrepareScreen(modifier: Modifier = Modifier) {
         Gen3Box(Modifier.fillMaxWidth()) {
             Column {
         Text(
-            "Add a game dump. What PREPARE does depends on the game; it says so once the dump is read.",
+            "Add a game dump. What Prepare does depends on the game; it says so once the dump is read.",
             style = MaterialTheme.typography.bodyMedium,
             color = Gen3.Ink,
         )
@@ -210,7 +220,7 @@ fun PrepareScreen(modifier: Modifier = Modifier) {
             Text(
                 id.summary,
                 style = MaterialTheme.typography.bodySmall,
-                color = if (id.recognised) MaterialTheme.colorScheme.primary
+                color = if (id.recognised) Shell.goodOnPaper
                 else MaterialTheme.colorScheme.error,
             )
             // Blake, 2026-09-07: "the prepare screen will be different and unique
@@ -238,7 +248,10 @@ fun PrepareScreen(modifier: Modifier = Modifier) {
                         ) {
                             ShellRadio(current.id == o.id)
                             Spacer(Modifier.width(10.dp))
-                            Text(o.label, fontWeight = if (current.id == o.id) FontWeight.SemiBold else FontWeight.Normal)
+                            Column {
+                                Text(o.label, fontWeight = if (current.id == o.id) FontWeight.SemiBold else FontWeight.Normal)
+                                Text(PrepOptions.describe(o), style = MaterialTheme.typography.bodySmall, color = Shell.inkOnPaper)
+                            }
                         }
                     }
                 }

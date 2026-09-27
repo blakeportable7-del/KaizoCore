@@ -23,6 +23,23 @@ import com.ironmonone.core.RomKind
 object PrepOptions {
     enum class Mode { STANDARD, NATDEX, PATCH }
 
+    /**
+     * One plain line under each choice. The labels alone ("Kaizo:
+     * pseudo-fluctuating patch", "Nat. Dex") meant nothing to a newcomer and
+     * nothing said which was the normal pick (audit, 2026-09-27).
+     */
+    fun describe(o: Option): String = when (o.mode) {
+        Mode.STANDARD -> if (o.label == "Vanilla") "The game as it came, with no patch." else "The game as it came. Pick this if you are not sure."
+        Mode.NATDEX -> "Adds Pokemon from later generations to the wild and to trainers."
+        Mode.PATCH -> when (o.out?.patchTag) {
+            "pseudofluct" -> "Adds the experience curve this game lacks. The official settings need it so nothing evolves into a legendary."
+            "smartai" -> "Trainers pick their moves more cleverly. Needed for Super Kaizo."
+            "superkaizo" -> "The Super Kaizo patch for this game. Needed for Super Kaizo."
+            "faster" -> "Hidden items marked, instant healing at the PC, shorter errands."
+            else -> "Applies a patch before randomizing."
+        }
+    }
+
     data class Option(val mode: Mode, val label: String, val asset: String? = null, val out: RomKind? = null) {
         val id: String get() = out?.id ?: mode.name
     }

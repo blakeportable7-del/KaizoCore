@@ -30,48 +30,54 @@ import androidx.compose.ui.unit.dp
  * is verified against the reference, not against this file.
  */
 object Shell {
+    // The modern dark look (Blake, 2026-09-27: "A, modern dark"). Cards are a
+    // step lighter than the page, so every "OnPaper" colour below is a LIGHT
+    // ink now. The names still say the ground, which is the rule of this file.
+    // Ratios measured against that ground.
 
     // ---- Grounds -----------------------------------------------------------
-    /** The app page. Everything not on a card sits on this. */
-    val night = Color(0xFF000000)
+    /** The app page. */
+    val night = Color(0xFF121316)
     /** Card ground. */
-    val paper = Color(0xFFF8F8F8)
+    val paper = Color(0xFF1C1D22)
+    /** A control on a card: buttons, chips, steppers. */
+    val raised = Color(0xFF2A2C33)
+    /** The same, pressed. */
+    val raisedPressed = Color(0xFF363841)
 
     // ---- On paper ----------------------------------------------------------
-    /** Body text on a card. 8.6:1 */
-    val inkOnPaper = Color(0xFF404040)
-    /** De-emphasised text on a card. 4.8:1 */
-    val hintOnPaper = Color(0xFF6B6B6B)
-    /**
-     * Links on a card: INK PLUS AN UNDERLINE, never the yellow accent.
-     * Yellow on paper measured 1.01:1 - see the class doc. Use with
-     * [linkDecoration] so the link is distinguishable without relying on hue,
-     * which also covers colour-blind readers.
-     */
-    val linkOnPaper = Color(0xFF404040)
+    /** Body text on a card. 14.4:1 */
+    val inkOnPaper = Color(0xFFECEDEE)
+    /** De-emphasised text on a card. 6.6:1 */
+    val hintOnPaper = Color(0xFFA0A3AD)
+    /** Links on a card: ink plus an underline, so hue is never the only cue. */
+    val linkOnPaper = Color(0xFFECEDEE)
     val linkDecoration = TextDecoration.Underline
 
     // ---- On night ----------------------------------------------------------
-    /** Body text on the page. 21:1 */
-    val textOnNight = Color(0xFFFFFFFF)
-    /**
-     * De-emphasised text on the page. 4.6:1 - the darkest grey that still
-     * clears AA on black. Empty-state copy is guidance, not disabled UI, and
-     * at 2:1 it read as the latter.
-     */
-    val hintOnNight = Color(0xFF9E9E9E)
-    /** The accent. ONLY on dark grounds - 19.6:1 here, 1.01:1 on paper. */
-    val accentOnNight = Color(0xFFFFEB00)
+    /** Body text on the page. 15.6:1 */
+    val textOnNight = Color(0xFFECEDEE)
+    /** De-emphasised text on the page. 7.1:1 */
+    val hintOnNight = Color(0xFFA0A3AD)
+    /** The accent as TEXT on either dark ground. 7.9:1 */
+    val accentOnNight = Color(0xFFFF8589)
+
+    // ---- Accent fill -------------------------------------------------------
+    /** The one filled colour: the main action on a screen, and selection. */
+    val accent = Color(0xFFCF3A3F)
+    val accentPressed = Color(0xFFB23035)
+    /** Text on [accent]. 5.8:1 */
+    val onAccent = Color(0xFFFFFFFF)
 
     // ---- Structure ---------------------------------------------------------
-    val frame = Color(0xFF333333)
-    val hairline = Color(0xFFAAAAAA)
+    val frame = Color(0xFF2E3036)
+    val hairline = Color(0xFF34363C)
 
     // ---- Status ------------------------------------------------------------
-    val dangerOnPaper = Color(0xFFC62828)   // 5.9:1 on paper
-    val dangerOnNight = Color(0xFFFF6B60)   // 6.6:1 on black
-    val goodOnPaper = Color(0xFF1B6B2E)     // 6.3:1 on paper
-    val goodOnNight = Color(0xFF5FD07A)     // 10.4:1 on black
+    val dangerOnPaper = Color(0xFFFF6B6B)   // 5.8:1 on a card
+    val dangerOnNight = Color(0xFFFF6B6B)
+    val goodOnPaper = Color(0xFF4CC38A)     // 7.5:1 on a card
+    val goodOnNight = Color(0xFF4CC38A)
 
     // ---- Metrics -----------------------------------------------------------
     /** Minimum interactive target. */
@@ -81,5 +87,37 @@ object Shell {
     /** Base spacing grid. */
     val gap = 4.dp
     /** Frame stroke on cards and buttons. */
-    val stroke = 2.dp
+    val stroke = 1.dp
+    val cardRadius = 16.dp
+    val controlRadius = 12.dp
+
+    /**
+     * Button labels are written in capitals all over the app ("PLAY IT NOW"),
+     * from the pixel-font days. In the sans face capitals shout, so a label
+     * with no lower case is shown in sentence case here, once, instead of
+     * rewriting ninety call sites. Short codes stay as they are.
+     */
+    fun label(s: String): String {
+        if (Regex("[0-9.]+X").matches(s)) return s.lowercase()   // speed: 1x, 2x
+        if (s.any { it.isLowerCase() } || s.length <= 2) return s
+        val words = s.split(' ')
+        return words.mapIndexed { i, w ->
+            val key = w.trimEnd(',', '.', '!', '?', ':')
+            val tail = w.substring(key.length)
+            (KEEP[key] ?: when {
+                key in CODES -> key
+                i == 0 -> key.lowercase().replaceFirstChar { it.uppercase() }
+                else -> key.lowercase()
+            }) + tail
+        }.joinToString(" ")
+    }
+
+    private val CODES = setOf(
+        "ROM", "ROMS", "IPS", "BPS", "UPS", "DS", "NDS", "GBA", "GBC", "GB", "HP", "PP", "PC",
+        "OK", "AI", "RA", "UPR", "ZX", "IV", "IVS", "EV", "EVS", "TM", "HM", "ID", "USB", "X",
+    )
+    private val KEEP = mapOf(
+        "BLAKE" to "Blake", "POKEMON" to "Pokémon", "NAT.DEX" to "Nat. Dex", "SUPERNDS" to "SuperNDS",
+        "DRASTIC" to "DraStic", "MELONDS" to "melonDS",
+    )
 }

@@ -1,5 +1,13 @@
 package com.ironmonone.app
 
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.graphics.Color
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -12,6 +20,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -66,6 +75,8 @@ fun RunScreen(
     modifier: Modifier = Modifier,
     /** The preset to edit, and the generation of the ROM it will be run on. */
     onEdit: (File, String?) -> Unit = { _, _ -> },
+    /** Go to the game. Called when a new run is ready: that is always the next step. */
+    onPlay: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val store = remember { PrepStore(context) }
@@ -114,18 +125,21 @@ fun RunScreen(
         if (uris.isEmpty()) return@rememberLauncherForActivityResult
         busy = true
         scope.launch {
-            var count = 0
+            val lines = ArrayList<String>()
+            var failed = false
             withContext(Dispatchers.IO) {
                 uris.forEach { uri ->
-                    runCatching {
+                    val name = runCatching { context.displayNameOf(uri) }.getOrDefault("One file")
+                    val r = runCatching {
                         val b = context.contentResolver.openInputStream(uri)!!.use { it.readBytes() }
-                        store.importSettings(context.displayNameOf(uri), b)
-                        count++
+                        store.addSettingsFile(name, b).getOrThrow()
                     }
+                    r.onSuccess { lines += "Added ${it.name.removeSuffix(".rnqs")}." }
+                    r.onFailure { failed = true; lines += (it as? IllegalArgumentException)?.message ?: "Could not read $name." }
                 }
             }
             refresh++
-            say("$count settings file(s) imported.")
+            say(lines.joinToString("\n"), err = failed)
             busy = false
         }
     }
@@ -149,7 +163,7 @@ fun RunScreen(
 
     /** The one guard that stops a crashed intro. */
     fun pairingProblem(): String? {
-        val rom = selectedRom ?: return "Prepare a ROM first (Prepare tab)."
+        val rom = selectedRom ?: return "Set up a game first on the Library tab."
         val s = selectedSettings ?: return "Import a settings file first."
         val info = RnqsInfo.parse(s.name)
         return when {
@@ -205,10 +219,8 @@ fun RunScreen(
                 // misleading. The Play screen's own NEW RUN already clears
                 // them; this path forgot to.
                 store.clearRunNotes()
-                say(
-                    "New run ready (seed %016x). Play tab, or NEW RUN there for the next."
-                        .format(it.seed)
-                )
+                say("Your new game is ready (seed %016x).".format(it.seed))
+                onPlay()
             }.onFailure { say(it.message ?: "Randomization failed.", true) }
             busy = false
         }
@@ -219,7 +231,7 @@ fun RunScreen(
     // swiped and put its result off-screen entirely.
     Column(modifier.fillMaxSize()) {
       Column(
-          Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(10.dp),
+          Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp),
       ) {
         // The engine follows the game (Randomizers.randomize): the Nat. Dex fork for a
         // Nat. Dex build, ZX for everything else. With no game picked there is no engine to name.
@@ -228,7 +240,7 @@ fun RunScreen(
             true -> NatDexEngine.DISPLAY_NAME
             false -> ZxEngine.DISPLAY_NAME
         }
-        Gen3Box(Modifier.fillMaxWidth()) {
+        Box(Modifier.fillMaxWidth()) {
             Column {
         // The attempt count is the emotional core of IronMON and lived only
         // inside the tracker, mid-battle. It belongs on the screen where you
@@ -239,103 +251,40 @@ fun RunScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    "ATTEMPT ${store.attempt(rom.id)}",
-                    fontFamily = com.ironmonone.app.gen3.Gen3.PixelFont,
-                    fontSize = 14.sp,
-                    color = Shell.inkOnPaper,
-                )
+                Column {
+                    Text("Run", style = MaterialTheme.typography.bodySmall, color = Shell.hintOnNight)
+                    Text(
+                        "Attempt ${store.attempt(rom.id)}",
+                        fontSize = 26.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Shell.textOnNight,
+                    )
+                }
                 lastSeed?.let {
                     Text(
-                        "seed %016x".format(it),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Shell.hintOnPaper,
+                        "seed %08x".format(it and 0xFFFFFFFFL),
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = 12.sp,
+                        color = Shell.accentOnNight,
+                        modifier = Modifier.clip(RoundedCornerShape(50)).background(Shell.accent.copy(alpha = 0.18f))
+                            .padding(horizontal = 10.dp, vertical = 4.dp),
                     )
                 }
             }
-            Spacer(Modifier.height(8.dp))
-            ShellDivider()
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(16.dp))
         }
-        Text(
-            "Engine: $engineName",
-            style = MaterialTheme.typography.bodySmall,
-            fontFamily = FontFamily.Monospace,
-            color = Gen3.MenuBlue,
-        )
-        Spacer(Modifier.height(12.dp))
-
-        // The PC tracker's startup favorites: three Pokemon it shows on the
-        // new-game screen. Typed by name here; the tracker's no-party card
-        // repeats them before a party exists, as the PC trackers' startup and title screens do.
-        Text("Startup favorites", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-        // As many boxes as the game's PC tracker keeps, and only that game's dex in the list.
-        val favCount = Favorites.slotCount(selectedRom?.first)
-        val favMax = Favorites.maxDex(selectedRom?.first)
-        val favRomId = selectedRom?.first?.id
-        var favSlots by remember(favCount, favRomId) { mutableStateOf(Favorites.slots(store, favRomId, favCount)) }
-        // Which box is being typed in: its suggestions show under the row.
-        var favActive by remember { mutableStateOf(-1) }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            favSlots.forEachIndexed { i, v ->
-                // Known FOR THIS GAME: a name past its dex (a Gen 5 species on a standard Emerald) is as wrong as a typo.
-                val known = v.isBlank() || (Favorites.idOf(v)?.let { it <= favMax } == true)
-                androidx.compose.material3.OutlinedTextField(
-                    value = v,
-                    onValueChange = { t ->
-                        favSlots = favSlots.toMutableList().also { it[i] = t }
-                        favActive = i
-                        Favorites.save(store, favRomId, favSlots)
-                    },
-                    modifier = Modifier.weight(1f).onFocusChanged { if (it.isFocused) favActive = i },
-                    singleLine = true,
-                    isError = !known,
-                    placeholder = { Text("Favorite ${i + 1}") },
-                    textStyle = MaterialTheme.typography.bodySmall,
-                )
-            }
-        }
-        // The names that start with what is typed in the active box, narrowing
-        // with every letter; a tap fills the box. Dex order, eight at most.
-        val favHints = if (favActive in favSlots.indices) Favorites.suggest(favSlots[favActive], maxId = favMax) else emptyList()
-        if (favHints.isNotEmpty()) {
-            Row(
-                Modifier.fillMaxWidth().padding(top = 6.dp).horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                favHints.forEach { name ->
-                    com.ironmonone.app.gen3.Gen3Button(name.uppercase()) {
-                        favSlots = favSlots.toMutableList().also { it[favActive] = name }
-                        Favorites.save(store, favRomId, favSlots)
-                        favActive = -1
-                    }
-                }
-            }
-        }
-        Text(
-            if (favSlots.all { it.isBlank() || (Favorites.idOf(it)?.let { id -> id <= favMax } == true) }) (if (favCount > 3) "The DS tracker keeps $favCount and rotates them on its title screen." else "Shown on the tracker before your first Pokemon, as the PC tracker's startup screen shows them.")
-            else "A name in red is not a Pokemon this game has.",
-            style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper,
-        )
-        Spacer(Modifier.height(12.dp))
-
-        Text("ROM", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+        com.ironmonone.app.gen3.Gen3Header("Game")
+        Spacer(Modifier.height(4.dp))
         if (preparedList.isEmpty()) {
             Text(
-                "Nothing prepared yet. Start on the Prepare tab.",
+                "No games yet. Add one on the Library tab.",
                 style = MaterialTheme.typography.bodySmall,
                 color = Shell.inkOnPaper,
             )
         }
         preparedList.forEach { pair ->
-            Row(
-                Modifier.fillMaxWidth().clickable { selectedRom = pair },
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                ShellRadio(selectedRom?.first?.id == pair.first.id)
-                Spacer(Modifier.width(10.dp))
-                Text(pair.first.displayName, style = MaterialTheme.typography.bodyMedium)
-            }
+            GameCard(pair.first, selectedRom?.first?.id == pair.first.id) { selectedRom = pair }
+            Spacer(Modifier.height(8.dp))
         }
 
         Spacer(Modifier.height(12.dp))
@@ -356,10 +305,9 @@ fun RunScreen(
             }
         }
         if (modes.isNotEmpty()) {
-            Spacer(Modifier.height(12.dp))
-            Text("Mode", style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold)
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(8.dp))
+            com.ironmonone.app.gen3.Gen3Header("Mode")
+            Spacer(Modifier.height(4.dp))
             ShellSegmented(
                 values = modes.map { it.key },
                 selected = RulesetCatalog.modeOf(modes, selectedSettings)?.key ?: "",
@@ -368,58 +316,140 @@ fun RunScreen(
             )
             Spacer(Modifier.height(4.dp))
         }
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Settings", style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold)
-            Spacer(Modifier.width(12.dp))
-            Gen3Button("IMPORT", enabled = !busy) { importSettings.launch(arrayOf("*/*")) }
-            Spacer(Modifier.width(8.dp))
-            Gen3Button("EDIT", enabled = !busy && selectedSettings != null) {
-                selectedSettings?.let {
-                    onEdit(it, selectedRom?.first?.generation?.name)
-                }
-            }
-        }
-        val labels = remember(settingsList) {
-            RnqsInfo.displayLabels(settingsList.map { it.name })
-        }
-        // With every game's presets bundled the full list is 39 rows. Show the
-        // selected ROM's family plus anything untagged (an imported custom
-        // file); the Mode row above is the normal way to pick.
-        val visibleSettings = remember(selectedRom, settingsList) {
-            val rom = selectedRom?.first
-            // Blake, 2026-09-07: only the loaded game's files, never all of them.
-            if (rom == null) emptyList()
-            else settingsList.filter { f ->
-                RnqsInfo.parse(f.name).gameTag == null || RulesetCatalog.isCompatible(rom, f)
-            }
-        }
-        if (selectedRom == null) Text("Pick a ROM above to see its settings files.", style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper)
-        visibleSettings.forEach { f ->
-            Row(
-                Modifier.fillMaxWidth().clickable { selectedSettings = f },
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                ShellRadio(selectedSettings?.name == f.name)
-                Spacer(Modifier.width(10.dp))
-                Column {
-                    // Two files can parse to the SAME label - "FRLG Kaizo.rnqs"
-                    // and "FRLG Kaizo (edited).rnqs" both read "FRLG Kaizo",
-                    // so the picker showed two identical rows and the only way
-                    // to tell them apart was the filename underneath. When a
-                    // label collides, lead with the file stem, which is unique
-                    // by definition, and keep the parsed ruleset beneath it.
-                    val (title, subtitle) = labels[settingsList.indexOf(f)]
-                    Text(title, style = MaterialTheme.typography.bodyMedium)
-                    Text(
-                        subtitle,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Shell.hintOnPaper,
+        // RUN used to open on three empty favourite boxes, the engine's name and
+        // a list of raw settings file names, before the game and mode: the
+        // choices every run needs came last (audit, 2026-09-27). The optional
+        // parts now sit folded below, each saying what is inside.
+        Spacer(Modifier.height(10.dp))
+        var showFavorites by remember { mutableStateOf(false) }
+        val favFilled = Favorites.slots(store, selectedRom?.first?.id, Favorites.slotCount(selectedRom?.first)).count { it.isNotBlank() }
+        RunDisclosure("Startup favorites (optional)",
+            if (favFilled == 0) "If one is offered as a starter, the rules let you take it." else "$favFilled set.",
+            showFavorites) { showFavorites = !showFavorites }
+        if (showFavorites) {
+            // The PC tracker's startup favorites: three Pokemon it shows on the
+            // new-game screen. Typed by name here; the tracker's no-party card
+            // repeats them before a party exists, as the PC trackers' startup and title screens do.
+            Text("Startup favorites", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+            // As many boxes as the game's PC tracker keeps, and only that game's dex in the list.
+            val favCount = Favorites.slotCount(selectedRom?.first)
+            val favMax = Favorites.maxDex(selectedRom?.first)
+            val favRomId = selectedRom?.first?.id
+            var favSlots by remember(favCount, favRomId) { mutableStateOf(Favorites.slots(store, favRomId, favCount)) }
+            // Which box is being typed in: its suggestions show under the row.
+            var favActive by remember { mutableStateOf(-1) }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                favSlots.forEachIndexed { i, v ->
+                    // Known FOR THIS GAME: a name past its dex (a Gen 5 species on a standard Emerald) is as wrong as a typo.
+                    val known = v.isBlank() || (Favorites.idOf(v)?.let { it <= favMax } == true)
+                    androidx.compose.material3.OutlinedTextField(
+                        value = v,
+                        onValueChange = { t ->
+                            favSlots = favSlots.toMutableList().also { it[i] = t }
+                            favActive = i
+                            Favorites.save(store, favRomId, favSlots)
+                        },
+                        modifier = Modifier.weight(1f).onFocusChanged { if (it.isFocused) favActive = i },
+                        singleLine = true,
+                        isError = !known,
+                        placeholder = { Text("Favorite ${i + 1}") },
+                        textStyle = MaterialTheme.typography.bodySmall,
                     )
                 }
             }
-        }
+            // The names that start with what is typed in the active box, narrowing
+            // with every letter; a tap fills the box. Dex order, eight at most.
+            val favHints = if (favActive in favSlots.indices) Favorites.suggest(favSlots[favActive], maxId = favMax) else emptyList()
+            if (favHints.isNotEmpty()) {
+                Row(
+                    Modifier.fillMaxWidth().padding(top = 6.dp).horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    favHints.forEach { name ->
+                        com.ironmonone.app.gen3.Gen3Button(name.uppercase()) {
+                            favSlots = favSlots.toMutableList().also { it[favActive] = name }
+                            Favorites.save(store, favRomId, favSlots)
+                            favActive = -1
+                        }
+                    }
+                }
+            }
+            Text(
+                if (favSlots.all { it.isBlank() || (Favorites.idOf(it)?.let { id -> id <= favMax } == true) }) (if (favCount > 3) "The DS tracker keeps $favCount and rotates them on its title screen." else "Shown on the tracker before your first Pokemon, as the PC tracker's startup screen shows them.")
+                else "A name in red is not a Pokemon this game has.",
+                style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper,
+            )
+            Spacer(Modifier.height(12.dp))
 
+
+        }
+        var showAdvanced by remember { mutableStateOf(false) }
+        RunDisclosure("Randomizer settings (advanced)",
+            selectedSettings?.let { "Using " + it.name.substringBeforeLast('.') + ". Import, edit or pick a file." } ?: "Import, edit or pick a settings file.",
+            showAdvanced) { showAdvanced = !showAdvanced }
+        if (showAdvanced) {
+            Text(
+                "Engine: $engineName",
+                style = MaterialTheme.typography.bodySmall,
+                fontFamily = FontFamily.Monospace,
+                color = Shell.hintOnPaper,
+            )
+            Spacer(Modifier.height(12.dp))
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Settings", style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold)
+                Spacer(Modifier.width(12.dp))
+                Gen3Button("IMPORT", enabled = !busy) { importSettings.launch(arrayOf("*/*")) }
+                Spacer(Modifier.width(8.dp))
+                Gen3Button("EDIT", enabled = !busy && selectedSettings != null) {
+                    selectedSettings?.let {
+                        onEdit(it, selectedRom?.first?.generation?.name)
+                    }
+                }
+            }
+            val labels = remember(settingsList) {
+                RnqsInfo.displayLabels(settingsList.map { it.name })
+            }
+            // With every game's presets bundled the full list is 39 rows. Show the
+            // selected ROM's family plus anything untagged (an imported custom
+            // file); the Mode row above is the normal way to pick.
+            val visibleSettings = remember(selectedRom, settingsList) {
+                val rom = selectedRom?.first
+                // Blake, 2026-09-07: only the loaded game's files, never all of them.
+                if (rom == null) emptyList()
+                else settingsList.filter { f ->
+                    RnqsInfo.parse(f.name).gameTag == null || RulesetCatalog.isCompatible(rom, f)
+                }
+            }
+            if (selectedRom == null) Text("Pick a ROM above to see its settings files.", style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper)
+            visibleSettings.forEach { f ->
+                Row(
+                    Modifier.fillMaxWidth().clickable { selectedSettings = f },
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    ShellRadio(selectedSettings?.name == f.name)
+                    Spacer(Modifier.width(10.dp))
+                    Column {
+                        // Two files can parse to the SAME label - "FRLG Kaizo.rnqs"
+                        // and "FRLG Kaizo (edited).rnqs" both read "FRLG Kaizo",
+                        // so the picker showed two identical rows and the only way
+                        // to tell them apart was the filename underneath. When a
+                        // label collides, lead with the file stem, which is unique
+                        // by definition, and keep the parsed ruleset beneath it.
+                        val (title, subtitle) = labels[settingsList.indexOf(f)]
+                        Text(title, style = MaterialTheme.typography.bodyMedium)
+                        Text(
+                            subtitle,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Shell.hintOnPaper,
+                        )
+                    }
+                }
+            }
+
+
+        }
         Spacer(Modifier.height(16.dp))
         // The primary action and its outcome now live in the sticky footer at
         // the bottom of this screen, where they cannot scroll out of reach.
@@ -436,7 +466,7 @@ fun RunScreen(
       }
 
       // ---- Sticky footer: the action, its progress, and its outcome -------
-      Column(Modifier.fillMaxWidth().background(Shell.night).padding(10.dp)) {
+      Column(Modifier.fillMaxWidth().background(Shell.night).padding(horizontal = 16.dp, vertical = 10.dp)) {
           if (busy) {
               ProgressPanel(phase)
               Spacer(Modifier.height(8.dp))
@@ -471,12 +501,91 @@ fun RunScreen(
               Spacer(Modifier.height(8.dp))
           }
           Gen3Button(
-              if (store.currentRun.exists()) "NEW RUN" else "RANDOMIZE",
+              if (store.currentRun.exists()) "Start new run" else "Randomize",
+              modifier = Modifier.fillMaxWidth(),
               enabled = !busy && preparedList.isNotEmpty(),
               accent = true,
               // Rolling a new seed ends the current run; ask first, the same
               // gate the Play screen's NEW chip has.
           ) { if (store.currentRun.exists()) confirmNewRun = true else newRun() }
       }
+    }
+}
+
+/** A folded section on RUN: a card row with a title, one line saying what is inside, and a chevron. */
+@Composable
+private fun RunDisclosure(title: String, detail: String, open: Boolean, onToggle: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().padding(vertical = 4.dp)
+            .clip(RoundedCornerShape(Shell.cardRadius)).background(Shell.paper)
+            .clickable(onClick = onToggle)
+            .heightIn(min = 56.dp).padding(horizontal = 14.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium, color = Shell.inkOnPaper)
+            Text(detail, style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper)
+        }
+        androidx.compose.material3.Icon(
+            if (open) androidx.compose.material.icons.Icons.Filled.KeyboardArrowUp
+            else androidx.compose.material.icons.Icons.Filled.KeyboardArrowDown,
+            contentDescription = if (open) "Close" else "Open",
+            tint = Shell.hintOnPaper,
+        )
+    }
+}
+
+/**
+ * One game on RUN: a card with the console badge, the name and what kind of
+ * file it is. The picked one carries the accent outline.
+ */
+@Composable
+private fun GameCard(kind: com.ironmonone.core.RomKind, selected: Boolean, onClick: () -> Unit) {
+    val shape = RoundedCornerShape(Shell.cardRadius)
+    Row(
+        Modifier.fillMaxWidth().clip(shape).background(Shell.paper)
+            .border(if (selected) 2.dp else 1.dp, if (selected) Shell.accent else Shell.hairline, shape)
+            .clickable(onClick = onClick)
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        PlatformBadge(kind.platform)
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(kind.displayName, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium, color = Shell.inkOnPaper)
+            Text(
+                when {
+                    kind in com.ironmonone.core.RomKind.allPatched -> "Patched game"
+                    kind.isNatDex -> "Nat. Dex build"
+                    else -> "Original game"
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = if (selected) Shell.goodOnPaper else Shell.hintOnPaper,
+            )
+        }
+        if (selected) {
+            androidx.compose.material3.Icon(
+                androidx.compose.material.icons.Icons.Filled.CheckCircle,
+                contentDescription = "Selected",
+                tint = Shell.accentOnNight,
+            )
+        }
+    }
+}
+
+/** A small rounded tile naming the console: GBA, DS, GBC. */
+@Composable
+internal fun PlatformBadge(platform: com.ironmonone.core.Platform?) {
+    val (label, tint) = when (platform) {
+        com.ironmonone.core.Platform.NDS -> "DS" to Color(0xFF3DD6C3)
+        com.ironmonone.core.Platform.GBA -> "GBA" to Color(0xFFFF8589)
+        null -> "?" to Shell.hintOnPaper
+        else -> platform.name to Color(0xFFF5C26B)
+    }
+    Box(
+        Modifier.size(44.dp).clip(RoundedCornerShape(10.dp)).background(tint.copy(alpha = 0.16f)),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(label, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = tint)
     }
 }

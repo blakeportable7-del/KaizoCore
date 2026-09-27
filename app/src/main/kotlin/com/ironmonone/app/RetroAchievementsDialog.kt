@@ -66,7 +66,7 @@ fun RetroAchievementsDialog(
                 )
                 Spacer(Modifier.height(8.dp))
                 if (busy != null) Text(busy, style = MaterialTheme.typography.bodySmall, color = Gen3.Ink)
-                if (error != null) Text(error, style = MaterialTheme.typography.bodySmall, color = androidx.compose.ui.graphics.Color(0xFFB03030))
+                if (error != null) Text(error, style = MaterialTheme.typography.bodySmall, color = Shell.dangerOnPaper)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Gen3Button("SIGN IN", enabled = busy == null && user.isNotBlank() && password.isNotBlank(), accent = true) {
                         onLogin(user.trim(), password); password = ""

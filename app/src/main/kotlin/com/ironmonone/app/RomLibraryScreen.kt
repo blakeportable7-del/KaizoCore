@@ -76,8 +76,8 @@ fun RomLibraryScreen(modifier: Modifier = Modifier, onPlay: () -> Unit = {}) {
     var renamePatch by remember { mutableStateOf<LibraryStore.PatchEntry?>(null) }
     var patchFor by remember { mutableStateOf<LibraryStore.Entry?>(null) }      // PATCH on a ROM
     var applyTo by remember { mutableStateOf<LibraryStore.PatchEntry?>(null) }  // APPLY on a patch
-    // An IPS being imported needs the player to say which game it is for.
-    var pendingIps by remember { mutableStateOf<Pair<String, ByteArray>?>(null) }
+    // One way in for files, shared with the HACK tab.
+    val importer = remember { LibraryImport(context, store, progress) }
 
     fun reload() {
         scope.launch {
@@ -87,67 +87,11 @@ fun RomLibraryScreen(modifier: Modifier = Modifier, onPlay: () -> Unit = {}) {
     }
     LaunchedEffect(Unit) { reload() }
 
-    fun importOne(name: String, bytes: ByteArray): String = when {
-        // A zip is opened and every ROM or patch inside is imported on its own.
-        ZipImport.isZip(name, bytes) -> {
-            val inside = ZipImport.extract(bytes)
-            if (inside.isEmpty()) "$name holds no ROM or patch this app reads."
-            else inside.joinToString(Char(10).toString()) { (n, b) -> importOne(n, b) }.ifBlank { "" }
-        }
-        LibraryStore.looksLikePatch(name) || store.library.peekPatch(bytes) != null -> {
-            val peek = store.library.peekPatch(bytes)
-            when {
-                peek == null -> "$name is not a patch this app reads."
-                peek.forCrc == null -> { pendingIps = name to bytes; "" }
-                else -> { val p = store.library.importPatch(name, bytes); "Added patch ${p.name} for ${p.forName ?: "an unknown game (%08x)".format(p.forCrc)}." }
-            }
-        }
-        else -> { val e = store.library.import(name, bytes); "Added ${e.name}: ${e.subtitle}" }
-    }
-
-    /**
-     * Import one picked file that has been streamed to [f]. ROMs move into
-     * the library as files (a DS dump is 128 to 512 MB and does not fit in
-     * the heap; Black 2 proved it); zips are unpacked to files the same
-     * way; only patches, which are small, are read into memory.
-     */
-    fun importFile(name: String, f: java.io.File): String {
-        val head = f.inputStream().use { i -> val b = ByteArray(8); val n = i.read(b); if (n > 0) b.copyOf(n) else ByteArray(0) }
-        return when {
-            ZipImport.isZip(name, head) -> {
-                progress.start("Unpacking $name", f.length())
-                val inside = f.inputStream().use { ZipImport.extractToFiles(it, java.io.File(f.parentFile, f.name + ".d")) { progress.at(it) } }
-                f.delete()
-                if (inside.isEmpty()) "$name holds no ROM or patch this app reads."
-                else inside.joinToString(Char(10).toString()) { (n, file) -> importFile(n, file) }.ifBlank { "" }
-            }
-            LibraryStore.looksLikePatch(name) || f.length() < 32L * 1024 * 1024 && store.library.peekPatch(f.readBytes()) != null ->
-                importOne(name, f.readBytes()).also { f.delete() }
-            else -> {
-                progress.start("Checking $name", f.length())
-                val e = store.library.importFile(name, f) { d, t -> progress.at(d); if (t > 0) progress.total = t }
-                "Added ${e.name}: ${e.subtitle}" + (if (e.verified) ". Ready on the RUN tab." else "")
-            }
-        }
-    }
-
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
         if (uris.isEmpty()) return@rememberLauncherForActivityResult
         busy = true
         scope.launch {
-            val lines = withContext(Dispatchers.IO) {
-                uris.mapNotNull { uri ->
-                    runCatching {
-                        val tmp = java.io.File(context.cacheDir, "import-" + System.nanoTime())
-                        val name = context.displayNameOf(uri)
-                        val size = runCatching { context.contentResolver.openAssetFileDescriptor(uri, "r")?.use { it.length } ?: -1L }.getOrDefault(-1L)
-                        progress.start("Copying $name", if (size > 0) size else 0L)
-                        context.contentResolver.openInputStream(uri)!!.use { i -> tmp.outputStream().buffered(1 shl 20).use { o -> copyWithProgress(i, o) { progress.at(it) } } }
-                        importFile(name, tmp)
-                    }.getOrElse { (it as? com.ironmonone.patch.PatchException)?.message ?: "Could not read one file." }
-                }
-            }
-            status = lines.filter { it.isNotEmpty() }.joinToString("\n").ifBlank { null }
+            status = withContext(Dispatchers.IO) { importer.importUris(uris) }
             reload(); progress.clear(); busy = false
         }
     }
@@ -155,10 +99,10 @@ fun RomLibraryScreen(modifier: Modifier = Modifier, onPlay: () -> Unit = {}) {
     fun runPatch(base: LibraryStore.Entry, p: LibraryStore.PatchEntry) {
         busy = true
         scope.launch {
-            val r = withContext(Dispatchers.IO) { runCatching { store.library.apply(base, p) } }
-            status = r.fold({ "Made ${it.name}: ${it.subtitle}" },
-                { (it as? com.ironmonone.patch.PatchException)?.message ?: "Patching failed." })
-            reload(); busy = false
+            progress.start("Patching ${base.name}", base.sizeBytes)
+            val r = withContext(Dispatchers.IO) { runCatching { store.library.apply(base, p) { d, t -> progress.at(d); if (t > 0) progress.total = t } } }
+            status = r.fold({ "Made ${it.name}: ${it.subtitle}" }, ::patchFailure)
+            reload(); progress.clear(); busy = false
         }
     }
 
@@ -251,7 +195,7 @@ fun RomLibraryScreen(modifier: Modifier = Modifier, onPlay: () -> Unit = {}) {
         ShellDialog("Patch ${e.name}", onDismiss = { patchFor = null }) {
             if (fits.isEmpty()) {
                 Text("No patch in the library fits this file. A patch is matched by the exact " +
-                    "ROM it was made for; add one with ADD FILES and it will appear here if it fits.",
+                    "ROM it was made for; add one with Add files and it will appear here if it fits.",
                     style = MaterialTheme.typography.bodyMedium, color = Gen3.Ink)
             } else fits.forEach { p ->
                 ShellListRow(p.name, p.format.name, onClick = { patchFor = null; runPatch(e, p) })
@@ -276,24 +220,23 @@ fun RomLibraryScreen(modifier: Modifier = Modifier, onPlay: () -> Unit = {}) {
             Gen3Button("CLOSE") { applyTo = null }
         }
     }
-    pendingIps?.let { (name, bytes) ->
+    importer.pendingName?.let { name ->
         // An IPS cannot say what it is for, so the player does, once, from
         // the clean ROMs on hand. It is then offered for that file only.
-        ShellDialog("Which game is $name for?", onDismiss = { pendingIps = null }) {
-            Text("An .ips patch does not name its game. Pick the ROM it was made for; it will " +
+        ShellDialog("Which game is $name for?", onDismiss = { importer.cancelPending() }) {
+            Text("This patch does not say which game it was made for. Pick the ROM it was made for; it will " +
                 "only ever be offered for that file.", style = MaterialTheme.typography.bodyMedium, color = Gen3.Ink)
             Spacer(Modifier.height(6.dp))
             val candidates = roms.filter { it.category == LibraryStore.Category.CLEAN || it.category == LibraryStore.Category.OTHER }
             if (candidates.isEmpty()) Text("Add the clean ROM first.", style = MaterialTheme.typography.bodyMedium, color = Gen3.Ink)
             candidates.forEach { e ->
                 ShellListRow(e.name, e.kind?.displayName ?: e.platform?.name ?: "", onClick = {
-                    val p = store.library.importPatch(name, bytes, declaredFor = e)
-                    status = "Added patch ${p.name} for ${e.name}."
-                    pendingIps = null; reload()
+                    status = importer.declarePending(e)
+                    reload()
                 })
             }
             Spacer(Modifier.height(8.dp))
-            Gen3Button("NOT NOW") { pendingIps = null }
+            Gen3Button("NOT NOW") { importer.cancelPending() }
         }
     }
 }
@@ -304,7 +247,7 @@ private fun Shelf(title: String, blurb: String, count: Int) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Gen3Header(title)
             Spacer(Modifier.width(8.dp))
-            Text("$count", fontFamily = Gen3.PixelFont, fontSize = 10.sp, color = Gen3.Paper)
+            Text("$count", fontWeight = androidx.compose.ui.text.font.FontWeight.Medium, fontSize = 14.sp, color = Shell.hintOnNight)
         }
         Text(blurb, style = MaterialTheme.typography.bodySmall, color = Shell.hintOnNight)
     }
@@ -324,17 +267,17 @@ private fun RomCard(
     val tracked = GameSession.trackerKind(entry.kind, entry.crc) != null
     val playable = entry.platform != null
     val accent = when {
-        tracked -> MaterialTheme.colorScheme.primary
-        playable -> Shell.inkOnPaper
-        else -> MaterialTheme.colorScheme.error
+        tracked -> Shell.goodOnPaper
+        playable -> Shell.hintOnPaper
+        else -> Shell.dangerOnPaper
     }
     var armed by remember(entry.name) { mutableStateOf(false) }
 
     Gen3Box(Modifier.fillMaxWidth()) {
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Surface(Modifier.size(10.dp).clip(RoundedCornerShape(1.dp)), color = accent, content = {})
-                Spacer(Modifier.size(10.dp))
+                PlatformBadge(entry.platform)
+                Spacer(Modifier.size(12.dp))
                 Column(Modifier.weight(1f)) {
                     Text(entry.name.substringBeforeLast('.') + if (playing) "  (playing)" else "",
                         style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
@@ -342,10 +285,10 @@ private fun RomCard(
                         style = MaterialTheme.typography.bodySmall, color = accent)
                     Text("%s · %,d KB · crc %08x".format(entry.name.substringAfterLast('.', "?").uppercase(),
                         entry.sizeBytes / 1024, entry.crc),
-                        style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace, color = Shell.inkOnPaper)
+                        style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper)
                 }
             }
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(10.dp))
             androidx.compose.foundation.layout.FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
@@ -375,9 +318,9 @@ private fun PatchCard(
             Text(p.name.substringBeforeLast('.'), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
             Text("For: " + (p.forName ?: p.forCrc?.let { "CRC %08x (not in your library)".format(it) } ?: "unknown"),
                 style = MaterialTheme.typography.bodySmall,
-                color = if (romCount > 0) MaterialTheme.colorScheme.primary else Shell.inkOnPaper)
+                color = if (romCount > 0) Shell.goodOnPaper else Shell.hintOnPaper)
             Text("%s · %,d KB".format(p.format.name, p.sizeBytes / 1024),
-                style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace, color = Shell.inkOnPaper)
+                style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper)
             Spacer(Modifier.height(8.dp))
             androidx.compose.foundation.layout.FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -406,10 +349,10 @@ private fun RenameDialog(
             modifier = Modifier.fillMaxWidth())
         if (suggestions.isNotEmpty()) {
             Spacer(Modifier.height(8.dp))
-            Text("SUGGESTIONS", fontFamily = Gen3.PixelFont, fontSize = 9.sp, color = Shell.inkOnPaper)
+            Text("Suggestions", fontWeight = androidx.compose.ui.text.font.FontWeight.Medium, fontSize = 13.sp, color = Shell.inkOnPaper)
             suggestions.forEach { s ->
                 Box(Modifier.fillMaxWidth().padding(vertical = 3.dp)
-                    .background(Color(0x14000000)).clickable { draft = s }.padding(8.dp)) {
+                    .background(Shell.raised).clickable { draft = s }.padding(8.dp)) {
                     Text(s, style = MaterialTheme.typography.bodyMedium, color = Gen3.Ink)
                 }
             }
@@ -420,4 +363,13 @@ private fun RenameDialog(
             Gen3Button("CANCEL", onClick = onDismiss)
         }
     }
+}
+
+/** What a failed patch says to the player. */
+internal fun patchFailure(t: Throwable): String = when (t) {
+    is com.ironmonone.patch.PatchException -> t.message ?: "The patch did not apply."
+    is OutOfMemoryError -> "This phone ran out of memory patching a game this size. Close other apps and try again."
+    is java.io.IOException -> if ((t.message ?: "").contains("ENOSPC") || (t.message ?: "").contains("No space"))
+        "Not enough free space on this phone to save the patched game." else "Could not write the patched game: ${t.message}"
+    else -> "The patch did not apply. It was probably made for a different version of this game."
 }

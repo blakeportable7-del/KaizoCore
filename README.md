@@ -14,9 +14,9 @@ Architecture: `IRONMON_ONE_MAP.md` (how, with verified reference-repo findings).
 
 ## Beta
 
-Download the APK from https://willowcreek.group/kaizocore (or the releases page here); the SHA-256 is on both. Install a newer APK over the old one; uninstalling wipes your games, saves, notes and attempt count. You need your own game dumps: nothing here contains, links or fetches a ROM.
+Download the APK from https://willowcreek.group/kaizocore (or the releases page here); the SHA-256 is on both. Install a newer APK over the old one; uninstalling wipes your games, saves, notes and attempt count. You need your own game dumps: nothing here contains or fetches a ROM. The Hacks tab's list opens each ROM hack's own page for its patch.
 
-Your first run: ROMS tab, ADD FILES, pick your dump (a zip is fine). RUN tab, pick the game and a ruleset, NEW RUN. PLAY. PREP is only for Nat. Dex on Emerald or FireRed v1.1. Bugs: INFO tab, REPORT A BUG, EMAIL BLAKE.
+Your first run: Library tab, All files, Add files, pick your dump (a zip is fine). Run tab, pick the game and a mode, Start new run. Play. Library, Set up a game is only for Nat. Dex on Emerald or FireRed v1.1 and the patched rulesets. Bugs: More tab, Backup and info, Report a bug, Email Blake.
 
 ## State as of 2026-08-30
 
@@ -122,7 +122,7 @@ Nat. Dex support uses the Pokémon and move data and sprites from the **Nat. Dex
 Extension** by **CyanSixFour / CyanSMP64**, used with the author's permission:
 https://github.com/CyanSMP64/NatDexExtension
 
-Faster FireRed, the FireRed quality-of-life patch bundled for PREP, is by DrMaple:
+Faster FireRed, the FireRed quality-of-life patch bundled for Library, Set up a game, is by DrMaple:
 https://github.com/DrMaple/Faster-FireRed
 
 Tracker constants and behaviour derive from the **IronMON Tracker** (MIT) by besteon

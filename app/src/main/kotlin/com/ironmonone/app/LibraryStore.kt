@@ -145,6 +145,21 @@ class LibraryStore(private val root: File) {
         return describe(target, RomIdentity.identify(bytes), baseName, patchName).also { write(it) }
     }
 
+    /**
+     * Drop a just-imported [e] that is not a game or is already here, and say
+     * why; null keeps it. For files the player adds, not for hacks this app
+     * makes (a hack of a game is a new CRC anyway).
+     */
+    fun refuse(name: String, e: Entry): String? {
+        if (e.platform == null) {
+            delete(e)
+            return "$name is not a game this app plays, or the file is damaged. Nothing was added."
+        }
+        val same = list().firstOrNull { it.file != e.file && it.crc == e.crc } ?: return null
+        delete(e)
+        return "$name is already in your library as ${same.name}."
+    }
+
     private fun describe(f: File, r: RomIdentity.Result, baseName: String?, patchName: String?): Entry {
         val platform = r.kind?.platform ?: when {
             r.header != null -> Platform.GBA
@@ -264,8 +279,24 @@ class LibraryStore(private val root: File) {
      * Store a patch. [declaredFor] is the ROM the player picked for a patch
      * that cannot say (IPS); a BPS/UPS ignores it and trusts its own CRC.
      */
+    /**
+     * Store a patch already on disk, moving it rather than reading it: an
+     * xdelta for a DS hack can be tens of megabytes. Only xdelta is taken this
+     * way, since its header is all [peekPatch] needs; BPS and UPS carry their
+     * checksums at the end, and are small.
+     */
+    fun importPatchFile(displayName: String, source: File, declaredFor: Entry? = null): PatchEntry {
+        val head = source.inputStream().use { it.readNBytes(64) }
+        if (Patcher.detect(head) != PatchFormat.XDELTA) return importPatch(displayName, source.readBytes(), declaredFor).also { source.delete() }
+        val forCrc = declaredFor?.crc
+        val target = unique(patchDir, displayName)
+        if (!source.renameTo(target)) { source.copyTo(target, overwrite = true); source.delete() }
+        return PatchEntry(target, target.name, PatchFormat.XDELTA, forCrc, null, forCrc?.let { declaredFor.name })
+            .also { writePatchMeta(it) }
+    }
+
     fun importPatch(displayName: String, bytes: ByteArray, declaredFor: Entry? = null): PatchEntry {
-        val peek = peekPatch(bytes) ?: throw com.ironmonone.patch.CorruptPatch("it is not an IPS, BPS or UPS patch")
+        val peek = peekPatch(bytes) ?: throw com.ironmonone.patch.CorruptPatch("it is not an IPS, BPS, UPS or xdelta patch")
         val forCrc = peek.forCrc ?: declaredFor?.crc
         val forName = forCrc?.let { crc -> nameForCrc(crc) ?: declaredFor?.name }
         val target = unique(patchDir, displayName)
@@ -306,11 +337,24 @@ class LibraryStore(private val root: File) {
      * Apply a stored patch to a ROM it matches. Refuses a mismatch here too,
      * so the UI's filtering is not the only guard.
      */
-    fun apply(base: Entry, patch: PatchEntry): Entry {
+    fun apply(base: Entry, patch: PatchEntry, onProgress: ((Long, Long) -> Unit)? = null): Entry {
         if (!patch.matches(base)) {
             throw com.ironmonone.patch.WrongSourceRom(patch.forCrc ?: 0L, base.crc, base.name)
         }
-        return patch(base, patch.name, patch.file.readBytes())
+        // File to file. This read the whole ROM and the patch into memory and
+        // went through Patcher.apply, which refuses xdelta outright; so every
+        // DS hack (they ship as xdelta, on 128 to 512 MB dumps) failed or ran
+        // out of memory (audit, 2026-09-27). applyFiles streams xdelta and
+        // takes the small formats through memory as before.
+        val stem = patch.name.substringBeforeLast('.').ifBlank { "patched" }
+        val ext = base.name.substringAfterLast('.', "")
+        val tmp = File(root, ".patching-" + System.nanoTime() + ".tmp")
+        try {
+            Patcher.applyFiles(patch.file, base.file, tmp, base.name, onProgress)
+            return importFile(if (ext.isEmpty()) stem else "$stem.$ext", tmp, baseName = base.name, patchName = patch.name)
+        } finally {
+            tmp.delete()
+        }
     }
 
     /** Apply patch bytes to a library entry; the result is a new entry named after the patch. */
@@ -340,7 +384,10 @@ class LibraryStore(private val root: File) {
     companion object {
         /** Guess whether a picked file is a patch by name, so ADD can route it. */
         fun looksLikePatch(name: String): Boolean =
-            name.lowercase().let { it.endsWith(".bps") || it.endsWith(".ips") || it.endsWith(".ups") }
+            name.lowercase().let {
+                it.endsWith(".bps") || it.endsWith(".ips") || it.endsWith(".ups") ||
+                    it.endsWith(".xdelta") || it.endsWith(".vcdiff")
+            }
 
         @Suppress("unused")
         private val crcOf = Crc32

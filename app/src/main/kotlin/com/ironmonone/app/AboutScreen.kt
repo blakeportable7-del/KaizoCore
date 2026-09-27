@@ -56,12 +56,41 @@ fun AboutScreen(modifier: Modifier = Modifier) {
     Column(
         modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(10.dp)
     ) {
+        // What the app is and how to use it, first. INFO had no help at all:
+        // a newcomer met jargon on PREP and nothing to explain it (audit,
+        // 2026-09-27). The steps name the real tabs.
+        com.ironmonone.app.gen3.Gen3Box(Modifier.fillMaxWidth()) {
+            Column {
+                Text("How it works", fontWeight = androidx.compose.ui.text.font.FontWeight.Medium, fontSize = 16.sp, color = Shell.inkOnPaper)
+                Spacer(Modifier.height(6.dp))
+                Text("KaizoCore plays IronMON on your phone: a randomized Pokemon game with a tracker beside it. " +
+                    "Lose the run and you start again with a brand new game.",
+                    style = MaterialTheme.typography.bodyMedium, color = Shell.inkOnPaper)
+                Spacer(Modifier.height(8.dp))
+                for ((n, line) in listOf(
+                    "1" to "Library: add your own game file. KaizoCore never downloads games.",
+                    "2" to "Run: pick a mode and start a new run. Every run is a new game.",
+                    "3" to "Play: play it. The tracker fills in as you go. When a run ends, start the next one on Run.",
+                )) {
+                    Row(Modifier.padding(vertical = 3.dp)) {
+                        Text(n, fontWeight = androidx.compose.ui.text.font.FontWeight.Medium, fontSize = 14.sp, color = Shell.inkOnPaper,
+                            modifier = Modifier.width(22.dp))
+                        Text(line, style = MaterialTheme.typography.bodyMedium, color = Shell.inkOnPaper)
+                    }
+                }
+                Spacer(Modifier.height(6.dp))
+                Text("Library also keeps all your files. Hacks turns a game you own into a ROM hack. " +
+                    "KEYS sets up a controller or keyboard.",
+                    style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper)
+            }
+        }
+        Spacer(Modifier.height(10.dp))
         crash?.let { text ->
             com.ironmonone.app.gen3.Gen3Box(Modifier.fillMaxWidth()) {
                 Column {
                     Text(
                         "LAST SESSION ENDED UNEXPECTEDLY",
-                        fontFamily = com.ironmonone.app.gen3.Gen3.PixelFont, fontSize = 11.sp,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Medium, fontSize = 16.sp,
                         color = Shell.dangerOnPaper,
                     )
                     Spacer(Modifier.height(6.dp))
@@ -76,7 +105,7 @@ fun AboutScreen(modifier: Modifier = Modifier) {
                     Text(
                         text.lineSequence().take(14)
                             .joinToString(Char(10).toString()),
-                        fontFamily = com.ironmonone.app.gen3.Gen3.PixelFont, fontSize = 8.sp,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Medium, fontSize = 12.sp,
                         color = Shell.hintOnPaper,
                     )
                     Spacer(Modifier.height(10.dp))
@@ -110,9 +139,9 @@ fun AboutScreen(modifier: Modifier = Modifier) {
         val store = remember { PrepStore(context) }
         com.ironmonone.app.gen3.Gen3Box(Modifier.fillMaxWidth()) {
             Column {
-                Text("REPORT A BUG", fontFamily = com.ironmonone.app.gen3.Gen3.PixelFont, fontSize = 11.sp, color = Shell.inkOnPaper)
+                Text("Report a bug", fontWeight = androidx.compose.ui.text.font.FontWeight.Medium, fontSize = 16.sp, color = Shell.inkOnPaper)
                 Spacer(Modifier.height(6.dp))
-                Text("Something in your way? Say what happened and where, then EMAIL BLAKE. The report carries your device, Android and app " +
+                Text("Something in your way? Say what happened and where, then tap Email Blake. The report carries your device, Android and app " +
                     "versions, the game family, the last crash if there was one, and the app's own log lines. Never a ROM, a save or a file name.",
                     style = MaterialTheme.typography.bodyMedium, color = Shell.inkOnPaper)
                 Spacer(Modifier.height(8.dp))
@@ -169,24 +198,41 @@ fun AboutScreen(modifier: Modifier = Modifier) {
                 backupStatus = if (n != null) "Backed up $n files." else "Could not write the backup."
             }
         }
+        // Settings are read when the app starts, so a restore is finished by a restart.
+        var needsRestart by remember { mutableStateOf(false) }
+        var restoreFrom by remember { mutableStateOf<android.net.Uri?>(null) }
         val importer = androidx.activity.compose.rememberLauncherForActivityResult(
             androidx.activity.result.contract.ActivityResultContracts.OpenDocument()
-        ) { uri ->
-            if (uri == null) return@rememberLauncherForActivityResult
-            scope.launch {
-                val n = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                    runCatching { context.contentResolver.openInputStream(uri)!!.use { Backup.read(context.filesDir, it) } }.getOrNull()
-                }
-                backupStatus = when {
-                    n == null -> "Could not read that file."
-                    n < 0 -> "That is not a KaizoCore backup."
-                    else -> "Restored $n files. Your saves, states and settings are back."
+        ) { uri -> if (uri != null) restoreFrom = uri }
+        restoreFrom?.let { uri ->
+            ShellDialog("Restore from this file?", onDismiss = { restoreFrom = null }) {
+                Column {
+                    Text("Your save states, battery saves, runs, notes and settings on this phone are replaced with the ones in the file. ROMs are untouched.",
+                        style = MaterialTheme.typography.bodyMedium, color = com.ironmonone.app.gen3.Gen3.Ink)
+                    Spacer(Modifier.height(10.dp))
+                    Row(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
+                        com.ironmonone.app.gen3.Gen3Button("RESTORE", accent = true) {
+                            restoreFrom = null
+                            scope.launch {
+                                val n = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                    runCatching { context.contentResolver.openInputStream(uri)!!.use { Backup.read(context.filesDir, it) } }.getOrNull()
+                                }
+                                backupStatus = when {
+                                    n == null -> "Could not read that file."
+                                    n < 0 -> "That is not a KaizoCore backup. Nothing was changed."
+                                    else -> "Restored $n files. Restart KaizoCore to finish."
+                                }
+                                if (n != null && n >= 0) needsRestart = true
+                            }
+                        }
+                        com.ironmonone.app.gen3.Gen3Button("CANCEL") { restoreFrom = null }
+                    }
                 }
             }
         }
         com.ironmonone.app.gen3.Gen3Box(Modifier.fillMaxWidth()) {
             Column {
-                Text("BACKUP", fontFamily = com.ironmonone.app.gen3.Gen3.PixelFont, fontSize = 11.sp, color = Shell.inkOnPaper)
+                Text("Backup", fontWeight = androidx.compose.ui.text.font.FontWeight.Medium, fontSize = 16.sp, color = Shell.inkOnPaper)
                 Spacer(Modifier.height(6.dp))
                 Text("One zip of your save states and screenshots, battery saves, the current run and its notes, " +
                     "attempts, presets, key bindings, layouts, cheats and settings. ROMs are never included; re-add " +
@@ -198,6 +244,7 @@ fun AboutScreen(modifier: Modifier = Modifier) {
                     com.ironmonone.app.gen3.Gen3Button("RESTORE") { importer.launch(arrayOf("application/zip", "application/octet-stream", "*/*")) }
                 }
                 backupStatus?.let { Spacer(Modifier.height(8.dp)); Text(it, style = MaterialTheme.typography.bodySmall, color = Shell.goodOnPaper) }
+                if (needsRestart) { Spacer(Modifier.height(8.dp)); com.ironmonone.app.gen3.Gen3Button("RESTART NOW", accent = true) { restartApp(context) } }
             }
         }
         Spacer(Modifier.height(10.dp))
@@ -208,6 +255,10 @@ fun AboutScreen(modifier: Modifier = Modifier) {
         var cloudStatus by remember { mutableStateOf<String?>(null) }
         var cloudBusy by remember { mutableStateOf(false) }
         var confirmCloudRestore by remember { mutableStateOf(false) }
+        // Linked to an EXISTING file to restore from it. Until that restore
+        // happens nothing may be written to it, or the empty new phone would
+        // overwrite the good copy; cancelling unlinks.
+        var linkedToRestore by remember { mutableStateOf(false) }
         // A sync started by leaving a game finishes after this screen is up,
         // so the label re-reads the (tiny) link file while it is showing.
         androidx.compose.runtime.LaunchedEffect(Unit) {
@@ -231,18 +282,31 @@ fun AboutScreen(modifier: Modifier = Modifier) {
                 cloudStatus = "Linked to ${cloudLink?.provider}. " + describe(r)
             }
         }
+        val existingLinker = androidx.activity.compose.rememberLauncherForActivityResult(
+            androidx.activity.result.contract.ActivityResultContracts.OpenDocument()
+        ) { uri ->
+            if (uri == null) return@rememberLauncherForActivityResult
+            cloudLink = CloudSync.link(context, uri)
+            linkedToRestore = true
+            confirmCloudRestore = true
+        }
         com.ironmonone.app.gen3.Gen3Box(Modifier.fillMaxWidth()) {
             Column {
-                Text("CLOUD SYNC", fontFamily = com.ironmonone.app.gen3.Gen3.PixelFont, fontSize = 11.sp, color = Shell.inkOnPaper)
+                Text("Cloud sync", fontWeight = androidx.compose.ui.text.font.FontWeight.Medium, fontSize = 16.sp, color = Shell.inkOnPaper)
                 Spacer(Modifier.height(6.dp))
                 val l = cloudLink
                 if (l == null) {
-                    Text("Keep the backup in Google Drive on its own. LINK creates one zip where you choose (pick Drive in the " +
-                        "picker); after that it is rewritten every time you leave a game, and the Drive app carries it up. " +
-                        "On another phone, link the same file and RESTORE.",
+                    Text("Keep your backup in Google Drive by itself. Start a sync file where you choose (pick Drive in the " +
+                        "picker); after that it is updated every time you leave a game. Moving to a new phone? Use the file " +
+                        "you already have instead, and your saves come back.",
                         style = MaterialTheme.typography.bodyMedium, color = Shell.inkOnPaper)
                     Spacer(Modifier.height(10.dp))
-                    com.ironmonone.app.gen3.Gen3Button("LINK A CLOUD FILE", accent = true) { linker.launch(CloudSync.SUGGESTED_NAME) }
+                    androidx.compose.foundation.layout.FlowRow(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp), verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
+                        com.ironmonone.app.gen3.Gen3Button("START A NEW SYNC FILE", accent = true) { linker.launch(CloudSync.SUGGESTED_NAME) }
+                        com.ironmonone.app.gen3.Gen3Button("USE MY FILE FROM ANOTHER PHONE") {
+                            existingLinker.launch(arrayOf("application/zip", "application/octet-stream", "*/*"))
+                        }
+                    }
                 } else {
                     Text("Linked to ${l.provider}. Last synced: ${CloudSync.whenLabel(l.lastSync)}. Syncs when you leave a game; ROMs never go up.",
                         style = MaterialTheme.typography.bodyMedium, color = Shell.inkOnPaper)
@@ -262,10 +326,18 @@ fun AboutScreen(modifier: Modifier = Modifier) {
                     }
                 }
                 cloudStatus?.let { Spacer(Modifier.height(8.dp)); Text(it, style = MaterialTheme.typography.bodySmall, color = Shell.goodOnPaper) }
+                if (needsRestart) { Spacer(Modifier.height(8.dp)); com.ironmonone.app.gen3.Gen3Button("RESTART NOW", accent = true) { restartApp(context) } }
+            }
+        }
+        fun cancelCloudRestore() {
+            confirmCloudRestore = false
+            if (linkedToRestore) {
+                CloudSync.unlink(context); cloudLink = null; linkedToRestore = false
+                cloudStatus = "Not linked. Nothing was changed."
             }
         }
         if (confirmCloudRestore) {
-            ShellDialog("Restore from cloud?", onDismiss = { confirmCloudRestore = false }) {
+            ShellDialog("Restore from cloud?", onDismiss = { cancelCloudRestore() }) {
                 Column {
                     Text("Overwrites the saves, states, runs and settings on this phone with the synced copy. ROMs are untouched.",
                         style = MaterialTheme.typography.bodyMedium, color = com.ironmonone.app.gen3.Gen3.Ink)
@@ -276,10 +348,12 @@ fun AboutScreen(modifier: Modifier = Modifier) {
                             scope.launch {
                                 val n = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { CloudSync.restore(context) }
                                 cloudBusy = false
-                                cloudStatus = when { n == null -> "Could not read the synced file."; n < 0 -> "The synced file is not a KaizoCore backup."; else -> "Restored $n files from the cloud." }
+                                cloudStatus = when { n == null -> "Could not read the synced file."; n < 0 -> "The synced file is not a KaizoCore backup."; else -> "Restored $n files from the cloud. Restart KaizoCore to finish." }
+                                if (n != null && n >= 0) { needsRestart = true; linkedToRestore = false }
+                                else if (linkedToRestore) { CloudSync.unlink(context); cloudLink = null; linkedToRestore = false }
                             }
                         }
-                        com.ironmonone.app.gen3.Gen3Button("CANCEL") { confirmCloudRestore = false }
+                        com.ironmonone.app.gen3.Gen3Button("CANCEL") { cancelCloudRestore() }
                     }
                 }
             }
@@ -391,4 +465,11 @@ fun AboutScreen(modifier: Modifier = Modifier) {
             }
         }
     }
+}
+
+/** Relaunch the app so settings read at startup take the restored values. */
+internal fun restartApp(context: android.content.Context) {
+    val launch = context.packageManager.getLaunchIntentForPackage(context.packageName) ?: return
+    context.startActivity(android.content.Intent.makeRestartActivityTask(launch.component))
+    Runtime.getRuntime().exit(0)
 }

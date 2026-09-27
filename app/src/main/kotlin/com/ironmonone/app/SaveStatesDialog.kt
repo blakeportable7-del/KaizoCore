@@ -1,5 +1,6 @@
 package com.ironmonone.app
 
+import androidx.compose.ui.draw.clip
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -60,7 +61,7 @@ fun SaveStatesDialog(
             Column(Modifier.weight(1f)) {
                 Text(auto.title(), style = MaterialTheme.typography.bodyMedium, color = Gen3.Ink)
                 Text(if (auto.exists) auto.savedLabel() + " · written when you leave" else "none yet",
-                    style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace, color = Shell.inkOnPaper)
+                    style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper)
             }
             Gen3Button("RESUME", accent = auto.exists, enabled = auto.exists) { onLoad(StateSlots.AUTO) }
         }
@@ -72,12 +73,14 @@ fun SaveStatesDialog(
                 row.forEach { s ->
                     Column(
                         Modifier.weight(1f)
-                            .then(if (s.n == current) Modifier.border(2.dp, Pc.Gold) else Modifier.border(1.dp, Color(0x33000000)))
-                            .clickable { onPick(s.n) }.padding(3.dp),
+                            .clip(androidx.compose.foundation.shape.RoundedCornerShape(10.dp))
+                            .background(Shell.raised)
+                            .then(if (s.n == current) Modifier.border(2.dp, Shell.accent, androidx.compose.foundation.shape.RoundedCornerShape(10.dp)) else Modifier)
+                            .clickable { onPick(s.n) }.padding(4.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         Thumb(s, version, Modifier.fillMaxWidth().aspectRatio(3f / 2f))
-                        Text("${s.n}${if (s.locked) " 🔒" else ""}", fontFamily = Gen3.PixelFont, fontSize = 9.sp, color = Gen3.Ink)
+                        Text("${s.n}${if (s.locked) " 🔒" else ""}", fontWeight = androidx.compose.ui.text.font.FontWeight.Medium, fontSize = 13.sp, color = Gen3.Ink)
                         Text(if (s.exists) s.savedLabel() else "empty", style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp),
                             color = Shell.inkOnPaper, maxLines = 1)
                     }
@@ -87,9 +90,9 @@ fun SaveStatesDialog(
         }
         // The picked slot's own line and actions.
         Text(
-            "${picked.title()}${if (picked.locked) " · LOCKED" else ""}" +
+            "${picked.title()}${if (picked.locked) " · locked" else ""}" +
                 if (picked.exists) " · %s · %,d KB".format(picked.savedLabel(), picked.sizeBytes / 1024) else " · empty",
-            style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace, color = Shell.inkOnPaper,
+            style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper,
         )
         Spacer(Modifier.height(4.dp))
         // Four buttons do not fit one row on a phone; the fourth (UNDO) was clipped.
@@ -104,11 +107,11 @@ fun SaveStatesDialog(
         }
         Text(
             when {
-                picked.locked -> "Locked: SAVE is refused until you unlock it."
-                picked.hasBackup -> "UNDO brings back the state this one overwrote."
-                else -> "Tap a slot to pick it. Overwrites keep the old state for UNDO."
+                picked.locked -> "Locked: Save is refused until you unlock it."
+                picked.hasBackup -> "Undo brings back the state this one overwrote."
+                else -> "Tap a slot to pick it. Overwrites keep the old state for Undo."
             },
-            fontFamily = Gen3.PixelFont, fontSize = 7.sp, color = Shell.inkOnPaper,
+            style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper,
         )
         Spacer(Modifier.height(8.dp))
         Gen3Button("CLOSE", onClick = onDismiss)

@@ -44,10 +44,10 @@ fun FileProgressPanel(p: FileProgress, modifier: Modifier = Modifier) {
     Gen3Box(modifier.fillMaxWidth()) {
         Column {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text(p.phase.uppercase(), fontFamily = Gen3.PixelFont, fontSize = 10.sp, color = Shell.inkOnPaper)
+                Text(p.phase.uppercase(), fontWeight = androidx.compose.ui.text.font.FontWeight.Medium, fontSize = 14.sp, color = Shell.inkOnPaper)
                 Text(
                     if (p.total > 0L) "${mb(p.done)} of ${mb(p.total)}" else if (p.done > 0L) mb(p.done) else "",
-                    fontFamily = Gen3.PixelFont, fontSize = 10.sp, color = Shell.hintOnPaper,
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.Medium, fontSize = 14.sp, color = Shell.hintOnPaper,
                 )
             }
             Spacer(Modifier.height(8.dp))

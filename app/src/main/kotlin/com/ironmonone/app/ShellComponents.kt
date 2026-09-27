@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -91,15 +93,13 @@ fun ProgressPanel(phase: RunPhase, modifier: Modifier = Modifier) {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    phase.label.uppercase(),
-                    fontFamily = Gen3.PixelFont,
-                    fontSize = 10.sp,
+                    phase.label,
+                    style = MaterialTheme.typography.titleSmall,
                     color = Shell.inkOnPaper,
                 )
                 Text(
                     "${seconds}s",
-                    fontFamily = Gen3.PixelFont,
-                    fontSize = 10.sp,
+                    style = MaterialTheme.typography.bodySmall,
                     color = Shell.hintOnPaper,
                 )
             }
@@ -141,7 +141,9 @@ private fun IndeterminateBar() {
     // node whose size the layout block expands painted the full width solid -
     // a "progress bar" that was always 100%, which is worse than none.
     androidx.compose.foundation.layout.BoxWithConstraints(
-        Modifier.fillMaxWidth().height(6.dp).background(Gen3.InkShadow),
+        Modifier.fillMaxWidth().height(6.dp)
+            .clip(androidx.compose.foundation.shape.RoundedCornerShape(3.dp))
+            .background(Shell.frame),
     ) {
         val track = maxWidth
         Box(
@@ -149,7 +151,8 @@ private fun IndeterminateBar() {
                 .offset(x = track * x)
                 .width(track * 0.35f)
                 .height(6.dp)
-                .background(Shell.inkOnPaper),
+                .clip(androidx.compose.foundation.shape.RoundedCornerShape(3.dp))
+                .background(Shell.accent),
         )
     }
 }
@@ -189,14 +192,13 @@ fun StatusBanner(text: String, isError: Boolean, modifier: Modifier = Modifier) 
 fun ShellRadio(selected: Boolean, modifier: Modifier = Modifier) {
     Box(
         modifier
-            .size(18.dp)
-            .background(Shell.frame)
-            .padding(2.dp)
-            .background(Shell.paper),
+            .size(20.dp)
+            .clip(androidx.compose.foundation.shape.CircleShape)
+            .border(2.dp, if (selected) Shell.accent else Shell.hintOnPaper, androidx.compose.foundation.shape.CircleShape),
         contentAlignment = Alignment.Center,
     ) {
         if (selected) {
-            Box(Modifier.size(8.dp).background(Shell.inkOnPaper))
+            Box(Modifier.size(10.dp).clip(androidx.compose.foundation.shape.CircleShape).background(Shell.accent))
         }
     }
 }
@@ -225,8 +227,8 @@ fun ShellListRow(
         Text(label, style = MaterialTheme.typography.bodyMedium, color = Shell.inkOnPaper)
         Text(
             value,
-            fontFamily = Gen3.PixelFont,
-            fontSize = 10.sp,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
             color = valueColor,
         )
     }
@@ -235,7 +237,7 @@ fun ShellListRow(
 /** A hairline on paper. */
 @Composable
 fun ShellDivider(modifier: Modifier = Modifier) {
-    Box(modifier.fillMaxWidth().height(1.dp).background(Gen3.InkShadow))
+    Box(modifier.fillMaxWidth().height(1.dp).background(Shell.hairline))
 }
 
 /**
@@ -258,15 +260,15 @@ fun ShellDialog(
     content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit,
 ) {
     androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
-        Gen3Box(Modifier.fillMaxWidth()) {
-            Column {
+        Gen3Box(Modifier.fillMaxWidth(), paper = Shell.paper) {
+            Column(Modifier.padding(4.dp)) {
                 Text(
-                    title.uppercase(),
-                    fontFamily = Gen3.PixelFont,
-                    fontSize = 11.sp,
+                    title,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
                     color = Shell.inkOnPaper,
                 )
-                Spacer(Modifier.height(10.dp))
+                Spacer(Modifier.height(12.dp))
                 content()
             }
         }
@@ -285,16 +287,16 @@ fun EmptyState(headline: String, detail: String, modifier: Modifier = Modifier) 
     Gen3Box(modifier.fillMaxWidth()) {
         Column {
             Text(
-                headline.uppercase(),
-                fontFamily = Gen3.PixelFont,
-                fontSize = 10.sp,
+                headline,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
                 color = Shell.inkOnPaper,
             )
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(6.dp))
             Text(
                 detail,
                 style = MaterialTheme.typography.bodyMedium,
-                color = Shell.inkOnPaper,
+                color = Shell.hintOnPaper,
             )
         }
     }
@@ -321,47 +323,27 @@ fun EmptyState(headline: String, detail: String, modifier: Modifier = Modifier) 
  */
 @Composable
 fun ScreenBackground(
-    asset: String?,
+    @Suppress("UNUSED_PARAMETER") asset: String?,
     modifier: Modifier = Modifier,
-    scrim: Float = 0.62f,
+    @Suppress("UNUSED_PARAMETER") scrim: Float = 0.62f,
     content: @Composable () -> Unit,
 ) {
-    Box(modifier.fillMaxSize().background(Shell.night)) {
-        if (asset != null) {
-            val context = androidx.compose.ui.platform.LocalContext.current
-            val bmp = remember(asset) { PcAssets.background(context, asset) }
-            if (bmp != null) {
-                androidx.compose.foundation.Image(
-                    bitmap = bmp,
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                    filterQuality = androidx.compose.ui.graphics.FilterQuality.None,
-                )
-                Box(
-                    Modifier.fillMaxSize()
-                        .background(Shell.night.copy(alpha = scrim)),
-                )
-            }
-        }
-        content()
-    }
+    // The modern look paints the plain page; the pixel-art scenes were the
+    // retro skin's and are no longer drawn (2026-09-27).
+    Box(modifier.fillMaxSize().background(Shell.night)) { content() }
 }
 
-/** A square check in the shell's language. Row-level click, like ShellRadio. */
+/** A rounded check box. Row-level click, like ShellRadio. */
 @Composable
 fun ShellCheck(checked: Boolean, modifier: Modifier = Modifier) {
+    val shape = androidx.compose.foundation.shape.RoundedCornerShape(6.dp)
     Box(
-        modifier.size(18.dp).background(Shell.frame).padding(2.dp).background(Shell.paper),
+        modifier.size(20.dp).clip(shape)
+            .then(if (checked) Modifier.background(Shell.accent) else Modifier.border(2.dp, Shell.hintOnPaper, shape)),
         contentAlignment = Alignment.Center,
     ) {
         if (checked) {
-            Text(
-                "x",
-                fontFamily = Gen3.PixelFont,
-                fontSize = 10.sp,
-                color = Shell.inkOnPaper,
-            )
+            Text("\u2713", fontSize = 13.sp, color = Shell.onAccent, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
         }
     }
 }
@@ -393,26 +375,25 @@ fun ShellSegmented(
     // "Random" was clipped and unselectable for anyone using large text.
     FlowRow(
         modifier,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         values.forEach { v ->
             val on = v == selected
             Box(
                 Modifier
-                    .background(Shell.frame)
-                    .padding(2.dp)
-                    .background(if (on) Shell.inkOnPaper else Shell.paper)
+                    .clip(androidx.compose.foundation.shape.RoundedCornerShape(50))
+                    .background(if (on) Shell.inkOnPaper else Shell.raised)
                     .clickable { onSelect(v) }
-                    .heightIn(min = 34.dp)
-                    .padding(horizontal = 10.dp),
+                    .heightIn(min = 36.dp)
+                    .padding(horizontal = 14.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     label(v),
-                    fontFamily = Gen3.PixelFont,
-                    fontSize = 9.sp,
-                    color = if (on) Shell.paper else Shell.inkOnPaper,
+                    fontSize = 13.sp,
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
+                    color = if (on) Shell.night else Shell.inkOnPaper,
                 )
             }
         }
@@ -431,8 +412,7 @@ fun ShellStepper(
         StepKey("-") { onChange((value - 1).coerceIn(range)) }
         Text(
             "$value",
-            fontFamily = Gen3.PixelFont,
-            fontSize = 11.sp,
+            style = MaterialTheme.typography.titleMedium,
             color = Shell.inkOnPaper,
             modifier = Modifier.padding(horizontal = 12.dp),
         )
@@ -444,10 +424,11 @@ fun ShellStepper(
 private fun StepKey(glyph: String, onClick: () -> Unit) {
     Box(
         Modifier.size(Shell.touchTarget)
-            .background(Shell.frame).padding(2.dp).background(Shell.paper)
+            .clip(androidx.compose.foundation.shape.RoundedCornerShape(Shell.controlRadius))
+            .background(Shell.raised)
             .clickable { onClick() },
         contentAlignment = Alignment.Center,
     ) {
-        Text(glyph, fontFamily = Gen3.PixelFont, fontSize = 12.sp, color = Shell.inkOnPaper)
+        Text(glyph, fontSize = 20.sp, color = Shell.inkOnPaper)
     }
 }

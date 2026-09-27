@@ -339,6 +339,31 @@ class PrepStore(context: Context) {
     /** Scratch space for writes that must not leave a half-file behind. */
     fun cacheDirFor(): File = File(root, "tmp").apply { mkdirs() }
 
+    /**
+     * A settings file the player picked: kept only if it is an .rnqs one of
+     * the two randomizers can read, and never over a file already here (a
+     * second "FRLG Kaizo.rnqs" becomes "FRLG Kaizo (2).rnqs"). IMPORT used to
+     * take any file under any name and replace a same-named preset without a
+     * word (audit, 2026-09-27). Returns the file, or why it was refused.
+     */
+    fun addSettingsFile(name: String, bytes: ByteArray): Result<File> {
+        val clean = name.substringAfterLast('/').substringAfterLast('\\')
+        if (!clean.endsWith(".rnqs", true))
+            return Result.failure(IllegalArgumentException("$clean is not a randomizer settings file (.rnqs)."))
+        fun reads(read: (java.io.FileInputStream) -> Any): Boolean {
+            val tmp = File.createTempFile("check", ".rnqs", cacheDirFor())
+            return try { tmp.writeBytes(bytes); runCatching { java.io.FileInputStream(tmp).use { read(it) } }.isSuccess } finally { tmp.delete() }
+        }
+        if (!reads { com.dabomstew.pkrandomzx.Settings.read(it) } && !reads { com.dabomstew.pkrandom.Settings.read(it) })
+            return Result.failure(IllegalArgumentException("$clean could not be read. It may be damaged or from a newer randomizer."))
+        val stem = clean.substring(0, clean.length - 5)
+        var target = File(settings, clean)
+        var n = 2
+        while (target.exists()) { target = File(settings, "$stem ($n).rnqs"); n++ }
+        target.writeBytes(bytes)
+        return Result.success(target)
+    }
+
     fun importSettings(name: String, bytes: ByteArray): File =
         File(settings, name.substringAfterLast('/').substringAfterLast('\\'))
             .apply { writeBytes(bytes) }
@@ -387,6 +412,18 @@ class PrepStore(context: Context) {
     /** Remember what the Run tab last randomized, so Play's NEW RUN can repeat it. */
     fun saveLastRun(romKindId: String, settingsName: String) =
         lastRunFile.writeText("$romKindId\n$settingsName")
+
+    /**
+     * Where the app should open: PLAY when a run is waiting, RUN when a game is
+     * prepared but not randomized, PREP when there is nothing yet. It always
+     * opened on PREP, so a player mid-run landed on "Add a game dump" every
+     * launch (audit, 2026-09-27).
+     */
+    fun startingPoint(): String {
+        val kind = loadLastRun()?.first?.let { RomKind.byId(it) }
+        if (kind != null && currentRunFor(kind).isFile) return "PLAY"
+        return if (runCatching { listPrepared() }.getOrDefault(emptyList()).isNotEmpty()) "RUN" else "PREP"
+    }
 
     fun loadLastRun(): Pair<String, String>? {
         if (!lastRunFile.exists()) return null

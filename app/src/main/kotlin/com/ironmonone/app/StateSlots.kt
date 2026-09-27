@@ -22,6 +22,30 @@ object StateSlots {
     const val COUNT = 8
     const val AUTO = 0
 
+    /**
+     * Write a state through a .tmp and a rename. Returns null on success, or
+     * the sentence to show. The write used to run bare in a background task,
+     * so a full phone threw there and closed the app (audit, 2026-09-27); the
+     * previous save is left as it was and the .tmp is removed.
+     */
+    fun writeAtomic(f: File, bytes: ByteArray): String? {
+        val tmp = File(f.parentFile, f.name + ".tmp")
+        return try {
+            f.parentFile?.mkdirs()
+            tmp.writeBytes(bytes)
+            if (!tmp.renameTo(f)) { f.delete(); tmp.renameTo(f) }
+            null
+        } catch (e: java.io.IOException) {
+            tmp.delete()
+            if ((e.message ?: "").contains("ENOSPC") || (e.message ?: "").contains("No space"))
+                "Could not save: this phone is out of space. Your last save is still there."
+            else "Could not save: ${e.message ?: "the file could not be written"}. Your last save is still there."
+        }
+    }
+
+    /** Read a state, or null with the reason when it cannot be read. */
+    fun readOrNull(f: File): ByteArray? = runCatching { f.readBytes() }.getOrNull()
+
     data class Slot(val n: Int, val file: File, val stamp: File, val thumb: File) {
         val exists: Boolean get() = file.exists() && file.length() > 0
         val savedAt: Long get() = if (exists) file.lastModified() else 0L

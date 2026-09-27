@@ -16,12 +16,20 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -39,16 +47,48 @@ import com.ironmonone.app.gen3.Gen3
 import com.ironmonone.app.gen3.Gen3Header
 import com.swordfish.libretrodroid.LibretroDroid
 
-private enum class Tab(val label: String, val scene: String? = null) {
-    // `scene` names a file in assets/backgrounds. Null = plain black, which is
-    // also the fallback when the named file is missing, so a tab can be
-    // assigned a scene before its art exists without breaking anything.
-    PREPARE("PREP", "battle-water"),
-    RUN("RUN", "battle-water"),
-    PLAY("PLAY"),
-    LIBRARY("ROMS", "battle-water"),
-    CONTROLS("KEYS", "battle-water"),
-    ABOUT("INFO", "battle-water")
+private enum class Tab(val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
+    // Five tabs with icons (Blake, 2026-09-27). Seven pixel-font labels did not
+    // fit a phone bar. PREP and ROMS are the two pages of LIBRARY; KEYS and
+    // INFO are the two pages of MORE.
+    PLAY("Play", androidx.compose.material.icons.Icons.Filled.PlayArrow),
+    RUN("Run", androidx.compose.material.icons.Icons.Filled.Refresh),
+    LIBRARY("Library", androidx.compose.material.icons.Icons.Filled.List),
+    HACKS("Hacks", androidx.compose.material.icons.Icons.Filled.Build),
+    MORE("More", androidx.compose.material.icons.Icons.Filled.Menu),
+}
+
+/** The two pages inside a tab, switched by a segmented control at its top. */
+@Composable
+private fun TabPages(
+    pages: List<String>,
+    page: Int,
+    onPage: (Int) -> Unit,
+    content: @Composable () -> Unit,
+) {
+    Column(Modifier.fillMaxSize().background(Shell.night)) {
+        Row(
+            Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 2.dp)
+                .clip(androidx.compose.foundation.shape.RoundedCornerShape(Shell.controlRadius))
+                .background(Shell.paper).padding(4.dp),
+        ) {
+            pages.forEachIndexed { i, name ->
+                val on = i == page
+                Box(
+                    Modifier.weight(1f)
+                        .clip(androidx.compose.foundation.shape.RoundedCornerShape(10.dp))
+                        .background(if (on) Shell.raised else Shell.paper)
+                        .clickable { onPage(i) }
+                        .padding(vertical = 10.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(name, fontSize = 14.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
+                        color = if (on) Shell.inkOnPaper else Shell.hintOnPaper)
+                }
+            }
+        }
+        Box(Modifier.weight(1f)) { content() }
+    }
 }
 
 /**
@@ -108,7 +148,15 @@ class MainActivity : ComponentActivity() {
         (getSystemService(INPUT_SERVICE) as InputManager)
             .registerInputDeviceListener(deviceListener, null)
         Controllers.refresh()
-        setContent { MaterialTheme(colorScheme = Gen3.Scheme) { App() } }
+        // Text with no colour of its own takes the light ink: on the dark
+        // shell the default (black) was invisible.
+        setContent {
+            MaterialTheme(colorScheme = Gen3.Scheme) {
+                androidx.compose.runtime.CompositionLocalProvider(
+                    androidx.compose.material3.LocalContentColor provides Shell.inkOnPaper,
+                ) { App() }
+            }
+        }
     }
 
     override fun onDestroy() {
@@ -207,7 +255,47 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 private fun App() {
-    var tab by remember { mutableStateOf(Tab.PREPARE) }
+    val appContext = androidx.compose.ui.platform.LocalContext.current
+    var tab by remember {
+        mutableStateOf(when (runCatching { PrepStore(appContext).startingPoint() }.getOrDefault("PREP")) {
+            "PLAY" -> Tab.PLAY
+            "RUN" -> Tab.RUN
+            else -> Tab.LIBRARY
+        })
+    }
+    // Which page of LIBRARY (0 set up a game, 1 all files) and MORE (0
+    // controls, 1 backup and info) is showing.
+    var libraryPage by remember { mutableStateOf(0) }
+    var morePage by remember { mutableStateOf(0) }
+    // A crash or freeze last session is offered at launch, not only on INFO,
+    // where hardly anyone would find it (audit, 2026-09-27). Android ending the
+    // app in the background to free memory is normal and is not announced.
+    var launchCrash by remember {
+        mutableStateOf(runCatching { CrashLog.collect(appContext) }.getOrNull()
+            ?.takeIf { "CRASH" in it || "ANR" in it })
+    }
+    launchCrash?.let { text ->
+        ShellDialog("KaizoCore closed unexpectedly", onDismiss = { launchCrash = null }) {
+            Text("It happened last time you played. Your saves are kept. A report says where the app failed, " +
+                "with your phone model and the app version, and helps get it fixed.",
+                style = androidx.compose.material3.MaterialTheme.typography.bodyMedium, color = Gen3.Ink)
+            Spacer(Modifier.height(10.dp))
+            Row(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
+                com.ironmonone.app.gen3.Gen3Button("SEND REPORT", accent = true) {
+                    runCatching {
+                        val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(android.content.Intent.EXTRA_SUBJECT, "KaizoCore crash report")
+                            putExtra(android.content.Intent.EXTRA_TEXT, text)
+                        }
+                        appContext.startActivity(android.content.Intent.createChooser(send, "Send crash report"))
+                    }
+                    launchCrash = null
+                }
+                com.ironmonone.app.gen3.Gen3Button("NOT NOW") { launchCrash = null }
+            }
+        }
+    }
     // The preset being edited, with the generation of the ROM it targets.
     var editing by remember { mutableStateOf<Pair<java.io.File, String?>?>(null) }
     val landscape =
@@ -232,7 +320,7 @@ private fun App() {
     androidx.activity.compose.BackHandler(enabled = fullscreen && !clean) { showChrome = true }
 
     Column(
-        Modifier.fillMaxSize().background(Pc.Page)
+        Modifier.fillMaxSize().background(Shell.night)
             .let { if (fullscreen) it else it.statusBarsPadding().navigationBarsPadding() }
     ) {
         // The bar carries the screen's own actions on the right and nothing
@@ -241,7 +329,7 @@ private fun App() {
         val barActions = AppBarActions.content
         if (!fullscreen && (barActions != null || editing != null)) {
             Row(
-                Modifier.fillMaxWidth().background(Pc.Ground)
+                Modifier.fillMaxWidth().background(Shell.paper)
                     .padding(horizontal = 14.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -280,11 +368,8 @@ private fun App() {
                 // picture there and anything behind it is either invisible or
                 // a distraction. ScreenBackground owns the scrim, so the
                 // contrast guarantees from M1 hold over any artwork.
-                Tab.PREPARE -> ScreenBackground(Tab.PREPARE.scene) {
-                    PrepareScreen(Modifier.fillMaxSize())
-                }
-                Tab.RUN -> ScreenBackground(Tab.RUN.scene) {
-                    RunScreen(Modifier.fillMaxSize(), onEdit = { f, g -> editing = f to g })
+                Tab.RUN -> ScreenBackground(null) {
+                    RunScreen(Modifier.fillMaxSize(), onEdit = { f, g -> editing = f to g }, onPlay = { tab = Tab.PLAY })
                 }
                 Tab.PLAY -> PlayScreen(
                     Modifier.fillMaxSize(),
@@ -294,59 +379,58 @@ private fun App() {
                     clean = clean,
                     onClean = { clean = it },
                 )
-                Tab.LIBRARY -> ScreenBackground(Tab.LIBRARY.scene) {
-                    RomLibraryScreen(Modifier.fillMaxSize(), onPlay = { tab = Tab.PLAY })
+                Tab.LIBRARY -> TabPages(listOf("Set up a game", "All files"), libraryPage, { libraryPage = it }) {
+                    if (libraryPage == 0) PrepareScreen(Modifier.fillMaxSize())
+                    else RomLibraryScreen(Modifier.fillMaxSize(), onPlay = { tab = Tab.PLAY })
                 }
-                Tab.CONTROLS -> ScreenBackground(Tab.CONTROLS.scene) {
-                    ControlsScreen(Modifier.fillMaxSize())
+                Tab.HACKS -> ScreenBackground(null) {
+                    HacksScreen(Modifier.fillMaxSize(), onPlay = { tab = Tab.PLAY })
                 }
-                Tab.ABOUT -> ScreenBackground(Tab.ABOUT.scene) {
-                    AboutScreen(Modifier.fillMaxSize())
+                Tab.MORE -> TabPages(listOf("Controls", "Backup and info"), morePage, { morePage = it }) {
+                    if (morePage == 0) ControlsScreen(Modifier.fillMaxSize())
+                    else AboutScreen(Modifier.fillMaxSize())
                 }
             }
             }
         }
 
-        // Tab bar as a Gen 3 menu row: paper strip, selector triangle marks the tab.
+        // Bottom navigation: icon over label, the selected tab in a pill.
         if (editing == null && !fullscreen) {
             Row(
-                // Tab bar in the tracker's own palette, not the green chrome.
-                Modifier.fillMaxWidth().background(Pc.Border).padding(1.dp)
-                    .background(Pc.Ground),
+                Modifier.fillMaxWidth().background(Shell.paper)
+                    .padding(horizontal = 6.dp, vertical = 6.dp),
             ) {
-                // Tab labels stop growing at a 1.3 system font scale.
-                //
-                // Six weight(1f) slots are 179px on a 1080px screen, which is
-                // exactly four glyph cells at a 2.0 font scale - and the
-                // longest label needs five (selector + four letters). So at
-                // 2.0 every label wrapped: PREP became "▶PR" over "EP",
-                // INFO became "INF" over "O", and the bar swelled to about a
-                // quarter of the screen. Measured at 1.3 the same five cells
-                // fit with 13px to spare, so 1.3 is the largest scale that
-                // provably works and the cap is set there rather than guessed.
-                //
-                // This CAPS growth, it does not reverse it: below 1.3 nothing
-                // changes at all, and above it the label still renders at
-                // 11.7sp, larger than the 9sp everyone sees by default.
-                //
-                // Deliberately NOT maxLines = 1. If a future label is longer
-                // than these, wrapping is the safe failure and clipping is
-                // not - forcing one line here turned the 2.0 wrap into
-                // genuinely lost text.
+                // Labels stop growing at a 1.3 font scale so five fit one row.
                 val fontScale = LocalDensity.current.fontScale
-                val labelSp = (9f * minOf(fontScale, 1.3f) / fontScale).sp
+                val labelSp = (12f * minOf(fontScale, 1.3f) / fontScale).sp
                 Tab.entries.forEach { t ->
                     val active = tab == t
-                    Text(
-                        text = (if (active) "▶" else " ") + t.label,
-                        modifier = Modifier.weight(1f)
+                    Column(
+                        Modifier.weight(1f)
+                            .clip(androidx.compose.foundation.shape.RoundedCornerShape(14.dp))
                             .clickable { tab = t; showChrome = false }
-                            .padding(vertical = 14.dp),
-                        textAlign = TextAlign.Center,
-                        fontFamily = Gen3.PixelFont,
-                        fontSize = labelSp,
-                        color = if (active) Pc.Gold else Pc.Text,
-                    )
+                            .padding(vertical = 6.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Box(
+                            Modifier.clip(androidx.compose.foundation.shape.RoundedCornerShape(50))
+                                .background(if (active) Shell.accent.copy(alpha = 0.22f) else Shell.paper)
+                                .padding(horizontal = 16.dp, vertical = 4.dp),
+                        ) {
+                            androidx.compose.material3.Icon(
+                                t.icon, contentDescription = null,
+                                tint = if (active) Shell.accentOnNight else Shell.hintOnNight,
+                                modifier = Modifier.size(22.dp),
+                            )
+                        }
+                        Text(
+                            t.label,
+                            modifier = Modifier.padding(top = 2.dp),
+                            fontSize = labelSp,
+                            fontWeight = if (active) androidx.compose.ui.text.font.FontWeight.Medium else androidx.compose.ui.text.font.FontWeight.Normal,
+                            color = if (active) Shell.inkOnPaper else Shell.hintOnNight,
+                        )
+                    }
                 }
             }
         }

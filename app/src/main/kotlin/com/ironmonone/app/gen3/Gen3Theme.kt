@@ -11,10 +11,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,11 +40,11 @@ import com.ironmonone.app.R
  */
 object Gen3 {
     // Palette per the design doc, sampled from Emerald's UI family.
-    val FrameDark = Color(0xFF303030)
-    val FrameBevel = Color(0xFFA8A8A0)
-    val Paper = Color(0xFFF8F8F8)
-    val Ink = Color(0xFF404040)
-    val InkShadow = Color(0xFFB8B8B0)
+    val FrameDark = Color(0xFF2E3036)
+    val FrameBevel = Color(0xFF34363C)
+    val Paper = Color(0xFF1C1D22)
+    val Ink = Color(0xFFECEDEE)
+    val InkShadow = Color(0xFF5A5D66)
     val Emerald = Color(0xFF40A058)
     val EmeraldDeep = Color(0xFF2E7842)
     val HpGreen = Color(0xFF58D080)
@@ -70,26 +73,29 @@ object Gen3 {
      * status lines like "Loaded slot 1." blue, the one colour the PC tracker's
      * theme has no slot for.
      */
-    val Scheme = lightColorScheme(
-        primary = PcBorder,
-        onPrimary = PcPage,
-        secondary = PcGold,
-        onSecondary = PcPage,
-        background = PcPage,
-        onBackground = PcText,
-        surface = Paper,
-        onSurface = Ink,
-        surfaceVariant = Paper,
-        onSurfaceVariant = Ink,
-        error = HpRed,
-        onError = Paper,
-        outline = FrameDark,
+    // The modern dark shell (2026-09-27). Material pieces that still read the
+    // scheme (text fields, menus) follow the same page, card and accent.
+    val Scheme = darkColorScheme(
+        primary = Color(0xFFCF3A3F),
+        onPrimary = Color(0xFFFFFFFF),
+        secondary = Color(0xFFFF8589),
+        onSecondary = Color(0xFF121316),
+        background = Color(0xFF121316),
+        onBackground = Color(0xFFECEDEE),
+        surface = Color(0xFF1C1D22),
+        onSurface = Color(0xFFECEDEE),
+        surfaceVariant = Color(0xFF2A2C33),
+        onSurfaceVariant = Color(0xFFA0A3AD),
+        error = Color(0xFFFF6B6B),
+        onError = Color(0xFF121316),
+        outline = Color(0xFF34363C),
     )
 }
 
 /**
- * The Emerald text box: 2dp dark outer frame, 2dp light bevel, paper inside.
- * Every card and dialog in the app is one of these.
+ * A card: the one container in the app. Rounded, a step lighter than the page,
+ * with a hairline so it holds its edge on any screen. Named for the Emerald
+ * text box it replaced, so every call site moved with it.
  */
 @Composable
 fun Gen3Box(
@@ -97,20 +103,20 @@ fun Gen3Box(
     paper: Color = Gen3.Paper,
     content: @Composable () -> Unit,
 ) {
+    val shape = RoundedCornerShape(com.ironmonone.app.Shell.cardRadius)
     Box(
         modifier
-            .border(2.dp, Gen3.FrameDark)
-            .padding(2.dp)
-            .border(2.dp, Gen3.FrameBevel)
-            .padding(2.dp)
+            .clip(shape)
             .background(paper)
-            .padding(10.dp),
+            .border(1.dp, com.ironmonone.app.Shell.hairline, shape)
+            .padding(14.dp),
     ) { content() }
 }
 
 /**
- * A Gen 3 menu button: a small text box with the selector triangle. Pressed state
- * nudges nothing fancy - the triangle IS the affordance, like the game.
+ * A button. [accent] is the screen's main action: filled red. Every other
+ * button is a quiet raised surface. Labels written in capitals are shown in
+ * sentence case (Shell.label).
  */
 @Composable
 fun Gen3Button(
@@ -120,30 +126,26 @@ fun Gen3Button(
     accent: Boolean = false,
     onClick: () -> Unit,
 ) {
-    // Press feel: a 1px inset shift and a darkened face, no Material ripple.
-    // A ripple is the wrong idiom on a hard-edged plastic button, and the app
-    // had no press feedback at all - taps looked ignored until the screen
-    // changed.
     val interaction = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
     val haptics = androidx.compose.ui.platform.LocalHapticFeedback.current
+    val S = com.ironmonone.app.Shell
     val face = when {
-        accent -> Gen3.PcGround
-        pressed -> Gen3.InkShadow
-        else -> Gen3.Paper
+        !enabled -> Color(0xFF1F2025)
+        accent -> if (pressed) S.accentPressed else S.accent
+        pressed -> S.raisedPressed
+        else -> S.raised
     }
+    val shape = RoundedCornerShape(S.controlRadius)
     Box(
         modifier
-            .offset(y = if (pressed) 1.dp else 0.dp)
-            .border(2.dp, if (enabled) Gen3.FrameDark else Gen3.FrameBevel)
-            .padding(2.dp)
-            .border(2.dp, Gen3.FrameBevel)
-            .padding(2.dp)
+            // 48dp, Android's minimum touch target.
+            .defaultMinSize(minHeight = 48.dp)
+            .clip(shape)
             .background(face)
             .clickable(
                 enabled = enabled,
                 interactionSource = interaction,
-                // No ripple: this is a moulded button, not a Material surface.
                 indication = null,
             ) {
                 haptics.performHapticFeedback(
@@ -151,42 +153,34 @@ fun Gen3Button(
                 )
                 onClick()
             }
-            .padding(horizontal = 12.dp, vertical = 8.dp),
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        contentAlignment = Alignment.Center,
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                "▶ ",
-                fontFamily = Gen3.PixelFont,
-                fontSize = 9.sp,
-                color = if (accent) Gen3.PcGold else Gen3.Ink,
-            )
-            Text(
-                text,
-                fontFamily = Gen3.PixelFont,
-                fontSize = 10.sp,
-                // A button label that wraps stops looking like a button:
-                // "CANCEL" was breaking across two lines as "CANCE / L".
-                maxLines = 1,
-                softWrap = false,
-                color = when {
-                    !enabled -> Gen3.InkShadow
-                    accent -> Gen3.PcGold
-                    else -> Gen3.Ink
-                },
-            )
-        }
+        Text(
+            S.label(text),
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Medium,
+            // A label that wraps stops looking like a button.
+            maxLines = 1,
+            softWrap = false,
+            color = when {
+                !enabled -> Color(0xFF6B6E78)
+                accent -> S.onAccent
+                else -> S.inkOnPaper
+            },
+        )
     }
 }
 
-/** Section header in the pixel face - the "eyebrow" of a Gen 3 menu page. */
+/** A section label on the page: small, spaced capitals in the hint colour. */
 @Composable
 fun Gen3Header(text: String, modifier: Modifier = Modifier) {
     Text(
         text.uppercase(),
         modifier = modifier.padding(vertical = 4.dp),
-        fontFamily = Gen3.PixelFont,
-        fontSize = 11.sp,
-        fontWeight = FontWeight.Normal,
-        color = Gen3.Paper,
+        fontSize = 12.sp,
+        fontWeight = FontWeight.Medium,
+        letterSpacing = 1.2.sp,
+        color = com.ironmonone.app.Shell.hintOnNight,
     )
 }

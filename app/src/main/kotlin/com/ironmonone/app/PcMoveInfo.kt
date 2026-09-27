@@ -37,6 +37,13 @@ data class MoveDetail(
     val typeChart: MoveMatchup.General? = null,
     /** The table's power label when the rules replace the ROM number (VAR, >FR, WT...); "0" is none. */
     val powerText: String? = null,
+    /**
+     * The ROM holds no battle data for this move: a name only. Every move past
+     * 354 on the Nat. Dex 1.2.1 build is like that (power 0, PP 0, type ???),
+     * the same in the PC tracker's Nat. Dex add-on. Said plainly instead of a
+     * row of dashes.
+     */
+    val noRomData: Boolean = false,
     /** Your own Pokemon's Hidden Power: its personality value, for InfoScreen's type arrows. */
     val hiddenPowerPid: Long? = null,
 )
@@ -84,6 +91,15 @@ fun PcMoveInfoContent(d: MoveDetail, onDismiss: () -> Unit) {
                 }
             }
             Spacer(Modifier.height(10.dp))
+        }
+        if (d.noRomData) {
+            InfoParagraph(
+                "No move data in this game",
+                "This game has the move's name but no battle data for it: no power, accuracy, PP or type. " +
+                    "It cannot be used in battle here, so there is nothing to show.",
+                Pc.Dim,
+            )
+            return@InfoCard
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             InfoStat("PP", d.ppMax?.let { "${d.pp}/$it" } ?: "${d.pp}")

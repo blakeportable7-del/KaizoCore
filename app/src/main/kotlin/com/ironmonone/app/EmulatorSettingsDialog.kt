@@ -53,7 +53,7 @@ fun EmulatorSettingsDialog(
                     DsiSection(values, opts, systemFilePresent, onChange)
                     return@forEach
                 }
-                Text(group.uppercase(), fontFamily = Gen3.PixelFont, fontSize = 9.sp, color = Shell.inkOnPaper,
+                Text(group.uppercase(), fontWeight = androidx.compose.ui.text.font.FontWeight.Medium, fontSize = 13.sp, color = Shell.inkOnPaper,
                     modifier = Modifier.padding(top = 8.dp, bottom = 2.dp))
                 if (group == CoreOptions.LINK_GROUP) {
                     Text("Both phones on the same Wi-Fi, same game. One hosts (Network Server), the other joins with the " +
@@ -66,7 +66,7 @@ fun EmulatorSettingsDialog(
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                             Text(o.label + if (o.restart) " (restart)" else "", style = MaterialTheme.typography.bodyMedium, color = Gen3.Ink)
                             Text(v, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodyMedium,
-                                color = if (v != o.default) Pc.Gold.copy(alpha = 0.9f).let { MaterialTheme.colorScheme.primary } else Shell.inkOnPaper)
+                                color = if (v != o.default) Shell.accentOnNight else Shell.inkOnPaper)
                         }
                         o.hint?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = Shell.inkOnPaper) }
                     }
@@ -75,7 +75,7 @@ fun EmulatorSettingsDialog(
             }
             val files = CoreOptions.systemFiles(platform)
             if (files.isNotEmpty()) {
-                Text("SYSTEM FILES", fontFamily = Gen3.PixelFont, fontSize = 9.sp, color = Shell.inkOnPaper,
+                Text("System files", fontWeight = androidx.compose.ui.text.font.FontWeight.Medium, fontSize = 13.sp, color = Shell.inkOnPaper,
                     modifier = Modifier.padding(top = 8.dp, bottom = 2.dp))
                 Text("Your own dumps. Nothing is downloaded; a missing file leaves the built-in replacement in use.",
                     style = MaterialTheme.typography.bodySmall, color = Shell.inkOnPaper)
@@ -84,7 +84,7 @@ fun EmulatorSettingsDialog(
                     Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
                             Text(name + if (present) " · present" else " · missing", fontFamily = FontFamily.Monospace,
-                                style = MaterialTheme.typography.bodyMedium, color = if (present) MaterialTheme.colorScheme.primary else Gen3.Ink)
+                                style = MaterialTheme.typography.bodyMedium, color = if (present) Shell.goodOnPaper else Gen3.Ink)
                             Text(what, style = MaterialTheme.typography.bodySmall, color = Shell.inkOnPaper)
                         }
                         Gen3Button(if (present) "REPLACE" else "IMPORT") { onImportSystemFile(name) }
@@ -133,7 +133,7 @@ private fun DsiSection(
 ) {
     val on = DsiMode.isOn(values)
     val missing = DsiMode.missing(present)
-    Text("DSI MODE", fontFamily = Gen3.PixelFont, fontSize = 9.sp, color = Shell.inkOnPaper,
+    Text("Dsi mode", fontWeight = androidx.compose.ui.text.font.FontWeight.Medium, fontSize = 13.sp, color = Shell.inkOnPaper,
         modifier = Modifier.padding(top = 8.dp, bottom = 2.dp))
     Text(
         "Runs the game as a DSi, with your own DSi dumps from the SYSTEM FILES list below. " +
@@ -144,7 +144,7 @@ private fun DsiSection(
     Text(
         if (missing.isEmpty()) "All files present." else "Missing: " + missing.joinToString(", "),
         fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall,
-        color = if (missing.isEmpty()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+        color = if (missing.isEmpty()) Shell.goodOnPaper else MaterialTheme.colorScheme.error,
     )
     Spacer(Modifier.height(6.dp))
     fun apply(map: Map<String, String>) {

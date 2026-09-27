@@ -82,6 +82,18 @@ class KeyBindings(private val file: File) {
         )
 
         /** Readable key name for the remap screen. */
+        /**
+         * Keys that belong to the phone, never to a binding. The remapper took
+         * whatever was pressed next, so a player could bind Back and lose the
+         * way out of every screen, or bind volume (audit, 2026-09-27).
+         */
+        fun isSystemKey(code: Int): Boolean = code in setOf(
+            android.view.KeyEvent.KEYCODE_BACK, android.view.KeyEvent.KEYCODE_HOME,
+            android.view.KeyEvent.KEYCODE_APP_SWITCH, android.view.KeyEvent.KEYCODE_POWER,
+            android.view.KeyEvent.KEYCODE_VOLUME_UP, android.view.KeyEvent.KEYCODE_VOLUME_DOWN,
+            android.view.KeyEvent.KEYCODE_VOLUME_MUTE,
+        )
+
         fun keyName(code: Int): String = when (code) {
             KeyEvent.KEYCODE_DPAD_UP -> "Arrow Up"
             KeyEvent.KEYCODE_DPAD_DOWN -> "Arrow Down"

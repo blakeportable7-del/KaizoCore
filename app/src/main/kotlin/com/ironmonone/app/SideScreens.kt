@@ -1,5 +1,11 @@
 package com.ironmonone.app
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -141,5 +147,28 @@ fun SideScreenDialogs(
     if (s.statsDialog) {
         val gba = trackerRef
         StatsDialog(StatsRows.build(attempt, gba?.let { t -> { i: Int -> t.readGameStat(i) } }), onClose = { s.statsDialog = false })
+    }
+}
+
+/**
+ * Landscape, a game with no tracker: the only FILE button lives in the tracker's
+ * header, so saves, speed and the way back to the app were out of reach
+ * (audit, 2026-09-27). This chip opens the same menu row. It sits top-centre,
+ * clear of the L and R buttons in every pad preset, and is 48dp tall.
+ */
+@Composable
+internal fun LandscapeMenuChip(modifier: androidx.compose.ui.Modifier, onClick: () -> Unit) {
+    val g = com.ironmonone.app.gen3.Gen3
+    androidx.compose.foundation.layout.Box(
+        modifier
+            .padding(6.dp)
+            .heightIn(min = 48.dp)
+            .background(g.FrameDark.copy(alpha = 0.6f))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp),
+        contentAlignment = androidx.compose.ui.Alignment.Center,
+    ) {
+        androidx.compose.material3.Text("Menu", fontWeight = androidx.compose.ui.text.font.FontWeight.Medium, fontSize = 14.sp,
+            color = androidx.compose.ui.graphics.Color.White)
     }
 }
