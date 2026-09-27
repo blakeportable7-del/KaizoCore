@@ -59,7 +59,15 @@ class GameOverLatchTest {
             assertTrue(l.onRead(RunOutcome.LOST, null))
             l.retried()
             assertFalse(l.open)
-            assertTrue(l.onRead(RunOutcome.LOST, null), "$family: loadTempSaveState re-arms it")
+            // The restore lands a frame or two after the tap: those reads still
+            // show the lost battle and must not bring the popup back.
+            assertFalse(l.onRead(RunOutcome.LOST, null), "$family: a stale read after Retry reopened the popup")
+            assertFalse(l.onRead(RunOutcome.LOST, null), "$family: a stale read after Retry reopened the popup")
+            assertFalse(l.open)
+            // Then the restored battle reads as live, and losing it again ends the run again.
+            assertFalse(l.onRead(null, null))
+            assertTrue(l.onRead(RunOutcome.LOST, null), "$family: the replayed battle can end the run")
+            assertTrue(l.open)
         }
     }
 

@@ -46,9 +46,21 @@ class GameOverLatch(private val family: GameOverFamily) {
     /** GameOverScreen.isDisplayed, inverted (Gen 1 to 3); !tracker.hasRunEnded() (DS). */
     var armed by mutableStateOf(true)
         private set
+    /**
+     * Retry was pressed and the loss has not been seen to go yet. Restoring the
+     * battle-start state lands a frame or two after the tap, so the next read
+     * can still be the old, lost battle. Re-arming on the tap fired the popup
+     * again on that stale read, and Retry had to be pressed twice (Blake,
+     * 2026-09-27). The latch re-arms on the first read without a loss instead.
+     */
+    private var awaitingClear = false
 
     /** One tracker read. True exactly when the popup has just fired, so the caller logs the run once. */
     fun onRead(live: RunOutcome?, liveCause: NdsRunOver?): Boolean {
+        if (awaitingClear) {
+            if (live == null) { awaitingClear = false; armed = true }
+            return false
+        }
         if (live == null || !armed) return false
         outcome = live
         dsCause = liveCause
@@ -73,7 +85,8 @@ class GameOverLatch(private val family: GameOverFamily) {
      */
     fun retried() {
         open = false
-        armed = true
+        armed = false
+        awaitingClear = true
     }
 
     /** A new run: the tracker data starts over, as a new seed's does in the reference. */
@@ -82,5 +95,6 @@ class GameOverLatch(private val family: GameOverFamily) {
         dsCause = null
         open = false
         armed = true
+        awaitingClear = false
     }
 }

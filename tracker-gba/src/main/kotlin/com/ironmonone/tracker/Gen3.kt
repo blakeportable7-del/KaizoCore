@@ -133,8 +133,13 @@ object PokemonDecoder {
             shiny = ((mon.u32(OTID) xor pid xor (pid ushr 16) xor (mon.u32(OTID) ushr 16)) and 0xFFFF) < 8,
             status = mon.u32(layout.status),
             curHp = mon.u16(layout.curHp), maxHp = mon.u16(layout.maxHp),
-            atk = mon.u16(0x5A), def = mon.u16(0x5C), spe = mon.u16(0x5E),
-            spAtk = mon.u16(0x60), spDef = mon.u16(0x62),
+            // The five stats follow max HP in the game's own order: Attack,
+            // Defense, Speed, Sp. Atk, Sp. Def. They were pinned at the vanilla
+            // 0x5A..0x62, so on Nat. Dex (max HP at 0x5C, a 104-byte record)
+            // every stat read 4 bytes early: HP landed in ATK and DEF and each
+            // real stat slid two places down the card (Blake, 2026-09-27).
+            atk = mon.u16(layout.maxHp + 2), def = mon.u16(layout.maxHp + 4), spe = mon.u16(layout.maxHp + 6),
+            spAtk = mon.u16(layout.maxHp + 8), spDef = mon.u16(layout.maxHp + 10),
             exp = plain.u32(g + 4),
         )
     }

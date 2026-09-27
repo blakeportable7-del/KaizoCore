@@ -53,11 +53,13 @@ internal fun GameOverHost(
         onContinue = { latch.close() },
         onRetry = {
             // The reference's loadTempSaveState: back to the moment the battle began.
-            latch.retried()
+            // A failed restore leaves the popup up: closing it would leave the
+            // player in the lost battle with nothing to press.
             if (battleStartState != null) {
                 val ok = retro?.unserializeState(battleStartState) == true
+                if (ok) latch.retried()
                 onStatus(if (ok) "Back to the start of the battle." else "Could not restore the battle.")
-            }
+            } else latch.retried()
         },
         onSaveAttempt = {
             val kind = session.kind

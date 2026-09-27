@@ -57,6 +57,8 @@ add_library(libretrodroid SHARED
         resamplers/resampler.h
         resamplers/linearresampler.h
         resamplers/linearresampler.cpp
+        resamplers/cubicresampler.h
+        resamplers/cubicresampler.cpp
         resamplers/sincresampler.h
         resamplers/sincresampler.cpp
         fpssync.h
