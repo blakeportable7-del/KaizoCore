@@ -15,6 +15,12 @@ Writes into nds/:
                         "male|female" for a gendered one. Then baseFriendship, which MainScreen's
                         friendship bar reads (set only on friendship evolvers; 0 elsewhere).
     evo-names.tsv       PokemonData.EVO_LONGER_NAMES: a type code's long names, one per evolution.
+    ability-desc.tsv    AbilityData.ABILITIES_MASTER_LIST: id, name, the Gen 4 and the Gen 5 description
+                        (GameConfigurator.initAbilityData picks description[GEN - 3] from a pair).
+    item-desc.tsv       ItemData.GEN_5_ITEMS: id, name, description; MainScreen uses this table for the
+                        held item in every game.
+    berries.tsv         ItemData.NATURE_SPECIFIC_BERRIES: a berry and the natures that dislike it.
+    natures.tsv         MiscData.NATURES in index order.
 
 Globals the files touch but that are not loaded here resolve to stand-ins that can be called
 (handing back their first argument, so MiscUtils.readOnly(t) is t) and indexed to any depth.
@@ -36,7 +42,8 @@ lua.execute(
     "STANDIN.__call = function(self, a, ...) if a ~= nil then return a end return proxy() end\n"
     "function isStandIn(v) return type(v) == 'table' and getmetatable(v) == STANDIN end\n"
     "setmetatable(_G, {__index = function(t, k) local v = proxy(); rawset(t, k, v); return v end})\n")
-for f in ("Chars.lua", "LocationData.lua", "TrainerData.lua", "PokemonData.lua", "GameInfo.lua"):
+for f in ("Chars.lua", "LocationData.lua", "TrainerData.lua", "PokemonData.lua", "GameInfo.lua",
+          "AbilityData.lua", "ItemData.lua", "MiscData.lua"):
     lua.execute((c / f).read_text(encoding="utf-8"))
 G = lua.globals()
 standin = G.isStandIn
@@ -134,3 +141,41 @@ with open(out / "evo-names.tsv", "w", encoding="utf-8", newline=nl) as f:
     for code, names in spairs(G.PokemonData.EVO_LONGER_NAMES):
         f.write(tab.join([code, " | ".join(plain(x) for _, x in ipairs(names))]) + nl); n += 1
 print("evo-names", n)
+
+def flat(v):
+    return plain(v).replace(tab, " ").replace(chr(13), " ").replace(nl, " ").strip()
+
+# ability descriptions
+n = 0
+with open(out / "ability-desc.tsv", "w", encoding="utf-8", newline=nl) as f:
+    f.write(tab.join(["# ability id", "name", "Gen 4 description", "Gen 5 description"]) + nl)
+    for _, a in ipairs(G.AbilityData.ABILITIES_MASTER_LIST):
+        d = a["description"]
+        if d is not None and lua_type(d) == "table" and not standin(d):
+            parts = [flat(x) for _, x in ipairs(d)]
+            g4, g5 = parts[0], parts[1] if len(parts) > 1 else parts[0]
+        else:
+            g4 = g5 = flat(d)
+        f.write(tab.join([plain(a["id"]), flat(a["name"]), g4, g5]) + nl); n += 1
+print("ability-desc", n)
+
+# held item descriptions
+n = 0
+with open(out / "item-desc.tsv", "w", encoding="utf-8", newline=nl) as f:
+    f.write(tab.join(["# item id", "name", "description"]) + nl)
+    for k, it in sorted(((k, v) for k, v in G.ItemData.GEN_5_ITEMS.items() if isinstance(k, int)), key=lambda kv: kv[0]):
+        f.write(tab.join([str(k), flat(it["name"]), flat(it["description"])]) + nl); n += 1
+print("item-desc", n)
+
+# nature berries and natures
+n = 0
+with open(out / "berries.tsv", "w", encoding="utf-8", newline=nl) as f:
+    f.write(tab.join(["# berry", "natures that dislike it"]) + nl)
+    for name, natures in spairs(G.ItemData.NATURE_SPECIFIC_BERRIES):
+        f.write(tab.join([name, ",".join(k for k, _ in spairs(natures))]) + nl); n += 1
+print("berries", n)
+with open(out / "natures.tsv", "w", encoding="utf-8", newline=nl) as f:
+    f.write("# nature, index order" + nl)
+    for _, nm in ipairs(G.MiscData.NATURES):
+        f.write(plain(nm) + nl)
+print("natures", len(ipairs(G.MiscData.NATURES)))

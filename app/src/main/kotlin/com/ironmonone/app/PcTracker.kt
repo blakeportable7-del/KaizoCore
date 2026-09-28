@@ -508,6 +508,8 @@ fun PcHeadBlock(
     itemLine: String,
     abilityLine: String,
     onAbilityTap: (() -> Unit)? = null,
+    /** The upper of the two lines: the held item on your own card, the first ability on the enemy's. */
+    onItemTap: (() -> Unit)? = null,
     onNameTap: (() -> Unit)? = null,
     /** TrackerScreen.lua:76: tapping the type icons opens TypeDefensesScreen for this Pokemon. */
     onTypesTap: (() -> Unit)? = null,
@@ -608,7 +610,8 @@ fun PcHeadBlock(
                     // into one "A / B" string is why "Pressure / Inner Focus"
                     // ran off the edge of a 96-unit box.
                     if (itemLine.isNotBlank())
-                        PixText(itemLine, PcRef.FONT, Pc.Gold)
+                        PixText(itemLine, PcRef.FONT, Pc.Gold,
+                            if (onItemTap != null) Modifier.clickable { onItemTap() } else Modifier)
                     if (abilityLine.isNotBlank()) {
                         Spacer(Modifier.height(1.rp))
                         PixText(

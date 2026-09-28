@@ -1254,6 +1254,7 @@ fun PlayScreen(
         r.getGLRetroEvents()
             .filter { it is GLRetroView.GLRetroEvents.FrameRendered }
             .first()
+        ui.coreUp = r   // the view may take its real size now (holdSizeWhileLoading)
         // melonDS dies above 4x (see speedOptions). Persistence made it possible
         // to carry a GBA run's 16x into a DS core, which is that same crash.
         val capped = speed.coerceAtMost(platform.maxTurbo)
@@ -1855,6 +1856,7 @@ fun PlayScreen(
             if (gameActive) androidx.compose.runtime.key(gameKey) {
                 AndroidView(
                     modifier = Modifier.fillMaxSize()
+                        .holdSizeWhileLoading(ui, loading = retro == null || ui.coreUp !== retro)
                         .onGloballyPositioned { gameFrame = it.boundsInWindow() }
                         // DS bottom-screen collapse: scale 2x about the top edge
                         // and clip, so the top screen fills the frame. The core

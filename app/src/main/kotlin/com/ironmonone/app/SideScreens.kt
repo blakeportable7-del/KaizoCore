@@ -30,6 +30,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.unit.constrainWidth
+import androidx.compose.ui.unit.constrainHeight
 import androidx.compose.ui.text.font.FontWeight
 import com.ironmonone.app.gen3.Gen3Button
 import androidx.compose.ui.unit.dp
@@ -224,7 +228,30 @@ class PlayUiState {
     var trackerPeek by mutableStateOf(false)
     /** An action offered with one status message: (that message, the button, what it does). */
     var toastAction by mutableStateOf<Triple<String, String, () -> Unit>?>(null)
+    /** The game view whose core has drawn a frame; until it is the current one, the core is still loading. */
+    var coreUp by mutableStateOf<Any?>(null)
+    /** The game view's size while its core loads (see [holdSizeWhileLoading]). */
+    var heldSize: androidx.compose.ui.unit.IntSize? = null
 }
+
+/**
+ * Keeps the game view at its first size until the core has drawn a frame.
+ *
+ * GLRetroView loads the game inside onSurfaceCreated on the GL thread, and a
+ * DS game is up to 512 MB. A resize meanwhile (the tracker filling in, a
+ * rotation) makes GLSurfaceView.surfaceChanged wait on the main thread for
+ * that thread, and a load past 5 s is an ANR. White 2 hit it on the emulator
+ * (2026-09-28). The view is measured at the held size and clipped to its slot;
+ * once the core is up it takes its real size, and a resize then is instant.
+ */
+fun Modifier.holdSizeWhileLoading(ui: PlayUiState, loading: Boolean): Modifier =
+    this.clipToBounds().layout { measurable, constraints ->
+        val held = if (loading) (ui.heldSize ?: androidx.compose.ui.unit.IntSize(constraints.maxWidth, constraints.maxHeight)
+            .takeIf { constraints.hasBoundedWidth && constraints.hasBoundedHeight }?.also { ui.heldSize = it })
+        else { ui.heldSize = null; null }
+        val p = measurable.measure(held?.let { androidx.compose.ui.unit.Constraints.fixed(it.width, it.height) } ?: constraints)
+        layout(constraints.constrainWidth(p.width), constraints.constrainHeight(p.height)) { p.place(0, 0) }
+    }
 
 /** A new-run failure we raised ourselves, whose message is already plain copy. */
 class RunSetupProblem(message: String) : Exception(message)

@@ -167,6 +167,8 @@ private fun EnemyCard(
     routeName: String? = null,
     team: List<Boolean> = emptyList(),
     onMoveInfo: ((PcMove) -> Unit)? = null,
+    /** TrackerScreen.lua AbilityUpper (1) and AbilityLower (2): the ability that line shows, or the notepad. */
+    onAbilityLine: ((Int) -> Unit)? = null,
     /** The species' learnset levels from the ROM, for the move count. */
     moveLevels: List<Int> = emptyList(),
     moveCtx: MoveContext? = null,
@@ -205,6 +207,8 @@ private fun EnemyCard(
                 revealedAbility != null -> "?"
                 else -> "---"
             },
+            onItemTap = onAbilityLine?.let { cb -> { cb(1) } },
+            onAbilityTap = onAbilityLine?.let { cb -> { cb(2) } },
             sprite = spriteFor(e.species),
             iconSpecies = e.species,
             evo = e.evo,
@@ -580,6 +584,15 @@ fun TrackerPanel(
                         rand = state.randomized,
                         catchText = state.catchPercent?.takeIf { state.isWildBattle && TrackerOptions.showCatchRate }?.let { "~ $it%  to catch" },
                         onCatchTap = onCatchRates,
+                        onAbilityLine = { line ->
+                            // canShowUnknownAbilities: the species' two possible abilities;
+                            // otherwise the tracked ones. Nothing there opens the notepad.
+                            val name = if (InfoRules.canShowAbilities(state.randomized))
+                                enemy.abilityGuess.split(" / ").getOrNull(line - 1)?.trim()
+                            else if (line == 1) revealedEnemyAbility else revealedEnemyAbility2
+                            if (name.isNullOrBlank() || name == "?" || name == "-" || name == "---") onEditNote()
+                            else info = Triple(name, "Ability", onAbilityDescription?.invoke(name))
+                        },
                         onMoveInfo = { mv ->
                             moveInfo = detailOf(mv, onMoveDescription?.invoke(mv.id), noRomData = moveRowFor(mv.id)?.let { it.pp == 0 && (it.power ?: 0) == 0 } == true)
                         })

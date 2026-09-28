@@ -104,6 +104,35 @@ object NdsLogData {
         return (if (female && parts.size > 1) parts[1] else parts[0]).trim()
     }
 
+    private val abilityDesc: Map<Int, List<String>> by lazy {
+        table("ability-desc.tsv").filter { it.size >= 2 }.associate { (it[0].toIntOrNull() ?: -1) to it }
+    }
+
+    /** AbilityData's description, Gen 4 or Gen 5 wording (GameConfigurator.initAbilityData). */
+    fun abilityDescription(abilityId: Int, gen: Int): String =
+        abilityDesc[abilityId]?.getOrNull(if (gen >= 5) 3 else 2)?.trim().orEmpty()
+
+    private val itemDesc: Map<Int, List<String>> by lazy {
+        table("item-desc.tsv").filter { it.size >= 2 }.associate { (it[0].toIntOrNull() ?: -1) to it }
+    }
+    private val berryHaters: Map<String, Set<String>> by lazy {
+        table("berries.tsv").filter { it.size >= 2 }.associate { it[0] to it[1].split(',').map(String::trim).toSet() }
+    }
+    private val natureNames: List<String> by lazy { table("natures.tsv").mapNotNull { it.firstOrNull()?.trim() } }
+
+    /**
+     * MainScreen.setUpMainPokemonInfo: ItemData.GEN_5_ITEMS[heldItem].description, and for a
+     * nature berry (readNatureSpecificBerry) " Your Pokémon will dislike this." or " Yum!".
+     */
+    fun heldItemDescription(itemId: Int, nature: Int): String {
+        val row = itemDesc[itemId] ?: return ""
+        var d = row.getOrNull(2)?.trim().orEmpty()
+        berryHaters[row.getOrNull(1)?.trim().orEmpty()]?.let { haters ->
+            d += if (natureNames.getOrNull(nature) in haters) " Your Pok\u00E9mon will dislike this." else " Yum!"
+        }
+        return d
+    }
+
     /** PokemonData.baseFriendship, which the reference sets only on friendship evolvers; 0 elsewhere ("or 0"). */
     fun baseFriendship(nationalId: Int): Int = evoRows[nationalId]?.getOrNull(3)?.trim()?.toIntOrNull() ?: 0
 

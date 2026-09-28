@@ -114,6 +114,9 @@ private fun NdsPartyCard(
     p: NdsTrackedMon,
     healPercent: Int = -1,
     healCount: Int = 0,
+    /** MainScreen's hover text on your ability and held item; a tap on a phone. */
+    onInfo: ((String, String, String) -> Unit)? = null,
+    gen: Int = 4,
 ) {
     val m = p.mon
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -129,6 +132,10 @@ private fun NdsPartyCard(
             onTypesTap = p.info?.let { i -> onTypeDefenses?.let { cb -> { cb(p.speciesName, i.type1, i.type2) } } },
             itemLine = p.itemName.takeIf { it != "-" } ?: "",
             abilityLine = p.abilityName,
+            onAbilityTap = onInfo?.let { cb -> { cb(p.abilityName, "Ability",
+                com.ironmonone.tracker.nds.NdsLogData.abilityDescription(m.abilityId, gen)) } },
+            onItemTap = onInfo?.takeIf { p.itemName != "-" }?.let { cb -> { cb(p.itemName, "Held item",
+                com.ironmonone.tracker.nds.NdsLogData.heldItemDescription(m.heldItem, m.nature)) } },
             evo = ndsEvoLabel(m, own = true),
             levelPrefix = "Lv. ",
             sprite = sprite,
@@ -360,6 +367,8 @@ fun NdsTrackerPanel(
     // Same reference canvas as the GBA panel. Without it this panel would keep
     // the shared boxes' new REFERENCE-pixel sizes at 1dp each, i.e. the right
     // proportions at the wrong scale - the two trackers must not drift apart.
+    var dsInfo by remember { mutableStateOf<Triple<String, String?, String?>?>(null) }
+    dsInfo?.let { (title, sub, body) -> PcInfoDialog(title, sub, body?.ifBlank { null }) { dsInfo = null } }
     PcCanvas(modifier.fillMaxWidth()) {
       Column(Modifier.fillMaxWidth().background(Pc.Page).padding(PcRef.MARGIN.rp)) {
           // The reference's gear sits at the top of the tracker screen; SETUP is its NavigationMenu.ButtonSetup.
@@ -411,7 +420,9 @@ fun NdsTrackerPanel(
                 state.party.forEachIndexed { i, p ->
                     NdsPartyCard(onMoveHistory = onMoveHistory, onTypeDefenses = onTypeDefenses, p,
                         healPercent = if (i == 0) state.healPercent else -1,
-                        healCount = state.healCount)
+                        healCount = state.healCount,
+                        onInfo = { t, sub, body -> dsInfo = Triple(t, sub, body) },
+                        gen = if (state.badgeSet.startsWith("BW")) 5 else 4)
                 }
                 PcCoverage(coverage, coverage.values.sumOf { it.size })
                 PcCarousel(

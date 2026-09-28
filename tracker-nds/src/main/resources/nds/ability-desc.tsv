@@ -1,0 +1,166 @@
+# ability id	name	Gen 4 description	Gen 5 description
+0	---		
+1	Stench	Helps repel wild Pokémon.	Has a 10% chance of making target Pokémon flinch with each hit.
+2	Drizzle	Summons rain that lasts indefinitely upon entering battle.	Summons rain that lasts indefinitely upon entering battle.
+3	Speed Boost	Raises Speed one stage after each turn.	Raises Speed one stage after each turn.
+4	Battle Armor	Protects against critical hits.	Protects against critical hits.
+5	Sturdy	Prevents OHKO moves like Guillotine from working.	Prevents being KOed from full HP, and this includes moves such as Guillotine and Sheer Cold.
+6	Damp	Prevents Selfdestruct, Explosion, and Aftermath from working while the Pokémon is in battle.	Prevents Selfdestruct, Explosion, and Aftermath from working while the Pokémon is in battle.
+7	Limber	Prevents paralysis.	Prevents paralysis.
+8	Sand Veil	Increases evasion to 1.25x during a sandstorm. Protects against sandstorm damage.	Increases evasion to 1.25x during a sandstorm. Protects against sandstorm damage.
+9	Static	Has a 30% chance of paralyzing attacking Pokémon on contact.	Has a 30% chance of paralyzing attacking Pokémon on contact.
+10	Volt Absorb	Absorbs electric moves, healing for 1/4 max HP.	Absorbs electric moves, healing for 1/4 max HP.
+11	Water Absorb	Absorbs water moves, healing for 1/4 max HP.	Absorbs water moves, healing for 1/4 max HP.
+12	Oblivious	Prevents infatuation and protects against Captivate.	Prevents infatuation and protects against Captivate.
+13	Cloud Nine	Negates all effects of weather, but does not prevent the weather itself.	Negates all effects of weather, but does not prevent the weather itself.
+14	Compoundeyes	Increases moves' accuracy to 1.3x.	Increases moves' accuracy to 1.3x.
+15	Insomnia	Prevents sleep.	Prevents sleep.
+16	Color Change	Changes type to match when hit by a damaging move.	Changes type to match when hit by a damaging move.
+17	Immunity	Prevents poison.	Prevents poison.
+18	Flash Fire	Protects against fire moves. Once one has been blocked, the Pokémon's own fire moves inflict 1.5x damage until it leaves battle.	Protects against fire moves. Once one has been blocked, the Pokémon's own fire moves inflict 1.5x damage until it leaves battle.
+19	Shield Dust	Protects against incoming moves' extra effects.	Protects against incoming moves' extra effects.
+20	Own Tempo	Prevents confusion.	Prevents confusion.
+21	Suction Cups	Prevents being forced out of battle by other Pokémon's moves.	Prevents being forced out of battle by other Pokémon's moves or items.
+22	Intimidate	Lowers opponents' Attack one stage upon entering battle.	Lowers opponents' Attack one stage upon entering battle.
+23	Shadow Tag	Prevents opponents from fleeing or switching out.	Prevents opponents from fleeing or switching out.
+24	Rough Skin	Damages attacking Pokémon for 1/8 their max HP on contact.	Damages attacking Pokémon for 1/8 their max HP on contact.
+25	Wonder Guard	Protects against damaging moves that are not super effective.	Protects against damaging moves that are not super effective.
+26	Levitate	Evades ground moves.	Evades ground moves.
+27	Effect Spore	Has a 30% chance of inflcting either paralysis, poison, or sleep on attacking Pokémon on contact.	Has a 30% chance of inflcting either paralysis, poison, or sleep on attacking Pokémon on contact.
+28	Synchronize	Copies burns, paralysis, and poison received onto the Pokémon that inflicted them.	Copies burns, paralysis, and poison received onto the Pokémon that inflicted them.
+29	Clear Body	Prevents stats from being lowered by other Pokémon.	Prevents stats from being lowered by other Pokémon.
+30	Natural Cure	Cures any major status ailment upon switching out or completing a battle.	Cures any major status ailment upon switching out or completing a battle.
+31	Lightningrod	Redirects single-target electric moves to this Pokémon where possible.	Redirects electric moves to this Pokémon and absorbs them, raising Special Attack one stage.
+32	Serene Grace	Doubles the chance of moves' extra effects occurring.	Doubles the chance of moves' extra effects occurring.
+33	Swift Swim	Doubles Speed during rain.	Doubles Speed during rain.
+34	Chlorophyll	Doubles Speed during strong sunlight.	Doubles Speed during strong sunlight.
+35	Illuminate	Doubles the wild encounter rate.	Doubles the wild encounter rate.
+36	Trace	Copies an opponent's ability upon entering battle.	Copies an opponent's ability upon entering battle.
+37	Huge Power	Doubles Attack in battle.	Doubles Attack in battle.
+38	Poison Point	Has a 30% chance of poisoning attacking Pokémon on contact.	Has a 30% chance of poisoning attacking Pokémon on contact.
+39	Inner Focus	Prevents flinching.	Prevents flinching.
+40	Magma Armor	Prevents freezing.	Prevents freezing.
+41	Water Veil	Prevents burns.	Prevents burns.
+42	Magnet Pull	Prevents steel opponents from fleeing or switching out.	Prevents steel opponents from fleeing or switching out.
+43	Soundproof	Protects against sound-based moves.	Protects against sound-based moves.
+44	Rain Dish	Heals for 1/16 max HP after each turn during rain.	Heals for 1/16 max HP after each turn during rain.
+45	Sand Stream	Summons a sandstorm that lasts indefinitely upon entering battle.	Summons a sandstorm that lasts indefinitely upon entering battle.
+46	Pressure	Increases the PP cost of moves targeting the Pokémon by one.	Increases the PP cost of moves targeting the Pokémon by one.
+47	Thick Fat	Halves damage from fire and ice moves.	Halves damage from fire and ice moves.
+48	Early Bird	Makes sleep pass twice as quickly.	Makes sleep pass twice as quickly.
+49	Flame Body	Has a 30% chance of burning attacking Pokémon on contact.	Has a 30% chance of burning attacking Pokémon on contact.
+50	Run Away	Ensures success fleeing from wild battles.	Ensures success fleeing from wild battles.
+51	Keen Eye	Prevents Accuracy from being lowered.	Prevents Accuracy from being lowered.
+52	Hyper Cutter	Prevents Attack from being lowered by other Pokémon.	Prevents Attack from being lowered by other Pokémon.
+53	Pickup	10% chance to pick up an item after battle.	Picks up other Pokémon's used and Flung held items. May also pick up an item after battle.
+54	Truant	Skips every second turn.	Skips every second turn.
+55	Hustle	Strengthens physical moves to inflict 1.5x damage, but decreases their Accuracy to 0.8x.	Strengthens physical moves to inflict 1.5x damage, but decreases their Accuracy to 0.8x.
+56	Cute Charm	Has a 30% chance of infatuating attacking Pokémon on contact.	Has a 30% chance of infatuating attacking Pokémon on contact.
+57	Plus	Increases Special Attack to 1.5x when a friendly Pokémon has Minus.	Increases Special Attack to 1.5x when a friendly Pokémon has Plus or Minus.
+58	Minus	Increases Special Attack to 1.5x when a friendly Pokémon has Plus.	Increases Special Attack to 1.5x when a friendly Pokémon has Plus or Minus.
+59	Forecast	Changes Castform's type and form to match the weather.	Changes Castform's type and form to match the weather.
+60	Sticky Hold	Prevents a held item from being removed by other Pokémon.	Prevents a held item from being removed by other Pokémon.
+61	Shed Skin	Has a 33% chance of curing any major status ailment after each turn.	Has a 33% chance of curing any major status ailment after each turn.
+62	Guts	Increases Attack to 1.5x with a major status ailment.	Increases Attack to 1.5x with a major status ailment.
+63	Marvel Scale	Increases Defense to 1.5x with a major status ailment.	Increases Defense to 1.5x with a major status ailment.
+64	Liquid Ooze	Damages opponents using leeching moves for as much as they would heal.	Damages opponents using leeching moves for as much as they would heal.
+65	Overgrow	Strengthens grass moves to inflict 1.5x damage at 1/3 max HP or less.	Strengthens grass moves to inflict 1.5x damage at 1/3 max HP or less.
+66	Blaze	Strengthens fire moves to inflict 1.5x damage at 1/3 max HP or less.	Strengthens fire moves to inflict 1.5x damage at 1/3 max HP or less.
+67	Torrent	Strengthens water moves to inflict 1.5x damage at 1/3 max HP or less.	Strengthens water moves to inflict 1.5x damage at 1/3 max HP or less.
+68	Swarm	Strengthens bug moves to inflict 1.5x damage at 1/3 max HP or less.	Strengthens bug moves to inflict 1.5x damage at 1/3 max HP or less.
+69	Rock Head	Protects against recoil damage.	Protects against recoil damage.
+70	Drought	Summons strong sunlight that lasts indefinitely upon entering battle.	Summons strong sunlight that lasts indefinitely upon entering battle.
+71	Arena Trap	Prevents opponents from fleeing or switching out. Eluded by flying-types and Pokémon in the air.	Prevents opponents from fleeing or switching out. Eluded by flying-types and Pokémon in the air.
+72	Vital Spirit	Prevents sleep.	Prevents sleep.
+73	White Smoke	Prevents stats from being lowered by other Pokémon.	Prevents stats from being lowered by other Pokémon.
+74	Pure Power	Doubles Attack in battle.	Doubles Attack in battle.
+75	Shell Armor	Protects against critical hits.	Protects against critical hits.
+76	Air Lock	Negates all effects of weather, but does not prevent the weather itself.	Negates all effects of weather, but does not prevent the weather itself.
+77	Tangled Feet	Doubles evasion when confused.	Doubles evasion when confused.
+78	Motor Drive	Absorbs electric moves, raising Speed one stage.	Absorbs electric moves, raising Speed one stage.
+79	Rivalry	Increases damage inflicted to 1.25x against Pokémon of the same gender, but decreases damage to 0.75x against the opposite gender.	Increases damage inflicted to 1.25x against Pokémon of the same gender, but decreases damage to 0.75x against the opposite gender.
+80	Steadfast	Raises Speed one stage upon flinching.	Raises Speed one stage upon flinching.
+81	Snow Cloak	Increases Evasion to 1.25x during hail. Protects against hail damage.	Increases Evasion to 1.25x during hail. Protects against hail damage.
+82	Gluttony	Makes the Pokémon eat any held Berry triggered by low HP below 1/2 its max HP.	Makes the Pokémon eat any held Berry triggered by low HP below 1/2 its max HP.
+83	Anger Point	Raises Attack to the maximum of six stages upon receiving a critical hit.	Raises Attack to the maximum of six stages upon receiving a critical hit.
+84	Unburden	Doubles Speed upon using or losing a held item.	Doubles Speed upon using or losing a held item.
+85	Heatproof	Halves damage from fire moves and burns.	Halves damage from fire moves and burns.
+86	Simple	Doubles the effectivness of stat modifiers, but not the stat modifiers themselves.	Doubles all stat modifiers, whether positive or negative.
+87	Dry Skin	Causes 1/8 max HP in damage each turn during strong sunlight, but heals for 1/8 max HP during rain. Increases damage from fire moves to 1.25x, but absorbs water moves, healing for 1/4 max HP.	Causes 1/8 max HP in damage each turn during strong sunlight, but heals for 1/8 max HP during rain. Increases damage from fire moves to 1.25x, but absorbs water moves, healing for 1/4 max HP.
+88	Download	Raises the Attack stat corresponding to the opponents' weaker Defense one stage upon entering battle.	Raises the Attack stat corresponding to the opponents' weaker Defense one stage upon entering battle.
+89	Iron Fist	Strengthens punch-based moves to 1.2x their power.	Strengthens punch-based moves to 1.2x their power.
+90	Poison Heal	Heals for 1/8 max HP after each turn when poisoned in place of damage.	Heals for 1/8 max HP after each turn when poisoned in place of damage.
+91	Adaptability	Increases the same-type attack bonus from 1.5x to 2x.	Increases the same-type attack bonus from 1.5x to 2x.
+92	Skill Link	Extends two-to-five-hit moves to their full length every time.	Extends two-to-five-hit moves and triple kick to their full length every time.
+93	Hydration	Cures any major status ailment after each turn during rain.	Cures any major status ailment after each turn during rain.
+94	Solar Power	Increases Special Attack to 1.5x but costs 1/8 max HP after each turn during strong sunlight.	Increases Special Attack to 1.5x but costs 1/8 max HP after each turn during strong sunlight.
+95	Quick Feet	Increases Speed to 1.5x with a major status ailment.	Increases Speed to 1.5x with a major status ailment.
+96	Normalize	Makes the Pokémon's moves all act normal-type.	Makes the Pokémon's moves all act normal-type.
+97	Sniper	Strengthens critical hits to inflict 3x damage rather than 2x.	Strengthens critical hits to inflict 3x damage rather than 2x.
+98	Magic Guard	Protects against damage not directly caused by a move.	Protects against damage not directly caused by a move.
+99	No Guard	Ensures all moves used by and against the Pokémon hit.	Ensures all moves used by and against the Pokémon hit.
+100	Stall	Makes the Pokémon move last within its move's priority bracket.	Makes the Pokémon move last within its move's priority bracket.
+101	Technician	Strengthens moves of 60 base power or less to 1.5x their power.	Strengthens moves of 60 base power or less to 1.5x their power.
+102	Leaf Guard	Protects against major status ailments during strong sunlight.	Protects against major status ailments during strong sunlight.
+103	Klutz	Prevents the effects of held items.	Prevents the effects of held items.
+104	Mold Breaker	Bypasses targets' abilities if they could hinder or prevent a move.	Bypasses targets' abilities if they could hinder or prevent a move.
+105	Super Luck	Raises moves' critical hit rates one stage.	Raises moves' critical hit rates one stage.
+106	Aftermath	Damages the attacker for 1/4 its max HP when knocked out by a contact move.	Damages the attacker for 1/4 its max HP when knocked out by a contact move.
+107	Anticipation	Notifies all trainers upon entering battle if an opponent has a super-effective move, self destruct, explosion, or a one-hit KO move.	Notifies all trainers upon entering battle if an opponent has a super-effective move, self destruct, explosion, or a one-hit KO move.
+108	Forewarn	Reveals the opponents' strongest move upon entering battle.	Reveals the opponents' strongest move upon entering battle.
+109	Unaware	Ignores other Pokémon's stat modifiers for damage and Accuracy calculation.	Ignores other Pokémon's stat modifiers for damage and Accuracy calculation.
+110	Tinted Lens	Doubles damage inflicted with not-very-effective moves.	Doubles damage inflicted with not-very-effective moves.
+111	Filter	Decreases damage taken from super-effective moves by 1/4.	Decreases damage taken from super-effective moves by 1/4.
+112	Slow Start	Halves Attack and Speed for five turns upon entering battle.	Halves Attack and Speed for five turns upon entering battle.
+113	Scrappy	Lets the Pokémon's normal and fighting moves hit ghost Pokémon.	Lets the Pokémon's normal and fighting moves hit ghost Pokémon.
+114	Storm Drain	Redirects single-target water moves to this Pokémon.	Redirects single-target water moves to this Pokémon and absorbs them, raising Special Attack one stage.
+115	Ice Body	Heals for 1/16 max HP after each turn during hail. Protects against hail damage.	Heals for 1/16 max HP after each turn during hail. Protects against hail damage.
+116	Solid Rock	Decreases damage taken from super-effective moves by 1/4.	Decreases damage taken from super-effective moves by 1/4.
+117	Snow Warning	Summons hail that lasts indefinitely upon entering battle.	Summons hail that lasts indefinitely upon entering battle.
+118	Honey Gather	The Pokémon may pick up honey after battle.	The Pokémon may pick up honey after battle.
+119	Frisk	Reveals the opponent's held item upon entering battle.	Reveals the opponent's held item upon entering battle.
+120	Reckless	Strengthens recoil moves to 1.2x their power.	Strengthens recoil moves to 1.2x their power.
+121	Multitype	Changes Arceus's type and form to match its held Plate.	Changes Arceus's type and form to match its held Plate.
+122	Flower Gift	Increases friendly Pokémon's Attack and Special Defense to 1.5x during strong sunlight.	Increases friendly Pokémon's Attack and Special Defense to 1.5x during strong sunlight.
+123	Bad Dreams	Damages sleeping opponents for 1/8 their max HP after each turn.	Damages sleeping opponents for 1/8 their max HP after each turn.
+124	Pickpocket	Steals attacking Pokémon's held items on contact.	Steals attacking Pokémon's held items on contact.
+125	Sheer Force	Strengthens moves with extra effects to 1.3x their power, but prevents their extra effects.	Strengthens moves with extra effects to 1.3x their power, but prevents their extra effects.
+126	Contrary	Inverts stat changes.	Inverts stat changes.
+127	Unnerve	Prevents opposing Pokémon from eating held Berries.	Prevents opposing Pokémon from eating held Berries.
+128	Defiant	Raises Attack two stages upon having any stat lowered.	Raises Attack two stages upon having any stat lowered.
+129	Defeatist	Halves Attack and Special Attack at 50% max HP or less.	Halves Attack and Special Attack at 50% max HP or less.
+130	Cursed Body	Has a 30% chance of Disabling any move that hits the Pokémon.	Has a 30% chance of Disabling any move that hits the Pokémon.
+131	Healer	Has a 30% chance of curing each adjacent ally of any major status ailment after each turn.	Has a 30% chance of curing each adjacent ally of any major status ailment after each turn.
+132	Friend Guard	Decreases all direct damage taken by friendly Pokémon to 0.75x.	Decreases all direct damage taken by friendly Pokémon to 0.75x.
+133	Weak Armor	Raises Speed and lowers Defense by one stage each upon being hit by a physical move.	Raises Speed and lowers Defense by one stage each upon being hit by a physical move.
+134	Heavy Metal	Doubles the Pokémon's weight.	Doubles the Pokémon's weight.
+135	Light Metal	Halves the Pokémon's weight.	Halves the Pokémon's weight.
+136	Multiscale	Halves damage taken from full HP.	Halves damage taken from full HP.
+137	Toxic Boost	Increases Attack to 1.5x when poisoned.	Increases Attack to 1.5x when poisoned.
+138	Flare Boost	Increases Special Attack to 1.5x when burned.	Increases Special Attack to 1.5x when burned.
+139	Harvest	Has a 50% chance of restoring a used Berry after each turn if the Pokémon has held no items in the meantime.	Has a 50% chance of restoring a used Berry after each turn if the Pokémon has held no items in the meantime.
+140	Telepathy	Protects against friendly Pokémon's damaging moves.	Protects against friendly Pokémon's damaging moves.
+141	Moody	Raises a random stat two stages and lowers another one stage after each turn.	Raises a random stat two stages and lowers another one stage after each turn.
+142	Overcoat	Protects against damage from weather.	Protects against damage from weather.
+143	Poison Touch	Has a 30% chance of poisoning target Pokémon upon contact.	Has a 30% chance of poisoning target Pokémon upon contact.
+144	Regenerator	Heals for 1/3 max HP upon switching out.	Heals for 1/3 max HP upon switching out.
+145	Big Pecks	Prevents Defense from being lowered.	Prevents Defense from being lowered.
+146	Sand Rush	Doubles Speed during a sandstorm. Protects against sandstorm damage.	Doubles Speed during a sandstorm. Protects against sandstorm damage.
+147	Wonder Skin	Lowers incoming non-damaging moves' base accuracy to exactly 50%.	Lowers incoming non-damaging moves' base accuracy to exactly 50%.
+148	Analytic	Strengthens moves to 1.3x their power when moving last.	Strengthens moves to 1.3x their power when moving last.
+149	Illusion	Takes the appearance of the last conscious party Pokémon upon being sent out until hit by a damaging move.	Takes the appearance of the last conscious party Pokémon upon being sent out until hit by a damaging move.
+150	Imposter	Transforms upon entering battle.	Transforms upon entering battle.
+151	Infiltrator	Bypasses Light Screen, Reflect, and Safeguard.	Bypasses Light Screen, Reflect, and Safeguard.
+152	Mummy	Changes attacking Pokémon's abilities to Mummy on contact.	Changes attacking Pokémon's abilities to Mummy on contact.
+153	Moxie	Raises Attack one stage upon KOing a Pokémon.	Raises Attack one stage upon KOing a Pokémon.
+154	Justified	Raises Attack one stage upon taking damage from a dark move.	Raises Attack one stage upon taking damage from a dark move.
+155	Rattled	Raises Speed one stage upon being hit by a dark, ghost, or bug move.	Raises Speed one stage upon being hit by a dark, ghost, or bug move.
+156	Magic Bounce	Reflects most non-damaging moves back at their user.	Reflects most non-damaging moves back at their user.
+157	Sap Sipper	Absorbs grass moves, raising Attack one stage.	Absorbs grass moves, raising Attack one stage.
+158	Prankster	Raises non-damaging moves' priority by one stage.	Raises non-damaging moves' priority by one stage.
+159	Sand Force	Strengthens rock, ground, and steel moves to 1.3x their power during a sandstorm. Protects against sandstorm damage.	Strengthens rock, ground, and steel moves to 1.3x their power during a sandstorm. Protects against sandstorm damage.
+160	Iron Barbs	Damages attacking Pokémon for 1/8 their max HP on contact.	Damages attacking Pokémon for 1/8 their max HP on contact.
+161	Zen Mode	Changes Darmanitan's form after each turn depending on its HP: Zen Mode below 50% max HP, and Standard Mode otherwise.	Changes Darmanitan's form after each turn depending on its HP: Zen Mode below 50% max HP, and Standard Mode otherwise.
+162	Victory Star	Increases moves' accuracy to 1.1x for friendly Pokémon.	Increases moves' accuracy to 1.1x for friendly Pokémon.
+163	Turboblaze	Bypasses targets' abilities if they could hinder or prevent moves.	Bypasses targets' abilities if they could hinder or prevent moves.
+164	Teravolt	Bypasses targets' abilities if they could hinder or prevent moves.	Bypasses targets' abilities if they could hinder or prevent moves.

@@ -1,0 +1,608 @@
+# item id	name	description
+0	---	
+1	Master Ball	Catches a wild Pokémon every time.
+2	Ultra Ball	Tries to catch a wild Pokemon. Success rate is 2x.
+3	Great Ball	Tries to catch a wild Pokemon. Success rate is 1.5x.
+4	Poke Ball	Tries to catch a wild Pokemon.
+5	Safari Ball	Tries to catch a wild Pokémon in the Great Marsh or Safari Zone. Success rate is 1.5x.
+6	Net Ball	Tries to catch a wild Pokemon. Success rate is 3x for water and bug Pokemon.
+7	Dive Ball	Tries to catch a wild Pokemon. Success rate is 3.5x when underwater, fishing, or surfing.
+8	Nest Ball	Tries to catch a wild Pokemon. Success rate is 3.9x for level 1 Pokemon, and drops steadily to 1x at level 30.
+9	Repeat Ball	Tries to catch a wild Pokemon. Success rate is 3x for previously-caught Pokemon.
+10	Timer Ball	Tries to catch a wild Pokemon. Success rate increases by 0.1x (Gen V: 0.3x) every turn, to a max of 4x.
+11	Luxury Ball	Tries to catch a wild Pokemon. Caught Pokémon start with 200 happiness.
+12	Premier Ball	Tries to catch a wild Pokemon.
+13	Dusk Ball	Tries to catch a wild Pokemon. Success rate is 3.5x at night and in caves.
+14	Heal Ball	Tries to catch a wild Pokemon. Caught Pokémon are immediately healed.
+15	Quick Ball	Tries to catch a wild Pokemon. Success rate is 4x (Gen V: 5x), but only on the first turn.
+16	Cherish Ball	Tries to catch a wild Pokemon.
+17	Potion	Restores 20 HP.
+18	Antidote	Cures poison.
+19	Burn Heal	Cures a burn.
+20	Ice Heal	Cures freezing.
+21	Awakening	Cures sleep.
+22	Paralyze Heal	Cures paralysis.
+23	Full Restore	Restores HP to full and cures any status ailment and confusion.
+24	Max Potion	Restores HP to full.
+25	Hyper Potion	Restores 200 HP.
+26	Super Potion	Restores 50 HP.
+27	Full Heal	Cures any status ailment and confusion.
+28	Revive	Revives with half HP.
+29	Max Revive	Revives with full HP.
+30	Fresh Water	Restores 50 HP.
+31	Soda Pop	Restores 60 HP.
+32	Lemonade	Restores 80 HP.
+33	Moomoo Milk	Restores 100 HP.
+34	Energy Powder	Restores 50 HP, but lowers happiness.
+35	Energy Root	Restores 200 HP, but lowers happiness.
+36	Heal Powder	Cures any status ailment, but lowers happiness.
+37	Revival Herb	Revives with full HP, but lowers happiness.
+38	Ether	Restores 10 PP for one move.
+39	Max Ether	Restores PP to full for one move.
+40	Elixir	Restores 10 PP for each move.
+41	Max Elixir	Restores PP to full for each move.
+42	Lava Cookie	Cures any status ailment and confusion.
+43	Berry Juice	Restores 20 HP.
+44	Sacred Ash	Revives all fainted Pokémon with full HP.
+45	Hp Up	Raises HP effort and happiness.
+46	Protein	Raises Attack effort and happiness.
+47	Iron	Raises Defense effort and happiness.
+48	Carbos	Raises Speed effort and happiness.
+49	Calcium	Raises Special Attack effort and happiness.
+50	Rare Candy	Causes a level-up and raises happiness.
+51	PP Up	Raises a move's max PP by 20%.
+52	Zinc	Raises Special Defense and happiness.
+53	PP Max	Raises a move's max PP by 60%.
+54	Old Gateau	Cures any status ailment and confusion.
+55	Guard Spec	Prevents stat changes in battle for five turns in battle. Raises happiness.
+56	Dire Hit	Increases the chance of a critical hit in battle. Raises happiness.
+57	X Attack	Raises Attack by one stage in battle. Raises happiness.
+58	X Defense	Raises Defense by one stage in battle. Raises happiness.
+59	X Speed	Raises Speed by one stage in battle. Raises happiness.
+60	X Accuracy	Raises accuracy by one stage in battle. Raises happiness.
+61	X Sp-atk	Raises Special Attack by one stage in battle. Raises happiness.
+62	X Sp-def	Raises Special Defense by one stage in battle. Raises happiness.
+63	Poke Doll	Ends a wild battle.
+64	Fluffy Tail	Ends a wild battle.
+65	Blue Flute	Cures sleep.
+66	Yellow Flute	Cures confusion.
+67	Red Flute	Cures attraction.
+68	Black Flute	Halves the wild Pokémon encounter rate.
+69	White Flute	Doubles the wild Pokémon encounter rate.
+70	Shoal Salt	No effect.
+71	Shoal Shell	No effect.
+72	Red Shard	No effect. Can be traded for items or moves.
+73	Blue Shard	No effect. Can be traded for items or moves.
+74	Yellow Shard	No effect. Can be traded for items or moves.
+75	Green Shard	No effect. Can be traded for items or moves.
+76	Super Repel	For 200 steps, prevents wild encounters of level lower than your party's lead Pokemon.
+77	Max Repel	For 250 steps, prevents wild encounters of level lower than your party's lead Pokemon.
+78	Escape Rope	Transports user to the outside entrance of a cave.
+79	Repel	For 100 steps, prevents wild encounters of level lower than your party's lead Pokemon.
+80	Sun Stone	Evolves a Cottonee into Whimsicott, a Gloom into Bellossom, a Petilil into Lilligant, or a Sunkern into Sunflora.
+81	Moon Stone	Evolves a Clefairy into Clefable, a Jigglypuff into Wigglytuff, a Munna into Musharna, a Nidorina into Nidoqueen, a Nidorino into Nidoking, or a Skitty into Delcatty.
+82	Fire Stone	Evolves an Eevee into Flareon, a Growlithe into Arcanine, a Pansear into Simisear, or a Vulpix into Ninetales.
+83	Thunder Stone	Evolves an Eelektrik into Eelektross, an Eevee into Jolteon, or a Pikachu into Raichu.
+84	Water Stone	Evolves an Eevee into Vaporeon, a Lombre into Ludicolo, a Panpour into Simipour, a Poliwhirl into Poliwrath, a Shellder into Cloyster, or a Staryu into Starmie.
+85	Leaf Stone	Evolves an Exeggcute into Exeggutor, a Gloom into Vileplume, a Nuzleaf into Shiftry, a Pansage into Simisage, or a Weepinbell into Victreebel.
+86	Tiny Mushroom	Fire Red and Leaf Green: Trade two for prior Level-up moves. Sell for 250 Pokedollars, or to Hungry Maid for 500 Pokedollars.
+87	Big Mushroom	Fire Red and Leaf Green: Trade for prior Level-up moves. Sell for 2500 Pokedollars, or to Hungry Maid for 5000 Pokedollars.
+88	Pearl	Sell for 700 Pokedollars, or to Ore Collector for 1400 Pokedollars.
+89	Big Pearl	Sell for 3750 Pokedollars, or to Ore Collector for 7500 Pokedollars.
+90	Stardust	Sell for 1000 Pokedollars, or to Ore Collector for 2000 Pokedollars.
+91	Star Piece	Platinum: Trade for one of each color Shard. Black and White: Trade for PP Up. Sell for 4900 Pokedollars, or to Ore Collector for 9800 Pokedollars.
+92	Nugget	Sell for 5000 Pokedollars, or to Ore Collector for 10000 Pokedollars.
+93	Heart Scale	No effect. Can be traded for prior Level-up moves.
+94	Honey	Used to attract Wild Pokémon.
+95	Growth Mulch	Growing time of berries is reduced, but the soil dries out faster.
+96	Damp Mulch	Growing time of berries is increased, but the soil dries out slower.
+97	Stable Mulch	Berries stay on the plant for longer than their usual time.
+98	Gooey Mulch	Berries regrow from dead plants an increased number of times.
+99	Root Fossil	Can be revived into a Lileep.
+100	Claw Fossil	Can be revived into an Anorith.
+101	Helix Fossil	Can be revived into an Omanyte.
+102	Dome Fossil	Can be revived into a Kabuto.
+103	Old Amber	Can be revived into an Aerodactyl.
+104	Armor Fossil	Can be revived into a Shieldon.
+105	Skull Fossil	Can be revived into a Cranidos.
+106	Rare Bone	Sell for 5000 Pokedollars, or to Bone Man for 10000 Pokedollars.
+107	Shiny Stone	Evolves a Minccino into Cinccino, a Roselia into Roserade, or a Togetic into Togekiss.
+108	Dusk Stone	Evolves a Lampent into Chandelure, a Misdreavus into Mismagius, or a Murkrow into Honchkrow.
+109	Dawn Stone	Evolves a male Kirlia into Gallade or a female Snorunt into Froslass.
+110	Oval Stone	Level-up during Day on a Happiny: Holder evolves into Chansey.
+111	Odd Keystone	Use on the tower on Route 209 to encounter Spiritomb if you have at least 32 Underground greetings.
+112	Griseous Orb	Boosts the damage from Giratina's Dragon-type and Ghost-type moves by 20%, and transforms it into Origin Forme.
+116	Douse Drive	Grants Genesect a blue, Water-type Techno Blast.
+117	Shock Drive	Grants Genesect a yellow, Electric-type Techno Blast.
+118	Burn Drive	Grants Genesect a red, Fire-type Techno Blast.
+119	Chill Drive	Grants Genesect a white, Ice-type Techno Blast.
+134	Sweet Heart	Restores 20 HP.
+135	Adamant Orb	Boosts the damage from Dialga's Dragon-type and Steel-type moves by 20%.
+136	Lustrous Orb	Boosts the damage from Palkia's Dragon-type and Water-type moves by 20%.
+137	Greet Mail	Lets a Trainer write a message and send it via Pokémon trade.
+138	Favored Mail	Lets a Trainer write a message and send it via Pokémon trade.
+139	Rsvp Mail	Lets a Trainer write a message and send it via Pokémon trade.
+140	Thanks Mail	Lets a Trainer write a message and send it via Pokémon trade.
+141	Inquiry Mail	Lets a Trainer write a message and send it via Pokémon trade.
+142	Like Mail	Lets a Trainer write a message and send it via Pokémon trade.
+143	Reply Mail	Lets a Trainer write a message and send it via Pokémon trade.
+144	Bridge Mail-s	Lets a Trainer write a message and send it via Pokémon trade.
+145	Bridge Mail-d	Lets a Trainer write a message and send it via Pokémon trade.
+146	Bridge Mail-t	Lets a Trainer write a message and send it via Pokémon trade.
+147	Bridge Mail-v	Lets a Trainer write a message and send it via Pokémon trade.
+148	Bridge Mail-m	Lets a Trainer write a message and send it via Pokémon trade.
+149	Cheri Berry	Consumed when paralyzed to cure paralysis.
+150	Chesto Berry	Consumed when asleep to cure sleep.
+151	Pecha Berry	Consumed when poisoned to cure poison.
+152	Rawst Berry	Consumed when burned to cure a burn.
+153	Aspear Berry	Consumed when frozen to cure frozen.
+154	Leppa Berry	Consumed when a move runs out of PP to restore its PP by 10.
+155	Oran Berry	Consumed at 1/2 max HP to recover 10 HP.
+156	Persim Berry	Consumed when confused to cure confusion.
+157	Lum Berry	Consumed to cure any status condition or confusion.
+158	Sitrus Berry	Consumed at 1/2 max HP to recover 1/4 max HP.
+159	Figy Berry	Consumed at 1/2 max HP to restore 1/8 max HP. Confuses Pokémon that dislike spicy flavor.
+160	Wiki Berry	Consumed at 1/2 max HP to restore 1/8 max HP. Confuses Pokémon that dislike dry flavor.
+161	Mago Berry	Consumed at 1/2 max HP to restore 1/8 max HP. Confuses Pokémon that dislike sweet flavor.
+162	Aguav Berry	Consumed at 1/2 max HP to restore 1/8 max HP. Confuses Pokémon that dislike bitter flavor.
+163	Iapapa Berry	Consumed at 1/2 max HP to restore 1/8 max HP. Confuses Pokémon that dislike sour flavor.
+164	Razz Berry	Used for creating PokeBlocks and Poffins.
+165	Bluk Berry	Used for creating PokeBlocks and Poffins.
+166	Nanab Berry	Used for creating PokeBlocks and Poffins.
+167	Wepear Berry	Used for creating PokeBlocks and Poffins.
+168	Pinap Berry	Used for creating PokeBlocks and Poffins.
+169	Pomeg Berry	Drops HP Effort Values by 10 and raises happiness.
+170	Kelpsy Berry	Drops Attack Effort Values by 10 and raises happiness.
+171	Qualot Berry	Drops Defense Effort Values by 10 and raises happiness.
+172	Hondew Berry	Drops Special Attack Effort Values by 10 and raises happiness.
+173	Grepa Berry	Drops Special Defense Effort Values by 10 and raises happiness.
+174	Tamato Berry	Drops Speed Effort Values by 10 and raises happiness.
+175	Cornn Berry	Used for creating PokeBlocks and Poffins.
+176	Magost Berry	Used for creating PokeBlocks and Poffins.
+177	Rabuta Berry	Used for creating PokeBlocks and Poffins.
+178	Nomel Berry	Used for creating PokeBlocks and Poffins.
+179	Spelon Berry	Used for creating PokeBlocks and Poffins.
+180	Pamtre Berry	Used for creating PokeBlocks and Poffins.
+181	Watmel Berry	Used for creating PokeBlocks and Poffins.
+182	Durin Berry	Used for creating PokeBlocks and Poffins.
+183	Belue Berry	Used for creating PokeBlocks and Poffins.
+184	Occa Berry	Consumed when struck by a super-effective Fire-type attack to halve the damage.
+185	Passho Berry	Consumed when struck by a super-effective Water-type attack to halve the damage.
+186	Wacan Berry	Consumed when struck by a super-effective Electric-type attack to halve the damage.
+187	Rindo Berry	Consumed when struck by a super-effective Grass-type attack to halve the damage.
+188	Yache Berry	Consumed when struck by a super-effective Ice-type attack to halve the damage.
+189	Chople Berry	Consumed when struck by a super-effective Fighting-type attack to halve the damage.
+190	Kebia Berry	Consumed when struck by a super-effective Poison-type attack to halve the damage.
+191	Shuca Berry	Consumed when struck by a super-effective Ground-type attack to halve the damage.
+192	Coba Berry	Consumed when struck by a super-effective Flying-type attack to halve the damage.
+193	Payapa Berry	Consumed when struck by a super-effective Psychic-type attack to halve the damage.
+194	Tanga Berry	Consumed when struck by a super-effective Bug-type attack to halve the damage.
+195	Charti Berry	Consumed when struck by a super-effective Rock-type attack to halve the damage.
+196	Kasib Berry	Consumed when struck by a super-effective Ghost-type attack to halve the damage.
+197	Haban Berry	Consumed when struck by a super-effective Dragon-type attack to halve the damage.
+198	Colbur Berry	Consumed when struck by a super-effective Dark-type attack to halve the damage.
+199	Babiri Berry	Consumed when struck by a super-effective Steel-type attack to halve the damage.
+200	Chilan Berry	Consumed when struck by a Normal-type attack to halve the damage.
+201	Liechi Berry	Consumed at 1/4 max HP to boost Attack.
+202	Ganlon Berry	Consumed at 1/4 max HP to boost Defense.
+203	Salac Berry	Consumed at 1/4 max HP to boost Speed.
+204	Petaya Berry	Consumed at 1/4 max HP to boost Special Attack.
+205	Apicot Berry	Consumed at 1/4 max HP to boost Special Defense.
+206	Lansat Berry	Consumed at 1/4 max HP to boost critical hit ratio by two stages.
+207	Starf Berry	Consumed at 1/4 max HP to boost a random stat by two stages.
+208	Enigma Berry	Consumed when struck by a super-effective attack to restore 1/4 max HP.
+209	Micle Berry	Consumed at 1/4 max HP to boost accuracy of next move by 20%.
+210	Custap Berry	Consumed at 1/4 max HP when using a move to go first.
+211	Jaboca Berry	Consumed to deal 1/8 attacker's max HP when holder is struck by a physical attack.
+212	Rowap Berry	Consumed to deal 1/8 attacker's max HP when holder is struck by a special attack.
+213	BrightPowder	Increases the holder's evasion by 1/9 (11 1/9%).
+214	White Herb	Resets all lowered stats to normal at end of turn. Consumed after use.
+215	Macho Brace	Holder gains double effort values from battles, but has halved Speed in battle.
+216	Exp Share	Half the experience from a battle is split between Pokémon holding this item.
+217	Quick Claw	Holder has a 3/16 (18.75%) chance to move first.
+218	Soothe Bell	Doubles the happiness earned by the holder.
+219	Mental Herb	Consumed to cure infatuation. Gen V: Also removes Taunt, Encore, Torment, Disable, and Cursed Body.
+220	Choice Band	Increases Attack by 50%, but restricts the holder to only one move.
+221	King's Rock	Damaging moves gain a 10% chance to make their target flinch. Traded on a Poliwhirl: Holder evolves into Politoed. Traded on a Slowpoke: Holder evolves into Slowking.
+222	Silver Powder	Bug-Type moves from holder do 20% more damage.
+223	Amulet Coin	Doubles the money earned from a battle. Does not stack with Luck Incense.
+224	Cleanse Tag	Prevents wild encounters of level lower than your party's lead Pokemon.
+225	Soul Dew	Raises Latias and Latios's Special Attack and Special Defense by 50%.
+226	Deep Sea-tooth	Doubles Clamperl's Special Attack. Traded on a Clamperl: Holder evolves into Huntail.
+227	Deep Sea-scale	Doubles Clamperl's Special Defense. Traded on a Clamperl: Holder evolves into Gorebyss.
+228	Smoke Ball	Allows the Holder to escape from any wild battle.
+229	Everstone	Prevents level-based evolution from occuring.
+230	Focus Band	Holder has 10% chance to survive attacks or self-inflicted damage at 1 HP.
+231	Lucky Egg	Increases EXP earned in battle by 50%.
+232	Scope Lens	Raises the holder's critical hit ratio by one stage.
+233	Metal Coat	Steel-Type moves from holder do 20% more damage.
+234	Leftovers	Restores 1/16 (6.25%) holder's max HP at the end of each turn.
+235	Dragon Scale	Traded on a Seadra: Holder evolves into Kingdra.
+236	Light Ball	Doubles Pikachu's Attack and Special Attack. Breed on Pikachu or Raichu: Pichu Egg will have Volt Tackle.
+237	Soft Sand	Ground-Type moves from holder do 20% more damage.
+238	Hard Stone	Rock-Type moves from holder do 20% more damage.
+239	Miracle Seed	Grass-Type moves from holder do 20% more damage.
+240	BlackGlasses	Dark-Type moves from holder do 20% more damage.
+241	Black Belt	Fighting-Type moves from holder do 20% more damage.
+242	Magnet	Electric-Type moves from holder do 20% more damage.
+243	Mystic Water	Water-Type moves from holder do 20% more damage.
+244	Sharp Beak	Flying-Type moves from holder do 20% more damage.
+245	Poison Barb	Poison-Type moves from holder do 20% more damage.
+246	Never Melt-ice	Ice-Type moves from holder do 20% more damage.
+247	Spell Tag	Ghost-Type moves from holder do 20% more damage.
+248	Twisted Spoon	Psychic-Type moves from holder do 20% more damage.
+249	Charcoal	Fire-Type moves from holder do 20% more damage.
+250	Dragon Fang	Dragon-Type moves from holder do 20% more damage.
+251	Silk Scarf	Normal-Type moves from holder do 20% more damage.
+252	Up Grade	Traded on a Porygon: Holder evolves into Porygon2.
+253	Shell Bell	Holder receives 1/8 of the damage it deals when attacking.
+254	Sea Incense	Water-Type moves from holder do 20% more damage. Breeding: Marill or Azumarill beget an Azurill Egg.
+255	Lax Incense	Holder's evasion is increased by 5%. Breeding: Wobbuffet begets a Wynaut Egg.
+256	Lucky Punch	Raises Chansey's critical hit ratio by two stages.
+257	Metal Powder	Raises Ditto's Defense and Special Defense by 50%. The boost is lost after transforming.
+258	Thick Club	Doubles Cubone or Marowak's Attack.
+259	Stick	Raises Farfetch'd's critical hit ratio by two stages.
+260	Red Scarf	Raises the holder's Coolness while in a contest.
+261	Blue Scarf	Raises the holder's Beauty while in a contest.
+262	Pink Scarf	Raises the holder's Cuteness while in a contest.
+263	Green Scarf	Raises the holder's Smartness while in a contest.
+264	Yellow Scarf	Raises the holder's Toughness while in a contest.
+265	Wide Lens	Provides a 1/10 (10%) boost in accuracy to the holder.
+266	Muscle Band	Boosts the damage of physical moves used by the holder by 10%.
+267	Wise Glasses	Boosts the damage of special moves used by the holder by 1/10 (10%).
+268	Expert Belt	Holder's Super Effective moves do 20% extra damage.
+269	Light Clay	Light Screen and Reflect used by the holder last 8 rounds instead of 5.
+270	Life Orb	Holder's moves inflict 30% extra damage, but cost 10% max HP.
+271	Power Herb	Both turns of a two-turn charge move happen at once. Consumed upon use.
+272	Toxic Orb	Inflicts Toxic on the holder at the end of the turn. Activates after Poison damage would occur.
+273	Flame Orb	Inflicts Burn on the holder at the end of the turn. Activates after Burn damage would occur.
+274	Quick Powder	Doubles Ditto's Speed when held. The boost is lost after transforming.
+275	Focus Sash	Holder survives any single-hit attack at 1 HP if at max HP, then the item is consumed.
+276	Zoom Lens	Provides a 1/5 (20%) boost in accuracy if the holder moves after the target.
+277	Metronome	Consectutive uses of the same attack have a cumulative damage boost of 10%. Maximum 100% boost.
+278	Iron Ball	Holder's Speed is halved. Negates all Ground-type immunities, and makes Flying-types take neutral damage from Ground-type moves. Arena Trap. Spikes, and Toxic Spikes affect the holder.
+279	Lagging Tail	Holder moves last in its priority bracket.
+280	Destiny Knot	Infatuates opposing Pokémon when holder is inflicted with infatuation.
+281	Black Sludge	Poison-type holder recovers 1/16 (6.25%) max HP each turn. Non-Poison-Types take 1/8 (12.5%) max HP damage.
+282	Icy Rock	Hail by the holder lasts 8 rounds instead of 5.
+283	Smooth Rock	Sandstorm by the holder lasts 8 rounds instead of 5.
+284	Heat Rock	Sunny Day by the holder lasts 8 rounds instead of 5.
+285	Damp Rock	Rain Dance by the holder lasts 8 rounds instead of 5.
+286	Grip Claw	Holder's multi-turn trapping moves last 5 turns.
+287	Choice Scarf	Increases Speed by 50%, but restricts the holder to only one move.
+288	Sticky Barb	Holder takes 1/8 (12.5%) its max HP at the end of each turn. When the holder is hit by a contact move, the attacking Pokémon takes 1/8 its max HP in damage and receive the item if not holding one.
+289	Power Bracer	Holder gains 4 Attack effort values, but has halved Speed in battle.
+290	Power Belt	Holder gains 4 Defense effort values, but has halved Speed in battle.
+291	Power Lens	Holder gains 4 Special Attack effort values, but has halved Speed in battle.
+292	Power Band	Holder gains 4 Special Defense effort values, but has halved Speed in battle.
+293	Power Anklet	Holder gains 4 Speed effort values, but has halved Speed in battle.
+294	Power Weight	Holder gains 4 HP effort values, but has halved Speed in battle.
+295	Shed Shell	Holder can bypass all trapping effects and switch out. Multi-turn moves still cannot be switched out of.
+296	Big Root	Increases HP recovered from draining moves, Ingrain, and Aqua Ring by 3/10 (30%).
+297	Choice Specs	Increases Special Attack by 50%, but restricts the holder to only one move.
+298	Flame Plate	Fire-Type moves from holder do 20% more damage. Changes Arceus's and Judgment's type to Fire.
+299	Splash Plate	Water-Type moves from holder do 20% more damage. Changes Arceus's and Judgment's type to Water.
+300	Zap Plate	Electric-Type moves from holder do 20% more damage. Changes Arceus's and Judgment's type to Electric.
+301	Meadow Plate	Grass-Type moves from holder do 20% more damage. Changes Arceus's and Judgment's type to Grass.
+302	Icicle Plate	Ice-Type moves from holder do 20% more damage. Changes Arceus's and Judgment's type to Ice.
+303	Fist Plate	Fighting-Type moves from holder do 20% more damage. Changes Arceus's and Judgment's type to Fighting.
+304	Toxic Plate	Posion-Type moves from holder do 20% more damage. Changes Arceus's and Judgment's type to Posion.
+305	Earth Plate	Ground-Type moves from holder do 20% more damage. Changes Arceus's and Judgment's type to Ground.
+306	Sky Plate	Flying-Type moves from holder do 20% more damage. Changes Arceus's and Judgment's type to Flying.
+307	Mind Plate	Psychic-Type moves from holder do 20% more damage. Changes Arceus's and Judgment's type to Psychic.
+308	Insect Plate	Bug-Type moves from holder do 20% more damage. Changes Arceus's and Judgment's type to Bug.
+309	Stone Plate	Rock-Type moves from holder do 20% more damage. Changes Arceus's and Judgment's type to Rock.
+310	Spooky Plate	Ghost-Type moves from holder do 20% more damage. Changes Arceus's and Judgment's type to Ghost.
+311	Draco Plate	Dragon-Type moves from holder do 20% more damage. Changes Arceus's and Judgment's type to Dragon.
+312	Dread Plate	Dark-Type moves from holder do 20% more damage. Changes Arceus's and Judgment's type to Dark.
+313	Iron Plate	Steel-Type moves from holder do 20% more damage. Changes Arceus's and Judgment's type to Steel.
+314	Odd Incense	Psychic-Type moves from holder do 20% more damage. Breeding: Mr. Mime begets a Mime Jr. Egg.
+315	Rock Incense	Rock-Type moves from holder do 20% more damage. Breeding: Sudowoodo begets a Bonsly Egg.
+316	Full Incense	Holder moves last in its priority bracket. Breeding: Snorlax begets a Munchlax Egg.
+317	Wave Incense	Water-Type moves from holder do 20% more damage. Breeding: Mantine begets a Mantyke Egg.
+318	Rose Incense	Grass-Type moves from holder do 20% more damage. Breeding: Roselia or Roserade beget a Budew Egg.
+319	Luck Incense	Doubles the money earned from a battle. Does not stack with Amulet Coin. Breeding: Chansey and Blissey beget a Happiny Egg.
+320	Pure Incense	Prevents wild encounters of level lower than your party's lead Pokemon. Breeding: Chimecho begets a Chingling Egg.
+321	Protector	Traded on a Rhydon: Holder evolves into Rhyperior.
+322	Electirizer	Traded on an Electabuzz: Holder evolves into Electivire.
+323	Magmarizer	Traded on a Magmar: Holder evolves into Magmortar.
+324	Dubious Disc	Traded on a Porygon2: Holder evolves into Porygon-Z.
+325	Reaper Cloth	Traded on a Dusclops: Holder evolves into Dusknoir.
+326	Razor Claw	Raises the holder's critical hit ratio by one stage. Held by a Sneasel while levelling up at night: Holder evolves into Weavile.
+327	Razor Fang	Damaging moves gain a 10% chance to make their target flinch. Held by a Gligar while levelling up: Holder evolves into Gliscor.
+328	TM01	Teaches a move to a compatible Pokemon.
+329	TM02	Teaches a move to a compatible Pokemon.
+330	TM03	Teaches a move to a compatible Pokemon.
+331	TM04	Teaches a move to a compatible Pokemon.
+332	TM05	Teaches a move to a compatible Pokemon.
+333	TM06	Teaches a move to a compatible Pokemon.
+334	TM07	Teaches a move to a compatible Pokemon.
+335	TM08	Teaches a move to a compatible Pokemon.
+336	TM09	Teaches a move to a compatible Pokemon.
+337	TM10	Teaches a move to a compatible Pokemon.
+338	TM11	Teaches a move to a compatible Pokemon.
+339	TM12	Teaches a move to a compatible Pokemon.
+340	TM13	Teaches a move to a compatible Pokemon.
+341	TM14	Teaches a move to a compatible Pokemon.
+342	TM15	Teaches a move to a compatible Pokemon.
+343	TM16	Teaches a move to a compatible Pokemon.
+344	TM17	Teaches a move to a compatible Pokemon.
+345	TM18	Teaches a move to a compatible Pokemon.
+346	TM19	Teaches a move to a compatible Pokemon.
+347	TM20	Teaches a move to a compatible Pokemon.
+348	TM21	Teaches a move to a compatible Pokemon.
+349	TM22	Teaches a move to a compatible Pokemon.
+350	TM23	Teaches a move to a compatible Pokemon.
+351	TM24	Teaches a move to a compatible Pokemon.
+352	TM25	Teaches a move to a compatible Pokemon.
+353	TM26	Teaches a move to a compatible Pokemon.
+354	TM27	Teaches a move to a compatible Pokemon.
+355	TM28	Teaches a move to a compatible Pokemon.
+356	TM29	Teaches a move to a compatible Pokemon.
+357	TM30	Teaches a move to a compatible Pokemon.
+358	TM31	Teaches a move to a compatible Pokemon.
+359	TM32	Teaches a move to a compatible Pokemon.
+360	TM33	Teaches a move to a compatible Pokemon.
+361	TM34	Teaches a move to a compatible Pokemon.
+362	TM35	Teaches a move to a compatible Pokemon.
+363	TM36	Teaches a move to a compatible Pokemon.
+364	TM37	Teaches a move to a compatible Pokemon.
+365	TM38	Teaches a move to a compatible Pokemon.
+366	TM39	Teaches a move to a compatible Pokemon.
+367	TM40	Teaches a move to a compatible Pokemon.
+368	TM41	Teaches a move to a compatible Pokemon.
+369	TM42	Teaches a move to a compatible Pokemon.
+370	TM43	Teaches a move to a compatible Pokemon.
+371	TM44	Teaches a move to a compatible Pokemon.
+372	TM45	Teaches a move to a compatible Pokemon.
+373	TM46	Teaches a move to a compatible Pokemon.
+374	TM47	Teaches a move to a compatible Pokemon.
+375	TM48	Teaches a move to a compatible Pokemon.
+376	TM49	Teaches a move to a compatible Pokemon.
+377	TM50	Teaches a move to a compatible Pokemon.
+378	TM51	Teaches a move to a compatible Pokemon.
+379	TM52	Teaches a move to a compatible Pokemon.
+380	TM53	Teaches a move to a compatible Pokemon.
+381	TM54	Teaches a move to a compatible Pokemon.
+382	TM55	Teaches a move to a compatible Pokemon.
+383	TM56	Teaches a move to a compatible Pokemon.
+384	TM57	Teaches a move to a compatible Pokemon.
+385	TM58	Teaches a move to a compatible Pokemon.
+386	TM59	Teaches a move to a compatible Pokemon.
+387	TM60	Teaches a move to a compatible Pokemon.
+388	TM61	Teaches a move to a compatible Pokemon.
+389	TM62	Teaches a move to a compatible Pokemon.
+390	TM63	Teaches a move to a compatible Pokemon.
+391	TM64	Teaches a move to a compatible Pokemon.
+392	TM65	Teaches a move to a compatible Pokemon.
+393	TM66	Teaches a move to a compatible Pokemon.
+394	TM67	Teaches a move to a compatible Pokemon.
+395	TM68	Teaches a move to a compatible Pokemon.
+396	TM69	Teaches a move to a compatible Pokemon.
+397	TM70	Teaches a move to a compatible Pokemon.
+398	TM71	Teaches a move to a compatible Pokemon.
+399	TM72	Teaches a move to a compatible Pokemon.
+400	TM73	Teaches a move to a compatible Pokemon.
+401	TM74	Teaches a move to a compatible Pokemon.
+402	TM75	Teaches a move to a compatible Pokemon.
+403	TM76	Teaches a move to a compatible Pokemon.
+404	TM77	Teaches a move to a compatible Pokemon.
+405	TM78	Teaches a move to a compatible Pokemon.
+406	TM79	Teaches a move to a compatible Pokemon.
+407	TM80	Teaches a move to a compatible Pokemon.
+408	TM81	Teaches a move to a compatible Pokemon.
+409	TM82	Teaches a move to a compatible Pokemon.
+410	TM83	Teaches a move to a compatible Pokemon.
+411	TM84	Teaches a move to a compatible Pokemon.
+412	TM85	Teaches a move to a compatible Pokemon.
+413	TM86	Teaches a move to a compatible Pokemon.
+414	TM87	Teaches a move to a compatible Pokemon.
+415	TM88	Teaches a move to a compatible Pokemon.
+416	TM89	Teaches a move to a compatible Pokemon.
+417	TM90	Teaches a move to a compatible Pokemon.
+418	TM91	Teaches a move to a compatible Pokemon.
+419	TM92	Teaches a move to a compatible Pokemon.
+420	HM01	Teaches a move to a compatible Pokemon.
+421	HM02	Teaches a move to a compatible Pokemon.
+422	HM03	Teaches a move to a compatible Pokemon.
+423	HM04	Teaches a move to a compatible Pokemon.
+424	HM05	Teaches a move to a compatible Pokemon.
+425	HM06	Teaches a move to a compatible Pokemon.
+428	Explorer Kit	Allows visiting the Underground.
+429	Loot Sack	Carries coal mine loot.
+430	Rule Book	List of battle types and their rules.
+431	Poke Radar	Use to track down rare or shiny Pokemon. 50 steps to recharge.
+432	Point Card	Keeps count of Battle Points earned.
+433	Journal	Records prior significant activities the player took.
+434	Seal Case	Stores Seals that can be applied to Poke Ball capsules.
+435	Fashion Case	Holds Pokémon Accessories for use in Contests.
+436	Seal Bag	Holds ten Seals for Poke Balls.
+437	Pal Pad	Use to record Friend Codes and check your own.
+438	Works Key	Grants access to Valley Windworks.
+439	Old Charm	Trade to Cynthia's grandmother in Celestic Town for HM04 (Surf).
+440	Galactic Key	Grants access to Galactic HQ in Veilstone City.
+441	Red Chain	Used to bind Palkia and Dialga.
+442	Town Map	Use to see the overworld map.
+443	Vs Seeker	Allows rebattling of on-screen trainers. 100 steps to recharge.
+444	Coin Case	Holds coins for the Game Corner.
+445	Old Rod	Used to catch Pokémon in bodies of water.
+446	Good Rod	Used to catch Pokémon in bodies of water.
+447	Super Rod	Used to catch Pokémon in bodies of water.
+448	Sprayduck	Used to water berries.
+449	Poffin Case	Holds Poffins.
+450	Bicycle	Use for fast transit.
+451	Suite Key	Opens a locked building in the Lakeside Resort.
+452	Oaks Letter	Allows access to Seabreak path, Flower Paradise, and Shaymin.
+453	Lunar Wing	Cures sailor's son of nightmares in Canalave City.
+454	Member Card	Allows access to Newmoon Island and Darkrai.
+455	Azure Flute	Allows entry into the Hall of Origin. Unreleased.
+456	Ss Ticket	Ticket for a ship. (RSE: S.S. Tidal LF: S.S. Anne HG: S.S. Aqua)
+457	Contest Pass	Allows participation in Pokémon Contests.
+458	Magma Stone	Magma is sealed inside.
+459	Parcel	Given to the trainer's rival in Jubilife City. Contains Town Maps.
+460	Coupon 1	The first of three tickets used to obtain a Poketch.
+461	Coupon 2	The second of three tickets used to obtain a Poketch.
+462	Coupon 3	The last of three tickets used to obtain a Poketch.
+463	Storage Key	Grants access to the Team Galactic warehouse in Veilstone City.
+464	Secret Potion	Used to heal the Ampharos at the top of Olivine Lighthouse.
+465	Vs Recorder	Records wireless, Wi-Fi, or Battle Frontier battles, and stores points.
+466	Gracidea	Changes an unfrozen Shaymin to Sky Forme in the day.
+467	Secret Key	Gen IV: The key to Rotom's appliance room.
+468	Apricorn Box	Holds Apricorns.
+469	Unown Report	Keeps track of Unown types caught.
+470	Berry Pots	Allows portable berry growing.
+471	Dowsing Machine	Use to find hidden items on the field. AKA Itemfinder.
+472	Blue Card	Keeps track of points from Buena's show.
+473	Slowpoke Tail	A tasty tail that sells for a high price.
+474	Clear Bell	HS: Allows Kimono-girls to summon Ho-oh. C: Summons Suicune to the Tin Tower.
+475	Card Key	HS: Opens doors in the Radio Tower.
+476	Basement Key	HS: Key to the tunnel under Goldenrod City.
+477	Squirt Bottle	Use on Sudowoodo blocking the path on Route 36. Also waters berries.
+478	Red Scale	Trade to Mr. Pokémon for an Exp. Share.
+479	Lost Item	A Poke Doll lost by the Copycat who lives in Saffron City. Trade for a Pass.
+480	Pass	Grants access to ride the Magnet Train between Goldenrod City and Saffron City.
+481	Machine Part	Must be replaced in the Power Plant to power the Magnet Train.
+482	Silver Wing	Summons Lugia to the Whirl Islands.
+483	Rainbow Wing	Summons Ho-Oh at the top of the Bell Tower.
+484	Mystery Egg	Deliver to Professor Elm.
+485	Red Apricorn	Used to make a Level Ball.
+486	Blue Apricorn	Used to make a Lure Ball.
+487	Yellow Apricorn	Used to make a Moon Ball.
+488	Green Apricorn	Used to make a Friend Ball.
+489	Pink Apricorn	Used to make a Love Ball.
+490	White Apricorn	Used to make a Fast Ball.
+491	Black Apricorn	Used to make a Heavy Ball.
+492	Fast Ball	4x effectiveness on Pokémon with 100 or greater base speed. Made from Wht Apricorn.
+493	Level Ball	Success rate based off of fraction target Pokémon is of user's Pokemon. Made from Red Apricorn.
+494	Lure Ball	3x effectiveness while fishing. Made from Blu Apricorn.
+495	Heavy Ball	Has flat bonus or penalty to catch rate depending on weight class of target. Made from Blk Apricorn.
+496	Love Ball	8x effectiveness on opposite sex, same species targets of the Active Pokemon. Made from Pnk Apricorn.
+497	Friend Ball	Caught Pokémon start with 200 happiness. Made from Grn Apricorn.
+498	Moon Ball	4x effectiveness on familes of Pokémon with a Moon Stone evolution. Made from Ylw Apricorn.
+499	Sport Ball	Tries to catch a Pokémon in the Bug-Catching contest in National Park.
+500	Park Ball	Catches Pokémon in the Pal Park every time.
+501	Photo Album	Stores photos from your adventure.
+502	Gb Sounds	Use to listen to GameBoy era audio.
+503	Tidal Bell	Allows Kimono-girls to summon Lugia.
+504	RageCandyBar	Acts as a Potion.
+505	Data Card-01	Records the number of times the trainer has come in first place overall in the Pokeathlon.
+506	Data Card-02	Records the number of times the trainer has come in last place overall in the Pokeathlon.
+507	Data Card-03	Records the number of times the trainer's Pokémon have dashed in the Pokeathlon.
+508	Data Card-04	Records the number of times the trainer's Pokémon have jumped in the Pokeathlon.
+509	Data Card-05	Records the number of times the trainer has come in first in the Pokeathlon Hurdle Dash.
+510	Data Card-06	Records the number of times the trainer has come in first in the Pokeathlon Relay Run.
+511	Data Card-07	Records the number of times the trainer has come in first in the Pokeathlon Pennant Capture.
+512	Data Card-08	Records the number of times the trainer has come in first in the Pokeathlon Block Smash.
+513	Data Card-09	Records the number of times the trainer has come in first in the Pokeathlon Disc Catch.
+514	Data Card-10	Records the number of times the trainer has come in first in the Pokeathlon Snow Throw.
+515	Data Card-11	Records the number of points the trainer has earned in the Pokeathlon.
+516	Data Card-12	Records the number of times the trainer's Pokémon have messed up in the Pokeathlon.
+517	Data Card-13	Records the number of times the trainer's Pokémon have defeated themselves in the Pokeathlon.
+518	Data Card-14	Records the number of times the trainer's Pokémon have tackled in the Pokeathlon.
+519	Data Card-15	Records the number of times the trainer's Pokémon have fallen in the Pokeathlon.
+520	Data Card-16	Records the number of times the trainer has come in first in the Pokeathlon Ring Drop.
+521	Data Card-17	Records the number of times the trainer has come in first in the Pokeathlon Lamp Jump.
+522	Data Card-18	Records the number of times the trainer has come in first in the Pokeathlon Circle Push.
+523	Data Card-19	Records the number of times the trainer has come in first place overall in the Pokeathlon over wirelss.
+524	Data Card-20	Records the number of times the trainer has come in last place overall in the Pokeathlon over wireless.
+525	Data Card-21	Records the number of times the trainer has come in first across all Pokeathlon events.
+526	Data Card-22	Records the number of times the trainer has come in last across all Pokeathlon events.
+527	Data Card-23	Records the number of times the trainer has switched Pokémon in the Pokeathlon.
+528	Data Card-24	Records the number of times the trainer has come in first in the Pokeathlon Goal Roll.
+529	Data Card-25	Records the number of times the trainer's Pokémon received prizes in the Pokeathlon.
+530	Data Card-26	Records the number of times the trainer has instructed Pokémon in the Pokeathlon.
+531	Data Card-27	Records the total time spent in the Pokeathlon.
+532	Jade Orb	Summons Rayquaza to the Embedded Tower.
+533	Lock Capsule	Contains TM95 (Snarl).
+534	Red Orb	Summons Groudon to the Embedded Tower.
+535	Blue Orb	Summons Kyogre to the Embedded Tower.
+536	Enigma Stone	S: Summons Latias H: Summons Latios.
+537	Prism Scale	Traded on a Feebas: Holder evolves into Milotic.
+538	Eviolite	Holder has 1.5x Defense and Special Defense, as long as it's not fully evolved.
+539	Float Stone	Holder has 0.5x weight.
+540	Rocky Helmet	When the holder is hit by a contact move, the attacking Pokémon takes 1/6 its max HP in damage.
+541	Air Balloon	Grants immunity to Ground-type moves, Spikes, and Toxic Spikes. Consumed when the holder takes damage from a move.
+542	Red Card	When the holder takes damage from a move, the opponent switches out for another random party Pokemon. Consumed after use.
+543	Ring Target	Negates the holder's type immunities. Ability immunities are not removed.
+544	Binding Band	Doubles the per-turn damage of multi-turn trapping moves.
+545	Absorb Bulb	Raises the holder's Special Attack by one stage when it takes Water-type damage.
+546	Cell Battery	Raises the holder's Attack by one stage when it takes Electric-type damage.
+547	Eject Button	When the holder takes damage from a move, it switches out for a party Pokémon of the Trainer's choice.
+548	Fire Gem	When the holder uses a damaging fire-type move, the move has 1.5x power and this item is consumed.
+549	Water Gem	When the holder uses a damaging water-type move, the move has 1.5x power and this item is consumed.
+550	Electric Gem	When the holder uses a damaging electric-type move, the move has 1.5x power and this item is consumed.
+551	Grass Gem	When the holder uses a damaging grass-type move, the move has 1.5x power and this item is consumed.
+552	Ice Gem	When the holder uses a damaging ice-type move, the move has 1.5x power and this item is consumed.
+553	Fighting Gem	When the holder uses a damaging fighting-type move, the move has 1.5x power and this item is consumed.
+554	Poison Gem	When the holder uses a damaging poison-type move, the move has 1.5x power and this item is consumed.
+555	Ground Gem	When the holder uses a damaging ground-type move, the move has 1.5x power and this item is consumed.
+556	Flying Gem	When the holder uses a damaging flying-type move, the move has 1.5x power and this item is consumed.
+557	Psychic Gem	When the holder uses a damaging psychic-type move, the move has 1.5x power and this item is consumed.
+558	Bug Gem	When the holder uses a damaging bug-type move, the move has 1.5x power and this item is consumed.
+559	Rock Gem	When the holder uses a damaging rock-type move, the move has 1.5x power and this item is consumed.
+560	Ghost Gem	When the holder uses a damaging ghost-type move, the move has 1.5x power and this item is consumed.
+561	Dragon Gem	When the holder uses a damaging dragon-type move, the move has 1.5x power and this item is consumed.
+562	Dark Gem	When the holder uses a damaging dark-type move, the move has 1.5x power and this item is consumed.
+563	Steel Gem	When the holder uses a damaging steel-type move, the move has 1.5x power and this item is consumed.
+564	Normal Gem	When the holder uses a damaging normal-type move, the move has 1.5x power and this item is consumed.
+565	Health Wing	Increases HP effort by 1.
+566	Muscle Wing	Increases Attack effort by 1.
+567	Resist Wing	Increases Defense effort by 1.
+568	Genius Wing	Increases Special Attack effort by 1.
+569	Clever Wing	Increases Special Defense effort by 1.
+570	Swift Wing	Increases Speed effort by 1.
+571	Pretty Wing	Sell for 100 Pokedollars.
+572	Cover Fossil	Can be revived into a tirtouga.
+573	Plume Fossil	Can be revived into a archen.
+574	Liberty Pass	Allows access to Liberty Garden and Victini.
+575	Pass Orb	Activates Pass Powers.
+576	Dream Ball	Catches Pokémon found in the Dream World.
+577	Poke Toy	Ends a wild battle.
+578	Prop Case	Stores props for the Pokémon Musical.
+579	Dragon Skull	Return to the museum in Nacrene City.
+580	Balm Mushroom	Sell to Hungry Maid for 25000 Pokedollars.
+581	Big Nugget	Sell to Ore Collector for 30000 Pokedollars.
+582	Pearl String	Sell to Ore Collector for 25000 Pokedollars.
+583	Comet Shard	Sell to Ore Collector for 60000 Pokedollars.
+584	Relic Copper	Sell to Villa Owner for 1000 Pokedollars.
+585	Relic Silver	Sell to Villa Owner 5000 Pokedollars.
+586	Relic Gold	Sell to Villa Owner 10000 Pokedollars.
+587	Relic Vase	Sell to Villa Owner 50000 Pokedollars.
+588	Relic Band	Sell to Villa Owner for 100000 Pokedollars.
+589	Relic Statue	Sell to Villa Owner 200000 Pokedollars.
+590	Relic Crown	Sell to Villa Owner for 300000 Pokedollars.
+591	Casteliacone	Cures any status ailment and confusion.
+592	Dire Hit-2	Raises critical hit rate by two stages in battle. Wonder Launcher only.
+593	X Speed-2	Raises Speed by two stages in battle. Wonder Launcher only.
+594	X Sp-atk-2	Raises Special Attack by two stages in battle. Wonder Launcher only.
+595	X Sp-def-2	Raises Special Defense by two stages in battle. Wonder Launcher only.
+596	X Defense-2	Raises Defense by two stages in battle. Wonder Launcher only.
+597	X Attack-2	Raises Attack by two stages in battle. Wonder Launcher only.
+598	X Accuracy-2	Raises accuracy by two stages in battle. Wonder Launcher only.
+599	X Speed-3	Raises Speed by three stages in battle. Wonder Launcher only.
+600	X Sp-atk-3	Raises Special Attack by three stages in battle. Wonder Launcher only.
+601	X Sp-def-3	Raises Special Defense by three stages in battle. Wonder Launcher only.
+602	X Defense-3	Raises Defense by three stages in battle. Wonder Launcher only.
+603	X Attack-3	Raises Attack by three stages in battle. Wonder Launcher only.
+604	X Accuracy-3	Raises accuracy by three stages in battle. Wonder Launcher only.
+605	X Speed-6	Raises Speed by six stages in battle. Wonder Launcher only.
+606	X Sp-atk-6	Raises Special Attack by six stages in battle. Wonder Launcher only.
+607	X Sp-def-6	Raises Special Defense by six stages in battle. Wonder Launcher only.
+608	X Defense-6	Raises Defense by six stages in battle. Wonder Launcher only.
+609	X Attack-6	Raises Attack by six stages in battle. Wonder Launcher only.
+610	X Accuracy-6	Raises accuracy by six stages in battle. Wonder Launcher only.
+611	Ability Urge	Forcibly activates a friendly Pokemon's ability.
+612	Item Drop	Forces a friendly Pokémon to drop its held item.
+613	Item Urge	Forcibly activates a friendly Pokemon's held item.
+614	Reset Urge	Resets a friendly Pokemon's stat changes.
+615	Dire Hit-3	Raises critical hit rate by three stages in battle. Wonder Launcher only.
+616	Light Stone	Summons Reshiram for the final battle against N.
+617	Dark Stone	Summons Zekrom for the final battle against N.
+618	TM93	Teaches a move to a compatible Pokemon.
+619	TM94	Teaches a move to a compatible Pokemon.
+620	TM95	Teaches a move to a compatible Pokemon.
+621	Xtransceiver	Makes four-way video calls.
+622	God Stone	Unknown. Currently unused.
+623	Gram 1	Part of a sidequest to obtain tm89.
+624	Gram 2	Part of a sidequest to obtain tm89.
+625	Gram 3	Part of a sidequest to obtain tm89.
