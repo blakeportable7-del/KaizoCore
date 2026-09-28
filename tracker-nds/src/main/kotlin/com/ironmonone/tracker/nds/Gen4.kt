@@ -97,6 +97,10 @@ object Gen4 {
          *  PSN/BRN/FRZ/PAR/toxic bits - the reference reads it at
          *  PokemonDataReader.lua:75. */
         val status: Long = 0,
+        /** Block A +0x0C (PokemonDataReader IMPORTANT_BLOCK_DATA A {12, friendship}). */
+        val friendship: Int = 0,
+        /** Block B +0x18 bit 1 (alternateForm byte; getBits(byte, 1, 1)): picks a gendered evolution. */
+        val isFemale: Boolean = false,
     )
 
     /**
@@ -182,6 +186,8 @@ object Gen4 {
             shiny = shinyValue < 8,
             nature = if (gen5) blocks.u8(b + 0x19) % 25 else (pid % 25).toInt(),
             isEgg = isEgg,
+            friendship = blocks.u8(a + 0x0C),
+            isFemale = ((blocks.u8(b + 0x18) shr 1) and 1) == 1,
         )
     }
 
@@ -211,6 +217,8 @@ object Gen4 {
         stats: List<Int> = listOf(50, 51, 52, 53, 54),   // atk, def, spe, spAtk, spDef
         gen5: Boolean = false,
         nature: Int = 0,
+        friendship: Int = 0,
+        female: Boolean = false,
     ): ByteArray {
         val blocks = ByteArray(BLOCK_AREA)
         val a = blockOffset(pid, 0)
@@ -221,6 +229,8 @@ object Gen4 {
         blocks.putU16(a + 0x04, otId)
         blocks.putU16(a + 0x06, otSid)
         blocks[a + 0x0D] = abilityId.toByte()
+        blocks[a + 0x0C] = friendship.toByte()
+        if (female) blocks[b + 0x18] = 0x02
         moves.forEachIndexed { i, m -> if (i < 4) blocks.putU16(b + i * 2, m) }
         pp.forEachIndexed { i, v -> if (i < 4) blocks[b + 0x08 + i] = v.toByte() }
         ppUps.forEachIndexed { i, v -> if (i < 4) blocks[b + 0x0C + i] = v.toByte() }

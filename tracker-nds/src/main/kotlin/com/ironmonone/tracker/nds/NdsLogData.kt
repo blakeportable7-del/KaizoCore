@@ -87,12 +87,25 @@ object NdsLogData {
     fun pivotAreas(locationTable: Long): List<String> =
         areaTable.filter { code(it[0]) == locationTable }.sortedBy { it[1].toIntOrNull() ?: 0 }.map { it[2] }
 
-    private val evoTable: Map<Int, String> by lazy {
-        table("evo-methods.tsv").filter { it.size >= 2 }.associate { (it[0].toIntOrNull() ?: 0) to (it.getOrNull(2) ?: "").trim() }
+    private val evoRows: Map<Int, List<String>> by lazy {
+        table("evo-methods.tsv").filter { it.size >= 2 }.associate { (it[0].toIntOrNull() ?: 0) to it }
     }
 
-    /** PokemonData's evolution for a national number: a level ("16"), a type code ("THUNDER"), or "" for none. */
-    fun evoMethod(nationalId: Int): String = evoTable[nationalId] ?: ""
+    /**
+     * PokemonData's evolution for a national number: a level ("16"), a type code ("THUNDER"), or "" for none.
+     * A gendered one (Kirlia, Snorunt, Combee) is "male|female" in the table; this gives the first,
+     * where the reference's log screen prints the raw table.
+     */
+    fun evoMethod(nationalId: Int): String = evoFor(nationalId, female = false)
+
+    /** MainScreen.setUpEvo: evolution[isFemale + 1] for a gendered one. */
+    fun evoFor(nationalId: Int, female: Boolean): String {
+        val parts = (evoRows[nationalId]?.getOrNull(2) ?: "").trim().split('|')
+        return (if (female && parts.size > 1) parts[1] else parts[0]).trim()
+    }
+
+    /** PokemonData.baseFriendship, which the reference sets only on friendship evolvers; 0 elsewhere ("or 0"). */
+    fun baseFriendship(nationalId: Int): Int = evoRows[nationalId]?.getOrNull(3)?.trim()?.toIntOrNull() ?: 0
 
     /** PokemonData.EVO_LONGER_NAMES: a type code's long names, one per evolution. */
     val evoNames: Map<String, List<String>> by lazy {

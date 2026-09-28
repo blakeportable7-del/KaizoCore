@@ -11,7 +11,9 @@ Writes into nds/:
                         (-1 is HeartGold and SoulSilver's spacer before Kanto), pivot types.
     pivot-areas.tsv     LocationData.LOCATION_DATA[code].encounterAreaOrder: the Pivots tab's areas.
     evo-methods.tsv     PokemonData.POKEMON_MASTER_LIST: each species' evolution, a level or a type
-                        code, as PokemonStatScreen labels the evolution it shows. Empty for none.
+                        code, as PokemonStatScreen labels the evolution it shows. Empty for none;
+                        "male|female" for a gendered one. Then baseFriendship, which MainScreen's
+                        friendship bar reads (set only on friendship evolvers; 0 elsewhere).
     evo-names.tsv       PokemonData.EVO_LONGER_NAMES: a type code's long names, one per evolution.
 
 Globals the files touch but that are not loaded here resolve to stand-ins that can be called
@@ -112,11 +114,19 @@ print("pivot-areas", n)
 # evolutions
 n = 0
 with open(out / "evo-methods.tsv", "w", encoding="utf-8", newline=nl) as f:
-    f.write(tab.join(["# national id", "name", "evolution (a level, or a type code; empty for none)"]) + nl)
+    f.write(tab.join(["# national id", "name", "evolution (a level, or a type code; empty for none; male|female where it differs)",
+                      "base friendship (only where the tracker sets one)"]) + nl)
     for i, p in ipairs(G.PokemonData.POKEMON_MASTER_LIST):
         if i < 2:
             continue   # entry 1 is the empty slot for id 0
-        f.write(tab.join([str(i - 1), plain(p["name"]), plain(p["evolution"])]) + nl); n += 1
+        evo = p["evolution"]
+        # A gendered evolution is a {male, female} table that MainScreen.setUpEvo indexes by
+        # isFemale + 1 (Kirlia, Snorunt, Combee). It used to be written as "<Lua table at ...>".
+        if evo is not None and lua_type(evo) == "table" and not standin(evo):
+            evo_text = "|".join(plain(x) for _, x in ipairs(evo))
+        else:
+            evo_text = plain(evo)
+        f.write(tab.join([str(i - 1), plain(p["name"]), evo_text, plain(p["baseFriendship"])]) + nl); n += 1
 print("evo-methods", n)
 n = 0
 with open(out / "evo-names.tsv", "w", encoding="utf-8", newline=nl) as f:

@@ -28,7 +28,12 @@ object EvoText {
      * What goes in the brackets and how it is coloured. The first [highlighted]
      * letters draw green over the rest, which take [tone].
      */
-    data class Label(val text: String, val tone: Tone, val highlighted: Int = 0)
+    data class Label(
+        val text: String, val tone: Tone, val highlighted: Int = 0,
+        /** The DS tracker's friendship bar (IconDrawer.drawFriendshipProgress): the word
+         *  drawn green column by column up to this fraction, not whole letters. */
+        val fill: Float? = null,
+    )
 
     /** English.lua PokemonData.Evolutions abbreviations. A level evolution is just its number. */
     private val ABBREVIATION = mapOf(

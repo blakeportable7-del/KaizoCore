@@ -78,6 +78,25 @@ private fun enemyMovesOf(e: NdsTrackedMon, runWide: List<StatMarks.SeenMove>, mo
     return merged.distinctBy { if (it.id != 0) it.id.toString() else it.name }
 }
 
+/**
+ * MainScreen.setUpEvo: "Lv. N (evo)" on both cards, the evolution picked by
+ * gender where it differs, "---" for none. On your own Pokemon a friendship
+ * evolution draws the bar: FRIEND filled green column by column at
+ * (friendship - base) / (220 - base), and READY in green once it reaches 1.
+ * The reference uses 220 here, not the ROM's value, and base 0 where its data
+ * sets none. It had been missing from the DS card entirely (2026-09-28).
+ */
+internal fun ndsEvoLabel(m: com.ironmonone.tracker.nds.Gen4.Mon, own: Boolean): com.ironmonone.tracker.EvoText.Label {
+    val raw = com.ironmonone.tracker.nds.NdsLogData.evoFor(m.species, m.isFemale).ifEmpty { "---" }
+    if (raw == "FRIEND" && own) {
+        val base = com.ironmonone.tracker.nds.NdsLogData.baseFriendship(m.species)
+        val progress = (m.friendship - base).toFloat() / (220 - base)
+        return if (progress >= 1f) com.ironmonone.tracker.EvoText.Label("READY", com.ironmonone.tracker.EvoText.Tone.READY)
+        else com.ironmonone.tracker.EvoText.Label("FRIEND", com.ironmonone.tracker.EvoText.Tone.PLAIN, fill = progress.coerceAtLeast(0f))
+    }
+    return com.ironmonone.tracker.EvoText.Label(raw, com.ironmonone.tracker.EvoText.Tone.PLAIN)
+}
+
 private fun typeChipsOf(p: NdsTrackedMon): List<Pair<String, androidx.compose.ui.graphics.Color>> {
     val info = p.info ?: return emptyList()
     val chips = mutableListOf<Pair<String, androidx.compose.ui.graphics.Color>>()
@@ -110,6 +129,8 @@ private fun NdsPartyCard(
             onTypesTap = p.info?.let { i -> onTypeDefenses?.let { cb -> { cb(p.speciesName, i.type1, i.type2) } } },
             itemLine = p.itemName.takeIf { it != "-" } ?: "",
             abilityLine = p.abilityName,
+            evo = ndsEvoLabel(m, own = true),
+            levelPrefix = "Lv. ",
             sprite = sprite,
             belowHead = if (healPercent >= 0) {
                 { PcHealsBlock(healPercent, healCount, wholeHp = healPercent * m.maxHp / 100) }
@@ -168,6 +189,8 @@ private fun NdsEnemyCard(
             // Revealed-on-activation, like the PC tracker: until a battle
             // trigger shows the ability, the line stays unrevealed.
             abilityLine = revealedAbility ?: "---",
+            evo = ndsEvoLabel(e.mon, own = false),
+            levelPrefix = "Lv. ",
             sprite = sprite,
         ) {
             // Enemy stats are unknown: this column is the notebook.

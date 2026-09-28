@@ -1,5 +1,7 @@
 package com.ironmonone.app
 
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.verticalScroll
@@ -516,6 +518,8 @@ fun PcHeadBlock(
     iconSpecies: Int = 0,
     /** The evolution in brackets after the level, "Lv.5 (30)" (EvoText). */
     evo: com.ironmonone.tracker.EvoText.Label? = null,
+    /** "Lv." on the GBA trackers; the DS tracker writes "Lv. " (MainScreen.setUpEvo). */
+    levelPrefix: String = "Lv.",
     /** "Display gender": Gender3.MALE or FEMALE; null draws nothing. */
     gender: Int? = null,
     /** "Show experience points bar": your Pokemon's progress through its level, 0 to 1. */
@@ -565,7 +569,7 @@ fun PcHeadBlock(
                     }
                     Spacer(Modifier.height(1.rp))
                     if (encounterLine != null) {
-                        PcLevelLine(level, evo)
+                        PcLevelLine(level, evo, levelPrefix)
                         Spacer(Modifier.height(1.rp))
                         PixText(encounterLine, PcRef.FONT, Pc.Gold)
                     } else {
@@ -587,7 +591,7 @@ fun PcHeadBlock(
                         )
                     }
                     Spacer(Modifier.height(1.rp))
-                    PcLevelLine(level, evo)
+                    PcLevelLine(level, evo, levelPrefix)
                     // TrackerScreen.lua:1242, 60 by 3, just under the level.
                     expFraction?.let { Spacer(Modifier.height(2.rp)); PcExpBar(it) }
                     }
@@ -1636,9 +1640,9 @@ fun TypeDefensesDialog(name: String, buckets: Map<Double, List<String>>, onClose
  * one letter at a time over the default-coloured word.
  */
 @Composable
-private fun PcLevelLine(level: Int, evo: com.ironmonone.tracker.EvoText.Label?) {
+private fun PcLevelLine(level: Int, evo: com.ironmonone.tracker.EvoText.Label?, prefix: String = "Lv.") {
     Row {
-        PixText("Lv.$level", PcRef.FONT, Pc.Text)
+        PixText("$prefix$level", PcRef.FONT, Pc.Text)
         if (evo != null) {
             val t = evo.text
             val n = evo.highlighted.coerceIn(0, t.length)
@@ -1648,8 +1652,19 @@ private fun PcLevelLine(level: Int, evo: com.ironmonone.tracker.EvoText.Label?) 
                 com.ironmonone.tracker.EvoText.Tone.PLAIN -> Pc.Text
             }
             PixText(" (", PcRef.FONT, Pc.Text)
-            if (n > 0) PixText(t.substring(0, n), PcRef.FONT, Pc.Positive)
-            if (n < t.length) PixText(t.substring(n), PcRef.FONT, rest)
+            val fill = evo.fill
+            if (fill != null) {
+                // The word in the default colour with a green copy over it, clipped to the fill.
+                androidx.compose.foundation.layout.Box {
+                    PixText(t, PcRef.FONT, Pc.Text)
+                    PixText(t, PcRef.FONT, Pc.Positive, Modifier.drawWithContent {
+                        clipRect(right = size.width * fill.coerceIn(0f, 1f)) { this@drawWithContent.drawContent() }
+                    })
+                }
+            } else {
+                if (n > 0) PixText(t.substring(0, n), PcRef.FONT, Pc.Positive)
+                if (n < t.length) PixText(t.substring(n), PcRef.FONT, rest)
+            }
             PixText(")", PcRef.FONT, Pc.Text)
         }
     }
