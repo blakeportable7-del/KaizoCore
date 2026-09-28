@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -44,7 +45,11 @@ fun FileProgressPanel(p: FileProgress, modifier: Modifier = Modifier) {
     Gen3Box(modifier.fillMaxWidth()) {
         Column {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text(p.phase.uppercase(), fontWeight = androidx.compose.ui.text.font.FontWeight.Medium, fontSize = 14.sp, color = Shell.inkOnPaper)
+                // As written, not shouted, and it gives way: a long file name
+                // used to crush the byte count beside it (audit, 2026-09-27).
+                Text(p.phase, fontWeight = androidx.compose.ui.text.font.FontWeight.Medium, fontSize = 14.sp, color = Shell.inkOnPaper,
+                    maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                Spacer(Modifier.width(8.dp))
                 Text(
                     if (p.total > 0L) "${mb(p.done)} of ${mb(p.total)}" else if (p.done > 0L) mb(p.done) else "",
                     fontWeight = androidx.compose.ui.text.font.FontWeight.Medium, fontSize = 14.sp, color = Shell.hintOnPaper,

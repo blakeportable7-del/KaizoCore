@@ -40,7 +40,6 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,21 +50,16 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ironmonone.app.engine.NatDexEngine
-import com.ironmonone.app.engine.Randomizers
 import com.ironmonone.app.engine.ZxEngine
-import com.ironmonone.app.gen3.Gen3
 import com.ironmonone.app.gen3.Gen3Box
 import com.ironmonone.app.gen3.Gen3Button
 import com.ironmonone.core.RomKind
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.io.File
 import java.security.SecureRandom
 
 /**
- * The loop: pick prepared ROM, pick settings (Kaizo default), Randomize, export,
- * play in ironmon_emu. New Run = tap again; the previous run is kept.
+ * The loop: pick prepared ROM, pick settings (Kaizo default), Randomize, play.
+ * New Run = tap again; the previous run is kept.
  *
  * Engine name is always visible (brief section 6), and a vanilla settings file on a
  * Nat. Dex ROM is refused BEFORE the engine sees it.
@@ -80,7 +74,6 @@ fun RunScreen(
 ) {
     val context = LocalContext.current
     val store = remember { PrepStore(context) }
-    val scope = rememberCoroutineScope()
     val rng = remember { SecureRandom() }
 
     // First run: put the bundled presets on disk before anything reads the list,
@@ -88,6 +81,9 @@ fun RunScreen(
     remember { store.seedBundledPresets(context) }
 
     var refresh by remember { mutableIntStateOf(0) }
+    // A job that finished while this tab was away re-reads the lists too.
+    val jobGeneration = RunJob.generation
+    LaunchedEffect(jobGeneration) { if (jobGeneration > 0) refresh++ }
     val preparedList = remember(refresh) { store.listPrepared() }
     val settingsList = remember(refresh) { store.listSettings() }
 
@@ -107,40 +103,48 @@ fun RunScreen(
         mutableStateOf(
             settingsList.firstOrNull { it.name == lastRun?.second }
                 ?: settingsList.firstOrNull {
-                    val i = RnqsInfo.parse(it.name); i.ruleset == "kaizo" && i.natDex
+                    val i = RnqsInfo.of(it); i.ruleset == "kaizo" && i.natDex
                 } ?: settingsList.firstOrNull())
     }
     var confirmNewRun by remember { mutableStateOf(false) }
 
-    var busy by remember { mutableStateOf(false) }
-    var status by remember { mutableStateOf<String?>(null) }
-    var statusIsError by remember { mutableStateOf(false) }
-    var lastSeed by remember { mutableStateOf<Long?>(null) }
-
-    fun say(t: String, err: Boolean = false) { status = t; statusIsError = err }
+    // The job, its phase and its outcome live in RunJob, not here: leaving
+    // the tab used to cancel a randomize half way (2026-09-27, audit).
+    val busy = RunJob.busy
+    val status = RunJob.status
+    val statusIsError = RunJob.statusIsError
+    val phase = RunJob.phase
+    fun say(t: String, err: Boolean = false) = RunJob.say(t, err)
+    // Go to Play when a run lands, but only while this tab is showing.
+    val playNow by androidx.compose.runtime.rememberUpdatedState(onPlay)
+    androidx.compose.runtime.DisposableEffect(Unit) {
+        RunJob.onRunReady = { playNow() }
+        onDispose { RunJob.onRunReady = null }
+    }
 
     val importSettings = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenMultipleDocuments()
     ) { uris ->
         if (uris.isEmpty()) return@rememberLauncherForActivityResult
-        busy = true
-        scope.launch {
+        // The phase is set before the panel shows. It showed whatever the last
+        // randomize left ("Saving run") while importing (2026-09-27, audit).
+        RunJob.run(RunPhase.IMPORTING, "Could not add those files") {
             val lines = ArrayList<String>()
             var failed = false
-            withContext(Dispatchers.IO) {
-                uris.forEach { uri ->
-                    val name = runCatching { context.displayNameOf(uri) }.getOrDefault("One file")
-                    val r = runCatching {
-                        val b = context.contentResolver.openInputStream(uri)!!.use { it.readBytes() }
-                        store.addSettingsFile(name, b).getOrThrow()
-                    }
-                    r.onSuccess { lines += "Added ${it.name.removeSuffix(".rnqs")}." }
-                    r.onFailure { failed = true; lines += (it as? IllegalArgumentException)?.message ?: "Could not read $name." }
+            uris.forEach { uri ->
+                val name = runCatching { context.displayNameOf(uri) }.getOrDefault("One file")
+                val r = runCatching {
+                    val b = context.contentResolver.openInputStream(uri)!!.use { it.readBytes() }
+                    store.addSettingsFile(name, b).getOrThrow()
+                }
+                r.onSuccess { lines += "Added ${it.name.removeSuffix(".rnqs")}." }
+                r.onFailure {
+                    failed = true
+                    lines += (it as? IllegalArgumentException)?.message ?: "Could not read $name."
+                    runCatching { android.util.Log.w("IronMonOne", "import failed", it) }
                 }
             }
-            refresh++
-            say(lines.joinToString("\n"), err = failed)
-            busy = false
+            lines.joinToString("\n") to failed
         }
     }
 
@@ -148,24 +152,20 @@ fun RunScreen(
         ActivityResultContracts.CreateDocument("application/octet-stream")
     ) { uri ->
         uri ?: return@rememberLauncherForActivityResult
-        busy = true
-        scope.launch {
-            runCatching {
-                withContext(Dispatchers.IO) {
-                    context.contentResolver.openOutputStream(uri)!!
-                        .use { it.write(store.currentRun.readBytes()) }
-                }
-            }.onSuccess { say("Exported. Open it in ironmon_emu and play.") }
-                .onFailure { say("Export failed: ${it.message}", true) }
-            busy = false
+        RunJob.run(RunPhase.EXPORTING, "Could not export the run") {
+            context.contentResolver.openOutputStream(uri)!!
+                .use { it.write(store.currentRun.readBytes()) }
+            "Exported. Open it in another emulator to play it there." to false
         }
     }
 
     /** The one guard that stops a crashed intro. */
     fun pairingProblem(): String? {
         val rom = selectedRom ?: return "Set up a game first on the Library tab."
-        val s = selectedSettings ?: return "Import a settings file first."
-        val info = RnqsInfo.parse(s.name)
+        val s = selectedSettings ?: return "Pick a settings file first, or import one."
+        // The file's sidecar counts too: a preset saved under a plain name
+        // keeps its Nat. Dex flag there (2026-09-27, audit).
+        val info = RnqsInfo.of(s)
         return when {
             info.natDex != rom.first.isNatDex ->
                 if (rom.first.isNatDex)
@@ -178,52 +178,13 @@ fun RunScreen(
         }
     }
 
-    var phase by remember { mutableStateOf(RunPhase.ROTATING) }
-
     fun newRun() {
+        // The guard first: with no settings file picked, RANDOMIZE used to
+        // return before it and do nothing at all (2026-09-27, audit).
+        pairingProblem()?.let { say(it, true); return }
         val rom = selectedRom ?: return
         val s = selectedSettings ?: return
-        pairingProblem()?.let { say(it, true); return }
-        busy = true; status = null
-        phase = RunPhase.ROTATING
-        scope.launch {
-            val seed = rng.nextLong()
-            runCatching {
-                withContext(Dispatchers.IO) {
-                    store.rotateRuns(rom.first)
-                    // The engine has no progress callback, so these three are
-                    // the only honest phases available: the steps the caller
-                    // actually performs. Nothing pretends to know how far
-                    // through randomize() we are.
-                    phase = RunPhase.RANDOMIZING
-                    val dest = store.currentRunFor(rom.first)
-                    // Engine is chosen by the ROM, never by the user: NatDex ROMs get
-                    // the fork, vanilla ROMs get ZX 4.6.1 (which also handles NDS
-                    // Gen 4). Cross-wiring is impossible.
-                    Randomizers.randomize(rom.first, rom.second, s, dest, seed, secondPass = store.secondPassSettings(rom.first))
-                }
-            }.onSuccess {
-                phase = RunPhase.FINISHING
-                lastSeed = it.seed
-                store.saveLastRun(rom.first.id, s.name)
-                store.saveLastSeed(it.seed)
-                // A fresh seed is what the player wants to play next, even
-                // if a library ROM was open before.
-                store.library.selectRun()
-                // Name the game explicitly rather than leaning on saveLastRun
-                // having already run: this counter is per game and must not
-                // depend on the order of the two lines above it.
-                store.bumpAttempt(rom.first.id)
-                // Marks, notes and route sightings describe the OLD seed's
-                // randomization; carrying them into the new run is actively
-                // misleading. The Play screen's own NEW RUN already clears
-                // them; this path forgot to.
-                store.clearRunNotes()
-                say("Your new game is ready (seed %016x).".format(it.seed))
-                onPlay()
-            }.onFailure { say(it.message ?: "Randomization failed.", true) }
-            busy = false
-        }
+        RunJob.randomize(context, rom, s, rng.nextLong())
     }
 
     // Scrolling content ABOVE, fixed footer BELOW. The whole screen used to be
@@ -260,9 +221,15 @@ fun RunScreen(
                         color = Shell.textOnNight,
                     )
                 }
-                lastSeed?.let {
+                // The STORED seed, in the same 16 digits as the status line.
+                // The chip showed 8 digits against the status line's 16 and
+                // vanished on a tab change although the seed is saved (2026-09-27, audit).
+                val seedShown = remember(refresh, jobGeneration, rom.id) {
+                    store.lastSeed()?.takeIf { store.loadLastRun()?.first == rom.id }
+                }
+                seedShown?.let {
                     Text(
-                        "seed %08x".format(it and 0xFFFFFFFFL),
+                        "seed $it",
                         fontFamily = FontFamily.Monospace,
                         fontSize = 12.sp,
                         color = Shell.accentOnNight,
@@ -327,7 +294,7 @@ fun RunScreen(
             if (favFilled == 0) "If one is offered as a starter, the rules let you take it." else "$favFilled set.",
             showFavorites) { showFavorites = !showFavorites }
         if (showFavorites) {
-            // The PC tracker's startup favorites: three Pokemon it shows on the
+            // The PC tracker's startup favorites: three Pokémon it shows on the
             // new-game screen. Typed by name here; the tracker's no-party card
             // repeats them before a party exists, as the PC trackers' startup and title screens do.
             Text("Startup favorites", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
@@ -338,7 +305,9 @@ fun RunScreen(
             var favSlots by remember(favCount, favRomId) { mutableStateOf(Favorites.slots(store, favRomId, favCount)) }
             // Which box is being typed in: its suggestions show under the row.
             var favActive by remember { mutableStateOf(-1) }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            // One full-width box per slot, stacked. Four or five boxes in one
+            // row left about 27dp of text each on a DS game (2026-09-27, audit).
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 favSlots.forEachIndexed { i, v ->
                     // Known FOR THIS GAME: a name past its dex (a Gen 5 species on a standard Emerald) is as wrong as a typo.
                     val known = v.isBlank() || (Favorites.idOf(v)?.let { it <= favMax } == true)
@@ -349,11 +318,11 @@ fun RunScreen(
                             favActive = i
                             Favorites.save(store, favRomId, favSlots)
                         },
-                        modifier = Modifier.weight(1f).onFocusChanged { if (it.isFocused) favActive = i },
+                        modifier = Modifier.fillMaxWidth().onFocusChanged { if (it.isFocused) favActive = i },
                         singleLine = true,
                         isError = !known,
                         placeholder = { Text("Favorite ${i + 1}") },
-                        textStyle = MaterialTheme.typography.bodySmall,
+                        textStyle = MaterialTheme.typography.bodyMedium,
                     )
                 }
             }
@@ -366,7 +335,9 @@ fun RunScreen(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     favHints.forEach { name ->
-                        com.ironmonone.app.gen3.Gen3Button(name.uppercase()) {
+                        // As the name is written: upper-casing it and passing it
+                        // through Shell.label mangled "Mr. Mime" and "Ho-Oh".
+                        com.ironmonone.app.gen3.Gen3Button(name, raw = true) {
                             favSlots = favSlots.toMutableList().also { it[favActive] = name }
                             Favorites.save(store, favRomId, favSlots)
                             favActive = -1
@@ -375,8 +346,8 @@ fun RunScreen(
                 }
             }
             Text(
-                if (favSlots.all { it.isBlank() || (Favorites.idOf(it)?.let { id -> id <= favMax } == true) }) (if (favCount > 3) "The DS tracker keeps $favCount and rotates them on its title screen." else "Shown on the tracker before your first Pokemon, as the PC tracker's startup screen shows them.")
-                else "A name in red is not a Pokemon this game has.",
+                if (favSlots.all { it.isBlank() || (Favorites.idOf(it)?.let { id -> id <= favMax } == true) }) (if (favCount > 3) "The DS tracker keeps $favCount and rotates them on its title screen." else "Shown on the tracker before your first Pokémon, as the PC tracker's startup screen shows them.")
+                else "A name in red is not a Pokémon this game has.",
                 style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper,
             )
             Spacer(Modifier.height(12.dp))
@@ -404,12 +375,16 @@ fun RunScreen(
                 Spacer(Modifier.width(8.dp))
                 Gen3Button("EDIT", enabled = !busy && selectedSettings != null) {
                     selectedSettings?.let {
+                        // The editor names a saved copy after this game when the
+                        // file's own name has no game tag (PresetStrings).
+                        PresetStrings.targetFamily = selectedRom?.first?.family
+                        PresetStrings.targetNatDex = selectedRom?.first?.isNatDex
                         onEdit(it, selectedRom?.first?.generation?.name)
                     }
                 }
             }
             val labels = remember(settingsList) {
-                RnqsInfo.displayLabels(settingsList.map { it.name })
+                RnqsInfo.displayLabelsFor(settingsList)
             }
             // With every game's presets bundled the full list is 39 rows. Show the
             // selected ROM's family plus anything untagged (an imported custom
@@ -419,13 +394,17 @@ fun RunScreen(
                 // Blake, 2026-09-07: only the loaded game's files, never all of them.
                 if (rom == null) emptyList()
                 else settingsList.filter { f ->
-                    RnqsInfo.parse(f.name).gameTag == null || RulesetCatalog.isCompatible(rom, f)
+                    val i = RnqsInfo.of(f)
+                    // Untagged files show only for a game of their own engine.
+                    (i.gameTag == null && !i.secondPass && i.natDex == rom.isNatDex) || RulesetCatalog.isCompatible(rom, f)
                 }
             }
-            if (selectedRom == null) Text("Pick a ROM above to see its settings files.", style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper)
+            if (selectedRom == null) Text("Pick a game above to see its settings files.", style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper)
             visibleSettings.forEach { f ->
                 Row(
-                    Modifier.fillMaxWidth().clickable { selectedSettings = f },
+                    Modifier.fillMaxWidth().clickable { selectedSettings = f }
+                        // A full touch target per file; the rows were about 40dp.
+                        .heightIn(min = Shell.touchTarget).padding(vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     ShellRadio(selectedSettings?.name == f.name)
@@ -457,7 +436,7 @@ fun RunScreen(
         if (store.currentRun.exists()) {
             Spacer(Modifier.height(8.dp))
             Gen3Button("EXPORT CURRENT RUN", enabled = !busy) {
-                export.launch("IronMonOne_CurrentRun." + store.currentRun.extension)
+                export.launch("KaizoCore_CurrentRun." + store.currentRun.extension)
             }
         }
             }

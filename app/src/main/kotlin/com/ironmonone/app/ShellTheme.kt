@@ -98,26 +98,34 @@ object Shell {
      * rewriting ninety call sites. Short codes stay as they are.
      */
     fun label(s: String): String {
-        if (Regex("[0-9.]+X").matches(s)) return s.lowercase()   // speed: 1x, 2x
+        // Speed: 1x, 2x, and the fractions ½x, ¼x (audit, 2026-09-27: "½X" was left shouting).
+        if (Regex("[0-9.½¼]+X").matches(s)) return s.lowercase()
         if (s.any { it.isLowerCase() } || s.length <= 2) return s
-        val words = s.split(' ')
-        return words.mapIndexed { i, w ->
+        // Multi-word names are joined first so the word loop sees one key.
+        val words = s.replace("MY BOY", "MY_BOY").split(' ')
+        // A word after ".", "!" or "?" starts a sentence: "SURE? RESET ALL" is "Sure? Reset all".
+        var sentenceStart = true
+        return words.joinToString(" ") { w ->
             val key = w.trimEnd(',', '.', '!', '?', ':')
             val tail = w.substring(key.length)
-            (KEEP[key] ?: when {
+            val out = KEEP[key] ?: when {
                 key in CODES -> key
-                i == 0 -> key.lowercase().replaceFirstChar { it.uppercase() }
+                sentenceStart -> key.lowercase().replaceFirstChar { it.uppercase() }
                 else -> key.lowercase()
-            }) + tail
-        }.joinToString(" ")
+            }
+            if (key.isNotEmpty() || tail.isNotEmpty()) sentenceStart = tail.any { it == '.' || it == '!' || it == '?' }
+            out + tail
+        }
     }
 
     private val CODES = setOf(
-        "ROM", "ROMS", "IPS", "BPS", "UPS", "DS", "NDS", "GBA", "GBC", "GB", "HP", "PP", "PC",
-        "OK", "AI", "RA", "UPR", "ZX", "IV", "IVS", "EV", "EVS", "TM", "HM", "ID", "USB", "X",
+        "ROM", "IPS", "BPS", "UPS", "DS", "NDS", "GBA", "GBC", "GB", "HP", "PP", "PC",
+        "OK", "AI", "RA", "UPR", "ZX", "IV", "EV", "TM", "HM", "ID", "USB", "X",
     )
     private val KEEP = mapOf(
         "BLAKE" to "Blake", "POKEMON" to "Pokémon", "NAT.DEX" to "Nat. Dex", "SUPERNDS" to "SuperNDS",
         "DRASTIC" to "DraStic", "MELONDS" to "melonDS",
+        // Plurals and mixed-case names (audit, 2026-09-27).
+        "DSI" to "DSi", "ROMS" to "ROMs", "IVS" to "IVs", "EVS" to "EVs", "MY_BOY" to "My Boy",
     )
 }

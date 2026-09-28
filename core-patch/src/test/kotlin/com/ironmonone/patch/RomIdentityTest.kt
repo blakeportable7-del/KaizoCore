@@ -42,7 +42,7 @@ class RomIdentityTest {
         assertEquals(RomKind.SOULSILVER_U, RomIdentity.identify(dsRom("POKEMON SS", "IPGE")).kind)
         val bk = RomIdentity.identify(dsRom("POKEMON B", "IRBO"))
         assertEquals(RomKind.BLACK_U, bk.kind)
-        assertTrue("by header" in bk.summary, bk.summary)
+        assertTrue("not checked yet" in bk.summary && "%08x".format(bk.crc) !in bk.summary, bk.summary)
         assertEquals(RomKind.BLACK2_U, RomIdentity.identify(dsRom("POKEMON B2", "IREO")).kind)
     }
 

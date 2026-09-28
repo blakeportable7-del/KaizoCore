@@ -32,10 +32,18 @@ object StreamHub {
         attempts = attempt.toString()
     }
 
-    /** Start on the fixed port; returns the URL to show, or null when the port is taken. */
-    fun start(): String? {
+    /**
+     * Start on the fixed port; returns the URL to show, or null when the port is taken.
+     *
+     * The token is kept in [filesDir]/prep/stream-token.txt and reused. A fresh
+     * one on every start broke the browser source saved in OBS each time the
+     * stream was switched on (2026-09-27, audit). Since it now lasts, it is 32
+     * random bits from SecureRandom rather than 16 from Math.random. Per phone:
+     * left out of the backup on purpose (BackupCoverageTest).
+     */
+    fun start(filesDir: java.io.File): String? {
         if (server != null) return url()
-        token = "%04x".format((Math.random() * 0xFFFF).toInt())
+        token = stableToken(java.io.File(filesDir, "prep/stream-token.txt"))
         val s = StreamServer(token, { page }, { state }, { version }, { attempts }, { dex })
         val ok = runCatching { s.start(PORT) }.isSuccess
         if (!ok) return null
@@ -44,6 +52,14 @@ object StreamHub {
     }
 
     fun stop() { server?.stop(); server = null }
+
+    /** The saved token, or a new one saved for next time. Unreadable or malformed = new. */
+    internal fun stableToken(f: java.io.File): String {
+        runCatching { f.readText().trim() }.getOrNull()?.takeIf { it.matches(Regex("[0-9a-f]{8}")) }?.let { return it }
+        val t = "%08x".format(java.security.SecureRandom().nextInt())
+        runCatching { f.parentFile?.mkdirs(); f.writeText(t) }
+        return t
+    }
 
     fun url(): String = "http://${wifiAddress() ?: "<phone-ip>"}:$PORT/tracker?k=$token"
 

@@ -18,10 +18,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -49,6 +55,22 @@ fun ControlsScreen(modifier: Modifier = Modifier) {
     var listening by remember { mutableStateOf<KeyBindings.Button?>(null) }
     var listeningAction by remember { mutableStateOf<KeyBindings.Action?>(null) }
     var lastCaptured by remember { mutableStateOf<String?>(null) }
+    // Warnings show in the danger colour; they were green like a success
+    // (audit, 2026-09-27).
+    var lastIsWarning by remember { mutableStateOf(false) }
+    val connected by Controllers.connected
+    fun say(text: String?, warning: Boolean = false) { lastCaptured = text; lastIsWarning = warning }
+
+    // A row tapped with no keyboard or controller attached used to wait
+    // forever for a key that could not come (audit, 2026-09-27).
+    fun canListen(): Boolean {
+        Controllers.refresh()
+        if (!Controllers.connected.value) {
+            say("Connect a keyboard or controller to change these.", warning = true)
+            return false
+        }
+        return true
+    }
 
     // While listening, swallow the next physical key and bind it. Registered on
     // the Activity so it sees keys even though no Compose node has focus.
@@ -61,20 +83,32 @@ fun ControlsScreen(modifier: Modifier = Modifier) {
                 // Back cancels; the phone's own keys pass through to the phone.
                 if (code == android.view.KeyEvent.KEYCODE_BACK) {
                     listening = null; listeningAction = null
-                    lastCaptured = null
+                    say(null)
                     return@capture true
                 }
                 if (KeyBindings.isSystemKey(code)) {
-                    lastCaptured = "That key belongs to the phone. Press another, or Back to cancel."
+                    say("That key belongs to the phone. Press another, or Back to cancel.", warning = true)
                     return@capture false
                 }
-                if (target != null) {
-                    bindings.bind(target, code)
-                    lastCaptured = "${target.label} = ${KeyBindings.keyName(code)}"
-                } else if (targetAction != null) {
-                    bindings.bindAction(targetAction, code)
-                    lastCaptured = "${targetAction.label} = ${KeyBindings.keyName(code)}"
+                // A standard pad button always reaches the game as itself (see
+                // MainActivity.dispatchKeyEvent), so binding it to a console
+                // button showed "B = Pad Y" and did nothing. Refused, and the
+                // screen keeps listening. Actions still take pad buttons: they
+                // are handled before the passthrough (audit, 2026-09-27).
+                if (target != null && activity.captureFromPad && code in KeyBindings.PAD_PASSTHROUGH) {
+                    say("Controller buttons always work as themselves; bind keyboard keys here.", warning = true)
+                    return@capture true
                 }
+                val (lost, what) = when {
+                    target != null ->
+                        bindings.bind(target, code) to "${target.label} = ${KeyBindings.keyName(code)}."
+                    targetAction != null ->
+                        bindings.bindAction(targetAction, code) to "${targetAction.label} = ${KeyBindings.keyName(code)}."
+                    else -> null to ""
+                }
+                // Say who lost the key; it used to be unbound silently.
+                say("Bound: $what" + (lost?.let { " $it lost its key; tap $it to bind it again." } ?: ""),
+                    warning = lost != null)
                 listening = null; listeningAction = null
                 version++
                 true
@@ -116,6 +150,14 @@ fun ControlsScreen(modifier: Modifier = Modifier) {
                     style = MaterialTheme.typography.bodySmall,
                     color = Shell.hintOnPaper,
                 )
+                if (!connected) {
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "No keyboard or controller is connected.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Shell.hintOnPaper,
+                    )
+                }
                 Spacer(Modifier.height(12.dp))
 
                 val map = remember(version) { bindings.all() }
@@ -132,7 +174,10 @@ fun ControlsScreen(modifier: Modifier = Modifier) {
                             map[button] == 0 -> Shell.dangerOnPaper
                             else -> Shell.inkOnPaper
                         },
-                        onClick = { listening = if (isListening) null else button },
+                        onClick = {
+                            listeningAction = null
+                            listening = if (isListening) null else if (canListen()) button else null
+                        },
                     )
                 }
 
@@ -146,35 +191,48 @@ fun ControlsScreen(modifier: Modifier = Modifier) {
                     val isListening = listeningAction == a
                     val bound = remember(version) { bindings.keyForAction(a) }
                     if (idx > 0) ShellDivider()
-                    ShellListRow(
-                        label = a.label,
-                        value = if (isListening) "press a key (Back cancels)" else bound?.let { KeyBindings.keyName(it) } ?: "unbound",
-                        valueColor = if (isListening) Shell.goodOnPaper else Shell.inkOnPaper,
-                        onClick = { listening = null; listeningAction = if (isListening) null else a },
-                    )
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        ShellListRow(
+                            label = a.label,
+                            value = if (isListening) "press a key (Back cancels)" else bound?.let { KeyBindings.keyName(it) } ?: "unbound",
+                            valueColor = if (isListening) Shell.goodOnPaper else Shell.inkOnPaper,
+                            onClick = {
+                                listening = null
+                                listeningAction = if (isListening) null else if (canListen()) a else null
+                            },
+                            modifier = Modifier.weight(1f),
+                        )
+                        // Clear is on the row itself; it only appeared while
+                        // that row was listening (audit, 2026-09-27).
+                        if (bound != null && !isListening) {
+                            IconButton(
+                                onClick = { bindings.unbindAction(a); version++; say("${a.label} is unbound.") },
+                                modifier = Modifier.size(Shell.touchTarget),
+                            ) {
+                                Icon(Icons.Filled.Close, contentDescription = "Clear ${a.label}", tint = Shell.hintOnPaper)
+                            }
+                        }
+                    }
                 }
                 Spacer(Modifier.height(12.dp))
                 lastCaptured?.let {
                     Text(
-                        if (it.startsWith("That key")) it else "Bound: $it",
+                        it,
                         style = MaterialTheme.typography.bodySmall,
-                        color = Shell.goodOnPaper,
+                        color = if (lastIsWarning) Shell.dangerOnPaper else Shell.goodOnPaper,
                     )
                     Spacer(Modifier.height(8.dp))
                 }
                 var resetArmed by remember { mutableStateOf(false) }
+                // Disarm after 4 s: "Sure?" used to stay armed forever (audit, 2026-09-27).
+                LaunchedEffect(resetArmed) { if (resetArmed) { kotlinx.coroutines.delay(4000); resetArmed = false } }
                 androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     // Two taps: this throws away every binding the player made.
-                    Gen3Button(if (resetArmed) "SURE? RESET ALL" else "RESET TO DEFAULTS", accent = resetArmed) {
-                        if (resetArmed) { bindings.resetToDefaults(); version++; lastCaptured = "Every key is back to its default."; resetArmed = false }
+                    Gen3Button(if (resetArmed) "Sure? Reset all" else "Reset to defaults", accent = resetArmed) {
+                        if (resetArmed) { bindings.resetToDefaults(); version++; say("Every key is back to its default."); resetArmed = false }
                         else resetArmed = true
                     }
-                    listeningAction?.let { a ->
-                        if (bindings.keyForAction(a) != null) Gen3Button("CLEAR ${a.label.uppercase()}") {
-                            bindings.unbindAction(a); listeningAction = null; version++; lastCaptured = "${a.label} is unbound."
-                        }
-                    }
-                    if (listening != null || listeningAction != null) Gen3Button("CANCEL") { listening = null; listeningAction = null }
+                    if (listening != null || listeningAction != null) Gen3Button("Cancel") { listening = null; listeningAction = null }
                 }
                 Spacer(Modifier.height(12.dp))
                 Text(

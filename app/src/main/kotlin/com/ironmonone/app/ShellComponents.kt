@@ -1,5 +1,22 @@
 package com.ironmonone.app
 
+import kotlinx.coroutines.launch
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.foundation.focusable
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -30,6 +47,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -56,6 +74,9 @@ enum class RunPhase(val label: String) {
     FINISHING("Saving run"),
     /** The Prepare screen: patching a supplied ROM into a stored base. */
     PATCHING("Patching ROM"),
+    /** The Run tab adding settings files, and exporting the current run. */
+    IMPORTING("Adding files"),
+    EXPORTING("Exporting the run"),
 }
 
 /**
@@ -261,7 +282,9 @@ fun ShellDialog(
 ) {
     androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
         Gen3Box(Modifier.fillMaxWidth(), paper = Shell.paper) {
-            Column(Modifier.padding(4.dp)) {
+            // Scrolls: at a large font a dialog's buttons fell off the bottom
+            // of the screen with no way to reach them (audit, 2026-09-27).
+            Column(Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState()).padding(4.dp)) {
                 Text(
                     title,
                     style = MaterialTheme.typography.titleLarge,
@@ -373,8 +396,10 @@ fun ShellSegmented(
     // Random measures 24 characters, passes the check, and overflows. Verified
     // on a device - the chips wrap to a second line here, so under a Row
     // "Random" was clipped and unselectable for anyone using large text.
+    // Chips are a radio group to TalkBack and 48dp tall (audit, 2026-09-27):
+    // at 36dp with plain clicks they were small and never said "selected".
     FlowRow(
-        modifier,
+        modifier.selectableGroup(),
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
@@ -384,8 +409,8 @@ fun ShellSegmented(
                 Modifier
                     .clip(androidx.compose.foundation.shape.RoundedCornerShape(50))
                     .background(if (on) Shell.inkOnPaper else Shell.raised)
-                    .clickable { onSelect(v) }
-                    .heightIn(min = 36.dp)
+                    .selectable(selected = on, role = androidx.compose.ui.semantics.Role.RadioButton) { onSelect(v) }
+                    .heightIn(min = Shell.touchTarget)
                     .padding(horizontal = 14.dp),
                 contentAlignment = Alignment.Center,
             ) {
@@ -400,7 +425,15 @@ fun ShellSegmented(
     }
 }
 
-/** A -/+ stepper for an integer setting. */
+/**
+ * A number setting: type it, or hold - / + to run it.
+ *
+ * It used to be a -/+ pair that moved one step per tap, so 26 to 100 was 74
+ * taps (Blake, 2026-09-27: "If I want 100% it requires a hundred taps"). Now
+ * the number is a field with the number keyboard, committed on Done or when
+ * the field loses focus and clamped to [range], and a held key repeats after
+ * 0.4 s, speeding up the longer it is held.
+ */
 @Composable
 fun ShellStepper(
     value: Int,
@@ -408,25 +441,112 @@ fun ShellStepper(
     onChange: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val current by androidx.compose.runtime.rememberUpdatedState(value)
+    val change by androidx.compose.runtime.rememberUpdatedState(onChange)
+    var text by remember { mutableStateOf(value.toString()) }
+    var focused by remember { mutableStateOf(false) }
+    fun step(d: Int) {
+        val next = (current + d).coerceIn(range)
+        // The field shows the stepped value too. While it had focus it kept the
+        // old typed text, and losing focus committed that, undoing the step
+        // (audit, 2026-09-27).
+        text = next.toString()
+        if (next != current) change(next)
+    }
+    // Follow the value from outside (a step, a revert) unless the player is typing.
+    androidx.compose.runtime.LaunchedEffect(value) { if (!focused) text = value.toString() }
+    fun commit() {
+        val typed = text.trim().toIntOrNull()
+        val next = (typed ?: current).coerceIn(range)
+        text = next.toString()
+        if (next != current) change(next)
+    }
+    val focus = androidx.compose.ui.platform.LocalFocusManager.current
     Row(modifier, verticalAlignment = Alignment.CenterVertically) {
-        StepKey("-") { onChange((value - 1).coerceIn(range)) }
-        Text(
-            "$value",
-            style = MaterialTheme.typography.titleMedium,
-            color = Shell.inkOnPaper,
-            modifier = Modifier.padding(horizontal = 12.dp),
+        StepKey("\u2212", "Less") { step(-1) }
+        androidx.compose.foundation.text.BasicTextField(
+            value = text,
+            onValueChange = { t -> if (t.length <= maxOf(4, range.last.toString().length, range.first.toString().length) && t.all { it.isDigit() || it == '-' }) text = t },
+            singleLine = true,
+            textStyle = MaterialTheme.typography.titleMedium.copy(
+                color = Shell.inkOnPaper, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            ),
+            cursorBrush = androidx.compose.ui.graphics.SolidColor(Shell.accent),
+            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                // The number pad has no minus sign on many phones, so a range below zero gets the full keyboard.
+                keyboardType = if (range.first < 0) androidx.compose.ui.text.input.KeyboardType.Text
+                    else androidx.compose.ui.text.input.KeyboardType.Number,
+                imeAction = androidx.compose.ui.text.input.ImeAction.Done,
+            ),
+            keyboardActions = androidx.compose.foundation.text.KeyboardActions(onDone = { commit(); focus.clearFocus() }),
+            modifier = Modifier
+                .padding(horizontal = 6.dp)
+                .width(64.dp)
+                .heightIn(min = Shell.touchTarget)
+                .clip(androidx.compose.foundation.shape.RoundedCornerShape(Shell.controlRadius))
+                .background(Shell.night)
+                .border(1.dp, if (focused) Shell.accent else Shell.hairline,
+                    androidx.compose.foundation.shape.RoundedCornerShape(Shell.controlRadius))
+                .onFocusChanged { f ->
+                    if (focused && !f.isFocused) commit()
+                    focused = f.isFocused
+                }
+                .semantics { contentDescription = "Value, from ${range.first} to ${range.last}" },
+            decorationBox = { inner -> Box(Modifier.padding(vertical = 12.dp), contentAlignment = Alignment.Center) { inner() } },
         )
-        StepKey("+") { onChange((value + 1).coerceIn(range)) }
+        StepKey("+", "More") { step(1) }
     }
 }
 
+/** A - or + key. A tap is one step; holding repeats, faster the longer it is held. */
 @Composable
-private fun StepKey(glyph: String, onClick: () -> Unit) {
+private fun StepKey(glyph: String, spoken: String, onStep: () -> Unit) {
+    val fire by androidx.compose.runtime.rememberUpdatedState(onStep)
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val haptics = androidx.compose.ui.platform.LocalHapticFeedback.current
+    var pressed by remember { mutableStateOf(false) }
+    var keyFocus by remember { mutableStateOf(false) }
+    val shape = androidx.compose.foundation.shape.RoundedCornerShape(Shell.controlRadius)
     Box(
         Modifier.size(Shell.touchTarget)
-            .clip(androidx.compose.foundation.shape.RoundedCornerShape(Shell.controlRadius))
-            .background(Shell.raised)
-            .clickable { onClick() },
+            .clip(shape)
+            .background(if (pressed) Shell.raisedPressed else Shell.raised)
+            .border(if (keyFocus) 2.dp else 0.dp, if (keyFocus) Shell.accent else Color.Transparent, shape)
+            // TalkBack, Switch Access and a keyboard press it through these; the
+            // pointerInput below only ever heard fingers (audit, 2026-09-27).
+            .semantics {
+                contentDescription = spoken; role = androidx.compose.ui.semantics.Role.Button
+                onClick { fire(); true }
+            }
+            .onKeyEvent { e ->
+                val press = e.key == Key.Enter || e.key == Key.NumPadEnter || e.key == Key.DirectionCenter || e.key == Key.Spacebar
+                if (press && e.type == KeyEventType.KeyUp) fire()
+                press
+            }
+            .onFocusChanged { keyFocus = it.isFocused }
+            .focusable()
+            .pointerInput(Unit) {
+                detectTapGestures(onPress = {
+                    pressed = true
+                    haptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
+                    fire()
+                    val repeat = scope.launch {
+                        kotlinx.coroutines.delay(400)
+                        var wait = 120L
+                        var n = 0
+                        while (true) {
+                            fire()
+                            kotlinx.coroutines.delay(wait)
+                            n++
+                            // Every 6 steps a little faster, down to 25 ms: 0 to 100 in about 3 s.
+                            if (n % 6 == 0 && wait > 25) wait = (wait * 0.7).toLong().coerceAtLeast(25)
+                        }
+                    }
+                    tryAwaitRelease()
+                    repeat.cancel()
+                    pressed = false
+                })
+            },
         contentAlignment = Alignment.Center,
     ) {
         Text(glyph, fontSize = 20.sp, color = Shell.inkOnPaper)

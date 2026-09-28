@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -34,11 +35,9 @@ import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.positionInParent
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.ironmonone.app.gen3.Gen3
 import kotlin.math.roundToInt
 
@@ -79,8 +78,13 @@ fun FreePad(
     Box(modifier.fillMaxSize().onSizeChanged { area = it }) {
         if (area.width == 0) return@Box
         val density = androidx.compose.ui.platform.LocalDensity.current.density
+        // Touch reach for the controls drawn under 48dp (PadGeometry.hitPadding).
+        val hits = remember(layout, area, translucent, skin, baseScale) {
+            PadGeometry.hitPadding(layout, area.width / density, area.height / density, translucent, skin, baseScale)
+        }
         PadLayout.Element.entries.filter { it in layout.places }.forEach { e ->
             val s = PadGeometry.scaleOf(layout, e, baseScale)
+            val (hx, hy) = hits[e] ?: (0f to 0f)
             Box(
                 Modifier.layout { measurable, constraints ->
                     val placeable = measurable.measure(constraints.copy(minWidth = 0, minHeight = 0))
@@ -128,10 +132,10 @@ fun FreePad(
                     PadLayout.Element.B -> PadButton("B", KeyEvent.KEYCODE_BUTTON_B, translucent = translucent, scale = s, onB = onB, skin = skin)
                     PadLayout.Element.X -> PadButton("X", KeyEvent.KEYCODE_BUTTON_X, translucent = translucent, scale = s, skin = skin)
                     PadLayout.Element.Y -> PadButton("Y", KeyEvent.KEYCODE_BUTTON_Y, translucent = translucent, scale = s, skin = skin)
-                    PadLayout.Element.L -> PadButton("L", KeyEvent.KEYCODE_BUTTON_L1, translucent = translucent, scale = s, mini = true, skin = skin)
-                    PadLayout.Element.R -> PadButton("R", KeyEvent.KEYCODE_BUTTON_R1, translucent = translucent, scale = s, mini = true, skin = skin)
-                    PadLayout.Element.SELECT -> PadButton("SELECT", KeyEvent.KEYCODE_BUTTON_SELECT, translucent = translucent, scale = s, small = !translucent, wide = translucent, skin = skin)
-                    PadLayout.Element.START -> PadButton("START", KeyEvent.KEYCODE_BUTTON_START, translucent = translucent, scale = s, small = !translucent, wide = translucent, skin = skin)
+                    PadLayout.Element.L -> PadButton("L", KeyEvent.KEYCODE_BUTTON_L1, translucent = translucent, scale = s, mini = true, skin = skin, hitX = hx.dp, hitY = hy.dp)
+                    PadLayout.Element.R -> PadButton("R", KeyEvent.KEYCODE_BUTTON_R1, translucent = translucent, scale = s, mini = true, skin = skin, hitX = hx.dp, hitY = hy.dp)
+                    PadLayout.Element.SELECT -> PadButton("SELECT", KeyEvent.KEYCODE_BUTTON_SELECT, translucent = translucent, scale = s, small = !translucent, wide = translucent, skin = skin, hitX = hx.dp, hitY = hy.dp)
+                    PadLayout.Element.START -> PadButton("START", KeyEvent.KEYCODE_BUTTON_START, translucent = translucent, scale = s, small = !translucent, wide = translucent, skin = skin, hitX = hx.dp, hitY = hy.dp)
                 }
             }
         }
@@ -164,7 +168,15 @@ fun FreePad(
     }
 }
 
-/** The strip of edit controls shown while the layout is being edited. DONE first: it must never scroll away. */
+/**
+ * The strip of edit controls shown while the layout is being edited. DONE first: it must never scroll away.
+ *
+ * 2026-09-27, audit: sizes and opacity are steppers with the value on them
+ * (they were tap cycles), the DS screens open a picker in words, RESET and the
+ * presets ask first, and CANCEL puts the layout back as it was. In landscape
+ * the bar is not full width, so the corners (where L and R usually sit) stay
+ * reachable, and it can move to the bottom when a button is under it.
+ */
 @Composable
 fun LayoutToolbar(
     layout: PadLayout,
@@ -176,45 +188,65 @@ fun LayoutToolbar(
     onDone: () -> Unit,
     skin: PadSkin = PadSkin.CLASSIC,
     onSkin: (PadSkin) -> Unit = {},
+    onCancel: () -> Unit = {},
+    /** Landscape: which edge the bar sits on, and the chip that moves it. Null hides the chip. */
+    barAtBottom: Boolean = false,
+    onMoveBar: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
+    var confirm by remember { mutableStateOf<Triple<String, String, () -> Unit>?>(null) }
+    var screensOpen by remember { mutableStateOf(false) }
     Row(
-        modifier.fillMaxWidth().background(Gen3.FrameDark.copy(alpha = 0.85f)).padding(6.dp)
+        modifier.then(if (landscape) Modifier.fillMaxWidth(0.72f) else Modifier.fillMaxWidth())
+            .background(Gen3.FrameDark.copy(alpha = 0.85f)).padding(6.dp)
             .horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        LayoutChip("DONE", accent = true, onClick = onDone)
+        LayoutChip("Done", accent = true, onClick = onDone)
+        LayoutChip("Cancel", onClick = onCancel)
         if (selected != null) {
-            LayoutChip("${selected.label.uppercase()} -") { onEdit(layout.with(selected, layout[selected].scaled(1 / 1.1f))) }
-            LayoutChip("${selected.label.uppercase()} +") { onEdit(layout.with(selected, layout[selected].scaled(1.1f))) }
+            // A diamond member draws at A's size, so its stepper edits A's.
+            val target = if (layout.inDiamond(selected)) PadLayout.Element.A else selected
+            ToolbarLabel("${selected.label} size %")
+            ShellStepper((layout[target].scale * 100).roundToInt(), 60..180, onChange = { v ->
+                onEdit(layout.with(target, layout[target].copy(scale = v / 100f)))
+            })
         }
         if (landscape) {
-            LayoutChip("FADE ${(layout.opacity * 100).roundToInt()}%") {
-                val next = if (layout.opacity >= 0.99f) 0.25f else (layout.opacity + 0.15f).coerceAtMost(1f)
-                onEdit(layout.copy(opacity = next))
-            }
+            ToolbarLabel("Opacity %")
+            ShellStepper((layout.opacity * 100).roundToInt(), 15..100, onChange = { v -> onEdit(layout.copy(opacity = v / 100f)) })
         }
-        if (isDs) {
-            LayoutChip("SCREENS: ${layout.dsLayout ?: "auto"}") {
-                // auto (fit the column) first, then every melonDS arrangement.
-                val list = listOf<String?>(null) + PadLayout.DS_LAYOUTS
-                val i = list.indexOf(layout.dsLayout)
-                onEdit(layout.copy(dsLayout = list[(i + 1) % list.size]))
-            }
-        }
-        LayoutChip("SKIN: ${skin.label.uppercase()}") { onSkin(skin.next()) }
+        if (isDs) LayoutChip("Screens: " + dsLayoutName(layout.dsLayout)) { screensOpen = true }
+        LayoutChip("Skin: " + skin.label.lowercase()) { onSkin(skin.next()) }
         // 2.1: the most-downloaded store emulator's layout, one tap. DS keeps its own until its reference is measured.
-        if (!isDs) LayoutChip("MY BOY LAYOUT") { onEdit(PadLayout.myBoy(landscape)); onSkin(PadSkin.OUTLINE) }
-        if (isDs) LayoutChip("SUPERNDS LAYOUT") { onEdit(PadLayout.default(landscape, nds = true)); onSkin(PadSkin.OUTLINE) }
-        if (!isDs) LayoutChip("ORIGINAL PAD") { onEdit(PadLayout.legacy(landscape)); onSkin(PadSkin.CLASSIC) }
-        LayoutChip("RESET", onClick = onReset)
+        if (!isDs) LayoutChip("My Boy layout") {
+            confirm = Triple("Use the My Boy layout?", "USE IT") { onEdit(PadLayout.myBoy(landscape)); onSkin(PadSkin.OUTLINE) }
+        }
+        if (isDs) LayoutChip("SuperNDS layout") {
+            confirm = Triple("Use the SuperNDS layout?", "USE IT") { onEdit(PadLayout.default(landscape, nds = true)); onSkin(PadSkin.OUTLINE) }
+        }
+        if (!isDs) LayoutChip("Original pad") {
+            confirm = Triple("Use the original pad?", "USE IT") { onEdit(PadLayout.legacy(landscape)); onSkin(PadSkin.CLASSIC) }
+        }
+        LayoutChip("Reset") { confirm = Triple("Reset to the default layout?", "RESET", onReset) }
+        onMoveBar?.let { LayoutChip(if (barAtBottom) "Bar to top" else "Bar to bottom", onClick = it) }
         Text(
-            if (selected == null) "DRAG A BUTTON · TAP TO PICK" else "DRAG TO MOVE",
-            fontFamily = Gen3.PixelFont, fontSize = 8.sp, color = Pc.Gold, fontWeight = FontWeight.Bold,
+            if (selected == null) "Drag a button. Tap one to size it." else "Drag to move.",
+            style = MaterialTheme.typography.bodySmall, color = Shell.hintOnNight,
             modifier = Modifier.padding(horizontal = 6.dp),
         )
     }
+    confirm?.let { (title, yes, run) ->
+        LayoutConfirmDialog(title, "This replaces the layout on screen. Cancel in the bar still puts back the one you started with.", yes,
+            onYes = { confirm = null; run() }, onDismiss = { confirm = null })
+    }
+    if (screensOpen) DsScreensDialog(layout.dsLayout, onPick = { onEdit(layout.copy(dsLayout = it)); screensOpen = false }, onDismiss = { screensOpen = false })
+}
+
+@Composable
+private fun ToolbarLabel(text: String) {
+    Text(text, style = MaterialTheme.typography.bodySmall, color = Shell.hintOnNight, maxLines = 1, softWrap = false)
 }
 
 @Composable

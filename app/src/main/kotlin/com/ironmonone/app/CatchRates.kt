@@ -13,6 +13,16 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -32,7 +42,7 @@ fun CatchRatesDialog(d: GbaTracker.CatchRates?, hpAdjust: Int, onAdjust: (Int) -
         Column(Modifier.width(300.dp).background(Pc.Page).border(1.dp, Pc.Border).padding(8.dp).verticalScroll(rememberScrollState())) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 PixText("CATCH RATES", 10, Pc.Text, Modifier.weight(1f))
-                PixText("X", 9, Pc.Dim, Modifier.clickable { onClose() }.padding(horizontal = 6.dp, vertical = 2.dp))
+                PcTap("X", 9, Pc.Dim, "Close") { onClose() }
             }
             Spacer(Modifier.height(4.dp))
             @Composable fun line(label: String, value: String, gold: Boolean, trailing: @Composable () -> Unit = {}) {
@@ -46,12 +56,16 @@ fun CatchRatesDialog(d: GbaTracker.CatchRates?, hpAdjust: Int, onAdjust: (Int) -
                 return@Column
             }
             line("Pokemon:", d.speciesName, true)
+            // Read through rememberUpdatedState so a held key steps from the latest value, not the one it was pressed on.
+            val adjustNow by androidx.compose.runtime.rememberUpdatedState(hpAdjust)
+            val onAdjustNow by androidx.compose.runtime.rememberUpdatedState(onAdjust)
+            fun adjust(d: Int) { val n = (adjustNow + d).coerceIn(-90, 90); if (n != adjustNow) onAdjustNow(n) }
             val rounded = Math.floor(d.hpPercent / 10.0 + 0.5).toInt() * 10
             line("Pokemon's HP:", "$rounded%", true) {
                 if (hpAdjust != 0) PixText((if (hpAdjust > 0) " + " else " -- ") + Math.abs(hpAdjust) + "%", 8, Pc.Text)
                 Spacer(Modifier.weight(1f))
-                PixText("-", 9, Pc.Negative, Modifier.clickable { onAdjust(maxOf(hpAdjust - 10, -90)) }.padding(horizontal = 8.dp))
-                PixText("+", 9, Pc.Positive, Modifier.clickable { onAdjust(minOf(hpAdjust + 10, 90)) }.padding(horizontal = 8.dp))
+                PcHoldTap("-", Pc.Negative, "Lower HP") { adjust(-10) }
+                PcHoldTap("+", Pc.Positive, "Raise HP") { adjust(10) }
             }
             line("Status:", d.status.ifEmpty { "---" }, d.status.isNotEmpty())
             Spacer(Modifier.height(6.dp))
@@ -69,4 +83,31 @@ fun CatchRatesDialog(d: GbaTracker.CatchRates?, hpAdjust: Int, onAdjust: (Int) -
             }
         }
     }
+}
+
+/**
+ * The HP - / + keys: the same glyph in a 48dp target, and holding repeats like
+ * the shell's stepper. They were ~26x14dp and one tap per 10%, so -90 to +90
+ * was eighteen small taps (2026-09-27, audit).
+ */
+@Composable
+private fun PcHoldTap(glyph: String, color: androidx.compose.ui.graphics.Color, spoken: String, onStep: () -> Unit) {
+    val fire by androidx.compose.runtime.rememberUpdatedState(onStep)
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    androidx.compose.foundation.layout.Box(
+        Modifier.size(48.dp)
+            .semantics { contentDescription = spoken; role = Role.Button; onClick { fire(); true } }
+            .pointerInput(Unit) {
+                detectTapGestures(onPress = {
+                    fire()
+                    val repeat = scope.launch {
+                        kotlinx.coroutines.delay(400)
+                        while (true) { fire(); kotlinx.coroutines.delay(150) }
+                    }
+                    tryAwaitRelease()
+                    repeat.cancel()
+                })
+            },
+        contentAlignment = Alignment.Center,
+    ) { PixText(glyph, 9, color) }
 }

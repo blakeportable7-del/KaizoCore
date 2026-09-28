@@ -69,7 +69,8 @@ object CloudSync {
         authority.contains("com.box.android") -> "Box"
         authority.contains("com.android.providers.downloads") -> "Downloads"
         authority.contains("com.android.externalstorage") -> "phone storage"
-        else -> authority
+        // An unknown provider's package name meant nothing to a player (audit, 2026-09-27).
+        else -> "your cloud folder"
     }
 
     /**
@@ -124,7 +125,13 @@ object CloudSync {
             return Result.Failed(when (e) {
                 is SecurityException -> "The link to ${link.provider} was lost. Link it again."
                 is java.io.FileNotFoundException -> "The synced file is gone from ${link.provider}. Link it again."
-                else -> e.message ?: e.javaClass.simpleName
+                // Raw exception text ("write failed: ENOSPC ...") is for the
+                // log, not the player (audit, 2026-09-27).
+                else -> {
+                    // Tagged KaizoCore so Feedback.logTail carries it into a bug report.
+                    runCatching { android.util.Log.w("KaizoCore", "cloud sync write failed: ${e.message ?: e.javaClass.simpleName}") }
+                    "Could not write to ${link.provider}. Check its space and connection, then Sync now."
+                }
             })
         }
         save(context.filesDir, link.copy(lastSync = now, fingerprint = fp))

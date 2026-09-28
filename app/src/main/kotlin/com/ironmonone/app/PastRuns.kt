@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -174,17 +175,45 @@ fun PastRunsDialog(store: PastRunStore, spriteOf: @Composable (Int) -> ImageBitm
     var confirmRemove by remember { mutableStateOf(false) }
     val runs = remember(store.version, sort, minBadges) { store.sorted(sort, minBadges) }
     if (index >= runs.size) index = 0
+    var jump by remember { mutableStateOf(false) }
+    if (jump) Dialog(onDismissRequest = { jump = false }) {
+        Column(Modifier.width(300.dp).background(Pc.Page).border(1.dp, Pc.Border).padding(8.dp)) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                PixText("JUMP TO A RUN", 10, Pc.Text, Modifier.weight(1f))
+                PcTap("X", 9, Pc.Dim, "Close") { jump = false }
+            }
+            androidx.compose.foundation.lazy.LazyColumn(Modifier.heightIn(max = 420.dp)) {
+                items(runs.size) { i ->
+                    val r = runs[i]
+                    Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).border(1.dp, if (i == index) Pc.Gold else Pc.Border)
+                        .clickable { index = i; showEnemy = false; jump = false }.padding(horizontal = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically) {
+                        PixText("${i + 1}", 8, Pc.Gold, Modifier.width(30.dp))
+                        Column(Modifier.weight(1f)) {
+                            PixText(r.fainted.name, 8, Pc.Text)
+                            PixText(r.dateText, 7, Pc.Dim)
+                        }
+                    }
+                }
+            }
+        }
+    }
     Dialog(onDismissRequest = onClose) {
         Column(Modifier.width(300.dp).background(Pc.Page).border(1.dp, Pc.Border).padding(8.dp).verticalScroll(rememberScrollState())) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 PixText("PAST RUNS", 10, Pc.Text, Modifier.weight(1f))
-                PixText("X", 9, Pc.Dim, Modifier.clickable { onClose() }.padding(horizontal = 6.dp, vertical = 2.dp))
+                PcTap("X", 9, Pc.Dim, "Close") { onClose() }
             }
             Spacer(Modifier.height(6.dp))
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                PixText("<", 12, Pc.Text, Modifier.clickable { if (runs.isNotEmpty()) { index = (index - 1 + runs.size) % runs.size; showEnemy = false } }.padding(horizontal = 10.dp))
-                PixText(if (runs.isEmpty()) "0/0" else "${index + 1}/${runs.size}", 9, Pc.Gold, Modifier.weight(1f), TextAlign.Center)
-                PixText(">", 12, Pc.Text, Modifier.clickable { if (runs.isNotEmpty()) { index = (index + 1) % runs.size; showEnemy = false } }.padding(horizontal = 10.dp))
+                PcTap("<", 12, Pc.Text, "Previous") { if (runs.isNotEmpty()) { index = (index - 1 + runs.size) % runs.size; showEnemy = false } }
+                // Tapping the count opens every run as a list to jump to; the arrows alone
+                // meant stepping one run at a time through a long history (2026-09-27, audit).
+                Box(Modifier.weight(1f).heightIn(min = 48.dp).clickable(enabled = runs.size > 1, onClickLabel = "Jump to a run") { jump = true },
+                    contentAlignment = Alignment.Center) {
+                    PixText(if (runs.isEmpty()) "0/0" else "${index + 1}/${runs.size}", 9, Pc.Gold, align = TextAlign.Center)
+                }
+                PcTap(">", 12, Pc.Text, "Next") { if (runs.isNotEmpty()) { index = (index + 1) % runs.size; showEnemy = false } }
             }
             Spacer(Modifier.height(6.dp))
             val run = runs.getOrNull(index)
@@ -239,7 +268,7 @@ fun StatisticsDialog(store: PastRunStore, onClose: () -> Unit) {
         Column(Modifier.width(300.dp).background(Pc.Page).border(1.dp, Pc.Border).padding(8.dp).verticalScroll(rememberScrollState())) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 PixText("STATISTICS", 10, Pc.Text, Modifier.weight(1f))
-                PixText("X", 9, Pc.Dim, Modifier.clickable { onClose() }.padding(horizontal = 6.dp, vertical = 2.dp))
+                PcTap("X", 9, Pc.Dim, "Close") { onClose() }
             }
             Spacer(Modifier.height(4.dp))
             PixText("Total runs: $totalRuns", 8, Pc.Text)
@@ -247,9 +276,9 @@ fun StatisticsDialog(store: PastRunStore, onClose: () -> Unit) {
             Spacer(Modifier.height(6.dp))
             val (name, rows) = sets[index]
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                PixText("<", 12, Pc.Text, Modifier.clickable { index = (index - 1 + sets.size) % sets.size }.padding(horizontal = 10.dp))
+                PcTap("<", 12, Pc.Text, "Previous") { index = (index - 1 + sets.size) % sets.size }
                 PixText(name, 9, Pc.Gold, Modifier.weight(1f), TextAlign.Center)
-                PixText(">", 12, Pc.Text, Modifier.clickable { index = (index + 1) % sets.size }.padding(horizontal = 10.dp))
+                PcTap(">", 12, Pc.Text, "Next") { index = (index + 1) % sets.size }
             }
             Spacer(Modifier.height(6.dp))
             val max = maxOf(1, if (name == "Overall Progress") totalRuns else pastLab)
@@ -290,13 +319,13 @@ fun EvoDataDialog(species: Int, tracker: NdsTracker?, spriteOf: @Composable (Int
         Column(Modifier.width(300.dp).background(Pc.Page).border(1.dp, Pc.Border).padding(8.dp).verticalScroll(rememberScrollState())) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 PixText("EVO DATA (${tracker?.speciesName(species) ?: "#$species"})", 10, Pc.Text, Modifier.weight(1f))
-                PixText("X", 9, Pc.Dim, Modifier.clickable { onClose() }.padding(horizontal = 6.dp, vertical = 2.dp))
+                PcTap("X", 9, Pc.Dim, "Close") { onClose() }
             }
             Spacer(Modifier.height(4.dp))
             if (targets.size > 1) Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                PixText("<", 12, Pc.Text, Modifier.clickable { target = (target - 1 + targets.size) % targets.size }.padding(horizontal = 10.dp))
+                PcTap("<", 12, Pc.Text, "Previous") { target = (target - 1 + targets.size) % targets.size }
                 PixText("Evo ${target + 1}: " + (tracker?.speciesName(targets[target]) ?: ""), 9, Pc.Gold, Modifier.weight(1f), TextAlign.Center)
-                PixText(">", 12, Pc.Text, Modifier.clickable { target = (target + 1) % targets.size }.padding(horizontal = 10.dp))
+                PcTap(">", 12, Pc.Text, "Next") { target = (target + 1) % targets.size }
             }
             Row(Modifier.fillMaxWidth()) {
                 listOf("NAME" to "Name", "BST" to "BST", "PERCENT" to "Percent").forEach { (k, label) ->

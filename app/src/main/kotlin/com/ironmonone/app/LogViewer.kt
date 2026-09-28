@@ -107,7 +107,18 @@ fun LogViewer(
     }
     val logSprite: ((RandomizerLog.Pokemon) -> androidx.compose.ui.graphics.ImageBitmap?)? =
         spriteFor?.let { sf -> { p: RandomizerLog.Pokemon -> speciesByName[p.name.uppercase()]?.let(sf) } }
-    Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+    // System Back closes the open detail page first, in the order the pages stack
+    // (a Pokemon over a trainer over a route), as DsLogViewer does; it used to close
+    // the whole viewer from a detail page (2026-09-27, audit).
+    fun back() {
+        when {
+            detail != null -> detail = null
+            trainerDetail != null && rules != null -> trainerDetail = null
+            routeDetail != null && rules != null -> routeDetail = null
+            else -> onClose()
+        }
+    }
+    Dialog(onDismissRequest = { back() }, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Column(Modifier.fillMaxSize().background(Pc.Ground).padding(6.dp)) {
             // Header: tabs, then CLOSE at the end.
             Row(Modifier.fillMaxWidth().horizontalScrollIfNeeded(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -162,7 +173,7 @@ fun LogViewer(
                         cursorBrush = SolidColor(Pc.Gold),
                         modifier = Modifier.weight(1f),
                     )
-                    if (query.isNotEmpty()) PixText("X", 7, Pc.Dim, Modifier.clickable { query = "" }.padding(4.dp))
+                    if (query.isNotEmpty()) PcTap("X", 7, Pc.Dim, "Clear search") { query = "" }
                 }
                 Spacer(Modifier.height(6.dp))
             }
@@ -261,7 +272,7 @@ enum class LogTab(val label: String) { POKEMON("POKEMON"), TRAINERS("TRAINERS"),
 private fun PokemonDetail(p: RandomizerLog.Pokemon, log: RandomizerLog, onBack: () -> Unit) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         Row(Modifier.fillMaxWidth().background(Pc.Page).border(1.dp, Pc.Border).padding(6.dp), verticalAlignment = Alignment.CenterVertically) {
-            PixText("< BACK", 7, Pc.Dim, Modifier.clickable { onBack() }.padding(end = 10.dp))
+            PcTap("< BACK", 7, Pc.Dim, "Back") { onBack() }
             PixText(p.name, 9, Pc.Gold, Modifier.weight(1f))
             PixText(p.types.joinToString("/"), 7, Pc.Text)
         }

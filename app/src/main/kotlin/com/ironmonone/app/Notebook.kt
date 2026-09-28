@@ -8,6 +8,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -57,13 +62,17 @@ fun NotebookDialog(
     val tracked: Set<Int> = remember(marks, seenSpecies) {
         (marks.markedSpecies() + marks.notedSpecies() + marks.movesSeenSpecies() + marks.abilitySeenSpecies() + seenSpecies).filter { it > 0 }.toSet()
     }
-    Dialog(onDismissRequest = onClose) {
+    // System Back walks the pages back to the index before it closes, as the BACK
+    // glyph does; it used to close the whole notebook from a species page (2026-09-27, audit).
+    fun back() { when (page) { "index" -> onClose(); "note" -> page = "seen"; else -> page = "index" } }
+    var filter by remember { mutableStateOf("") }
+    Dialog(onDismissRequest = { back() }) {
         Column(Modifier.width(300.dp).background(Pc.Page).border(1.dp, Pc.Border).padding(8.dp).verticalScroll(rememberScrollState())) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 val title = when (page) { "seen" -> "POKEMON SEEN"; "areas" -> "TRAINERS BY AREA"; "note" -> viewed?.let { speciesName(it).uppercase() } ?: "NOTE"; else -> "NOTEBOOK" }
                 PixText(title, 10, Pc.Text, Modifier.weight(1f))
-                if (page != "index") PixText("BACK", 8, Pc.Dim, Modifier.clickable { page = if (page == "note") "seen" else "index" }.padding(horizontal = 6.dp, vertical = 2.dp))
-                PixText("X", 9, Pc.Dim, Modifier.clickable { onClose() }.padding(horizontal = 6.dp, vertical = 2.dp))
+                if (page != "index") PcTap("BACK", 8, Pc.Dim, "Back") { back() }
+                PcTap("X", 9, Pc.Dim, "Close") { onClose() }
             }
             Spacer(Modifier.height(6.dp))
             when (page) {
@@ -83,9 +92,22 @@ fun NotebookDialog(
                 "seen" -> {
                     GearToggle("Include unseen", includeUnseen) { includeUnseen = it }
                     Spacer(Modifier.height(4.dp))
+                    // A name filter: with unseen included the list is 386 species long (2026-09-27, audit).
+                    Row(Modifier.fillMaxWidth().heightIn(min = 40.dp).border(1.dp, Pc.Border).padding(horizontal = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                        PixText("FIND", 7, Pc.Dim, Modifier.width(34.dp))
+                        BasicTextField(
+                            value = filter, onValueChange = { filter = it }, singleLine = true,
+                            textStyle = TextStyle(color = Pc.Text, fontSize = 12.sp),
+                            cursorBrush = SolidColor(Pc.Gold),
+                            modifier = Modifier.weight(1f),
+                        )
+                        if (filter.isNotEmpty()) PcTap("X", 7, Pc.Dim, "Clear") { filter = "" }
+                    }
+                    Spacer(Modifier.height(4.dp))
                     val ids = if (includeUnseen) (1 until 412).filter { it !in 252..276 } else tracked.toList()
-                    val rows = ids.map { it to speciesName(it) }.sortedBy { it.second }
-                    if (rows.isEmpty()) PixText("Nothing tracked yet this run.", 8, Pc.Dim)
+                    val q = filter.trim()
+                    val rows = ids.map { it to speciesName(it) }.filter { q.isEmpty() || it.second.contains(q, ignoreCase = true) }.sortedBy { it.second }
+                    if (rows.isEmpty()) PixText(if (q.isEmpty()) "Nothing tracked yet this run." else "No Pokemon match.", 8, Pc.Dim)
                     rows.forEach { (id, name) ->
                         val m = marks.of(id)
                         val summary = StatMarks.STAT_NAMES.indices.mapNotNull { i -> when (m.getOrElse(i) { 0 }) { 1 -> StatMarks.STAT_NAMES[i] + "+"; 2 -> StatMarks.STAT_NAMES[i] + "--"; 3 -> StatMarks.STAT_NAMES[i] + "="; else -> null } }.joinToString(" ")

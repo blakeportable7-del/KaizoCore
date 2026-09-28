@@ -55,22 +55,35 @@ fun RulesDialog(family: String, mode: String?, onDismiss: () -> Unit) {
             if (modes.isEmpty()) {
                 PixText("No rules text ships for this game yet.", 7, Pc.Dim)
             } else {
-                Row(Modifier.fillMaxWidth().padding(bottom = 6.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                // Six tabs in a Row were clipped on a 320dp phone and about
+                // 12dp tall. They wrap now, each a 48dp target, same look
+                // (2026-09-27, audit).
+                @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+                androidx.compose.foundation.layout.FlowRow(
+                    Modifier.fillMaxWidth().padding(bottom = 6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
                     modes.forEach { m ->
                         val on = m == current
-                        PixText(
-                            RnqsInfo.rulesetLabel(m).uppercase(), 6, if (on) Pc.Gold else Pc.Dim,
-                            Modifier.border(1.dp, if (on) Pc.Gold else Pc.Border).padding(horizontal = 4.dp, vertical = 3.dp)
-                                .clickable { current = m },
-                        )
+                        androidx.compose.foundation.layout.Box(
+                            Modifier.heightIn(min = 48.dp).clickable { current = m },
+                            contentAlignment = androidx.compose.ui.Alignment.Center,
+                        ) {
+                            PixText(
+                                RnqsInfo.rulesetLabel(m).uppercase(), 6, if (on) Pc.Gold else Pc.Dim,
+                                Modifier.border(1.dp, if (on) Pc.Gold else Pc.Border).padding(horizontal = 6.dp, vertical = 6.dp),
+                            )
+                        }
                     }
                 }
                 val text = remember(family, current) { current?.let { Rules.text(context, family, it) } ?: "" }
                 Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {
                     text.lines().forEach { line ->
                         when {
-                            line.startsWith("# ") -> { PixText(line.removePrefix("# ").uppercase(), 9, Pc.Gold); Spacer(Modifier.height(4.dp)) }
-                            line.startsWith("## ") -> { Spacer(Modifier.height(6.dp)); PixText(line.removePrefix("## ").uppercase(), 8, Pc.Text); Spacer(Modifier.height(3.dp)) }
+                            // Headings wrap: a long one was cut mid-word at the dialog edge.
+                            line.startsWith("# ") -> { PixText(line.removePrefix("# ").uppercase(), 9, Pc.Gold, wrap = true); Spacer(Modifier.height(4.dp)) }
+                            line.startsWith("## ") -> { Spacer(Modifier.height(6.dp)); PixText(line.removePrefix("## ").uppercase(), 8, Pc.Text, wrap = true); Spacer(Modifier.height(3.dp)) }
                             line.startsWith("### ") -> { Spacer(Modifier.height(4.dp)); PixText(line.removePrefix("### "), 7, Pc.Gold); Spacer(Modifier.height(2.dp)) }
                             line.isBlank() -> Spacer(Modifier.height(3.dp))
                             else -> Text(

@@ -41,12 +41,21 @@ object CrashLog {
         else -> "other($r)"
     }
 
-    /** Exits worth telling the user about. A normal EXIT_SELF is not one. */
+    /**
+     * Exits worth telling the user about: a crash, a native crash or a freeze.
+     * LOW_MEMORY and SIGNALED are Android ending a background app, which is
+     * normal; they left a red "ended unexpectedly" card on INFO that never
+     * went away (audit, 2026-09-27). Same filter as the launch dialog.
+     */
     private fun isFailure(r: Int): Boolean = r == ApplicationExitInfo.REASON_CRASH ||
         r == ApplicationExitInfo.REASON_CRASH_NATIVE ||
-        r == ApplicationExitInfo.REASON_ANR ||
-        r == ApplicationExitInfo.REASON_SIGNALED ||
-        r == ApplicationExitInfo.REASON_LOW_MEMORY
+        r == ApplicationExitInfo.REASON_ANR
+
+    /** A report older than this is not shown or sent. */
+    private const val MAX_AGE_MS = 7L * 24 * 60 * 60 * 1000
+
+    /** True if [text] reports a crash or freeze (not a report of normal exits written before 2026-09-27). */
+    fun isCrashReport(text: String): Boolean = "CRASH" in text || "ANR" in text
 
     fun reportFile(context: Context): File = File(context.filesDir, REPORT)
 
@@ -67,7 +76,8 @@ object CrashLog {
         val marker = File(context.filesDir, MARKER)
         val seenUpTo = runCatching { marker.readText().trim().toLong() }.getOrNull() ?: 0L
 
-        val fresh = history.filter { isFailure(it.reason) && it.timestamp > seenUpTo }
+        val weekAgo = System.currentTimeMillis() - MAX_AGE_MS
+        val fresh = history.filter { isFailure(it.reason) && it.timestamp > seenUpTo && it.timestamp > weekAgo }
         if (fresh.isEmpty()) return@runCatching null
 
         val stamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
@@ -146,8 +156,22 @@ object CrashLog {
         }
     }
 
+    /** The stored report, if it is a real crash from the last 7 days. */
     fun existing(context: Context): String? =
-        reportFile(context).takeIf { it.exists() && it.length() > 0 }?.readText()
+        reportFile(context).takeIf {
+            it.exists() && it.length() > 0 && System.currentTimeMillis() - it.lastModified() < MAX_AGE_MS
+        }?.readText()?.takeIf { isCrashReport(it) }
+
+    /**
+     * When the newest failure in [text] happened, as a short local date, from
+     * the report's "---- yyyy-MM-dd HH:mm:ss ----" lines. Null if none parses.
+     */
+    fun whenLabel(text: String): String? = runCatching {
+        val line = text.lineSequence().firstOrNull { it.startsWith("---- ") } ?: return@runCatching null
+        val date = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).parse(line.removePrefix("---- ").removeSuffix(" ----").trim())
+            ?: return@runCatching null
+        java.text.DateFormat.getDateInstance(java.text.DateFormat.MEDIUM).format(date)
+    }.getOrNull()
 }
 
 /** Version string without depending on a generated BuildConfig. */

@@ -1,6 +1,10 @@
+@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+
 package com.ironmonone.app
 
 import android.view.KeyEvent
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.foundation.background
@@ -47,6 +51,7 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
@@ -148,7 +153,7 @@ fun PlayScreen(
                 EmptyState("That ROM is gone.",
                     "${session.title} is no longer in the library. Pick another on the ROMs tab.")
             } else if (failure != null) {
-                EmptyState("New run failed.", failure)
+                EmptyState("New run failed.", newRunFailureCopy(failure))
             } else {
                 EmptyState(
                     "No run yet.",
@@ -376,17 +381,48 @@ fun PlayScreen(
             status = if (ok != null) "$name imported (%,d bytes). Takes effect on the next boot.".format(ok) else "Could not read that file."
         }
     }
+    var menuOpen by remember { mutableStateOf(false) }
+    // Confirmations, pickers and the toast's action live in one holder, off this method's registers.
+    val ui = remember { PlayUiState() }
+    // The layout editor edits a copy. It used to save on DONE and on Back alike
+    // and RESET deleted the saved file on the spot, so there was no way to
+    // walk away from a bad edit (2026-09-27, audit). Now DONE keeps, CANCEL
+    // restores what was there on entry, Back asks when anything changed, and
+    // nothing reaches disk before DONE.
+    fun startLayoutEdit() {
+        ui.layoutBefore = padLayout; ui.skinBefore = padSkin
+        selectedElement = null; menuOpen = false; editingLayout = true
+    }
+    fun finishLayoutEdit(keep: Boolean) {
+        if (keep) {
+            // A layout put back to the default is stored as no file, as RESET used to leave it.
+            if (padLayout == PadLayout.default(landscape, nds = platform == com.ironmonone.core.Platform.NDS)) store.layouts.reset(layoutKey)
+            else store.layouts.save(layoutKey, padLayout)
+        } else {
+            ui.layoutBefore?.let { padLayout = it }
+            ui.skinBefore?.let { if (it != padSkin) { padSkin = it; store.setPadSkin(it) } }
+        }
+        ui.confirmKeepLayout = false; editingLayout = false; selectedElement = null
+    }
+    // Back closes the FILE menu before it leaves anything (2026-09-27, audit).
+    // Declared before the editor's handler, so the editor's wins when both are on.
+    androidx.activity.compose.BackHandler(enabled = menuOpen) { menuOpen = false }
+    LaunchedEffect(menuOpen) { if (!menuOpen) ui.moreOpen = false }
     androidx.activity.compose.BackHandler(enabled = editingLayout) {
-        store.layouts.save(layoutKey, padLayout); editingLayout = false
+        if (padLayout != ui.layoutBefore || padSkin != ui.skinBefore) ui.confirmKeepLayout = true
+        else finishLayoutEdit(false)
     }
     val layoutToolbar: @Composable (Modifier) -> Unit = { m ->
         LayoutToolbar(
             layout = padLayout, selected = selectedElement, landscape = landscape,
             isDs = platform == com.ironmonone.core.Platform.NDS,
             onEdit = { padLayout = it },
-            onReset = { store.layouts.reset(layoutKey); padLayout = PadLayout.default(landscape, nds = platform == com.ironmonone.core.Platform.NDS); selectedElement = null },
-            onDone = { store.layouts.save(layoutKey, padLayout); editingLayout = false; selectedElement = null },
+            onReset = { padLayout = PadLayout.default(landscape, nds = platform == com.ironmonone.core.Platform.NDS); selectedElement = null },
+            onDone = { finishLayoutEdit(true) },
             skin = padSkin, onSkin = { padSkin = it; store.setPadSkin(it) },
+            onCancel = { finishLayoutEdit(false) },
+            barAtBottom = ui.layoutBarBottom,
+            onMoveBar = if (landscape) ({ ui.layoutBarBottom = !ui.layoutBarBottom }) else null,
             modifier = m,
         )
     }
@@ -504,6 +540,9 @@ fun PlayScreen(
         if (enemySpecies > 0) statMarks.noteFor(enemySpecies) else ""
     }
     var noteDialog by remember { mutableStateOf(false) }
+    val side = remember { SideScreenState() }
+    /** The randomizer log open full screen (the game-over screen's Inspect the log), or null. */
+    var logViewerFile by remember { mutableStateOf<java.io.File?>(null) }
 
     // Hardware keys route to the game ONLY while this screen exists and no
     // text dialog is open. Without the gate a Bluetooth keyboard could never
@@ -517,7 +556,10 @@ fun PlayScreen(
     val noteDialogVisible = noteDialog && enemySpecies > 0
     // Any dialog with a text field takes the keyboard back from the game:
     // the note, the cheats (code entry) and the settings (link address).
-    val textDialogOpen = noteDialogVisible || cheatsDialog || settingsDialog || raDialog
+    // Also the tracked-Pokemon and log searches, and the layout editor's typeable
+    // steppers: a Bluetooth keyboard typed into the game there (2026-09-27, audit).
+    val textDialogOpen = noteDialogVisible || cheatsDialog || settingsDialog || raDialog ||
+        side.trackedPokemon || logViewerFile != null || editingLayout
     DisposableEffect(textDialogOpen) {
         KeyBindings.routeToGame = !textDialogOpen
         onDispose { KeyBindings.routeToGame = false }
@@ -606,7 +648,6 @@ fun PlayScreen(
             lastCountedSpecies = -1
         }
     }
-    var menuOpen by remember { mutableStateOf(false) }
 
     // Card art, cached per run (a new ROM = new art).
     //
@@ -795,10 +836,7 @@ fun PlayScreen(
     /** The Type Defenses screen for one Pokemon: its name and its buckets, or null. */
     var typeDefenses by remember { mutableStateOf<Pair<String, Map<Double, List<String>>>?>(null) }
     var coverageCalc by remember { mutableStateOf(false) }
-    val side = remember { SideScreenState() }
     /** Move History for one Pokemon: species, name, level. */
-    /** The randomizer log open full screen (the game-over screen's Inspect the log), or null. */
-    var logViewerFile by remember { mutableStateOf<java.io.File?>(null) }
     // Where the game picture sits on screen, so the game-over popup sits over it (GameOverHost).
     var gameFrame by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
 
@@ -867,13 +905,13 @@ fun PlayScreen(
             val ok = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                 runCatching {
                     val (romId, settingsName) = store.loadLastRun()
-                        ?: error("Randomize once on the Run tab first.")
+                        ?: throw RunSetupProblem("Randomize once on the Run tab first.")
                     val prepared = store.listPrepared()
                         .firstOrNull { it.first.id == romId }
-                        ?: error("Prepared ROM missing - use the Run tab.")
+                        ?: throw RunSetupProblem("The prepared ROM is missing. Prepare it again on the Run tab.")
                     val settings = store.listSettings()
                         .firstOrNull { it.name == settingsName }
-                        ?: error("Settings \"$settingsName\" missing.")
+                        ?: throw RunSetupProblem("The settings \"$settingsName\" are missing. Pick settings on the Run tab.")
                     store.rotateRuns(prepared.first)
                     val dest = store.currentRunFor(prepared.first)
                     val seed = java.security.SecureRandom().nextLong()
@@ -904,9 +942,12 @@ fun PlayScreen(
                 gameActive = true
                 status = "New run (seed %016x). New ball call incoming.".format(seed)
             }.onFailure {
-                status = it.message
+                // Plain copy, never a null (which showed nothing) or an exception's
+                // class name; the exception itself goes to the log (2026-09-27, audit).
+                android.util.Log.w("KaizoCore", "New run failed", it)
+                status = newRunFailureCopy(it)
                 // Survives the composition being torn down by the empty state.
-                store.setLastRunError(it.message ?: it.toString())
+                store.setLastRunError(newRunFailureCopy(it))
                 // The core was already stopped; bring the OLD run back up
                 // rather than leaving a dead screen.
                 gameActive = true
@@ -1024,7 +1065,7 @@ fun PlayScreen(
         }.start()
     }
 
-    fun loadState(which: Int = saveSlot) {
+    fun loadState(which: Int = saveSlot, keepUndo: Boolean = false) {
         val f = slotFile(which)
         if (!f.exists()) { status = "Slot $which is empty."; return }
         if (raHardcore) { status = "Loading a state is off in RetroAchievements hardcore."; return }
@@ -1051,42 +1092,56 @@ fun PlayScreen(
             val bytes = StateSlots.readOrNull(f)
             kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
                 if (bytes == null) { status = "Could not read slot $slot."; return@withContext }
+                // A controller's quick load asks nothing, so it keeps the moment
+                // it replaced and the toast offers it back (2026-09-27, audit).
+                val before = if (keepUndo) runCatching { retro?.serializeState() }.getOrNull()?.takeIf { it.isNotEmpty() } else null
                 // The core reports whether it accepted the state; claiming
                 // "Loaded" when it refused left the player mid-game with no
                 // idea the rewind never happened.
                 val ok = retro?.unserializeState(bytes) == true
-                status = if (ok) (if (slot == StateSlots.AUTO) "Resumed from the auto-save." else "Loaded slot $slot.")
+                val msg = if (ok) (if (slot == StateSlots.AUTO) "Resumed from the auto-save." else "Loaded slot $slot.")
                 else "Could not load slot $slot. The save may be damaged."
+                status = msg
+                if (ok && before != null) ui.toastAction = Triple(msg, "Undo") {
+                    status = if (retro?.unserializeState(before) == true) "Load undone." else "Could not undo the load."
+                }
             }
         }
     }
+
+    // LOAD from a menu asks first: it replaced live progress on one tap. An
+    // empty slot has nothing to lose, so it goes straight to "Slot N is empty."
+    fun askLoad(n: Int = saveSlot) { if (slotFile(n).exists()) ui.confirmLoad = n else loadState(n) }
 
     /** Audio is on only when the user has not muted AND we are not in turbo. */
     fun applyAudio() {
         retro?.audioEnabled = !muted && speed == 1 && slow == 1 && !rewinding
     }
 
-    fun cycleSpeed() {
-        // GBA goes to 16x. The DS core is capped at 4x: raising melonDS past it
-        // killed the GL thread outright (SIGSEGV in GLThread the instant the
-        // multiplier changed, reproduced 2026-08-30), and a crash that eats the
-        // run is worse than a slower fast-forward. Revisit if the core is fixed.
-        // ... then past the top turbo come the two slow-motion steps, 1/2 and
-        // 1/4, before wrapping to 1x. Slow motion is a session thing, never
-        // persisted: a game that opened at quarter speed would read as broken.
-        val max = platform.maxTurbo
-        when {
-            slow == 4 -> { slow = 1; speed = 1 }
-            slow == 2 -> { slow = 4 }
-            speed >= max -> { speed = 1; slow = if (raHardcore) 1 else 2 }
-            else -> speed *= 2
+    // Speed is PICKED, not cycled: a forward cycle through 1x..16x, 1/2x,
+    // 1/4x took six taps to get from 2x back to 1x (2026-09-27, audit).
+    // GBA goes to 16x. The DS core is capped at 4x: raising melonDS past it
+    // killed the GL thread outright (SIGSEGV in GLThread the instant the
+    // multiplier changed, reproduced 2026-08-30), and a crash that eats the
+    // run is worse than a slower fast-forward. Revisit if the core is fixed.
+    // Then the two slow-motion steps, 1/2 and 1/4, never in hardcore. Slow
+    // motion is a session thing, never persisted: a game that opened at
+    // quarter speed would read as broken.
+    fun speedOptions(): List<String> =
+        generateSequence(1) { it * 2 }.takeWhile { it <= platform.maxTurbo }.map { "${it}x" }.toList() +
+            (if (raHardcore) emptyList() else listOf("\u00BDx", "\u00BCx"))
+    fun pickSpeed(label: String) {
+        when (label) {
+            "\u00BDx" -> { speed = 1; slow = 2 }
+            "\u00BCx" -> { speed = 1; slow = 4 }
+            else -> { speed = label.removeSuffix("x").toIntOrNull()?.coerceIn(1, platform.maxTurbo) ?: 1; slow = 1 }
         }
         retro?.frameSpeed = speed
         retro?.slowMotion = slow
         // IronMON default: silence during turbo, full audio at 1x. Never chipmunk.
         applyAudio()
     }
-    val speedLabel = when (slow) { 2 -> "\u00BDX"; 4 -> "\u00BCX"; else -> "${speed}X" }
+    val speedLabel = when (slow) { 2 -> "\u00BDx"; 4 -> "\u00BCx"; else -> "${speed}x" }
 
     // RUMBLE. The core's rumble state changes arrive as events; the phone's
     // motor follows: any strength above zero buzzes at that amplitude until
@@ -1170,7 +1225,7 @@ fun PlayScreen(
         r.getGLRetroEvents()
             .filter { it is GLRetroView.GLRetroEvents.FrameRendered }
             .first()
-        // melonDS dies above 4x (see cycleSpeed). Persistence made it possible
+        // melonDS dies above 4x (see speedOptions). Persistence made it possible
         // to carry a GBA run's 16x into a DS core, which is that same crash.
         val capped = speed.coerceAtMost(platform.maxTurbo)
         if (capped != speed) speed = capped
@@ -1246,44 +1301,80 @@ fun PlayScreen(
     val FileMenu: @Composable () -> Unit = {
         Column {
         if (streamOn) {
-            Text("Stream: " + com.ironmonone.app.stream.StreamHub.url() + "  (Back leaves CLEAN VIEW)",
-                fontWeight = androidx.compose.ui.text.font.FontWeight.Medium, fontSize = 12.sp,
-                color = Pc.Gold, modifier = Modifier.padding(horizontal = 8.dp))
+            // The address OBS needs, with a Copy button: it had to be typed by
+            // hand off this line (2026-09-27, audit).
+            val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
+            Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text("Stream: " + com.ironmonone.app.stream.StreamHub.url(),
+                    style = MaterialTheme.typography.bodySmall, color = Shell.hintOnNight,
+                    modifier = Modifier.weight(1f))
+                com.ironmonone.app.gen3.Gen3Button("Copy link", onClick = {
+                    clipboard.setText(androidx.compose.ui.text.AnnotatedString(com.ironmonone.app.stream.StreamHub.url()))
+                    status = "Stream link copied."
+                })
+            }
         }
-        Row(
+        // Wrapped rows in three groups (save states, the game, tools), not one
+        // row of twenty buttons with most of them off screen and nothing to say
+        // so (2026-09-27, audit). Capped and scrolled vertically, so it stays
+        // near the height the portrait budget gives it; the half-shown row is
+        // the cue that there is more. 164dp ended exactly on a row edge, so the
+        // menu looked complete with four rows hidden; 190dp shows half a row, and
+        // a fade marks the bottom while there is more (2026-09-27, walk-through).
+        val menuScroll = rememberScrollState()
+        FlowRow(
             // Excluded from the system back gesture: a fast fling on this strip
             // starting near the screen edge used to leave the game (2026-09-06).
-            Modifier.fillMaxWidth().systemGestureExclusion().padding(8.dp).horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
+            Modifier.fillMaxWidth().systemGestureExclusion()
+                .heightIn(max = if (landscape) 210.dp else 190.dp)
+                .drawWithContent {
+                    drawContent()
+                    if (menuScroll.canScrollForward) drawRect(
+                        androidx.compose.ui.graphics.Brush.verticalGradient(
+                            listOf(Color.Transparent, Shell.paper), startY = size.height - 36.dp.toPx(), endY = size.height,
+                        ),
+                    )
+                }
+                .verticalScroll(menuScroll).padding(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            com.ironmonone.app.gen3.Gen3Button(speedLabel, accent = speed > 1 || slow > 1,
-                onClick = { cycleSpeed() })
-            // Slot picker: shows a dot when that slot holds a state.
-            val slotHas = remember(saveSlot, slotsVersion) {
-                (1..StateSlots.COUNT).map { slotFile(it).exists() }
+            if (landscape) {
+                // Landscape shows this OR the chip strip, never both.
+                com.ironmonone.app.gen3.Gen3Button("Fewer", onClick = { ui.moreOpen = false })
+                com.ironmonone.app.gen3.Gen3Button("Close", onClick = { menuOpen = false })
+                MenuRule()
             }
-            com.ironmonone.app.gen3.Gen3Button(
-                "SLOT $saveSlot" + if (slotHas[saveSlot - 1]) "*" else "",
-                onClick = { saveSlot = if (saveSlot >= StateSlots.COUNT) 1 else saveSlot + 1 })
-            com.ironmonone.app.gen3.Gen3Button("STATES", onClick = { statesDialog = true })
+            // Save states. The slot is picked in STATES; this button used to
+            // step through eight slots one tap at a time (2026-09-27, audit).
+            val slotHas = remember(saveSlot, slotsVersion) { slotFile(saveSlot).exists() }
+            com.ironmonone.app.gen3.Gen3Button("States, slot $saveSlot" + if (slotHas) "" else " (empty)",
+                onClick = { statesDialog = true })
             com.ironmonone.app.gen3.Gen3Button("SAVE", onClick = { saveState() })
-            com.ironmonone.app.gen3.Gen3Button("LOAD", onClick = { loadState() })
-            com.ironmonone.app.gen3.Gen3Button("RESET", onClick = { retro?.reset() })
-            // 2.4: the rules for this game and mode, readable mid-run.
-            if (session.tracked) com.ironmonone.app.gen3.Gen3Button("RULES", onClick = { rulesDialog = true })
+            com.ironmonone.app.gen3.Gen3Button("LOAD", onClick = { askLoad() })
             if (rewindAllowed) HoldChip("REWIND", onDown = { startRewind() }, onUp = { stopRewind() }, big = true)
+            MenuRule()
+            // The game.
+            if (session.isRun) com.ironmonone.app.gen3.Gen3Button("NEW RUN", accent = true,
+                onClick = { confirmNewRun = true })
+            // Speed opens a picker (see speedOptions).
+            com.ironmonone.app.gen3.Gen3Button("Speed $speedLabel", accent = speed > 1 || slow > 1,
+                onClick = { ui.speedPicker = true })
+            com.ironmonone.app.gen3.Gen3Button(if (muted) "UNMUTE" else "MUTE",
+                accent = muted, onClick = { muted = !muted; applyAudio() })
+            // Restart asks first: it threw away everything since the last save on one tap.
+            com.ironmonone.app.gen3.Gen3Button("RESTART", onClick = { ui.confirmReset = true })
             // DS: collapse the touch screen so the top screen fills the frame.
             if (dsScreens) {
                 com.ironmonone.app.gen3.Gen3Button(
-                    if (dsTopOnly) "2 SCREEN" else "1 SCREEN",
+                    if (dsTopOnly) "Both screens" else "Top screen only",
                     accent = dsTopOnly,
                     onClick = { dsTopOnly = !dsTopOnly })
             }
-            if (session.isRun) com.ironmonone.app.gen3.Gen3Button("NEW RUN", accent = true,
-                onClick = { confirmNewRun = true })
-            com.ironmonone.app.gen3.Gen3Button(if (muted) "UNMUTE" else "MUTE",
-                accent = muted, onClick = { muted = !muted; applyAudio() })
+            // 2.4: the rules for this game and mode, readable mid-run.
+            if (session.tracked) com.ironmonone.app.gen3.Gen3Button("RULES", onClick = { rulesDialog = true })
+            MenuRule()
+            // Tools.
             com.ironmonone.app.gen3.Gen3Button("CAM", accent = facecam,
                 onClick = { facecam = !facecam })
             // Streaming: the web tracker for OBS, and the capture layout.
@@ -1291,20 +1382,20 @@ fun PlayScreen(
                 accent = streamOn, onClick = {
                     if (streamOn) { com.ironmonone.app.stream.StreamHub.stop(); streamOn = false; status = "Stream server stopped." }
                     else {
-                        val url = com.ironmonone.app.stream.StreamHub.start()
+                        val url = com.ironmonone.app.stream.StreamHub.start(context.filesDir)
                         streamOn = url != null
                         status = if (url != null) "OBS browser source: $url" else "Port ${com.ironmonone.app.stream.StreamHub.PORT} is busy."
                     }
                 })
             com.ironmonone.app.gen3.Gen3Button("CLEAN VIEW", onClick = { onClean(true); menuOpen = false })
-            com.ironmonone.app.gen3.Gen3Button("EDIT LAYOUT", onClick = { editingLayout = true; menuOpen = false })
+            com.ironmonone.app.gen3.Gen3Button("EDIT LAYOUT", onClick = { startLayoutEdit() })
             com.ironmonone.app.gen3.Gen3Button("SETTINGS", onClick = { settingsDialog = true })
             com.ironmonone.app.gen3.Gen3Button(
-                if (!raSummary.loggedIn) "ACHIEVEMENTS" else if (raSummary.gameLoaded) "ACHIEVEMENTS ${raSummary.unlocked}/${raSummary.total}" else "ACHIEVEMENTS ON",
+                if (!raSummary.loggedIn) "ACHIEVEMENTS" else if (raSummary.gameLoaded) "Achievements ${raSummary.unlocked}/${raSummary.total}" else "ACHIEVEMENTS ON",
                 accent = raSummary.loggedIn && raSummary.gameLoaded,
                 onClick = { raRefresh(); raDialog = true })
             com.ironmonone.app.gen3.Gen3Button(
-                if (!cheatsAllowed) "CHEATS OFF" else if (cheats.any { it.enabled }) "CHEATS (${cheats.count { it.enabled }})" else "CHEATS",
+                if (!cheatsAllowed) "CHEATS OFF" else if (cheats.any { it.enabled }) "Cheats (${cheats.count { it.enabled }})" else "CHEATS",
                 accent = cheatsAllowed && cheats.any { it.enabled },
                 onClick = {
                     if (cheatsAllowed) cheatsDialog = true
@@ -1319,8 +1410,11 @@ fun PlayScreen(
                 }
             }
             // Diagnostic for the route panel: the adopted map-id transitions,
-            // shareable without a computer, same as the crash report.
-            com.ironmonone.app.gen3.Gen3Button("ROUTE LOG", onClick = {
+            // shareable without a computer, same as the crash report. Only the
+            // Gen 3 tracker records them (trackerRef is GBA only), so on GB/GBC
+            // and DS it could only ever send an empty log and is not shown
+            // there (2026-09-27, audit).
+            if (trackerRef != null) com.ironmonone.app.gen3.Gen3Button("ROUTE LOG", onClick = {
                 val lines = trackerRef?.routeLogSnapshot() ?: emptyList()
                 val text = if (lines.isEmpty()) "No map transitions recorded yet."
                     else lines.joinToString(Char(10).toString())
@@ -1352,11 +1446,7 @@ fun PlayScreen(
                 })
             }
         }
-        status?.let {
-            Text(it, Modifier.padding(horizontal = 12.dp),
-                style = MaterialTheme.typography.bodySmall,
-                color = Shell.accentOnNight)
-        }
+        // Status messages are the toast's now (StatusToast), shown whether or not this menu is open.
         }
     }
 
@@ -1431,14 +1521,14 @@ fun PlayScreen(
                       )
                       Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                           if (dsScreens) {
-                              OverlayChip(if (dsTopOnly) "2 SCR" else "1 SCR") {
+                              OverlayChip(if (dsTopOnly) "2 screens" else "1 screen") {
                                   dsTopOnly = !dsTopOnly
                               }
                           }
                           // Landscape has no app bar, so its FILE lives here: it shows and hides the
                           // row of SAVE / LOAD / STATES chips over the game (hidden by default).
                           OverlayChip(if (menuOpen) "HIDE" else "FILE") { menuOpen = !menuOpen }
-                          OverlayChip("▶") { trackerOpen = false }
+                          OverlayChip("▶", description = "Hide tracker") { trackerOpen = false; ui.trackerPeek = false }
                       }
                   }
                   if (dsScreens) NdsTrackerPanel(
@@ -1527,7 +1617,7 @@ fun PlayScreen(
               // Nothing to track: the game takes the whole width.
           } else if (TrackerOptions.landscapeTracker == LandscapeTracker.FLOATING) {
               // 2.2: the window floats over the game; nothing sits in this row.
-          } else if (trackerOpen && TrackerOptions.landscapeTracker == LandscapeTracker.DOCKED) {
+          } else if (trackerOpen && (TrackerOptions.landscapeTracker == LandscapeTracker.DOCKED || ui.trackerPeek)) {
               // Drag handle: pulling it right shrinks the tracker, and the game
               // column is weighted so it takes back every pixel given up.
               // 24dp of grab, not 10, with a visible ridge. At 10dp wide
@@ -1602,11 +1692,19 @@ fun PlayScreen(
                   trackerContent()
               }
           } else {
-              // Collapsed: a thin tab on the right edge, tap to bring it back.
+              // Collapsed: a tab on the right edge, tap to bring it back.
+              // 48dp wide and named for a screen reader; it was 26dp with a
+              // bare arrow. A tap shows the tracker for now: it used to write
+              // Docked over a Hidden choice made in the tracker's settings
+              // (2026-09-27, audit).
               Box(
-                  Modifier.width(26.dp).fillMaxHeight()
+                  Modifier.width(com.ironmonone.app.Shell.touchTarget).fillMaxHeight()
+                      .semantics { contentDescription = "Show tracker" }
                       .background(Pc.Ground)
-                      .clickable { trackerOpen = true; TrackerOptions.landscapeTracker = LandscapeTracker.DOCKED; TrackerOptions.save() },
+                      .clickable {
+                          trackerOpen = true
+                          if (TrackerOptions.landscapeTracker != LandscapeTracker.DOCKED) ui.trackerPeek = true
+                      },
                   contentAlignment = Alignment.Center,
               ) {
                   Text("◀", fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
@@ -1907,11 +2005,12 @@ fun PlayScreen(
                     )
                 }
 
-                // The FILE button is in the top bar in landscape too, so its
-                // menu renders here. Offset below the chip strip so the two
-                // do not sit on top of each other.
-                if (menuOpen) {
-                    Box(Modifier.align(Alignment.TopStart).padding(top = 54.dp)) {
+                // FILE in landscape shows ONE thing: the chip strip, or (after
+                // More) the full menu. It drew both at once, about 170dp over
+                // the game, and kept drawing the menu over clean view and the
+                // layout editor (2026-09-27, audit).
+                if (menuOpen && ui.moreOpen && !streamClean && !editingLayout) {
+                    Box(Modifier.align(Alignment.TopStart).fillMaxWidth().background(Color.Black.copy(alpha = 0.75f))) {
                         FileMenu()
                     }
                 }
@@ -1920,10 +2019,13 @@ fun PlayScreen(
                 // touch even with a controller (no controller button maps to them).
                 // Bounded and scrollable: the strip is as wide as the game
                 // column, and adding MENU pushed it past that edge.
-                if (editingLayout) layoutToolbar(Modifier.align(Alignment.TopStart))
+                // The editor bar is narrower than the column, so the corners
+                // (L and R in every preset) stay free, and it moves to the
+                // bottom edge when a control sits under it (2026-09-27, audit).
+                if (editingLayout) layoutToolbar(Modifier.align(if (ui.layoutBarBottom) Alignment.BottomCenter else Alignment.TopCenter))
                 if (!session.tracked && !menuOpen && !streamClean && !editingLayout)
                     LandscapeMenuChip(Modifier.align(Alignment.TopCenter)) { menuOpen = true }
-                if (menuOpen && !streamClean && !editingLayout) Row(
+                if (menuOpen && !ui.moreOpen && !streamClean && !editingLayout) Row(
                     Modifier.align(Alignment.TopStart).fillMaxWidth().systemGestureExclusion().padding(6.dp)
                         .horizontalScroll(rememberScrollState())
                         .alpha(chipAlpha),
@@ -1934,22 +2036,24 @@ fun PlayScreen(
                     // undifferentiated chips meant hunting for LOAD every
                     // time, and NEW (which ends your run) sat between two
                     // harmless ones.
-                    OverlayChip("SLOT $saveSlot") {
-                        saveSlot = if (saveSlot >= StateSlots.COUNT) 1 else saveSlot + 1
-                    }
-                    OverlayChip("STATES") { statesDialog = true }
+                    // One chip for the states list, where slots are picked; SLOT
+                    // used to step through eight of them (2026-09-27, audit).
+                    OverlayChip("States, slot $saveSlot") { statesDialog = true }
                     OverlayChip("SAVE") { saveState() }
-                    OverlayChip("LOAD") { loadState() }
-                    OverlayChip("NEW") { confirmNewRun = true }
+                    OverlayChip("LOAD") { askLoad() }
+                    // Runs only, as in portrait: on a library game or hack NEW
+                    // re-randomized the last IronMON run (2026-09-27, audit).
+                    if (session.isRun) OverlayChip("NEW") { confirmNewRun = true }
                     ChipRule()
-                    OverlayChip(speedLabel) { cycleSpeed() }
+                    OverlayChip("Speed $speedLabel") { ui.speedPicker = true }
                     if (rewindAllowed) HoldChip("REWIND", onDown = { startRewind() }, onUp = { stopRewind() })
                     OverlayChip(if (muted) "MUTED" else "SOUND") {
                         muted = !muted; applyAudio()
                     }
                     OverlayChip("CAM") { facecam = !facecam }
-                    OverlayChip("CLEAN") { onClean(true) }
-                    OverlayChip("LAYOUT") { editingLayout = true }
+                    // Both close the menu: it stayed open over the capture and the editor.
+                    OverlayChip("CLEAN") { menuOpen = false; onClean(true) }
+                    OverlayChip("LAYOUT") { startLayoutEdit() }
                     // Reachable in landscape too, where the portrait notice
                     // and its button are not rendered at all.
                     if (controllerOn) {
@@ -1958,14 +2062,10 @@ fun PlayScreen(
                             store.setPadForced(padForced)
                         }
                     }
-                    // The status line lives inside the FILE row, which is
-                    // portrait-only - so in landscape every message ("Save
-                    // failed", "Slot belongs to a different run", "Camera
-                    // permission denied") was unreachable and those buttons
-                    // looked like they did nothing. Show it in the strip.
-                    status?.let { msg ->
-                        OverlayChip(msg.take(38)) { status = null }
-                    }
+                    // Everything else (restart, settings, cheats, stream...) in place of the strip.
+                    OverlayChip("MORE") { ui.moreOpen = true }
+                    // Status messages are the toast's now (StatusToast); here
+                    // they were cut at 38 characters and only showed with the strip open.
                     // The tab bar is gone in landscape, so without this the
                     // only way back to the rest of the app was to rotate the
                     // phone - impossible with rotation locked.
@@ -1999,7 +2099,7 @@ fun PlayScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(
-                        "CONTROLLER CONNECTED — PAD HIDDEN",
+                        "Controller connected. Pad hidden.",
                         fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
                         fontSize = 13.sp,
                         color = Shell.hintOnNight,
@@ -2132,11 +2232,21 @@ fun PlayScreen(
             onDock = { TrackerOptions.landscapeTracker = LandscapeTracker.DOCKED; TrackerOptions.save(); trackerOpen = true },
         ) { trackerContent() }
     }
+    // One place for status messages in both orientations, menu open or not
+    // (2026-09-27, audit). Not over the capture: clean view stays clean.
+    if (!streamClean) StatusToast(
+        status, hold = !gameActive, action = ui.toastAction,
+        onGone = { status = null; ui.toastAction = null },
+        modifier = Modifier.align(if (landscape) Alignment.TopCenter else Alignment.BottomCenter)
+            .padding(top = if (landscape) 56.dp else 0.dp),
+    )
+    if (streamClean) CleanViewExit(onExit = { onClean(false) })
     }
 
     androidx.compose.runtime.SideEffect {
         QuickActions.onQuickSave = { saveState() }
-        QuickActions.onQuickLoad = { loadState() }
+        // Instant, as a mapped key should be, with Undo on the toast instead of a question.
+        QuickActions.onQuickLoad = { loadState(keepUndo = true) }
         QuickActions.onOpenStates = { statesDialog = true }
         QuickActions.onRewind = { down -> if (down) startRewind() else stopRewind() }
         QuickActions.onFastForward = { down ->
@@ -2172,7 +2282,8 @@ fun PlayScreen(
             auto = auto, slots = slots, current = saveSlot, version = slotsVersion,
             onPick = { saveSlot = it },
             onSave = { saveState(it) },
-            onLoad = { loadState(it); statesDialog = false },
+            // Asks first, like the menu's LOAD (2026-09-27, audit).
+            onLoad = { askLoad(it); statesDialog = false },
             onLock = { s, on -> s.setLocked(on); slotsVersion++ },
             onUndo = { s -> status = if (s.restoreBackup()) "Slot ${s.n}: previous state restored." else "Nothing to undo."; slotsVersion++ },
             onDismiss = { statesDialog = false },
@@ -2276,7 +2387,7 @@ fun PlayScreen(
 
     if (rulesDialog) {
         val fam = session.kind?.family ?: ""
-        val runMode = if (session.isRun) store.loadLastRun()?.second?.let { RnqsInfo.parse(it).ruleset } else null
+        val runMode = if (session.isRun) store.loadLastRun()?.second?.let { RnqsInfo.of(store.settingsFile(it)).ruleset } else null
         RulesDialog(family = fam, mode = runMode, onDismiss = { rulesDialog = false })
     }
 
@@ -2307,32 +2418,18 @@ fun PlayScreen(
     }
 
     if (confirmNewRun) {
-        androidx.compose.ui.window.Dialog(onDismissRequest = { confirmNewRun = false }) {
-            Column(
-                Modifier.background(Pc.Ground).border(1.dp, Pc.Border).padding(14.dp)
-            ) {
-                PixText("START A NEW RUN?", 10, Pc.Gold)
-                Spacer(Modifier.height(8.dp))
-                PixText("Rolls a fresh seed and re-randomizes the ROM.", 8, Pc.Text)
-                Spacer(Modifier.height(4.dp))
-                PixText("Your in-game save is KEPT, so if you saved", 8, Pc.Dim)
-                PixText("after the intro you can pick Continue and", 8, Pc.Dim)
-                PixText("start straight into the new randomization.", 8, Pc.Dim)
-                Spacer(Modifier.height(4.dp))
-                PixText("Stat notes for this run are cleared.", 8, Pc.Negative)
-                Spacer(Modifier.height(12.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    com.ironmonone.app.gen3.Gen3Button("YES, NEW RUN", accent = true) {
-                        confirmNewRun = false
-                        newRun()
-                    }
-                    com.ironmonone.app.gen3.Gen3Button("CANCEL") {
-                        confirmNewRun = false
-                    }
-                }
-            }
-        }
+        // Shell look since 2026-09-27 (audit); it was the tracker's pixel font and palette.
+        NewRunConfirmDialog(onConfirm = { confirmNewRun = false; newRun() }, onDismiss = { confirmNewRun = false })
     }
+    PlayDialogs(
+        ui,
+        onRestart = { retro?.reset() },
+        onLoad = { loadState(it) },
+        speeds = speedOptions(),
+        speedNow = speedLabel,
+        onSpeed = { pickSpeed(it) },
+        onLayoutDone = { finishLayoutEdit(it) },
+    )
 
     // Note editor for the species on screen. Notes are per species and per run,
     // sitting beside the stat marks.
@@ -2354,12 +2451,12 @@ fun PlayScreen(
                 )
                 Spacer(Modifier.height(10.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    PcSmallButton("SAVE") {
+                    PcTarget("SAVE") {
                         statMarks.setNote(enemySpecies, draft)
                         marksVersion++
                         noteDialog = false
                     }
-                    PcSmallButton("CANCEL") { noteDialog = false }
+                    PcTarget("CANCEL") { noteDialog = false }
                 }
             }
         }
@@ -2464,6 +2561,9 @@ internal fun PadButton(
     skin: PadSkin = PadSkin.CLASSIC,
     /** Modern d-pad arrows: no shape of their own, drawn over the disc. */
     glyphOnly: Boolean = false,
+    /** Touch reach past the drawn box on each side (PadGeometry.hitPadding); the drawing does not move. */
+    hitX: androidx.compose.ui.unit.Dp = 0.dp,
+    hitY: androidx.compose.ui.unit.Dp = 0.dp,
 ) {
     // What a screen reader says. The visible labels are arrows and single
     // letters - "^", "<", "v" - which are meaningless read aloud, and the
@@ -2508,6 +2608,28 @@ internal fun PadButton(
     }
     val modernFill = Color.White.copy(alpha = if (pressed) 0.50f else if (glyphOnly) 0f else 0.22f)
     val modernEdge = Color.White.copy(alpha = if (glyphOnly) 0f else 0.40f)
+    // The press is taken on the OUTER box, which reaches hitX/hitY past the
+    // drawn one: Select/Start and L/R draw under 48dp (2026-09-27, audit).
+    Box(
+        Modifier
+            .semantics { contentDescription = spoken }
+            .pressHold(
+                {
+                    pressed = true
+                    // A tick on press only, never on release: a d-pad held for
+                    // a walk cycle must not buzz continuously, and a double
+                    // buzz per tap reads as a stutter rather than a button.
+                    haptics.performHapticFeedback(
+                        androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress,
+                    )
+                    corePress(keyCode)
+                },
+                { pressed = false
+                  coreRelease(keyCode)
+                  if (keyCode == KeyEvent.KEYCODE_BUTTON_B) currentOnB() },
+            )
+            .padding(horizontal = hitX, vertical = hitY),
+    ) {
     Box(
         Modifier
             .padding(2.dp)
@@ -2527,23 +2649,7 @@ internal fun PadButton(
                     modern -> it.background(modernFill, shape).border(1.dp, modernEdge, shape)
                     else -> it.background(frame).padding(2.dp).background(bevel).padding(2.dp).background(paper)
                 }
-            }
-            .semantics { contentDescription = spoken }
-            .pressHold(
-                {
-                    pressed = true
-                    // A tick on press only, never on release: a d-pad held for
-                    // a walk cycle must not buzz continuously, and a double
-                    // buzz per tap reads as a stutter rather than a button.
-                    haptics.performHapticFeedback(
-                        androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress,
-                    )
-                    corePress(keyCode)
-                },
-                { pressed = false
-                  coreRelease(keyCode)
-                  if (keyCode == KeyEvent.KEYCODE_BUTTON_B) currentOnB() },
-            ),
+            },
         contentAlignment = Alignment.Center,
     ) {
         if (modern || outline) {
@@ -2565,6 +2671,7 @@ internal fun PadButton(
             fontSize = ((if (wide || small) 8f else if (mini) 9f else 12f) * scale).sp,
             color = if (translucent) Color.White else g.Ink,
         )
+    }
     }
 }
 
@@ -2689,6 +2796,12 @@ private fun ChipRule() {
     )
 }
 
+/** The line between the FILE menu's groups. */
+@Composable
+private fun MenuRule() {
+    Box(Modifier.width(1.dp).height(com.ironmonone.app.Shell.touchTarget).background(com.ironmonone.app.Shell.hairline))
+}
+
 /** A chip that acts while HELD: down starts, up stops. Rewind's control. */
 @Composable
 private fun HoldChip(label: String, onDown: () -> Unit, onUp: () -> Unit, big: Boolean = false) {
@@ -2701,19 +2814,46 @@ private fun HoldChip(label: String, onDown: () -> Unit, onUp: () -> Unit, big: B
             .background(g.Paper.copy(alpha = if (big) 1f else 0.25f))
             .heightIn(min = Shell.touchTarget)
             .padding(horizontal = 10.dp)
-            .pressHold({ held = true; onDown() }, { held = false; onUp() }),
+            .holdUnlessScrolled({ held = true; onDown() }, { held = false; onUp() }),
         contentAlignment = Alignment.Center,
     ) {
-        Text("\u25C0\u25C0 " + label, fontWeight = androidx.compose.ui.text.font.FontWeight.Medium, fontSize = 13.sp,
+        Text("\u25C0\u25C0 " + com.ironmonone.app.Shell.label(label), fontWeight = androidx.compose.ui.text.font.FontWeight.Medium, fontSize = 13.sp,
             color = if (big) g.Ink else Color.White)
     }
 }
 
+/**
+ * [pressHold] for a control that sits in a scrolling row or menu: it waits
+ * 150 ms before acting, and a finger that moves past touch slop in that time
+ * is a scroll, not a press. REWIND used plain pressHold, so a swipe that began
+ * on it rewound the game (2026-09-27, audit). The pad keeps pressHold: a
+ * button there must act on the instant.
+ */
+private fun Modifier.holdUnlessScrolled(onDown: () -> Unit, onUp: () -> Unit): Modifier =
+    this.pointerInput(Unit) {
+        awaitEachGesture {
+            val down = awaitFirstDown(requireUnconsumed = false)
+            val slop = viewConfiguration.touchSlop
+            // null = still held and still, so it is a press; false = lifted or moved.
+            val gaveUp = withTimeoutOrNull(150L) {
+                while (true) {
+                    val c = awaitPointerEvent().changes.firstOrNull { it.id == down.id } ?: break
+                    if (!c.pressed || c.isConsumed || (c.position - down.position).getDistance() > slop) break
+                }
+                false
+            }
+            if (gaveUp != null) return@awaitEachGesture
+            onDown()
+            try { waitForUpOrCancellation() } finally { onUp() }
+        }
+    }
+
 @Composable
-private fun OverlayChip(label: String, onClick: () -> Unit) {
+private fun OverlayChip(label: String, description: String? = null, onClick: () -> Unit) {
     val g = com.ironmonone.app.gen3.Gen3
     Box(
         Modifier
+            .then(if (description != null) Modifier.semantics { contentDescription = description } else Modifier)
             .background(g.FrameDark.copy(alpha = 0.45f))
             .padding(1.dp)
             .background(g.Paper.copy(alpha = 0.25f))
@@ -2733,11 +2873,28 @@ private fun OverlayChip(label: String, onClick: () -> Unit) {
         // No wrapping: when the chip row ran out of width the last chip broke
         // its label into a vertical column of letters ("M E N U") instead of
         // staying on one line.
+        // Shell.label: the chips were written in capitals ("SLOT 1", "MUTED")
+        // and the rest of the chrome is sentence case (2026-09-27, audit).
         Text(
-            label, fontWeight = androidx.compose.ui.text.font.FontWeight.Medium, fontSize = 12.sp, color = Color.White,
+            com.ironmonone.app.Shell.label(label), fontWeight = androidx.compose.ui.text.font.FontWeight.Medium, fontSize = 12.sp, color = Color.White,
             maxLines = 1, softWrap = false,
         )
     }
+}
+
+/**
+ * The tracker's small pixel button with a 48dp press area around it: the
+ * note editor's SAVE and CANCEL were a few dp tall (2026-09-27, audit). The
+ * look is the tracker's and stays; only the target grows.
+ */
+@Composable
+private fun PcTarget(label: String, onClick: () -> Unit) {
+    Box(
+        Modifier.heightIn(min = com.ironmonone.app.Shell.touchTarget)
+            .widthIn(min = com.ironmonone.app.Shell.touchTarget)
+            .clickable { onClick() },
+        contentAlignment = Alignment.Center,
+    ) { PcSmallButton(label, onClick) }
 }
 
 /**

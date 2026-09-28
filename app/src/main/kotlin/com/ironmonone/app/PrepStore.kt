@@ -364,13 +364,17 @@ class PrepStore(context: Context) {
         return Result.success(target)
     }
 
-    fun importSettings(name: String, bytes: ByteArray): File =
-        File(settings, name.substringAfterLast('/').substringAfterLast('\\'))
-            .apply { writeBytes(bytes) }
+    // importSettings (write under any name, over any file) is gone: the editor's
+    // Save As and PASTE used it and replaced same-named presets, bundled ones
+    // included, without a word. Everything goes through addSettingsFile now
+    // (2026-09-27, audit).
 
     /** The bundled Gen 1 PART 2 file, for a Gen 1 kind; null for every other console. */
     fun secondPassSettings(kind: RomKind): File? =
         if (kind.generation == com.ironmonone.core.Generation.GB1) File(settings, com.ironmonone.app.engine.Randomizers.GEN1_SECOND_PASS) else null
+
+    /** A settings file by name, for RnqsInfo.of (which also reads its sidecar). */
+    fun settingsFile(name: String): File = File(settings, name)
 
     fun listSettings(): List<File> =
         settings.listFiles { f -> f.isFile && f.name.endsWith(".rnqs", true) }

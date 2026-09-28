@@ -299,6 +299,48 @@ object PadGeometry {
         return out
     }
 
+    /** Android's minimum touch target, in dp. */
+    const val MIN_TARGET = 48f
+
+    /**
+     * How far each control's TOUCH area reaches past its drawn box, (x, y) in dp
+     * per side, so a control drawn under 48dp still takes a 48dp press. The
+     * portrait Select/Start bars (64x32) and the L/R pills (48x30, or the 36dp
+     * squares) were all short of it (2026-09-27, audit). The drawing does not
+     * change. Each reach is capped at the area's edge, and at half the gap to
+     * every neighbour, so two touch areas never meet and a press still lands on
+     * the control nearest the thumb. Controls already 48dp get nothing.
+     */
+    fun hitPadding(layout: PadLayout, areaW: Float, areaH: Float, landscape: Boolean, skin: PadSkin, baseScale: Float = 1f): Map<PadLayout.Element, Pair<Float, Float>> {
+        val all = rects(layout, areaW, areaH, landscape, skin, baseScale)
+        val out = HashMap<PadLayout.Element, Pair<Float, Float>>()
+        for ((e, boxes) in all) {
+            val b = boxes.singleOrNull() ?: continue   // the d-pad: its arrows are full size
+            var ex = ((MIN_TARGET - (b.r - b.l)) / 2).coerceAtLeast(0f)
+            var ey = ((MIN_TARGET - (b.b - b.t)) / 2).coerceAtLeast(0f)
+            if (ex == 0f && ey == 0f) continue
+            ex = minOf(ex, b.l, areaW - b.r).coerceAtLeast(0f)
+            ey = minOf(ey, b.t, areaH - b.b).coerceAtLeast(0f)
+            for ((o, others) in all) {
+                if (o == e) continue
+                for (ob in others) {
+                    val gx = maxOf(ob.l - b.r, b.l - ob.r)   // >= 0: apart side to side
+                    val gy = maxOf(ob.t - b.b, b.t - ob.b)   // >= 0: apart top to bottom
+                    when {
+                        gx < 0 && gy < 0 -> {}                          // already touching; nothing to keep
+                        gy < 0 -> ex = minOf(ex, gx / 2)
+                        gx < 0 -> ey = minOf(ey, gy / 2)
+                        // Diagonal: both sides of the pair cap the same axis, the wider gap.
+                        gx >= gy -> ex = minOf(ex, gx / 2)
+                        else -> ey = minOf(ey, gy / 2)
+                    }
+                }
+            }
+            if (ex > 0f || ey > 0f) out[e] = ex to ey
+        }
+        return out
+    }
+
     /** The pairs of controls whose rectangles touch, empty when the layout is clean. */
     fun overlaps(layout: PadLayout, areaW: Float, areaH: Float, landscape: Boolean, skin: PadSkin, baseScale: Float = 1f): List<Pair<PadLayout.Element, PadLayout.Element>> {
         val r = rects(layout, areaW, areaH, landscape, skin, baseScale).entries.toList()

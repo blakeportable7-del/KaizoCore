@@ -2,6 +2,7 @@ package com.ironmonone.app
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -10,12 +11,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,8 +55,14 @@ fun CheatsDialog(
         Platform.NDS -> "Action Replay codes: pairs of 8 hex digits, one pair per line."
     }
 
+    // Delete takes two taps on the same code within 3 s (2026-09-27, audit: a bare
+    // "X" dropped a typed code with no way back).
+    var armed by remember { mutableStateOf(-1) }
+    LaunchedEffect(armed) { if (armed >= 0) { kotlinx.coroutines.delay(3000); armed = -1 } }
     ShellDialog(title, onDismiss = onDismiss) {
-        Column(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState())) {
+        // The buttons are inside the content, which ShellDialog scrolls as one; ADD A
+        // CODE used to sit under a 420dp list, off-screen in landscape (2026-09-27, audit).
+        Column {
             if (cheats.isEmpty() && !adding) {
                 Text("No cheats for this game yet.", style = MaterialTheme.typography.bodyMedium, color = Gen3.Ink)
             }
@@ -70,7 +80,18 @@ fun CheatsDialog(
                         Text(c.code.replace("\n", " · "), style = MaterialTheme.typography.bodySmall,
                             fontFamily = FontFamily.Monospace, color = Shell.inkOnPaper)
                     }
-                    Gen3Button("X") { onChange(cheats.filterIndexed { j, _ -> j != i }) }
+                    val sure = armed == i
+                    Box(
+                        Modifier.heightIn(min = Shell.touchTarget).widthIn(min = Shell.touchTarget)
+                            .clickable(onClickLabel = if (sure) "Confirm delete" else "Delete code") {
+                                if (sure) { armed = -1; onChange(cheats.filterIndexed { j, _ -> j != i }) } else armed = i
+                            },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        if (sure) Text("Delete?", style = MaterialTheme.typography.labelLarge, color = Shell.dangerOnPaper,
+                            modifier = Modifier.padding(horizontal = 6.dp))
+                        else Icon(Icons.Filled.Delete, contentDescription = "Delete code", tint = Shell.hintOnPaper)
+                    }
                 }
             }
             if (adding) {
@@ -88,7 +109,8 @@ fun CheatsDialog(
                     Gen3Button("SAVE", accent = true) {
                         val clean = CheatStore.normalise(code, platform)
                         when {
-                            clean == null -> error = "The code is empty."
+                            code.isBlank() -> error = "The code is empty."
+                            clean == null -> error = "A line in that code is not a code this app reads. Check it and try again."
                             name.isBlank() -> error = "Give it a name."
                             else -> {
                                 onChange(cheats + CheatStore.Cheat(name.trim(), code.trim(), true))
@@ -99,11 +121,11 @@ fun CheatsDialog(
                     Gen3Button("CANCEL") { adding = false; error = null }
                 }
             }
-        }
-        Spacer(Modifier.height(10.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            if (!adding) Gen3Button("ADD A CODE", accent = true) { adding = true }
-            Gen3Button("CLOSE", onClick = onDismiss)
+            Spacer(Modifier.height(10.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (!adding) Gen3Button("ADD A CODE", accent = true) { adding = true }
+                Gen3Button("CLOSE", onClick = onDismiss)
+            }
         }
     }
 }

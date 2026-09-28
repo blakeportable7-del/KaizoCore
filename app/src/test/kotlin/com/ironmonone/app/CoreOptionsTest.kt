@@ -42,4 +42,27 @@ class CoreOptionsTest {
         assertTrue(s.load(Platform.GBA).isEmpty(), "per console")
         s.reset(Platform.NDS); assertTrue(s.load(Platform.NDS).isEmpty())
     }
+
+    @Test
+    fun `number scales step through their allowed values and labels read as words`() {
+        val gba = CoreOptions.GBA.associateBy { it.key }
+        val range = gba.getValue("mgba_audio_low_pass_range")
+        assertEquals((5..95 step 5).toList(), range.numbers)
+        assertEquals("65", range.snap(61, 60), "+ on a scale in fives moves a whole step")
+        assertEquals("55", range.snap(59, 60))
+        assertEquals("60", range.snap(62, null), "a typed number goes to the nearest allowed value")
+        val solar = gba.getValue("mgba_solar_sensor_level")
+        assertEquals((0..10).toList(), solar.numbers)
+        assertEquals(listOf("sensor"), solar.extras)
+        assertEquals(null, gba.getValue("mgba_frameskip").numbers)
+        assertEquals(null, CoreOptions.NDS.first { it.key == "melonds_hybrid_ratio" }.numbers, "two values are chips, not a stepper")
+        assertEquals("Off", CoreOptions.display("OFF")); assertEquals("On", CoreOptions.display("yes"))
+        assertEquals("Mix (smart)", CoreOptions.display("mix_smart"))
+        assertEquals("Don't remove", CoreOptions.display("Don't Remove"))
+        assertEquals("GB DMG", CoreOptions.display("GB - DMG"))
+        assertEquals("GBC dark blue", CoreOptions.display("GBC - Dark Blue"))
+        assertTrue("custom" !in CoreOptions.GBC.first { it.key == "gambatte_gb_colorization" }.values, "no way to import a custom palette")
+        assertEquals(CoreOptions.DSI_GROUP, CoreOptions.NDS.first { it.key == "melonds_console_mode" }.group,
+            "the console row belongs to the DSi section, which checks the files first")
+    }
 }

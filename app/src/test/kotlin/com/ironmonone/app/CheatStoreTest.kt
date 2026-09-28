@@ -41,5 +41,7 @@ class CheatStoreTest {
         assertEquals("010138CD", CheatStore.normalise("010138cd", Platform.GBC))
         assertEquals("ABC-DEF-123", CheatStore.normalise("abc-def-123", Platform.GBC), "Game Genie keeps its dashes")
         assertNull(CheatStore.normalise("  \n ", Platform.NDS))
+        assertNull(CheatStore.normalise("hello", Platform.GBA), "not a code, not the single hex digit E")
+        assertNull(CheatStore.normalise("c518e2ce 7ff6acd5\nmaster code", Platform.GBA), "one bad line refuses the code")
     }
 }

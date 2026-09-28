@@ -2,9 +2,7 @@ package com.ironmonone.app
 
 import android.content.Context
 import android.net.Uri
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateListOf
 
 /**
  * Bringing files into the library: ROMs, patches and zips of either. Shared by
@@ -21,29 +19,44 @@ internal class LibraryImport(
     private val store: PrepStore,
     private val progress: FileProgress,
 ) {
+    /** A patch that names no game, waiting for the player to say which one: small ones in memory, an xdelta on disk. */
+    private class Pending(val name: String, val bytes: ByteArray?, val file: java.io.File?)
+
     /**
-     * An .ips names no game, so the player says which ROM it is for. It waits
-     * here until they do. Null when nothing is waiting.
+     * An .ips or .xdelta names no game, so the player says which ROM it is
+     * for. Each waits here until they do, first in first asked. This held one
+     * patch: a zip or a pick with two lost all but the last, and an .ips plus
+     * an .xdelta saved one and deleted the other (audit, 2026-09-27).
      */
-    var pendingIps by mutableStateOf<Pair<String, ByteArray>?>(null)
+    private val pending = mutableStateListOf<Pending>()
 
-    /** The same, for an xdelta kept on disk because it may be large. */
-    var pendingFile by mutableStateOf<Pair<String, java.io.File>?>(null)
+    /** The patch the player is being asked about now, or null when nothing is waiting. */
+    val pendingName: String? get() = pending.firstOrNull()?.name
 
-    /** The patch the player is being asked about, whichever kind it is. */
-    val pendingName: String? get() = pendingIps?.first ?: pendingFile?.first
+    private fun isPendingFile(f: java.io.File) = pending.any { it.file == f }
 
-    /** Save the waiting patch for [game]. Returns the status line. */
+    /** Save the patch being asked about for [game], then move on to the next. Returns the status line. */
     fun declarePending(game: LibraryStore.Entry): String {
-        val msg = pendingIps?.let { (n, b) -> store.library.importPatch(n, b, declaredFor = game).name }
-            ?: pendingFile?.let { (n, f) -> store.library.importPatchFile(n, f, game).name }
-        cancelPending()
-        return if (msg == null) "" else "Added patch $msg for ${game.name}."
+        val head = pending.firstOrNull() ?: return ""
+        val msg = runCatching {
+            when {
+                head.bytes != null -> store.library.importPatch(head.name, head.bytes, declaredFor = game).name
+                head.file != null -> store.library.importPatchFile(head.name, head.file, game).name
+                else -> null
+            }
+        }
+        pending.removeAt(0)
+        return msg.fold(
+            { n -> if (n == null) "" else "Added patch ${stripKnownExt(n)} for ${stripKnownExt(game.name)}." },
+            { patchFailure(it) },
+        )
     }
 
+    /** Drop the patch being asked about and move on to the next. */
     fun cancelPending() {
-        pendingFile?.second?.delete()
-        pendingIps = null; pendingFile = null
+        val head = pending.firstOrNull() ?: return
+        head.file?.delete()
+        pending.removeAt(0)
     }
 
     private fun isXdelta(f: java.io.File): Boolean =
@@ -68,10 +81,13 @@ internal class LibraryImport(
                 peek == null -> "$name is not a patch this app reads."
                 peek.forCrc == null && ipsFor != null -> {
                     val p = store.library.importPatch(name, bytes, declaredFor = ipsFor)
-                    "Added patch ${p.name} for ${ipsFor.name}."
+                    "Added patch ${stripKnownExt(p.name)} for ${stripKnownExt(ipsFor.name)}."
                 }
-                peek.forCrc == null -> { pendingIps = name to bytes; "" }
-                else -> { val p = store.library.importPatch(name, bytes); "Added patch ${p.name} for ${p.forName ?: "an unknown game (%08x)".format(p.forCrc)}." }
+                peek.forCrc == null -> { pending.add(Pending(name, bytes, null)); "" }
+                else -> {
+                    val p = store.library.importPatch(name, bytes)
+                    "Added patch ${stripKnownExt(p.name)} for ${p.forName?.let(::stripKnownExt) ?: "a game you have not added yet"}."
+                }
             }
         }
         else -> admit(name, store.library.import(name, bytes))
@@ -85,7 +101,7 @@ internal class LibraryImport(
      * is what import does.
      */
     private fun admit(name: String, e: LibraryStore.Entry): String =
-        store.library.refuse(name, e) ?: ("Added ${e.name}: ${e.subtitle}" + (if (e.verified) ". Ready on the Run tab." else ""))
+        store.library.refuse(name, e) ?: ("Added ${stripKnownExt(e.name)}: ${e.subtitle}" + (if (e.verified) ". Ready on the Run tab." else ""))
 
     /** Import one picked file that has been streamed to [f]. */
     fun importFile(name: String, f: java.io.File, ipsFor: LibraryStore.Entry? = null): String {
@@ -100,15 +116,14 @@ internal class LibraryImport(
                     if (inside.isEmpty()) "$name holds no ROM or patch this app reads."
                     else inside.joinToString(Char(10).toString()) { (n, file) -> importFile(n, file, ipsFor) }.ifBlank { "" }
                 } finally {
-                    // Whatever was not moved into the library, a waiting xdelta aside.
-                    val keep = pendingFile?.second
-                    dir.walkBottomUp().forEach { if (it != keep) it.delete() }  // a folder still holding it stays
+                    // Whatever was not moved into the library, waiting xdeltas aside.
+                    dir.walkBottomUp().forEach { if (!isPendingFile(it)) it.delete() }  // a folder still holding one stays
                 }
             }
             // A big xdelta (a DS hack) is moved, not read into memory.
             isXdelta(f) -> {
-                if (ipsFor == null) { pendingFile = name to f; "" }
-                else { val p = store.library.importPatchFile(name, f, ipsFor); "Added patch ${p.name} for ${ipsFor.name}." }
+                if (ipsFor == null) { pending.add(Pending(name, null, f)); "" }
+                else { val p = store.library.importPatchFile(name, f, ipsFor); "Added patch ${stripKnownExt(p.name)} for ${stripKnownExt(ipsFor.name)}." }
             }
             LibraryStore.looksLikePatch(name) || f.length() < 32L * 1024 * 1024 && store.library.peekPatch(f.readBytes()) != null ->
                 importOne(name, f.readBytes(), ipsFor).also { f.delete() }
@@ -122,12 +137,13 @@ internal class LibraryImport(
     /** Copy each picked document to the cache and import it. Returns the status lines, or null if there is nothing to say. */
     fun importUris(uris: List<Uri>, ipsFor: LibraryStore.Entry? = null): String? {
         val lines = uris.mapNotNull { uri ->
+            var name: String? = null
             // A copy that failed half way used to stay in the cache for good.
             // It is removed here unless the library took it or it is the
             // patch waiting for the player to name its game.
             val tmp = java.io.File(context.cacheDir, "import-" + System.nanoTime())
             try {
-                val name = context.displayNameOf(uri)
+                name = context.displayNameOf(uri)
                 val size = runCatching { context.contentResolver.openAssetFileDescriptor(uri, "r")?.use { it.length } ?: -1L }.getOrDefault(-1L)
                 // The copy and the library file exist together for a moment,
                 // and a zip unpacks beside itself: twice the size, plus room.
@@ -139,9 +155,11 @@ internal class LibraryImport(
                 importFile(name, tmp, ipsFor)
             } catch (t: Throwable) {
                 (t as? com.ironmonone.patch.PatchException)?.message
-                    ?: if (isNoSpace(t)) "Your phone ran out of space while copying. Nothing was added." else "Could not read one file."
+                    ?: if (isNoSpace(t)) "Your phone ran out of space while copying. Nothing was added."
+                    // Say which one: "one file" out of a pick of five was no help (audit, 2026-09-27).
+                    else "Could not read ${name ?: "one of the files"}. Nothing was added from it."
             } finally {
-                if (tmp.exists() && pendingFile?.second != tmp) tmp.delete()
+                if (tmp.exists() && !isPendingFile(tmp)) tmp.delete()
             }
         }
         return lines.filter { it.isNotEmpty() }.joinToString("\n").ifBlank { null }

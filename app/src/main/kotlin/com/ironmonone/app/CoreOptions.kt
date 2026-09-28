@@ -34,7 +34,73 @@ object CoreOptions {
             val i = values.indexOf(current)
             return values[(if (i < 0) 0 else i + 1) % values.size]
         }
+
+        /**
+         * The number scale, when this option is one: five or more whole numbers,
+         * evenly spaced, ascending. The page draws these as a stepper instead of a
+         * forward-only cycle (2026-09-27, audit: the low-pass range was 19 taps
+         * round). Values that are not numbers ride along as [extras].
+         */
+        val numbers: List<Int>? = values.mapNotNull { it.toIntOrNull() }.takeIf { ns ->
+            ns.size >= 5 && ns[1] > ns[0] && ns.zipWithNext { a, b -> b - a }.distinct().size == 1
+        }
+
+        /** Non-number values on a number option (Boktai's "sensor"). */
+        val extras: List<String> get() = if (numbers == null) emptyList() else values.filter { it.toIntOrNull() == null }
+
+        /**
+         * The allowed value for a stepper result [n]. A one-step move from [from]
+         * goes to the next allowed value in that direction, so + on a scale in
+         * fives moves 60 to 65 rather than snapping 61 back to 60; anything else
+         * (a typed number) goes to the nearest allowed value.
+         */
+        fun snap(n: Int, from: Int?): String {
+            val ns = numbers ?: return default
+            val pick = when {
+                from != null && n == from + 1 -> ns.firstOrNull { it > from } ?: ns.last()
+                from != null && n == from - 1 -> ns.lastOrNull { it < from } ?: ns.first()
+                else -> ns.minBy { kotlin.math.abs(it - n) }
+            }
+            return pick.toString()
+        }
     }
+
+    /**
+     * How a stored value reads on the page. The stored value is the core's and
+     * never changes; this is only its label (2026-09-27, audit: rows showed
+     * "mix_smart" and "lcd_ghosting_fast" raw, in monospace).
+     */
+    fun display(value: String): String {
+        LABELS[value]?.let { return it }
+        when (value.lowercase()) {
+            "on", "yes", "enabled" -> return "On"
+            "off", "no", "disabled" -> return "Off"
+        }
+        // "GB - DMG", "SGB - 1A": the palette names, without the separator.
+        val words = value.replace(" - ", " ").replace('_', ' ').split(' ').filter { it.isNotEmpty() }
+        return words.mapIndexed { i, w ->
+            val titleCase = w.length > 1 && w[0].isUpperCase() && w.drop(1).all { !it.isLetter() || it.isLowerCase() }
+            when {
+                i == 0 -> w.replaceFirstChar { it.uppercase() }
+                titleCase && w !in KEEP_CASE -> w.lowercase()
+                else -> w
+            }
+        }.joinToString(" ")
+    }
+
+    private val KEEP_CASE = setOf("Game", "Boy", "Pocket", "Light")
+    private val LABELS = mapOf(
+        "mix" to "Mix",
+        "mix_smart" to "Mix (smart)",
+        "lcd_ghosting" to "LCD ghosting",
+        "lcd_ghosting_fast" to "LCD ghosting (fast)",
+        "auto_threshold" to "Auto (threshold)",
+        "fixed_interval" to "Fixed interval",
+        "sinc" to "Sinc (best)",
+        "cc" to "Cosine (lighter)",
+        "sensor" to "Phone light sensor",
+        "internal" to "Internal palette",
+    )
 
     /** The video filter is LibretroDroid's, not a core option; it rides on the same page. */
     const val FILTER_KEY = "kaizo_filter"
@@ -70,7 +136,7 @@ object CoreOptions {
             hint = "Needs gba_bios.bin imported below. Without it the built-in HLE BIOS runs."),
         Option("mgba_skip_bios", "Skip BIOS intro", listOf("OFF", "ON"), "OFF", "System", restart = true),
         Option("mgba_solar_sensor_level", "Solar sensor level", range(0, 10) + "sensor", "0", "Hardware",
-            hint = "For Boktai. 'sensor' reads the phone's light sensor."),
+            hint = "For Boktai. Phone light sensor reads the real light around you."),
         Option("mgba_force_gbp", "Game Boy Player rumble", listOf("OFF", "ON"), "OFF", "Hardware", restart = true),
         Option("mgba_allow_opposing_directions", "Allow up+down / left+right", listOf("no", "yes"), "no", "Hardware"),
         RUMBLE_ROW, SENSORS_ROW,
@@ -86,8 +152,9 @@ object CoreOptions {
 
     val GBC: List<Option> = listOf(
         Option(FILTER_KEY, "Video filter", FILTERS, "Default", "Video"),
-        Option("gambatte_gb_colorization", "Game Boy colourisation", listOf("disabled", "auto", "GBC", "SGB", "internal", "custom"), "disabled", "Video",
-            hint = "For original Game Boy games: auto uses the GBC/SGB palette the game shipped with; internal uses the palette below."),
+        Option("gambatte_gb_colorization", "Game Boy colourisation", listOf("disabled", "auto", "GBC", "SGB", "internal"), "disabled", "Video",
+            hint = "For original Game Boy games: Auto uses the GBC/SGB palette the game shipped with; Internal palette uses the one below."),
+        // "custom" is left out (2026-09-27, audit): it reads a palette file the app has no way to import.
         Option("gambatte_gb_internal_palette", "Internal palette", GB_PALETTES, "GB - DMG", "Video"),
         Option("gambatte_gbc_color_correction", "GBC colour correction", listOf("GBC only", "always", "disabled"), "GBC only", "Video"),
         Option("gambatte_gbc_color_correction_mode", "Correction mode", listOf("accurate", "fast"), "accurate", "Video"),
@@ -105,9 +172,9 @@ object CoreOptions {
         // Wi-Fi. The server address goes to the core as twelve digit options
         // (LinkIp), which the page shows as one address field.
         Option("gambatte_show_gb_link_settings", "Link settings active", listOf("enabled", "disabled"), "enabled", LINK_GROUP,
-            hint = "Leave enabled; the core reads the link rows only while this is on."),
+            hint = "Leave it on; the core reads the link rows only while this is on."),
         Option("gambatte_gb_link_mode", "Link mode", listOf("Not Connected", "Network Server", "Network Client"), "Not Connected", LINK_GROUP,
-            hint = "Network Server: this phone hosts. Network Client: this phone joins the server address below."),
+            hint = "Network server: this phone hosts. Network client: this phone joins the server address below."),
         Option("gambatte_gb_link_network_port", "Port", range(56400, 56420), "56400", LINK_GROUP),
     ) + (1..12).map { Option(LinkIp.key(it), "Server address digit $it", range(0, 9), "0", LINK_IP_GROUP) }
 
@@ -133,14 +200,16 @@ object CoreOptions {
         Option("melonds_mic_input", "Microphone input", listOf("Blow Noise", "White Noise", "Microphone Input", "None"), "Blow Noise", "Hardware",
             hint = "Blow Noise answers any mic prompt with a breath."),
         RUMBLE_ROW, SENSORS_ROW,
-        Option("melonds_console_mode", "Console", listOf("DS", "DSi"), "DS", "System", restart = true,
-            hint = "DSi needs your own DSi BIOS, firmware and NAND imported below."),
         Option("melonds_boot_directly", "Boot straight into the game", listOf("enabled", "disabled"), "enabled", "System", restart = true,
-            hint = "disabled shows the DS menu first; needs real firmware."),
+            hint = "Off shows the DS menu first; needs real firmware."),
         Option("melonds_use_fw_settings", "Use firmware settings", listOf("disabled", "enabled"), "disabled", "System", restart = true,
-            hint = "enabled reads your name, colour and language from an imported firmware.bin."),
+            hint = "On reads your name, colour and language from an imported firmware.bin."),
         Option("melonds_language", "Language", listOf("English", "Japanese", "French", "German", "Italian", "Spanish"), "English", "System", restart = true),
         Option("melonds_randomize_mac_address", "Random MAC address", listOf("disabled", "enabled"), "disabled", "System", restart = true),
+        // In the DSi group, so it is not drawn as a row: the DSi section switches it,
+        // and only once all seven files are present. As a plain row it skipped that
+        // check and a game could fail to boot (2026-09-27, audit).
+        Option("melonds_console_mode", "Console", listOf("DS", "DSi"), "DS", DSI_GROUP, restart = true),
         Option("melonds_dsi_sdcard", "DSi virtual SD card", listOf("disabled", "enabled"), "disabled", DSI_GROUP, restart = true),
     )
 

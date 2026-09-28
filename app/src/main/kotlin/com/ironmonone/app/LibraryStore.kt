@@ -76,9 +76,10 @@ class LibraryStore(private val root: File) {
         /** What the card says under the name. */
         val subtitle: String get() = when {
             verified && (kind!!.isNatDex || kind.patchTag != null) -> kind.displayName + " · verified"
-            patchName != null -> "$patchName on ${baseName ?: "?"}"
+            // Names without their file extensions, and no checksum talk (audit, 2026-09-27).
+            patchName != null -> "${stripKnownExt(patchName)} on ${baseName?.let(::stripKnownExt) ?: "?"}"
             verified -> kind!!.displayName + " · verified"
-            unverified -> kind!!.displayName + " · unverified (CRC not pinned yet)"
+            unverified -> kind!!.displayName + " · a copy this app has not checked yet"
             else -> summary
         }
     }
@@ -104,7 +105,9 @@ class LibraryStore(private val root: File) {
     // ------------------------------------------------------------------ ROMs
 
     private fun unique(dir: File, wanted: String): File {
-        val base = wanted.replace(Regex("[^A-Za-z0-9 ._+()\\[\\]-]"), "_").trim().ifBlank { "rom" }
+        // Only what a filename cannot hold is replaced. The old allow-list
+        // turned "Pokémon" into "Pok_mon" and ate apostrophes (audit, 2026-09-27).
+        val base = wanted.replace(ILLEGAL_IN_NAME, "_").trim().trimStart('.').ifBlank { "rom" }
         var target = File(dir, base)
         var n = 2
         while (target.exists()) {
@@ -210,8 +213,9 @@ class LibraryStore(private val root: File) {
 
     /** Rename the file (the extension is kept; saves are keyed by CRC, so nothing is lost). */
     fun rename(e: Entry, newStem: String): Entry {
-        val ext = e.name.substringAfterLast('.', "")
-        val stem = newStem.substringBeforeLast('.').trim().ifBlank { return e }
+        // Only a real file extension is cut: "FireRed 1.2.1" is a name, not "FireRed 1.2" plus ".1" (audit, 2026-09-27).
+        val ext = knownExtOf(e.name) ?: ""
+        val stem = stripKnownExt(newStem).trim().ifBlank { return e }
         val target = unique(root, if (ext.isEmpty()) stem else "$stem.$ext")
         if (!e.file.renameTo(target)) return e
         sidecar(e.file).renameTo(sidecar(target))
@@ -220,7 +224,12 @@ class LibraryStore(private val root: File) {
         return renamed
     }
 
-    /** Names worth offering in the rename dialog, best first. */
+    /**
+     * Names worth offering in the rename dialog, best first. Built from what
+     * the sidecar already knows: this used to re-hash the whole file on the
+     * main thread for a header line ("POKEMON EMER BPEE") nobody would pick,
+     * and froze the app on a DS game (audit, 2026-09-27).
+     */
     fun suggestions(e: Entry): List<String> {
         val out = LinkedHashSet<String>()
         val k = e.kind
@@ -229,16 +238,14 @@ class LibraryStore(private val root: File) {
             k != null && e.verified -> { out += k.displayName + " clean"; out += k.displayName }
             k != null && e.unverified -> { out += k.displayName; out += k.displayName + " (unverified)" }
             e.patchName != null -> {
-                val stem = e.patchName.substringBeforeLast('.')
+                val stem = stripKnownExt(e.patchName)
                 out += stem
-                e.baseName?.let { b -> out += "$stem on ${b.substringBeforeLast('.')}" }
+                e.baseName?.let { b -> out += "$stem on ${stripKnownExt(b)}" }
                 k?.let { out += "$stem (${it.displayName.substringBefore(" (")} hack)" }
             }
             k != null -> out += k.displayName.substringBefore(" (") + " hack"
         }
-        runCatching { RomIdentity.identify(e.file) }.getOrNull()?.headerLine
-            ?.let { out += it.trim() }
-        return out.filter { it.isNotBlank() && it != e.name.substringBeforeLast('.') }.take(4)
+        return out.filter { it.isNotBlank() && it != stripKnownExt(e.name) }.take(4)
     }
 
     fun delete(e: Entry) {
@@ -323,8 +330,8 @@ class LibraryStore(private val root: File) {
     fun romsFor(patch: PatchEntry): List<Entry> = list().filter { patch.matches(it) }
 
     fun renamePatch(p: PatchEntry, newStem: String): PatchEntry {
-        val ext = p.name.substringAfterLast('.', "")
-        val stem = newStem.substringBeforeLast('.').trim().ifBlank { return p }
+        val ext = knownExtOf(p.name) ?: ""
+        val stem = stripKnownExt(newStem).trim().ifBlank { return p }
         val target = unique(patchDir, if (ext.isEmpty()) stem else "$stem.$ext")
         if (!p.file.renameTo(target)) return p
         sidecar(p.file).renameTo(sidecar(target))
@@ -346,7 +353,7 @@ class LibraryStore(private val root: File) {
         // DS hack (they ship as xdelta, on 128 to 512 MB dumps) failed or ran
         // out of memory (audit, 2026-09-27). applyFiles streams xdelta and
         // takes the small formats through memory as before.
-        val stem = patch.name.substringBeforeLast('.').ifBlank { "patched" }
+        val stem = stripKnownExt(patch.name).ifBlank { "patched" }
         val ext = base.name.substringAfterLast('.', "")
         val tmp = File(root, ".patching-" + System.nanoTime() + ".tmp")
         try {
@@ -360,7 +367,7 @@ class LibraryStore(private val root: File) {
     /** Apply patch bytes to a library entry; the result is a new entry named after the patch. */
     fun patch(base: Entry, patchName: String, patchBytes: ByteArray): Entry {
         val out = Patcher.apply(patchBytes, base.file.readBytes(), base.name)
-        val stem = patchName.substringBeforeLast('.').ifBlank { "patched" }
+        val stem = stripKnownExt(patchName).ifBlank { "patched" }
         val ext = base.name.substringAfterLast('.', "")
         return import(if (ext.isEmpty()) stem else "$stem.$ext", out, baseName = base.name, patchName = patchName)
     }
@@ -391,5 +398,31 @@ class LibraryStore(private val root: File) {
 
         @Suppress("unused")
         private val crcOf = Crc32
+
+        /** What no filename may hold: path separators, the Windows reserved set, control characters. */
+        private val ILLEGAL_IN_NAME = Regex("[/\\\\:*?\"<>|\\x00-\\x1F\\x7F]")
     }
+}
+
+/** The file extensions this app reads. Anything else after a dot is part of the name. */
+private val KNOWN_EXTS = setOf("gba", "gbc", "gb", "nds", "zip", "ips", "bps", "ups", "xdelta", "vcdiff")
+
+/** [name]'s extension, lowercase, when it is one this app reads; null otherwise. */
+internal fun knownExtOf(name: String): String? =
+    name.substringAfterLast('.', "").lowercase().takeIf { it in KNOWN_EXTS && name.lastIndexOf('.') > 0 }
+
+/**
+ * A file or game name without its file extension. Only a known extension is
+ * cut, because game names carry dots of their own: "FireRed + Nat. Dex 1.2.1"
+ * and "(U) v1.1" lost their versions to substringBeforeLast (audit, 2026-09-27).
+ */
+internal fun stripKnownExt(name: String): String =
+    if (knownExtOf(name) != null) name.substringBeforeLast('.') else name
+
+/** A patch format as the player reads it. */
+internal fun patchFormatLabel(f: PatchFormat): String = when (f) {
+    PatchFormat.IPS -> "IPS patch"
+    PatchFormat.BPS -> "BPS patch"
+    PatchFormat.UPS -> "UPS patch"
+    PatchFormat.XDELTA -> "xdelta patch"
 }

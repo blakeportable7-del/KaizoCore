@@ -284,7 +284,7 @@ internal fun LogTrainerDetail(
     val ctx = LocalContext.current
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         Row(Modifier.fillMaxWidth().background(Pc.Page).border(1.dp, Pc.Border).padding(6.dp), verticalAlignment = Alignment.CenterVertically) {
-            PixText("< BACK", 7, Pc.Dim, Modifier.clickable { onBack() }.padding(end = 10.dp))
+            PcTap("< BACK", 7, Pc.Dim, "Back", Modifier.padding(end = 4.dp)) { onBack() }
             Column(Modifier.weight(1f)) {
                 PixText(rules.detailClass(t, custom).uppercase(), 8, Pc.Gold)
                 PixText(rules.detailName(t, custom).uppercase(), 8, Pc.Gold)

@@ -88,13 +88,13 @@ fun TrackedPokemonDialog(marks: StatMarks, seen: Set<Int>, tracker: NdsTracker?,
         Column(Modifier.width(300.dp).background(Pc.Page).border(1.dp, Pc.Border).padding(8.dp).verticalScroll(rememberScrollState())) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 PixText("TRACKED POKEMON", 10, Pc.Text, Modifier.weight(1f))
-                PixText("X", 9, Pc.Dim, Modifier.clickable { onClose() }.padding(horizontal = 6.dp, vertical = 2.dp))
+                PcTap("X", 9, Pc.Dim, "Close") { onClose() }
             }
             Spacer(Modifier.height(6.dp))
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                PixText("<", 12, Pc.Text, Modifier.clickable { if (ids.isNotEmpty()) index = (index - 1 + ids.size) % ids.size }.padding(horizontal = 10.dp))
+                PcTap("<", 12, Pc.Text, "Previous") { if (ids.isNotEmpty()) index = (index - 1 + ids.size) % ids.size }
                 PixText(if (ids.isEmpty()) "0/0" else "${index + 1}/${ids.size}", 9, Pc.Gold, Modifier.weight(1f), TextAlign.Center)
-                PixText(">", 12, Pc.Text, Modifier.clickable { if (ids.isNotEmpty()) index = (index + 1) % ids.size }.padding(horizontal = 10.dp))
+                PcTap(">", 12, Pc.Text, "Next") { if (ids.isNotEmpty()) index = (index + 1) % ids.size }
             }
             Spacer(Modifier.height(4.dp))
             Row(Modifier.fillMaxWidth().border(1.dp, Pc.Border).padding(4.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -268,7 +268,7 @@ fun TourneyDialog(t: TourneyTracker, currentSeed: String, onClose: () -> Unit) {
         Column(Modifier.width(300.dp).background(Pc.Page).border(1.dp, Pc.Border).padding(8.dp).verticalScroll(rememberScrollState())) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 PixText("TOURNEY TRACKER", 10, Pc.Text, Modifier.weight(1f))
-                PixText("X", 9, Pc.Dim, Modifier.clickable { onClose() }.padding(horizontal = 6.dp, vertical = 2.dp))
+                PcTap("X", 9, Pc.Dim, "Close") { onClose() }
             }
             Spacer(Modifier.height(4.dp))
             GearToggle("Tourney tracker on", TrackerOptions.tourneyTracker) { TrackerOptions.tourneyTracker = it; TrackerOptions.save() }
@@ -278,9 +278,9 @@ fun TourneyDialog(t: TourneyTracker, currentSeed: String, onClose: () -> Unit) {
             if (s == null) PixText("No seeds scored yet.", 8, Pc.Dim)
             else {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    PixText("<", 12, Pc.Text, Modifier.clickable { index = (index - 1 + t.scores.size) % t.scores.size }.padding(horizontal = 10.dp))
+                    PcTap("<", 12, Pc.Text, "Previous") { index = (index - 1 + t.scores.size) % t.scores.size }
                     PixText("Seed ${index + 1}/${t.scores.size}: ${t.points(s)} points", 9, Pc.Text, Modifier.weight(1f), TextAlign.Center)
-                    PixText(">", 12, Pc.Text, Modifier.clickable { index = (index + 1) % t.scores.size }.padding(horizontal = 10.dp))
+                    PcTap(">", 12, Pc.Text, "Next") { index = (index + 1) % t.scores.size }
                 }
                 Spacer(Modifier.height(4.dp))
                 PixText("Milestones", 8, Pc.Gold)

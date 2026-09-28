@@ -23,6 +23,14 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -39,7 +47,6 @@ import com.dabomstew.pkrandom.Settings as NdSettings
 import com.dabomstew.pkrandomzx.Settings as ZxSettings
 import com.ironmonone.app.engine.NatDexEngine
 import com.ironmonone.app.engine.ZxEngine
-import com.ironmonone.app.gen3.Gen3
 import com.ironmonone.app.gen3.Gen3Box
 import com.ironmonone.app.gen3.Gen3Button
 import com.ironmonone.editor.Option
@@ -132,6 +139,11 @@ fun EditorScreen(
     var edits by remember { mutableIntStateOf(0) }   // bump to recompose values
     var saveDialog by remember { mutableStateOf(false) }
     var pasteDialog by remember { mutableStateOf(false) }
+    // A pasted string that passed validation, waiting for its name: the text
+    // and whether the Nat. Dex fork owns it.
+    var pendingPaste by remember { mutableStateOf<Pair<String, Boolean>?>(null) }
+    val fileInfo = remember(file) { RnqsInfo.of(file) }
+    val natDexFile = PresetStrings.isNatDexClass(settingsClass)
     var status by remember { mutableStateOf<String?>(null) }
     var statusError by remember { mutableStateOf(false) }
     var query by remember { mutableStateOf("") }
@@ -167,11 +179,15 @@ fun EditorScreen(
      */
     fun gateReason(opt: Option): String? {
         @Suppress("UNUSED_EXPRESSION") edits
-        val gate = SettingsReflector.gateFor(opt.id) ?: return null
-        val master = allOptions.firstOrNull { it.id == gate.whenField } ?: return null
-        if (valueOf(master, settings) != gate.equalsValue) return null
-        return "No effect while " + master.label + " is " +
-            SettingsReflector.prettifyEnum(gate.equalsValue)
+        // Every gate a field has, not just one: balanceShakingGrass is dead
+        // under Area AND Global mapping (2026-09-27, audit).
+        for (gate in SettingsReflector.gatesFor(opt.id)) {
+            val master = allOptions.firstOrNull { it.id == gate.whenField } ?: continue
+            if (valueOf(master, settings) != gate.equalsValue) continue
+            return "No effect while " + master.label + " is " +
+                SettingsReflector.valueLabel(master.id, gate.equalsValue)
+        }
+        return null
     }
 
     val changedCount = allOptions.count { changed(it) }
@@ -183,11 +199,14 @@ fun EditorScreen(
     var confirmLeave by remember { mutableStateOf(false) }
     fun leave() { if (dirty) confirmLeave = true else onClose() }
     androidx.activity.compose.BackHandler { leave() }
+    // Declared AFTER the leave handler so it wins while there is a search:
+    // Back clears the search first, as every search field does (2026-09-27, audit).
+    androidx.activity.compose.BackHandler(enabled = query.isNotEmpty()) { query = "" }
     if (confirmLeave) {
         ShellDialog("Leave without saving?", onDismiss = { confirmLeave = false }) {
             Column {
                 Text("You changed $changedCount setting(s). They are lost if you leave now.",
-                    style = MaterialTheme.typography.bodyMedium, color = Gen3.Ink)
+                    style = MaterialTheme.typography.bodyMedium, color = Shell.inkOnPaper)
                 Spacer(Modifier.height(10.dp))
                 // Two rows: three buttons in one clipped the last at phone width.
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -195,7 +214,8 @@ fun EditorScreen(
                     Gen3Button("STAY") { confirmLeave = false }
                 }
                 Spacer(Modifier.height(8.dp))
-                Gen3Button("LEAVE WITHOUT SAVING") { confirmLeave = false; onClose() }
+                // The destructive choice reads as one: danger text, no fill.
+                DangerTextButton("Leave without saving") { confirmLeave = false; onClose() }
             }
         }
     }
@@ -231,27 +251,44 @@ fun EditorScreen(
                             // 141 options behind eight collapsed sections is
                             // not browsable. Search is how anyone finds one
                             // setting without opening all of them.
-                            Box(
+                            Row(
                                 Modifier.fillMaxWidth().background(Shell.frame)
                                     .padding(2.dp).background(Shell.paper)
-                                    .padding(horizontal = 8.dp, vertical = 10.dp),
+                                    .padding(start = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                if (query.isEmpty()) {
-                                    Text(
-                                        "Search settings",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = Shell.hintOnPaper,
+                                Box(Modifier.weight(1f).padding(vertical = 10.dp)) {
+                                    if (query.isEmpty()) {
+                                        Text(
+                                            "Search settings",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = Shell.hintOnPaper,
+                                        )
+                                    }
+                                    BasicTextField(
+                                        value = query,
+                                        onValueChange = { query = it },
+                                        singleLine = true,
+                                        textStyle = TextStyle(
+                                            color = Shell.inkOnPaper, fontSize = 15.sp,
+                                        ),
+                                        modifier = Modifier.fillMaxWidth(),
                                     )
                                 }
-                                BasicTextField(
-                                    value = query,
-                                    onValueChange = { query = it },
-                                    singleLine = true,
-                                    textStyle = TextStyle(
-                                        color = Shell.inkOnPaper, fontSize = 15.sp,
-                                    ),
-                                    modifier = Modifier.fillMaxWidth(),
-                                )
+                                // A way out of a search without deleting it
+                                // letter by letter.
+                                if (query.isNotEmpty()) {
+                                    Box(
+                                        Modifier.size(Shell.touchTarget).clickable { query = "" },
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        androidx.compose.material3.Icon(
+                                            androidx.compose.material.icons.Icons.Filled.Close,
+                                            contentDescription = "Clear search",
+                                            tint = Shell.hintOnPaper,
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
@@ -278,6 +315,7 @@ fun EditorScreen(
                                 opt = opt, settings = settings,
                                 changed = changed(opt),
                                 gateReason = gateReason(opt),
+                                generation = generation,
                                 onEdit = { edits++ }, onRevert = { revert(opt) },
                             )
                         }
@@ -298,13 +336,13 @@ fun EditorScreen(
                                 }.heightIn(min = Shell.touchTarget),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                Text(
-                                    if (openSection == section) "v" else ">",
-                                    fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
-                                    fontSize = 13.sp,
-                                    color = Shell.hintOnPaper,
-                                    modifier = Modifier.width(20.dp),
+                                androidx.compose.material3.Icon(
+                                    if (openSection == section) androidx.compose.material.icons.Icons.Filled.KeyboardArrowUp
+                                    else androidx.compose.material.icons.Icons.Filled.KeyboardArrowDown,
+                                    contentDescription = if (openSection == section) "Close" else "Open",
+                                    tint = Shell.hintOnPaper,
                                 )
+                                Spacer(Modifier.width(6.dp))
                                 Text(
                                     section.title,
                                     Modifier.weight(1f),
@@ -342,6 +380,7 @@ fun EditorScreen(
                                     settings = settings,
                                     changed = changed(opt),
                                     gateReason = gateReason(opt),
+                                    generation = generation,
                                     onEdit = { edits++ },
                                     onRevert = { revert(opt) },
                                 )
@@ -379,8 +418,10 @@ fun EditorScreen(
                     Gen3Button("COPY") {
                         val clip = context.getSystemService(Context.CLIPBOARD_SERVICE)
                             as ClipboardManager
+                        // With the version prefix, as the desktop copies it:
+                        // the bare body was refused by our own PASTE (2026-09-27, audit).
                         clip.setPrimaryClip(
-                            ClipData.newPlainText("settings", settings.toString()),
+                            ClipData.newPlainText("settings", PresetStrings.copyString(settings, settingsClass)),
                         )
                         status = "Settings string copied."; statusError = false
                     }
@@ -396,7 +437,9 @@ fun EditorScreen(
     if (saveDialog) {
         NameDialog(
             title = "Save preset as",
-            initial = file.name.removeSuffix(".rnqs") + " (edited)",
+            // The game tag, NatDex and ruleset stay in the suggested name: the
+            // Run tab pairs a preset with a game by them (2026-09-27, audit).
+            initial = PresetStrings.suggestedName(fileInfo, natDexFile, "my edit"),
             onCancel = { saveDialog = false },
         ) { name ->
             saveDialog = false
@@ -432,16 +475,23 @@ fun EditorScreen(
                         "the saved file did not read back the same: " +
                             lost.take(3).joinToString { it.label }
                     }
-                    store.importSettings("$name.rnqs", tmp.readBytes())
+                    // Never over another file: importSettings replaced any
+                    // same-named preset, bundled ones included, without a word.
+                    // addSettingsFile makes "Name (2)" instead (2026-09-27, audit).
+                    val saved = store.addSettingsFile("${name.removeSuffix(".rnqs")}.rnqs", tmp.readBytes()).getOrThrow()
+                    // What the preset is for, beside it, in case the name lost
+                    // the tokens the Run tab pairs on.
+                    RnqsInfo.writeMeta(saved, fileInfo.gameTag ?: PresetStrings.targetFamily, natDexFile, fileInfo.ruleset)
+                    saved
                 } finally {
                     // Always: a failed save used to leave the temp file behind.
                     tmp.delete()
                 }
-            }.onSuccess {
+            }.onSuccess { saved ->
                 savedString = runCatching { settings.toString() }.getOrNull()
-                status = "Saved. Pick it on the Run tab."; statusError = false
+                status = "Saved as ${saved.name.removeSuffix(".rnqs")}. Pick it on the Run tab."; statusError = false
             }.onFailure {
-                status = "Save failed: ${it.message}"; statusError = true
+                status = PresetStrings.plain(it, "Could not save the preset"); statusError = true
             }
         }
     }
@@ -454,23 +504,65 @@ fun EditorScreen(
             onCancel = { pasteDialog = false },
         ) { text ->
             pasteDialog = false
-            val natDexOk = NatDexEngine.validateSettingsString(text) == null
-            val zxOk = ZxEngine.validateSettingsString(text) == null
-            if (!natDexOk && !zxOk) {
-                status = "That settings string is not valid for either engine."
+            val natDexErr = NatDexEngine.validateSettingsString(text)
+            val zxErr = ZxEngine.validateSettingsString(text)
+            if (natDexErr != null && zxErr != null) {
+                status = if ("newer randomizer" in natDexErr + zxErr)
+                    "That settings string is from a newer randomizer than this app carries."
+                else "That is not a settings string either randomizer can read."
                 statusError = true
                 return@NameDialog
             }
+            // Both can accept an older string; then the engine of the file
+            // being edited decides.
+            val natDex = when {
+                natDexErr == null && zxErr == null -> natDexFile
+                else -> natDexErr == null
+            }
+            // Name it next, instead of saving every paste over "Pasted
+            // preset.rnqs" with no tags the Run tab could pair on (2026-09-27, audit).
+            pendingPaste = text to natDex
+        }
+    }
+
+    pendingPaste?.let { (text, natDex) ->
+        NameDialog(
+            title = "Name the pasted preset",
+            initial = PresetStrings.suggestedName(null, natDex, "pasted", family = fileInfo.gameTag),
+            onCancel = { pendingPaste = null },
+        ) { name ->
+            pendingPaste = null
             runCatching {
-                val dest = store.importSettings("Pasted preset.rnqs", ByteArray(0))
-                if (natDexOk) NatDexEngine.writeSettingsString(text, dest)
-                else ZxEngine.writeSettingsString(text, dest)
-            }.onSuccess {
-                status = "Pasted preset saved. Pick it on the Run tab."; statusError = false
+                val tmp = File.createTempFile("paste", ".rnqs", store.cacheDirFor())
+                try {
+                    if (natDex) NatDexEngine.writeSettingsString(text, tmp)
+                    else ZxEngine.writeSettingsString(text, tmp)
+                    val saved = store.addSettingsFile("${name.removeSuffix(".rnqs")}.rnqs", tmp.readBytes()).getOrThrow()
+                    RnqsInfo.writeMeta(saved, RnqsInfo.parse(saved.name).gameTag ?: fileInfo.gameTag ?: PresetStrings.targetFamily, natDex, null)
+                    saved
+                } finally {
+                    tmp.delete()
+                }
+            }.onSuccess { saved ->
+                status = "Saved as ${saved.name.removeSuffix(".rnqs")}. Pick it on the Run tab."; statusError = false
             }.onFailure {
-                status = "Could not save: ${it.message}"; statusError = true
+                status = PresetStrings.plain(it, "Could not save the pasted preset"); statusError = true
             }
         }
+    }
+}
+
+/** A text-only button for a destructive choice, in the danger colour. */
+@Composable
+private fun DangerTextButton(text: String, onClick: () -> Unit) {
+    Box(
+        Modifier.heightIn(min = Shell.touchTarget)
+            .clip(androidx.compose.foundation.shape.RoundedCornerShape(Shell.controlRadius))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(text, style = MaterialTheme.typography.labelLarge, color = Shell.dangerOnPaper)
     }
 }
 
@@ -486,6 +578,7 @@ private fun OptionRow(
     settings: Any,
     changed: Boolean,
     gateReason: String?,
+    generation: String?,
     onEdit: () -> Unit,
     onRevert: () -> Unit,
 ) {
@@ -503,9 +596,14 @@ private fun OptionRow(
                 // Tapping the label did nothing, which is the most natural
                 // thing to tap and the largest part of the row.
                 .then(
-                    if (opt is Option.Bool && live)
-                        Modifier.clickable { opt.set(settings, !opt.get(settings)); onEdit() }
-                    else Modifier,
+                    when {
+                        opt is Option.Bool && live ->
+                            Modifier.clickable { opt.set(settings, !opt.get(settings)); onEdit() }
+                        // A number or choice row has no toggle: its label opens
+                        // the help instead, a bigger target than the icon.
+                        opt !is Option.Bool && help != null -> Modifier.clickable { showHelp = !showHelp }
+                        else -> Modifier
+                    },
                 )
                 .heightIn(min = Shell.touchTarget),
             verticalAlignment = Alignment.CenterVertically,
@@ -516,8 +614,11 @@ private fun OptionRow(
             }
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    // Weighted without fill: a long label wraps instead of
+                    // squeezing the help button to zero width (2026-09-27, audit).
                     Text(
                         opt.label,
+                        Modifier.weight(1f, fill = false),
                         style = MaterialTheme.typography.bodyMedium,
                         color = ink,
                     )
@@ -525,16 +626,16 @@ private fun OptionRow(
                     // 138 fields have one; the rest show no marker at all
                     // rather than an empty panel.
                     if (help != null) {
-                        Spacer(Modifier.width(6.dp))
+                        // A 48dp target with an icon, not a 28dp "?" glyph.
                         Box(
-                            Modifier.size(28.dp).clickable { showHelp = !showHelp },
+                            Modifier.size(Shell.touchTarget).clickable { showHelp = !showHelp },
                             contentAlignment = Alignment.Center,
                         ) {
-                            Text(
-                                "?",
-                                fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
-                                fontSize = 14.sp,
-                                color = Shell.hintOnPaper,
+                            androidx.compose.material3.Icon(
+                                androidx.compose.material.icons.Icons.Filled.Info,
+                                contentDescription = "Help",
+                                tint = Shell.hintOnPaper,
+                                modifier = Modifier.size(20.dp),
                             )
                         }
                     }
@@ -548,16 +649,27 @@ private fun OptionRow(
                 }
             }
             when (opt) {
-                // The row owns the click; this is just the indicator.
-                is Option.Bool -> Box(Modifier.padding(8.dp)) {
+                // The row owns the click; this is just the indicator. Dimmed
+                // while dead, so a set box does not look like a live choice.
+                is Option.Bool -> Box(Modifier.padding(8.dp).alpha(if (live) 1f else 0.38f)) {
                     ShellCheck(opt.get(settings))
                 }
 
-                is Option.IntValue -> ShellStepper(
+                // A dead number is shown, not offered: the stepper took edits
+                // the engine then ignored (2026-09-27, audit).
+                is Option.IntValue -> if (live) ShellStepper(
                     value = opt.get(settings),
-                    // The engine clamps anyway; this keeps the stepper sane.
-                    range = 0..255,
-                    onChange = { opt.set(settings, it); onEdit() },
+                    // The desktop randomizer's own limits for this setting,
+                    // widened to its "off" value where it has one.
+                    range = SettingsReflector.stepperRange(opt.id, generation),
+                    onChange = { v ->
+                        opt.set(settings, SettingsReflector.snapValue(opt.id, opt.get(settings), v)); onEdit()
+                    },
+                ) else Text(
+                    opt.get(settings).toString(),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Shell.hintOnPaper,
+                    modifier = Modifier.padding(horizontal = 16.dp),
                 )
 
                 // Choice rows are handled BELOW, on their own line.
@@ -569,11 +681,10 @@ private fun OptionRow(
                     Modifier.size(Shell.touchTarget).clickable { onRevert() },
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(
-                        "<",
-                        fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
-                        fontSize = 16.sp,
-                        color = Shell.inkOnPaper,
+                    androidx.compose.material3.Icon(
+                        androidx.compose.material.icons.Icons.Filled.Refresh,
+                        contentDescription = "Put back the file's value",
+                        tint = Shell.hintOnPaper,
                     )
                 }
             }
@@ -597,41 +708,52 @@ private fun OptionRow(
         // fits every enum in the file.
         if (opt is Option.Choice) {
             val current = opt.get(settings)
+            fun name(v: String) = SettingsReflector.valueLabel(opt.id, v)
+            // A value the editor does not offer (Custom starters) still shows
+            // when the file already uses it.
+            val values = if (current in opt.values) opt.values else opt.values + current
             // Segmented only when the labels actually FIT. Counting values was
             // not enough - three long names do not fit a phone width.
-            val inline = opt.values.size <= 3 &&
-                opt.values.sumOf { SettingsReflector.prettifyEnum(it).length } <= 26
+            val inline = values.size <= 3 && values.sumOf { name(it).length } <= 26
             Spacer(Modifier.height(2.dp))
             if (inline) {
                 ShellSegmented(
-                    values = opt.values,
+                    values = values,
                     selected = current,
-                    label = { SettingsReflector.prettifyEnum(it) },
-                    onSelect = { opt.set(settings, it); onEdit() },
-                    modifier = Modifier.padding(bottom = 6.dp),
+                    label = { name(it) },
+                    // Dead: the chips stay readable but take no taps.
+                    onSelect = { if (live) { opt.set(settings, it); onEdit() } },
+                    modifier = Modifier.padding(bottom = 6.dp).alpha(if (live) 1f else 0.38f),
                 )
             } else {
                 var picking by remember(opt.id) { mutableStateOf(false) }
-                Box(
+                Row(
                     Modifier.fillMaxWidth()
-                        .clickable { picking = true }
+                        .then(if (live) Modifier.clickable { picking = true } else Modifier)
                         .background(Shell.frame).padding(2.dp)
                         .background(Shell.paper)
-                        .heightIn(min = 40.dp)
-                        .padding(horizontal = 10.dp),
-                    contentAlignment = Alignment.CenterStart,
+                        .heightIn(min = Shell.touchTarget)
+                        .padding(start = 10.dp, end = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        SettingsReflector.prettifyEnum(current),
+                        name(current),
+                        Modifier.weight(1f),
                         fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
                         fontSize = 13.sp,
-                        color = Shell.inkOnPaper,
+                        color = ink,
+                    )
+                    // Says "this opens a list", which a bare box did not.
+                    androidx.compose.material3.Icon(
+                        androidx.compose.material.icons.Icons.Filled.ArrowDropDown,
+                        contentDescription = null,
+                        tint = Shell.hintOnPaper,
                     )
                 }
                 Spacer(Modifier.height(6.dp))
-                if (picking) {
+                if (picking && live) {
                     ShellDialog(opt.label, onDismiss = { picking = false }) {
-                        opt.values.forEach { v ->
+                        values.forEach { v ->
                             Row(
                                 Modifier.fillMaxWidth()
                                     .clickable {
@@ -643,7 +765,7 @@ private fun OptionRow(
                                 ShellRadio(v == current)
                                 Spacer(Modifier.width(10.dp))
                                 Text(
-                                    SettingsReflector.prettifyEnum(v),
+                                    name(v),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = Shell.inkOnPaper,
                                 )

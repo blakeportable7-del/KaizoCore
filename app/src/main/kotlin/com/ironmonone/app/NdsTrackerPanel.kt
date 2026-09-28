@@ -360,16 +360,8 @@ fun NdsTrackerPanel(
 
             !state.located && !state.inBattle -> PcCard {
                 Column(Modifier.padding(6.dp)) {
-                    PixText("No party yet - the tracker locks on once you", 8, Pc.Dim)
-                    PixText("have a Pokemon.", 8, Pc.Dim)
-                    Spacer(Modifier.height(3.dp))
-                    PixText(
-                        if (state.resolvedBase != 0L)
-                            "party base 0x%08X - reading live memory"
-                                .format(state.resolvedBase)
-                        else "address chain not resolved yet",
-                        7, Pc.Dim,
-                    )
+                    // The memory address line was a debug read-out in front of players (audit, 2026-09-27).
+                    PixText("No Pokemon yet. The tracker fills in when you get your first one.", 8, Pc.Dim, wrap = true)
                     randomBall?.let { Spacer(Modifier.height(4.dp)); RandomBallRow(it, hgss = state.badgeSet == "HGSS") }
                     favoriteLine?.let { Spacer(Modifier.height(3.dp)); PixText(it, 7, Pc.Gold, wrap = true) }
                 }

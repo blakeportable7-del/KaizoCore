@@ -17,6 +17,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -70,15 +73,18 @@ private fun TabPages(
         Row(
             Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 2.dp)
                 .clip(androidx.compose.foundation.shape.RoundedCornerShape(Shell.controlRadius))
-                .background(Shell.paper).padding(4.dp),
+                .background(Shell.paper).padding(4.dp)
+                .selectableGroup(),
         ) {
+            // A tab group to TalkBack, 48dp tall (audit, 2026-09-27).
             pages.forEachIndexed { i, name ->
                 val on = i == page
                 Box(
                     Modifier.weight(1f)
+                        .heightIn(min = Shell.touchTarget)
                         .clip(androidx.compose.foundation.shape.RoundedCornerShape(10.dp))
                         .background(if (on) Shell.raised else Shell.paper)
-                        .clickable { onPage(i) }
+                        .selectable(selected = on, role = androidx.compose.ui.semantics.Role.Tab) { onPage(i) }
                         .padding(vertical = 10.dp),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -133,6 +139,15 @@ class MainActivity : ComponentActivity() {
      */
     var keyCapture: ((Int) -> Boolean)? = null
 
+    /**
+     * True while [keyCapture] runs for a key from a gamepad. The remap screen
+     * refuses standard pad buttons for console buttons, because those always
+     * reach the core as themselves below; a keyboard's arrow keys share the
+     * same key codes and must stay bindable (audit, 2026-09-27).
+     */
+    var captureFromPad: Boolean = false
+        private set
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Demo.mode = intent?.getStringExtra("demo")
@@ -180,6 +195,7 @@ class MainActivity : ComponentActivity() {
         // screen was dead: every key press bound nothing.
         keyCapture?.let { capture ->
             if (event.action == KeyEvent.ACTION_DOWN) {
+                captureFromPad = (event.source and InputDevice.SOURCE_GAMEPAD) == InputDevice.SOURCE_GAMEPAD
                 if (capture(event.keyCode)) return true
             } else if (event.action == KeyEvent.ACTION_UP) {
                 return true      // swallow the matching up, or the game sees it
@@ -254,6 +270,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 private fun App() {
     val appContext = androidx.compose.ui.platform.LocalContext.current
     var tab by remember {
@@ -280,8 +297,12 @@ private fun App() {
                 "with your phone model and the app version, and helps get it fixed.",
                 style = androidx.compose.material3.MaterialTheme.typography.bodyMedium, color = Gen3.Ink)
             Spacer(Modifier.height(10.dp))
-            Row(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
-                com.ironmonone.app.gen3.Gen3Button("SEND REPORT", accent = true) {
+            // FlowRow: at a large font two buttons in a Row ran off the dialog.
+            androidx.compose.foundation.layout.FlowRow(
+                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
+                verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
+            ) {
+                com.ironmonone.app.gen3.Gen3Button("Send report", accent = true) {
                     runCatching {
                         val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
                             type = "text/plain"
@@ -292,7 +313,7 @@ private fun App() {
                     }
                     launchCrash = null
                 }
-                com.ironmonone.app.gen3.Gen3Button("NOT NOW") { launchCrash = null }
+                com.ironmonone.app.gen3.Gen3Button("Not now") { launchCrash = null }
             }
         }
     }
@@ -318,6 +339,10 @@ private fun App() {
     val fullscreen = editing == null && (clean || (landscape && tab == Tab.PLAY && !showChrome))
     androidx.activity.compose.BackHandler(enabled = clean) { clean = false }
     androidx.activity.compose.BackHandler(enabled = fullscreen && !clean) { showChrome = true }
+    // Back on any other tab goes to Play; it used to close the app, even with
+    // a game running (audit, 2026-09-27). On Play the system handles it.
+    // Screens and editors register their own handlers later, so theirs win.
+    androidx.activity.compose.BackHandler(enabled = editing == null && tab != Tab.PLAY) { tab = Tab.PLAY }
 
     Column(
         Modifier.fillMaxSize().background(Shell.night)
@@ -398,7 +423,8 @@ private fun App() {
         if (editing == null && !fullscreen) {
             Row(
                 Modifier.fillMaxWidth().background(Shell.paper)
-                    .padding(horizontal = 6.dp, vertical = 6.dp),
+                    .padding(horizontal = 6.dp, vertical = 6.dp)
+                    .selectableGroup(),
             ) {
                 // Labels stop growing at a 1.3 font scale so five fit one row.
                 val fontScale = LocalDensity.current.fontScale
@@ -407,8 +433,9 @@ private fun App() {
                     val active = tab == t
                     Column(
                         Modifier.weight(1f)
+                            .heightIn(min = Shell.touchTarget)
                             .clip(androidx.compose.foundation.shape.RoundedCornerShape(14.dp))
-                            .clickable { tab = t; showChrome = false }
+                            .selectable(selected = active, role = androidx.compose.ui.semantics.Role.Tab) { tab = t; showChrome = false }
                             .padding(vertical = 6.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {

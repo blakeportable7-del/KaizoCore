@@ -52,7 +52,12 @@ class CheatStore(private val dir: File) {
          * in it, so an empty cheat is never sent.
          */
         fun normalise(code: String, platform: Platform): String? {
-            val lines = code.lines().map { it.trim() }.filter { it.isNotEmpty() }
+            val raw = code.lines().map { it.trim() }.filter { it.isNotEmpty() }
+            // A line with letters past F is not a code. Stripping them used to
+            // turn "hello" into "E" and accept it (audit, 2026-09-27).
+            val allowed = if (platform == Platform.GBC) Regex("[0-9A-Fa-f +:-]+") else Regex("[0-9A-Fa-f +:]+")
+            if (raw.any { !allowed.matches(it) }) return null
+            val lines = raw
                 .map { line ->
                     // Game Genie codes for the Game Boy keep their dashes; everything
                     // else is hex pairs that cores compare case-insensitively but

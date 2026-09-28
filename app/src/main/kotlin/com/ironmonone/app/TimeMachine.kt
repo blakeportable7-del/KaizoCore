@@ -95,7 +95,7 @@ fun TimeMachineDialog(tm: TimeMachine, enabled: Boolean, onEnable: (Boolean) -> 
         Column(Modifier.width(300.dp).background(Pc.Page).border(1.dp, Pc.Border).padding(8.dp).verticalScroll(rememberScrollState())) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 PixText("TIME MACHINE", 10, Pc.Text, Modifier.weight(1f))
-                PixText("X", 9, Pc.Dim, Modifier.clickable { onClose() }.padding(horizontal = 6.dp, vertical = 2.dp))
+                PcTap("X", 9, Pc.Dim, "Close") { onClose() }
             }
             Spacer(Modifier.height(4.dp))
             GearToggle("Enable restore points", enabled) { onEnable(it) }

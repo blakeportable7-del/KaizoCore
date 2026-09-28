@@ -186,7 +186,8 @@ private fun DsBox(modifier: Modifier = Modifier, content: @Composable ColumnScop
 @Composable
 private fun DsArrow(text: String, visible: Boolean = true, onClick: () -> Unit) {
     val m = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-    if (visible) PixText(text, 9, Pc.Text, Modifier.clickable { onClick() }.then(m)) else PixText(" ", 9, Pc.Text, m)
+    // 48dp to tap, same glyph (audit, 2026-09-27).
+    if (visible) PcTap(text, 9, Pc.Text, if (text.contains("<")) "Previous" else "Next") { onClick() } else PixText(" ", 9, Pc.Text, m)
 }
 
 /** A Pokemon's picture; a form with no picture shows its name instead. */
@@ -204,7 +205,7 @@ private fun DsField(value: String, onValue: (String) -> Unit) {
             textStyle = TextStyle(color = Pc.Text, fontSize = 12.sp), cursorBrush = SolidColor(Pc.Gold),
             modifier = Modifier.weight(1f),
         )
-        if (value.isNotEmpty()) PixText("X", 7, Pc.Dim, Modifier.clickable { onValue("") }.padding(4.dp))
+        if (value.isNotEmpty()) PcTap("X", 7, Pc.Dim, "Clear search") { onValue("") }
     }
 }
 

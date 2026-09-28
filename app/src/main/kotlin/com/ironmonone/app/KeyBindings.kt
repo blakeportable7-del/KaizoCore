@@ -81,7 +81,6 @@ class KeyBindings(private val file: File) {
             KeyEvent.KEYCODE_BUTTON_START, KeyEvent.KEYCODE_BUTTON_SELECT,
         )
 
-        /** Readable key name for the remap screen. */
         /**
          * Keys that belong to the phone, never to a binding. The remapper took
          * whatever was pressed next, so a player could bind Back and lose the
@@ -94,22 +93,39 @@ class KeyBindings(private val file: File) {
             android.view.KeyEvent.KEYCODE_VOLUME_MUTE,
         )
 
+        /**
+         * Readable key name for the remap screen, in sentence case. Pad buttons
+         * read "Pad A", "Pad L1" rather than Android's "Button a", "Button l1"
+         * (audit, 2026-09-27).
+         */
         fun keyName(code: Int): String = when (code) {
-            KeyEvent.KEYCODE_DPAD_UP -> "Arrow Up"
-            KeyEvent.KEYCODE_DPAD_DOWN -> "Arrow Down"
-            KeyEvent.KEYCODE_DPAD_LEFT -> "Arrow Left"
-            KeyEvent.KEYCODE_DPAD_RIGHT -> "Arrow Right"
-            KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER -> "Enter"
+            KeyEvent.KEYCODE_DPAD_UP -> "Arrow up"
+            KeyEvent.KEYCODE_DPAD_DOWN -> "Arrow down"
+            KeyEvent.KEYCODE_DPAD_LEFT -> "Arrow left"
+            KeyEvent.KEYCODE_DPAD_RIGHT -> "Arrow right"
+            KeyEvent.KEYCODE_DPAD_CENTER -> "D-pad centre"
+            KeyEvent.KEYCODE_ENTER -> "Enter"
+            KeyEvent.KEYCODE_NUMPAD_ENTER -> "Numpad enter"
             KeyEvent.KEYCODE_SPACE -> "Space"
             KeyEvent.KEYCODE_SHIFT_LEFT -> "L-Shift"
             KeyEvent.KEYCODE_SHIFT_RIGHT -> "R-Shift"
             KeyEvent.KEYCODE_BACKSLASH -> "Backslash"
             KeyEvent.KEYCODE_TAB -> "Tab"
+            KeyEvent.KEYCODE_BUTTON_THUMBL -> "Left stick press"
+            KeyEvent.KEYCODE_BUTTON_THUMBR -> "Right stick press"
+            KeyEvent.KEYCODE_BUTTON_MODE -> "Pad home"
             else -> {
-                val label = KeyEvent.keyCodeToString(code)
-                    .removePrefix("KEYCODE_").replace('_', ' ')
-                if (label.length == 1) label else label.lowercase()
-                    .replaceFirstChar { it.uppercase() }
+                val raw = KeyEvent.keyCodeToString(code).removePrefix("KEYCODE_")
+                when {
+                    // BUTTON_A, BUTTON_L1, BUTTON_START: "Pad A", "Pad L1", "Pad start".
+                    raw.startsWith("BUTTON_") -> raw.removePrefix("BUTTON_").let { b ->
+                        if (b.all { it.isDigit() }) "Pad button $b"
+                        else if (b.length <= 2) "Pad $b"
+                        else "Pad ${b.lowercase().replace('_', ' ')}"
+                    }
+                    raw.length == 1 -> raw
+                    else -> raw.replace('_', ' ').lowercase().replaceFirstChar { it.uppercase() }
+                }
             }
         }
 
@@ -169,12 +185,19 @@ class KeyBindings(private val file: File) {
 
     fun keyForAction(a: Action): Int? = actions[a]
 
-    /** Bind [key] to an action. The key leaves any button or other action it drove. */
-    fun bindAction(a: Action, key: Int) {
+    /**
+     * Bind [key] to an action. The key leaves any button or other action it
+     * drove; the label of what lost it is returned, so the screen can say so
+     * instead of unbinding it silently (audit, 2026-09-27).
+     */
+    fun bindAction(a: Action, key: Int): String? {
+        val lost = bindings.entries.filter { it.value == key }.map { it.key.label } +
+            actions.entries.filter { it.value == key && it.key != a }.map { it.key.label }
         bindings.entries.filter { it.value == key }.forEach { bindings[it.key] = 0 }
         actions.entries.filter { it.value == key && it.key != a }.map { it.key }.forEach { actions.remove(it) }
         actions[a] = key
         save()
+        return lost.firstOrNull()
     }
 
     fun unbindAction(a: Action) { actions.remove(a); save() }
@@ -184,13 +207,17 @@ class KeyBindings(private val file: File) {
     /**
      * Binds [key] to [button]. Any other button holding that key loses it, so a
      * key can never drive two buttons at once and quietly break the game.
+     * Returns the label of the button or action that lost the key, if any.
      */
-    fun bind(button: Button, key: Int) {
+    fun bind(button: Button, key: Int): String? {
+        val lost = bindings.entries.filter { it.value == key && it.key != button }.map { it.key.label } +
+            actions.entries.filter { it.value == key }.map { it.key.label }
         bindings.entries.filter { it.value == key && it.key != button }
             .forEach { bindings[it.key] = 0 }
         actions.entries.filter { it.value == key }.map { it.key }.forEach { actions.remove(it) }
         bindings[button] = key
         save()
+        return lost.firstOrNull()
     }
 
     fun resetToDefaults() {

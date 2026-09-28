@@ -89,8 +89,12 @@ for line in open(BUNDLE, encoding="utf-8", errors="replace"):
                   .replace("&lt;", "<").replace("&gt;", ">"))
         tips[m.group(1)] = " ".join(txt.split())
 
+# upr-help.tsv is written by editor/src/test/tools/extract_upr_help.py since
+# 2026-09-27 (line breaks, bullets, phone wording). Writing it here again
+# would put back the flattened text, so this script only reports the count.
 n = 0
-with open(RES + "/upr-help.tsv", "w", encoding="utf-8") as f:
+import io
+with io.StringIO() as f:
     f.write("# GENERATED - the randomizer's OWN tooltip text.\n")
     f.write("# settingsField\tdescription\n")
     for _, field, comp in rows:

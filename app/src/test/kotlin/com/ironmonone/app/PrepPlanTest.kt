@@ -16,11 +16,11 @@ class PrepPlanTest {
         assertTrue(PrepPlan.lines(RomKind.FIRERED_U_V10).first().startsWith("Standard only"))
         assertTrue(PrepPlan.lines(RomKind.RED_U).first().contains("pseudo-fluctuating"))
         assertTrue(PrepPlan.lines(RomKind.RED_U).any { it.contains("two passes") })
-        assertTrue(PrepPlan.lines(RomKind.CRYSTAL_U).first().contains("requires it for Crystal"))
+        assertTrue(PrepPlan.lines(RomKind.CRYSTAL_U).first().contains("require it for Crystal"))
         assertTrue(PrepPlan.lines(RomKind.HEARTGOLD_U).first().contains("Super Kaizo"))
         assertTrue(PrepPlan.lines(RomKind.RED_PF).first().startsWith("Already carries"))
         assertTrue(PrepPlan.lines(RomKind.BLACK2_U).any { it.contains("needs no patch") })
-        assertTrue(PrepPlan.lines(RomKind.RUBY_U).any { it == "Settings files: RSE." })
+        assertTrue(PrepPlan.lines(RomKind.RUBY_U).none { it.startsWith("Settings files") }, "no developer jargon on the screen")
         assertTrue(PrepPlan.lines(RomKind.EMERALD_NATDEX_121).first().startsWith("Already a Nat. Dex"))
     }
 }

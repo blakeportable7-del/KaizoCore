@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -23,6 +24,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.ironmonone.tracker.LossCondition
 
@@ -196,7 +199,9 @@ fun TrackerGearDialog(
 @Composable
 internal fun GearToggle(label: String, on: Boolean, radio: Boolean = false, onChange: (Boolean) -> Unit) {
     Row(
-        Modifier.fillMaxWidth().clickable { onChange(if (radio) true else !on) }.padding(vertical = 3.dp),
+        // 48dp tall: the rows were ~16dp and forty of them sit in a column (2026-09-27, audit).
+        // The box and label are drawn as before, centred in the taller row.
+        Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable { onChange(if (radio) true else !on) }.padding(vertical = 3.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(Modifier.size(12.dp).border(1.dp, Pc.Border), contentAlignment = Alignment.Center) {
@@ -205,4 +210,26 @@ internal fun GearToggle(label: String, on: Boolean, radio: Boolean = false, onCh
         Spacer(Modifier.width(8.dp))
         PixText(label, 7, Pc.Text)
     }
+}
+
+/**
+ * A PC-tracker glyph button (X, <, >, BACK) inside a 48dp touch area. The glyph
+ * is drawn exactly as before; only the tappable box around it grew, since the
+ * bare glyphs were ~20x15dp (2026-09-27, audit).
+ */
+@Composable
+internal fun PcTap(
+    text: String,
+    size: Int,
+    color: androidx.compose.ui.graphics.Color,
+    spoken: String,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    Box(
+        modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+            .clickable(onClickLabel = spoken) { onClick() }
+            .semantics { contentDescription = spoken },
+        contentAlignment = Alignment.Center,
+    ) { PixText(text, size, color) }
 }

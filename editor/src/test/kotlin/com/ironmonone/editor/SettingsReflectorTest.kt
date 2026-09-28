@@ -7,6 +7,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
+import kotlin.test.assertFalse
 
 /**
  * Proves the reflected editor model actually drives the engine: options enumerate,
@@ -103,6 +104,120 @@ class SettingsReflectorTest {
     @Test
     fun `labels read like settings, not code`() {
         assertEquals("Randomize move powers", SettingsReflector.prettify("randomizeMovePowers"))
+        // Plural acronyms, as they read on the phone before 2026-09-27: "Keep field move t ms", "TMS HMS compatibility mod".
+        assertEquals("Keep field move TMs", SettingsReflector.prettify("keepFieldMoveTMs"))
+        // Gen 6 and 7 settings are hidden for every game the app runs.
+        assertTrue(SettingsReflector.unsupportedIn("allowTotemAltFormes", "GBA3"))
+        assertTrue(SettingsReflector.unsupportedIn("swapTrainerMegaEvos", "NDS5"))
+        assertFalse(SettingsReflector.unsupportedIn("allowTotemAltFormes", null))
+        assertEquals("TMs HMs compatibility mod", SettingsReflector.prettify("tmsHmsCompatibilityMod"))
+        assertEquals("TMs force good damaging", SettingsReflector.prettify("tmsForceGoodDamaging"))
+        assertEquals("TM levels", SettingsReflector.prettify("tmLevels"))
+        // Ranges from the desktop randomizer, not 0..255 for everything.
+        assertEquals(0..100, SettingsReflector.rangeOf("tmsGoodDamagingPercent"))
+        assertEquals(-50..50, SettingsReflector.rangeOf("wildLevelModifier"))
+        assertEquals(2..4, SettingsReflector.rangeOf("guaranteedMoveCount"))
+        assertEquals(0..5, SettingsReflector.rangeOf("additionalBossTrainerPokemon"))
         assertEquals("Random every level", SettingsReflector.prettifyEnum("RANDOM_EVERY_LEVEL"))
+    }
+
+    @Test
+    fun `the fallback joins every plural acronym and splits numbers off`() {
+        // As the audit read them on 2026-09-27: "i vs", "o ts", "p ps", "op shop", "Limit600".
+        assertEquals("Randomize in game trades IVs", SettingsReflector.prettify("randomizeInGameTradesIVs"))
+        assertEquals("Randomize in game trades OTs", SettingsReflector.prettify("randomizeInGameTradesOTs"))
+        assertEquals("Randomize move PPs", SettingsReflector.prettify("randomizeMovePPs"))
+        assertEquals("Ban OP shop items", SettingsReflector.prettify("banOPShopItems"))
+        assertEquals("Limit 600", SettingsReflector.prettify("limit600"))
+        assertEquals("Elite Four unique Pok\u00e9mon number", SettingsReflector.prettify("eliteFourUniquePokemonNumber"))
+    }
+
+    @Test
+    fun `labels come from the desktop, and switch and number are told apart`() {
+        val opts = SettingsReflector.options(Settings::class.java).associateBy { it.id }
+        assertEquals("Change trainer levels", opts.getValue("trainersLevelModified").label)
+        assertEquals("Trainer level change (%)", opts.getValue("trainersLevelModifier").label)
+        assertEquals("Change wild Pok\u00e9mon levels", opts.getValue("wildLevelsModified").label)
+        assertEquals("Random shiny trainer Pok\u00e9mon", opts.getValue("shinyChance").label)
+        assertEquals("Keep field move TMs", opts.getValue("keepFieldMoveTMs").label)
+        // No two options may read the same, and none may read like code.
+        val labels = opts.values.map { it.label }
+        assertEquals(labels.size, labels.toSet().size, "duplicate labels: " + labels.groupBy { it }.filter { it.value.size > 1 }.keys)
+        // Both engines' fields: every one has a written label, none relies on prettify.
+        (opts.values + SettingsReflector.options(com.dabomstew.pkrandomzx.Settings::class.java)).forEach { o ->
+            assertTrue(o.id in SettingsReflector.LABELS, "${o.id} has no desktop label")
+        }
+        opts.values.forEach { o ->
+            assertTrue(!o.label.endsWith(" mod"), "${o.id} still reads ${o.label}")
+            assertTrue("pokemon" !in o.label.lowercase(), "${o.id} spells Pokemon without the accent: ${o.label}")
+            assertTrue(!Regex("[a-z][0-9]").containsMatchIn(o.label), "${o.id}: ${o.label}")
+        }
+    }
+
+    @Test
+    fun `enum values read as the desktop's buttons`() {
+        assertEquals("Random, even distribution, main game", SettingsReflector.valueLabel("trainersMod", "MAINPLAYTHROUGH"))
+        assertEquals("Catch 'em all", SettingsReflector.valueLabel("wildPokemonRestrictionMod", "CATCH_EM_ALL"))
+        assertEquals("off", SettingsReflector.valueLabel("trainersLevelModified", "false"))
+        // Every value of every choice the editor shows has a written label, so
+        // none falls back to the raw constant ("Mainplaythrough").
+        SettingsReflector.options(Settings::class.java).filterIsInstance<Option.Choice>().forEach { c ->
+            c.values.forEach { v ->
+                assertTrue(SettingsReflector.VALUE_LABELS[c.id]?.containsKey(v) == true, "${c.id}.$v has no label")
+            }
+        }
+    }
+
+    @Test
+    fun `settings with no editable data are hidden`() {
+        val opts = SettingsReflector.options(Settings::class.java)
+        val ids = opts.map { it.id }.toSet()
+        assertTrue("limitPokemon" !in ids)
+        assertTrue("standardizeEXPCurves" !in ids)
+        val starters = opts.filterIsInstance<Option.Choice>().first { it.id == "startersMod" }
+        assertTrue("CUSTOM" !in starters.values, "Custom starters has no picker here")
+        assertEquals("Other", Section.MISC.title)
+    }
+
+    @Test
+    fun `sections follow the desktop tab, not substrings`() {
+        assertEquals(Section.TRAITS, SettingsReflector.sectionOf("removeTimeBasedEvolutions"))   // "move" in "remove"
+        assertEquals(Section.ITEMS, SettingsReflector.sectionOf("banRegularShopItems"))
+        assertEquals(Section.MISC, SettingsReflector.sectionOf("banIrregularAltFormes"))
+        assertEquals(Section.TMHM, SettingsReflector.sectionOf("blockBrokenTMMoves"))
+        assertEquals(Section.TMHM, SettingsReflector.sectionOf("tmLevelUpMoveSanity"))
+        assertEquals(Section.TRAINERS, SettingsReflector.sectionOf("rivalCarriesStarterThroughout"))
+        assertEquals(Section.STARTERS, SettingsReflector.sectionOf("limitMainGameLegendaries"))
+        assertEquals(Section.TRAITS, SettingsReflector.sectionOf("allowWonderGuard"))
+        assertEquals(Section.WILD, SettingsReflector.sectionOf("balanceShakingGrass"))
+        assertEquals(Section.TRAINERS, SettingsReflector.sectionOf("doubleBattleMode"))
+        assertEquals(Section.TRAINERS, SettingsReflector.sectionOf("shinyChance"))
+        assertEquals(Section.TRAINERS, SettingsReflector.sectionOf("eliteFourUniquePokemonNumber"))
+        assertEquals(Section.STARTERS, SettingsReflector.sectionOf("limit600"))
+        assertEquals(Section.WILD, SettingsReflector.sectionOf("wildPokemonBSTLimit"))
+    }
+
+    @Test
+    fun `desktop ranges for the BST cap and the generation combos`() {
+        assertEquals(307..780, SettingsReflector.rangeOf("wildPokemonBSTLimit"))
+        assertEquals(0..780, SettingsReflector.stepperRange("wildPokemonBSTLimit"))
+        // One step down from the lowest cap is "off"; one up from off is the lowest cap.
+        assertEquals(0, SettingsReflector.snapValue("wildPokemonBSTLimit", 307, 306))
+        assertEquals(307, SettingsReflector.snapValue("wildPokemonBSTLimit", 0, 1))
+        assertEquals(307, SettingsReflector.snapValue("wildPokemonBSTLimit", 600, 250))
+        assertEquals(0, SettingsReflector.snapValue("wildPokemonBSTLimit", 600, 40))
+        assertEquals(500, SettingsReflector.snapValue("wildPokemonBSTLimit", 600, 500))
+        // A Gen 3 game: moves 4..9, base stats 6..9; a Gen 5 game: moves 6..9.
+        assertEquals(4..9, SettingsReflector.rangeOf("updateMovesToGeneration", "GBA3"))
+        assertEquals(6..9, SettingsReflector.rangeOf("updateBaseStatsToGeneration", "GEN3"))
+        assertEquals(6..9, SettingsReflector.rangeOf("updateMovesToGeneration", "NDS5"))
+    }
+
+    @Test
+    fun `the Nat Dex legendary exclusion is a named choice, not a number`() {
+        val c = SettingsReflector.options(Settings::class.java).first { it.id == "wildBSTLimit" }
+        assertTrue(c is Option.Choice, "wildBSTLimit is ${c::class.simpleName}")
+        assertEquals(listOf("0", "1", "2"), c.values)
+        assertEquals("Legendaries and Mythicals", SettingsReflector.valueLabel("wildBSTLimit", "1"))
     }
 }

@@ -16,7 +16,7 @@ import java.util.Locale
  */
 sealed interface Option {
     val id: String          // property name, e.g. "randomizeMovePowers"
-    val label: String       // prettified, e.g. "Randomize move powers"
+    val label: String       // the desktop's own wording, e.g. "Randomize move power"
     val section: Section
 
     data class Bool(
@@ -45,16 +45,44 @@ enum class Section(val title: String) {
     WILD("Wild Pokémon"),
     TMHM("TM/HM & Tutors"),
     ITEMS("Items"),
-    MISC("Misc Tweaks"),
+    // "Misc Tweaks" held none of the desktop's misc tweaks (currentMiscTweaks is
+    // not editable here), only the General Options leftovers (2026-09-27, audit).
+    MISC("Other"),
 }
 
 object SettingsReflector {
 
-    /** Excluded: engine plumbing a player never sets directly. */
+    /**
+     * Excluded: engine plumbing a player never sets directly, and settings
+     * whose data this editor cannot edit yet (2026-09-27, audit): "Limit
+     * Pokémon" needs its generation list (currentRestrictions), and
+     * "Standardize EXP curves" needs the curve itself (selectedEXPCurve), so
+     * both switches turned on something with no way to say what. The Slow
+     * curve choice only matters under Standardize, so it goes with it. The
+     * file keeps whatever values these have.
+     */
     private val EXCLUDED = setOf(
         "romName", "customNames", "currentRestrictions", "currentMiscTweaks",
         "updatedFromOldVersion",
+        "limitPokemon", "standardizeEXPCurves", "expCurveMod",
+        // Never written to the file nor read by the engine: an edit here was
+        // lost on save (found by the every-field-has-a-label test, 2026-09-27).
+        "trainersEnforceDistribution", "trainersEnforceMainPlaythrough",
     )
+
+    /**
+     * Enum values the editor cannot back with data. "Custom" starters picks
+     * three species the editor has no picker for, so it is not offered; a file
+     * that already uses it still shows it (the screen adds the current value).
+     */
+    private val HIDDEN_VALUES = mapOf("startersMod" to setOf("CUSTOM"))
+
+    /**
+     * Int fields that are really a pick from a list: the Nat. Dex fork stores
+     * "Don't use legendaries"' combo box as its index (2 bits), and showing it
+     * as a number meant nothing.
+     */
+    private val INT_CHOICES = mapOf("wildBSTLimit" to 3)
 
     fun options(cls: Class<*>): List<Option> {
         val methods = cls.methods
@@ -77,13 +105,18 @@ object SettingsReflector {
                 if (id in EXCLUDED) return@forEach
                 val getter = getters[id] ?: return@forEach
                 val type = setter.parameterTypes[0]
-                val label = prettify(id)
+                val label = labelFor(id)
                 val section = sectionOf(id)
                 when {
                     type == Boolean::class.javaPrimitiveType -> out += Option.Bool(
                         id, label, section,
                         get = { s -> getter.invoke(s) as Boolean },
                         set = { s, v -> setter.invoke(s, v) },
+                    )
+                    type == Int::class.javaPrimitiveType && id in INT_CHOICES -> out += Option.Choice(
+                        id, label, section, (0 until INT_CHOICES.getValue(id)).map { it.toString() },
+                        get = { s -> (getter.invoke(s) as Int).toString() },
+                        set = { s, v -> setter.invoke(s, v.toInt()) },
                     )
                     type == Int::class.javaPrimitiveType -> out += Option.IntValue(
                         id, label, section,
@@ -110,9 +143,10 @@ object SettingsReflector {
                 cls.getDeclaredMethod("set" + id.cap(), type)
                     .apply { isAccessible = true }
             }.getOrNull() ?: return@forEach
-            val values = type.enumConstants.map { (it as Enum<*>).name }
+            val hidden = HIDDEN_VALUES[id].orEmpty()
+            val values = type.enumConstants.map { (it as Enum<*>).name }.filterNot { it in hidden }
             out += Option.Choice(
-                id, prettify(id), sectionOf(id), values,
+                id, labelFor(id), sectionOf(id), values,
                 get = { s -> (getter.invoke(s) as Enum<*>).name },
                 set = { s, v ->
                     @Suppress("UNCHECKED_CAST")
@@ -143,7 +177,7 @@ object SettingsReflector {
     private fun tsv(name: String): Map<String, String> {
         val stream = SettingsReflector::class.java.classLoader
             ?.getResourceAsStream(name) ?: return emptyMap()
-        return stream.bufferedReader().useLines { lines ->
+        return stream.bufferedReader(Charsets.UTF_8).useLines { lines ->
             lines.filterNot { it.startsWith("#") || it.isBlank() }
                 .mapNotNull {
                     val parts = it.split('	')
@@ -156,11 +190,14 @@ object SettingsReflector {
     /**
      * The randomizer's OWN description for a setting, or null.
      *
-     * Generated from Bundle.properties by tools/extract_upr.py. 122 of the 138
-     * fields have one; the rest are null and the editor shows nothing rather
-     * than inventing an explanation for them.
+     * Generated from Bundle.properties by editor/src/test/tools/extract_upr_help.py.
+     * Line breaks are stored as the two characters backslash + n and turned
+     * back here: the old extractor dropped the backslash, so the help read
+     * "...from being selected. nThis bans Arena Trap" (2026-09-27, audit).
      */
-    private val HELP: Map<String, String> by lazy { tsv("upr-help.tsv") }
+    private val HELP: Map<String, String> by lazy {
+        tsv("upr-help.tsv").mapValues { it.value.replace("\\n", "\n") }
+    }
 
     fun helpFor(id: String): String? = HELP[id]
 
@@ -177,21 +214,52 @@ object SettingsReflector {
      * control with a compound condition simply stays enabled. That direction is
      * the safe one: a missing rule leaves a control usable, a wrong rule greys
      * out something that should work and looks like a broken editor.
+     *
+     * A LIST per field: one field can have several (balanceShakingGrass is dead
+     * under Area AND Global mapping). A map of single gates kept only the last
+     * line read, so half of those rules were silently dropped (2026-09-27, audit).
      */
-    private val GATES: Map<String, Gate> by lazy {
-        val stream = SettingsReflector::class.java.classLoader
-            ?.getResourceAsStream("upr-gating.tsv") ?: return@lazy emptyMap()
-        stream.bufferedReader().useLines { lines ->
-            lines.filterNot { it.startsWith("#") || it.isBlank() }
-                .mapNotNull {
-                    val p = it.split('	')
-                    if (p.size >= 3) p[0] to Gate(p[1], p[2]) else null
-                }
-                .toMap()
-        }
+    private val GATES: Map<String, List<Gate>> by lazy {
+        val fromFile = SettingsReflector::class.java.classLoader
+            ?.getResourceAsStream("upr-gating.tsv")?.bufferedReader()?.useLines { lines ->
+                lines.filterNot { it.startsWith("#") || it.isBlank() }
+                    .mapNotNull {
+                        val p = it.split('	')
+                        if (p.size >= 3) p[0] to Gate(p[1], p[2]) else null
+                    }
+                    .toList()
+            }.orEmpty()
+        (fromFile + CHECKBOX_GATES).groupBy({ it.first }, { it.second })
     }
 
-    fun gateFor(id: String): Gate? = GATES[id]
+    /**
+     * The desktop's checkbox-then-slider pairs, which the extractor's radio-only
+     * rule never sees: each number is disabled (and zeroed) while its switch is
+     * off. Read from enableOrDisableSubControls() by hand, one `if (x.isSelected())
+     * slider.setEnabled(true) else false` block each.
+     */
+    private val CHECKBOX_GATES = listOf(
+        "updateBaseStatsToGeneration" to Gate("updateBaseStats", "false"),
+        "updateMovesToGeneration" to Gate("updateMoves", "false"),
+        "updateMovesLegacy" to Gate("updateMoves", "false"),
+        "guaranteedMoveCount" to Gate("startWithGuaranteedMoves", "false"),
+        "movesetsGoodDamagingPercent" to Gate("movesetsForceGoodDamaging", "false"),
+        "tmsGoodDamagingPercent" to Gate("tmsForceGoodDamaging", "false"),
+        "tutorsGoodDamagingPercent" to Gate("tutorsForceGoodDamaging", "false"),
+        "trainersForceFullyEvolvedLevel" to Gate("trainersForceFullyEvolved", "false"),
+        "trainersLevelModifier" to Gate("trainersLevelModified", "false"),
+        "wildLevelModifier" to Gate("wildLevelsModified", "false"),
+        "staticLevelModifier" to Gate("staticLevelModified", "false"),
+        "totemLevelModifier" to Gate("totemLevelsModified", "false"),
+        "minimumCatchRateLevel" to Gate("useMinimumCatchRate", "false"),
+        "wildBSTLimit" to Gate("blockWildLegendaries", "false"),
+    )
+
+    /** Every rule that can grey [id] out; it is dead while ANY of them holds. */
+    fun gatesFor(id: String): List<Gate> = GATES[id].orEmpty()
+
+    /** The first gate, for callers that only ever needed one. */
+    fun gateFor(id: String): Gate? = gatesFor(id).firstOrNull()
 
     /**
      * Settings the desktop hides for an entire generation, e.g. everything
@@ -202,6 +270,12 @@ object SettingsReflector {
      * rule leaves a usable control on screen; a wrong rule hides something the
      * game supports, which is the worse failure.
      */
+    private val LATER_GEN_ONLY = setOf(
+        "baseStatsFollowMegaEvolutions", "abilitiesFollowMegaEvolutions", "typesFollowMegaEvolutions",
+        "swapTrainerMegaEvos", "swapStaticMegaEvos",
+        "totemPokemonMod", "randomizeTotemHeldItems", "totemLevelsModified", "totemLevelModifier", "allowTotemAltFormes",
+    )
+
     private val UNSUPPORTED: Set<Pair<String, String>> by lazy {
         val stream = SettingsReflector::class.java.classLoader
             ?.getResourceAsStream("upr-unsupported.tsv") ?: return@lazy emptySet()
@@ -224,6 +298,10 @@ object SettingsReflector {
      * and silently disabled the whole feature - it looked like it worked.
      */
     fun unsupportedIn(id: String, generation: String?): Boolean {
+        // Mega evolutions (Gen 6) and totem Pokémon (Gen 7) do not exist in any
+        // game KaizoCore runs (Gen 1 to 5); "Totems: allow alternate formes"
+        // was on offer while editing a FireRed preset (walk-through, 2026-09-27).
+        if (generation != null && id in LATER_GEN_ONLY) return true
         val g = when (generation) {
             null -> return false
             "GBA3" -> "GEN3"
@@ -233,60 +311,428 @@ object SettingsReflector {
         return (id to g) in UNSUPPORTED
     }
 
-    /** settings-field -> position, from the desktop GUI. See the sort above. */
-    private val UPR_ORDER: Map<String, Int> by lazy {
+    /** settings-field -> (position, desktop control), from the desktop GUI. See the sort above. */
+    private val UPR_CONTROLS: Map<String, Pair<Int, String>> by lazy {
         val stream = SettingsReflector::class.java.classLoader
             ?.getResourceAsStream("upr-order.tsv")
             ?: return@lazy emptyMap()
         stream.bufferedReader().useLines { lines ->
             lines.filterNot { it.startsWith("#") || it.isBlank() }
                 .mapIndexedNotNull { i, line ->
-                    line.substringBefore('	').takeIf { it.isNotBlank() }?.let { it to i }
+                    val p = line.split('	')
+                    p[0].takeIf { it.isNotBlank() }?.let { it to (i to p.getOrElse(1) { "" }) }
                 }
-                .toMap()
+                .toList().distinctBy { it.first }.toMap()
         }
     }
+    private val UPR_ORDER: Map<String, Int> by lazy { UPR_CONTROLS.mapValues { it.value.first } }
 
     fun bySection(cls: Class<*>): Map<Section, List<Option>> =
         options(cls).groupBy { it.section }.toSortedMap(compareBy { it.ordinal })
 
     /**
-     * Section routing by name keyword. Longest/most-specific keywords first; MISC is
-     * the fallback rather than a guess, so nothing is silently hidden.
+     * The desktop tab each control sits on, by its binding prefix in
+     * NewRandomizerGUI.form (pbs = Pokemon Base Statistics on the Traits tab,
+     * stp = Static Pokemon on Starters, tp = Trainer Pokemon, ...).
+     *
+     * Keyword matching alone misfiled settings (2026-09-27, audit): "Remove
+     * time based evolutions" went to Moves because "remove" contains "move",
+     * "Ban irregular alt formes" to Trainers for "regular", "Rival carries
+     * starter" to Starters. The tab is a fact; the keywords are a guess.
      */
-    private fun sectionOf(id: String): Section {
-        val n = id.lowercase(Locale.ROOT)
+    private val TAB_BY_PREFIX = mapOf(
+        "pbs" to Section.TRAITS, "pt" to Section.TRAITS, "pa" to Section.TRAITS, "pe" to Section.TRAITS,
+        "sp" to Section.STARTERS, "stp" to Section.STARTERS, "igt" to Section.STARTERS,
+        "md" to Section.MOVES, "pms" to Section.MOVES,
+        "tp" to Section.TRAINERS, "totp" to Section.TRAINERS,
+        "wp" to Section.WILD,
+        "tm" to Section.TMHM, "thc" to Section.TMHM, "mt" to Section.TMHM, "mtc" to Section.TMHM,
+        "fi" to Section.ITEMS, "sh" to Section.ITEMS, "pu" to Section.ITEMS,
+    )
+
+    /** Fields the order table cannot place (Nat. Dex-only, or set through a helper). */
+    private val SECTION_EXTRA = mapOf(
+        "trainersMod" to Section.TRAINERS,
+        "ensureTwoAbilities" to Section.TRAITS,
+        "evosMatchPostEvoTyping" to Section.TRAITS,
+        "updateMovesLegacy" to Section.MOVES,
+        "wildBSTLimit" to Section.WILD,
+        "wildPokemonBSTLimit" to Section.WILD,
+    )
+
+    /**
+     * Section routing: the desktop tab first, then the explicit extras, then
+     * whole-WORD keywords as a fallback. MISC is the last resort rather than a
+     * guess, so nothing is silently hidden.
+     */
+    internal fun sectionOf(id: String): Section {
+        UPR_CONTROLS[id]?.second?.let { control ->
+            val prefix = control.takeWhile { it.isLowerCase() }
+            // In the order table but on no tab: the General Options panel.
+            return TAB_BY_PREFIX[prefix] ?: Section.MISC
+        }
+        SECTION_EXTRA[id]?.let { return it }
+        val words = prettify(id).lowercase(Locale.ROOT).split(' ').toSet()
+        fun any(vararg w: String) = w.any { it in words }
         return when {
-            listOf("starter", "static", "trade", "totem", "ally", "aura")
-                .any { n.contains(it) } -> Section.STARTERS
-            listOf("trainer", "rival", "boss", "important", "regular", "swapmegaevos")
-                .any { n.contains(it) } -> Section.TRAINERS
-            listOf("wild", "catchrate", "areabased", "encounter")
-                .any { n.contains(it) } -> Section.WILD
-            listOf("tmshms", "tms", "hms", "tutor", "compat", "movetutor", "fullhmcompat")
-                .any { n.contains(it) } -> Section.TMHM
-            listOf("item", "shop", "pickup").any { n.contains(it) } -> Section.ITEMS
-            listOf("move", "moveset").any { n.contains(it) } -> Section.MOVES
-            listOf(
-                "basestat", "stat", "exp", "type", "abilit", "evo", "evolution",
-                "legendar", "pokemonpalette", "dualtype",
-            ).any { n.contains(it) } -> Section.TRAITS
+            any("starter", "starters", "static", "trade", "trades", "totem", "ally", "aura") -> Section.STARTERS
+            any("trainer", "trainers", "rival", "boss") -> Section.TRAINERS
+            any("wild", "encounter", "encounters") -> Section.WILD
+            any("tms", "hms", "tm", "hm", "tutor", "tutors") -> Section.TMHM
+            any("item", "items", "shop", "pickup") -> Section.ITEMS
+            any("move", "moves", "moveset", "movesets") -> Section.MOVES
+            any("stats", "exp", "types", "abilities", "evolutions", "evos", "legendaries") -> Section.TRAITS
             else -> Section.MISC
         }
     }
 
-    /** "randomizeMovePowers" -> "Randomize move powers"; keeps acronyms readable. */
+    /**
+     * The label a player reads, from the desktop's own control text
+     * (Bundle.properties) with its panel heading folded in, since the desktop
+     * leans on the panel ("Follow Evolutions" under "Pokemon Abilities").
+     *
+     * [prettify] of the field name read like code: "i vs", "o ts", "Limit600",
+     * "Evos force change", "Trainers level modified" beside "Trainers level
+     * modifier", "Shiny chance" on a checkbox (2026-09-27, audit). A switch and
+     * its number are now named as a pair: "Change trainer levels" and "Trainer
+     * level change (%)".
+     */
+    internal val LABELS = mapOf(
+        // General options
+        "raceMode" to "Race mode",
+        "limitPokemon" to "Limit Pokémon",
+        "banIrregularAltFormes" to "No irregular alternate formes",
+        // Base stats
+        "baseStatisticsMod" to "Base stats",
+        "baseStatsFollowEvolutions" to "Base stats follow evolutions",
+        "updateBaseStats" to "Update base stats to a newer generation",
+        "updateBaseStatsToGeneration" to "Base stats from generation",
+        "baseStatsFollowMegaEvolutions" to "Base stats follow Mega Evolutions",
+        "assignEvoStatsRandomly" to "Randomize stats added on evolution",
+        "standardizeEXPCurves" to "Standardize EXP curves",
+        "expCurveMod" to "Keep the Slow EXP curve for",
+        // Types
+        "typesMod" to "Types",
+        "typesFollowMegaEvolutions" to "Types follow Mega Evolutions",
+        "dualTypeOnly" to "Force dual types",
+        // Abilities
+        "abilitiesMod" to "Abilities",
+        "allowWonderGuard" to "Allow Wonder Guard",
+        "abilitiesFollowEvolutions" to "Abilities follow evolutions",
+        "banTrappingAbilities" to "Ban trapping abilities",
+        "banNegativeAbilities" to "Ban negative abilities",
+        "banBadAbilities" to "Ban bad abilities",
+        "weighDuplicateAbilitiesTogether" to "Combine duplicate abilities",
+        "ensureTwoAbilities" to "Ensure two abilities",
+        "abilitiesFollowMegaEvolutions" to "Abilities follow Mega Evolutions",
+        // Evolutions
+        "evolutionsMod" to "Evolutions",
+        "evosSimilarStrength" to "Evolve into similar strength",
+        "evosSameTyping" to "Evolve into a shared type",
+        "evosMaxThreeStages" to "Limit evolutions to three stages",
+        "evosForceChange" to "Every evolution changes",
+        "evosMatchPostEvoTyping" to "Match the evolved form's typing",
+        "changeImpossibleEvolutions" to "Change impossible evolutions",
+        "makeEvolutionsEasier" to "Make evolutions easier",
+        "evosAllowAltFormes" to "Evolve into alternate formes",
+        "removeTimeBasedEvolutions" to "Remove time-based evolutions",
+        // Starters
+        "startersMod" to "Starters",
+        "randomizeStartersHeldItems" to "Randomize starter held items",
+        "banBadRandomStarterHeldItems" to "Starter held items: ban bad items",
+        "allowStarterAltFormes" to "Starters: allow alternate formes",
+        // Static Pokémon
+        "staticPokemonMod" to "Static Pokémon",
+        "swapStaticMegaEvos" to "Static: swap Mega Evolvables",
+        "staticLevelModified" to "Change static Pokémon levels",
+        "staticLevelModifier" to "Static Pokémon level change (%)",
+        "limit600" to "Static: randomize 600+ BST",
+        "allowStaticAltFormes" to "Static: allow alternate formes",
+        "limitMainGameLegendaries" to "Limit main-game legendaries",
+        "correctStaticMusic" to "Fix static encounter music",
+        // In-game trades
+        "inGameTradesMod" to "In-game trades",
+        "randomizeInGameTradesNicknames" to "Trades: randomize nicknames",
+        "randomizeInGameTradesOTs" to "Trades: randomize OTs",
+        "randomizeInGameTradesIVs" to "Trades: randomize IVs",
+        "randomizeInGameTradesItems" to "Trades: randomize held items",
+        // Move data
+        "randomizeMovePowers" to "Randomize move power",
+        "randomizeMoveAccuracies" to "Randomize move accuracy",
+        "randomizeMovePPs" to "Randomize move PP",
+        "randomizeMoveTypes" to "Randomize move types",
+        "randomizeMoveCategory" to "Randomize move category",
+        "updateMoves" to "Update moves to a newer generation",
+        "updateMovesToGeneration" to "Moves from generation",
+        "updateMovesLegacy" to "Update moves to Gen 5 instead (legacy)",
+        // Movesets
+        "movesetsMod" to "Movesets",
+        "startWithGuaranteedMoves" to "Guaranteed level 1 moves",
+        "guaranteedMoveCount" to "Level 1 moves guaranteed",
+        "reorderDamagingMoves" to "Reorder damaging moves",
+        "blockBrokenMovesetMoves" to "Movesets: no game-breaking moves",
+        "movesetsForceGoodDamaging" to "Movesets: force good damaging moves",
+        "movesetsGoodDamagingPercent" to "Movesets: good damaging moves (%)",
+        "evolutionMovesForAll" to "Evolution moves for all Pokémon",
+        // Trainer Pokémon
+        "trainersMod" to "Trainer Pokémon",
+        "rivalCarriesStarterThroughout" to "Rival carries starter through the game",
+        "trainersUsePokemonOfSimilarStrength" to "Trainers: similar strength Pokémon",
+        "randomizeTrainerNames" to "Randomize trainer names",
+        "randomizeTrainerClassNames" to "Randomize trainer class names",
+        "trainersForceFullyEvolved" to "Force fully evolved trainer Pokémon",
+        "trainersForceFullyEvolvedLevel" to "Fully evolved from level",
+        "trainersLevelModified" to "Change trainer levels",
+        "trainersLevelModifier" to "Trainer level change (%)",
+        "trainersMatchTypingDistribution" to "Trainers: weight types by Pokémon count",
+        "trainersBlockLegendaries" to "Trainers: no legendaries",
+        "trainersBlockEarlyWonderGuard" to "Trainers: no early Wonder Guard",
+        "allowTrainerAlternateFormes" to "Trainers: allow alternate formes",
+        "swapTrainerMegaEvos" to "Trainers: swap Mega Evolvables",
+        "shinyChance" to "Random shiny trainer Pokémon",
+        "eliteFourUniquePokemonNumber" to "Pokémon League unique Pokémon (0 = off)",
+        "doubleBattleMode" to "Double battle mode",
+        "additionalBossTrainerPokemon" to "Extra Pokémon for boss trainers",
+        "additionalImportantTrainerPokemon" to "Extra Pokémon for important trainers",
+        "additionalRegularTrainerPokemon" to "Extra Pokémon for regular trainers",
+        "randomizeHeldItemsForBossTrainerPokemon" to "Held items for boss trainers",
+        "randomizeHeldItemsForImportantTrainerPokemon" to "Held items for important trainers",
+        "randomizeHeldItemsForRegularTrainerPokemon" to "Held items for regular trainers",
+        "consumableItemsOnlyForTrainers" to "Trainer held items: consumable only",
+        "sensibleItemsOnlyForTrainers" to "Trainer held items: sensible only",
+        "highestLevelGetsItemsForTrainers" to "Trainer held items: highest level only",
+        "betterTrainerMovesets" to "Better trainer movesets",
+        // Totem Pokémon
+        "totemPokemonMod" to "Totem Pokémon",
+        "allyPokemonMod" to "Ally Pokémon",
+        "auraMod" to "Totem auras",
+        "totemLevelsModified" to "Change Totem Pokémon levels",
+        "totemLevelModifier" to "Totem Pokémon level change (%)",
+        "randomizeTotemHeldItems" to "Randomize Totem held items",
+        "allowTotemAltFormes" to "Totems: allow alternate formes",
+        // Wild Pokémon
+        "wildPokemonMod" to "Wild Pokémon",
+        "wildPokemonRestrictionMod" to "Wild Pokémon rule",
+        "useTimeBasedEncounters" to "Use time-based encounters",
+        "blockWildLegendaries" to "Wild: no legendaries",
+        "wildBSTLimit" to "Wild: legendaries kept out",
+        "wildPokemonBSTLimit" to "Wild: highest BST (0 = off)",
+        "useMinimumCatchRate" to "Set a minimum catch rate",
+        "minimumCatchRateLevel" to "Minimum catch rate level",
+        "randomizeWildPokemonHeldItems" to "Randomize wild held items",
+        "banBadRandomWildPokemonHeldItems" to "Wild held items: ban bad items",
+        "balanceShakingGrass" to "Balance shaking grass Pokémon",
+        "wildLevelsModified" to "Change wild Pokémon levels",
+        "wildLevelModifier" to "Wild Pokémon level change (%)",
+        "allowWildAltFormes" to "Wild: allow alternate formes",
+        // TMs and HMs
+        "tmsMod" to "TM moves",
+        "blockBrokenTMMoves" to "TMs: no game-breaking moves",
+        "keepFieldMoveTMs" to "Keep field move TMs",
+        "tmsForceGoodDamaging" to "TMs: force good damaging moves",
+        "tmsGoodDamagingPercent" to "TMs: good damaging moves (%)",
+        "tmsHmsCompatibilityMod" to "TM and HM compatibility",
+        "tmsFollowEvolutions" to "TM compatibility follows evolutions",
+        "tmLevelUpMoveSanity" to "Learn TMs of level-up moves",
+        "fullHMCompat" to "Every Pokémon learns every HM",
+        // Move tutors
+        "moveTutorMovesMod" to "Move tutor moves",
+        "blockBrokenTutorMoves" to "Tutors: no game-breaking moves",
+        "keepFieldMoveTutors" to "Keep field move tutors",
+        "tutorsForceGoodDamaging" to "Tutors: force good damaging moves",
+        "tutorsGoodDamagingPercent" to "Tutors: good damaging moves (%)",
+        "moveTutorsCompatibilityMod" to "Move tutor compatibility",
+        "tutorFollowEvolutions" to "Tutor compatibility follows evolutions",
+        "tutorLevelUpMoveSanity" to "Learn tutor moves of level-up moves",
+        // Items
+        "fieldItemsMod" to "Field items",
+        "banBadRandomFieldItems" to "Field items: ban bad items",
+        "shopItemsMod" to "Shop items",
+        "banOPShopItems" to "Shops: ban overpowered items",
+        "banBadRandomShopItems" to "Shops: ban bad items",
+        "banRegularShopItems" to "Shops: ban regular shop items",
+        "balanceShopPrices" to "Balance shop prices",
+        "guaranteeEvolutionItems" to "Shops: guarantee evolution items",
+        "guaranteeXItems" to "Shops: guarantee X Items",
+        "pickupItemsMod" to "Pickup items",
+        "banBadRandomPickupItems" to "Pickup items: ban bad items",
+    )
+
+    /** The label for [id]: the desktop's wording, else [prettify] of the name. */
+    fun labelFor(id: String): String = LABELS[id] ?: prettify(id)
+
+    /**
+     * "randomizeMovePowers" -> "Randomize move powers"; keeps acronyms readable.
+     * The fallback for a field with no desktop label. "keepFieldMoveTMs" used
+     * to read "Keep field move t ms": a plural acronym (TMs, HMs, IVs, OTs,
+     * PPs) is joined up first, and a number stays apart from its word
+     * ("limit600" read "Limit600").
+     */
     fun prettify(id: String): String {
-        val words = Regex("(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])")
-            .split(id)
+        val joined = id.replace(Regex("(TM|HM|IV|OT|PP)s(?=[A-Z0-9]|$)")) {
+            it.value.dropLast(1).lowercase(Locale.ROOT).replaceFirstChar { c -> c.uppercase(Locale.ROOT) } + "s"
+        }.replace(Regex("OP(?=[A-Z])"), "Op")
+        val words = Regex("(?<=[a-z])(?=[0-9])|(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])")
+            .split(joined)
             .joinToString(" ") { it.lowercase(Locale.ROOT) }
         return words.replaceFirstChar { it.uppercase(Locale.ROOT) }
-            .replace(Regex("\\b(tm|hm|tms|hms|exp|hp|pp|bst|wp)\\b", RegexOption.IGNORE_CASE)) {
+            .replace(Regex("\\b(tms|hms|ivs|ots|pps)\\b", RegexOption.IGNORE_CASE)) {
+                it.value.substring(0, 2).uppercase(Locale.ROOT) + "s"
+            }
+            .replace(Regex("\\b(tm|hm|exp|hp|pp|bst|wp|op|iv|ot)\\b", RegexOption.IGNORE_CASE)) {
                 it.value.uppercase(Locale.ROOT)
             }
+            .replace(Regex("\\bpokemon\\b", RegexOption.IGNORE_CASE), "Pokémon")
+            .replace(Regex("\\belite four\\b", RegexOption.IGNORE_CASE), "Elite Four")
     }
 
-    /** Enum constant "RANDOM_EVERY_LEVEL" -> "Random every level". */
+    /**
+     * What each enum value is called on the desktop's own radio buttons
+     * (Bundle.properties), in the app's sentence case. The raw constants read
+     * "Mainplaythrough", "Distributed", "Type themed elite4 gyms", "Catch em
+     * all" (2026-09-27, audit).
+     */
+    internal val VALUE_LABELS: Map<String, Map<String, String>> = mapOf(
+        "baseStatisticsMod" to mapOf("UNCHANGED" to "Unchanged", "SHUFFLE" to "Shuffle", "RANDOM" to "Random"),
+        "expCurveMod" to mapOf(
+            "LEGENDARIES" to "Legendaries", "STRONG_LEGENDARIES" to "Strong legendaries",
+            "ALL" to "No one (all Pokémon get the chosen curve)",
+        ),
+        "typesMod" to mapOf(
+            "UNCHANGED" to "Unchanged", "RANDOM_FOLLOW_EVOLUTIONS" to "Random, follow evolutions",
+            "COMPLETELY_RANDOM" to "Random, completely",
+        ),
+        "abilitiesMod" to mapOf("UNCHANGED" to "Unchanged", "RANDOMIZE" to "Random"),
+        "evolutionsMod" to mapOf("UNCHANGED" to "Unchanged", "RANDOM" to "Random", "RANDOM_EVERY_LEVEL" to "Random every level"),
+        "startersMod" to mapOf(
+            "UNCHANGED" to "Unchanged", "CUSTOM" to "Custom", "COMPLETELY_RANDOM" to "Random, completely",
+            "RANDOM_WITH_TWO_EVOLUTIONS" to "Random, basic with two evolutions",
+        ),
+        "staticPokemonMod" to mapOf(
+            "UNCHANGED" to "Unchanged", "RANDOM_MATCHING" to "Swap legendaries and standards",
+            "COMPLETELY_RANDOM" to "Random, completely", "SIMILAR_STRENGTH" to "Random, similar strength",
+        ),
+        "inGameTradesMod" to mapOf(
+            "UNCHANGED" to "Unchanged", "RANDOMIZE_GIVEN" to "Randomize given Pokémon only",
+            "RANDOMIZE_GIVEN_AND_REQUESTED" to "Randomize given and requested",
+        ),
+        "movesetsMod" to mapOf(
+            "UNCHANGED" to "Unchanged", "RANDOM_PREFER_SAME_TYPE" to "Random, prefer same type",
+            "COMPLETELY_RANDOM" to "Random, completely", "METRONOME_ONLY" to "Metronome only",
+        ),
+        "trainersMod" to mapOf(
+            "UNCHANGED" to "Unchanged", "RANDOM" to "Random", "DISTRIBUTED" to "Random, even distribution",
+            "MAINPLAYTHROUGH" to "Random, even distribution, main game", "TYPE_THEMED" to "Type themed",
+            "TYPE_THEMED_ELITE4_GYMS" to "Type themed, Elite Four and Gyms only",
+        ),
+        "totemPokemonMod" to mapOf("UNCHANGED" to "Unchanged", "RANDOM" to "Random", "SIMILAR_STRENGTH" to "Random, similar strength"),
+        "allyPokemonMod" to mapOf("UNCHANGED" to "Unchanged", "RANDOM" to "Random", "SIMILAR_STRENGTH" to "Random, similar strength"),
+        "auraMod" to mapOf("UNCHANGED" to "Unchanged", "RANDOM" to "Random", "SAME_STRENGTH" to "Random, same strength"),
+        "wildPokemonMod" to mapOf(
+            "UNCHANGED" to "Unchanged", "RANDOM" to "Random", "AREA_MAPPING" to "Area 1-to-1 mapping",
+            "GLOBAL_MAPPING" to "Global 1-to-1 mapping",
+        ),
+        "wildPokemonRestrictionMod" to mapOf(
+            "NONE" to "None", "SIMILAR_STRENGTH" to "Similar strength", "CATCH_EM_ALL" to "Catch 'em all",
+            "TYPE_THEME_AREAS" to "Type themed areas",
+        ),
+        "wildBSTLimit" to mapOf(
+            "0" to "Legendaries, Mythicals, Ultra Beasts and Paradox",
+            "1" to "Legendaries and Mythicals",
+            "2" to "Only strong legendaries and Mythicals",
+        ),
+        "tmsMod" to mapOf("UNCHANGED" to "Unchanged", "RANDOM" to "Random"),
+        "tmsHmsCompatibilityMod" to mapOf(
+            "UNCHANGED" to "Unchanged", "RANDOM_PREFER_TYPE" to "Random, prefer same type",
+            "COMPLETELY_RANDOM" to "Random, completely", "FULL" to "Full compatibility",
+        ),
+        "moveTutorMovesMod" to mapOf("UNCHANGED" to "Unchanged", "RANDOM" to "Random"),
+        "moveTutorsCompatibilityMod" to mapOf(
+            "UNCHANGED" to "Unchanged", "RANDOM_PREFER_TYPE" to "Random, prefer same type",
+            "COMPLETELY_RANDOM" to "Random, completely", "FULL" to "Full compatibility",
+        ),
+        "fieldItemsMod" to mapOf(
+            "UNCHANGED" to "Unchanged", "SHUFFLE" to "Shuffle", "RANDOM" to "Random",
+            "RANDOM_EVEN" to "Random, even distribution",
+        ),
+        "shopItemsMod" to mapOf("UNCHANGED" to "Unchanged", "SHUFFLE" to "Shuffle", "RANDOM" to "Random"),
+        "pickupItemsMod" to mapOf("UNCHANGED" to "Unchanged", "RANDOM" to "Random"),
+    )
+
+    /**
+     * How [value] of setting [id] reads: the desktop's radio text for an enum,
+     * "on"/"off" for a switch, else [prettifyEnum].
+     */
+    fun valueLabel(id: String, value: String): String = VALUE_LABELS[id]?.get(value) ?: when (value) {
+        "true" -> "on"
+        "false" -> "off"
+        else -> prettifyEnum(value)
+    }
+
+    /**
+     * The values a number setting may take, from the desktop randomizer's own
+     * sliders and spinners (NewRandomizerGUI.form and .java, ZX 4.6.1). The
+     * editor offered 0..255 for all of them: a percent went to 255 and a level
+     * modifier could not go below 0. A setting not known here keeps 0..255.
+     *
+     * [generation] (the app's "GBA3" or the table's "GEN3") narrows the two
+     * "update to generation" combos to what the desktop lists for that game:
+     * moves from the next generation to 9, base stats from 6 on, four at most.
+     */
+    fun rangeOf(id: String, generation: String? = null): IntRange {
+        val n = id.lowercase(Locale.ROOT)
+        val gen = generation?.let { Regex("\\d+").find(it)?.value?.toIntOrNull() } ?: 1
+        return when {
+            n.endsWith("levelmodifier") -> -50..50
+            n.endsWith("percent") -> 0..100
+            n == "guaranteedmovecount" -> 2..4
+            n == "trainersforcefullyevolvedlevel" -> 30..65
+            n == "minimumcatchratelevel" -> 1..5
+            n.startsWith("additional") && n.endsWith("trainerpokemon") -> 0..5   // 0 = off, else 1..5
+            n == "elitefouruniquepokemonnumber" -> 0..2                          // 0 = off, else 1..2
+            // The Nat. Dex fork's BST cap spinner (NewRandomizerGUI ~1628); 0 is off, see offValue.
+            n == "wildpokemonbstlimit" -> 307..780
+            // NewRandomizerGUI ~3821: generationOfPokemon()+1 .. HIGHEST_POKEMON_GEN (9).
+            n == "updatemovestogeneration" -> (gen + 1).coerceAtMost(9)..9
+            // ~3814: max(6, gen+1), at most four entries and never past 9.
+            n == "updatebasestatstogeneration" -> {
+                val lo = maxOf(6, gen + 1).coerceAtMost(9)
+                lo..minOf(lo + minOf(4, 9 - gen) - 1, 9).coerceAtLeast(lo)
+            }
+            else -> 0..255
+        }
+    }
+
+    /** A value outside [rangeOf] that still means something: "off". */
+    fun offValue(id: String): Int? = if (id == "wildPokemonBSTLimit") 0 else null
+
+    /** What a stepper for [id] may show: [rangeOf], widened down to [offValue]. */
+    fun stepperRange(id: String, generation: String? = null): IntRange {
+        val r = rangeOf(id, generation)
+        val off = offValue(id) ?: return r
+        return minOf(off, r.first)..r.last
+    }
+
+    /**
+     * A stepper value snapped out of the gap between [offValue] and the range:
+     * one step down from the lowest real value turns the setting off, one step
+     * up from off lands on the lowest, and a typed value in the gap goes to
+     * the nearer of the two.
+     */
+    fun snapValue(id: String, old: Int, new: Int): Int {
+        val off = offValue(id) ?: return new
+        val r = rangeOf(id)
+        if (new == off || new in r) return new
+        if (new !in (off + 1) until r.first) return new.coerceIn(minOf(off, r.first), r.last)
+        return when {
+            old == r.first && new == old - 1 -> off
+            old == off && new == off + 1 -> r.first
+            new - off < r.first - new -> off
+            else -> r.first
+        }
+    }
+
+    /** Enum constant "RANDOM_EVERY_LEVEL" -> "Random every level". The fallback for [valueLabel]. */
     fun prettifyEnum(name: String): String =
         name.lowercase(Locale.ROOT).replace('_', ' ')
             .replaceFirstChar { it.uppercase(Locale.ROOT) }

@@ -14,6 +14,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material3.Icon
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
@@ -25,6 +29,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -53,68 +59,79 @@ fun SaveStatesDialog(
     onDismiss: () -> Unit,
 ) {
     val picked = slots.firstOrNull { it.n == current } ?: slots.first()
+    // Landscape puts all eight slots in one row, so the grid is half as tall there.
+    val across = if (LocalConfiguration.current.screenWidthDp > LocalConfiguration.current.screenHeightDp) 8 else 4
     ShellDialog("Save states · ${slots.size} slots", onDismiss = onDismiss) {
-        // Auto-save row.
-        Row(Modifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
-            Thumb(auto, version, Modifier.width(64.dp).height(43.dp))
-            Spacer(Modifier.width(8.dp))
-            Column(Modifier.weight(1f)) {
-                Text(auto.title(), style = MaterialTheme.typography.bodyMedium, color = Gen3.Ink)
-                Text(if (auto.exists) auto.savedLabel() + " · written when you leave" else "none yet",
-                    style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper)
+        // ShellDialog scrolls its content now; with eight across in landscape the
+        // grid is also half as tall, so SAVE / LOAD / LOCK and CLOSE stay reachable
+        // (2026-09-27, audit: they were pushed off the bottom).
+        Column {
+            // Auto-save row.
+            Row(Modifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                Thumb(auto, version, Modifier.width(64.dp).height(43.dp))
+                Spacer(Modifier.width(8.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(auto.title(), style = MaterialTheme.typography.bodyMedium, color = Gen3.Ink)
+                    Text(if (auto.exists) auto.savedLabel() + " · written when you leave" else "none yet",
+                        style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper)
+                }
+                Gen3Button("RESUME", accent = auto.exists, enabled = auto.exists) { onLoad(StateSlots.AUTO) }
             }
-            Gen3Button("RESUME", accent = auto.exists, enabled = auto.exists) { onLoad(StateSlots.AUTO) }
-        }
-        ShellDivider()
-        Spacer(Modifier.height(6.dp))
-        // The grid: two rows of four.
-        slots.chunked(4).forEach { row ->
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                row.forEach { s ->
-                    Column(
-                        Modifier.weight(1f)
-                            .clip(androidx.compose.foundation.shape.RoundedCornerShape(10.dp))
-                            .background(Shell.raised)
-                            .then(if (s.n == current) Modifier.border(2.dp, Shell.accent, androidx.compose.foundation.shape.RoundedCornerShape(10.dp)) else Modifier)
-                            .clickable { onPick(s.n) }.padding(4.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Thumb(s, version, Modifier.fillMaxWidth().aspectRatio(3f / 2f))
-                        Text("${s.n}${if (s.locked) " 🔒" else ""}", fontWeight = androidx.compose.ui.text.font.FontWeight.Medium, fontSize = 13.sp, color = Gen3.Ink)
-                        Text(if (s.exists) s.savedLabel() else "empty", style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp),
-                            color = Shell.inkOnPaper, maxLines = 1)
+            ShellDivider()
+            Spacer(Modifier.height(6.dp))
+            // The grid: two rows of four (one row of eight in landscape).
+            slots.chunked(across).forEach { row ->
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    row.forEach { s ->
+                        Column(
+                            Modifier.weight(1f)
+                                .clip(androidx.compose.foundation.shape.RoundedCornerShape(10.dp))
+                                .background(Shell.raised)
+                                .then(if (s.n == current) Modifier.border(2.dp, Shell.accent, androidx.compose.foundation.shape.RoundedCornerShape(10.dp)) else Modifier)
+                                .clickable { onPick(s.n) }.padding(4.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Thumb(s, version, Modifier.fillMaxWidth().aspectRatio(3f / 2f))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("${s.n}", fontWeight = androidx.compose.ui.text.font.FontWeight.Medium, fontSize = 13.sp, color = Gen3.Ink)
+                                if (s.locked) Icon(Icons.Filled.Lock, contentDescription = "Locked", tint = Gen3.Ink,
+                                    modifier = Modifier.padding(start = 2.dp).size(12.dp))
+                            }
+                            Text(if (s.exists) s.savedLabel() else "empty", style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp),
+                                color = Shell.inkOnPaper, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        }
                     }
                 }
+                Spacer(Modifier.height(6.dp))
             }
-            Spacer(Modifier.height(6.dp))
+            // The picked slot's own line and actions.
+            Text(
+                "${picked.title()}${if (picked.locked) " · locked" else ""}" +
+                    if (picked.exists) " · %s · %,d KB".format(picked.savedLabel(), picked.sizeBytes / 1024) else " · empty",
+                style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper,
+            )
+            Spacer(Modifier.height(4.dp))
+            // Four buttons do not fit one row on a phone; the fourth (UNDO) was clipped.
+            androidx.compose.foundation.layout.FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Gen3Button("SAVE", accent = !picked.exists, enabled = !picked.locked) { onSave(picked.n) }
+                Gen3Button("LOAD", enabled = picked.exists) { onLoad(picked.n) }
+                Gen3Button(if (picked.locked) "UNLOCK" else "LOCK", enabled = picked.exists || picked.locked) { onLock(picked, !picked.locked) }
+                if (picked.hasBackup) Gen3Button("UNDO") { onUndo(picked) }
+            }
+            Text(
+                when {
+                    picked.locked -> "Locked: Save is refused until you unlock it."
+                    picked.hasBackup -> "Undo brings back the state this one overwrote."
+                    else -> "Tap a slot to pick it. Overwrites keep the old state for Undo."
+                },
+                style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper,
+            )
+            Spacer(Modifier.height(8.dp))
+            Gen3Button("CLOSE", onClick = onDismiss)
         }
-        // The picked slot's own line and actions.
-        Text(
-            "${picked.title()}${if (picked.locked) " · locked" else ""}" +
-                if (picked.exists) " · %s · %,d KB".format(picked.savedLabel(), picked.sizeBytes / 1024) else " · empty",
-            style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper,
-        )
-        Spacer(Modifier.height(4.dp))
-        // Four buttons do not fit one row on a phone; the fourth (UNDO) was clipped.
-        androidx.compose.foundation.layout.FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            Gen3Button("SAVE", accent = !picked.exists, enabled = !picked.locked) { onSave(picked.n) }
-            Gen3Button("LOAD", enabled = picked.exists) { onLoad(picked.n) }
-            Gen3Button(if (picked.locked) "UNLOCK" else "LOCK", enabled = picked.exists || picked.locked) { onLock(picked, !picked.locked) }
-            if (picked.hasBackup) Gen3Button("UNDO") { onUndo(picked) }
-        }
-        Text(
-            when {
-                picked.locked -> "Locked: Save is refused until you unlock it."
-                picked.hasBackup -> "Undo brings back the state this one overwrote."
-                else -> "Tap a slot to pick it. Overwrites keep the old state for Undo."
-            },
-            style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper,
-        )
-        Spacer(Modifier.height(8.dp))
-        Gen3Button("CLOSE", onClick = onDismiss)
     }
 }
 

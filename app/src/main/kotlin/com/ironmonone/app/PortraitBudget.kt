@@ -38,7 +38,8 @@ object PortraitBudget {
     const val PAD_WIDTH_DP = 366f
     const val PAD_FLOOR = 0.55f
     const val TRACKER_MIN_DP = 140f
-    const val MENU_DP = 96f
+    // The FILE menu wraps into groups since 2026-09-27 (audit) and is capped at 164dp.
+    const val MENU_DP = 190f
     const val FRAME_DP = 6f
     const val GAME_MIN_FRACTION = 0.5f
 

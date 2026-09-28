@@ -39,15 +39,18 @@ object RulesetCatalog {
         "kaizodoubles", "chaoskaizo", "evokaizo", "ironmonjourney",
     )
 
+    // Reads the file's sidecar too (RnqsInfo.of), not just its name: a preset
+    // saved under a plain name kept its family and Nat. Dex flag there
+    // (2026-09-27, audit).
     fun isCompatible(kind: RomKind, preset: File): Boolean {
-        val i = RnqsInfo.parse(preset.name)
+        val i = RnqsInfo.of(preset)
         if (i.secondPass) return false   // applied by Randomizers, not picked
         return i.gameTag == kind.family && i.natDex == kind.isNatDex
     }
 
     fun forRom(kind: RomKind, settings: List<File>): List<Ruleset> {
         val eligible = settings.mapNotNull { f ->
-            val i = RnqsInfo.parse(f.name)
+            val i = RnqsInfo.of(f)
             if (i.ruleset != null && isCompatible(kind, f)) i.ruleset to f else null
         }
         return eligible.groupBy({ it.first }, { it.second }).map { (key, files) ->

@@ -17,6 +17,7 @@ class BackupCoverageTest {
         "prep/cloudsync.txt" to "the link to this phone's cloud file; restoring it on another phone would point at a file it cannot open",
         "prep/crc-cache.txt" to "a cache, rebuilt from the files",
         "prep/run-error.txt" to "the last randomizer failure, a diagnostic",
+        "prep/stream-token.txt" to "the stream page's key on this phone; OBS on this phone's network holds it, and another phone gets its own",
         "prep/tmp" to "scratch space",
         "prep/patches" to "patch files the player can re-add",
         "prep/prepared" to "prepared ROMs, which are the player's own dumps",

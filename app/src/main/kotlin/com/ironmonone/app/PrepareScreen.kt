@@ -25,6 +25,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -50,6 +51,7 @@ import kotlinx.coroutines.withContext
  * The Nat. Dex .bps is imported ONCE and remembered; after that the choice is just a
  * radio button. An already-patched Nat. Dex ROM is accepted too and skips the patch.
  */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun PrepareScreen(modifier: Modifier = Modifier) {
     val context = LocalContext.current
@@ -95,16 +97,17 @@ fun PrepareScreen(modifier: Modifier = Modifier) {
                         val inside = tmp.inputStream().use { ZipImport.extractToFiles(it, java.io.File(tmp.parentFile, tmp.name + ".d")) { progress.at(it) } }
                         tmp.delete()
                         val rom = inside.firstOrNull { (n, _) -> n.substringAfterLast('.').lowercase() in setOf("gba", "gbc", "gb", "nds") }
-                            ?: inside.firstOrNull() ?: error("that zip holds no ROM")
+                            ?: inside.firstOrNull() ?: throw NoRomInZip()
                         name = rom.first; file = rom.second
                     }
                     progress.start("Checking $name", file.length())
                     Triple(name, file, RomIdentity.identify(file) { d, _ -> progress.at(d) })
                 }
             }.onSuccess { (n, f, id) ->
+                // A file that is not a game is explained once, under the pick,
+                // with where to go next; it used to repeat here in red (audit, 2026-09-27).
                 romFile?.delete(); romName = n; romFile = f; romId = id
-                if (!id.recognised) say(id.summary, error = true)
-            }.onFailure { say("Could not read that file: ${it.message}", error = true); runCatching { context.cacheDir.listFiles()?.filter { f -> f.name.startsWith("prep-") }?.forEach { f -> f.deleteRecursively() } } }
+            }.onFailure { say(readFailure(it), error = true); runCatching { context.cacheDir.listFiles()?.filter { f -> f.name.startsWith("prep-") }?.forEach { f -> f.deleteRecursively() } } }
             progress.clear(); busy = false
         }
     }
@@ -123,7 +126,10 @@ fun PrepareScreen(modifier: Modifier = Modifier) {
             }.onSuccess {
                 needPatchImport = false
                 say("Patch saved. It will be found automatically from now on.")
-            }.onFailure { say(it.message ?: "Could not import that patch.", error = true) }
+            }.onFailure {
+                // PrepStore words its own refusals; anything else is not for the player to read.
+                say((it as? IllegalArgumentException)?.message ?: "Could not read that patch file. Pick it again.", error = true)
+            }
             busy = false
         }
     }
@@ -143,46 +149,49 @@ fun PrepareScreen(modifier: Modifier = Modifier) {
             return
         }
         busy = true; message = null
+        // A stale phase from the pick used to label this job; each mode names its own (audit, 2026-09-27).
+        progress.clear()
         scope.launch {
             runCatching {
                 withContext(Dispatchers.IO) {
                     val options = PrepOptions.forKind(kind)
                     val opt = options.firstOrNull { it.id == chosenOption } ?: options.first()
                     when (opt.mode) {
-                        PrepOptions.Mode.STANDARD ->
+                        PrepOptions.Mode.STANDARD -> {
+                            progress.start("Saving", 0L)
                             (if (kind.isNatDex || kind.patchTag != null) "Already patched. Stored as is." else "Stored as a standard (vanilla) base.") to
                                 store.savePrepared(kind, file)
+                        }
 
                         PrepOptions.Mode.PATCH -> {
-                            val outKind = opt.out ?: error("no output kind for ${opt.label}")
-                            val patchFile = store.bundledPatch(context, opt.asset ?: error("no patch for ${opt.label}"))
-                                ?: error("The ${opt.label} is not in this build of the app.")
+                            // Every failure below is worded for the player; none of them passes on an exception's own text (audit, 2026-09-27).
+                            val outKind = opt.out ?: throw PrepFailure(NOT_IN_THIS_BUILD)
+                            val patchFile = store.bundledPatch(context, opt.asset ?: throw PrepFailure(NOT_IN_THIS_BUILD))
+                                ?: throw PrepFailure(NOT_IN_THIS_BUILD)
                             val tmp = java.io.File(context.cacheDir, "prep-patched-${outKind.id}.${outKind.fileExtension}")
-                            progress.phase = "Patching"
+                            progress.start("Patching", 0L)
                             val crc = Patcher.applyFiles(patchFile, file, tmp, kind.displayName) { done, total -> progress.done = done; progress.total = total }
                             if (outKind.expectedCrc != RomKind.CRC_UNKNOWN && crc != outKind.expectedCrc) {
                                 tmp.delete()
-                                error("The patch applied but the result is not the build this app knows (checksum %08x, expected %08x). The dump is probably a different revision.".format(crc, outKind.expectedCrc))
+                                throw PrepFailure("The patch applied, but the result is not a version this app knows. " +
+                                    "Your dump is probably a different version of the game. Nothing was changed.")
                             }
                             file.delete()
-                            "Patched to ${outKind.displayName}. Ready to randomize." to store.savePrepared(outKind, tmp)
+                            "Patched to ${outKind.displayName}." to store.savePrepared(outKind, tmp)
                         }
 
                         PrepOptions.Mode.NATDEX -> {
                             // Bundled patch is used unless the user imported one.
                             val patchFile = store.patchFileOrBundled(context, kind)
                                 ?: throw NeedPatch()
+                            progress.start("Patching", 0L)
                             val out = Patcher.apply(patchFile.readBytes(), file.readBytes(), kind.displayName)
                             val outKind = RomKind.allNatDex.firstOrNull {
                                 it.expectedCrc == com.ironmonone.patch.Crc32.of(out)
-                            } ?: error(
-                                "The patch applied, but the result is not a " +
-                                "build this app knows (CRC mismatch). A newer " +
-                                "Nat. Dex release needs an app update that " +
-                                "records its CRC - importing just the .bps is " +
-                                "not enough, because the tracker's addresses " +
-                                "are resolved per known build.")
-                            "Patched to ${outKind.displayName}. Ready to randomize." to
+                            } ?: throw PrepFailure(
+                                "The patch applied, but the result is not a Nat. Dex version this app knows. " +
+                                    "A newer Nat. Dex release needs an update of this app first. Nothing was changed.")
+                            "Patched to ${outKind.displayName}." to
                                 store.savePrepared(outKind, out)
                         }
                     }
@@ -190,42 +199,65 @@ fun PrepareScreen(modifier: Modifier = Modifier) {
             }.onSuccess { (msg, _) -> say("$msg Ready on the Run tab."); romFile = null; romId = null }
                 .onFailure {
                     if (it is NeedPatch) {
+                        // Not an error: a one-time step, with where to get the file (audit, 2026-09-27).
                         needPatchImport = true
-                        say(
-                            "One-time setup: pick the pokeemerald/pokefirered " +
-                                "natdex .bps file. The app will keep it.", error = true
-                        )
-                    } else say(it.message ?: "Failed.", error = true)
+                        say("KaizoCore needs the National Dex patch for this game once. " +
+                            "It comes from the Nat. Dex Extension release page. Download the .bps for your game there, then import it here.")
+                    } else say(prepFailure(it), error = true)
                 }
-            busy = false
+            progress.clear(); busy = false
         }
     }
 
     Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(10.dp)) {
         Gen3Box(Modifier.fillMaxWidth()) {
             Column {
+        // Why this page exists, before anything else (audit, 2026-09-27).
         Text(
-            "Add a game dump. What Prepare does depends on the game; it says so once the dump is read.",
+            "Makes a game ready for the Run tab: checks your dump and, if you pick a ruleset patch, applies it. " +
+                "A clean dump added in All files is already ready.",
             style = MaterialTheme.typography.bodyMedium,
             color = Gen3.Ink,
         )
         Spacer(Modifier.height(14.dp))
 
-        Gen3Button(romName ?: "CHOOSE ROM", enabled = !busy) {
+        // The file name gets its own line: through the button label it was
+        // re-cased and clipped (audit, 2026-09-27).
+        Gen3Button(if (romName == null) "CHOOSE ROM" else "CHOOSE ANOTHER", enabled = !busy) {
             pickRom.launch(arrayOf("*/*"))
         }
+        romName?.let { n ->
+            Spacer(Modifier.height(6.dp))
+            Text(n, style = MaterialTheme.typography.bodyMedium, color = Shell.inkOnPaper,
+                maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+        }
 
+        // A game named by its header but whose exact copy is unchecked: said
+        // as soon as it is read, with Prepare off, not after a tap (audit, 2026-09-27).
+        val unchecked = romId?.kind?.expectedCrc == RomKind.CRC_UNKNOWN
         romId?.let { id ->
             Spacer(Modifier.height(8.dp))
             Text(
                 id.summary,
                 style = MaterialTheme.typography.bodySmall,
-                color = if (id.recognised) Shell.goodOnPaper
-                else MaterialTheme.colorScheme.error,
+                color = when {
+                    !id.recognised -> Shell.dangerOnPaper
+                    unchecked -> Shell.hintOnPaper
+                    else -> Shell.goodOnPaper
+                },
             )
+            if (!id.recognised) {
+                Spacer(Modifier.height(4.dp))
+                Text("To play it anyway, add it in Library, All files. To make a hack, use the Hacks tab.",
+                    style = MaterialTheme.typography.bodySmall, color = Shell.inkOnPaper)
+            } else if (unchecked) {
+                Spacer(Modifier.height(4.dp))
+                Text("This copy cannot be randomized here yet. It plays from Library, All files, without the tracker.",
+                    style = MaterialTheme.typography.bodySmall, color = Shell.inkOnPaper)
+            }
             // Blake, 2026-09-07: "the prepare screen will be different and unique
             // to each rom." What this game gets, in its own words.
-            id.kind?.let { k ->
+            id.kind?.takeIf { !unchecked }?.let { k ->
                 Spacer(Modifier.height(6.dp))
                 PrepPlan.lines(k).forEach { line ->
                     Text(line, style = MaterialTheme.typography.bodySmall, color = Shell.inkOnPaper)
@@ -233,7 +265,7 @@ fun PrepareScreen(modifier: Modifier = Modifier) {
             }
         }
 
-        romId?.kind?.let { k ->
+        romId?.kind?.takeIf { !unchecked }?.let { k ->
             val options = PrepOptions.forKind(k)
             if (options.size > 1) {
                 Spacer(Modifier.height(14.dp))
@@ -265,14 +297,27 @@ fun PrepareScreen(modifier: Modifier = Modifier) {
             Spacer(Modifier.height(14.dp))
         }
 
-        Gen3Button("PREPARE", enabled = !busy && romId?.recognised == true, accent = true) {
+        Gen3Button("PREPARE", enabled = !busy && romId?.recognised == true && !unchecked, accent = true) {
             prepare()
         }
 
         if (needPatchImport) {
             Spacer(Modifier.height(10.dp))
-            Gen3Button("IMPORT NAT.DEX PATCH", enabled = !busy) {
-                pickPatch.launch(arrayOf("*/*"))
+            androidx.compose.foundation.layout.FlowRow(
+                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
+                verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
+            ) {
+                Gen3Button("Import the Nat. Dex patch", enabled = !busy) {
+                    pickPatch.launch(arrayOf("*/*"))
+                }
+                Gen3Button("Open the release page", enabled = !busy) {
+                    runCatching {
+                        context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(NATDEX_RELEASES))
+                            .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
+                    }.onFailure {
+                        android.widget.Toast.makeText(context, "No browser found to open the page.", android.widget.Toast.LENGTH_SHORT).show()
+                    }
+                }
             }
         }
             }
@@ -280,19 +325,17 @@ fun PrepareScreen(modifier: Modifier = Modifier) {
 
         message?.let {
             Spacer(Modifier.height(10.dp))
-            Gen3Box(Modifier.fillMaxWidth()) {
-                Text(
-                    it, style = MaterialTheme.typography.bodyMedium,
-                    color = if (messageIsError) Gen3.HpRed else Gen3.Ink,
-                )
-            }
+            StatusBanner(it, isError = messageIsError)
         }
 
         // What is already prepared. A ROM is patched and stored ONCE, but the
         // screen showed no sign of that, so it read as though every session had
         // to go and find the file again. These are the ones the Run tab will
-        // offer; nothing here needs re-picking.
-        val prepared = remember(message, busy) { store.listPrepared() }
+        // offer; nothing here needs re-picking. Read off the main thread: it
+        // hashes a newly stored file, seconds on a DS game (audit, 2026-09-27).
+        val prepared by produceState<List<Pair<RomKind, java.io.File>>?>(null, message, busy) {
+            if (!busy) value = withContext(Dispatchers.IO) { runCatching { store.listPrepared() }.getOrDefault(emptyList()) }
+        }
         Spacer(Modifier.height(14.dp))
         Gen3Box(Modifier.fillMaxWidth()) {
             Column {
@@ -302,14 +345,16 @@ fun PrepareScreen(modifier: Modifier = Modifier) {
                     fontWeight = FontWeight.SemiBold,
                 )
                 Spacer(Modifier.height(6.dp))
-                if (prepared.isEmpty()) {
+                if (prepared == null) {
+                    ShellBusy()
+                } else if (prepared!!.isEmpty()) {
                     Text(
                         "Nothing yet. Add a ROM above and it is kept for good.",
                         style = MaterialTheme.typography.bodySmall,
-                        color = Gen3.InkShadow,
+                        color = Shell.hintOnPaper,
                     )
                 } else {
-                    prepared.forEach { (kind, file) ->
+                    prepared!!.forEach { (kind, file) ->
                         Row(
                             Modifier.fillMaxWidth().padding(vertical = 3.dp),
                             verticalAlignment = Alignment.CenterVertically,
@@ -322,7 +367,7 @@ fun PrepareScreen(modifier: Modifier = Modifier) {
                             Text(
                                 "%.0f MB".format(file.length() / 1048576.0),
                                 style = MaterialTheme.typography.bodySmall,
-                                color = Gen3.InkShadow,
+                                color = Shell.hintOnPaper,
                             )
                         }
                     }
@@ -330,7 +375,7 @@ fun PrepareScreen(modifier: Modifier = Modifier) {
                     Text(
                         "Pick one on the Run tab to randomize it.",
                         style = MaterialTheme.typography.bodySmall,
-                        color = Gen3.InkShadow,
+                        color = Shell.hintOnPaper,
                     )
                 }
             }
@@ -339,3 +384,32 @@ fun PrepareScreen(modifier: Modifier = Modifier) {
 }
 
 private class NeedPatch : Exception()
+
+/** A failure already worded for the player. */
+private class PrepFailure(message: String) : Exception(message)
+
+/** A zip with no game inside. */
+private class NoRomInZip : Exception()
+
+private const val NOT_IN_THIS_BUILD = "This option is not part of this version of the app. Pick another one."
+
+/** Where the Nat. Dex patches are published. */
+private const val NATDEX_RELEASES = "https://github.com/CyanSMP64/NatDexExtension"
+
+private fun isNoSpace(t: Throwable): Boolean =
+    generateSequence(t) { it.cause }.any { (it.message ?: "").contains("ENOSPC") || (it.message ?: "").contains("No space left") }
+
+/** What a failed pick says to the player: never an exception's own text (audit, 2026-09-27). */
+private fun readFailure(t: Throwable): String = when {
+    t is NoRomInZip -> "That zip has no game inside. Pick the .gba, .gbc, .gb or .nds file, or a zip holding one."
+    isNoSpace(t) -> "Not enough free space on this phone to read that file. Free some space and try again."
+    t is OutOfMemoryError -> "This phone ran out of memory reading that file. Close other apps and try again."
+    else -> "Could not read that file. Pick it again, or copy it onto this phone first."
+}
+
+/** What a failed Prepare says to the player. */
+private fun prepFailure(t: Throwable): String = when {
+    t is PrepFailure -> t.message ?: "Setting up the game did not work. Nothing was changed."
+    isNoSpace(t) -> "Not enough free space on this phone to save the game. Free some space and try again."
+    else -> patchFailure(t)
+}

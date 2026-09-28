@@ -25,6 +25,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ironmonone.app.R
@@ -124,6 +126,8 @@ fun Gen3Button(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     accent: Boolean = false,
+    // True shows [text] as written: a file or game name must not go through Shell.label.
+    raw: Boolean = false,
     onClick: () -> Unit,
 ) {
     val interaction = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
@@ -139,14 +143,16 @@ fun Gen3Button(
     val shape = RoundedCornerShape(S.controlRadius)
     Box(
         modifier
-            // 48dp, Android's minimum touch target.
-            .defaultMinSize(minHeight = 48.dp)
+            // 48dp both ways, Android's minimum touch target: "X" alone was
+            // about 41dp wide (audit, 2026-09-27).
+            .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
             .clip(shape)
             .background(face)
             .clickable(
                 enabled = enabled,
                 interactionSource = interaction,
                 indication = null,
+                role = Role.Button,
             ) {
                 haptics.performHapticFeedback(
                     androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress,
@@ -157,12 +163,14 @@ fun Gen3Button(
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            S.label(text),
+            if (raw) text else S.label(text),
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium,
-            // A label that wraps stops looking like a button.
+            // A label that wraps stops looking like a button. One that does
+            // not fit ends in an ellipsis instead of being cut mid-word.
             maxLines = 1,
             softWrap = false,
+            overflow = TextOverflow.Ellipsis,
             color = when {
                 !enabled -> Color(0xFF6B6E78)
                 accent -> S.onAccent

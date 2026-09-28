@@ -78,6 +78,86 @@ data class RnqsInfo(
             }
         }
 
+        /**
+         * Display labels for real files, read with [of] so a renamed preset's
+         * sidecar counts. Same contract as [displayLabels].
+         */
+        fun displayLabelsFor(files: List<java.io.File>): List<Pair<String, String>> {
+            val parsed = files.map { it.name to of(it) }
+            val counts = parsed.groupingBy { it.second.label }.eachCount()
+            return parsed.map { (name, info) ->
+                val stem = name.removeSuffix(".rnqs").removeSuffix(".RNQS")
+                if ((counts[info.label] ?: 0) > 1 || info.gameTag == null) stem to info.label
+                else info.label to name
+            }
+        }
+
+        /** The sidecar beside a preset: "FRLG my run.rnqs" -> "FRLG my run.rnqs.meta". */
+        fun metaFile(preset: java.io.File): java.io.File = java.io.File(preset.parentFile, preset.name + ".meta")
+
+        /**
+         * Records what a preset is for, beside it, so a name without the tokens
+         * still pairs: a Nat. Dex preset saved as "My run" was refused on its own
+         * Nat. Dex ROM and listed as "? ?" (2026-09-27, audit). Plain key=value
+         * lines; a null field is left out.
+         */
+        fun writeMeta(preset: java.io.File, gameTag: String?, natDex: Boolean, ruleset: String?) {
+            runCatching {
+                metaFile(preset).writeText(buildString {
+                    gameTag?.let { append("family=").append(it).append('\n') }
+                    append("natdex=").append(natDex).append('\n')
+                    ruleset?.let { append("ruleset=").append(it).append('\n') }
+                })
+            }
+        }
+
+        private val engineCache = HashMap<String, Pair<Long, Boolean?>>()
+
+        /**
+         * True when only the Nat. Dex fork reads [f], false when only ZX does,
+         * null when neither (or the file is gone). Remembered per file and
+         * modification time: the pairing guard asks on every recomposition.
+         */
+        private fun readsAsNatDex(f: java.io.File): Boolean? = synchronized(engineCache) {
+            val stamp = f.lastModified()
+            engineCache[f.absolutePath]?.let { (t, v) -> if (t == stamp) return v }
+            fun reads(read: (java.io.FileInputStream) -> Any) =
+                runCatching { java.io.FileInputStream(f).use { read(it) } }.isSuccess
+            val v = when {
+                reads { com.dabomstew.pkrandom.Settings.read(it) } -> true
+                reads { com.dabomstew.pkrandomzx.Settings.read(it) } -> false
+                else -> null
+            }
+            engineCache[f.absolutePath] = stamp to v
+            v
+        }
+
+        /**
+         * What a preset FILE is for: its name first, then the sidecar written at
+         * save time ([writeMeta]) fills what the name lacks, and a file with no
+         * game tag and no sidecar is judged by which engine can read it. The
+         * name alone made a Nat. Dex preset renamed "My run" look vanilla.
+         */
+        fun of(file: java.io.File): RnqsInfo {
+            val byName = parse(file.name)
+            val meta = runCatching {
+                metaFile(file).takeIf { it.isFile }?.readLines()
+                    ?.mapNotNull { l -> l.split('=', limit = 2).takeIf { it.size == 2 }?.let { it[0].trim() to it[1].trim() } }
+                    ?.toMap()
+            }.getOrNull()
+            val natDex = when {
+                byName.natDex -> true
+                meta?.get("natdex") != null -> meta["natdex"] == "true"
+                byName.gameTag == null -> readsAsNatDex(file) ?: false
+                else -> false
+            }
+            return byName.copy(
+                gameTag = byName.gameTag ?: meta?.get("family")?.takeIf { it.isNotBlank() },
+                ruleset = byName.ruleset ?: meta?.get("ruleset")?.takeIf { it.isNotBlank() },
+                natDex = natDex,
+            )
+        }
+
         fun parse(fileName: String): RnqsInfo {
             val n = fileName.removeSuffix(".rnqs").removeSuffix(".RNQS")
                 .lowercase().replace(Regex("[^a-z0-9]"), "")

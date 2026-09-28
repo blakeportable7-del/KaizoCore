@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
@@ -58,6 +60,11 @@ fun FloatingTracker(
     content: @Composable () -> Unit,
 ) {
     val density = LocalDensity.current.density
+    // The gesture blocks outlive a recomposition, so they read the frame
+    // through this, not the `frame` captured when the drag began: that stale
+    // copy made every move start from the old spot and the window jittered
+    // instead of following the finger (2026-09-27, audit).
+    val live by rememberUpdatedState(frame)
     Box(
         Modifier
             .offset { IntOffset((frame.x * density).roundToInt(), (frame.y * density).roundToInt()) }
@@ -72,7 +79,7 @@ fun FloatingTracker(
                     .pointerInput(windowW, windowH) {
                         detectDragGestures { change, drag ->
                             change.consume()
-                            onFrame(frame.copy(x = frame.x + drag.x / density, y = frame.y + drag.y / density).clamped(windowW, windowH))
+                            onFrame(live.copy(x = live.x + drag.x / density, y = live.y + drag.y / density).clamped(windowW, windowH))
                         }
                     }
                     .pointerInput(windowW, windowH) {
@@ -92,7 +99,7 @@ fun FloatingTracker(
                 .pointerInput(windowW, windowH) {
                     detectDragGestures { change, drag ->
                         change.consume()
-                        onFrame(frame.copy(w = frame.w + drag.x / density, h = frame.h + drag.y / density).clamped(windowW, windowH))
+                        onFrame(live.copy(w = live.w + drag.x / density, h = live.h + drag.y / density).clamped(windowW, windowH))
                     }
                 },
             contentAlignment = Alignment.BottomEnd,

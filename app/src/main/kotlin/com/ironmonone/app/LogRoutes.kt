@@ -217,7 +217,7 @@ internal fun LogRouteDetail(
     var tab by remember(route.mapId) { mutableStateOf(first) }
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().background(Pc.Page).border(1.dp, Pc.Border).padding(6.dp), verticalAlignment = Alignment.CenterVertically) {
-            PixText("< BACK", 7, Pc.Dim, Modifier.clickable { onBack() }.padding(end = 10.dp))
+            PcTap("< BACK", 7, Pc.Dim, "Back", Modifier.padding(end = 4.dp)) { onBack() }
             PixText(route.name.uppercase(), 8, Pc.Gold, Modifier.weight(1f))
         }
         Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {

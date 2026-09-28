@@ -6,11 +6,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -49,9 +46,13 @@ fun RetroAchievementsDialog(
 ) {
     var user by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    // Hardcore on is asked first: the one tap reset the game's achievements and
+    // switched off loads and rewind with no warning (2026-09-27, audit). Off stays one tap.
+    var confirmHardcore by remember { mutableStateOf(false) }
 
     ShellDialog("RetroAchievements", onDismiss = onDismiss) {
-        Column(Modifier.heightIn(max = 440.dp).verticalScroll(rememberScrollState())) {
+        // ShellDialog scrolls its content as one now; a second, capped scroll in here only nested two.
+        Column {
             if (!summary.loggedIn) {
                 Text(
                     "Sign in with your retroachievements.org account. The password is sent once and not stored.",
@@ -90,8 +91,20 @@ fun RetroAchievementsDialog(
                     else -> Text("No achievement set for this game (not in the RetroAchievements database, or a patched file).", style = MaterialTheme.typography.bodySmall, color = Gen3.Ink)
                 }
                 Spacer(Modifier.height(8.dp))
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Gen3Button(if (summary.hardcore) "HARDCORE ON" else "HARDCORE OFF", accent = summary.hardcore) { onHardcore(!summary.hardcore) }
+                if (confirmHardcore && !summary.hardcore) {
+                    Text(
+                        "Turning on hardcore resets this game's achievements and turns off cheats, rewind, slow motion and state loads.",
+                        style = MaterialTheme.typography.bodySmall, color = Shell.dangerOnPaper,
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Gen3Button("Turn on hardcore", accent = true) { confirmHardcore = false; onHardcore(true) }
+                        Gen3Button("Cancel") { confirmHardcore = false }
+                    }
+                } else Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Gen3Button(if (summary.hardcore) "HARDCORE ON" else "HARDCORE OFF", accent = summary.hardcore) {
+                        if (summary.hardcore) onHardcore(false) else confirmHardcore = true
+                    }
                     Text(
                         if (summary.hardcore) "No cheats, rewind, slow motion or state loads." else "Softcore: everything allowed, unlocks marked softcore.",
                         style = MaterialTheme.typography.bodySmall, color = Gen3.Ink,
@@ -104,7 +117,7 @@ fun RetroAchievementsDialog(
                         if (a.bucket != lastBucket) {
                             lastBucket = a.bucket
                             Spacer(Modifier.height(4.dp))
-                            Text(a.bucket.uppercase(), style = MaterialTheme.typography.labelSmall, color = Gen3.Ink)
+                            Text(a.bucket.lowercase().replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.labelMedium, color = Gen3.Ink)
                         }
                         Row(Modifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.Top) {
                             Text(if (a.unlocked) "✓" else "·", style = MaterialTheme.typography.bodyMedium, color = Gen3.Ink, modifier = Modifier.width(18.dp))

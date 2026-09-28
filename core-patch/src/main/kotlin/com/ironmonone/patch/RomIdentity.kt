@@ -149,7 +149,8 @@ object RomIdentity {
         /** One line for the user, saying what this is or why it was rejected. */
         val summary: String get() = when {
             kind != null && kind.expectedCrc == RomKind.CRC_UNKNOWN ->
-                "${kind.displayName} (by header; CRC ${"%08x".format(crc)} not yet pinned)"
+                // Plain words, no checksum: the player cannot act on one (audit, 2026-09-27).
+                "${kind.displayName}, a copy this app has not checked yet"
             kind != null -> kind.displayName
             header?.game != null && sizeBytes > 16 * 1024 * 1024 ->
                 "${header.game}, but modified. This is not a clean dump."

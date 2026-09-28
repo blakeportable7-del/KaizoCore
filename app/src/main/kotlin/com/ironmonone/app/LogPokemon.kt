@@ -95,7 +95,7 @@ internal fun LogPokemonDetail(
     val mine = team[p.name.uppercase()]
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         Row(Modifier.fillMaxWidth().background(Pc.Page).border(1.dp, Pc.Border).padding(6.dp), verticalAlignment = Alignment.CenterVertically) {
-            PixText("< BACK", 7, Pc.Dim, Modifier.clickable { onBack() }.padding(end = 10.dp))
+            PcTap("< BACK", 7, Pc.Dim, "Back", Modifier.padding(end = 4.dp)) { onBack() }
             PixText(p.name.uppercase(), 9, Pc.Gold, Modifier.weight(1f))
             PixText(p.types.joinToString("/") { logTitle(it) }, 7, Pc.Text)
         }
