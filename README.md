@@ -1,144 +1,74 @@
-# KaizoCore
+<h1 align="center">KaizoCore</h1>
 
-Formerly IronMON One. Package id is still `com.ironmonone.app`; renaming it would
-make a new app to Android and orphan every save.
+<p align="center"><b>Kaizo IronMON on your phone.</b><br>
+Emulator, randomizer, patcher and the IronMON tracker in one Android app.</p>
 
-One Android app replacing the PC stack: BizHawk + GBA IronMON Tracker + Universal
-Pokémon Randomizer ZX + NatDex extension + web patcher.
+<p align="center">
+  <a href="https://github.com/blakeportable7-del/KaizoCore/releases/latest"><img alt="Download the latest beta" src="https://img.shields.io/github/v/release/blakeportable7-del/KaizoCore?include_prereleases&label=download&style=for-the-badge&color=d93a3a"></a>
+  <img alt="Android 8 or newer" src="https://img.shields.io/badge/android-8%2B-3ddc84?style=for-the-badge">
+  <img alt="GPL-3.0" src="https://img.shields.io/badge/license-GPL--3.0-blue?style=for-the-badge">
+  <img alt="Free" src="https://img.shields.io/badge/price-free-555?style=for-the-badge">
+</p>
 
-Specification: `IRONMON_ONE_BRIEF.md` (what to build, non-negotiable rules).
-Architecture: `IRONMON_ONE_MAP.md` (how, with verified reference-repo findings).
+<p align="center"><img src="docs/img/landscape-emerald.jpg" width="820" alt="Emerald in landscape: the game on the left, the IronMON tracker docked beside it with Wattson's Magneton on the opponent card"></p>
 
-**No ROM files in this repository, ever.** The user supplies legally obtained dumps.
+Playing IronMON today takes a PC, a patcher, a randomizer, an emulator, a tracker that only runs on a computer, and OBS. KaizoCore does all of that on an Android phone. Add your game, pick a mode, tap **Start new run**, and the tracker is under the game when you get your starter.
 
+<p align="center">
+  <img src="docs/img/tracker-gba.jpg" width="200" alt="The tracker under Emerald on a phone">
+  <img src="docs/img/tracker-ds.jpg" width="200" alt="The tracker under HeartGold on a phone">
+  <img src="docs/img/run.jpg" width="200" alt="The Run screen: pick the game and the mode, Start new run">
+  <img src="docs/img/game-over.jpg" width="200" alt="The game over popup with the attempt count">
+</p>
 
-## Beta
+## What it does
 
-Download the APK from https://willowcreek.group/kaizocore (or the releases page here); the SHA-256 is on both. Install a newer APK over the old one; uninstalling wipes your games, saves, notes and attempt count. You need your own game dumps: nothing here contains or fetches a ROM. The Hacks tab's list opens each ROM hack's own page for its patch.
+**Tracks the run.** The app has its own copy of the PC IronMON tracker, reading the game while you play: your party, the opponent, moves seen, stat notes, abilities as they are revealed, badges, heals, evolutions and friendship. Tap an ability or a move to read what it does. It covers Gen 1 through Gen 5, and the sprites come from your own ROM. When a run ends you get the PC tracker's game over popup: continue, retry the battle, save the attempt, grade your notes, inspect the log, or roll a new seed.
 
-Your first run: Library tab, All files, Add files, pick your dump (a zip is fine). Run tab, pick the game and a mode, Start new run. Play. Library, Set up a game is only for Nat. Dex on Emerald or FireRed v1.1 and the patched rulesets. Bugs: More tab, Backup and info, Report a bug, Email Blake.
+**Randomizes on the phone.** Universal Pokémon Randomizer ZX is built into the app, not a second download. Pick Standard, Kaizo, Super Kaizo, Survival, Ultimate or Kaizo Doubles from the official settings files, or change any setting in the editor. Gen 1's two-pass randomization is done for you, and the log opens full screen on the phone.
 
-## State as of 2026-08-30
+**Patches and hacks.** The library says what each dump is and whether it is clean. Patches (BPS and IPS) are checked against the game they were made for, so a wrong patch is refused instead of making a broken ROM. The Hacks tab lists the ROM hacks made for your game and opens each creator's own page. Nat. Dex for Emerald and FireRed v1.1 is built in.
 
-**Milestones 1 and 2 are done and tested, and the toolchain is installed.**
-JDK 21.0.12 LTS, Android SDK (platform-tools, android-34, build-tools 34.0.0,
-licences accepted) at `C:\Users\bepor\Android\Sdk`, Gradle 8.7 with a wrapper in the
-repo. `core-api` compiles and its tests pass. The NDK is deliberately **not** installed
-yet: it is 1-3GB and nothing needs it until the emulator milestone, which is blocked on
-the ironmon_emu source question.
+**Plays everything IronMON runs on.** Game Boy, Game Boy Color, GBA and DS, with eight save slots with screenshots, an auto-save, rewind, fast forward, slow motion, controllers, custom button layouts and skins. In landscape the tracker docks beside the game; on DS both screens and the tracker fit without overlapping.
 
-```
-core-api/        pure Kotlin, zero Android deps   — 10 tests green
-core-patch/      crc32, BPS, IPS                  — 10 tests green
-core-recipe/     recipe runner + stage cache      — 8 tests green
-tools/           Java reference impls + decoder   — 24 tests green
-emu-mgba/        libmgba + NDK + our own JNI (no official port)  — not started
-tracker-gba/     native tracker behind Tracker    — spec'd, see docs/
-engine-zx/       ZX 4.6.1 source subtree, headless               — not started
-engine-natdex/   CyanSMP64 fork @1.2.1, package-relocated        — not started
-app/             Compose shell: ROM library + About — BUILDS, untested on device
-nds/             stubs only, must stay empty in v1               — not started
-```
+**Streams.** The tracker is an OBS browser source on your own network, and the attempt counter is a text source beside it, so your overlay works the way it does with the PC setup. Clean View hides everything but the game for screen capture. Cheats and rewind switch themselves off on a tracked run.
 
-Build the APK (lands in `app/build/outputs/apk/debug/`):
+**Keeps your progress.** RetroAchievements, with a hardcore mode that locks the helpers. Saves sync to the cloud through Android's file picker, and backups never include a ROM.
 
-```bash
-./gradlew :app:assembleDebug
-```
+<p align="center">
+  <img src="docs/img/library.jpg" width="200" alt="The library, sorted into clean ROMs, patched games and patches">
+  <img src="docs/img/hacks.jpg" width="200" alt="The Hacks tab: pick a game, pick a hack, patch it on the phone">
+  <img src="docs/img/editor.jpg" width="200" alt="Every randomizer setting, editable on the phone">
+  <img src="docs/img/states.jpg" width="200" alt="Eight save state slots with screenshots">
+</p>
 
-Run the tests:
+## Every game the tracker knows
 
-```bash
-./gradlew test
-```
+<p align="center"><img src="docs/img/games.jpg" width="820" alt="Title screens of Red, Blue, Yellow, Gold, Silver, Crystal, Ruby, Sapphire, Emerald, FireRed, LeafGreen, Diamond, Pearl, Platinum, HeartGold, SoulSilver, White, Black 2 and White 2, each booted in the app"></p>
 
-```bash
-cd tools && javac -d out *.java && java -cp out RomToolTest && java -cp out SettingsMatcher C:\PokemonIronmon && java -cp out PokemonDecoderTest
-```
+Red, Blue and Yellow; Gold, Silver and Crystal; Ruby, Sapphire, Emerald, FireRed and LeafGreen; Diamond, Pearl, Platinum, HeartGold and SoulSilver; Black, White, Black 2 and White 2. Each title above is a player's own dump, booted in the app.
 
-Set `JAVA_HOME` to the **JDK 21** install, not the system JDK 25: Gradle 8.7 does not
-run on 25.
+<p align="center"><img src="docs/img/landscape-heartgold.jpg" width="820" alt="HeartGold in landscape: the top screen, the bottom screen and the tracker side by side"></p>
 
-What is proven, not assumed:
+## Get it
 
-- CRC-32 matches the standard check vector, so the gate itself is right.
-- BPS applies all four opcodes correctly, and refuses a wrong-CRC source, a
-  wrong-size source, and an output that misses its declared checksum.
-- IPS handles plain records, RLE runs and the optional truncation field.
-- The settings matcher parses **all 72 real `.rnqs` files** on this machine (52
-  distinct names) and resolves each v1 profile to exactly one file. Super Kaizo never
-  satisfies a request for Kaizo, and no vanilla file can reach a NatDex profile.
-- Blake's Emerald is already correct Nat. Dex 1.2.1 (`ebfdce4b`). There is **no clean
-  Emerald dump and no FireRed** here, so BPS apply is verified against synthetic
-  fixtures rather than the real patch.
-- The Gen III decoder unpacks species, moves, item and level across four different
-  substructure orderings. Its permutation table is **generated from the canonical
-  ordering rule, not transcribed**, then checked against the published GAEM / GAME /
-  MEAG rows, so a silent typo in 24 rows of digits is impossible.
-- Shiny, nature, gender and the IV bit-packing are each asserted against **independent**
-  hand-computed vectors, not against the test's own encoder. A round-trip alone would
-  only prove the encoder and decoder share an assumption.
-- `GbaHeader` parses the **real retail ROM** and its GBATEK checksum validates:
-  `POKEMON EMER / BPEE / maker 01 / v1.0`. Nat. Dex leaves the header untouched, which
-  is why CRC-32 remains the only way to identify a patched ROM.
+1. Download the APK from the [latest release](https://github.com/blakeportable7-del/KaizoCore/releases/latest) or from [willowcreek.group/kaizocore](https://willowcreek.group/kaizocore). Both list the SHA-256.
+2. Open it on the phone. Android asks once to let your browser or file manager install apps.
+3. **Library** tab, **All files**, **Add files**, pick your dump (a zip is fine).
+4. **Run** tab, pick the game and a mode, **Start new run**. Then play.
 
-- The Kotlin patcher reads the **real 26MB Nat. Dex 1.2.1 patch** and independently
-  reproduces both checksums the app hardcodes. Its failures are written for a person:
-  a wrong dump says which copy it needs, a wrong size adds "that usually means the file
-  is a different game, or already patched".
-- **New Run re-runs only randomization.** Proved by counting calls, not by comparing
-  output: the second run reports the patch stage as a cache hit while the randomizer
-  runs exactly once more. Adding a QoL toggle re-runs the new stage and still hits cache
-  for everything upstream of it.
-- **Randomizing a randomized ROM is unrepresentable.** Randomization always consumes the
-  prepared ROM, so the same seed twice is byte-identical rather than drifting.
+To update, install the new APK over the old one. Uninstalling deletes your games, saves, notes and attempt count.
 
-**Verified on Android (emulator, API 34, 2026-08-30) — the whole loop, driven by adb:**
-SAF pick → CRC gate identified the NatDex ROM green → Prepare stored it → rnqs import
-labeled "RSE Nat. Dex Kaizo" by the matcher → **Randomize ran on ART** ("New run ready
-(seed 7ff78351c808b73f)", no crash) → output pulled via run-as: exactly 32MB, valid
-GBA header, fresh CRC. Also closed with Blake's clean dumps: the **real Emerald BPS
-apply** (clean `1f1c08fb` → `ebfdce4b`, byte-identical to the known-good build), and
-the FireRed gate correctly **refusing a v1.0 dump** (`dd88761c`; the patch needs v1.1
-`84ee4776`).
+**You need your own game dumps.** KaizoCore contains no ROMs and downloads none, and this repository never will. Android 8 or newer; a DS game wants a phone with at least 3 GB of RAM.
 
-Still unproven, and honestly so: the party-structure offsets and the tracker's address
-tables need a differential test against a live save once the emulator exists (see
-`docs/TRACKER_SPEC.md`), and real-phone behaviour (performance, screen sizes) versus
-the x86_64 emulator.
-
-## Next three actions
-
-1. Install Android Studio. It bundles its own JDK; **do not point the build at the
-   system JDK 25** without checking that the Android Gradle Plugin supports it.
-2. Fork `billgreenwald/ironmon_emu` (permission secured 2026-08-30) and stand its
-   mGBA core + `mgba-android-memapi` up behind `EmulatorCore`.
-3. `core-patch`: BPS applies the NatDex patch and its embedded CRC-32s become the
-   verification gate.
+Found a bug? In the app go to **More**, **Backup and info**, **Report a bug**, or [open an issue](https://github.com/blakeportable7-del/KaizoCore/issues). Never attach a ROM or a save.
 
 ## Credits
 
-Nat. Dex support uses the Pokémon and move data and sprites from the **Nat. Dex
-Extension** by **CyanSixFour / CyanSMP64**, used with the author's permission:
-https://github.com/CyanSMP64/NatDexExtension
+Built on [LibretroDroid](https://github.com/Swordfish90/LibretroDroid) with the mGBA, melonDS and Gambatte cores; [Universal Pokémon Randomizer ZX](https://github.com/Ajarmar/universal-pokemon-randomizer-zx) and the Nat. Dex fork; rcheevos for [RetroAchievements](https://retroachievements.org). The tracker follows the [Ironmon-Tracker](https://github.com/besteon/Ironmon-Tracker) by Besteon and the [NDS-Ironmon-Tracker](https://github.com/Brian0255/NDS-Ironmon-Tracker). Nat. Dex Extension by CyanSMP64, used with permission. Press Start 2P by CodeMan38, under the SIL Open Font License.
 
-Faster FireRed, the FireRed quality-of-life patch bundled for Library, Set up a game, is by DrMaple:
-https://github.com/DrMaple/Faster-FireRed
+KaizoCore is free software under the [GPL-3.0](LICENSE). It is not affiliated with Nintendo, Game Freak, The Pokémon Company, IronMON or RetroAchievements. Screenshots show the player's own copy of each game running in the app.
 
-Tracker constants and behaviour derive from the **IronMON Tracker** (MIT) by besteon
-and contributors: https://github.com/besteon/Ironmon-Tracker
+A side project from [Willow Creek Group](https://willowcreek.group), St. Clairsville, Ohio. If it saved you an evening of setup, you can [chip in a few dollars](https://willowcreek.group/kaizocore#support). Nothing is unlocked; it is a thank-you.
 
-**This is not an official IronMON or Nat. Dex release.** It is an unaffiliated,
-unendorsed community project.
-
-## Licensing
-
-GPL-3.0. Forced by the ZX randomizer and UPR-Android, both GPL-3.0, whose source is
-compiled into the APK. mGBA is MPL 2.0 and compatible via section 3.3.
-
-**No Pokémon ROM is shipped, hosted, or linked, ever.** Users supply their own legally
-obtained dump and patch it in-app with the author's published BPS. This is both a
-project rule and a condition of the Nat. Dex permission.
-
-See [NOTICE](NOTICE) for the full component list, the permission grants verbatim, and
-the binding release checklist.
+Build notes and the development log are in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
