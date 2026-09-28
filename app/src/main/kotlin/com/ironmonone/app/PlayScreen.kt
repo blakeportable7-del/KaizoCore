@@ -634,10 +634,19 @@ fun PlayScreen(
         trackerState?.ownAbilities?.forEach { (sp, name) -> if (statMarks.revealAbility(sp, name)) changed = true }
         if (changed) marksVersion++
     }
-    LaunchedEffect(ndsState?.abilityRevealed) {
-        ndsState?.abilityRevealed?.let { (sp, name) ->
-            if (statMarks.revealAbility(sp, name)) marksVersion++
+    // The DS reference (Tracker.trackAbilityNote) also writes a newly tracked
+    // ability into that species' note, unless the note already names it.
+    LaunchedEffect(ndsState?.abilitiesRevealed) {
+        var changed = false
+        ndsState?.abilitiesRevealed?.forEach { (sp, name) ->
+            if (statMarks.revealAbility(sp, name, max = 3)) {
+                val note = statMarks.noteFor(sp)
+                if (!note.contains(name, ignoreCase = true))
+                    statMarks.setNote(sp, if (note.isEmpty()) name else "$note, $name")
+                changed = true
+            }
         }
+        if (changed) marksVersion++
     }
 
     LaunchedEffect(enemySpecies) {
@@ -704,7 +713,14 @@ fun PlayScreen(
             val visible =
                 lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)
             if (!visible) { kotlinx.coroutines.delay(1000); continue }
-            kotlinx.coroutines.delay(700)
+            if (ndsState?.inBattle == true && tracker != null) {
+                // In battle: full read every 250 ms, and the Gen 4 battle
+                // message checked about every 2 frames in between.
+                val t = tracker
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+                    repeat(8) { kotlinx.coroutines.delay(31); t?.pollAbilityTrigger() }
+                }
+            } else kotlinx.coroutines.delay(700)
             if (tracker == null) {
                 tracker = kotlinx.coroutines.withContext(
                     kotlinx.coroutines.Dispatchers.Default

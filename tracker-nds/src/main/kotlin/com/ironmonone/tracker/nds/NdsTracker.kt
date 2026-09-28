@@ -98,6 +98,9 @@ data class NdsTrackerState(
      * name. The panel persists these per run; the reference's TrackAbility.
      */
     val abilityRevealed: Pair<Int, String>? = null,
+    /** Every reveal since the last read, oldest first, including Gen 4
+     *  messages [NdsTracker.pollAbilityTrigger] caught between reads. */
+    val abilitiesRevealed: List<Pair<Int, String>> = emptyList(),
 ) : com.ironmonone.tracker.RunView {
     override val enemySpeciesId: Int get() = enemy?.mon?.species ?: -1
     override val outcome: com.ironmonone.tracker.RunOutcome? get() = runOver?.let {
@@ -244,6 +247,27 @@ class NdsTracker(
      * when the word changes to something non-zero; -1 until a battle is up.
      */
     private val lastAbilityTrigger = longArrayOf(-1L, -1L)
+
+    /**
+     * Gen 4: the reference checks the battle message every 8 frames, and the
+     * message is gone a moment later. read() runs every 250 ms at best, so at
+     * fast-forward reveals were missed (2026-09-28, Blake: "do the DS tracker
+     * too"). Between reads the play screen calls this; it reads one u16 and
+     * queues a message that can reveal an ability, resolved against the mons
+     * on the field at the next read.
+     */
+    @Volatile private var pollVersionRel = 0L
+    private val pendingMsgs = ArrayList<Int>()
+
+    fun pollAbilityTrigger() {
+        val rel = pollVersionRel
+        if (rel == 0L || map.absolute) return
+        val b = runCatching { memory.read(ramStart + rel + battleSubscriptMsgsOffset, 2) }.getOrNull() ?: return
+        if (b.size < 2) return
+        val msg = b.u16(0)
+        if (battleMsgAbilities[msg] == null) return
+        synchronized(pendingMsgs) { if (pendingMsgs.lastOrNull() != msg) pendingMsgs += msg }
+    }
 
     init {
         loadPairs("/${map.dataDir}/species.tsv", speciesNames)
@@ -751,6 +775,14 @@ class NdsTracker(
             map.absolute -> readAbilityTriggerGen5(lead, battle.first)
             else -> readAbilityTrigger(battle.third, lead, battle.first)
         }
+        pollVersionRel = if (battle != null && !map.absolute) battle.third else 0L
+        val allRevealed = if (battle == null || battle.third == 0L || map.absolute) {
+            synchronized(pendingMsgs) { pendingMsgs.clear() }
+            listOfNotNull(revealed)
+        } else {
+            val queued = synchronized(pendingMsgs) { val q = pendingMsgs.toList(); pendingMsgs.clear(); q }
+            (queued.mapNotNull { resolveAbilityMsg(it, lead, battle.first) } + listOfNotNull(revealed)).distinct()
+        }
         val heals = readHeals(lead?.mon?.maxHp ?: 0, battle != null)
         runCatching { updateLocation() }
         // BattleHandlerBase._onEndOfBattle: a battle that just ended against a lab rival is Past Lab, against the champion is Won.
@@ -770,6 +802,7 @@ class NdsTracker(
             isWildBattle = battle?.second ?: false,
             enemy = battle?.first,
             abilityRevealed = revealed,
+            abilitiesRevealed = allRevealed,
             resolvedBase = partyBase,
             probe = probe,
             badges = readBadges(),
@@ -967,7 +1000,16 @@ class NdsTracker(
     ): Pair<Int, String>? {
         val msgBytes = memory.read(ramStart + versionRel + battleSubscriptMsgsOffset, 2)
         if (msgBytes.size < 2) return null
-        val candidates = battleMsgAbilities[msgBytes.u16(0)] ?: return null
+        return resolveAbilityMsg(msgBytes.u16(0), player, enemy)
+    }
+
+    /** The rest of [readAbilityTrigger], for a message already read. */
+    internal fun resolveAbilityMsg(
+        msg: Int,
+        player: NdsTrackedMon?,
+        enemy: NdsTrackedMon?,
+    ): Pair<Int, String>? {
+        val candidates = battleMsgAbilities[msg] ?: return null
         val onField = listOfNotNull(player, enemy)
         val sources = onField.filter { it.mon.abilityId in candidates }
         if (sources.size != 1) return null

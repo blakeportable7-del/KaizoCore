@@ -242,7 +242,7 @@ class StatMarks(private val file: File) {
                 // "species:A" (one tracked) or "species:A|B" (both), the
                 // file of builds before 2026-09-27 being the first form.
                 if (cut > 0) line.substring(0, cut).toIntOrNull()?.let {
-                    val names = line.substring(cut + 1).split('|').filter { n -> n.isNotBlank() }.take(2)
+                    val names = line.substring(cut + 1).split('|').filter { n -> n.isNotBlank() }.take(3)
                     if (names.isNotEmpty()) abilitiesSeen[it] = names.toMutableList()
                 }
             }
@@ -262,13 +262,14 @@ class StatMarks(private val file: File) {
     }
 
     /** Records a revealed ability; returns true when it is new. */
-    fun revealAbility(species: Int, name: String): Boolean {
+    fun revealAbility(species: Int, name: String, max: Int = 2): Boolean {
         if (species <= 0 || name.isBlank() || name == "?") return false
         // Tracker.TrackAbility: the first becomes slot 1, a DIFFERENT one slot 2,
         // and a species with two tracked keeps them. It used to keep one and
         // let a later reveal overwrite it (2026-09-27, Blake: "check the pc version").
         val names = abilitiesSeen.getOrPut(species) { mutableListOf() }
-        if (name in names || names.size >= 2) return false
+        // The DS reference keeps every one it sees (a Gen 5 species can have three with its hidden ability).
+        if (name in names || names.size >= max) return false
         names += name
         saveAbilities()
         return true
