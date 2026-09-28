@@ -1159,6 +1159,14 @@ data class TrackerState(
     /** Ability revealed by a battle-script activation this tick:
      *  species to ability name. The reference's Tracker.TrackAbility. */
     val abilityRevealed: Pair<Int, String>? = null,
+    /** Every reveal caught since the last read, oldest first, including the
+     *  ones [GbaTracker.pollAbilityTrigger] saw between reads. */
+    val abilitiesRevealed: List<Pair<Int, String>> = emptyList(),
+    /** The player's own battlers in this battle, species to ability. The
+     *  reference tracks these on every battle update with no trigger needed
+     *  (Battle.lua ~484-504), so an ability you have fielded is known when that
+     *  species turns up against you. */
+    val ownAbilities: List<Pair<Int, String>> = emptyList(),
     /** null while the run is alive; otherwise how it ended. */
     val gameOver: GameOver? = null,
     /**
@@ -1489,6 +1497,8 @@ class GbaTracker(
             enemyTeam = if (inBattle && trainer) readEnemyTeam() else emptyList(),
             enemy = if (inBattle) readEnemy() else run { seenForSpecies = -1; movesSeen.clear(); null },
             abilityRevealed = if (inBattle) readAbilityTrigger() else null,
+            abilitiesRevealed = if (inBattle) drainReveals() else { pendingReveals.clear(); emptyList() },
+            ownAbilities = if (inBattle) readOwnAbilities() else emptyList(),
             playerX = px,
             playerY = py,
             weather = if (inBattle) readWeather() else null,
@@ -2992,6 +3002,55 @@ class GbaTracker(
      * Levitate gBattleCommunication check - both need cross-poll bookkeeping
      * the reference itself flags as fragile.
      */
+    /**
+     * The player's side in battle: battler 0, and battler 2 in a double. The
+     * ability is the mon's own (the slot bit in the IV word, +0x14 bit 31,
+     * against its base stats), as the reference's PokemonData.getAbilityId(id,
+     * abilityNum) reads it, not the live +0x20 byte that Trace or Skill Swap
+     * change.
+     */
+    internal fun readOwnAbilities(): List<Pair<Int, String>> {
+        if (map.battleMons == 0L) return emptyList()
+        val nB = memory.read(map.battlersCount, 1)
+        val n = if (nB.isEmpty()) 2 else (nB[0].toInt() and 0xFF)
+        val out = ArrayList<Pair<Int, String>>(2)
+        for (i in if (n >= 4) listOf(0, 2) else listOf(0)) {
+            val b = memory.read(map.battleMons + i.toLong() * map.battleMonSize, 0x18)
+            if (b.size < 0x18) continue
+            val sp = b.u16(0)
+            val base = baseStats(sp) ?: continue
+            val slot = ((b.u32(0x14) ushr 31) and 1L).toInt()
+            val id = if (slot == 1 && base.ability2 != 0) base.ability2 else base.ability1
+            if (sp != 0 && id != 0) out += sp to abilityName(id)
+        }
+        return out
+    }
+
+    /**
+     * The reference looks for an ability message every 10 EMULATED frames,
+     * because it runs inside the emulator's frame loop. read() runs every 250 ms
+     * of wall time: at fast-forward that is 60 frames and more, and Faster
+     * FireRed's short battle text left the message on screen for less than
+     * that, so reveals were missed (2026-09-27, Blake: abilities not tracked on
+     * FireRed). This reads only the battle-script pointer and a few bytes, so
+     * the play screen calls it every few frames between full reads.
+     */
+    private val pendingReveals = ArrayList<Pair<Int, String>>()
+
+    fun pollAbilityTrigger() {
+        val r = runCatching { readAbilityTrigger() }.getOrNull() ?: return
+        synchronized(pendingReveals) {
+            // The same message stays up across several polls; record it once.
+            if (pendingReveals.lastOrNull() != r) pendingReveals += r
+        }
+    }
+
+    private fun drainReveals(): List<Pair<Int, String>> = synchronized(pendingReveals) {
+        val now = readAbilityTrigger()
+        if (now != null && pendingReveals.lastOrNull() != now) pendingReveals += now
+        val out = pendingReveals.toList(); pendingReveals.clear(); out
+    }
+
     internal fun readAbilityTrigger(): Pair<Int, String>? {
         if (map.scriptCurrInstr == 0L || abilityScripts.isEmpty()) return null
         val msgB = memory.read(map.scriptCurrInstr, 4)

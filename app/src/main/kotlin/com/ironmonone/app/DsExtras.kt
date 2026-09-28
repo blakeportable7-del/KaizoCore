@@ -115,7 +115,7 @@ fun TrackedPokemonDialog(marks: StatMarks, seen: Set<Int>, tracker: NdsTracker?,
                         PixText(tracker?.speciesName(id) ?: "#$id", 9, Pc.Text)
                         if (info != null) {
                             PixText(listOf(info.type1, info.type2).filter { it.isNotEmpty() }.distinct().joinToString("/") + "  BST ${info.bst}", 7, Pc.Dim)
-                            PixText(marks.abilityFor(id) ?: listOf(info.ability1, info.ability2).filter { it.isNotEmpty() }.distinct().joinToString(" / "), 7, Pc.Gold)
+                            PixText(marks.abilitiesFor(id).ifEmpty { null }?.joinToString(" / ") ?: listOf(info.ability1, info.ability2).filter { it.isNotEmpty() }.distinct().joinToString(" / "), 7, Pc.Gold)
                         }
                     }
                     val m = marks.of(id)

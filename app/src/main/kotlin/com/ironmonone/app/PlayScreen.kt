@@ -623,10 +623,16 @@ fun PlayScreen(
 
     // A battle script revealing an ability is the ONLY thing that unlocks
     // the enemy's ability line - the reference's TrackAbility rule.
-    LaunchedEffect(trackerState?.abilityRevealed) {
-        trackerState?.abilityRevealed?.let { (sp, name) ->
-            if (statMarks.revealAbility(sp, name)) marksVersion++
-        }
+    LaunchedEffect(trackerState?.abilitiesRevealed) {
+        var changed = false
+        trackerState?.abilitiesRevealed?.forEach { (sp, name) -> if (statMarks.revealAbility(sp, name)) changed = true }
+        if (changed) marksVersion++
+    }
+    // Your own battlers' abilities, every battle, as the reference does.
+    LaunchedEffect(trackerState?.ownAbilities) {
+        var changed = false
+        trackerState?.ownAbilities?.forEach { (sp, name) -> if (statMarks.revealAbility(sp, name)) changed = true }
+        if (changed) marksVersion++
     }
     LaunchedEffect(ndsState?.abilityRevealed) {
         ndsState?.abilityRevealed?.let { (sp, name) ->
@@ -759,7 +765,14 @@ fun PlayScreen(
         while (true) {
             val visible = lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)
             if (!visible) { kotlinx.coroutines.delay(1000); continue }
-            kotlinx.coroutines.delay(
+            if (trackerState?.inBattle == true && tracker != null) {
+                // In battle, look for ability messages every ~2 frames at 1x
+                // between the 250 ms full reads (see pollAbilityTrigger).
+                val t = tracker
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+                    repeat(8) { kotlinx.coroutines.delay(31); t?.pollAbilityTrigger() }
+                }
+            } else kotlinx.coroutines.delay(
                 if (trackerState?.inBattle == true) 250 else 700
             )
             if (tracker == null) {
@@ -1564,6 +1577,8 @@ fun PlayScreen(
                 moveRowFor = { id -> trackerRef?.moveRowFor(id) ?: gbLookup?.invoke(id) },
                 revealedEnemyAbility = trackerState?.enemy
                     ?.let { statMarks.abilityFor(it.species) },
+                revealedEnemyAbility2 = trackerState?.enemy
+                    ?.let { statMarks.secondAbilityFor(it.species) },
                 routeName = trackerState?.routeName,
                 routeSeen = trackerState?.mapId?.let { statMarks.seenOnRoute(it).size } ?: 0,
                 routeTotal = trackerState?.routeSpecies?.size ?: 0,
@@ -2176,6 +2191,8 @@ fun PlayScreen(
                 moveRowFor = { id -> trackerRef?.moveRowFor(id) ?: gbLookup?.invoke(id) },
                 revealedEnemyAbility = trackerState?.enemy
                     ?.let { statMarks.abilityFor(it.species) },
+                revealedEnemyAbility2 = trackerState?.enemy
+                    ?.let { statMarks.secondAbilityFor(it.species) },
                 routeName = trackerState?.routeName,
                 routeSeen = trackerState?.mapId?.let { statMarks.seenOnRoute(it).size } ?: 0,
                 routeTotal = trackerState?.routeSpecies?.size ?: 0,

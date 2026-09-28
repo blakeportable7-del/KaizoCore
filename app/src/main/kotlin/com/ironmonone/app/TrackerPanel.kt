@@ -155,6 +155,7 @@ private fun EnemyCard(
     onTypeDefenses: ((String, Int, Int) -> Unit)? = null,
     e: EnemyInfo,
     revealedAbility: String?,
+    revealedAbility2: String?,
     spriteFor: (Int) -> androidx.compose.ui.graphics.ImageBitmap?,
     marks: IntArray,
     onCycleMark: (Int) -> Unit,
@@ -200,6 +201,7 @@ private fun EnemyCard(
             },
             abilityLine = when {
                 InfoRules.canShowAbilities(rand) -> e.abilityGuess.substringAfter(" / ", "---")
+                revealedAbility2 != null -> revealedAbility2
                 revealedAbility != null -> "?"
                 else -> "---"
             },
@@ -317,6 +319,8 @@ fun TrackerPanel(
     moveRowFor: (Int) -> MoveRow? = { null },
     /** The enemy's ability, if a battle trigger has revealed it this run. */
     revealedEnemyAbility: String? = null,
+    /** The enemy species' second tracked ability (DataHelper.lua:247). */
+    revealedEnemyAbility2: String? = null,
     routeSeen: Int = 0,
     routeTotal: Int = 0,
     routeTrainers: Int = 0,
@@ -563,7 +567,7 @@ fun TrackerPanel(
                         hidden = TrackerOptions.hideStatsUntilSummary && state.gameDataRandomized && !SummaryChecks.checked(attempt))
                 }
                 if (enemy != null) {
-                    EnemyCard(onMoveHistory = onMoveHistory, onTypeDefenses = onTypeDefenses, enemy, revealedEnemyAbility, spriteFor,
+                    EnemyCard(onMoveHistory = onMoveHistory, onTypeDefenses = onTypeDefenses, enemy, revealedEnemyAbility, revealedEnemyAbility2, spriteFor,
                         enemyMarks, onCycleMark, movesSeenRunWide, moveRowFor,
                         lastSeenLevel = enemyLastSeenLevel,
                         isWild = state.isWildBattle,

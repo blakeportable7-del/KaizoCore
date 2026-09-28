@@ -75,7 +75,7 @@ class StatMarks(private val file: File) {
      * Tracker.TrackAbility: the panel shows an enemy ability only once a
      * battle script has shown it activating, and remembers it all run.
      */
-    private val abilitiesSeen = HashMap<Int, String>()
+    private val abilitiesSeen = HashMap<Int, MutableList<String>>()
     private val abilitiesFile = File(file.parentFile, "abilities.txt")
 
     init {
@@ -239,8 +239,11 @@ class StatMarks(private val file: File) {
         runCatching {
             abilitiesFile.forEachLine { line ->
                 val cut = line.indexOf(':')
+                // "species:A" (one tracked) or "species:A|B" (both), the
+                // file of builds before 2026-09-27 being the first form.
                 if (cut > 0) line.substring(0, cut).toIntOrNull()?.let {
-                    abilitiesSeen[it] = line.substring(cut + 1)
+                    val names = line.substring(cut + 1).split('|').filter { n -> n.isNotBlank() }.take(2)
+                    if (names.isNotEmpty()) abilitiesSeen[it] = names.toMutableList()
                 }
             }
         }
@@ -250,8 +253,8 @@ class StatMarks(private val file: File) {
         runCatching {
             abilitiesFile.parentFile?.mkdirs()
             abilitiesFile.bufferedWriter().use { w ->
-                abilitiesSeen.forEach { (sp, name) ->
-                    w.write(sp.toString() + ":" + name)
+                abilitiesSeen.forEach { (sp, names) ->
+                    w.write(sp.toString() + ":" + names.joinToString("|") { it.replace('|', ' ') })
                     w.newLine()
                 }
             }
@@ -260,14 +263,25 @@ class StatMarks(private val file: File) {
 
     /** Records a revealed ability; returns true when it is new. */
     fun revealAbility(species: Int, name: String): Boolean {
-        if (species <= 0 || name.isBlank()) return false
-        if (abilitiesSeen[species] == name) return false
-        abilitiesSeen[species] = name
+        if (species <= 0 || name.isBlank() || name == "?") return false
+        // Tracker.TrackAbility: the first becomes slot 1, a DIFFERENT one slot 2,
+        // and a species with two tracked keeps them. It used to keep one and
+        // let a later reveal overwrite it (2026-09-27, Blake: "check the pc version").
+        val names = abilitiesSeen.getOrPut(species) { mutableListOf() }
+        if (name in names || names.size >= 2) return false
+        names += name
         saveAbilities()
         return true
     }
 
-    fun abilityFor(species: Int): String? = abilitiesSeen[species]
+    /** The first tracked ability, or null. */
+    fun abilityFor(species: Int): String? = abilitiesSeen[species]?.firstOrNull()
+
+    /** The second tracked ability, once a different one has been seen. */
+    fun secondAbilityFor(species: Int): String? = abilitiesSeen[species]?.getOrNull(1)
+
+    /** Both tracked abilities, in the order they were seen. */
+    fun abilitiesFor(species: Int): List<String> = abilitiesSeen[species].orEmpty()
 
     /**
      * The reference's Tracker.TrackMove, per move: Struggle is never tracked; a

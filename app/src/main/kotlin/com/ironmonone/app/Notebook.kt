@@ -158,7 +158,7 @@ fun NotebookDialog(
                     @Composable fun line(k: String, v: String) { Row { PixText(k, 8, Pc.Dim, Modifier.width(96.dp)); PixText(v, 8, Pc.Text, wrap = true) } }
                     line("BST", base?.bst?.toString() ?: "---")
                     line("Last level", lastLevelOf(id)?.toString() ?: "---")
-                    line("Abilities", (marks.abilityFor(id)?.let { listOf(it) } ?: tracker?.possibleAbilities(id) ?: emptyList()).ifEmpty { listOf("---") }.joinToString(" / "))
+                    line("Abilities", (marks.abilitiesFor(id).ifEmpty { null } ?: tracker?.possibleAbilities(id) ?: emptyList()).ifEmpty { listOf("---") }.joinToString(" / "))
                     line("Encounters", encountersOf(id).toString())
                     Spacer(Modifier.height(4.dp))
                     PixText("Moves seen", 8, Pc.Gold)
