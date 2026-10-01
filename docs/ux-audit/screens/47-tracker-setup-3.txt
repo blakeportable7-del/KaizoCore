@@ -1,0 +1,16 @@
+TEXT:
+Show team view
+Display repel usage
+Display pedometer
+Determine friendship readiness
+Show move effectiveness
+Calculate variable damage
+Count enemy PP usage
+Show Poké Ball catch rate
+Show last damage calcs
+Damage calc in wild battles only
+Auto swap to enemy
+Show nicknames
+
+CONTENT DESCRIPTIONS:
+

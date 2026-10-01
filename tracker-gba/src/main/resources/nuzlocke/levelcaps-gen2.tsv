@@ -1,0 +1,77 @@
+# Hardcore Nuzlocke level caps for the vanilla Generation 2 games, Gold, Silver and Crystal (2026-09-29).
+#
+# A cap is the level of the highest-level Pokemon on the boss's team in the first-run fight. Each of these bosses has
+# exactly one party in the trainer table (Generation 2 has no rematch for a gym leader, the Elite Four, Lance, Blue or
+# Red; its phone rematches are ordinary trainers). That is the definition Bulbapedia gives for the Hardcore "Level Cap" rule.
+#
+# Source: docs/research/nuzlocke-gen1-3.md sections 4.1 (Gold and Silver) and 5.1 (Crystal). Every number was
+# recomputed from data/trainers/parties.asm of pokegold and pokecrystal and read back out of the Gold (U) and Crystal (U)
+# dumps (tools/nuzlocke/gen2_trainer_rom.py); tools/nuzlocke/gen2_levelcaps.py --check redoes all three. The two games
+# agree on every boss here. Gold and Silver share one trainer table and are one key, gs. Lt. Surge is 46 (Electabuzz),
+# not the 45 that Nuzlocke University and Serebii give.
+#
+# game: gs = Gold and Silver, c = Crystal. seq: the order the fights normally come in, restarting at 1 for each game.
+# key: gym1..gym8 are the Johto gyms in fight order (Falkner, Bugsy, Whitney, Morty, Chuck, Jasmine, Pryce, Clair; Pryce's
+# 31 is lower than Jasmine's 35, that is the game's own data), e4-1..e4-4 (Will, Koga, Bruno, Karen), champion (Lance, the
+# fight that ends the run),
+# then post fights: the eight Kanto gym leaders (any order, group "Kanto gyms") and Red on Mt. Silver (group "Mt. Silver").
+# Eusine (Crystal) is not a cap point; he is in trainers-gen2.tsv as a boss.
+# ids: class:no, the trainer class number and party number the game keeps in wOtherTrainerClass and wOtherTrainerID
+# during the fight (see trainers-gen2.tsv). Each boss has one party, so no is 1.
+#
+# badge: the bit of the badge word GbcTracker reports (johtoInArtOrder(wJohtoBadges) or (wKantoBadges shl 8)).
+#   Johto: the game keeps Zephyr 0, Hive 1, Plain 2, Fog 3, Mineral 4, Storm 5, Glacier 6, Rising 7 in wJohtoBadges
+#   (constants/ram_constants.asm). Mineral is Jasmine's and Storm is Chuck's, and Chuck is fought first, so the tracker
+#   swaps bits 4 and 5: in the tracker's word badge N (the Nth gym in fight order) is bit N-1. Falkner 0, Bugsy 1,
+#   Whitney 2, Morty 3, Chuck 4, Jasmine 5, Pryce 6, Clair 7.
+#   Kanto: the game's own order in wKantoBadges is Boulder 0 (Brock), Cascade 1 (Misty), Thunder 2 (Surge), Rainbow 3
+#   (Erika), Soul 4 (Janine), Marsh 5 (Sabrina), Volcano 6 (Blaine), Earth 7 (Blue), shifted up by 8: Brock 8 ... Blue 15.
+#   Each pairing of leader and badge is the setflag ENGINE_*BADGE in that leader's map script. Clair's Rising Badge is
+#   NOT handed over at the gym: she sends you to the Dragon's Den (Dragon Shrine in Crystal) and the badge comes there.
+#   Elite Four, Champion and Red earn no badge.
+#
+# game	seq	key	kind	label	cap	ace	ids	badge	group
+gs	1	gym1	gym	Falkner	9	Pidgeotto	1:1	0	
+gs	2	gym2	gym	Bugsy	16	Scyther	3:1	1	
+gs	3	gym3	gym	Whitney	20	Miltank	2:1	2	
+gs	4	gym4	gym	Morty	25	Gengar	4:1	3	
+gs	5	gym5	gym	Chuck	30	Poliwrath	7:1	4	
+gs	6	gym6	gym	Jasmine	35	Steelix	6:1	5	
+gs	7	gym7	gym	Pryce	31	Piloswine	5:1	6	
+gs	8	gym8	gym	Clair	40	Kingdra	8:1	7	
+gs	9	e4-1	e4	Will	42	Xatu	11:1		
+gs	10	e4-2	e4	Koga	44	Crobat	15:1		
+gs	11	e4-3	e4	Bruno	46	Machamp	13:1		
+gs	12	e4-4	e4	Karen	47	Houndoom	14:1		
+gs	13	champion	champion	Lance	50	Dragonite	16:1		
+gs	14	brock	post	Brock	44	Onix	17:1	8	Kanto gyms
+gs	15	misty	post	Misty	47	Starmie	18:1	9	Kanto gyms
+gs	16	surge	post	Lt. Surge	46	Electabuzz	19:1	10	Kanto gyms
+gs	17	erika	post	Erika	46	Victreebel or Bellossom	21:1	11	Kanto gyms
+gs	18	janine	post	Janine	39	Venomoth	26:1	12	Kanto gyms
+gs	19	sabrina	post	Sabrina	48	Alakazam	35:1	13	Kanto gyms
+gs	20	blaine	post	Blaine	50	Rapidash	46:1	14	Kanto gyms
+gs	21	blue	post	Blue	58	Gyarados or Exeggutor or Arcanine	64:1	15	Kanto gyms
+gs	22	red	post	Red	81	Pikachu	63:1		Mt. Silver
+c	1	gym1	gym	Falkner	9	Pidgeotto	1:1	0	
+c	2	gym2	gym	Bugsy	16	Scyther	3:1	1	
+c	3	gym3	gym	Whitney	20	Miltank	2:1	2	
+c	4	gym4	gym	Morty	25	Gengar	4:1	3	
+c	5	gym5	gym	Chuck	30	Poliwrath	7:1	4	
+c	6	gym6	gym	Jasmine	35	Steelix	6:1	5	
+c	7	gym7	gym	Pryce	31	Piloswine	5:1	6	
+c	8	gym8	gym	Clair	40	Kingdra	8:1	7	
+c	9	e4-1	e4	Will	42	Xatu	11:1		
+c	10	e4-2	e4	Koga	44	Crobat	15:1		
+c	11	e4-3	e4	Bruno	46	Machamp	13:1		
+c	12	e4-4	e4	Karen	47	Houndoom	14:1		
+c	13	champion	champion	Lance	50	Dragonite	16:1		
+c	14	brock	post	Brock	44	Onix	17:1	8	Kanto gyms
+c	15	misty	post	Misty	47	Starmie	18:1	9	Kanto gyms
+c	16	surge	post	Lt. Surge	46	Electabuzz	19:1	10	Kanto gyms
+c	17	erika	post	Erika	46	Victreebel or Bellossom	21:1	11	Kanto gyms
+c	18	janine	post	Janine	39	Venomoth	26:1	12	Kanto gyms
+c	19	sabrina	post	Sabrina	48	Alakazam	35:1	13	Kanto gyms
+c	20	blaine	post	Blaine	50	Rapidash	46:1	14	Kanto gyms
+c	21	blue	post	Blue	58	Gyarados or Exeggutor or Arcanine	64:1	15	Kanto gyms
+c	22	red	post	Red	81	Pikachu	63:1		Mt. Silver

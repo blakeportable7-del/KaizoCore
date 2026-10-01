@@ -41,7 +41,7 @@ class LibraryOrganizeTest {
         val hg = lib.import("whatever.nds", dsRom("POKEMON B", "IRBO"))
         assertEquals(LibraryStore.Category.CLEAN, hg.category, "header match, CRC unpinned: clean but unverified")
         assertTrue(hg.unverified)
-        assertTrue(hg.subtitle.contains("not checked yet"), hg.subtitle)
+        assertEquals("This is Pokémon Black (U), a copy KaizoCore has not checked yet. It plays here without a tracker.", hg.subtitle)
         val mk = lib.import("mk.nds", dsRom("MARIO KART", "AMCE"))
         assertEquals(LibraryStore.Category.OTHER, mk.category)
         val junk = lib.import("notes.txt", ByteArray(0x2000))
@@ -60,7 +60,7 @@ class LibraryOrganizeTest {
         java.io.File(dir, "stale.nds.meta").writeText(listOf("%08x".format(e.crc), "heartgold-u", "NDS", "-", "-", "old verdict").joinToString("\n"))
         val again = lib.list().single()
         assertNull(again.platform, "the old sidecar was ignored and the file re-identified")
-        assertTrue(again.summary.contains("damaged header"), again.summary)
+        assertEquals("This DS file looks damaged (POKEMON HG), so it will not play. Copy the file to the phone again, then add it again.", again.summary)
     }
 
     @Test
@@ -80,7 +80,7 @@ class LibraryOrganizeTest {
         val out = lib.apply(hg, p)
         assertEquals("Renegade.nds", out.name)
         assertEquals(LibraryStore.Category.HACK, out.category)
-        assertEquals("Renegade on POKEMON HG", out.subtitle)
+        assertEquals("Renegade on POKEMON HG · No tracker", out.subtitle)
         assertEquals(hg.name, out.baseName)
         assertTrue(lib.listPatches().single().name == p.name)
     }

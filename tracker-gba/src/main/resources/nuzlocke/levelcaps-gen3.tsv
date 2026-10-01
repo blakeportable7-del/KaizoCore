@@ -1,0 +1,61 @@
+# Hardcore Nuzlocke level caps for the vanilla Gen 3 games (2026-09-29).
+#
+# A cap is the level of the highest-level Pokemon on the boss's team in the first-run fight. Rematches are left out.
+# That is the definition Bulbapedia gives for the Hardcore "Level Cap" rule and the one Nuzlocke University uses.
+#
+# Source: docs/research/nuzlocke-gen1-3.md sections 6.1 (Ruby and Sapphire), 7.1 (Emerald) and 8.1 (FireRed and
+# LeafGreen). Each number was computed from the pret disassemblies (pokeruby, pokeemerald, pokefirered: trainer
+# tables and trainer parties) and checked against Bulbapedia's trainer pages, Nuzlocke University's Hardcore level
+# cap page and Serebii. Two community datasets that disagree (Drake 54, Lt. Surge 45) are wrong and are not used.
+# NuzlockeRomCapsTest reads the same numbers back out of clean dumps when they are on hand.
+#
+# These are the FALLBACK. When the tracker can read the trainer data out of the loaded ROM it uses the boss's real
+# party levels instead, which is what a randomized or Kaizo-scaled game needs (NuzlockeCaps, GbaTracker.levelCaps).
+#
+# game: rs = Ruby and Sapphire, e = Emerald, frlg = FireRed and LeafGreen.
+# key: gymN is the Nth badge (the tracker reads badges as bits, badge N = bit N-1); e4-N is the Nth Elite Four
+# member; champion; post is a fight after the Hall of Fame.
+# kind: gym, e4, champion, post.
+# ids: the boss's trainer ids, comma separated (FireRed and LeafGreen's Champion has one per rival starter).
+#
+# game	seq	key	kind	label	cap	ace	ids
+rs	1	gym1	gym	Roxanne	15	Nosepass	265
+rs	2	gym2	gym	Brawly	18	Makuhita	266
+rs	3	gym3	gym	Wattson	23	Magneton	267
+rs	4	gym4	gym	Flannery	28	Torkoal	268
+rs	5	gym5	gym	Norman	31	Slaking	269
+rs	6	gym6	gym	Winona	33	Altaria	270
+rs	7	gym7	gym	Tate and Liza	42	Lunatone or Solrock	271
+rs	8	gym8	gym	Wallace	43	Milotic	272
+rs	9	e4-1	e4	Sidney	49	Absol	261
+rs	10	e4-2	e4	Phoebe	51	Dusclops	262
+rs	11	e4-3	e4	Glacia	53	Walrein	263
+rs	12	e4-4	e4	Drake	55	Salamence	264
+rs	13	champion	champion	Steven	58	Metagross	335
+e	1	gym1	gym	Roxanne	15	Nosepass	265
+e	2	gym2	gym	Brawly	19	Makuhita	266
+e	3	gym3	gym	Wattson	24	Manectric	267
+e	4	gym4	gym	Flannery	29	Torkoal	268
+e	5	gym5	gym	Norman	31	Slaking	269
+e	6	gym6	gym	Winona	33	Altaria	270
+e	7	gym7	gym	Tate and Liza	42	Lunatone or Solrock	271
+e	8	gym8	gym	Juan	46	Kingdra	272
+e	9	e4-1	e4	Sidney	49	Absol	261
+e	10	e4-2	e4	Phoebe	51	Dusclops	262
+e	11	e4-3	e4	Glacia	53	Walrein	263
+e	12	e4-4	e4	Drake	55	Salamence	264
+e	13	champion	champion	Wallace	58	Milotic	335
+e	14	steven	post	Steven	78	Metagross	804
+frlg	1	gym1	gym	Brock	14	Onix	414
+frlg	2	gym2	gym	Misty	21	Starmie	415
+frlg	3	gym3	gym	Lt. Surge	24	Raichu	416
+frlg	4	gym4	gym	Erika	29	Victreebel or Vileplume	417
+frlg	5	gym5	gym	Koga	43	Weezing	418
+frlg	6	gym6	gym	Sabrina	43	Alakazam	420
+frlg	7	gym7	gym	Blaine	47	Arcanine	419
+frlg	8	gym8	gym	Giovanni	50	Rhyhorn	350
+frlg	9	e4-1	e4	Lorelei	54	Jynx or Lapras	410
+frlg	10	e4-2	e4	Bruno	56	Machamp	411
+frlg	11	e4-3	e4	Agatha	58	Gengar	412
+frlg	12	e4-4	e4	Lance	60	Dragonite	413
+frlg	13	champion	champion	Blue	63	his starter's last stage	438,439,440

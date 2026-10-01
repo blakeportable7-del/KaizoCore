@@ -53,9 +53,81 @@ class PcHealsTest {
     }
 
     @Test
+    fun `a new run clears what another game left under its attempt number`() {
+        PcHeals.arm(5, PcHeals.Limit.REVIVAL)
+        PcHeals.add(5, -2)
+        assertEquals(3, PcHeals.count(5))
+        PcHeals.forgetAttempt(5)                        // Emerald's attempt 5 after FireRed's
+        PcHeals.load(file)
+        assertEquals(10, PcHeals.count(5), "the default again, after a reload too")
+        TrackerOptions.trackPcHeals = false
+        PcHeals.arm(5, PcHeals.Limit.SURVIVAL)
+        assertEquals(true, TrackerOptions.trackPcHeals, "the new run arms")
+        assertEquals(10, PcHeals.count(5))
+    }
+
+    @Test
+    fun `a run armed past the 8th badge gets no second bonus`() {
+        PcHeals.autoTracking = true
+        PcHeals.arm(6, PcHeals.Limit.SURVIVAL, badges = 8)
+        PcHeals.observeBadges(6, 8, PcHeals.Limit.SURVIVAL)
+        assertEquals(10, PcHeals.count(6))
+    }
+
+    @Test
     fun `colours follow the reference`() {
         assertEquals(Pc.Negative, PcHeals.color(0)); assertEquals(Pc.Gold, PcHeals.color(5)); assertEquals(Pc.Text, PcHeals.color(6))
         TrackerOptions.pcHealsCountDownward = false
         assertEquals(Pc.Text, PcHeals.color(4)); assertEquals(Pc.Gold, PcHeals.color(9)); assertEquals(Pc.Negative, PcHeals.color(10))
+    }
+
+    @Test
+    fun `a Survival settings file asks for its limit`() {
+        assertEquals(PcHeals.Limit.SURVIVAL, PcHeals.limitFor("FRLG Survival.rnqs"))
+        assertEquals(PcHeals.Limit.REVIVAL, PcHeals.limitFor("FRLG Survival Revival.rnqs"))
+        assertEquals(null, PcHeals.limitFor("FRLG Kaizo.rnqs"))
+        assertEquals(null, PcHeals.limitFor(null))
+        java.io.File(dir, "lastrun.txt").writeText("firered-u-v10\nFRLG Survival.rnqs")
+        assertEquals(PcHeals.Limit.SURVIVAL, PcHeals.limitForLastRun(), "the run in play, beside the counter's file")
+    }
+
+    @Test
+    fun `a Survival run switches the counter on at its limit, once, and the player keeps control`() {
+        TrackerOptions.trackPcHeals = false; TrackerOptions.pcHealsCountDownward = false
+        PcHeals.arm(7, PcHeals.Limit.REVIVAL)
+        kotlin.test.assertTrue(TrackerOptions.trackPcHeals); kotlin.test.assertTrue(TrackerOptions.pcHealsCountDownward)
+        assertEquals(5, PcHeals.count(7))
+        // The player turns it off: arming again for the same attempt changes nothing.
+        TrackerOptions.trackPcHeals = false
+        PcHeals.arm(7, PcHeals.Limit.REVIVAL)
+        kotlin.test.assertFalse(TrackerOptions.trackPcHeals)
+        // Saved with the counts: a restart does not arm the attempt again.
+        TrackerOptions.trackPcHeals = true
+        PcHeals.load(file)
+        TrackerOptions.trackPcHeals = false
+        PcHeals.arm(7, PcHeals.Limit.REVIVAL)
+        kotlin.test.assertFalse(TrackerOptions.trackPcHeals)
+        // Not a Survival run: nothing.
+        PcHeals.arm(8, null)
+        assertEquals(10, PcHeals.count(8).let { if (TrackerOptions.pcHealsCountDownward) it else 10 })
+    }
+
+    @Test
+    fun `the 8th badge adds the bonus heal once, heart or no heart`() {
+        PcHeals.observeBadges(9, 8, PcHeals.Limit.SURVIVAL)
+        assertEquals(10, PcHeals.count(9), "not armed yet: nothing")
+        PcHeals.arm(9, PcHeals.Limit.SURVIVAL)
+        PcHeals.observeBadges(9, 7, PcHeals.Limit.SURVIVAL)
+        assertEquals(10, PcHeals.count(9))
+        PcHeals.observeBadges(9, 8, PcHeals.Limit.SURVIVAL)
+        assertEquals(11, PcHeals.count(9))
+        PcHeals.observeBadges(9, 8, PcHeals.Limit.SURVIVAL)
+        assertEquals(11, PcHeals.count(9), "once")
+        PcHeals.observeBadges(10, 8, null)
+        assertEquals(10, PcHeals.count(10), "not a Survival run")
+        PcHeals.arm(11, PcHeals.Limit.SURVIVAL)
+        TrackerOptions.trackPcHeals = false
+        PcHeals.observeBadges(11, 8, PcHeals.Limit.SURVIVAL)
+        assertEquals(10, PcHeals.count(11), "a counter the player switched off is left alone")
     }
 }

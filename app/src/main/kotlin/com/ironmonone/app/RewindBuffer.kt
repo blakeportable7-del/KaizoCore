@@ -12,8 +12,10 @@ import com.ironmonone.core.Platform
  * state is tens of megabytes, so the DS gets a short history at a long
  * interval rather than none at all.
  *
- * Never on a tracked game: rewinding an IronMON run is the one thing a
- * viewer would call out, the same rule as cheats (CheatStore.allowed).
+ * Never in a Kaizo IronMON run or a Nuzlocke: rewinding one is the thing a
+ * viewer would call out, the same rule as cheats (CheatStore.allowed). Until
+ * 2026-09-30 it was every game the tracker reads, so a plain Emerald from the
+ * library, with no run and no rules, had no rewind at all.
  */
 class RewindBuffer(val capacity: Int) {
     private val states = ArrayDeque<ByteArray>()
@@ -32,7 +34,7 @@ class RewindBuffer(val capacity: Int) {
     fun clear() = states.clear()
 
     companion object {
-        fun allowed(session: GameSession): Boolean = !session.tracked
+        fun allowed(session: GameSession, nuzlocke: Boolean = NuzlockeTracking.inPlay()): Boolean = !session.isRun && !nuzlocke
 
         /** (capacity, interval ms) per console. */
         fun policy(p: Platform): Pair<Int, Long> = when (p) {

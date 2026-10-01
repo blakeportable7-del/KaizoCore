@@ -1,0 +1,475 @@
+# Nuzlocke areas for Generation 1, Red, Blue and Yellow (2026-09-29): which Nuzlocke area a map belongs to.
+#
+# One row per real map and game. rb is Red and Blue (they share every map id, name and warp), y is Yellow.
+# Source: the pret disassemblies pokered and pokeyellow. constants/map_constants.asm gives the map ids, data/maps/
+# names.asm and town_map_entries.asm the place names as the game spells them, data/maps/objects/*.asm each map's
+# warps. The clean ROM dumps (red-u, blue-u, yellow-u) hold the same warps and wild tables: `python tools/nuzlocke/
+# gen1_areas.py --check` reads them back, derives the places a second time from the ROM and compares.
+#
+# id: wCurMap in decimal (0..247; Yellow also has 248, the Summer Beach House, and its map 63 is Melanie's house
+# instead of the Cerulean trade house).
+# place: the Nuzlocke area a wild encounter or a gift on that map belongs to. A town, city or route is its own place
+# (Sea Route 19..21 keep the game's name). An indoor map belongs to the outdoor map its warps lead out to: a
+# house, a Pokemon Center, a Mart, a Gym or a gate is part of its town or route (a gate with two sides goes to the
+# side the game's Town Map names). Bill's House is Route 25, the Rock Tunnel Pokemon Center is Route 10, the
+# Safari Zone gate is Fuchsia City, the Game Corner rooms are Celadon City, the League rooms are Indigo Plateau.
+# Every floor of a cave, tower, mansion or building complex shares one place: Viridian Forest, Mt. Moon, Rock
+# Tunnel, Power Plant, Pokemon Tower, Pokemon Mansion, Seafoam Islands, Victory Road, Rocket Hideout, Silph Co.,
+# Cerulean Cave, Diglett's Cave, S.S. Anne, Celadon Mansion and Underground Path (the two tunnels only; the four
+# entrance houses are part of their routes). The Safari Zone is four places, Safari Zone Center, East, North and
+# West, each with its rest house (the Secret House is in the West sector); merge them by the prefix if a ruleset
+# wants one Safari Zone. The two link rooms are the place Cable Club.
+# detail: the specific map for the every-floor-is-its-own-area switch (Mt. Moon B1F, Silph Co. 5F). It is the same
+# as place for a map that is not a floor of a multi-floor place.
+# Left out: the 22 unused ids (the ROM's pointer for each is another map's header),
+#   11, 105, 106, 107, 109, 110, 111, 112, 114, 115, 116, 117, 204, 205, 206, 231, 237, 238, 241, 242, 243, 244,
+# and the maps nothing can warp into (unreachable copies of other maps):
+#   CERULEAN_TRASHED_HOUSE_COPY, UNDERGROUND_PATH_ROUTE_6_COPY, UNDERGROUND_PATH_ROUTE_7_COPY, CINNABAR_MART_COPY.
+# Yellow leaves out the same ids and the same copies.
+#
+# game	id	place	detail
+rb	0	Pallet Town	Pallet Town
+rb	1	Viridian City	Viridian City
+rb	2	Pewter City	Pewter City
+rb	3	Cerulean City	Cerulean City
+rb	4	Lavender Town	Lavender Town
+rb	5	Vermilion City	Vermilion City
+rb	6	Celadon City	Celadon City
+rb	7	Fuchsia City	Fuchsia City
+rb	8	Cinnabar Island	Cinnabar Island
+rb	9	Indigo Plateau	Indigo Plateau
+rb	10	Saffron City	Saffron City
+rb	12	Route 1	Route 1
+rb	13	Route 2	Route 2
+rb	14	Route 3	Route 3
+rb	15	Route 4	Route 4
+rb	16	Route 5	Route 5
+rb	17	Route 6	Route 6
+rb	18	Route 7	Route 7
+rb	19	Route 8	Route 8
+rb	20	Route 9	Route 9
+rb	21	Route 10	Route 10
+rb	22	Route 11	Route 11
+rb	23	Route 12	Route 12
+rb	24	Route 13	Route 13
+rb	25	Route 14	Route 14
+rb	26	Route 15	Route 15
+rb	27	Route 16	Route 16
+rb	28	Route 17	Route 17
+rb	29	Route 18	Route 18
+rb	30	Sea Route 19	Sea Route 19
+rb	31	Sea Route 20	Sea Route 20
+rb	32	Sea Route 21	Sea Route 21
+rb	33	Route 22	Route 22
+rb	34	Route 23	Route 23
+rb	35	Route 24	Route 24
+rb	36	Route 25	Route 25
+rb	37	Pallet Town	Pallet Town
+rb	38	Pallet Town	Pallet Town
+rb	39	Pallet Town	Pallet Town
+rb	40	Pallet Town	Pallet Town
+rb	41	Viridian City	Viridian City
+rb	42	Viridian City	Viridian City
+rb	43	Viridian City	Viridian City
+rb	44	Viridian City	Viridian City
+rb	45	Viridian City	Viridian City
+rb	46	Route 2	Route 2
+rb	47	Route 2	Route 2
+rb	48	Route 2	Route 2
+rb	49	Route 2	Route 2
+rb	50	Route 2	Route 2
+rb	51	Viridian Forest	Viridian Forest
+rb	52	Pewter City	Pewter City
+rb	53	Pewter City	Pewter City
+rb	54	Pewter City	Pewter City
+rb	55	Pewter City	Pewter City
+rb	56	Pewter City	Pewter City
+rb	57	Pewter City	Pewter City
+rb	58	Pewter City	Pewter City
+rb	59	Mt. Moon	Mt. Moon 1F
+rb	60	Mt. Moon	Mt. Moon B1F
+rb	61	Mt. Moon	Mt. Moon B2F
+rb	62	Cerulean City	Cerulean City
+rb	63	Cerulean City	Cerulean City
+rb	64	Cerulean City	Cerulean City
+rb	65	Cerulean City	Cerulean City
+rb	66	Cerulean City	Cerulean City
+rb	67	Cerulean City	Cerulean City
+rb	68	Route 4	Route 4
+rb	70	Route 5	Route 5
+rb	71	Route 5	Route 5
+rb	72	Route 5	Route 5
+rb	73	Route 6	Route 6
+rb	74	Route 6	Route 6
+rb	76	Route 7	Route 7
+rb	77	Route 7	Route 7
+rb	79	Route 8	Route 8
+rb	80	Route 8	Route 8
+rb	81	Route 10	Route 10
+rb	82	Rock Tunnel	Rock Tunnel 1F
+rb	83	Power Plant	Power Plant
+rb	84	Route 11	Route 11
+rb	85	Route 11	Route 11
+rb	86	Route 11	Route 11
+rb	87	Route 12	Route 12
+rb	88	Route 25	Route 25
+rb	89	Vermilion City	Vermilion City
+rb	90	Vermilion City	Vermilion City
+rb	91	Vermilion City	Vermilion City
+rb	92	Vermilion City	Vermilion City
+rb	93	Vermilion City	Vermilion City
+rb	94	Vermilion City	Vermilion City
+rb	95	S.S. Anne	S.S. Anne 1F
+rb	96	S.S. Anne	S.S. Anne 2F
+rb	97	S.S. Anne	S.S. Anne 3F
+rb	98	S.S. Anne	S.S. Anne B1F
+rb	99	S.S. Anne	S.S. Anne Bow
+rb	100	S.S. Anne	S.S. Anne Kitchen
+rb	101	S.S. Anne	S.S. Anne Captain's Room
+rb	102	S.S. Anne	S.S. Anne 1F Rooms
+rb	103	S.S. Anne	S.S. Anne 2F Rooms
+rb	104	S.S. Anne	S.S. Anne B1F Rooms
+rb	108	Victory Road	Victory Road 1F
+rb	113	Indigo Plateau	Indigo Plateau
+rb	118	Indigo Plateau	Indigo Plateau
+rb	119	Underground Path	Underground Path North-South
+rb	120	Indigo Plateau	Indigo Plateau
+rb	121	Underground Path	Underground Path West-East
+rb	122	Celadon City	Celadon City
+rb	123	Celadon City	Celadon City
+rb	124	Celadon City	Celadon City
+rb	125	Celadon City	Celadon City
+rb	126	Celadon City	Celadon City
+rb	127	Celadon City	Celadon City
+rb	128	Celadon Mansion	Celadon Mansion 1F
+rb	129	Celadon Mansion	Celadon Mansion 2F
+rb	130	Celadon Mansion	Celadon Mansion 3F
+rb	131	Celadon Mansion	Celadon Mansion Roof
+rb	132	Celadon Mansion	Celadon Mansion Roof House
+rb	133	Celadon City	Celadon City
+rb	134	Celadon City	Celadon City
+rb	135	Celadon City	Celadon City
+rb	136	Celadon City	Celadon City
+rb	137	Celadon City	Celadon City
+rb	138	Celadon City	Celadon City
+rb	139	Celadon City	Celadon City
+rb	140	Celadon City	Celadon City
+rb	141	Lavender Town	Lavender Town
+rb	142	Pokemon Tower	Pokemon Tower 1F
+rb	143	Pokemon Tower	Pokemon Tower 2F
+rb	144	Pokemon Tower	Pokemon Tower 3F
+rb	145	Pokemon Tower	Pokemon Tower 4F
+rb	146	Pokemon Tower	Pokemon Tower 5F
+rb	147	Pokemon Tower	Pokemon Tower 6F
+rb	148	Pokemon Tower	Pokemon Tower 7F
+rb	149	Lavender Town	Lavender Town
+rb	150	Lavender Town	Lavender Town
+rb	151	Lavender Town	Lavender Town
+rb	152	Fuchsia City	Fuchsia City
+rb	153	Fuchsia City	Fuchsia City
+rb	154	Fuchsia City	Fuchsia City
+rb	155	Fuchsia City	Fuchsia City
+rb	156	Fuchsia City	Fuchsia City
+rb	157	Fuchsia City	Fuchsia City
+rb	158	Fuchsia City	Fuchsia City
+rb	159	Seafoam Islands	Seafoam Islands B1F
+rb	160	Seafoam Islands	Seafoam Islands B2F
+rb	161	Seafoam Islands	Seafoam Islands B3F
+rb	162	Seafoam Islands	Seafoam Islands B4F
+rb	163	Vermilion City	Vermilion City
+rb	164	Fuchsia City	Fuchsia City
+rb	165	Pokemon Mansion	Pokemon Mansion 1F
+rb	166	Cinnabar Island	Cinnabar Island
+rb	167	Cinnabar Island	Cinnabar Island
+rb	168	Cinnabar Island	Cinnabar Island
+rb	169	Cinnabar Island	Cinnabar Island
+rb	170	Cinnabar Island	Cinnabar Island
+rb	171	Cinnabar Island	Cinnabar Island
+rb	172	Cinnabar Island	Cinnabar Island
+rb	174	Indigo Plateau	Indigo Plateau
+rb	175	Saffron City	Saffron City
+rb	176	Saffron City	Saffron City
+rb	177	Saffron City	Saffron City
+rb	178	Saffron City	Saffron City
+rb	179	Saffron City	Saffron City
+rb	180	Saffron City	Saffron City
+rb	181	Silph Co.	Silph Co. 1F
+rb	182	Saffron City	Saffron City
+rb	183	Saffron City	Saffron City
+rb	184	Route 15	Route 15
+rb	185	Route 15	Route 15
+rb	186	Route 16	Route 16
+rb	187	Route 16	Route 16
+rb	188	Route 16	Route 16
+rb	189	Route 12	Route 12
+rb	190	Route 18	Route 18
+rb	191	Route 18	Route 18
+rb	192	Seafoam Islands	Seafoam Islands 1F
+rb	193	Route 22	Route 22
+rb	194	Victory Road	Victory Road 2F
+rb	195	Route 12	Route 12
+rb	196	Vermilion City	Vermilion City
+rb	197	Diglett's Cave	Diglett's Cave
+rb	198	Victory Road	Victory Road 3F
+rb	199	Rocket Hideout	Rocket Hideout B1F
+rb	200	Rocket Hideout	Rocket Hideout B2F
+rb	201	Rocket Hideout	Rocket Hideout B3F
+rb	202	Rocket Hideout	Rocket Hideout B4F
+rb	203	Rocket Hideout	Rocket Hideout Elevator
+rb	207	Silph Co.	Silph Co. 2F
+rb	208	Silph Co.	Silph Co. 3F
+rb	209	Silph Co.	Silph Co. 4F
+rb	210	Silph Co.	Silph Co. 5F
+rb	211	Silph Co.	Silph Co. 6F
+rb	212	Silph Co.	Silph Co. 7F
+rb	213	Silph Co.	Silph Co. 8F
+rb	214	Pokemon Mansion	Pokemon Mansion 2F
+rb	215	Pokemon Mansion	Pokemon Mansion 3F
+rb	216	Pokemon Mansion	Pokemon Mansion B1F
+rb	217	Safari Zone East	Safari Zone East
+rb	218	Safari Zone North	Safari Zone North
+rb	219	Safari Zone West	Safari Zone West
+rb	220	Safari Zone Center	Safari Zone Center
+rb	221	Safari Zone Center	Safari Zone Center Rest House
+rb	222	Safari Zone West	Safari Zone West Secret House
+rb	223	Safari Zone West	Safari Zone West Rest House
+rb	224	Safari Zone East	Safari Zone East Rest House
+rb	225	Safari Zone North	Safari Zone North Rest House
+rb	226	Cerulean Cave	Cerulean Cave 2F
+rb	227	Cerulean Cave	Cerulean Cave B1F
+rb	228	Cerulean Cave	Cerulean Cave 1F
+rb	229	Lavender Town	Lavender Town
+rb	230	Cerulean City	Cerulean City
+rb	232	Rock Tunnel	Rock Tunnel B1F
+rb	233	Silph Co.	Silph Co. 9F
+rb	234	Silph Co.	Silph Co. 10F
+rb	235	Silph Co.	Silph Co. 11F
+rb	236	Silph Co.	Silph Co. Elevator
+rb	239	Cable Club	Trade Center
+rb	240	Cable Club	Colosseum
+rb	245	Indigo Plateau	Indigo Plateau
+rb	246	Indigo Plateau	Indigo Plateau
+rb	247	Indigo Plateau	Indigo Plateau
+y	0	Pallet Town	Pallet Town
+y	1	Viridian City	Viridian City
+y	2	Pewter City	Pewter City
+y	3	Cerulean City	Cerulean City
+y	4	Lavender Town	Lavender Town
+y	5	Vermilion City	Vermilion City
+y	6	Celadon City	Celadon City
+y	7	Fuchsia City	Fuchsia City
+y	8	Cinnabar Island	Cinnabar Island
+y	9	Indigo Plateau	Indigo Plateau
+y	10	Saffron City	Saffron City
+y	12	Route 1	Route 1
+y	13	Route 2	Route 2
+y	14	Route 3	Route 3
+y	15	Route 4	Route 4
+y	16	Route 5	Route 5
+y	17	Route 6	Route 6
+y	18	Route 7	Route 7
+y	19	Route 8	Route 8
+y	20	Route 9	Route 9
+y	21	Route 10	Route 10
+y	22	Route 11	Route 11
+y	23	Route 12	Route 12
+y	24	Route 13	Route 13
+y	25	Route 14	Route 14
+y	26	Route 15	Route 15
+y	27	Route 16	Route 16
+y	28	Route 17	Route 17
+y	29	Route 18	Route 18
+y	30	Sea Route 19	Sea Route 19
+y	31	Sea Route 20	Sea Route 20
+y	32	Sea Route 21	Sea Route 21
+y	33	Route 22	Route 22
+y	34	Route 23	Route 23
+y	35	Route 24	Route 24
+y	36	Route 25	Route 25
+y	37	Pallet Town	Pallet Town
+y	38	Pallet Town	Pallet Town
+y	39	Pallet Town	Pallet Town
+y	40	Pallet Town	Pallet Town
+y	41	Viridian City	Viridian City
+y	42	Viridian City	Viridian City
+y	43	Viridian City	Viridian City
+y	44	Viridian City	Viridian City
+y	45	Viridian City	Viridian City
+y	46	Route 2	Route 2
+y	47	Route 2	Route 2
+y	48	Route 2	Route 2
+y	49	Route 2	Route 2
+y	50	Route 2	Route 2
+y	51	Viridian Forest	Viridian Forest
+y	52	Pewter City	Pewter City
+y	53	Pewter City	Pewter City
+y	54	Pewter City	Pewter City
+y	55	Pewter City	Pewter City
+y	56	Pewter City	Pewter City
+y	57	Pewter City	Pewter City
+y	58	Pewter City	Pewter City
+y	59	Mt. Moon	Mt. Moon 1F
+y	60	Mt. Moon	Mt. Moon B1F
+y	61	Mt. Moon	Mt. Moon B2F
+y	62	Cerulean City	Cerulean City
+y	63	Cerulean City	Cerulean City
+y	64	Cerulean City	Cerulean City
+y	65	Cerulean City	Cerulean City
+y	66	Cerulean City	Cerulean City
+y	67	Cerulean City	Cerulean City
+y	68	Route 4	Route 4
+y	70	Route 5	Route 5
+y	71	Route 5	Route 5
+y	72	Route 5	Route 5
+y	73	Route 6	Route 6
+y	74	Route 6	Route 6
+y	76	Route 7	Route 7
+y	77	Route 7	Route 7
+y	79	Route 8	Route 8
+y	80	Route 8	Route 8
+y	81	Route 10	Route 10
+y	82	Rock Tunnel	Rock Tunnel 1F
+y	83	Power Plant	Power Plant
+y	84	Route 11	Route 11
+y	85	Route 11	Route 11
+y	86	Route 11	Route 11
+y	87	Route 12	Route 12
+y	88	Route 25	Route 25
+y	89	Vermilion City	Vermilion City
+y	90	Vermilion City	Vermilion City
+y	91	Vermilion City	Vermilion City
+y	92	Vermilion City	Vermilion City
+y	93	Vermilion City	Vermilion City
+y	94	Vermilion City	Vermilion City
+y	95	S.S. Anne	S.S. Anne 1F
+y	96	S.S. Anne	S.S. Anne 2F
+y	97	S.S. Anne	S.S. Anne 3F
+y	98	S.S. Anne	S.S. Anne B1F
+y	99	S.S. Anne	S.S. Anne Bow
+y	100	S.S. Anne	S.S. Anne Kitchen
+y	101	S.S. Anne	S.S. Anne Captain's Room
+y	102	S.S. Anne	S.S. Anne 1F Rooms
+y	103	S.S. Anne	S.S. Anne 2F Rooms
+y	104	S.S. Anne	S.S. Anne B1F Rooms
+y	108	Victory Road	Victory Road 1F
+y	113	Indigo Plateau	Indigo Plateau
+y	118	Indigo Plateau	Indigo Plateau
+y	119	Underground Path	Underground Path North-South
+y	120	Indigo Plateau	Indigo Plateau
+y	121	Underground Path	Underground Path West-East
+y	122	Celadon City	Celadon City
+y	123	Celadon City	Celadon City
+y	124	Celadon City	Celadon City
+y	125	Celadon City	Celadon City
+y	126	Celadon City	Celadon City
+y	127	Celadon City	Celadon City
+y	128	Celadon Mansion	Celadon Mansion 1F
+y	129	Celadon Mansion	Celadon Mansion 2F
+y	130	Celadon Mansion	Celadon Mansion 3F
+y	131	Celadon Mansion	Celadon Mansion Roof
+y	132	Celadon Mansion	Celadon Mansion Roof House
+y	133	Celadon City	Celadon City
+y	134	Celadon City	Celadon City
+y	135	Celadon City	Celadon City
+y	136	Celadon City	Celadon City
+y	137	Celadon City	Celadon City
+y	138	Celadon City	Celadon City
+y	139	Celadon City	Celadon City
+y	140	Celadon City	Celadon City
+y	141	Lavender Town	Lavender Town
+y	142	Pokemon Tower	Pokemon Tower 1F
+y	143	Pokemon Tower	Pokemon Tower 2F
+y	144	Pokemon Tower	Pokemon Tower 3F
+y	145	Pokemon Tower	Pokemon Tower 4F
+y	146	Pokemon Tower	Pokemon Tower 5F
+y	147	Pokemon Tower	Pokemon Tower 6F
+y	148	Pokemon Tower	Pokemon Tower 7F
+y	149	Lavender Town	Lavender Town
+y	150	Lavender Town	Lavender Town
+y	151	Lavender Town	Lavender Town
+y	152	Fuchsia City	Fuchsia City
+y	153	Fuchsia City	Fuchsia City
+y	154	Fuchsia City	Fuchsia City
+y	155	Fuchsia City	Fuchsia City
+y	156	Fuchsia City	Fuchsia City
+y	157	Fuchsia City	Fuchsia City
+y	158	Fuchsia City	Fuchsia City
+y	159	Seafoam Islands	Seafoam Islands B1F
+y	160	Seafoam Islands	Seafoam Islands B2F
+y	161	Seafoam Islands	Seafoam Islands B3F
+y	162	Seafoam Islands	Seafoam Islands B4F
+y	163	Vermilion City	Vermilion City
+y	164	Fuchsia City	Fuchsia City
+y	165	Pokemon Mansion	Pokemon Mansion 1F
+y	166	Cinnabar Island	Cinnabar Island
+y	167	Cinnabar Island	Cinnabar Island
+y	168	Cinnabar Island	Cinnabar Island
+y	169	Cinnabar Island	Cinnabar Island
+y	170	Cinnabar Island	Cinnabar Island
+y	171	Cinnabar Island	Cinnabar Island
+y	172	Cinnabar Island	Cinnabar Island
+y	174	Indigo Plateau	Indigo Plateau
+y	175	Saffron City	Saffron City
+y	176	Saffron City	Saffron City
+y	177	Saffron City	Saffron City
+y	178	Saffron City	Saffron City
+y	179	Saffron City	Saffron City
+y	180	Saffron City	Saffron City
+y	181	Silph Co.	Silph Co. 1F
+y	182	Saffron City	Saffron City
+y	183	Saffron City	Saffron City
+y	184	Route 15	Route 15
+y	185	Route 15	Route 15
+y	186	Route 16	Route 16
+y	187	Route 16	Route 16
+y	188	Route 16	Route 16
+y	189	Route 12	Route 12
+y	190	Route 18	Route 18
+y	191	Route 18	Route 18
+y	192	Seafoam Islands	Seafoam Islands 1F
+y	193	Route 22	Route 22
+y	194	Victory Road	Victory Road 2F
+y	195	Route 12	Route 12
+y	196	Vermilion City	Vermilion City
+y	197	Diglett's Cave	Diglett's Cave
+y	198	Victory Road	Victory Road 3F
+y	199	Rocket Hideout	Rocket Hideout B1F
+y	200	Rocket Hideout	Rocket Hideout B2F
+y	201	Rocket Hideout	Rocket Hideout B3F
+y	202	Rocket Hideout	Rocket Hideout B4F
+y	203	Rocket Hideout	Rocket Hideout Elevator
+y	207	Silph Co.	Silph Co. 2F
+y	208	Silph Co.	Silph Co. 3F
+y	209	Silph Co.	Silph Co. 4F
+y	210	Silph Co.	Silph Co. 5F
+y	211	Silph Co.	Silph Co. 6F
+y	212	Silph Co.	Silph Co. 7F
+y	213	Silph Co.	Silph Co. 8F
+y	214	Pokemon Mansion	Pokemon Mansion 2F
+y	215	Pokemon Mansion	Pokemon Mansion 3F
+y	216	Pokemon Mansion	Pokemon Mansion B1F
+y	217	Safari Zone East	Safari Zone East
+y	218	Safari Zone North	Safari Zone North
+y	219	Safari Zone West	Safari Zone West
+y	220	Safari Zone Center	Safari Zone Center
+y	221	Safari Zone Center	Safari Zone Center Rest House
+y	222	Safari Zone West	Safari Zone West Secret House
+y	223	Safari Zone West	Safari Zone West Rest House
+y	224	Safari Zone East	Safari Zone East Rest House
+y	225	Safari Zone North	Safari Zone North Rest House
+y	226	Cerulean Cave	Cerulean Cave 2F
+y	227	Cerulean Cave	Cerulean Cave B1F
+y	228	Cerulean Cave	Cerulean Cave 1F
+y	229	Lavender Town	Lavender Town
+y	230	Cerulean City	Cerulean City
+y	232	Rock Tunnel	Rock Tunnel B1F
+y	233	Silph Co.	Silph Co. 9F
+y	234	Silph Co.	Silph Co. 10F
+y	235	Silph Co.	Silph Co. 11F
+y	236	Silph Co.	Silph Co. Elevator
+y	239	Cable Club	Trade Center
+y	240	Cable Club	Colosseum
+y	245	Indigo Plateau	Indigo Plateau
+y	246	Indigo Plateau	Indigo Plateau
+y	247	Indigo Plateau	Indigo Plateau
+y	248	Sea Route 19	Sea Route 19

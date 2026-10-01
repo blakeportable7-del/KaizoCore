@@ -94,6 +94,8 @@ public:
     );
     void resume();
     void step();
+    // KaizoCore patch: the debug build's test bot runs frames itself (see stepBot in libretrodroid.cpp).
+    void stepBot(unsigned frames);
     void pause();
     void destroy();
 
@@ -182,6 +184,8 @@ public:
 
 private:
     void updateAudioSampleRateMultiplier();
+    // KaizoCore patch (2026-09-29): see streamtap.h.
+    void updateStreamAudioRate();
     float findDefaultAspectRatio(const retro_system_av_info &system_av_info);
     void afterGameLoad();
 
@@ -197,6 +201,9 @@ private:
     unsigned int frameSpeed = 1;
     unsigned int slowDivisor = 1;
     unsigned int slowTick = 0;
+    // KaizoCore patch (2026-09-29): the core's sound rate as it arrives in real
+    // time, before the fast-forward multiplier. Only the stream kit reads it.
+    double streamBaseRate = 32768.0;
     bool audioEnabled = true;
     bool preferLowLatencyAudio = false;
     bool rumbleEnabled = false;
@@ -223,6 +230,14 @@ private:
     std::unique_ptr<FPSSync> fpsSync;
     std::unique_ptr<Input> input;
     std::unique_ptr<Rumble> rumble;
+
+    // LOCAL MODIFICATION (KaizoCore): the ROM read into memory for a core that
+    // takes its content as data. It was never freed, so every game load leaked
+    // the whole ROM: +145 MB per load for HeartGold on 2026-09-29, and a DS
+    // player's NEW RUNs ran the app out of memory. Owned here, kept while the
+    // game runs (a core may keep reading it, as mGBA does), freed in destroy()
+    // once the core has unloaded the game.
+    std::unique_ptr<char[]> gameData;
 };
 
 } //namespace libretrodroid

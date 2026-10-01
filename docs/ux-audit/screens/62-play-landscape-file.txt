@@ -1,0 +1,86 @@
+TEXT:
+▲
+◀
+▶
+▼
+A
+B
+L
+R
+SELECT
+START
+TRACKER
+DOCK
+ATTEMPT 37
+Hide
+▶
+SETUP
+NUZLOCKE  Standard
+1 alive  1 dead  2 !
+Route 102: Wurmple fainted
+TREECKO
+HP:
+0/24
+Lv.7
+ (
+16
+)
+OVERGROW
+Heals:
+0% HP (0)
+HP
+24
+ATK
++
+12
+DEF
+11
+SPA
+-
+13
+SPD
+12
+SPE
+16
+BST
+310
+Moves 1/9
+ (
+11
+)
+PP
+Pow
+Acc
+POUND
+35
+40
+100
+LEER
+30
+---
+100
+---
+---
+---
+---
+---
+---
+---
+---
+Walking:
+0/3 Seen Pokémon
+
+CONTENT DESCRIPTIONS:
+Up
+Left
+Right
+Down
+A button
+B button
+L shoulder
+R shoulder
+Select
+Start
+Hide tracker
+FNT
+Grass

@@ -101,6 +101,23 @@ object Gen4 {
         val friendship: Int = 0,
         /** Block B +0x18 bit 1 (alternateForm byte; getBits(byte, 1, 1)): picks a gendered evolution. */
         val isFemale: Boolean = false,
+        /**
+         * Block B +0x18 bits 3-7: the form index (Program.checkForAlternateForm,
+         * Program.lua:465-468: alternateForm AND 0xF8, divided by 0x08). 0 is the base form.
+         */
+        val form: Int = 0,
+        /**
+         * Block A +0x08, u32: experience points (PokemonDataReader experience1 and
+         * experience2, joined in formatData, PokemonDataReader.lua:269-271).
+         */
+        val experience: Long = 0,
+        /** Block B's IV word, bit 31: the Pokemon has been given a nickname of its own (the Nuzlocke reminder reads it). */
+        val nicknamed: Boolean = false,
+        /** Block C's nickname: Gen 5 keeps it as UTF-16, Gen 4 in its own 16-bit codes (letters, digits and the space are read, any other mark is a "?"). */
+        val nickname: String = "",
+        /** The original trainer's id and secret id (Block A +0x04 and +0x06): what a wild Pokemon's shininess is judged against. */
+        val otId: Int = 0,
+        val otSid: Int = 0,
     )
 
     /**
@@ -187,8 +204,43 @@ object Gen4 {
             nature = if (gen5) blocks.u8(b + 0x19) % 25 else (pid % 25).toInt(),
             isEgg = isEgg,
             friendship = blocks.u8(a + 0x0C),
+            experience = blocks.u32(a + 0x08),
             isFemale = ((blocks.u8(b + 0x18) shr 1) and 1) == 1,
+            form = blocks.u8(b + 0x18) shr 3,
+            nicknamed = ((ivWord shr 31) and 1L) == 1L,
+            nickname = blocks.name(blockOffset(pid, 2), 11, gen5),
+            otId = otId,
+            otSid = otSid,
         )
+    }
+
+    /** Up to [max] characters of a name from [at], ended by a zero or 0xFFFF: UTF-16 in Gen 5, the game's own codes in Gen 4. */
+    private fun ByteArray.name(at: Int, max: Int, gen5: Boolean): String {
+        val sb = StringBuilder()
+        for (i in 0 until max) {
+            val ch = u16(at + i * 2)
+            if (ch == 0 || ch == 0xFFFF) break
+            sb.append(if (gen5) ch.toChar() else gen4Char(ch))
+        }
+        return sb.toString()
+    }
+
+    /** Generation 4's character codes: the digits from 0x0121, the capitals from 0x012B, the small letters from 0x0145 and the space at 0x01DE. */
+    private fun gen4Char(code: Int): Char = when (code) {
+        in 0x0121..0x012A -> '0' + (code - 0x0121)
+        in 0x012B..0x0144 -> 'A' + (code - 0x012B)
+        in 0x0145..0x015E -> 'a' + (code - 0x0145)
+        0x01DE -> ' '
+        else -> '?'
+    }
+
+    /** The code of a character in a Gen 4 name, the inverse of [gen4Char] (the debug encoder and the tests). */
+    private fun gen4Code(c: Char): Int = when (c) {
+        in '0'..'9' -> 0x0121 + (c - '0')
+        in 'A'..'Z' -> 0x012B + (c - 'A')
+        in 'a'..'z' -> 0x0145 + (c - 'a')
+        ' ' -> 0x01DE
+        else -> 0x01AC
     }
 
     /**
@@ -219,6 +271,10 @@ object Gen4 {
         nature: Int = 0,
         friendship: Int = 0,
         female: Boolean = false,
+        experience: Long = 0,
+        form: Int = 0,
+        /** A nickname of the Pokemon's own: written into block C, and bit 31 of the IV word says it has one. */
+        nickname: String? = null,
     ): ByteArray {
         val blocks = ByteArray(BLOCK_AREA)
         val a = blockOffset(pid, 0)
@@ -230,12 +286,18 @@ object Gen4 {
         blocks.putU16(a + 0x06, otSid)
         blocks[a + 0x0D] = abilityId.toByte()
         blocks[a + 0x0C] = friendship.toByte()
-        if (female) blocks[b + 0x18] = 0x02
+        blocks[b + 0x18] = ((if (female) 0x02 else 0) or (form shl 3)).toByte()
+        blocks.putU32(a + 0x08, experience)
         moves.forEachIndexed { i, m -> if (i < 4) blocks.putU16(b + i * 2, m) }
         pp.forEachIndexed { i, v -> if (i < 4) blocks[b + 0x08 + i] = v.toByte() }
         ppUps.forEachIndexed { i, v -> if (i < 4) blocks[b + 0x0C + i] = v.toByte() }
-        // IVs set, egg bit clear (bit 30) so the tracker does not skip it.
-        blocks.putU32(b + 0x10, 0x3FFFFFFFL)
+        // IVs set, egg bit clear (bit 30) so the tracker does not skip it, and the nickname bit (31) only for a named one.
+        blocks.putU32(b + 0x10, if (nickname != null) 0xBFFFFFFFL else 0x3FFFFFFFL)
+        nickname?.let { n ->
+            val c = blockOffset(pid, 2)
+            n.take(10).forEachIndexed { i, ch -> blocks.putU16(c + i * 2, if (gen5) ch.code else gen4Code(ch)) }
+            blocks.putU16(c + minOf(n.length, 10) * 2, 0xFFFF)
+        }
         if (gen5) blocks[b + 0x19] = nature.toByte()
 
         var checksum = 0
@@ -305,3 +367,21 @@ internal fun ByteArray.putU32(o: Int, v: Long) {
     this[o] = v.toByte(); this[o + 1] = (v ushr 8).toByte()
     this[o + 2] = (v ushr 16).toByte(); this[o + 3] = (v ushr 24).toByte()
 }
+
+/**
+ * Gen 5's in-battle status. The battle data holds one 4-byte word per condition id from +0x20
+ * (id 1 at +0x20, id 2 at +0x24, ...), non-zero while the condition holds. The ids are the
+ * game's own, the u16 at +8 of each move in a/0/2/1 (Gen5RomHandler.loadMoves reads it):
+ * 1 paralysis, 2 sleep, 3 freeze, 4 burn, 5 poison (Toxic too), 6 confusion, 17 Foresight.
+ * Checked 2026-09-29 against the clean Black 2 ROM's move data and the rival-battle dump, where
+ * Odor Sleuth (condition 17) left the only non-zero word, at +0x60. The reference loops over
+ * ids 1-7 but reads +0x20 every time (BattleHandlerGen5.lua:160-166), so any condition came out
+ * as 7, which has no icon; Blake, 2026-09-29: read it properly. [words] is the 20 bytes from
+ * +0x20; the result is in the Gen 4 status bits the panel's name lookup reads.
+ */
+internal fun gen5StatusBits(words: ByteArray): Long {
+    if (words.size < 20) return 0L
+    val bits = longArrayOf(0x40L, 0x01L, 0x20L, 0x10L, 0x08L)   // PAR, SLP, FRZ, BRN, PSN
+    return (0 until 5).firstOrNull { words.u32(it * 4) != 0L }?.let { bits[it] } ?: 0L
+}
+

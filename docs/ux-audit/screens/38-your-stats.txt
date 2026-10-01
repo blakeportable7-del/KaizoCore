@@ -1,0 +1,29 @@
+TEXT:
+Your stats
+Runs started
+27
+Runs won
+0
+Time played in runs
+0 min
+Ended the most runs
+Nothing yet
+Longest winning streak
+Nothing yet
+BEST RUN IN EACH GAME AND MODE
+No finished run yet.
+NUZLOCKE RUNS
+Started
+1
+Finished, Champion beaten
+0
+Lost
+0
+Best runs and winning streaks come from runs saved since run history was added.
+Home
+Play
+Library
+More
+
+CONTENT DESCRIPTIONS:
+Back to Home

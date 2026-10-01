@@ -1,0 +1,23 @@
+TEXT:
+Hide stats until summary shown
+Show data for vanilla game
+Reveal info if randomized
+Open Book Play Mode
+Carousel
+Allow bottom box rotation
+Speed:
+1/2x
+1x
+2x
+3x
+4x
+Info to show:
+Gym badges
+Notes on Pokémon
+Wild encounters in area
+Trainers defeated in area
+Last attack damage
+Additional battle details
+
+CONTENT DESCRIPTIONS:
+

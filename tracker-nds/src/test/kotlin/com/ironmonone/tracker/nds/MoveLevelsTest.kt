@@ -61,6 +61,28 @@ class MoveLevelsTest {
     }
 
     @Test
+    fun `each Gen 4 version group reads its own levels`() {
+        // Program.lua:327 keeps movelvls[gameInfo.VERSION_GROUP]: 1 Diamond and Pearl, 2 Platinum,
+        // 3 HeartGold and SoulSilver. Every Gen 4 map used to load Platinum's: 51 species wrong on
+        // Diamond and Pearl, 13 on HeartGold and SoulSilver (parity audit, 2026-09-28).
+        val none = NdsMemoryReader { _, _ -> ByteArray(0) }
+        fun lv(map: NdsGameMap, species: Int) = NdsTracker(none, null, map).moveLevelsOf(species)
+        assertEquals(listOf(4, 7, 10, 13, 16, 19, 22, 25, 28, 31, 34, 37), lv(NdsGameMap.DP, 7), "Diamond/Pearl Squirtle")
+        assertEquals(listOf(4, 7, 10, 13, 16, 19, 22, 25, 28, 31, 34, 37, 40), lv(NdsGameMap.PLATINUM, 7), "Platinum Squirtle")
+        assertEquals(emptyList(), lv(NdsGameMap.DP, 10), "Caterpie has no level-up move after 1 before Platinum")
+        assertEquals(listOf(15), lv(NdsGameMap.PLATINUM, 10), "Platinum Caterpie")
+        assertEquals(listOf(6, 10, 13, 19, 22, 28, 31, 37, 40, 46, 49), lv(NdsGameMap.HGSS, 155), "HeartGold Cyndaquil")
+        assertEquals(listOf(4, 10, 13, 19, 22, 28, 31, 37, 40, 46, 49), lv(NdsGameMap.PLATINUM, 155), "Platinum Cyndaquil")
+        assertEquals(listOf(6, 10, 15, 19, 24, 28, 33, 37, 42, 46), lv(NdsGameMap.HGSS, 483), "HeartGold Dialga")
+        // The header's "next" for a Lv. 5 Cyndaquil: 6 on HeartGold, 10 on Platinum.
+        assertEquals(6, lv(NdsGameMap.HGSS, 155).first { it > 5 })
+        for (map in listOf(NdsGameMap.DP, NdsGameMap.HGSS)) {
+            val t = NdsTracker(none, null, map)
+            assertTrue((1..493).count { t.moveLevelsOf(it).isNotEmpty() } > 400, "${map.name} table loaded")
+        }
+    }
+
+    @Test
     fun `the header counts what has been learned and points at the next`() {
         // Bulbasaur at level 20: 3,7,9,13,13,15,19 are learned = 7 of 13, and
         // the next arrives at 21.

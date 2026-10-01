@@ -5,7 +5,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.ironmonone.app.engine.NatDexEngine
-import com.ironmonone.app.engine.Randomizers
 import com.ironmonone.core.RomKind
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -57,50 +56,48 @@ object RunJob {
     /**
      * Randomize [rom] with [settings] into the current run. Returns false when
      * a job is already running: one randomize at a time, never two writing
-     * the same files.
+     * the same files. [seed] is one the player chose, kept as it is; null
+     * asks for a new one, and a run made ahead for exactly this game and
+     * these settings (NextRun) is taken instead of randomizing.
      */
-    fun randomize(context: Context, rom: Pair<RomKind, File>, settings: File, seed: Long): Boolean {
+    fun randomize(
+        context: Context, rom: Pair<RomKind, File>, settings: File, seed: Long? = null, expect: RunCode? = null, nuzlocke: Boolean = false,
+        /** A run code's own passes, for this one build: the player's switches are left as they are (R4). */
+        prePassOn: Boolean? = null, part2On: Boolean? = null,
+    ): Boolean {
         if (busy) return false
         val app = context.applicationContext
-        busy = true; status = null; phase = RunPhase.ROTATING
+        // The engine has no progress callback, so the phases are the steps the
+        // caller performs. RANDOMIZING covers taking a run made ahead too:
+        // that is seconds, and saying more would be pretending.
+        busy = true; status = null; phase = RunPhase.RANDOMIZING
         scope.launch {
             val store = PrepStore(app)
             try {
+                // Engine is chosen by the ROM, never by the user: NatDex ROMs get
+                // the fork, vanilla ROMs get ZX 4.6.1 (which also handles NDS
+                // Gen 4). Cross-wiring is impossible. The rotate, the seed, the
+                // attempt and the cleared notes are PrepStore.installRun's, the
+                // same code Play's NEW RUN goes through.
                 val outcome = withContext(Dispatchers.IO) {
-                    store.rotateRuns(rom.first)
-                    // The engine has no progress callback, so these three are
-                    // the only honest phases available: the steps the caller
-                    // actually performs. Nothing pretends to know how far
-                    // through randomize() we are.
-                    main { phase = RunPhase.RANDOMIZING }
-                    // Engine is chosen by the ROM, never by the user: NatDex ROMs get
-                    // the fork, vanilla ROMs get ZX 4.6.1 (which also handles NDS
-                    // Gen 4). Cross-wiring is impossible.
-                    val dest = store.currentRunFor(rom.first)
-                    Randomizers.randomize(rom.first, rom.second, settings, dest, seed, secondPass = store.secondPassSettings(rom.first))
+                    RunStart.start(store, rom.first, rom.second, settings, seed, NextRunJob.appStamp(app),
+                        prePass = ExtraPasses.prePassFor(app, store, rom.first, settings, prePassOn),
+                        secondPass = ExtraPasses.secondPassFor(app, store, rom.first, settings, part2On),
+                        countAttempt = !nuzlocke, fromCode = expect != null)
                 }
                 main { phase = RunPhase.FINISHING }
-                withContext(Dispatchers.IO) {
-                    store.saveLastRun(rom.first.id, settings.name)
-                    store.saveLastSeed(outcome.seed)
-                    // A fresh seed is what the player wants to play next, even
-                    // if a library ROM was open before.
-                    store.library.selectRun()
-                    // Name the game explicitly rather than leaning on saveLastRun
-                    // having already run: this counter is per game and must not
-                    // depend on the order of the two lines above it.
-                    store.bumpAttempt(rom.first.id)
-                    // Marks, notes and route sightings describe the OLD seed's
-                    // randomization; carrying them into the new run is actively
-                    // misleading. The Play screen's own NEW RUN already clears
-                    // them; this path forgot to.
-                    store.clearRunNotes()
-                }
+                // The run's Game Over condition comes from its settings file (the reference's
+                // profile default by keyword, or what the player last chose for that file).
+                main { TrackerOptions.startRunWith(settings.name) }
+                // A run built from a code (RunCodes): the same game as the sharer's, or not.
+                val built = expect?.let { runCatching { withContext(Dispatchers.IO) { RunCode.crc32(store.currentRunFor(rom.first)) } }.getOrDefault(0L) }
                 main {
-                    say("Your new game is ready (seed ${seedText(outcome.seed)}).")
+                    val verdict = if (expect != null && built != null) " " + RunCodes.verdict(expect, built) else ""
+                    say("Your new game is ready (seed ${seedText(outcome.seed)}).$verdict",
+                        isError = expect != null && expect.romCrc != 0L && expect.romCrc != built)
                     generation++
                     busy = false
-                    onRunReady?.invoke()
+                    if (expect == null) onRunReady?.invoke()
                 }
             } catch (e: CancellationException) {
                 // Never swallowed: only the app's own scope can cancel this.

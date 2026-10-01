@@ -1,0 +1,27 @@
+TEXT:
+ROM Hacks
+ROM hacks
+Turn a game you own into a ROM hack. Pick the game, pick the patch, tap Patch it. The hack is saved as its own game and your original stays as it was.
+Nothing is downloaded. Bring the patch file from the hack's own page: .ips, .bps, .ups or .xdelta, or a zip holding one.
+1
+PICK YOUR GAME
+Add a game
+crystal-u
+Pokémon Crystal (U) · verified
+red-u
+Pokémon Red (U) · verified
+Pokemon - White Version 2 (USA, Europe) (NDSi Enhanced)
+Pokémon White 2 (U) · verified
+heartgold-u
+Pokémon HeartGold (U) · verified
+emerald-u
+Pokémon Emerald (U) · verified
+smartai-emerald
+Pokémon Emerald + Smart AI (Super Kaizo) · verified
+Home
+Play
+Library
+More
+
+CONTENT DESCRIPTIONS:
+Back to Home

@@ -1,0 +1,31 @@
+TEXT:
+Kaizo IronMON
+Build your own
+The Pokémon
+Step 4 of 5
+Pokémon Emerald (U)
+What each Pokémon is, and what it can do.
+Types
+The type or types of each Pokémon.
+Unchanged
+Random, evolutions follow
+Random for every Pokémon
+Every Pokémon keeps its own types.
+Abilities
+The abilities each Pokémon can have.
+Unchanged
+Random
+Every Pokémon keeps its own abilities.
+Evolutions
+What each Pokémon evolves into.
+Unchanged
+Random
+Back
+Next
+Home
+Play
+Library
+More
+
+CONTENT DESCRIPTIONS:
+Back to Home

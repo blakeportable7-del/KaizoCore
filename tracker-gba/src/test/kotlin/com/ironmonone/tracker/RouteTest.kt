@@ -37,12 +37,28 @@ class RouteTest {
         // Birch's bag is. If this is wrong the ball picker shows in the wrong
         // place, which is exactly what the id is for.
         assertEquals("Route 101", t.routeInfo(17)?.first)
-        // All three: Poochyena 263 and Zigzagoon 261 are written in the Lua as
-        // {Ruby, Sapphire, Emerald} tuples, which the first extractor DROPPED
-        // - Emerald's first route was missing two of its three species and
-        // looked fine. The tuple resolves at index 2 (Emerald).
+        // All three, by the names the ROM gives them. The ids used to be asserted as
+        // 261/263/265, the NATIONAL numbers, which is the bug this table had: Gen 3
+        // memory uses internal ids (Poochyena 286, Zigzagoon 288, Wurmple 290), so every
+        // Hoenn species on the route screen was a different Pokemon and "seen" never
+        // matched (parity audit, 2026-09-28). Names from the ROM cannot hide that.
         val land = t.routeInfo(17)?.second ?: emptyList()
-        assertTrue(land.containsAll(listOf(261, 263, 265)), "Route 101: $land")
+        val names = land.map { t.speciesName(it).uppercase() }.toSet()
+        assertEquals(setOf("POOCHYENA", "ZIGZAGOON", "WURMPLE"), names, "Route 101: $land")
+    }
+
+    @Test
+    fun `route encounters carry the reference's rates and levels, per area`() {
+        val t = tracker() ?: run { println("SKIP: clean dump missing"); return }
+        // RouteData.lua, Emerald Route 101: Poochyena 45% Lv2-3 (the Emerald pick of the
+        // {R, S, E} tuple; Ruby puts Zigzagoon first), Wurmple 45%, Zigzagoon 10%.
+        val walking = t.routeEncounters(17)["Walking"] ?: emptyList()
+        val byName = walking.associateBy { t.speciesName(it.id).uppercase() }
+        assertEquals(0.45, byName["POOCHYENA"]?.rate)
+        assertEquals(2 to 3, byName["POOCHYENA"]?.let { it.minLv to it.maxLv })
+        assertEquals(0.10, byName["ZIGZAGOON"]?.rate)
+        // Petalburg City's areas come back in RouteData.OrderedEncounters order.
+        assertEquals(listOf("Surfing", "Super Rod", "Good Rod", "Old Rod"), t.routeEncounters(1).keys.toList())
     }
 
     @Test

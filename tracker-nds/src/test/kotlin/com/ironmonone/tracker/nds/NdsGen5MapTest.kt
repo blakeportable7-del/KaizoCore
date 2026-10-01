@@ -120,6 +120,41 @@ class NdsGen5MapTest {
         assertEquals(6, e.statStages["SPE"])
     }
 
+    @Test
+    fun `Gen 5 stages carry accuracy and evasion, and a block that is not stage data reads neutral`() {
+        val r = blackInBattle()
+        val enemyData = 0x310000L
+        r.bytes[(enemyData + 0xFC + 5).toInt()] = 5                               // accuracy -1
+        r.bytes[(enemyData + 0xFC + 6).toInt()] = 7                               // evasion +1
+        val six = listOf("ATK", "DEF", "SPA", "SPD", "SPE", "ACC", "EVA").associateWith { 6 }
+        val s = NdsTracker(r.reader(RAM), null, map).read()
+        assertEquals(six + mapOf("ATK" to 8, "ACC" to 5, "EVA" to 7), assertNotNull(s.enemy).statStages)
+        assertEquals(six, s.party.first().statStages, "the lead's side, read the same way")
+        // PokemonDataReader.lua:367-381: one value past 12 resets every stage to 6.
+        r.bytes[(enemyData + 0xFC + 3).toInt()] = 13
+        assertEquals(six, assertNotNull(NdsTracker(r.reader(RAM), null, map).read().enemy).statStages)
+        // So does a sum under 3 (a block of zeros before the battle fills it in).
+        for (i in 0 until 8) r.bytes[(enemyData + 0xFC + i).toInt()] = 0
+        assertEquals(six, assertNotNull(NdsTracker(r.reader(RAM), null, map).read().enemy).statStages)
+    }
+
+    @Test
+    fun `an opponent's unused moves stay off the card`() {
+        // Tackle at 35 of 35 PP and Thrash at 10 of 10: neither has been used. The old
+        // gen5/moves.tsv had Thrash at PP 0, which usedOnly cannot judge and keeps, so
+        // Thrash showed before the opponent ever used it (parity audit, 2026-09-28).
+        val r = blackInBattle()
+        val enemyData = 0x310000L
+        r.u16(enemyData + 0x104, 33); r.bytes[(enemyData + 0x106).toInt()] = 35
+        r.u16(enemyData + 0x104 + 14, 37); r.bytes[(enemyData + 0x106 + 14).toInt()] = 10
+        val e = assertNotNull(NdsTracker(r.reader(RAM), null, map).read().enemy)
+        assertEquals(emptyList(), e.moves.map { it.name })
+        // One PP spent on Thrash and it shows, with its Gen 5 numbers.
+        r.bytes[(enemyData + 0x106 + 14).toInt()] = 9
+        val used = assertNotNull(NdsTracker(r.reader(RAM), null, map).read().enemy).moves
+        assertEquals(listOf("Thrash" to 120), used.map { it.name to it.power })
+    }
+
     // --------------------------------------------------- ability reveals (Gen 5)
 
     private fun blackWithAbilities(playerAbility: Int, enemyAbility: Int): Ram {
@@ -206,6 +241,24 @@ class NdsGen5MapTest {
         val wrong = NdsTracker(r.reader(RAM), null, map)
         assertTrue(wrong.read().located)
         assertEquals(0x20L, wrong.scanShift)
+    }
+
+    @Test
+    fun `a Black 2 whose heap sits 0x40 low reads its bag and its map there too`() {
+        // Blake's randomized Black 2 (2026-09-08): party, bag and map headers all 0x40 below the
+        // PC tracker's addresses. The scan moved the party, badges and repel; the bag and the
+        // map headers stayed at the PC address, so no heals were counted and no area was named.
+        val b2 = NdsGameMap.B2W2
+        val r = Ram()
+        r.put(b2.playerBase - 0x40, Gen4.encodeParty(0x0BADF00DL, 483, 5, 19, 100, listOf(33, 0, 0, 0), gen5 = true))
+        r.u32(b2.itemStartNoBattle - 0x40, 17L or (2L shl 16))                     // two Potions
+        r.u16(b2.childMapHeader - 0x40, 427); r.u16(b2.parentMapHeader - 0x40, 427)
+        val t = NdsTracker(r.reader(RAM), null, b2)
+        val s = t.read()
+        assertEquals(-0x40L, t.scanShift)
+        assertEquals(40 to 2, s.healPercent to s.healCount, "two Potions on a 100 HP lead")
+        assertEquals(427, s.mapId)
+        assertEquals("Aspertia City", s.areaName)
     }
 
     @Test

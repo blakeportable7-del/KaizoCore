@@ -489,7 +489,7 @@ fun EditorScreen(
                 }
             }.onSuccess { saved ->
                 savedString = runCatching { settings.toString() }.getOrNull()
-                status = "Saved as ${saved.name.removeSuffix(".rnqs")}. Pick it on the Run tab."; statusError = false
+                status = "Saved as ${saved.name.removeSuffix(".rnqs")}. Pick it in Kaizo IronMON."; statusError = false
             }.onFailure {
                 status = PresetStrings.plain(it, "Could not save the preset"); statusError = true
             }
@@ -544,7 +544,7 @@ fun EditorScreen(
                     tmp.delete()
                 }
             }.onSuccess { saved ->
-                status = "Saved as ${saved.name.removeSuffix(".rnqs")}. Pick it on the Run tab."; statusError = false
+                status = "Saved as ${saved.name.removeSuffix(".rnqs")}. Pick it in Kaizo IronMON."; statusError = false
             }.onFailure {
                 status = PresetStrings.plain(it, "Could not save the pasted preset"); statusError = true
             }

@@ -24,7 +24,10 @@ class RewindBufferTest {
     fun `policy and the tracked gate`() {
         assertEquals(60 to 500L, RewindBuffer.policy(Platform.GBA))
         assertEquals(6 to 2000L, RewindBuffer.policy(Platform.NDS))
-        assertFalse(RewindBuffer.allowed(GameSession.forRun(File("/x/c.gba"), RomKind.FIRERED_U_V11)))
-        assertTrue(RewindBuffer.allowed(GameSession(File("/x/h.gba"), Platform.GBA, null, "h", "lib-1", isRun = false)))
+        assertFalse(RewindBuffer.allowed(GameSession.forRun(File("/x/c.gba"), RomKind.FIRERED_U_V11), nuzlocke = false), "a Kaizo IronMON run")
+        assertTrue(RewindBuffer.allowed(GameSession(File("/x/h.gba"), Platform.GBA, null, "h", "lib-1", isRun = false), nuzlocke = false))
+        val plainTracked = GameSession(File("/x/fr.gba"), Platform.GBA, RomKind.FIRERED_U_V11, "fr", "lib-2", isRun = false)
+        assertTrue(RewindBuffer.allowed(plainTracked, nuzlocke = false), "plain play, tracker and all (2026-09-30)")
+        assertFalse(RewindBuffer.allowed(plainTracked, nuzlocke = true), "a Nuzlocke")
     }
 }

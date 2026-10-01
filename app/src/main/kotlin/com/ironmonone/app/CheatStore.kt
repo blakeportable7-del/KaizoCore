@@ -43,8 +43,11 @@ class CheatStore(private val dir: File) {
     }
 
     companion object {
-        /** Whether cheats may run at all for this session. Tracked games: never. */
-        fun allowed(session: GameSession): Boolean = !session.tracked
+        /**
+         * Whether cheats may run at all for this session: never in a Kaizo IronMON run or a Nuzlocke, and in plain
+         * play, tracked or not (2026-09-30, UX audit P1: every tracked game used to refuse them).
+         */
+        fun allowed(session: GameSession, nuzlocke: Boolean = NuzlockeTracking.inPlay()): Boolean = !session.isRun && !nuzlocke
 
         /**
          * What the core is given: lines trimmed, blank lines dropped, hex

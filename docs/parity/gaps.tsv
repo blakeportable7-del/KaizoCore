@@ -1,0 +1,83 @@
+# tracker	status	title	detail  (the fix list: docs/parity/verify-*.tsv condensed by hand; BUG and OPEN are the queue)
+gba	FIXED	Notebook shows the ROM's real abilities when none are tracked	513702c
+gba	FIXED	Trainer Info shows every Pokemon, item and move before the fight	44198da
+gba	FIXED	"Reveal info if randomized" off still shows the enemy's randomized types	17a32e6
+gba	FIXED	Battle Details line shows weather and times seen	91d0426
+gba	FIXED	"Loafing" shows for any species that could have Truant	3766e57
+gba	FIXED	"Hide stats until summary shown" hides only your card	70410af, d8b8712
+gba	FIXED	Auto swap to the enemy only at battle start	fdb3c10
+gba	FIXED	Accuracy and evasion stage arrows never show	2d38183
+gba	FIXED	Evolution methods read as internal names	774bcf8
+gba	OPEN	Trainers defeated counts one map	The reference merges multi-map areas (Mt. Moon, S.S. Anne) and leaves out rivals you will not face.
+gba	OPEN	No Gen 3 play timer	Game Stats reads "Play Time: not kept".
+gba	OPEN	No move or ability look-up	Only Pokemon and route look-ups exist.
+gba	FIXED	Calc Atk's math, native (estimate an enemy's attack from the damage it did); its screen is next	f2b5a68
+gba	OPEN	Pokemon info: no EXP yield, View Evos only for your own party	'Does not learn any moves', 'Has no weaknesses' and eggs as EGG are done (a14c910)
+gba	FIXED	Coverage Calc and Heals in Bag order	f1c79ef
+gba	FIXED	Controls are touch, not buttons (Blake, 2026-09-29)	Every button action has a tap: swap on the battle banner, tap a stat to mark it, tap the name for info, arrows on paged screens. No L/R bindings, so the game's Button Mode is left alone.
+gba	OPEN	"Can click trainers on screen" missing	On by default in the reference.
+gba	OPEN	Crash recovery saves only on pause or exit	The reference backs up every 3 minutes, with a recovery screen.
+gba	OPEN	No manual ability setting	The note editor has no ability pickers or Clear Abilities.
+gba	OPEN	Theme codes and presets	The PC tracker's 11-colour theme codes are refused; no preset list.
+gba	OPEN	Attempts can't be set by hand; tracked data can't be saved or loaded as a file
+gba	OPEN	GachaMon	49 rows: cards, GachaDex, carousel, options, prize card. A feature in its own right.
+gba	OPEN	Stream Connect chat commands	The OBS page exists; the Streamer.bot link does not.
+gba	FIXED	Encounter counts and Last seen saved with the run, wild and trainer apart	209c655
+gba	FIXED	Pokemon Tower ghost without the Silph Scope	4d4f587
+gba	FIXED	Pokemon info: previous/next, look-up, History, Resistances, notes	f7b8951, da90108
+gba	FIXED	Taps: heals box, Trainers and Battle Details lines, the viewed Pokemon	ed09cea
+gba	FIXED	"In Emerald:" ability note, Toxic catch bonus, R/S trainers, route names and trainers	0114ee2, 8b1c6ff, cf5a259, 2bc839b
+gba	FIXED	Nat. Dex: trainers, save offsets, starter preview, balls pocket, exp tables, battle details	de7c955, 813fbe1, be1853f
+gba	FIXED	Safari Zone battles; repel bar hidden in the Hall of Fame	19aae7d, 35a7ee0
+nds	FIXED	The enemy card shows the opponent's exact HP	fix/ds-ui 58e6d08
+nds	FIXED	Run-over condition follows the settings file name	fix/ds-ui cdd803f: the DS's own setting, default Lead, battles only
+nds	FIXED	No move effectiveness on DS move rows	fix/ds-ui 47ed1bc
+nds	FIXED	One-Pokemon view, by touch	fix/ds-ui bf97a4e: SEE FOE / SEE MINE and a tap to lock, singles
+nds	FIXED	Move rows: no description on tap, no STAB colour, no stars on enemy moves	fix/ds-ui b137905
+nds	FIXED	Variable power, Hidden Power, Judgment	fix/ds-ui 7feee11
+nds	FIXED	Beating the champion never ends the run	fix/ds-ui c8d8364
+nds	FIXED	Heals box and counters	fix/ds-ui 9b94de3
+nds	FIXED	EXP bar and ACC/EVA stages missing	fix/ds-ui 3766504
+nds	OPEN	Bookmarks	No way to mark a Pokemon, so the log's marked-only filter is missing too.
+nds	OPEN	Start card	No "Did you know?" statistics, game name or attempts.
+nds	OPEN	Battle settings in the gear are not read by the DS panel
+nds	OPEN	Evo Data from a tap on the level; timer kept across restarts; restore points every 5 minutes, 3 kept, named by area
+nds	OPEN	Theme: 14 colours, 6 toggles, 15 presets; icon sets (Stadium is the default)
+nds	OPEN	Doubles: enemy slots, the L/R effectiveness target, doubles mode	nds-0052, nds-0055, nds-0023: needs the second opponent read (Gen 4 PID + 0x180, Gen 5 double flag); no doubles dump to test against.
+nds	OPEN	Move type icons and text shadows	nds-0045, nds-0046.
+nds	FIXED	Auto Pokemon Themes on DS	fix/ds-ui 83c0c26
+nds	FIXED	"Total seen" and "Last level" on the enemy card, saved with the run	209c655
+nds	FIXED	Gen 5 moves and stages, Gen 4 move levels per version, held items, Bug Catching, HGSS badges, past runs per game, Black 2 memory shift, "Past N"	fix/ds-data, 34b06c5
+nds	FIXED	Encounter frame, White 2 battle detection	dd95193, earlier
+gen1	FIXED	"Hide stats until summary shown" is not applied on Game Boy	4cc528b
+gen1	FIXED	Game over only once the battle is over, with the player's condition	411f2ca, 5f61c37
+gen1	FIXED	Credits for the Gen 1 and Gen 2 tracker authors in NOTICE and About	4138dc6
+gen1	FIXED	Evolution text "Lv.12 (16)" with readiness colours	e72b953
+gen1	FIXED	Stat stage arrows, last move line, live enemy PP	8298617
+gen1	FIXED	Gen 2 held items by name	cecddca
+gen1	FIXED	Auto swap to the enemy off by default on Game Boy	e0dda24
+gen1	FIXED	Time Machine on Game Boy: map read, 5 minutes, area names on Crystal	c36f368
+gen1	FIXED	Enemy team poke ball and the Gen 2 IV estimate	4bd90c2, 2fd2f92
+gen1	OPEN	Log viewer trainer filter and trainer pages	The Gen 2 reference's trainer table is numbered by Crystal's log; needs a Crystal log to check.
+gen1	FIXED	Info screen lookups: weight, evolution, weaknesses, learn levels, move summaries, names	6e4a354, 1bb3bcf, da90108
+gen1	FIXED	Badge art, Low Kick, Gen 1 type chart, Gen 2 enemy moves, Gen 1 first move, Viridian Mart Repel	fix/gameboy
+all	FIXED	R/S map numbering: game-correct everywhere, the route info screen included (Blake: keep correct numbers)	37ed453
+all	FIXED	Gen 5 in-battle status read one condition word per id, checked against the ROM's move data and a battle dump (Blake: read properly)	1f593a2
+all	FIXED	Game Boy reference bugs: we keep the correct values (Blake: correct values)	Yellow battle flag 0xD056, Crystal party count 0xDCD7, Gen 1 learn levels from the ROM.
+all	DECIDE	Game Boy rules	Gen 2 move data from the randomized ROM (ref: vanilla table); Low Kick by target weight; Yellow's Repel replaces the Potion, as the reference does.
+all	FIXED	Safari Zone record saved with the run and shown on its route screen (Blake: show it somewhere)	ee20b9b
+all	FIXED	IronMON modes: 60% levels for Emerald and Crystal Kaizo/Survival/Super Kaizo, the Gen 1 patch, DPPt Kaizo preset, Super Kaizo pairing, Nat. Dex and community modes, rules text	fix/modes (12 commits): the 60% pre-pass as a RUN switch, DPPt and RSE Kaizo from the settings page, Platinum Super Kaizo, the Super Kaizo warning, Nat. Dex v1.2 and the community presets, rules text, Gen 1 PART 2 as a switch, NOTICE and About
+all	FIXED	Kaizo Doubles: the run ends when either of your two Pokemon faints (Blake: most recent rules)	LossCondition.EITHER_OF_FIRST_TWO on every game: Gen 1 to 3 and the DS check (merge of fix/ds-ui); Doubles settings files choose it
+all	FIXED	Survival heal counter: on for Survival runs, 10 then +1 at badge 8, not counting before the first non-rival trainer, Johto +7, DS counter; Survival Revival 5 +1	GBA heart armed at 10 or 5 with the badge-8 bonus (b9daf55); DS counter (fix/ds-ui 9b94de3) armed the same way; counts kept per game. Heals before the first non-rival trainer and the Johto +7 after the E4 are counted by hand, as in the references (no E4 flag verified)
+all	FIXED	When to ship rc30	Shipped 2026-09-29 on Blake's go: site deploy 6abbc9f76efbdf8a55901791 (rollback 6abaf32246062faa69dfd55c), GitHub pre-release v1.0.0-rc30, tag v1.0.0-rc30 on c8e0a70
+all	DECIDE	Emerald 60% for Kaizo Doubles, Journey and Chaos	The switch defaults on only for Kaizo, Survival and Super Kaizo (the gist names those); Doubles, Journey and Chaos start at +50% and the player can switch it on.
+all	DECIDE	SoulSilver Super Kaizo	Offered with a "patch is HeartGold only" warning; the Super Kaizo README's rules cover HeartGold and SoulSilver.
+all	DECIDE	Evo Kaizo on Nat. Dex Emerald	Shows the pastebin's FireRed rules plus Nat. Dex's "pivots banned".
+all	FIXED	Run codes: share the run in play, build a friend's	8dc7506, 4225792; checked on the emulator: a shared Emerald Kaizo code (60% on) rebuilt to the same checksum
+all	FIXED	Integrity line: state loads, restores and retries on the death card and the shared line	1a64735, from the run's event log (fix/run-loop RunEvents)
+all	FIXED	Second screen: the tracker on a second display	73561d3; checked on the emulator's overlay display
+all	FIXED	No way back to the run after opening a Library game	e73c8a6, found in the rc30 QA pass (rc29 has it too)
+all	FIXED	DS core teardown crash in the audio thread	b091dfb (found on fix/run-loop); rare: 0 in 20 teardowns on master, 10 of 10 clean with the fix
+all	OPEN	DS memory: a B2W2 run takes about 1 GB	White 2 Faster run: native heap 844 MB; clean White 2 (512 MB ROM) OOM-killed at 1.45 GB on a 2.5 GB guest. Likely LibretroDroid and melonDS each hold the ROM.
+all	FIXED	APK size	Blake, 2026-09-29: keep them bundled. 120 MB against rc29's 82 MB (Platinum Super Kaizo 20.6 MB, Faster B2W2 16.7 MB).
+all	DECIDE	Second screen on by default	The gear offers the switch only while a second display is connected.

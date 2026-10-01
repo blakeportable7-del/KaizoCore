@@ -1,0 +1,98 @@
+# Evolution lines for the dupes clause, Generation 2 (2026-09-29): one line per line, baby forms included, names as
+# natdex/species.tsv spells them. A species on no line is its own line. Species 1 to 251 only.
+#
+# Derived from the games' own evolution tables: the ROM's EvosAttacksPointers (Gold (U) and Crystal (U) dumps, the
+# randomizer's PokemonMovesetsTableOffset) and data/pokemon/evos_attacks.asm of pokegold and pokecrystal, which agree.
+# Two species share a line when one evolves into the other by any method (level, stone, trade, happiness, Attack and
+# Defense). Where a line branches (Eevee, Tyrogue, Poliwag, Gloom, Slowpoke) every branch is on the one line. The Gen 2
+# babies (Pichu, Cleffa, Igglybuff, Tyrogue, Smoochum, Elekid, Magby) can be hatched from eggs, so they are on their lines.
+# These are the VANILLA lines; a randomizer that shuffles evolutions changes who belongs together and this file cannot know.
+# Gold, Silver and Crystal have identical lines. The Gen 3 babies (Azurill, Wynaut) are not in Generation 2.
+#
+# tools/nuzlocke/gen2_families.py --check also compares this file with the Gen 1 to 3 block of families-gen3.tsv.
+Bulbasaur,Ivysaur,Venusaur
+Charmander,Charmeleon,Charizard
+Squirtle,Wartortle,Blastoise
+Caterpie,Metapod,Butterfree
+Weedle,Kakuna,Beedrill
+Pidgey,Pidgeotto,Pidgeot
+Rattata,Raticate
+Spearow,Fearow
+Ekans,Arbok
+Pichu,Pikachu,Raichu
+Sandshrew,Sandslash
+Nidoran F,Nidorina,Nidoqueen
+Nidoran M,Nidorino,Nidoking
+Cleffa,Clefairy,Clefable
+Vulpix,Ninetales
+Igglybuff,Jigglypuff,Wigglytuff
+Zubat,Golbat,Crobat
+Oddish,Gloom,Vileplume,Bellossom
+Paras,Parasect
+Venonat,Venomoth
+Diglett,Dugtrio
+Meowth,Persian
+Psyduck,Golduck
+Mankey,Primeape
+Growlithe,Arcanine
+Poliwag,Poliwhirl,Poliwrath,Politoed
+Abra,Kadabra,Alakazam
+Machop,Machoke,Machamp
+Bellsprout,Weepinbell,Victreebel
+Tentacool,Tentacruel
+Geodude,Graveler,Golem
+Ponyta,Rapidash
+Slowpoke,Slowbro,Slowking
+Magnemite,Magneton
+Doduo,Dodrio
+Seel,Dewgong
+Grimer,Muk
+Shellder,Cloyster
+Gastly,Haunter,Gengar
+Onix,Steelix
+Drowzee,Hypno
+Krabby,Kingler
+Voltorb,Electrode
+Exeggcute,Exeggutor
+Cubone,Marowak
+Tyrogue,Hitmonlee,Hitmonchan,Hitmontop
+Koffing,Weezing
+Rhyhorn,Rhydon
+Chansey,Blissey
+Horsea,Seadra,Kingdra
+Goldeen,Seaking
+Staryu,Starmie
+Scyther,Scizor
+Smoochum,Jynx
+Elekid,Electabuzz
+Magby,Magmar
+Magikarp,Gyarados
+Eevee,Vaporeon,Jolteon,Flareon,Espeon,Umbreon
+Porygon,Porygon2
+Omanyte,Omastar
+Kabuto,Kabutops
+Dratini,Dragonair,Dragonite
+Chikorita,Bayleef,Meganium
+Cyndaquil,Quilava,Typhlosion
+Totodile,Croconaw,Feraligatr
+Sentret,Furret
+Hoothoot,Noctowl
+Ledyba,Ledian
+Spinarak,Ariados
+Chinchou,Lanturn
+Togepi,Togetic
+Natu,Xatu
+Mareep,Flaaffy,Ampharos
+Marill,Azumarill
+Hoppip,Skiploom,Jumpluff
+Sunkern,Sunflora
+Wooper,Quagsire
+Pineco,Forretress
+Snubbull,Granbull
+Teddiursa,Ursaring
+Slugma,Magcargo
+Swinub,Piloswine
+Remoraid,Octillery
+Houndour,Houndoom
+Phanpy,Donphan
+Larvitar,Pupitar,Tyranitar

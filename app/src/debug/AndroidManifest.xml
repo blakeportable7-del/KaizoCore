@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Debug builds only: the test bot's port (bot/BotPort.kt). A players' build is made from the release variant,
+     which has neither this provider nor its code. The port listens only when files/bot/enabled exists, and only
+     on 127.0.0.1, which the PC reaches through `adb forward tcp:8650 tcp:8650`. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <provider
+            android:name=".bot.BotPortStarter"
+            android:authorities="${applicationId}.botport"
+            android:exported="false" />
+    </application>
+</manifest>

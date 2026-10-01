@@ -1,0 +1,39 @@
+TEXT:
+Save states · 8 slots
+-
+Auto-save
+30 Sep 02:14 · written when you leave
+Resume
+1
+27 Sep 20:14
+-
+2
+empty
+-
+3
+empty
+-
+4
+empty
+-
+5
+empty
+-
+6
+empty
+-
+7
+empty
+-
+8
+empty
+Slot 1 · 27 Sep 20:14 · 516 KB
+Save
+Load
+Lock
+Undo
+Undo brings back the state this one overwrote.
+Close
+
+CONTENT DESCRIPTIONS:
+Slot 1 screenshot

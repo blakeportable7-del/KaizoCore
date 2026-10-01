@@ -1,0 +1,27 @@
+TEXT:
+Controls
+Backup and info
+Email Blake
+Share instead
+Bug form
+Latest build
+Support the project
+Updates
+This is KaizoCore 1.0.0-rc31.
+✓
+Check for a new build once a day
+It asks willowcreek.group for one small file that names the newest build, and sends nothing else: no account, no phone details, nothing about your games.
+Check now
+Backup
+One zip of your save states and screenshots, battery saves, the current run and its notes, attempts, presets, key bindings, layouts, cheats and settings. ROMs are never included; re-add those in Library, All files. Restoring overwrites what is here.
+Back up
+Restore
+Cloud sync
+Keep your backup in Google Drive by itself. Start a sync file where you choose (pick Drive in the picker); after that it is updated every time you leave a game. Moving to a new phone? Use the file you already have instead, and your saves come back.
+Home
+Play
+Library
+More
+
+CONTENT DESCRIPTIONS:
+

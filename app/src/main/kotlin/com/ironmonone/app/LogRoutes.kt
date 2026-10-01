@@ -106,7 +106,8 @@ object LogRoutes {
             }
             if (avgSum > 0) { a.numTrainers = ids.size; a.avgT = avgSum / ids.size }
         }
-        // Then the log's wild sets.
+        // Then the log's wild sets, by the same map ids as the trainers above (logRouteSets turns
+        // Ruby/Sapphire's raw ids into the tracker's).
         val sets = tracker.logRouteSets()
         for (set in log.routes) {
             val mapId = sets[set.number] ?: continue

@@ -1,6 +1,8 @@
 package com.ironmonone.app
 
 import kotlinx.coroutines.launch
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -14,6 +16,8 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -282,21 +286,44 @@ fun ShellDialog(
 ) {
     androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
         Gen3Box(Modifier.fillMaxWidth(), paper = Shell.paper) {
-            // Scrolls: at a large font a dialog's buttons fell off the bottom
-            // of the screen with no way to reach them (audit, 2026-09-27).
-            Column(Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState()).padding(4.dp)) {
-                Text(
-                    title,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
-                    color = Shell.inkOnPaper,
-                )
+            Column(Modifier.padding(4.dp)) {
+                // The title and its X stay at the top; the rest scrolls under them. Scrolls: at a large font a
+                // dialog's buttons fell off the bottom of the screen with no way to reach them (audit, 2026-09-27).
+                DialogTitle(title, onDismiss)
                 Spacer(Modifier.height(12.dp))
-                content()
+                Column(Modifier.weight(1f, fill = false).verticalScroll(androidx.compose.foundation.rememberScrollState())) {
+                    content()
+                }
             }
         }
     }
 }
+
+/**
+ * A window's title with an X at the right that closes it, as the game-over popup has (Blake, 2026-09-30: "there
+ * should be an x to close on the top right of those windows"). The app's own windows only: the tracker's windows keep
+ * the PC tracker's look ("tracker should have no x"). The X is a full touch target and reads out as Close.
+ */
+@Composable
+fun DialogTitle(title: String, onClose: () -> Unit) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+        Text(
+            title,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
+            color = Shell.inkOnPaper,
+            modifier = Modifier.weight(1f),
+        )
+        androidx.compose.material3.IconButton(onClick = onClose, modifier = Modifier.size(Shell.touchTarget)) {
+            androidx.compose.material3.Icon(
+                Icons.Filled.Close, contentDescription = DIALOG_CLOSE, tint = Shell.inkOnPaper,
+            )
+        }
+    }
+}
+
+/** What the X at the top right of a window says to a screen reader. */
+const val DIALOG_CLOSE = "Close"
 
 /**
  * An empty state: a headline and an explanation, on paper.
@@ -304,9 +331,20 @@ fun ShellDialog(
  * These used to be loose grey text on the black page, measured at 2.03:1 -
  * which reads as a disabled control rather than as the app telling you
  * something. The copy was always good; it just looked switched off.
+ *
+ * [actionLabel] and [onAction] add the button for the next step (2026-09-30, UX audit P0-13): the empty states
+ * named the place to go ("the Library tab") and gave no way to it. Both or neither; with neither it is what it
+ * was, so every existing caller is unchanged. It is the screen's one filled button, since nothing else on an
+ * empty screen can be pressed.
  */
 @Composable
-fun EmptyState(headline: String, detail: String, modifier: Modifier = Modifier) {
+fun EmptyState(
+    headline: String,
+    detail: String,
+    modifier: Modifier = Modifier,
+    actionLabel: String? = null,
+    onAction: (() -> Unit)? = null,
+) {
     Gen3Box(modifier.fillMaxWidth()) {
         Column {
             Text(
@@ -321,6 +359,10 @@ fun EmptyState(headline: String, detail: String, modifier: Modifier = Modifier) 
                 style = MaterialTheme.typography.bodyMedium,
                 color = Shell.hintOnPaper,
             )
+            if (actionLabel != null && onAction != null) {
+                Spacer(Modifier.height(12.dp))
+                com.ironmonone.app.gen3.Gen3Button(actionLabel, accent = true, onClick = onAction)
+            }
         }
     }
 }
@@ -367,6 +409,29 @@ fun ShellCheck(checked: Boolean, modifier: Modifier = Modifier) {
     ) {
         if (checked) {
             Text("\u2713", fontSize = 13.sp, color = Shell.onAccent, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+        }
+    }
+}
+
+/**
+ * One on/off setting on a paper card: a check box, a title and an optional plain line, with the
+ * whole row the target (at least [Shell.touchTarget] tall) and read out as a check box. INFO's
+ * switches borrowed the tracker's GearToggle at first, which is drawn in the PC palette at 7dp
+ * for the tracker's dark dialog and all but vanished on paper (2026-09-29).
+ */
+@Composable
+fun ShellSwitchRow(title: String, on: Boolean, detail: String? = null, onChange: (Boolean) -> Unit) {
+    Row(
+        Modifier.fillMaxWidth()
+            .toggleable(value = on, role = Role.Checkbox, onValueChange = onChange)
+            .heightIn(min = Shell.touchTarget).padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        ShellCheck(on)
+        Spacer(Modifier.width(10.dp))
+        Column {
+            Text(title, style = MaterialTheme.typography.bodyMedium, color = Shell.inkOnPaper)
+            if (detail != null) Text(detail, style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper)
         }
     }
 }

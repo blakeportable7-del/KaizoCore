@@ -34,6 +34,11 @@ import kotlinx.coroutines.launch
 private const val NATDEX_URL = "https://github.com/CyanSMP64/NatDexExtension"
 private const val FASTER_URL = "https://github.com/DrMaple/Faster-FireRed"
 private const val TRACKER_URL = "https://github.com/besteon/Ironmon-Tracker"
+/** The Game Boy trackers' references (NOTICE): Red, Blue and Yellow; Crystal. */
+private const val GEN1_TRACKER_URL = "https://github.com/mollo010/Ironmon-gen-tracker"
+private const val GEN2_TRACKER_URL = "https://github.com/seadogstingray/Ironmon-gen-2-tracker"
+/** IronMon Emu, where the FireRed and LeafGreen pictures come from (NOTICE). */
+private const val IRONMON_EMU_URL = "https://github.com/billgreenwald/ironmon_emu"
 
 /**
  * Credits and disclaimer.
@@ -45,7 +50,7 @@ private const val TRACKER_URL = "https://github.com/besteon/Ironmon-Tracker"
  */
 @Composable
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
-fun AboutScreen(modifier: Modifier = Modifier) {
+fun AboutScreen(modifier: Modifier = Modifier, onStats: () -> Unit = {}) {
     val context = LocalContext.current
     // A link with no browser to open it crashed the app (audit, 2026-09-27).
     // False when nothing could open it; the caller says so where it was tapped.
@@ -77,8 +82,8 @@ fun AboutScreen(modifier: Modifier = Modifier) {
                 Spacer(Modifier.height(8.dp))
                 for ((n, line) in listOf(
                     "1" to "Library: add your own game file. KaizoCore never downloads games.",
-                    "2" to "Run: pick a mode and start a new run. Every run is a new game.",
-                    "3" to "Play: play it. The tracker fills in as you go. When a run ends, start the next one on Run.",
+                    "2" to "Home, Kaizo IronMON: pick a mode and start a new run. Every run is a new game.",
+                    "3" to "Play: play it. The tracker fills in as you go. When a run ends, start the next one in Kaizo IronMON.",
                 )) {
                     Row(Modifier.padding(vertical = 3.dp)) {
                         Text(n, fontWeight = androidx.compose.ui.text.font.FontWeight.Medium, fontSize = 14.sp, color = Shell.inkOnPaper,
@@ -87,9 +92,20 @@ fun AboutScreen(modifier: Modifier = Modifier) {
                     }
                 }
                 Spacer(Modifier.height(6.dp))
-                Text("Library also keeps all your files. Hacks turns a game you own into a ROM hack. " +
+                Text("Library also keeps all your files. ROM Hacks on Home turns a game you own into a ROM hack. " +
                     "More, Controls sets up a controller or keyboard.",
                     style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper)
+            }
+        }
+        Spacer(Modifier.height(10.dp))
+        // Your stats (2026-09-30): the way to it from More. It opens on Home, where Back returns (AppNav.openStats).
+        com.ironmonone.app.gen3.Gen3Box(Modifier.fillMaxWidth()) {
+            Column {
+                Text(HomeCopy.STATS_LINK, fontWeight = androidx.compose.ui.text.font.FontWeight.Medium, fontSize = 16.sp, color = Shell.inkOnPaper)
+                Spacer(Modifier.height(6.dp))
+                Text(HomeCopy.STATS_CARD_LINE, style = MaterialTheme.typography.bodyMedium, color = Shell.inkOnPaper)
+                Spacer(Modifier.height(10.dp))
+                com.ironmonone.app.gen3.Gen3Button(HomeCopy.STATS_OPEN, Modifier.fillMaxWidth()) { onStats() }
             }
         }
         Spacer(Modifier.height(10.dp))
@@ -111,37 +127,23 @@ fun AboutScreen(modifier: Modifier = Modifier) {
                         color = Shell.inkOnPaper,
                     )
                     Spacer(Modifier.height(6.dp))
+                    // Send report goes through the site now, and Share instead is the old
+                    // share sheet (CrashReportUi, 2026-09-29).
                     Text(
-                        "Tap Send report and share it however is easiest. It says " +
-                            "where the app failed, which is what makes a crash " +
-                            "fixable rather than guessed at.",
+                        CrashReportText.INFO_HINT,
                         style = MaterialTheme.typography.bodySmall,
                         color = Shell.hintOnPaper,
                     )
                     Spacer(Modifier.height(10.dp))
-                    androidx.compose.foundation.layout.FlowRow(
-                        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
-                        verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
-                    ) {
-                        com.ironmonone.app.gen3.Gen3Button("Send report", accent = true, onClick = {
-                            runCatching {
-                                val send = Intent(Intent.ACTION_SEND).apply {
-                                    type = "text/plain"
-                                    putExtra(Intent.EXTRA_SUBJECT, "KaizoCore crash report")
-                                    putExtra(Intent.EXTRA_TEXT, text)
-                                }
-                                context.startActivity(
-                                    Intent.createChooser(send, "Send crash report"))
-                            }
-                        })
-                        com.ironmonone.app.gen3.Gen3Button("Dismiss", onClick = {
-                            CrashLog.clear(context); crash = null
-                        })
-                    }
+                    CrashCardActions(text, onDismiss = { CrashLog.clear(context); crash = null })
                 }
             }
             Spacer(Modifier.height(10.dp))
         }
+
+        // CRASH REPORTS. The one switch behind "Always send"; off until the player turns it on.
+        CrashReportsCard()
+        Spacer(Modifier.height(10.dp))
 
         // BETA FEEDBACK. Composed here, sent through the share sheet: no
         // account, no server, no ROM. The outward buttons appear only once
@@ -203,6 +205,8 @@ fun AboutScreen(modifier: Modifier = Modifier) {
         }
         Spacer(Modifier.height(10.dp))
 
+        UpdatesCard()
+        Spacer(Modifier.height(10.dp))
         // BACKUP. One zip of saves, states, notes, runs and settings - never
         // ROMs. Both directions go through the system file picker, so the
         // file lands wherever the player chooses (Drive, Downloads, a mail).
@@ -279,9 +283,10 @@ fun AboutScreen(modifier: Modifier = Modifier) {
             Column {
                 Text("Backup", fontWeight = androidx.compose.ui.text.font.FontWeight.Medium, fontSize = 16.sp, color = Shell.inkOnPaper)
                 Spacer(Modifier.height(6.dp))
-                Text("One zip of your save states and screenshots, battery saves, the current run and its notes, " +
-                    "attempts, presets, key bindings, layouts, cheats and settings. ROMs are never included; re-add " +
-                    "those in Library, All files. Restoring overwrites what is here.",
+                Text("One zip of your save states and screenshots, battery saves, the current run and its notes " +
+                    "(its randomizer log once the run is over), attempts, presets, key bindings, layouts, cheats and settings. " +
+                    "Your library games are never in it; add them again in Library, My games. The current run's " +
+                    "randomized game is, so a restored run comes back whole. Restoring overwrites what is here.",
                     style = MaterialTheme.typography.bodyMedium, color = Shell.inkOnPaper)
                 Spacer(Modifier.height(10.dp))
                 androidx.compose.foundation.layout.FlowRow(
@@ -361,7 +366,7 @@ fun AboutScreen(modifier: Modifier = Modifier) {
                         }
                     }
                 } else {
-                    Text("Linked to ${l.provider}. Last synced: ${CloudSync.whenLabel(l.lastSync)}. Syncs when you leave a game; ROMs never go up.",
+                    Text("Linked to ${l.provider}. Last synced: ${CloudSync.whenLabel(l.lastSync)}. Syncs when you leave a game; your library games never go up.",
                         style = MaterialTheme.typography.bodyMedium, color = Shell.inkOnPaper)
                     Spacer(Modifier.height(10.dp))
                     androidx.compose.foundation.layout.FlowRow(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp), verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
@@ -443,7 +448,7 @@ fun AboutScreen(modifier: Modifier = Modifier) {
         Spacer(Modifier.height(8.dp))
 
         Text(
-            "Nat. Dex support uses the Pokémon and move data and sprites from the " +
+            "Nat. Dex support uses the Pok\u00e9mon and move data, sprites and settings files from the " +
                 "Nat. Dex Extension by CyanSixFour (CyanSMP64), used with permission.",
             style = MaterialTheme.typography.bodyMedium,
         )
@@ -452,11 +457,47 @@ fun AboutScreen(modifier: Modifier = Modifier) {
         Spacer(Modifier.height(12.dp))
 
         Text(
-            "The FireRed quality-of-life patch is Faster FireRed by DrMaple. " +
-                "It is bundled so a run can be prepared without hunting for the file.",
+            "The quality-of-life patches are Faster FireRed and Faster Emerald by DrMaple, " +
+                "and Faster Black 2 / White 2 by SilverstarStream. " +
+                "They are bundled so a run can be prepared without hunting for the files.",
             style = MaterialTheme.typography.bodyMedium,
         )
         CreditLink(FASTER_URL) { openOrSay(it) }
+        CreditLink("https://github.com/DrMaple/Faster-Emerald") { openOrSay(it) }
+        CreditLink("https://github.com/SilverstarStream/faster_black2_white2") { openOrSay(it) }
+
+        Spacer(Modifier.height(12.dp))
+
+        // Every mode the app offers comes from these, and NOTICE lists each file.
+        Text(
+            "The IronMON rules are iateyourpie's, from the rules gist kept by valiant-code, and the official " +
+                "settings are UTDZac's. The other modes are Super Kaizo (iateyourpie, kept by PyroMikeGit), " +
+                "Survival Revival (SaltyDolphin and Reimi), IronMON Journey (PappyQC, settings by UTDZac), " +
+                "Chaos Kaizo (UTDZac) and Evo Kaizo (a pastebin that names no author). Their rules text and " +
+                "settings files are bundled from these sources.",
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        CreditLink("https://gist.github.com/valiant-code/adb18d248fa0fae7da6b639e2ee8f9c1") { openOrSay(it) }
+        CreditLink("https://gist.github.com/UTDZac/a147c497424dfbd537d8c4b0c22b5621") { openOrSay(it) }
+        CreditLink("https://github.com/PyroMikeGit/SuperKaizoIronMON") { openOrSay(it) }
+        CreditLink("https://github.com/Reimittv/SurvivalRevivalIronMON") { openOrSay(it) }
+        CreditLink("https://gist.github.com/PappyQC/b9e28068ba4abbbdf191dd33625b737d") { openOrSay(it) }
+        CreditLink("https://gist.github.com/UTDZac/7c51734eed353779f1653217413dd05e") { openOrSay(it) }
+        CreditLink("https://gist.github.com/UTDZac/c8c3a84553840f8eabb063be80a33ee7") { openOrSay(it) }
+        CreditLink("https://pastebin.com/puyAqPyt") { openOrSay(it) }
+
+        Spacer(Modifier.height(12.dp))
+
+        Text(
+            "The mode patches are the pseudo-fluctuating growth patches from the Kaizo run site, Smart AI " +
+                "by tom-overton (FireRed, LeafGreen) and by CyanSixFour (Emerald), HeartGold Super Kaizo by " +
+                "PyroMikeGit, and Platinum Super Kaizo by SentorG.",
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        CreditLink("https://www.stealmylyrics.com/kaizo/patch/") { openOrSay(it) }
+        CreditLink("https://github.com/tom-overton/pokefirered/releases/tag/smart-ai-v2") { openOrSay(it) }
+        CreditLink("https://github.com/CyanSMP64/Emerald_Smart_AI") { openOrSay(it) }
+        CreditLink("https://github.com/SentorG/PlatinumSuperKaizo") { openOrSay(it) }
 
         Spacer(Modifier.height(16.dp))
 
@@ -467,6 +508,28 @@ fun AboutScreen(modifier: Modifier = Modifier) {
         )
         CreditLink(TRACKER_URL) { openOrSay(it) }
 
+        Spacer(Modifier.height(12.dp))
+
+        Text(
+            "The Game Boy trackers follow the Gen 1 IronMON Tracker by Sannji (mollo010) and " +
+                "the Gen 2 IronMON Tracker by seadogstingray, forks of besteon's, used under " +
+                "the MIT licence.",
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        CreditLink(GEN1_TRACKER_URL) { openOrSay(it) }
+        CreditLink(GEN2_TRACKER_URL) { openOrSay(it) }
+
+        Spacer(Modifier.height(12.dp))
+
+        // Added 2026-09-29 with the FireRed and LeafGreen pictures (NOTICE): permission for the
+        // pictures only, from IronMon Emu's author. None of its code is used. Seven maps ship since 2026-09-30.
+        Text(
+            "The FireRed and LeafGreen dungeon maps are by Bill Greenwald (doctrDNA), " +
+                "from IronMon Emu, used with permission.",
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        CreditLink(IRONMON_EMU_URL) { openOrSay(it) }
+
         Spacer(Modifier.height(16.dp))
 
         Text(
@@ -475,6 +538,64 @@ fun AboutScreen(modifier: Modifier = Modifier) {
             style = MaterialTheme.typography.bodyMedium,
         )
         CreditLink("https://sprites.pmdcollab.org") { openOrSay(it) }
+
+        Spacer(Modifier.height(12.dp))
+
+        // Play as your Pokemon (2026-09-29): UTDZac's Sprite Is Me, drawing the sprites above.
+        Text(
+            "Play as your Pok\u00e9mon follows Sprite Is Me, the Ironmon Tracker extension by UTDZac, used under " +
+                "the MIT licence, and draws the Walking Pals sprites above.",
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        CreditLink("https://github.com/UTDZac/SpriteIsMe-IronmonExtension") { openOrSay(it) }
+
+        Spacer(Modifier.height(16.dp))
+
+        // Added 2026-09-29 (the rc30 credits check): the DS tracker, the two Gen 3 extensions
+        // ported, the randomizer, the cores and the font, which were in NOTICE or nowhere.
+        Text(
+            "The DS trackers follow the NDS IronMON Tracker by Brian0255, used under the GPL-3.0 " +
+                "licence. The damage calculator is Calc Atk by UTDZac and the Auto Pokémon Themes " +
+                "are Fellshadow's, both used under the MIT licence.",
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        CreditLink("https://github.com/Brian0255/NDS-Ironmon-Tracker") { openOrSay(it) }
+        CreditLink("https://github.com/UTDZac/CalcAtk-IronmonExtension") { openOrSay(it) }
+        CreditLink("https://github.com/Fellshadow/Ironmon-Tracker-AutoPokemonThemes") { openOrSay(it) }
+
+        Spacer(Modifier.height(12.dp))
+
+        Text(
+            "Runs are randomized with the Universal Pokémon Randomizer ZX by Ajarmar, built on " +
+                "Dabomstew's Universal Pokémon Randomizer, and Nat. Dex runs with CyanSixFour's fork " +
+                "of it, all used under the GPL-3.0 licence.",
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        CreditLink("https://github.com/Ajarmar/universal-pokemon-randomizer-zx") { openOrSay(it) }
+        CreditLink("https://github.com/CyanSMP64/universal-pokemon-randomizer-zx") { openOrSay(it) }
+
+        Spacer(Modifier.height(12.dp))
+
+        Text(
+            "Games run on the mGBA, melonDS and Gambatte cores through LibretroDroid, and the " +
+                "on-screen controls are RadialGamePad, both by Swordfish90. RetroAchievements " +
+                "uses rcheevos by RetroAchievements.org, under the MIT licence. The pixel font is " +
+                "Press Start 2P by CodeMan38, under the SIL Open Font Licence.",
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        CreditLink("https://github.com/Swordfish90/LibretroDroid") { openOrSay(it) }
+        CreditLink("https://github.com/Swordfish90/RadialGamePad") { openOrSay(it) }
+        CreditLink("https://github.com/RetroAchievements/rcheevos") { openOrSay(it) }
+
+        Spacer(Modifier.height(12.dp))
+
+        // Added 2026-09-30 with the game over lines (NOTICE): the idea is the Death Quotes extension's.
+        Text(
+            "Your own game over lines follow the Death Quotes extension by UTDZac, used under the " +
+                "MIT licence.",
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        CreditLink("https://github.com/UTDZac/DeathQuotes-IronmonExtension") { openOrSay(it) }
 
         linkStatus?.let {
             Spacer(Modifier.height(8.dp))

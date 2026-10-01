@@ -55,9 +55,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * The ROMs tab: the player's files, shelved by what they are.
+ * My games, the first page of Library: the player's files, shelved by what they are.
  *
- * Four shelves for ROMs (clean, patched, hacks, other games) and one for
+ * Five shelves for ROMs (clean, patched, other versions, hacks, other games) and one for
  * patches. Everything is matched by identity: a patch card names the game
  * it is for, a ROM's Patch button lists only patches that fit its CRC, and
  * a patch's Apply lists only ROMs it fits. Names are the player's to change;
@@ -75,6 +75,9 @@ fun RomLibraryScreen(modifier: Modifier = Modifier, onPlay: () -> Unit = {}) {
     val patches = remember { mutableStateListOf<LibraryStore.PatchEntry>() }
     var busy by remember { mutableStateOf(false) }
     var status by remember { mutableStateOf<String?>(null) }
+    // True once the library has been read. Until then the page is not empty, it is not read yet: the empty state
+    // flashed on every visit, and after an update that re-reads the games it stayed for seconds (2026-09-30).
+    var loaded by remember { mutableStateOf(false) }
     val progress = remember { FileProgress() }
     var selectedName by remember { mutableStateOf(store.library.selectedLibraryName()) }
 
@@ -83,13 +86,15 @@ fun RomLibraryScreen(modifier: Modifier = Modifier, onPlay: () -> Unit = {}) {
     var renamePatch by remember { mutableStateOf<LibraryStore.PatchEntry?>(null) }
     var patchFor by remember { mutableStateOf<LibraryStore.Entry?>(null) }      // PATCH on a ROM
     var applyTo by remember { mutableStateOf<LibraryStore.PatchEntry?>(null) }  // APPLY on a patch
-    // One way in for files, shared with the HACK tab.
+    var natDexFor by remember { mutableStateOf<LibraryStore.Entry?>(null) }     // NAT. DEX on a game that has one
+    // One way in for files, shared with the ROM Hacks screen.
     val importer = remember { LibraryImport(context, store, progress) }
 
     fun reload() {
         scope.launch {
             val (r, p) = withContext(Dispatchers.IO) { store.library.list() to store.library.listPatches() }
             roms.clear(); roms.addAll(r); patches.clear(); patches.addAll(p)
+            loaded = true
         }
     }
     LaunchedEffect(Unit) { reload() }
@@ -99,6 +104,31 @@ fun RomLibraryScreen(modifier: Modifier = Modifier, onPlay: () -> Unit = {}) {
         busy = true
         scope.launch {
             status = withContext(Dispatchers.IO) { importer.importUris(uris) }
+            reload(); progress.clear(); busy = false
+        }
+    }
+
+    /**
+     * A patched version KaizoCore makes by itself (Nat. Dex, the growth patch, Faster, Smart AI, Super Kaizo), made from
+     * a copy of the library's own file, which stays where it is (PrepRun). Blake, 2026-09-30: PATCH said no patch fits
+     * his FireRed 1.1 while the app carries Nat. Dex for it; "this needs applied to all games".
+     */
+    fun runBuiltIn(base: LibraryStore.Entry, o: PrepOptions.Option) {
+        val kind = base.kind ?: return
+        busy = true
+        scope.launch {
+            val r = withContext(Dispatchers.IO) {
+                runCatching {
+                    val (tmp, id) = PrepRun.copyFromLibrary(context, base, progress)
+                    try {
+                        if (!id.exact) throw PrepFailure("This copy of ${kind.displayName} is not an exact one, so KaizoCore cannot patch it. Nothing was changed.")
+                        PrepRun.run(context, store, tmp, kind, o.id, progress)
+                    } finally {
+                        tmp.delete()   // spent by a run that worked; left behind by one that did not
+                    }
+                }
+            }
+            status = r.fold({ "$it Ready for Kaizo IronMON: pick it on Home, Kaizo IronMON." }, { if (it is NeedPatch) NEED_NATDEX_PATCH else prepFailure(it) })
             reload(); progress.clear(); busy = false
         }
     }
@@ -117,7 +147,7 @@ fun RomLibraryScreen(modifier: Modifier = Modifier, onPlay: () -> Unit = {}) {
         Gen3Box(Modifier.fillMaxWidth()) {
             Column {
                 Text(
-                    "Your own dumps, hacks and patches. Nothing is downloaded and nothing " +
+                    "Your own games, hacks and patches. Nothing is downloaded and nothing " +
                         "leaves this phone. Files are sorted by what they are, and a patch is " +
                         "only ever offered for the game it fits.",
                     style = MaterialTheme.typography.bodyMedium, color = Gen3.Ink,
@@ -136,14 +166,10 @@ fun RomLibraryScreen(modifier: Modifier = Modifier, onPlay: () -> Unit = {}) {
         }
         Spacer(Modifier.height(8.dp))
         if (busy) { if (progress.phase.isNotEmpty()) FileProgressPanel(progress) else ShellBusy() }
+        else if (!loaded) ShellBusy()
 
-        if (roms.isEmpty() && patches.isEmpty() && !busy) {
-            EmptyState(
-                "Nothing here yet.",
-                "Add files takes ROMs (.gba, .gbc, .nds), patches (.bps, .ips, .ups) and zips of either. " +
-                    "KaizoCore tracks Red, Blue, Yellow, Gold, Silver, Crystal, FireRed, Emerald, Diamond, Pearl, " +
-                    "Platinum, HeartGold, SoulSilver, Black, White, Black 2 and White 2 (U). Anything else plays without a tracker.",
-            )
+        if (loaded && roms.isEmpty() && patches.isEmpty() && !busy) {
+            EmptyState("Nothing here yet.", emptyLibraryLine())
         }
 
         LazyColumn(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -154,9 +180,11 @@ fun RomLibraryScreen(modifier: Modifier = Modifier, onPlay: () -> Unit = {}) {
                 items(here, key = { it.name }) { e ->
                     RomCard(
                         e, playing = e.name == selectedName, busy = busy,
-                        patchCount = patches.count { it.matches(e) },
+                        patchCount = patches.count { it.matches(e) } + PrepRun.builtIns(e).size,
                         onPlay = { store.library.selectLibrary(e); selectedName = e.name; onPlay() },
                         onPatch = { patchFor = e },
+                        // The games the Nat. Dex Extension has a patch for (FireRed 1.1 and Emerald), said on the card itself.
+                        onNatDex = if (PrepRun.builtIns(e).any { it.mode == PrepOptions.Mode.NATDEX }) ({ natDexFor = e }) else null,
                         onRename = { renameRom = e },
                         onDelete = {
                             scope.launch(Dispatchers.IO) { store.library.delete(e) }
@@ -205,16 +233,55 @@ fun RomLibraryScreen(modifier: Modifier = Modifier, onPlay: () -> Unit = {}) {
     }
     patchFor?.let { e ->
         val fits = patches.filter { it.matches(e) }
+        val builtIns = PrepRun.builtIns(e)
         ShellDialog("Patch ${stripKnownExt(e.name)}", onDismiss = { patchFor = null }) {
-            if (fits.isEmpty()) {
-                Text("No patch in the library fits this file. A patch is matched by the exact " +
-                    "ROM it was made for; add one with Add files and it will appear here if it fits.",
+            if (builtIns.isNotEmpty()) {
+                Text("Made by KaizoCore from this game", style = MaterialTheme.typography.titleSmall, color = Gen3.Ink)
+                builtIns.forEach { o ->
+                    LibraryPickRow(o.label, PrepOptions.describe(o, e.kind), onClick = {
+                        patchFor = null
+                        if (o.mode == PrepOptions.Mode.NATDEX) natDexFor = e else runBuiltIn(e, o)
+                    })
+                }
+            }
+            if (fits.isNotEmpty()) {
+                if (builtIns.isNotEmpty()) {
+                    Spacer(Modifier.height(8.dp))
+                    Text("Your patches", style = MaterialTheme.typography.titleSmall, color = Gen3.Ink)
+                }
+                fits.forEach { p ->
+                    LibraryPickRow(stripKnownExt(p.name), patchFormatLabel(p.format), onClick = { patchFor = null; runPatch(e, p) })
+                }
+            }
+            if (fits.isEmpty() && builtIns.isEmpty()) {
+                Text("No patch in the library fits this file yet. A patch is matched by the exact ROM it was made for.",
                     style = MaterialTheme.typography.bodyMedium, color = Gen3.Ink)
-            } else fits.forEach { p ->
-                LibraryPickRow(stripKnownExt(p.name), patchFormatLabel(p.format), onClick = { patchFor = null; runPatch(e, p) })
             }
             Spacer(Modifier.height(8.dp))
-            Gen3Button("CLOSE") { patchFor = null }
+            // Add a patch from here (Blake, 2026-09-30: "a button to add patch file to library"). The window stays open,
+            // so a patch that fits this game is listed under Your patches as soon as it is in.
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Gen3Button(if (busy) "WORKING…" else "ADD A PATCH FILE", accent = fits.isEmpty() && builtIns.isEmpty(), enabled = !busy) {
+                    picker.launch(arrayOf("*/*"))
+                }
+                Gen3Button("CLOSE") { patchFor = null }
+            }
+        }
+    }
+    natDexFor?.let { e ->
+        val k = e.kind
+        val natDex = PrepRun.builtIns(e).firstOrNull { it.mode == PrepOptions.Mode.NATDEX }
+        if (k != null && natDex != null) ShellDialog(NatDexInfo.TITLE, onDismiss = { natDexFor = null }) {
+            Text(NatDexInfo.WHAT, style = MaterialTheme.typography.titleSmall, color = Gen3.Ink)
+            Spacer(Modifier.height(4.dp))
+            NatDexInfo.lines(k).forEach { line ->
+                Text("\u2022 $line", style = MaterialTheme.typography.bodyMedium, color = Gen3.Ink, modifier = Modifier.padding(vertical = 2.dp))
+            }
+            Spacer(Modifier.height(6.dp))
+            Text("Your ${stripKnownExt(e.name)} stays as it is; the Nat. Dex version is made from a copy and listed on Kaizo IronMON. " +
+                NatDexInfo.CREDIT, style = MaterialTheme.typography.bodySmall, color = Shell.inkOnPaper)
+            Spacer(Modifier.height(10.dp))
+            Gen3Button("MAKE IT", accent = true, enabled = !busy) { natDexFor = null; runBuiltIn(e, natDex) }
         }
     }
     applyTo?.let { p ->
@@ -240,7 +307,9 @@ fun RomLibraryScreen(modifier: Modifier = Modifier, onPlay: () -> Unit = {}) {
             Text("This patch does not say which game it was made for. Pick the ROM it was made for; it will " +
                 "only ever be offered for that file.", style = MaterialTheme.typography.bodyMedium, color = Gen3.Ink)
             Spacer(Modifier.height(6.dp))
-            val candidates = roms.filter { it.category == LibraryStore.Category.CLEAN || it.category == LibraryStore.Category.OTHER }
+            val candidates = roms.filter {
+                it.category == LibraryStore.Category.CLEAN || it.category == LibraryStore.Category.OTHER_VERSIONS || it.category == LibraryStore.Category.OTHER
+            }
             if (candidates.isEmpty()) Text("The game it is for is not in your library yet. Add it, and it will appear here.",
                 style = MaterialTheme.typography.bodyMedium, color = Gen3.Ink)
             candidates.forEach { e ->
@@ -283,10 +352,12 @@ private fun RomCard(
     patchCount: Int,
     onPlay: () -> Unit,
     onPatch: () -> Unit,
+    /** Set for a game the Nat. Dex Extension has a patch for: the card says so with its own button. */
+    onNatDex: (() -> Unit)? = null,
     onRename: () -> Unit,
     onDelete: () -> Unit,
 ) {
-    val tracked = GameSession.trackerKind(entry.kind, entry.crc) != null
+    val tracked = entry.tracked
     val playable = entry.platform != null
     val accent = when {
         tracked -> Shell.goodOnPaper
@@ -305,8 +376,9 @@ private fun RomCard(
                 Column(Modifier.weight(1f)) {
                     Text(stripKnownExt(entry.name) + if (playing) "  (playing)" else "",
                         style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                    Text(entry.subtitle + if (tracked) " · tracked" else if (playable) " · plays untracked" else "",
-                        style = MaterialTheme.typography.bodySmall, color = accent)
+                    // The subtitle says whether the tracker works ("Tracker works", "No tracker") or, for a file
+                    // it cannot read, what it is and that it plays (UX audit Words table, 2026-09-30).
+                    Text(entry.subtitle, style = MaterialTheme.typography.bodySmall, color = accent)
                     // No checksum on the card: it means nothing to a player (audit, 2026-09-27).
                     Text("%s · %s".format((knownExtOf(entry.name) ?: entry.platform?.name ?: "?").uppercase(), sizeLabel(entry.sizeBytes)),
                         style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper)
@@ -319,6 +391,7 @@ private fun RomCard(
             ) {
                 Gen3Button("PLAY", accent = true, enabled = playable, onClick = onPlay)
                 Gen3Button(if (patchCount > 0) "PATCH ($patchCount)" else "PATCH", enabled = playable, onClick = onPatch)
+                onNatDex?.let { Gen3Button("NAT. DEX", enabled = !busy, onClick = it) }
                 Gen3Button("RENAME", onClick = onRename)
                 Gen3Button(if (armed) "SURE?" else "DELETE", accent = armed, enabled = !busy,
                     onClick = { if (armed) { armed = false; onDelete() } else armed = true })
@@ -417,6 +490,22 @@ internal fun patchFailure(t: Throwable): String = when (t) {
 
 /** How long a Delete stays armed as "Sure?" before it lets go. */
 internal const val DISARM_MS = 3000L
+
+/**
+ * What the empty page says is accepted and what the tracker reads (2026-09-30, UX audit P0-11). The file types are
+ * the ones LibraryImport and ZipImport take (.gba, .gbc, .gb and .nds games, the four patch kinds, a .zip of either),
+ * and the games are the ones with a pinned checksum, so it cannot promise a game whose tracker is not there.
+ */
+internal fun emptyLibraryLine(): String =
+    "Add files takes games (.gba, .gbc, .gb, .nds), patches (.bps, .ips, .ups, .xdelta) and .zip files holding either. " +
+        "The tracker reads the US English ${listWithAnd(LibraryStore.trackedGames())}. Any other game still plays, without a tracker."
+
+/** "Red, Blue and Yellow". */
+internal fun listWithAnd(items: List<String>): String = when (items.size) {
+    0 -> ""
+    1 -> items[0]
+    else -> items.dropLast(1).joinToString(", ") + " and " + items.last()
+}
 
 /** "16 MB", or "512 KB" for a small file such as a patch. */
 internal fun sizeLabel(bytes: Long): String =

@@ -15,14 +15,28 @@ import java.io.File
  * the current run out to shared storage (where ironmon_emu can open it) goes through
  * SAF in the UI layer.
  */
-class PrepStore(context: Context) {
+class PrepStore(private val filesDir: File) {
 
-    private val root = File(context.filesDir, "prep").apply { mkdirs() }
+    constructor(context: Context) : this(context.filesDir)
+
+    companion object {
+        /**
+         * Whether a state stamp names a run. [runIdentity] writes "?" for a
+         * game or seed not on disk, which is also the stamp half way through
+         * NEW RUN (installRun forgets the seed first), and two unknowns must
+         * never match each other.
+         */
+        fun stampKnown(stamp: String): Boolean = stamp.isNotBlank() && stamp.split('/').none { it == "?" || it.isBlank() }
+    }
+
+    private val root = File(filesDir, "prep").apply { mkdirs() }
     private val patches = File(root, "patches").apply { mkdirs() }
     private val prepared = File(root, "prepared").apply { mkdirs() }
     private val settings = File(root, "settings").apply { mkdirs() }
     private val runs = File(root, "runs").apply { mkdirs() }
-    private val filesDir: File = context.filesDir
+
+    /** The next run, made ahead of the player asking (NextRun, NextRunJob). */
+    val nextRun = NextRun(File(root, "next"))
 
     // ---------------------------------------------------------------- sessions
 
@@ -48,6 +62,16 @@ class PrepStore(context: Context) {
     fun slotFile(s: GameSession, n: Int): File = SessionPaths.slot(filesDir, s, n)
     fun slotStamp(s: GameSession, n: Int): File = SessionPaths.slotStamp(filesDir, s, n)
     fun marksFile(s: GameSession): File = SessionPaths.marks(root, s)
+
+    /**
+     * The run's events: every load, restore, retry and resume (RunEvents),
+     * beside its stat notes and gone with them on a new run. A library game
+     * is not a run and keeps none.
+     */
+    fun runEvents(s: GameSession): RunEvents? = if (s.isRun) RunEvents(File(root, "integrity.txt")) else null
+
+    /** Names the game the Play screen has up, while it has one (CrashResume). */
+    val playMarker = File(root, "playing.txt")
 
     /**
      * Per-game settings (GameSettings). The old app-wide playspeed.txt and
@@ -229,25 +253,14 @@ class PrepStore(context: Context) {
      * there is nothing to edit, which made "make a custom preset" impossible
      * until the user had hunted down an .rnqs by hand.
      *
-     * Only ever ADDS missing files: a preset the user edited or deleted is
-     * never restored or overwritten.
+     * Only ever ADDS missing files, apart from one step: a copy that is byte
+     * for byte a preset an earlier release shipped is brought up to date
+     * (PresetMigration). A preset the user edited is never overwritten.
      */
-    fun seedBundledPresets(context: Context): Int {
-        var added = 0
-        runCatching {
-            val names = context.assets.list("presets") ?: return 0
-            names.forEach { name ->
-                val dest = File(settings, name)
-                if (!dest.exists()) {
-                    context.assets.open("presets/$name").use { input ->
-                        dest.outputStream().use { input.copyTo(it) }
-                    }
-                    added++
-                }
-            }
-        }
-        return added
-    }
+    fun seedBundledPresets(context: Context): Int = runCatching {
+        val names = context.assets.list("presets")?.toList() ?: return 0
+        PresetMigration.seed(settings, names) { n -> runCatching { context.assets.open("presets/$n").use { it.readBytes() } }.getOrNull() }
+    }.getOrDefault(0)
 
     /** Per-run stat notes (see StatMarks). Lives beside the run, cleared with it. */
     /**
@@ -268,6 +281,15 @@ class PrepStore(context: Context) {
             if (on) { padForceFile.parentFile?.mkdirs(); padForceFile.writeText("1") }
             else padForceFile.delete()
         }
+    }
+
+    /** "Get the next run ready in the background" (NextRunJob): on unless this file says off. */
+    private val nextRunOffFile = File(root, "nextrun-off.txt")
+
+    fun nextRunAhead(): Boolean = !nextRunOffFile.exists()
+
+    fun setNextRunAhead(on: Boolean) {
+        runCatching { if (on) nextRunOffFile.delete() else nextRunOffFile.writeText("1") }
     }
 
     // ------------------------------------------------------ play preferences
@@ -330,7 +352,7 @@ class PrepStore(context: Context) {
 
     fun marksFile(): File = File(root, "marks.txt")
 
-    /** SeedLogger's past runs for a game family (DS tracker): prep/pastruns-<badgeSet>.tsv. */
+    /** SeedLogger's past runs (DS tracker): prep/pastruns-<GameInfo NAME>.tsv; older builds keyed them by badge set. */
     fun pastRunsFile(family: String): File = File(root, "pastruns-$family.tsv")
 
     /** TourneyTracker's scores.tdata: prep/tourney.tsv. */
@@ -413,20 +435,62 @@ class PrepStore(context: Context) {
 
     private val lastRunFile = File(root, "lastrun.txt")
 
-    /** Remember what the Run tab last randomized, so Play's NEW RUN can repeat it. */
-    fun saveLastRun(romKindId: String, settingsName: String) =
-        lastRunFile.writeText("$romKindId\n$settingsName")
+    /**
+     * Remember what the Run tab last randomized, so Play's NEW RUN can repeat it. Every reader takes the first two
+     * lines; after them come what is known about the run: whether its settings file is custom (CustomRuns), and
+     * whether it is a Nuzlocke, which counts no attempt and files no IronMON record.
+     */
+    fun saveLastRun(romKindId: String, settingsName: String, custom: Boolean? = null, nuzlocke: Boolean = false, variant: String? = null) =
+        lastRunFile.writeText("$romKindId\n$settingsName" + (custom?.let { "\ncustom=$it" } ?: "") + (if (nuzlocke) "\nnuzlocke=true" else "") +
+            (variant?.takeIf { it.isNotBlank() }?.let { "\nvariant=" + it.replace('\n', ' ') } ?: ""))
+
+    private fun lastRunFlag(line: String): Boolean =
+        runCatching { lastRunFile.readLines().drop(2).any { it.trim() == line } }.getOrDefault(false)
 
     /**
-     * Where the app should open: PLAY when a run is waiting, RUN when a game is
-     * prepared but not randomized, PREP when there is nothing yet. It always
-     * opened on PREP, so a player mid-run landed on "Add a game dump" every
-     * launch (audit, 2026-09-27).
+     * Whether the run in play was started from a custom settings file (CustomRuns). A run started before rc32 has no
+     * line saying so: it is judged from its file now, as the Kaizo IronMON screen judges one; false when that cannot be.
      */
-    fun startingPoint(): String {
+    fun lastRunCustom(): Boolean {
+        val lines = runCatching { lastRunFile.readLines() }.getOrNull() ?: return false
+        lines.drop(2).firstOrNull { it.trim().startsWith("custom=") }?.let { return it.trim() == "custom=true" }
+        val name = lines.getOrNull(1)?.takeIf { it.isNotBlank() } ?: return false
+        val bundled = CustomRuns.bundled?.invoke()?.takeIf { it.isNotEmpty() } ?: return false
+        return CustomRuns.isCustom(name, runCatching { settingsFile(name).takeIf { it.isFile }?.readBytes() }.getOrNull(), bundled)
+    }
+
+    /** Whether the run in play is a randomized Nuzlocke (installRun with no attempt counted). */
+    fun lastRunNuzlocke(): Boolean = lastRunFlag("nuzlocke=true")
+
+    /** What the run in play's official file ran without (ExtraPasses.variant), or null. */
+    fun lastRunVariant(): String? =
+        runCatching { lastRunFile.readLines().drop(2).firstOrNull { it.startsWith("variant=") }?.removePrefix("variant=")?.trim() }.getOrNull()?.ifBlank { null }
+
+    /**
+     * Where the app should open (2026-09-29): "HOME", the menu, except "PLAY" when the app is
+     * being reopened after it closed in the middle of a game (a crash, Android freeing memory,
+     * a swipe from recents). Play's marker names that game and is deleted whenever Play closes
+     * the normal way (CrashResume), so it is still there only after such a close, and opening on
+     * Play is what lets CrashResume bring the game back where it was. It is read with
+     * [CrashResume.parse], never [CrashResume.leftover]: leftover is the read Play's core-up
+     * makes once per process, and taking it here would leave Play with nothing to resume.
+     *
+     * A staged demo ([demo], Demo.mode) shows on the Play screen, so it opens where every launch
+     * used to when a run was waiting: on Play. Until Home existed the app opened on PLAY for any
+     * run waiting, on RUN with a game prepared and on PREP with nothing (audit, 2026-09-27: a
+     * player mid-run landed on "Add a game dump" every launch); Home's Continue card is now the
+     * way back into a run.
+     */
+    fun startingPoint(demo: String? = null): String = when {
+        CrashResume.parse(playMarker) != null -> "PLAY"
+        demo != null && runWaiting() -> "PLAY"
+        else -> "HOME"
+    }
+
+    /** A randomized run is on disk for the game the app last randomized. */
+    private fun runWaiting(): Boolean {
         val kind = loadLastRun()?.first?.let { RomKind.byId(it) }
-        if (kind != null && currentRunFor(kind).isFile) return "PLAY"
-        return if (runCatching { listPrepared() }.getOrDefault(emptyList()).isNotEmpty()) "RUN" else "PREP"
+        return kind != null && currentRunFor(kind).isFile
     }
 
     fun loadLastRun(): Pair<String, String>? {
@@ -449,30 +513,99 @@ class PrepStore(context: Context) {
     }
 
     /**
-     * Attempts are counted PER GAME, not once for the whole app.
+     * Attempts are counted per game and settings file since 2026-09-30 (IronMON rules check R8, Blake's call), the way
+     * the PC tracker counts per profile. One count per game put every Standard, custom and Nuzlocke game into the
+     * number on a Kaizo death card. (Before that, a single count for the whole app put every game into it.)
      *
-     * There used to be a single attempts.txt, so a FireRed run and an Emerald
-     * run bumped the same number and each game showed the other's attempts.
-     * An IronMON attempt count only means anything against one game.
-     *
-     * The old shared number cannot be split back out - there is no record of
-     * which game each of those attempts belonged to - so it is not migrated,
-     * and every game starts its own count.
+     * - prep/attempts/<game>.txt counts every run started on the game, whatever its file: Your stats reads it.
+     * - prep/attempts/<game>/<settings file>.txt is the attempt number a run of that file shows.
+     * - A file with no count yet starts from the game's count as it stood when this came in (prep/attempts/<game>.base,
+     *   written the first time it is needed), so no one's number went back to 1 (Blake: "start each file's count from
+     *   your current number"). A game first played after this starts at 0.
+     * - A randomized Nuzlocke counts no attempt: installRun's [countAttempt].
      */
-    private fun attemptFile(romId: String) =
-        File(attemptsDir, romId.replace(Regex("[^A-Za-z0-9._-]"), "_") + ".txt")
+    private fun safeName(s: String) = s.replace(Regex("[^A-Za-z0-9._-]"), "_")
+    private fun attemptFile(romId: String) = File(attemptsDir, safeName(romId) + ".txt")
+    private fun fileAttemptFile(romId: String, settingsName: String) = File(File(attemptsDir, safeName(romId)), safeName(settingsName) + ".txt")
+    private fun baseFile(romId: String) = File(attemptsDir, safeName(romId) + ".base")
+    private fun readCount(f: File): Int? = runCatching { f.takeIf { it.isFile }?.readText()?.trim()?.toIntOrNull() }.getOrNull()
 
     private fun currentRomId(): String = loadLastRun()?.first ?: "unknown"
 
-    fun attempt(romId: String = currentRomId()): Int =
-        if (Demo.mode != null) Demo.ATTEMPT
-        else attemptFile(romId).takeIf { it.exists() }
-            ?.readText()?.trim()?.toIntOrNull() ?: 0
+    /** Every run started on [romId], all its settings files together. */
+    fun gameAttempts(romId: String): Int = readCount(attemptFile(romId)) ?: 0
 
-    fun bumpAttempt(romId: String = currentRomId()): Int =
-        (attempt(romId) + 1).also { attemptFile(romId).writeText("$it") }
+    /** The game's count when counting per settings file came in: kept the first time it is asked for. */
+    private fun base(romId: String): Int =
+        readCount(baseFile(romId)) ?: gameAttempts(romId).also { SafeWrite.text(baseFile(romId), "$it") }
+
+    /** The attempts started on [romId] with [settingsName]; with no file named, the game's own count. */
+    fun attemptOf(romId: String, settingsName: String?): Int = when {
+        Demo.mode != null -> Demo.ATTEMPT
+        settingsName.isNullOrBlank() -> gameAttempts(romId)
+        else -> readCount(fileAttemptFile(romId, settingsName)) ?: base(romId)
+    }
+
+    /** The attempt number of the run in play on [romId]: its settings file's count (prep/lastrun.txt). */
+    fun attempt(romId: String = currentRomId()): Int =
+        attemptOf(romId, loadLastRun()?.takeIf { it.first == romId }?.second)
+
+    /**
+     * A new run of [romId] from [settingsName]: that file's next attempt number, and one more run started on the game.
+     * With no file named (an old caller), the game's count alone.
+     */
+    fun bumpAttempt(romId: String = currentRomId(), settingsName: String? = loadLastRun()?.takeIf { it.first == romId }?.second): Int {
+        val game = gameAttempts(romId) + 1
+        if (settingsName.isNullOrBlank()) { SafeWrite.text(attemptFile(romId), "$game"); return game }
+        val n = (readCount(fileAttemptFile(romId, settingsName)) ?: base(romId)) + 1
+        SafeWrite.text(fileAttemptFile(romId, settingsName), "$n")
+        SafeWrite.text(attemptFile(romId), "$game")
+        return n
+    }
+
+    /**
+     * What is kept under an attempt number starts over for the run that takes it: counted per settings file, two files'
+     * runs can carry the same number. The Survival heal count and the summary check go; the time played is kept apart
+     * (RunClock.retire), so Your stats still counts it.
+     */
+    private fun freshAttempt(romId: String, n: Int) {
+        PcHeals.forgetAttempt(n)
+        SummaryChecks.forget(n)
+        RunClock.retire(RunClock.key(romId, n))
+    }
+
+    /**
+     * The run in play, when a new one replaces it before it ended, is filed as ended by a new run (IronMON rules check
+     * R13): a re-roll in the lab or a bail before the game-over screen left no line in its history. A Nuzlocke keeps
+     * its own ledger, and a run with a record already keeps that record.
+     */
+    private fun fileOpenRunAsEnded(at: Long = System.currentTimeMillis()) {
+        runCatching {
+            val (romId, settingsName) = loadLastRun() ?: return
+            if (lastRunNuzlocke()) return
+            val kind = RomKind.byId(romId) ?: return
+            val run = currentRunFor(kind).takeIf { it.isFile } ?: return
+            val seed = lastSeedText().takeIf { it.isNotBlank() } ?: return
+            val n = attemptOf(romId, settingsName)
+            val history = RunHistory(runHistoryFile(kind))
+            if (history.find(n, seed) != null) return
+            val events = RunEvents(File(root, "integrity.txt")).entries()
+            history.record(RunRecord(
+                attempt = n, seed = seed, ruleset = settingsName, started = run.lastModified(), ended = at,
+                playSeconds = RunClock.of(RunClock.key(romId, n)), outcome = RunRecord.Outcome.ENDED, badges = 0,
+                lead = null, killer = null, trainer = "", location = "",
+                restores = rewinds(events), resumes = events.count { it.kind == RunEvents.Kind.RESUME },
+                resets = events.count { it.kind == RunEvents.Kind.RESET },
+                keptSave = events.any { it.kind == RunEvents.Kind.KEPT_SAVE }, custom = lastRunCustom(),
+                variant = lastRunVariant().orEmpty(), fromCode = events.any { it.kind == RunEvents.Kind.CODE },
+            ))
+        }
+    }
 
     private val lastSeedFile = File(root, "lastseed.txt")
+
+    /** Every run of [kind] that ended (RunHistory): personal bests and the death card. */
+    fun runHistoryFile(kind: RomKind): File = File(root, "runhistory-${kind.id}.tsv")
 
     fun saveLastSeed(seed: Long) = lastSeedFile.writeText("%016x".format(seed))
 
@@ -534,7 +667,7 @@ class PrepStore(context: Context) {
         rom.copyTo(File(dir, "run.${kind.fileExtension}"), overwrite = true)
         currentRunLogFor(kind)?.copyTo(File(dir, "run.${kind.fileExtension}.log"), overwrite = true)
         state?.takeIf { it.isNotEmpty() }?.let { File(dir, "state.bin").writeBytes(it) }
-        listOf("marks.txt", "notes.txt", "routes.txt", "moves.txt", "abilities.txt").forEach { f ->
+        listOf("marks.txt", "notes.txt", "routes.txt", "moves.txt", "abilities.txt", "encounters.txt", "ds-encounters.txt", "safari.txt", "ds-tracked.txt", "integrity.txt").forEach { f ->
             File(root, f).takeIf { it.isFile }?.copyTo(File(dir, f), overwrite = true)
         }
         File(dir, "attempt.txt").writeText("game=${kind.id}\nattempt=$attempt\nseed=$seed\n")
@@ -548,30 +681,89 @@ class PrepStore(context: Context) {
     fun currentRunLogFor(kind: RomKind): File? =
         com.ironmonone.app.engine.Randomizers.logFor(currentRunFor(kind)).takeIf { it.isFile && it.length() > 0 }
 
-    /** Rotate current -> previous before a new seed lands. */
     /**
      * Deletes the per-run notes (stat marks, free-text notes, route
-     * sightings). They describe one seed's randomization and must die with
-     * it. Called by BOTH new-run paths.
+     * sightings) and the run's events (RunEvents). They describe one seed's
+     * randomization and must die with it. Called by [installRun], which both
+     * new-run paths go through.
      */
     fun clearRunNotes() {
         listOf("marks.txt", "notes.txt", "routes.txt", "moves.txt",
-            "abilities.txt").forEach {
+            "abilities.txt", "encounters.txt", "ds-encounters.txt", "safari.txt", "ds-tracked.txt", "integrity.txt").forEach {
             runCatching { File(root, it).delete() }
         }
     }
 
+    /**
+     * Rotate current -> previous before a new run lands. Renamed, not copied:
+     * a DS run is 300 MB, and the copy cost seconds of every NEW RUN and that
+     * much free space. Nothing is written over current any more (NextRun
+     * moves a whole new file in), so the copy left in place had no reader.
+     */
     fun rotateRuns(kind: RomKind? = null) {
         val cur = kind?.let { currentRunFor(it) } ?: currentRun
         val prev = kind?.let { previousRunFor(it) } ?: previousRun
         if (cur.exists()) {
             prev.delete()
-            cur.copyTo(prev, overwrite = true)
+            moveOrCopy(cur, prev)
         }
         // The log travels with its ROM.
         val curLog = com.ironmonone.app.engine.Randomizers.logFor(cur)
         val prevLog = com.ironmonone.app.engine.Randomizers.logFor(prev)
         prevLog.delete()
-        if (curLog.isFile) runCatching { curLog.copyTo(prevLog, overwrite = true) }
+        if (curLog.isFile) runCatching { moveOrCopy(curLog, prevLog) }
+    }
+
+    private fun moveOrCopy(from: File, to: File) {
+        if (!from.renameTo(to)) { from.copyTo(to, overwrite = true); from.delete() }
+    }
+
+    /**
+     * Puts a new run in place: the one path both new-run buttons take (Play's
+     * NEW RUN and the Run tab, through RunStart), for a run made there and
+     * then or ahead of time (NextRun). The bookkeeping used to be written out
+     * twice, once per button, and the two copies had already drifted apart.
+     */
+    fun installRun(
+        kind: RomKind, settingsName: String, staged: NextRun.Staged, countAttempt: Boolean = true,
+        /** What its official file runs without (ExtraPasses.variant), for its record. */
+        variant: String? = null,
+        /** Built from a run code: its record says so, and whether the seed was played before (R7). */
+        fromCode: Boolean = false,
+    ) {
+        // Before anything moves: the run this replaces, if it never ended, goes into its history as ended (R13).
+        fileOpenRunAsEnded()
+        // First. A save state is stamped with the seed (runIdentity), and were
+        // the app to die between the new ROM moving in and the new seed being
+        // saved, the old seed would vouch for an old state on the new ROM.
+        // With no seed on disk no state matches until the new one is written.
+        lastSeedFile.delete()
+        // The in-game save stays, in every game, and a copy rc32's first builds set aside comes back when there is
+        // none (RunSaves, Blake 2026-09-30). Before the ROM moves: the name is the old run's.
+        RunSaves.onNewSeed(RunSaves.file(filesDir, kind, currentRunFor(kind)), kind)
+        rotateRuns(kind)
+        nextRun.install(staged, currentRunFor(kind))
+        // Custom or not, decided on the file's bytes now, while it is the file the run was made from (R2).
+        val custom = CustomRuns.bundled?.invoke()?.takeIf { it.isNotEmpty() }?.let { b ->
+            CustomRuns.isCustom(settingsName, runCatching { settingsFile(settingsName).takeIf { it.isFile }?.readBytes() }.getOrNull(), b)
+        }
+        saveLastRun(kind.id, settingsName, custom, nuzlocke = !countAttempt, variant = variant)
+        saveLastSeed(staged.seed)
+        // A fresh seed is what the player wants to play next, even if a
+        // library ROM was open before.
+        library.selectRun()
+        // Named explicitly: this counter is per game and settings file and must not depend on the order of the lines
+        // above. A randomized Nuzlocke takes its file's number without counting one (R8).
+        val n = if (countAttempt) bumpAttempt(kind.id, settingsName) else attemptOf(kind.id, settingsName)
+        freshAttempt(kind.id, n)
+        // Marks, notes and route sightings describe the OLD seed's
+        // randomization; carrying them into the new run is misleading.
+        clearRunNotes()
+        setLastRunError(null)
+        // A run code's run: said on its record, with the attempt that played the same seed before, if one did (R7).
+        if (fromCode) {
+            val before = RunCodeHistory.playedBefore(RunHistory(runHistoryFile(kind)), "%016x".format(staged.seed), settingsName)
+            RunEvents(File(root, "integrity.txt")).add(RunEvents.Kind.CODE, "run code", before?.let { "seed played before as attempt ${it.attempt}" }.orEmpty())
+        }
     }
 }

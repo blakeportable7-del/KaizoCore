@@ -41,4 +41,57 @@ class LossConditionTest {
         assertEquals(LossCondition.LEAD, LossCondition.byKey("nonsense"))
         assertEquals(LossCondition.ENTIRE_PARTY, LossCondition.byKey("EntirePartyFaints"))
     }
+
+    @Test
+    fun `a run's settings file picks its condition, as the reference's profiles do`() {
+        // QuickloadScreen.SettingsKeywordToGameOverMap over every bundled settings file name, but
+        // Kaizo Doubles: the reference's keyword map gives it the lead, the rules give it either of
+        // the two (Blake, 2026-09-29: the most recent rules).
+        val dir = java.io.File("../app/src/main/assets/presets")
+        val names = dir.listFiles()?.map { it.name }.orEmpty()
+        kotlin.test.assertTrue(names.size > 30, "presets not found at ${dir.absolutePath}")
+        for (n in names) {
+            val want = when {
+                n.contains("Doubles") -> LossCondition.EITHER_OF_FIRST_TWO
+                // RBY Survival's HM friend may lead a gym and faint (IronMON rules check R9, 2026-09-30).
+                n == "RBY Survival.rnqs" -> LossCondition.HIGHEST_LEVEL
+                n.contains("Standard") || n.contains("Ultimate") -> LossCondition.ENTIRE_PARTY
+                else -> LossCondition.LEAD   // Kaizo, Super Kaizo, Survival, PART 2, anything else
+            }
+            kotlin.test.assertEquals(want, LossCondition.forSettingsName(n), n)
+        }
+        kotlin.test.assertEquals(LossCondition.ENTIRE_PARTY, LossCondition.forSettingsName("my ultimate run.rnqs"))
+    }
+
+    @Test
+    fun `eggs never count`() {
+        val egg = LossMon(5, 0, isEgg = true)
+        // The lead is slot 1 itself: an egg there is not a fainted lead.
+        kotlin.test.assertFalse(LossCondition.LEAD.lostMons(listOf(egg, LossMon(20, 30))))
+        // Entire party: every REAL Pokemon down, the egg does not keep the run alive.
+        kotlin.test.assertTrue(LossCondition.ENTIRE_PARTY.lostMons(listOf(LossMon(20, 0), LossMon(5, 40, isEgg = true))))
+        // Highest level: a higher-level egg is not the highest Pokemon.
+        kotlin.test.assertTrue(LossCondition.HIGHEST_LEVEL.lostMons(listOf(LossMon(30, 0), LossMon(40, 10, isEgg = true))))
+        // Only eggs: nothing to lose.
+        kotlin.test.assertFalse(LossCondition.ENTIRE_PARTY.lostMons(listOf(egg)))
+    }
+
+    @Test
+    fun `Kaizo Doubles ends when either of the first two faints`() {
+        val d = LossCondition.EITHER_OF_FIRST_TWO
+        assertTrue(d.lost(leadDown), "the lead")
+        assertTrue(d.lost(listOf(20 to 30, 18 to 0, 25 to 40)), "the second")
+        assertFalse(d.lost(listOf(20 to 30, 18 to 10, 25 to 0)), "a third Pokemon (an HM friend) is not one of the two")
+        assertFalse(LossCondition.LEAD.lost(listOf(20 to 30, 18 to 0)), "the lead rule would miss the second")
+        // Eggs are skipped, as for every condition: the two are the first two real Pokemon.
+        assertTrue(d.lostMons(listOf(LossMon(5, 20, isEgg = true), LossMon(20, 30), LossMon(18, 0))))
+    }
+
+    @Test
+    fun `a Doubles settings file starts on the doubles rule, before its Kaizo keyword`() {
+        assertEquals(LossCondition.EITHER_OF_FIRST_TWO, LossCondition.forSettingsName("RSE Kaizo Doubles.rnqs"))
+        assertEquals(LossCondition.EITHER_OF_FIRST_TWO, LossCondition.forSettingsName("B2W2 Kaizo Doubles.rnqs"))
+        assertEquals(LossCondition.LEAD, LossCondition.forSettingsName("FRLG Kaizo.rnqs"))
+        assertEquals(LossCondition.ENTIRE_PARTY, LossCondition.forSettingsName("HGSS Standard.rnqs"))
+    }
 }

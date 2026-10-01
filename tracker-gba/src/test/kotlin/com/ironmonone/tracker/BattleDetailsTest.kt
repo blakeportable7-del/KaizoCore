@@ -48,6 +48,37 @@ class BattleDetailsTest {
     }
 
     @Test
+    fun `each poll carries every battler's summary for the carousel line`() {
+        val t = GbaTracker(mem(true), m)
+        val s = List(2) { t.read() }.last()
+        assertEquals("Confused (1- 4 Turns)", s.battleSummaries[0])
+        assertEquals("${t.moveName(227)} (${t.moveName(33)})", s.battleSummaries[1])
+        val out = GbaTracker(mem(false), m)
+        assertEquals(emptyList(), List(2) { out.read() }.last().battleSummaries)
+    }
+
+    /** Battler 0 on its loafing turn (gDisableStructs + 0x18, bit 0), a species whose base stats give it Truant. */
+    private fun loafing(): MemoryReader {
+        val ram = HashMap<Long, Byte>()
+        fun put(a: Long, vararg b: Int) { b.forEachIndexed { i, v -> ram[a + i] = v.toByte() } }
+        put(m.battleMons + 0x00, 1, 0)                      // allied species 1
+        put(m.battleMons + m.battleMonSize, 4, 0)           // enemy species 4
+        put(m.baseStats + 28, 50)                           // species 1: a real stat block...
+        put(m.baseStats + 28 + 22, 54)                      // ...whose first ability is Truant
+        put(m.disableStructs + 0x18, 1)                     // truantCounter
+        put(m.battlersCount, 2); put(m.battleMainFunc, 0x75, 0xBE, 0x03, 0x08)
+        return MemoryReader { a, n -> ByteArray(n) { ram[a + it] ?: 0 } }
+    }
+
+    @Test
+    fun `Loafing shows only once Truant is tracked for the species`() {
+        val t = GbaTracker(loafing(), m); repeat(2) { t.read() }
+        assertEquals(emptyList(), assertNotNull(t.battleDetails()).mons[0].map { it.text }, "a species that could have Truant: showing it would reveal the ability")
+        t.trackedAbilities = { sp -> if (sp == 1) listOf(t.abilityName(54)) else emptyList() }
+        assertEquals(listOf("Loafing"), assertNotNull(t.battleDetails()).mons[0].map { it.text })
+    }
+
+    @Test
     fun `outside a battle there is nothing to read`() {
         val t = GbaTracker(mem(false), m); repeat(2) { t.read() }
         assertNull(t.battleDetails())

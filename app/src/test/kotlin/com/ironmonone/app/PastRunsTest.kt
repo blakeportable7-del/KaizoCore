@@ -31,4 +31,42 @@ class PastRunsTest {
         again.removeNoBadgeRuns()
         assertEquals(2, again.totalRuns()); assertEquals(2, PastRunStore(f).totalRuns())
     }
+
+    @Test
+    fun `Black and White count Past N where every other game counts Past Lab`() {
+        // StatisticsScreen.lua:52-53: VERSION_GROUP 4 renames the first Overall Progress bar.
+        val dir = java.nio.file.Files.createTempDirectory("pastruns").toFile(); dir.deleteOnExit()
+        fun first(game: String) = PastRunStore(File(dir, "pastruns-$game.tsv"), gameName = game).statistics().toMap().getValue("Overall Progress").first().first
+        assertEquals("Past N", first("Pokemon Black"))
+        assertEquals("Past N", first("Pokemon White"))
+        assertEquals("Past Lab", first("Pokemon Black 2"))
+        assertEquals("Past Lab", first("Pokemon Platinum"))
+        val state = com.ironmonone.tracker.nds.NdsTrackerState(0, emptyList(), located = false, badgeSet = "BW", gameName = "Pokemon White")
+        assertEquals("Past N", pastRunStoreFor(state) { File(dir, "pastruns-$it.tsv") }.statistics().toMap().getValue("Overall Progress").first().first)
+    }
+
+    @Test
+    fun `each game keeps its own log, and the family log older builds wrote is still read`() {
+        // SeedLogger(self, gameInfo.NAME): savedData/<name>.pastlog, one per game (SeedLogger.lua:233).
+        val dir = java.nio.file.Files.createTempDirectory("pastruns").toFile(); dir.deleteOnExit()
+        fun fileFor(key: String) = File(dir, "pastruns-$key.tsv")
+        fun state(name: String) = com.ironmonone.tracker.nds.NdsTrackerState(0, emptyList(), located = false, badgeSet = "DPPT", gameName = name)
+        // A log an older build wrote for the whole family, one run with no badges.
+        PastRunStore(fileFor("DPPT")).log(PastRun(1000, 60, mon("ZUBAT", 245, "Poison", "Flying", "Inner Focus", listOf("Bite")), mon("ONIX", 385, "Rock", "Ground", "Sturdy", listOf("Tackle")), "", 0, PastRun.NOWHERE))
+        val platinum = pastRunStoreFor(state("Pokemon Platinum"), ::fileFor)
+        assertEquals(1, platinum.totalRuns())
+        platinum.log(PastRun(2000, 120, mon("ABSOL", 465, "Dark", "Dark", "Pressure", listOf("Bite")), mon("MEW", 600, "Psychic", "Psychic", "Synchronize", listOf("Psychic")), "", 3, PastRun.PAST_LAB))
+        assertEquals(2, pastRunStoreFor(state("Pokemon Platinum"), ::fileFor).totalRuns())
+        // Platinum's run is not Diamond's, and a new run never goes into the old file.
+        assertEquals(listOf("ZUBAT"), pastRunStoreFor(state("Pokemon Diamond"), ::fileFor).all().map { it.fainted.name })
+        assertEquals(1, PastRunStore(fileFor("DPPT")).totalRuns())
+        assertEquals(1, PastRunStore(fileFor("Pokemon Platinum")).totalRuns())
+        // A state with no game name (a demo) keeps to the family file alone, and a file is never read twice.
+        assertEquals(1, pastRunStoreFor(state(""), ::fileFor).totalRuns())
+        assertEquals(1, PastRunStore(fileFor("DPPT"), legacy = fileFor("DPPT")).totalRuns())
+        // Removing no-badge runs takes the old file's out too, as it did when that file was the log.
+        platinum.removeNoBadgeRuns()
+        assertEquals(listOf("ABSOL"), pastRunStoreFor(state("Pokemon Platinum"), ::fileFor).all().map { it.fainted.name })
+        assertEquals(0, pastRunStoreFor(state("Pokemon Diamond"), ::fileFor).totalRuns())
+    }
 }

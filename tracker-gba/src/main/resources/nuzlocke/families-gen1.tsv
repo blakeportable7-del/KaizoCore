@@ -1,0 +1,64 @@
+# Evolution lines for the dupes clause, Generation 1 (2026-09-29): one line per line, names as natdex/species.tsv spells them.
+# A species on no line is its own line. Generation 1 has no baby forms, so every line starts at a wild species.
+#
+# These are the VANILLA lines, from the games' own evolution tables: pokered and pokeyellow data/pokemon/evos_moves.asm,
+# and the same table read out of the Red, Blue and Yellow ROM dumps (`python tools/nuzlocke/gen1_families.py --check`
+# does both; the three games have identical lines). A branching line keeps all its branches on one row (Poliwag,
+# Eevee). Nidoran F and Nidoran M are two lines. Only species 1 to 151. A randomizer that shuffles evolutions changes
+# who belongs together and this file cannot know: the dupes clause is then a suggestion the player corrects by hand.
+#
+# names, comma separated, lowest dex number first
+Bulbasaur,Ivysaur,Venusaur
+Charmander,Charmeleon,Charizard
+Squirtle,Wartortle,Blastoise
+Caterpie,Metapod,Butterfree
+Weedle,Kakuna,Beedrill
+Pidgey,Pidgeotto,Pidgeot
+Rattata,Raticate
+Spearow,Fearow
+Ekans,Arbok
+Pikachu,Raichu
+Sandshrew,Sandslash
+Nidoran F,Nidorina,Nidoqueen
+Nidoran M,Nidorino,Nidoking
+Clefairy,Clefable
+Vulpix,Ninetales
+Jigglypuff,Wigglytuff
+Zubat,Golbat
+Oddish,Gloom,Vileplume
+Paras,Parasect
+Venonat,Venomoth
+Diglett,Dugtrio
+Meowth,Persian
+Psyduck,Golduck
+Mankey,Primeape
+Growlithe,Arcanine
+Poliwag,Poliwhirl,Poliwrath
+Abra,Kadabra,Alakazam
+Machop,Machoke,Machamp
+Bellsprout,Weepinbell,Victreebel
+Tentacool,Tentacruel
+Geodude,Graveler,Golem
+Ponyta,Rapidash
+Slowpoke,Slowbro
+Magnemite,Magneton
+Doduo,Dodrio
+Seel,Dewgong
+Grimer,Muk
+Shellder,Cloyster
+Gastly,Haunter,Gengar
+Drowzee,Hypno
+Krabby,Kingler
+Voltorb,Electrode
+Exeggcute,Exeggutor
+Cubone,Marowak
+Koffing,Weezing
+Rhyhorn,Rhydon
+Horsea,Seadra
+Goldeen,Seaking
+Staryu,Starmie
+Magikarp,Gyarados
+Eevee,Vaporeon,Jolteon,Flareon
+Omanyte,Omastar
+Kabuto,Kabutops
+Dratini,Dragonair,Dragonite

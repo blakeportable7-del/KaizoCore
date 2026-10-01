@@ -51,6 +51,10 @@ https://github.com/DrMaple/Faster-FireRed
   identified either way, because that is a pinned checksum, not his file, and the
   library keeps importing anyone's own copy.
 
+  2026-09-28, Blake, on every patch and settings file the app bundles: "we have
+  all licensing." Recorded as he said it. His Faster Emerald and the other mode
+  patches are listed under IRONMON MODE PATCHES AND SETTINGS below.
+
   The patch is the author's own work, not game content. No ROM is bundled.
 
 
@@ -66,8 +70,26 @@ https://github.com/billgreenwald/ironmon_emu
         gradle build.
     (b) what conditions, if any, are attached?
 
-  Used so far: only the publicly published architecture documentation, as reference.
-  See docs/TRACKER_SPEC.md for how that provenance is kept clean.
+  Used so far: the publicly published architecture documentation, as reference, and, since
+  2026-09-29, the pictures described next. See docs/TRACKER_SPEC.md for how the documentation
+  provenance is kept clean.
+
+  2026-09-29, THE PICTURES: the author (Bill Greenwald, "doctrDNA" on the IronMON Discord,
+  "billgreenwald" on GitHub) gave the project owner permission to use IronMon Emu's FireRed and
+  LeafGreen map and hidden item pictures. As reported: the wording is not captured here, so
+  paste it below when it is to hand. Scope: those pictures only, the 11 dungeon maps and the
+  106 distinct hidden item screenshots that ship in app/src/main/assets/frlg/, converted to
+  lossless WebP; app/src/main/assets/frlg/SOURCE.txt gives every file's original name and SHA-256
+  and the commit they were taken from (abf9453ba031a2ff58ab9a11059cb8678aec15e1). Since 2026-09-30
+  seven of the maps ship and none of the screenshots (the IronMON rules check; SOURCE.txt says
+  which and why). It does NOT
+  cover his Kotlin code, and none of it is used: FrlgPictures.kt is this project's own table of
+  which picture goes with which place, keyed by the game's own map numbers. For the pictures
+  this settles the "do not build on this" above; questions (a) and (b) still stand for his
+  application source.
+
+  Credit, and the line the About screen carries in its own words:
+  FireRed and LeafGreen dungeon maps: Bill Greenwald (doctrDNA), from IronMon Emu (github.com/billgreenwald/ironmon_emu), used with permission.
 
 
 LICENSED COMPONENTS
@@ -93,6 +115,76 @@ CyanSMP64 randomizer fork — GPL-3.0          CyanSMP64/universal-pokemon-rando
 besteon / Ironmon-Tracker — MIT              https://github.com/besteon/Ironmon-Tracker
   Used as the source of truth for tracker constants and as a specification.
 
+Sannji (mollo010) / Ironmon-gen-tracker - MIT   https://github.com/mollo010/Ironmon-gen-tracker
+  The Gen 1 IronMON tracker for Red, Blue and Yellow, a fork of besteon's
+  Ironmon-Tracker. Its LICENSE.txt is the MIT licence as the fork carries it,
+  "Copyright 2022-2023 Besteon". tracker-gba's Gen1Tracker follows its
+  addresses and rules, and the Gen 1 move summaries, weights and evolutions in
+  tracker-gba/src/main/resources/gen1 are taken from its data files
+  (tools/extract_gb_data.py). Used as a specification, as besteon's is.
+
+seadogstingray / Ironmon-gen-2-tracker - MIT   https://github.com/seadogstingray/Ironmon-gen-2-tracker
+  The Gen 2 IronMON tracker for Crystal, a fork of the Gen 1 tracker above. Its
+  LICENSE.txt is the same MIT licence, "Copyright 2022-2023 Besteon".
+  tracker-gba's GbcTracker follows its addresses and rules, and the Gen 2 move
+  summaries, weights and evolutions in tracker-gba/src/main/resources/gen2 are
+  taken from its data files (tools/extract_gb_data.py).
+
+UTDZac / CalcAtk-IronmonExtension - MIT       https://github.com/UTDZac/CalcAtk-IronmonExtension
+  Calc Atk, the Gen 3 tracker extension that works out an opponent's attacking
+  stat from the damage it did. Ported to Kotlin as tracker-gba's CalcAtk.kt and
+  checked against the extension's own Lua on 4,000 cases
+  (tools/parity/calcatk_fixture.py). Credited on the About screen.
+
+Fellshadow / Ironmon-Tracker-AutoPokemonThemes - MIT
+  https://github.com/Fellshadow/Ironmon-Tracker-AutoPokemonThemes
+  The Gen 3 tracker extension that themes the tracker after your Pokemon. Its
+  theme codes are read from the extension's own loader by
+  tools/trainer-data/convert_autothemes.py. The DS themes are the NDS tracker's
+  own (GPL-3.0, below). Credited on the About screen.
+
+UTDZac / SpriteIsMe-IronmonExtension - MIT    https://github.com/UTDZac/SpriteIsMe-IronmonExtension
+  Sprite Is Me, the Ironmon Tracker extension that turns your character into your lead Pokemon
+  (v1.4, read 2026-09-28; its LICENSE is "Copyright (c) 2023 UTDZac"). "Play as your Pokemon"
+  follows its behaviour: the lead's Walking Pals sheet over the player out of battle, walk frames
+  while stepping, sleep after 55 seconds idle or when the lead sleeps, faint at 0 HP, a Pokemon
+  picked or a default when there is no lead, and a custom sprite with its own frame size and frame
+  lengths. None of its files is used. Its optional invisible-trainer patch
+  (FRLG_Invisible_Trainer_-_Maple_Compatible.ips) is NOT shipped or applied: the trainer is hidden
+  through the game's own OAM buffer instead (libretrodroid/src/main/cpp/sprite_core.h). Credited
+  on the About screen.
+
+UTDZac / DeathQuotes-IronmonExtension - MIT   https://github.com/UTDZac/DeathQuotes-IronmonExtension
+  Death Quotes, the Gen 3 tracker extension that lets the player change the lines the
+  Game Over screen shows (v1.1, last commit 2023-12-05), read 2026-09-29. Its LICENSE is
+  the MIT licence, "Copyright (c) 2023 UTDZac". The extension has no lines of its own: it
+  keeps the tracker's list and lets the player edit it, so the built-in lines here stay
+  the tracker's (besteon's Languages/English.lua GameOverScreenQuotes, in PcTracker.kt).
+  The idea is written again in Kotlin as DeathQuotes.kt, with the player's own lines kept
+  in prep/death-quotes.txt, which Backup carries; none of its Lua is used. Credited on
+  the About screen.
+
+rcheevos - MIT                                RetroAchievements/rcheevos
+  ** VENDORED IN THIS REPO ** at libretrodroid/src/main/cpp/rcheevos, with its
+  LICENSE ("Copyright (c) 2018 RetroAchievements.org"). RetroAchievements support.
+
+Gambatte libretro core - GPL-2.0              libretro/gambatte-libretro
+  Prebuilt .so per ABI in app/src/main/jniLibs: the Game Boy and Game Boy Color
+  core. No Gambatte files are modified.
+
+Press Start 2P - SIL Open Font License 1.1    CodeMan38
+  app/src/main/res/font/press_start_2p.ttf, the app's pixel font.
+
+PMD Sprite Collab - CC BY-NC 4.0              https://sprites.pmdcollab.org
+  The animated Pokemon of the Walking Pals icon set, by the collab's artists.
+  Credited on the About screen. Non-commercial: the app is free.
+  Gen 1-3 (app/src/main/assets/walkingpals) as Ironmon-Tracker ships them. Gen 4-9 and the
+  Nat. Dex forms (app/src/main/assets/walkingpals-nat) straight from
+  github.com/PMDCollab/SpriteCollab by tools/trainer-data/convert_walking_pals_nat.py, which
+  writes each sheet's artists and the licence of each contribution into
+  walkingpals-nat/credits.tsv. Sheets credited to CHUNSOFT are Spike Chunsoft's own sprites
+  from the Mystery Dungeon games, outside the collab's licence, as most of the Gen 1-3 set is.
+
 LibretroDroid 0.13.2 — GPL-3.0                Swordfish90/LibretroDroid
   ** VENDORED IN THIS REPO ** at libretrodroid/, with its LICENSE, plus the IronMON
   One memory-read patch (SET_MEMORY_MAPS capture + readMemory JNI), each change
@@ -110,6 +202,10 @@ NDS-Ironmon-Tracker (Brian0255) - GPL-3.0   Brian0255/NDS-Ironmon-Tracker
   tracker-nds come from this project's MemoryAddresses.lua and GameConfigurator
   .lua, read 2026-08-30. It is Lua for BizHawk and cannot run inside an APK, so
   tracker-nds is a Kotlin port of its knowledge, not a replacement for it.
+  Black 2 and White 2 are read through the one pointer that project's 6.3.11 uses
+  (commit 4a45e1aa, 2026-09-26, read 2026-09-29): its MAIN_POINTER and
+  POINTER_OFFSETS are NdsPointerOffsets, checked against the file by
+  NdsAddressAuditTest.
   GPL-3.0 is this app's own licence.
 
 melonDS libretro core — GPL-3.0               melonDS-emu/melonDS
@@ -128,7 +224,9 @@ Swordfish90/RadialGamePad — GPL-3.0          (compatible; this app is GPL-3.0)
 BUNDLED IN THE APK (personal builds)
 ------------------------------------
 
-  app/src/main/assets/patches/   natdex-emerald.bps, natdex-firered.bps
+  app/src/main/assets/patches/   natdex-emerald.bps, natdex-firered.bps, and the
+                                 IronMON mode patches listed under IRONMON MODE
+                                 PATCHES AND SETTINGS below
   app/src/main/assets/types/     19 type icons, DRAWN BY THIS PROJECT
                                  (tools/draw_icons.py) since 2026-09-06; the
                                  tracker repositories' copies are no longer used
@@ -136,6 +234,13 @@ BUNDLED IN THE APK (personal builds)
   app/src/main/assets/badges/    112 badge icons, same: tools/draw_icons.py.
                                  Numbered medals in a colour per set, not the
                                  games' badge designs
+  app/src/main/res/mipmap-*/ic_launcher_foreground.png  the app icon, from the
+                                 master Blake Porterfield supplied on 2026-10-01
+                                 (tools/icon/kaizocore-icon-master.webp), the ball
+                                 cut from its background and centred on white by
+                                 tools/icon/make_launcher_icon.py
+  app/src/main/assets/icons/heart.png  the DS heals box's Pokecenter heart, 12x10,
+                                 from Brian0255/NDS-Ironmon-Tracker (images/icons)
   app/src/main/assets/gen4sprites/  986 Pokemon sprites (493 + shiny), from
                                  Brian0255/NDS-Ironmon-Tracker
                                  (images/pokemonIconSets/hgsssprites).
@@ -160,8 +265,16 @@ BUNDLED IN THE APK (personal builds)
                                  Bundled because the Nat. Dex ROMs publish no
                                  front-pic table address, so there is nothing to
                                  decode and every card rendered blank.
-  app/src/main/assets/presets/   FRLG Kaizo, RSE Kaizo, RSE NatDex v1.2 Kaizo,
-                                 FRLG NatDex v1.2 Kaizo, DPPt Kaizo (Gen 4)
+  app/src/main/assets/frlg/      7 FireRed and LeafGreen dungeon guide maps (maps/),
+                                 lossless WebP copies of the source PNGs, by Bill Greenwald (doctrDNA)
+                                 from IronMon Emu, used with permission (see the ironmon_emu
+                                 entry above). SOURCE.txt lists each file's original name and
+                                 SHA-256. Shown from the Gen 3 tracker on FireRed and LeafGreen
+                                 only (FrlgPictures.kt). They show the games' own art, which is
+                                 Nintendo's, so the note on Pokemon artwork below covers them too.
+  app/src/main/assets/presets/   74 settings files: every IronMON mode the app
+                                 offers, listed with their sources under IRONMON
+                                 MODE PATCHES AND SETTINGS below
 
   These ship inside the APK so a fresh install can patch and randomize with no
   file hunting. The patches are extracted on demand, the presets on first run,
@@ -180,15 +293,183 @@ BUNDLED IN THE APK (personal builds)
   in writing (record it above, the way the first one is recorded) or remove
   these assets and go back to one-time import. Condition 3 still holds
   regardless: no ROM is bundled, only patches. **
+  2026-09-28, Blake: "we have all licensing." See condition 7.
 
-  The two vanilla GBA Kaizo presets are the official IronMON settings published
-  in UTDZac's public gist for players to use.
+  The settings files and their sources are listed under IRONMON MODE PATCHES AND
+  SETTINGS below. (Until 2026-09-29 "DPPt Kaizo.rnqs" was the DS tracker's
+  DiamondPearlPlatinum_Kaizo.rnqs, from Brian0255/NDS-Ironmon-Tracker, GPL-3.0,
+  and "RSE Kaizo.rnqs" the Gen 3 tracker's; both are now generated from the
+  settings page, and the old copies stay as test fixtures in
+  app/src/test/resources/presets-before/.)
 
-  "DPPt Kaizo.rnqs" is DiamondPearlPlatinum_Kaizo.rnqs, copied unmodified from
-  Brian0255/NDS-Ironmon-Tracker (ironmon_tracker/settings/). That project is
-  GPL-3.0 and the file is a randomizer settings string published for players to
-  use, not game content. It is bundled for the same reason as the others: so a
-  fresh install can start a Gen 4 run without hunting for a file.
+
+IRONMON MODE PATCHES AND SETTINGS (bundled in the APK)
+------------------------------------------------------
+
+  What each IronMON mode needs, bundled so a player can pick the mode and play.
+  Blake, 2026-09-28: "we have all licensing." Each is credited here and on the
+  About screen. None is game content, and no ROM is bundled.
+
+The official IronMON settings (presets named "<game> <mode>.rnqs")
+https://gist.github.com/UTDZac/a147c497424dfbd537d8c4b0c22b5621
+
+  UTDZac's "Official IronMon Randomizer Settings" gist, revision ebe53603
+  (2026-07-05), the settings for iateyourpie's rulesets (rules:
+  https://gist.github.com/valiant-code/adb18d248fa0fae7da6b639e2ee8f9c1, rules
+  last changed 2025-02-23). Every official preset is generated from the page's own
+  string by tools/upr-settings (parse_gist.py, then PresetGenerator through ZX
+  4.6.1's reader, read back and compared), including Gen 1's "RBY PART 2.rnqs"
+  and the 60% levels pre-passes (the page's +6% strings for Emerald and for Gold,
+  Silver and Crystal). "FRLG Kaizo.rnqs" is the Gen 3 tracker's file
+  (besteon/Ironmon-Tracker, MIT) and loads identical to the page's string. Written
+  on this branch, SHA-256:
+    75152cfe9c7d404449cab9068ec812bfb20ed91bf532e16bee9a267059c36dfa  RSE PRE-PASS.rnqs
+    15923488608668f3f19dbeb45bb5672e94ff1c212ed6dabe828643e8ef1530f6  GSC PRE-PASS.rnqs
+    645c402a1088296e7bb46b7dc978c22eb54c970ff01ca52e0e8857a1e460281c  RSE Kaizo.rnqs
+    c5d9259cefff72eef18a4e3d05d405997a999dd494c82068d8f1d4b2f9f0cab0  DPPt Kaizo.rnqs
+  The rules text (app/src/main/assets/rulesets/) is generated from these gists and
+  the community rulesets' sources by tools/rules/build_rules.py.
+
+The pseudo-fluctuating growth patches (Red, Blue, Yellow, Gold, Silver, Crystal)
+https://www.stealmylyrics.com/kaizo/patch/
+
+  The Kaizo run site's patch page, which the settings page links for Gen 1 and
+  Crystal: each game's Medium Slow growth entry becomes a fluctuating-like curve,
+  so the official settings keep a Pokemon from evolving into a legendary. The
+  page names no author. Each bundled file is byte for byte the page's download
+  (checked 2026-09-29), SHA-256:
+    6caa9d020086b70edbfd4f726afbe64395d4aef731164d6151663cc77458b025  pseudofluct-red-u.bps     (pokered_pseudofluctuating.bps)
+    82a0f39938133f69b82da30aef986f4c9c6611cae18969f6cafa0b063294793f  pseudofluct-blue-u.bps    (pokeblue_pseudofluctuating.bps)
+    b1613563d4179f0509778d1fd57a86716aa41e99375d4a7188b1bfdf204cd803  pseudofluct-yellow-u.bps  (pokeyellow_pseudofluctuating_v1.bps)
+    24a739c28529985c1d8011655a73d155669c88e4dc48af8b63db7c9474510e27  pseudofluct-gold-u.bps    (pokegold_pseudofluctuating.bps)
+    a6182c49415029f36da7ea27d4205f869e7348ca07f174b7906a53b160fb5a79  pseudofluct-silver-u.bps  (pokesilver_pseudofluctuating.bps)
+    16c33f118922b5e659f89c13c9da8a573948411333018c85923937815fb90b0e  pseudofluct-crystal-u.bps (pokecrystal_pseudofluctuating.bps, Crystal 1.0)
+
+tom-overton / pokefirered, Smart AI for FireRed and LeafGreen
+https://github.com/tom-overton/pokefirered/releases/tag/smart-ai-v2
+
+  "All Trainers Have Smart AI" v2 (2024-03-15), the Super Kaizo README's FireRed
+  and LeafGreen patch. Byte for byte the release's assets, SHA-256:
+    446e2e14a4a046d951a41f134f10ccc815b2d360bcf8217fcd6832ea8e33f70f  smartai-firered-u-v10.ips (Fire.Red.US.v1.0.All.Trainers.Have.Smart.AI.ips)
+    b9c32086493b204d0ebcefec5dfc71929f488fcab855dbd4e8e1ea1c21d93335  smartai-leafgreen-u.ips   (Leaf.Green.US.v1.0.All.Trainers.Have.Smart.AI.ips)
+  The release also has FireRed 1.1 and LeafGreen 1.1 builds, not bundled: the app
+  has no FireRed 1.1 Smart AI kind and no LeafGreen 1.1 dump.
+
+CyanSMP64 / Emerald_Smart_AI, Smart AI for Emerald
+https://github.com/CyanSMP64/Emerald_Smart_AI/releases/tag/smart-ai
+
+  "smart-ai" (v1, 2024-03-21), the release the Super Kaizo README links: every
+  trainer's AI set to Check Bad Move, Try To Faint and Check Viability. By
+  CyanSixFour (CyanSMP64). Byte for byte the release's asset, SHA-256:
+    d00fa192944fe02c5411791a3559f286f7caa0c655074aa1410068b217fb1137  smartai-emerald-u.ips (Emerald.US.All.Trainers.Have.Smart.AI.ips)
+
+PyroMikeGit / SuperKaizoIronMON, HeartGold Super Kaizo
+https://github.com/PyroMikeGit/SuperKaizoIronMON/releases/tag/v0.0.3
+
+  Heart Gold Super Kaizo v0.0.3 (2025-05-06): the HeartGold quality-of-life patch,
+  smart AI for every trainer, a Celebi that sets the Bug-Catching Contest day, a
+  contest Smoke Ball. The Limiter build (original frame rate) is bundled, byte for
+  byte, SHA-256:
+    1200affa1c5961ba8ffb3b9f2c4435790155a26f1acc1badc45332ecaa62172a  superkaizo-heartgold-u.xdelta (SuperKaizoHGPyroIronMONV0.0.3Limiter.xdelta)
+  The Super Kaizo rules themselves are the repository's README (iateyourpie's
+  ruleset, maintained by PyroMikeGit and UTDZac).
+
+DrMaple / Faster-Emerald
+https://github.com/DrMaple/Faster-Emerald/releases
+
+  Faster Emerald, DrMaple's quality-of-life patch, in both of its current builds,
+  byte for byte the releases' assets, SHA-256:
+    32288c7460f941412fdeae0fe6b4014617764e9ffb1a8e623409c61c5cbec6f7  faster-emerald-u.ups    (release 1.3.2, 2026-06-24, Faster.Emerald.v1.3.2.-.The.Friendship.and.Xs.Update.ups)
+    227b58adae30241d680ab4542d69ecf2eaf81b2741000a1a5cf124d66f602588  faster121-emerald-u.ips (release 1.2.1, 2023-06-01, Faster.Emerald.v1.2.1.-.The.Bike.Update.ips)
+  1.3.2 carries "the 6% level increase": applied to the pinned dump, its trainer and
+  wild levels equal the settings page's 60% pre-pass run on the clean dump, in every
+  slot (PrePassLevelsTest), so the app runs no pre-pass on that build.
+
+SilverstarStream / faster_black2_white2
+https://github.com/SilverstarStream/faster_black2_white2/releases/tag/v1.0
+
+  Faster Black 2 / White 2 v1.0 (2026-09-27): cutscenes removed, made for the ZX
+  randomizer, and a skipPWT build that also skips the Driftveil tournament. The four
+  xdelta files of the release's BW2_Faster.zip, byte for byte, SHA-256:
+    9b75baae3d4bf3f49702366b88e025f94e8857aedfbc4eb6a1cc685f93adbf98  faster-black2-u.xdelta    (B2_Faster.xdelta)
+    3bce79ac47501e4e351fc7e2b6454e797368d0827f3f9ead96ff44b39e822da0  fasterpwt-black2-u.xdelta (B2_Faster_skipPWT.xdelta)
+    6ca59dfed6c0195992fa6f465522c77c602f965635c8fd393494d36cfa04f03d  faster-white2-u.xdelta    (W2_Faster.xdelta)
+    fa22c692c83fae15b6bf9d8709f666951709c0ffd7e297ab260c626c6819c8cd  fasterpwt-white2-u.xdelta (W2_Faster_skipPWT.xdelta)
+
+SentorG / PlatinumSuperKaizo
+https://github.com/SentorG/PlatinumSuperKaizo/releases/tag/v1.0
+
+  Platinum Super Kaizo IronMON v1.0 (2025-02-05), the patch the Super Kaizo
+  README links for Platinum: every trainer's AI flags set to smart, the Great
+  Marsh binoculars, intro and dialogue cuts. Made by SentorG, with PyroMike,
+  Arex, Champred (binoculars, smart AI flags), Toxxxyn and devbotman, per its
+  README. For Platinum 1.0 only. The plain build is bundled, unmodified:
+  Platinum.Super.Kaizo.IronMON.xdelta (not FLX, not Snowy) as
+  app/src/main/assets/patches/superkaizo-platinum-u.xdelta, 22,894,434 bytes,
+  sha256 3d0343e5c19645170f77957fa8dea4ede2c79b221e9ce0e2ce3271bb2fbb1290.
+  Offered on Library, Set up a game, for Platinum (RomKind.PLATINUM_SUPERKAIZO).
+
+CyanSMP64 / NatDexExtension, the Nat. Dex v1.2 settings files
+https://github.com/CyanSMP64/NatDexExtension/tree/v1.2.1/natdex/rnqs_files
+
+  All twenty of release v1.2.1's settings files (2026-06-29), ten modes for
+  FireRed and ten for Emerald, byte for byte as the tag holds them. Two (the
+  Kaizo pair) were bundled before; the other eighteen since 2026-09-29. By
+  CyanSixFour (CyanSMP64). SHA-256:
+    98d224f8a74b3ddbcf4f69b67bcb6e249d2d129031bcde7745d4a9842b5492e8  FRLG NatDex v1.2 Chaos Kaizo.rnqs
+    98608153d543ee7cf61b38b5271ff13fb33ec57d3a21c126c07e1c51a995b442  FRLG NatDex v1.2 Evo Kaizo.rnqs
+    89ba3619b0d6b1b05a316ab6a3d4bb4da0feea3420c2024c42c3fa9917437056  FRLG NatDex v1.2 Ironmon Journey.rnqs
+    047cc38f186bf1e86ba639678bfa182379f96d2ee21821f83d3443fba99c6ac8  FRLG NatDex v1.2 Kaizo Doubles.rnqs
+    d147056e5b590b2b666fdddb2fc535bef8ef8ffee5218a245f42ea37d8502693  FRLG NatDex v1.2 Kaizo.rnqs
+    e4c0845f8768ade40fbef79e14dbcdcab79216093753d5277b32b303cbed27c4  FRLG NatDex v1.2 Standard.rnqs
+    6197dcd1f0272b6718afb97c48ef96bc557bb34985fabbf9b65a5a02b79cf310  FRLG NatDex v1.2 Super Kaizo.rnqs
+    9311c4edcd52b18bf2a1383760629893c42d8bda6e04f71a9fdc4aea632604a0  FRLG NatDex v1.2 Survival Revival.rnqs
+    17b35f4db2689ab4321d475773d8f43cb704c7174825cc72a5ccfa69cfb3bda5  FRLG NatDex v1.2 Survival.rnqs
+    9d8b47a60b49129b3cbc26dfa8498bf3b3ed1a4e7e3e946b64cb2ccd104f6b03  FRLG NatDex v1.2 Ultimate.rnqs
+    e09a8db8499cda7eb107854602db409598cab957d771e233a9284960d8647761  RSE NatDex v1.2 Chaos Kaizo.rnqs
+    1b9fce02511f30313109afcc17dfa2919d74874d9e8d18a7dfcbe007dca42891  RSE NatDex v1.2 Evo Kaizo.rnqs
+    f42d30291ecd389ecbc935849b5a00d33bd61c0e596caee5da52cde7d972c4de  RSE NatDex v1.2 Ironmon Journey.rnqs
+    74d87ea5cc7ced08d9c1a8db6f02414ff9c17de75d309163f187ef4cae8a81be  RSE NatDex v1.2 Kaizo Doubles.rnqs
+    1ef1b861a7d0c3fc4b6ff5e653a34ba9877608f822d80534d1e837a449b7c83f  RSE NatDex v1.2 Kaizo.rnqs
+    7234c10e8553cc9b2334c58e5691197a7173e39d03710a82e9491fac919400ab  RSE NatDex v1.2 Standard.rnqs
+    85e9d82e79004af16a41b23a92565af620f002e51cf1c2614765144b8d0df812  RSE NatDex v1.2 Super Kaizo.rnqs
+    5eff8174f6a7a43dbe01f6f63420f94c3fa869c27c2b81d1bf3919c51245a843  RSE NatDex v1.2 Survival Revival.rnqs
+    c2765881e2060f471fe38b2c666b58d866375c925c7c074831e1a139309bd3a3  RSE NatDex v1.2 Survival.rnqs
+    685d5933358eaebfe9a099b35cc1e815d9eaa543cca1fc14e3f74d3f0544cf0b  RSE NatDex v1.2 Ultimate.rnqs
+
+The community rulesets' settings (IronMON Journey, Chaos Kaizo, Evo Kaizo, Survival Revival)
+
+  Each generated from the ruleset's own published settings string by
+  tools/upr-settings (parse_community.py, then PresetGenerator through ZX
+  4.6.1's own reader, read back and compared option by option), the way the
+  official presets are. The sources are saved in tools/upr-settings/community/.
+  - IronMON Journey, strings by UTDZac for PappyQC's ruleset:
+    https://gist.github.com/UTDZac/7c51734eed353779f1653217413dd05e (revision
+    9314ebb1, 2026-02-17). Rules: https://gist.github.com/PappyQC/b9e28068ba4abbbdf191dd33625b737d
+    (revision fea31541, 2026-02-23). X/Y and Omega Ruby/Alpha Sapphire left out.
+  - Chaos Kaizo, by UTDZac: https://gist.github.com/UTDZac/c8c3a84553840f8eabb063be80a33ee7
+    (revision 22dbe34f, 2023-09-20).
+  - Evo Kaizo: https://pastebin.com/puyAqPyt (names no author; linked by the
+    Nat. Dex Extension's v1.2.0 changelog).
+  - Survival Revival, by SaltyDolphin and Reimi:
+    https://github.com/Reimittv/SurvivalRevivalIronMON (README at commit
+    3fec370d, 2026-02-21, the current string). That string was written by
+    something-smart/ironmon-randomizer (https://github.com/something-smart/ironmon-randomizer,
+    "IM-2.3"), which keeps 8 more settings bytes than ZX: its 64-bit misc
+    tweaks again, here the same tweaks as ZX's own field and none of its own.
+    ZX 4.6.1 reads every setting and misses only the ROM name; the bundled
+    file carries the name where that tool keeps it ("Fire Red (U) 1.1").
+  SHA-256 of the files written:
+    6bda58152f0c3be277a4e0ed2b7acbc9a3ad1d900d44ab2184ccd6753b0020e5  FRLG Ironmon Journey.rnqs
+    b0405a13c2ee33c60827caeceaef5bb1e6f209b8e0693bb83058a17a2f84a6f9  RSE Ironmon Journey.rnqs
+    bee1b0c200aba738b54666fc5d662efec05de72d54e682a0822f6a2457134dfb  HGSS Ironmon Journey.rnqs
+    16032d6e3c52b73cc539427ae18d69f6bad2f20255332b8303ca26c2141c9cea  DPPt Ironmon Journey.rnqs
+    50d3b235f1cdac24b9a7b3eb8111aae4bbc4e02d86417998fa620a75850a1dd8  BW Ironmon Journey.rnqs
+    649bd1006b2e3b4d3fb638861ddb0ae2c042176e71a3d6f7402052dd8e8c8711  B2W2 Ironmon Journey.rnqs
+    b5377da9e392b56905594f266b846ffae161878f0f85ca285223cc15deabb98e  FRLG Chaos Kaizo.rnqs
+    db3a159f5e6aa90237cf9ee4963c5f26eb7a35f52c91b83c419e7219608b0d59  RSE Chaos Kaizo.rnqs
+    6a42a186b6bb1acf48ed119b0ebd97b3cb860ad1fa4c3d10eb56861f0da1b809  FRLG Evo Kaizo.rnqs
+    d36b87793483ad3e7a94a60d744703d106987d1e59b853d32068289a8b6eb48c  FRLG Survival Revival.rnqs
 
 
 BINDING RELEASE CONDITIONS — verify every one before any public build
@@ -204,13 +485,19 @@ BINDING RELEASE CONDITIONS — verify every one before any public build
        unaffiliated and unendorsed. A disclaimer line satisfies this regardless of
        the final name.
 [ ] 5. Vendored randomizer stays GPL-3.0 with copyright notices intact.
-[ ] 6. ironmon_emu grant wording captured above, or nothing of theirs is used.
+[~] 6. ironmon_emu grant wording captured above, or nothing of theirs is used.
+       2026-09-29: the FireRed and LeafGreen pictures ARE used, on the author's permission as
+       reported; his words are not captured above yet. No code of his is used.
 [~] 7. Bundled Nat. Dex .bps/.rnqs assets: grant extended in writing, or assets
        removed and one-time import restored. See BUNDLED IN THE APK above.
        2026-09-23: Blake says "cyan is cool with it". Reported, not captured: the
        wording and scope are written down nowhere, the way the first grant is quoted
        at the top of this file. Blake's call on his own risk. Paste Cyan's actual
        words here when they are to hand.
+       2026-09-28: Blake, on every bundled patch and settings file: "we have all
+       licensing." Also reported, not captured in the holder's own words.
 [ ] 8. Faster FireRed (faster-firered-u-v11.ips) ships with NO permission, by
        Blake's decision of 2026-09-23. See the DrMaple entry above. The credit and
        link in the About screen and the README must stay.
+       2026-09-28: Blake: "we have all licensing." The same holds for every mode
+       patch listed under IRONMON MODE PATCHES AND SETTINGS: credit and link stay.

@@ -1,0 +1,33 @@
+TEXT:
+Controls
+Backup and info
+B
+Z
+L
+A
+R
+S
+Start
+Enter
+Select
+R-Shift
+Emulator actions
+Give a pad button or key to an action. It stops being a game button until unbound.
+Quick save
+unbound
+Quick load
+unbound
+Fast forward (hold)
+unbound
+Open save states
+unbound
+Rewind (hold)
+unbound
+Reset to defaults
+Home
+Play
+Library
+More
+
+CONTENT DESCRIPTIONS:
+

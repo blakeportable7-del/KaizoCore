@@ -16,6 +16,7 @@
  */
 
 #include <jni.h>
+#include "sprite_overlay.h"   // KaizoCore: Play as your Pokemon
 
 #include <EGL/egl.h>
 
@@ -45,6 +46,13 @@
 #include "utils/rect.h"
 #include "errorcodes.h"
 #include "vfs/vfs.h"
+#include "streamtap.h"
+
+// KaizoCore patch (2026-09-29): streamtap.h repeats these three values so that it
+// need not include libretro.h. A change upstream would fail the build here.
+static_assert(libretrodroid::StreamTap::FORMAT_0RGB1555 == RETRO_PIXEL_FORMAT_0RGB1555, "stream tap format id");
+static_assert(libretrodroid::StreamTap::FORMAT_XRGB8888 == RETRO_PIXEL_FORMAT_XRGB8888, "stream tap format id");
+static_assert(libretrodroid::StreamTap::FORMAT_RGB565 == RETRO_PIXEL_FORMAT_RGB565, "stream tap format id");
 
 namespace libretrodroid {
 
@@ -153,7 +161,27 @@ bool LibretroDroid::unserializeState(int8_t *data, size_t size) {
     // lifecycle destroyed the core). A null core answers empty, never faults.
     if (core == nullptr) return false;
 
-    return core->retro_unserialize(data, size);
+    // KaizoCore patch (2026-09-30): loading a state never changes the in-game
+    // save. Gambatte keeps cartridge RAM inside every state, so a state from
+    // before the last in-game save brought the older save back, and the app's
+    // SRAM flush then wrote it over the newer one. The battery save in memory
+    // before the load is put back after it, which is what mGBA does by itself
+    // (its retro_unserialize loads SAVESTATE_RTC only, never SAVESTATE_SAVEDATA).
+    // A core that exposes no save RAM here (melonDS) is guarded in the app.
+    size_t sramSize = core->retro_get_memory_size(RETRO_MEMORY_SAVE_RAM);
+    auto* sramBefore = static_cast<uint8_t*>(core->retro_get_memory_data(RETRO_MEMORY_SAVE_RAM));
+    std::vector<uint8_t> keptSram;
+    if (sramBefore != nullptr && sramSize > 0) keptSram.assign(sramBefore, sramBefore + sramSize);
+
+    bool loaded = core->retro_unserialize(data, size);
+
+    if (loaded && !keptSram.empty()) {
+        auto* sramAfter = static_cast<uint8_t*>(core->retro_get_memory_data(RETRO_MEMORY_SAVE_RAM));
+        if (sramAfter != nullptr && core->retro_get_memory_size(RETRO_MEMORY_SAVE_RAM) == keptSram.size()) {
+            memcpy(sramAfter, keptSram.data(), keptSram.size());
+        }
+    }
+    return loaded;
 }
 
 JNIEXPORT jboolean JNICALL LibretroDroid::unserializeSRAM(int8_t* data, size_t size) {
@@ -414,6 +442,7 @@ void LibretroDroid::loadGameFromPath(const std::string& gamePath) {
         game_info.size = 0;
     } else {
         struct Utils::ReadResult file = Utils::readFileAsBytes(gamePath);
+        gameData.reset(file.data);  // LOCAL MODIFICATION (KaizoCore): freed in destroy(), see the header
         game_info.data = file.data;
         game_info.size = file.size;
     }
@@ -484,6 +513,7 @@ void LibretroDroid::loadGameFromVirtualFiles(std::vector<VFSFile> virtualFiles) 
         game_info.size = 0;
     } else {
         struct Utils::ReadResult file = Utils::readFileAsBytes(firstFileFD);
+        gameData.reset(file.data);  // LOCAL MODIFICATION (KaizoCore): freed in destroy(), see the header
         game_info.data = file.data;
         game_info.size = file.size;
     }
@@ -519,6 +549,8 @@ void LibretroDroid::destroy() {
 
     core->retro_unload_game();
     core->retro_deinit();
+    // LOCAL MODIFICATION (KaizoCore): the core is done with the ROM it was given.
+    gameData.reset();
 
     video = nullptr;
     core = nullptr;
@@ -547,6 +579,23 @@ void LibretroDroid::pause() {
     if (audio) audio->stop();
 
     input = nullptr;
+}
+
+// KaizoCore patch (2026-09-30): the debug build's test bot plays frame by frame (lockstep) and needs exactly
+// the frames it asks for. step() paces itself to real time (FPSSync waits, and runs two frames when it is
+// late), which is right for a player and wrong for a bot. This runs exactly `frames` of the core's frames,
+// with no pacing, then draws once. Emulation thread only; nothing in a players' build calls it.
+void LibretroDroid::stepBot(unsigned frames) {
+    std::lock_guard<std::mutex> lock(coreLock);
+    if (core == nullptr || !gameLoaded) return;
+    for (unsigned i = 0; i < frames; i++) {
+        if (framesRun < 1000) framesRun++;
+        core->retro_run();
+        Cheevos::getInstance().doFrame();
+    }
+    if (video && !video->rendersInVideoCallback()) {
+        video->renderFrame();
+    }
 }
 
 void LibretroDroid::step() {
@@ -642,6 +691,7 @@ void LibretroDroid::setSlowMotion(unsigned int divisor) {
 void LibretroDroid::setFrameSpeed(unsigned int speed) {
     frameSpeed = speed;
     updateAudioSampleRateMultiplier();
+    updateStreamAudioRate();
 }
 
 void LibretroDroid::setAudioEnabled(bool enabled) {
@@ -661,6 +711,20 @@ void LibretroDroid::handleVideoRefresh(
     unsigned int height,
     size_t pitch
 ) {
+    SpriteOverlay::apply(data, width, height, pitch);   // KaizoCore: may swap in a copy with the sprite drawn; off = one atomic load
+    // KaizoCore patch (2026-09-29): the stream kit's picture tap. One relaxed load
+    // when nobody streams. It runs BEFORE the renderer, which rewrites 0RGB1555
+    // frames (and, on ES2, XRGB8888 ones) in place. A core that renders through
+    // OpenGL hands over no pixels, so it is skipped; none of the shipped cores
+    // (mGBA, Gambatte, melonDS) does that. See streamtap.h.
+    // The copy is of `data` and `pitch` as they are HERE, so anything an earlier line of this
+    // function composes into them (a scratch frame with something drawn on it) is in the stream
+    // too. Do not cache the core's own buffer anywhere else.
+    if (StreamTap::enabled() && !Environment::getInstance().isUseHwAcceleration()) {
+        StreamTap::getInstance().onFrame(
+            data, width, height, pitch, Environment::getInstance().getPixelFormat());
+    }
+
     if (video) {
         video->onNewFrame(data, width, height, pitch);
 
@@ -671,6 +735,14 @@ void LibretroDroid::handleVideoRefresh(
 }
 
 size_t LibretroDroid::handleAudioCallback(const int16_t *data, size_t frames) {
+    // KaizoCore patch (2026-09-29): the stream kit's sound tap. It sits before the
+    // phone's mute check on purpose: a streamer mutes the phone so it does not
+    // sound twice, and the stream keeps its sound. Slow motion is left out, because
+    // its sound arrives in bursts. See streamtap.h.
+    if (StreamTap::enabled() && slowDivisor == 1) {
+        StreamTap::getInstance().onAudio(data, frames);
+    }
+
     if (audio && audioEnabled) {
         audio->write(data, frames);
     }
@@ -755,7 +827,25 @@ void LibretroDroid::afterGameLoad() {
 
     updateAudioSampleRateMultiplier();
 
+    // KaizoCore patch (2026-09-29): what the stream kit tags its sound with. On a
+    // vsync-paced display the core runs one retro_run per vsync, so its sound
+    // arrives at rate * (screen refresh / content fps), not at the nominal rate
+    // (getTimeStretchFactor is content / screen there, and 1.0 otherwise).
+    {
+        const double stretch = fpsSync->getTimeStretchFactor();
+        streamBaseRate = system_av_info.timing.sample_rate / (stretch > 0 ? stretch : 1.0);
+    }
+    updateStreamAudioRate();
+    StreamTap::flushAudio();
+
     defaultAspectRatio = findDefaultAspectRatio(system_av_info);
+}
+
+void LibretroDroid::updateStreamAudioRate() {
+    // Fast-forward runs the core several times per vsync, so its sound arrives
+    // that many times faster.
+    const unsigned speed = frameSpeed > 0 ? frameSpeed : 1;
+    StreamTap::setAudioRate((int) std::lround(streamBaseRate * speed));
 }
 
 float LibretroDroid::findDefaultAspectRatio(const retro_system_av_info& system_av_info) {

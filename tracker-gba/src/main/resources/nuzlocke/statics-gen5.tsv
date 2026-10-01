@@ -1,0 +1,79 @@
+# Statics for the Generation 5 games (2026-09-29): wild battles that are NOT the first encounter of their area.
+#
+# A wild battle at that place at exactly that level counts as a static (a set battle), not the area's first
+# encounter: legendaries and weekday Pokemon standing in the overworld, the Zen Mode statues, item balls that
+# are Pokemon. One row per game, place and level. species is the vanilla species (a randomized game changes the
+# species, the place and level stay). Gifts, eggs, fossils, trades and roamers are not here: they are not
+# battles or have no fixed place (the research doc's Tornadus and Thundurus roam, Zoroark and Zorua are gifts).
+#
+# game: bw = Black and White, b2w2 = Black 2 and White 2. Black 2 and White 2 were both read and no level differs;
+# Black could not be read and the research doc gives no version difference for these levels, so no row uses a
+# single-game key. place: spelled exactly as the DS tracker names the area (gen5/locations-bw.tsv,
+# gen5/locations-b2w2.tsv); a room inside a bigger area is shown by the tracker under the parent's name.
+#
+# Sources. Where each static keeps its species and level: the Universal Pokemon Randomizer ZX ini
+# (engine-zx gen5_offsets.ini, StaticPokemon and StaticPokemonFakeBall). Every level, every species and every
+# place was read out of clean ROMs: Black 2 and White 2 (they agree) and, for bw, a White (US) ROM, since Black
+# has no dump on this machine. The place is the zone the script or map file belongs to, turned into a tracker
+# area the way the tracker does it (the zone's own table entry, else its parent's). The research doc
+# (docs/research/nuzlocke-gen4-5.md 4.3 and 5.3) agrees on every level it gives; the fused Kyurem's level 55 and
+# the Foongus and Amoonguss item ball levels are not in it. Statics a game leaves out of its scripts (Tornadus,
+# Thundurus) or that are not battles are left out here.
+# A census of every map file finds exactly the item balls the randomizer lists: Black and White have 2 Foongus at
+# level 20 on Route 6 and 2 Foongus at 30 plus 2 Amoonguss at 40 on Route 10 (the research doc says 3 on Route 6
+# and 2 plus 1 on Route 10); Black 2 and White 2 have 3 at 29 on Route 6, 2 at 36 on Route 7, 2 at 43 on Route 11,
+# 2 at 47 on Route 22 and 3 at 56 on Route 23.
+#
+# Rows dropped on purpose, and rows kept with a species check. A wild battle is matched to a row by place and level (and
+# by species when the row has a sixth column), so a row whose level an ordinary encounter of that area also has would
+# turn ordinary encounters into free statics. Checked in the ROM (all seasons, every zone of the area): the same species
+# at that level in the ordinary tables (dropped: nothing tells the static from the ordinary encounter), or another
+# species at that level in a land table (grass, dark grass, shaking grass; kept, with the species' national dex number
+# as the sixth column, so an ordinary encounter of another species is not taken for it. A randomized game changes the
+# species and does not match those rows).
+#   same species, dropped: bw Route 10 L40 Amoonguss; b2w2 Undella Bay L40 Jellicent; b2w2 Route 6 L29 Foongus; b2w2 Route 7 L36 Foongus.
+#   land table, kept with a dex number: bw Dreamyard L50 Musharna; bw Victory Road L42 Terrakion; b2w2 Route 22 L45 Terrakion; b2w2 Seaside Cave L42 Crustle; b2w2 Route 11 L43 Amoonguss; b2w2 Route 22 L47 Amoonguss; b2w2 Route 23 L56 Amoonguss.
+# Rows kept can still share their level with a surf or fishing encounter, whose tables span wide ranges (fishing
+# is post-game in these games); that residue is accepted.
+#
+# Regenerate: python tools/nuzlocke/gen5_statics.py    Check: python tools/nuzlocke/gen5_statics.py --check
+#
+# game	place	level	species	note	dex (optional)
+bw	Desert Resort	35	Darmanitan	Five Zen Mode statues at the Desert Resort end of Relic Castle; each is a battle once given a Rage Candy Bar
+bw	Dreamyard	50	Musharna	Fridays only, in the basement, after the credits	518
+bw	Relic Castle	70	Volcarona	Deepest floor, after the credits
+bw	Liberty Garden	15	Victini	Needs the Liberty Pass event item, so not reachable in a normal game
+bw	N's Castle	50	Reshiram or Zekrom	The legendary you must catch before N's battle: Reshiram in Black, Zekrom in White
+bw	Dragonspiral Tower	50	Reshiram or Zekrom	The same legendary waits at the top of the tower if it was not caught in N's Castle
+bw	Mistralton Cave	42	Cobalion	Guidance Chamber
+bw	Victory Road	42	Terrakion	Trial Chamber, after Cobalion	639
+bw	Pinwheel Exterior	42	Virizion	Rumination Field; the tracker shows this area as Pinwheel Exterior
+bw	Abundant Shrine	70	Landorus	After the credits; needs Tornadus and Thundurus in the party
+bw	Giant Chasm	75	Kyurem	After the credits
+bw	Route 6	20	Foongus	Item balls that are Foongus, a wild battle when picked up
+bw	Route 10	30	Foongus	Item balls that are Foongus
+b2w2	Route 13	45	Cobalion	Story
+b2w2	Route 13	65	Cobalion	Comes back after the Hall of Fame at a higher level
+b2w2	Route 11	45	Virizion	Story
+b2w2	Route 11	65	Virizion	Comes back after the Hall of Fame at a higher level
+b2w2	Route 22	45	Terrakion	Story; after the Wave Badge and a Colress scene	639
+b2w2	Route 22	65	Terrakion	Comes back after the Hall of Fame at a higher level
+b2w2	Dragonspiral Tower	70	Reshiram or Zekrom	After the credits, with N in the ruins of his castle: Zekrom in Black 2, Reshiram in White 2
+b2w2	Giant Chasm	70	Kyurem	After the credits, once N's dragon is caught
+b2w2	Giant Chasm	55	Kyurem	The fused Kyurem of the story (Black Kyurem or White Kyurem); it cannot be caught
+b2w2	Dreamyard	68	Latios or Latias	After the credits; Latios in Black 2, Latias in White 2; it flees and must be chased
+b2w2	Nacrene City	65	Uxie	After the Cave of Being scene; in front of the museum
+b2w2	Celestial Tower	65	Mesprit	After the Cave of Being scene; on the roof
+b2w2	Route 23	65	Azelf	After the Cave of Being scene
+b2w2	Clay Tunnel	65	Regirock, Regice or Registeel	The three chambers of the Underground Ruins, which the tracker shows as Clay Tunnel; Regice and Registeel need a key from the other version
+b2w2	Twist Mountain	68	Regigigas	Needs Regirock, Regice and Registeel in the party
+b2w2	Marvelous Bridge	68	Cresselia	Needs the Lunar Wing from the Strange House; the bridge is post-game
+b2w2	Reversal Mountain	68	Heatran	Needs the Magma Stone from a cliff on Route 18
+b2w2	Route 4	25	Mandibuzz or Braviary	Behind a house, on one weekday only: Thursday in Black 2 (Mandibuzz), Monday in White 2 (Braviary)
+b2w2	Relic Castle	35	Volcarona	Lowest floor, after the Quake Badge
+b2w2	Relic Castle	65	Volcarona	Comes back after the Hall of Fame at a higher level
+b2w2	Seaside Cave	42	Crustle	Blocks the way to the Plasma Frigate until Colress wakes it	558
+b2w2	Nature Preserve	60	Haxorus	Shiny; needs the Permit from Professor Juniper, given after every Unova Pokemon has been seen
+b2w2	Route 11	43	Amoonguss	Item balls that are Amoonguss	591
+b2w2	Route 22	47	Amoonguss	Item balls that are Amoonguss	591
+b2w2	Route 23	56	Amoonguss	Item balls that are Amoonguss	591

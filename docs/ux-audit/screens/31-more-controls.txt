@@ -1,0 +1,33 @@
+TEXT:
+Controls
+Backup and info
+Keys and buttons
+Tap a button, then press the key you want on your keyboard or controller.
+Controller buttons always work as themselves; these bindings are for keyboards and odd pads.
+Up
+Arrow up
+Down
+Arrow down
+Left
+Arrow left
+Right
+Arrow right
+A
+X
+B
+Z
+L
+A
+R
+S
+Start
+Enter
+Select
+R-Shift
+Home
+Play
+Library
+More
+
+CONTENT DESCRIPTIONS:
+

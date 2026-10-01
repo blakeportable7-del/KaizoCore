@@ -1,0 +1,31 @@
+TEXT:
+Kaizo IronMON
+Build your own
+The Pokémon
+Step 4 of 5
+Pokémon Emerald (U)
+Each Pokémon learns its own moves.
+The moves themselves
+How hard, how accurate and how many uses.
+Unchanged
+Random power, accuracy and PP
+Random power, accuracy, PP and type
+Every move keeps its power, accuracy, PP and type.
+TM moves
+The move each TM teaches. HMs are not touched.
+Unchanged
+Random
+Each TM teaches its own move.
+Who can learn TMs and HMs
+Which Pokémon are able to use each one.
+Unchanged
+Random, own types first
+Back
+Next
+Home
+Play
+Library
+More
+
+CONTENT DESCRIPTIONS:
+Back to Home

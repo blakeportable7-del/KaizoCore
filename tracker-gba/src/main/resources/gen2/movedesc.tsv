@@ -1,0 +1,251 @@
+1	Pound	No additional effect. .
+2	Karate Chop	High critical hit ratio. .
+3	DoubleSlap	Hits 2-5 times in one turn. Two: 37.5%, Three: 37.5%, Four: 12.5%, Five: 12.5%. Each hit has a chance to critical or trigger a contact ability.
+4	Comet Punch	Hits 2-5 times in one turn. .
+5	Mega Punch	No additional effect. .
+6	Pay Day	Scatters coins. .
+7	Fire Punch	10% chance to burn the target. .
+8	Ice Punch	10% chance to freeze the target. .
+9	ThunderPunch	Deals damage and has a 10% chance of paralyzing the opponent.
+10	Scratch	No additional effect. .
+11	ViceGrip	Deals damage and has no secondary effect.
+12	Guillotine	Deals 65535 damage. Fails if target is faster. .
+13	Razor Wind	Charges turn 1. Hits turn 2. .
+14	Swords Dance	Raises the user's Attack by 2. .
+15	Cut	No additional effect. .
+16	Gust	No additional effect. .
+17	Wing Attack	No additional effect. .
+18	Whirlwind	No competitive use. .
+19	Fly	Flies up on first turn, then strikes the next turn .
+20	Bind	Prevents the target from moving for 2-5 turns. .
+21	Slam	No additional effect. .
+22	Vine Whip	No additional effect. .
+23	Stomp	30% chance to make the target flinch. .
+24	Double Kick	Hits 2 times in one turn. .
+25	Mega Kick	No additional effect. .
+26	Jump Kick	User takes 1 HP of damage if it misses. .
+27	Rolling Kick	30% chance to make the target flinch. .
+28	Sand-Attack	Lowers the target's accuracy stat by one stage. (100% -> 75% -> 60% -> 50% ...)
+29	Headbutt	30% chance to make the target flinch. .
+30	Horn Attack	No additional effect. .
+31	Fury Attack	Hits 2-5 times in one turn. .
+32	Horn Drill	Deals 65535 damage. Fails if target is faster. .
+33	Tackle	No additional effect. .
+34	Body Slam	30% chance to paralyze the target. .
+35	Wrap	Prevents the target from moving for 2-5 turns. .
+36	Take Down	Has 1/4 recoil. .
+37	Thrash	Lasts 3-4 turns. Confuses the user afterwards. .
+38	Double-Edge	Has 1/4 recoil. .
+39	Tail Whip	Lowers the target's Defense by 1. .
+40	Poison Sting	20% chance to poison the target. .
+41	Twineedle	Hits 2 times. Last hit has 20% chance to poison. .
+42	Pin Missile	Hits 2-5 times in one turn. .
+43	Leer	Lowers the target's Defense by 1. .
+44	Bite	10% chance to make the target flinch. .
+45	Growl	Lowers the target's Attack by 1. .
+46	Roar	No competitive use. .
+47	Sing	Causes the target to fall asleep. .
+48	Supersonic	Causes the target to become confused. .
+49	SonicBoom	Always inflicts exactly 20 HP damage if it hits.
+50	Disable	For 0-7 turns, disables one of the target's moves.
+51	Acid	33% chance to lower the target's Defense by 1. .
+52	Ember	10% chance to burn the target. .
+53	Flamethrower	10% chance to burn the target. .
+54	Mist	While active, user is protected from stat drops .
+55	Water Gun	No additional effect. .
+56	Hydro Pump	No additional effect. .
+57	Surf	No additional effect. .
+58	Ice Beam	10% chance to freeze the target. .
+59	Blizzard	10% chance to freeze the target. .
+60	Psybeam	10% chance to confuse the target. .
+61	BubbleBeam	Deals damage and has a 10% chance of lowering the target's Speed stat by one stage.
+62	Aurora Beam	33% chance to lower the target's Attack by 1. .
+63	Hyper Beam	Can't move next turn if target or sub is not KOed. .
+64	Peck	No additional effect. .
+65	Drill Peck	No additional effect. .
+66	Submission	Has 1/4 recoil. .
+67	Low Kick	30% chance to make the target flinch. .
+68	Counter	If hit by Normal/Fighting move, deals 2x damage .
+69	Seismic Toss	Damage = user's level. Can hit Ghost types. .
+70	Strength	No additional effect. .
+71	Absorb	User recovers 50% of the damage dealt. .
+72	Mega Drain	User recovers 50% of the damage dealt. .
+73	Leech Seed	1/8 of target's HP is restored to user every turn. .
+74	Growth	Raises the user's Special by 1. .
+75	Razor Leaf	High critical hit ratio. .
+76	SolarBeam	Attacks on the 2nd turn after use, or immediately in sunny weather. Half damage in rain or sandstorm.
+77	PoisonPowder	Poisons the target, losing 1/8 of the their max HP at the end of each turn.
+78	Stun Spore	Paralyzes the target. .
+79	Sleep Powder	Causes the target to fall asleep. .
+80	Petal Dance	Lasts 3-4 turns. Confuses the user afterwards. .
+81	String Shot	Lowers the target's Speed by 1. .
+82	Dragon Rage	Deals 40 HP of damage to the target. .
+83	Fire Spin	Prevents the target from moving for 2-5 turns. .
+84	ThunderShock	Deals damage and has a 10% chance of paralyzing the target.
+85	Thunderbolt	10% chance to paralyze the target. .
+86	Thunder Wave	Paralyzes the target. .
+87	Thunder	10% chance to paralyze the target. .
+88	Rock Throw	No additional effect. .
+89	Earthquake	No additional effect. .
+90	Fissure	Deals 65535 damage. Fails if target is faster. .
+91	Dig	Digs underground turn 1, strikes turn 2.
+92	Toxic	Badly poisons the target. .
+93	Confusion	10% chance to confuse the target. .
+94	Psychic	33% chance to lower the target's Special by 1. .
+95	Hypnosis	Causes the target to fall asleep. .
+96	Meditate	Raises the user's Attack by 1. .
+97	Agility	Raises the user's Speed by 2. .
+98	Quick Attack	Usually goes first. .
+99	Rage	Lasts forever. Raises user's Attack by 1 when hit. .
+100	Teleport	Fails when used. .
+101	Night Shade	Damage = user's level. Can hit Normal types. .
+102	Mimic	Random move known by the target replaces this. .
+103	Screech	Lowers the target's Defense by 2. .
+104	Double Team	Raises the user's evasiveness by 1. .
+105	Recover	Heals the user by 50% of its max HP. .
+106	Harden	Raises the user's Defense by 1. .
+107	Minimize	Raises the user's evasiveness by 1. .
+108	SmokeScreen	Lowers the target's accuracy stat by one stage. (100% -> 75% -> 60% -> 50% ...)
+109	Confuse Ray	Confuses the target. .
+110	Withdraw	Raises the user's Defense by 1. .
+111	Defense Curl	Raises the user's Defense by 1. .
+112	Barrier	Raises the user's Defense by 2. .
+113	Light Screen	While active, user's Special is 2x when damaged.
+114	Haze	Resets all stat changes. Removes foe's status. .
+115	Reflect	While active, the user's Defense is doubled .
+116	Focus Energy	Quarters the user's chance for a critical hit. .
+117	Bide	Waits 2-3 turns; deals double the damage taken. .
+118	Metronome	Picks a random move. .
+119	Mirror Move	User uses the target's last used move against it. .
+120	Selfdestruct	The target's Defense is halved, effectively doubling the power of this move.
+121	Egg Bomb	No additional effect. .
+122	Lick	30% chance to paralyze the target. .
+123	Smog	40% chance to poison the target. .
+124	Sludge	40% chance to poison the target. .
+125	Bone Club	10% chance to make the target flinch. .
+126	Fire Blast	30% chance to burn the target. .
+127	Waterfall	No additional effect. .
+128	Clamp	Prevents the target from moving for 2-5 turns. .
+129	Swift	Never misses, even against Dig and Fly.
+130	Skull Bash	Charges turn 1. Hits turn 2. .
+131	Spike Cannon	Hits 2-5 times in one turn. .
+132	Constrict	33% chance to lower the target's Speed by 1. .
+133	Amnesia	Raises the user's Special by 2. .
+134	Kinesis	Lowers the target's accuracy by 1. .
+135	Softboiled	Restores up to 50% of the user's max HP. Can be used outside of battle to transfer 20% of max HP to another Pokemon.
+136	Hi Jump Kick	If the move misses, the user is hurt for 1/2 of the damage it would have dealt.
+137	Glare	Paralyzes the target. .
+138	Dream Eater	User gains 1/2 HP inflicted. Sleeping target only. .
+139	Poison Gas	Poisons the target. .
+140	Barrage	Hits 2-5 times. 37.5% chance for 2 times, 37.5% for 3 times, 12.5% for 4 times, and 12.5% for 5 times. Avg power ~48.
+141	Leech Life	User recovers 50% of the damage dealt. .
+142	Lovely Kiss	Causes the target to fall asleep. .
+143	Sky Attack	Charges turn 1. Hits turn 2. .
+144	Transform	Copies target's stats, moves, types, and species.
+145	Bubble	33% chance to lower the target's Speed by 1. .
+146	Dizzy Punch	No additional effect. .
+147	Spore	Causes the target to fall asleep. .
+148	Flash	Lowers the target's accuracy by 1. .
+149	Psywave	Random damage from 1 to (user's level*1.5 - 1). .
+150	Splash	This move has no effect. .
+151	Acid Armor	Raises the user's Defense by 2. .
+152	Crabhammer	High critical hit ratio. .
+153	Explosion	Target's Def halved during damage. User faints. .
+154	Fury Swipes	Hits 2-5 times in one turn. .
+155	Bonemerang	Hits 2 times in one turn. .
+156	Rest	User sleeps 2 turns and restores HP and status. .
+157	Rock Slide	No additional effect. .
+158	Hyper Fang	10% chance to make the target flinch. .
+159	Sharpen	Raises the user's Attack by 1. .
+160	Conversion	User becomes the same type as the target. .
+161	Tri Attack	No additional effect. .
+162	Super Fang	Damage = 1/2 target's current HP. Hits Ghosts. .
+163	Slash	High critical hit ratio. .
+164	Substitute	User takes 1/4 its max HP to put in a Substitute. .
+165	Struggle	User loses 1/2 the HP lost by the target. .
+166	Sketch	User learns the target's last move permanently, replacing Sketch in the process. Fails against some moves, or if user already knows the move.
+167	Triple Kick	Deals damage three times, each additional hit gains 10 power. Each hit has a separate accuracy check and is able to be critical.
+168	Thief	Steals the target's held item, if it has one. An item cannot be stolen if the user already has an item, or the target has Sticky Hold.
+169	Spider Web	Prevents the target from switching out or fleeing. A Pokémon can still flee if it has Run Away or holding a Smoke Ball.
+170	Mind Reader	Allows the next move used by the user to never miss, even against Bounce, Dig, Dive, and Fly.
+171	Nightmare	Causes a sleeping target to lose 1/4 of the their max HP at the end of each turn that they remain asleep.
+172	Flame Wheel	Deals damage and has a 10% chance of burning the target. This move will first thaw out its user if frozen.
+173	Snore	If the user is asleep, deals damage and has a 30% chance of causing the target to flinch. No effect against Soundproof.
+174	Curse	Lowers Speed but raises Attack and Defense. If user is Ghost, instead loses half max HP to curse target, causing them to lose 1/4 of the their max HP at end of each turn.
+175	Flail	Deals more damage the less HP the user has. Important breakpoints: 80 power at 35% hp or lower, and 150 power at 10% hp or lower.
+176	Conversion2	Randomly changes the user's type to a new type that resists or is immune to the type of the last damaging move it was hit by.
+177	Aeroblast	Deals damage and has an increased critical-hit ratio. (+1 stage = 1/8 or 12.5%)
+178	Cotton Spore	Lowers the target's Speed stat by two stages.
+179	Reversal	Deals more damage the less HP the user has. Important breakpoints: 80 power at 35% hp or lower, and 150 power at 10% hp or lower.
+180	Spite	Decreases the PP of the target's last used move by 2-5 PP, chosen at random. Spite fails if that move has exactly 1 PP remaining.
+181	Powder Snow	Deals damage and has a 10% chance of freezing the target.
+182	Protect	Protects user from all effects of moves for the turn, including damage. Using this move consecutively halves its success rate each time.
+183	Mach Punch	This is an increased priority move, causing the user to attack before most other moves.
+184	Scary Face	Lowers the target's Speed stat by two stages.
+185	Faint Attack	Deals damage and bypasses accuracy checks to always hit, unless the target is in the semi-invulnerable turn of a move such as Dig or Fly.
+186	Sweet Kiss	Causes the target to become confused for 2-5 turns. 50% chance to damage self as a 40 power Physical move.
+187	Belly Drum	The user loses half of their max HP, and in return raises their Attack stat all the way to +6 stages.
+188	Sludge Bomb	Deals damage and has a 30% chance of poisoning the target.
+189	Mud-Slap	Deals damage and lowers the target's accuracy by one stage.
+190	Octazooka	Deals damage and has a 50% chance to lower the target's accuracy by one stage.
+191	Spikes	Creates a hazard for the enemy team (can stack 3 times). Switching out deals 1/8, 1/6, or 1/4 max HP in damage to an enemy without Flying or Levitate.
+192	Zap Cannon	Deals damage and paralyzes the target every time it hits.
+193	Foresight	Neutralizes accuracy checks against the target, and allows Fighting and Normal moves to hit them if they are Ghost.
+194	Destiny Bond	If the user faints as the result of a direct attack by an enemy, that Pokémon also faints. Effect ends when user uses another move.
+195	Perish Song	All Pokémon faint after 3 turns. Switching out or having Soundproof removes this effect.
+196	Icy Wind	Deals damage to all adjacent opponents and lowers the Speed of each by one stage.
+197	Detect	Protects user from all effects of moves for the turn, including damage. Using this move consecutively halves its success rate each time.
+198	Bone Rush	Hits 2-5 times in one turn. Two: 37.5%, Three: 37.5%, Four: 12.5%, Five: 12.5%. Each hit has a chance to critical or trigger a contact ability.
+199	Lock-On	Allows the next move used by the user to never miss, even against Bounce, Dig, Dive, and Fly.
+200	Outrage	Deals damage for 2-3 consecutive turns. User becomes confused afterwards.
+201	Sandstorm	Changes weather to Sandstorm for 5 turns. Pokémon take 1/16 of their max HP in damage, except for Steel, Ground, and Rock types.
+202	Giga Drain	50% of the damage dealt is restored to the user as HP.
+203	Endure	Allows the user to survive any single attack that would cause it to faint, leaving the user with 1 HP instead.
+204	Charm	Lowers the Attack stat of the target by two stages.
+205	Rollout	Deals damage over 5 turns, doubling in power each consecutive hit. Base power is doubled if the user had previously used Defense Curl.
+206	False Swipe	Deals damage, but will always leave the target with 1 HP if it would otherwise cause it to faint.
+207	Swagger	Raises the target's Attack stat by two stages and confuses it.
+208	Milk Drink	Restores up to 50% of the user's max HP. Can be used outside of battle to transfer 20% of max HP to another Pokemon.
+209	Spark	Deals damage and has a 30% chance of paralyzing the target.
+210	Fury Cutter	Each time this move hits successively, its power will double, up to a maximum of 160. Otherwise, it resets to base power.
+211	Steel Wing	Deals damage and has a 10% chance of raising the user's Defense by one stage.
+212	Mean Look	Prevents the target from switching out or fleeing. A Pokémon can still flee if it has Run Away or holding a Smoke Ball.
+213	Attract	If the user and the target are opposite genders, the target will become infatuated, unable to use moves 50% of the time.
+214	Sleep Talk	If the user is asleep, randomly chooses another one of the user's moves to use.
+215	Heal Bell	Cures all Pokémon in the user's party of all major status conditions. Fails against Pokémon with Soundproof.
+216	Return	Power ranges between 1 and 102, strongest at friendship of 255. If the user's friendship is 127 or less, Frustration is stronger.
+217	Present	40% chance power is 40, 30% chance it's 80, 10% chance it's 120, and 20% chance to heal target by 1/4 their max HP.
+218	Frustration	Power ranges between 1 and 102, strongest at friendship of 0. If the user's friendship is 128 or greater, Return is stronger.
+219	Safeguard	For 5 turns, protects the user's party from most status effects and confusion.
+220	Pain Split	Equalizes HP of user and target by adding both Pokemon's current HP together, then dividing by two, split among them evenly.
+221	Sacred Fire	Deals damage and has a 50% chance of burning the target. This move will first thaw out its user if frozen.
+222	Magnitude	Power varies based on a random value and probability. Starting at value 4 and power 10, each additional value adds 20 power; 150 power at value 10. Can hit Pokémon using Dig.
+223	DynamicPunch	Deals damage and always confuses the target, lasting 2-5 turns.
+224	Megahorn	Deals damage and has no secondary effect.
+225	DragonBreath	Deals damage and has a 30% chance of paralyzing the target.
+226	Baton Pass	Switches out the user, passing all temporary stat stage changes as well as many other effects and conditions, on to the Pokémon that replaces it in battle.
+227	Encore	Prevents the target from using any move except its last used move, lasts for 2-6 turns.
+228	Pursuit	If the target Pokémon attempts to switch out, Pursuit's power will double and hit it first.
+229	Rapid Spin	Deals damage and removes the effects of any binding moves, Leech Seed, and any entry hazards such as Spikes from the user's field.
+230	Sweet Scent	Lowers the evasion of all adjacent opponents by one stage. Can be used outside of battle to attract a wild Pokemon.
+231	Iron Tail	Deals damage and has a 30% chance of lowering the target's Defense stat by one stage.
+232	Metal Claw	Deals damage and has a 10% chance of raising the user's Attack stat by one stage.
+233	Vital Throw	This is a decreased priority move, causing the user to attack after most other moves.
+234	Morning Sun	Restores the user's HP by a percentage based weather: 1/2 in no weather, 2/3 if sunny, and 1/4 during any other weather condition.
+235	Synthesis	Restores the user's HP by a percentage based weather: 1/2 in no weather, 2/3 if sunny, and 1/4 during any other weather condition.
+236	Moonlight	Restores the user's HP by a percentage based weather: 1/2 in no weather, 2/3 if sunny, and 1/4 during any other weather condition.
+237	Hidden Power	Power and type vary with IVs, power ranges from 30 to 70. Counter will always work against this move, but never Mirror Coat.
+238	Cross Chop	Deals damage and has an increased critical-hit ratio. (+1 stage = 1/8 or 12.5%)
+239	Twister	Deals damage and has a 20% chance of causing each target to flinch. Hits Pokémon using Bounce or Fly for double damage.
+240	Rain Dance	Changes weather to Rain for 5 turns. Water moves are boosted by 50% and Fire moves are weakened by 50%. Thunder ignores accuracy and evasion.
+241	Sunny Day	Changes weather to Sunny for 5 turns. Fire moves are boosted by 50% and Water moves are weakened by 50%. Thunder accuracy becomes 50%.
+242	Crunch	Deals damage and has a 20% chance of lowering the target's Special Defense stat by one stage.
+243	Mirror Coat	If hit by a Special category move, deals twice the damage received back to the user.
+244	Psych Up	Resets the user's stat changes and copies all of the target's stat stages onto the user: ATK DEF SPA SPD SPE ACC EVA.
+245	ExtremeSpeed	This is an increased priority move, causing the user to attack before most other moves.
+246	AncientPower	Deals damage and has a 10% chance of raising the user's Attack, Defense, Special Attack, Special Defense, and Speed by one stage each.
+247	Shadow Ball	Deals damage and has a 20% chance of lowering the target's Special Defense by one stage.
+248	Future Sight	Locks in damage when used based on SpAtk of user and SpDef of target. After 2 turns, deals damage to the current enemy. Attack is typeless: cannot STAB, hits Wonder Guard.
+249	Rock Smash	Deals damage and has a 50% chance of lowering the target's Defense stat by one stage.
+250	Whirlpool	Deals damage (doubled if opponent using Dive) and inflicts 1/16 of the target's max HP as damage for 2-5 turns. Prevents the target from switching out or fleeing.
+251	Beat Up	Each conscious, non-statused Pokémon in the user's party does an independent attack, each one is typeless with power of 10.

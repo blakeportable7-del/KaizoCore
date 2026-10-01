@@ -10,8 +10,9 @@ import java.util.zip.ZipOutputStream
 /**
  * A backup is one zip of everything the player made and nothing they can
  * re-add: save states and their screenshots, battery saves, the auto-save,
- * locks, run notes, favourites, the current and previous run, attempt
- * counts, presets, key bindings, layouts, skins, cheats, core options.
+ * locks, run notes, favourites, the current and previous run, the attempts
+ * saved from the game-over screen, attempt counts, presets, key bindings, layouts, skins, cheats, core options, tracker
+ * colours and the image behind the tracker.
  *
  * Deliberately NOT in it: library ROMs and patches, prepared bases, the
  * Nat. Dex patch files. Those are the player's own dumps, they are big,
@@ -31,9 +32,20 @@ object Backup {
         "prep/library/notes/", "prep/runs/", "prep/settings/",
         // Per-game favourites and the DS past-runs logs (prep/pastruns-<family>.tsv).
         "prep/favorites/", "prep/pastruns-",
+        // Every game's run history (prep/runhistory-<game>.tsv): personal bests and the death card.
+        "prep/runhistory-",
+        // The Nuzlocke ledgers (2026-09-29): one file per run, prep/nuzlocke/<run>.txt. The areas, the graveyard and the
+        // corrections the player made by hand exist nowhere else, and a restore that dropped them would end the run.
+        "prep/nuzlocke/",
+        // Play as your Pokemon: the picture or sheets the player imported for their own sprite.
+        "prep/spriteisme/",
+        // "Save this attempt" (PrepStore.saveAttempt): the run's game, its log, a save state and the notes, one folder
+        // per attempt. It said "Saved" and nothing backed it up, so an uninstall or a new phone lost every one
+        // (2026-09-30, UX audit P0-5). Each holds a copy of the randomized game, as prep/runs/ does for the run in play.
+        "attempts/",
     )
     private val FILES = setOf(
-        "prep/marks.txt", "prep/notes.txt", "prep/routes.txt", "prep/moves.txt", "prep/abilities.txt",
+        "prep/marks.txt", "prep/notes.txt", "prep/routes.txt", "prep/moves.txt", "prep/abilities.txt", "prep/integrity.txt",
         "prep/favorites.txt", "prep/lastrun.txt", "prep/lastseed.txt", "prep/keys.txt", "prep/skin.txt",
         "prep/padforce.txt", "prep/playspeed.txt", "prep/playmute.txt", "prep/library/session.txt",
         // Left out until 2026-09-27, so a restore silently lost them (audit): the
@@ -41,6 +53,24 @@ object Backup {
         // checks, the theme, the attempt counter and the tourney table.
         "prep/tracker-options.txt", "prep/hidden-power.txt", "prep/pc-heals.txt", "prep/summary-checked.txt",
         "prep/theme.txt", "prep/attempts.txt", "prep/tourney.tsv",
+        // The switch for making the next run ahead (NextRunJob), set by the player.
+        "prep/nextrun-off.txt",
+        // The DS tracker's run-wide values (StatMarks: Hidden Power type, Pokecenter count).
+        "prep/ds-tracked.txt",
+        // The run's other notes beside marks.txt (StatMarks), missed until 2026-09-29 because the
+        // coverage check did not read StatMarks' file names: encounter counts, the Safari record,
+        // the DS encounters. And the time played per run (RunClock).
+        "prep/encounters.txt", "prep/safari.txt", "prep/ds-encounters.txt", "prep/run-clock.txt",
+        // The player's choices over the passes the rules add (ExtraPasses).
+        "prep/extra-passes.txt",
+        // The player's own game over lines and their switches (DeathQuotes), typed in by hand and nowhere else.
+        "prep/death-quotes.txt",
+        // Tracker themes (2026-09-29): the colours they saved under a name, and the image behind the tracker
+        // with its dim and fit. The image makes the backup bigger by its own size: a JPEG of at most 1280 px
+        // on its long side, usually a few hundred KB.
+        "prep/theme-presets.txt", "prep/tracker-bg.txt", "prep/tracker-bg.jpg",
+        // Play as your Pokemon (2026-09-29): the switch and the player's choices, beside the art under prep/spriteisme/.
+        "prep/sprite-is-me.txt",
     )
 
     fun admits(rel: String): Boolean {
@@ -52,10 +82,34 @@ object Backup {
     }
 
     /** Every file under filesDir the backup takes, as relative paths. */
-    fun collect(filesDir: File): List<String> =
-        filesDir.walkTopDown().filter { it.isFile }
+    fun collect(filesDir: File): List<String> {
+        val skip = liveRunLogs(filesDir)
+        return filesDir.walkTopDown().filter { it.isFile }
             .map { it.relativeTo(filesDir).path.replace('\\', '/') }
-            .filter { admits(it) }.sorted().toList()
+            .filter { admits(it) && it !in skip }.sorted().toList()
+    }
+
+    /**
+     * The run in play's randomizer log, while that run is live: left out of every backup and cloud copy (2026-09-30,
+     * Blake, on the IronMON rules check). The log is the seed's answers, which the app opens only from the game-over
+     * screen, and a backup is a zip anyone can open. It goes in once the run has ended, which its record in the game's
+     * run history says (the seed, and the game file's own time as the run's start); a randomized Nuzlocke's stays out
+     * until a new run replaces it. The game file and a DS run's species file stay in: the tracker needs them.
+     */
+    internal fun liveRunLogs(filesDir: File): Set<String> = runCatching {
+        val prep = File(filesDir, "prep")
+        val runs = File(prep, "runs")
+        val logs = runs.listFiles { f -> f.isFile && f.name.startsWith("current.") && f.name.endsWith(".log") }.orEmpty()
+        if (logs.isEmpty()) return emptySet()
+        val lines = File(prep, "lastrun.txt").takeIf { it.isFile }?.readLines().orEmpty()
+        val romId = lines.getOrNull(0)?.trim().orEmpty()
+        val seed = File(prep, "lastseed.txt").takeIf { it.isFile }?.readText()?.trim().orEmpty()
+        val games = runs.listFiles { f -> f.isFile && f.name.startsWith("current.") && !f.name.endsWith(".log") && !f.name.endsWith(".tsv") }.orEmpty()
+        val nuzlocke = lines.drop(2).any { it.trim() == "nuzlocke=true" }
+        val ended = !nuzlocke && romId.isNotBlank() && seed.isNotBlank() &&
+            RunHistory(File(prep, "runhistory-$romId.tsv")).all().any { r -> r.seed == seed && games.any { it.lastModified() == r.started } }
+        if (ended) emptySet() else logs.map { "prep/runs/${it.name}" }.toSet()
+    }.getOrDefault(emptySet())
 
     /** Write the backup. Returns the number of files written. */
     fun write(filesDir: File, out: OutputStream): Int {
@@ -92,7 +146,19 @@ object Backup {
                 n++; zip.closeEntry()
             }
         }
+        if (marker) afterRestore(filesDir)
         return if (marker) n else -1
+    }
+
+    /**
+     * A restore puts the run back to the backup's moment (2026-09-30, IronMON rules check R1). It goes into the run's
+     * own log as a restore, as a Time Machine one does, and the auto-saves' left marks go, so the next open does not
+     * drop the player into the backup's moment without a word: the auto-save is offered under File > States instead.
+     */
+    internal fun afterRestore(filesDir: File, at: Long = System.currentTimeMillis()) {
+        runCatching { File(filesDir, "saves").walkTopDown().filter { it.isFile && it.name.endsWith(".left") }.toList().forEach { it.delete() } }
+        if (File(filesDir, "prep/lastseed.txt").isFile)
+            RunEvents(File(filesDir, "prep/integrity.txt")).add(RunEvents.Kind.RESTORE, "backup", "restored from a backup", at)
     }
 
     fun suggestedName(): String =

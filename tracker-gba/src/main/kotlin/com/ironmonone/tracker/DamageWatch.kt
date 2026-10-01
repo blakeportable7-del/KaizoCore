@@ -52,3 +52,19 @@ class DamageWatch {
     /** The carousel item's timing: between the enemy's attacks, once one has hit you. */
     val ready: Boolean get() = !enemyHasAttacked && lastEnemyMoveId != 0
 }
+
+/**
+ * The carousel's LAST_ATTACK line, getContentList in all three references
+ * (Gen 3 TrackerScreen.lua:738-753, Gen 1 :427-440, Gen 2 :396-409): the move
+ * and the damage it did once some was counted, "Last move: X" when none was.
+ * Gen 3 always counts damage before it shows the line, so there the second
+ * form is unused; the Game Boy references never read damage, so there it is
+ * the only one (GbLastMove). The sword turns red only for damage that would
+ * knock your Pokemon out: the "Last move" branch leaves the colour alone.
+ */
+object LastAttack {
+    fun text(move: String, damage: Int, teams: Boolean): String =
+        if (damage > 0) (if (teams) "Total received" else move) + ": $damage damage" else "Last move: $move"
+
+    fun lethal(damage: Int, curHp: Int?): Boolean = damage > 0 && curHp != null && damage >= curHp
+}

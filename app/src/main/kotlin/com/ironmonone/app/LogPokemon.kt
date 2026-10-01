@@ -69,6 +69,21 @@ internal fun LogPokemonTab(
 private enum class StatView { BST, IVS, EVS }
 
 /**
+ * The labels under the log's evolution icons (LogTabPokemonDetails.lua:163-189, 204-222, 286-326):
+ * each species' own evolution method in the reference's short words (EvoText.short), the i-th
+ * method for the i-th evolution, the first where there are fewer methods than evolutions; for a
+ * pre-evolution, its method into the Pokemon on the page, "" when the log does not list that one.
+ */
+internal object LogEvoLabels {
+    fun forward(methods: List<String>, index: Int): String = methods.getOrNull(index) ?: methods.firstOrNull() ?: ""
+
+    fun into(preMethods: List<String>, preEvolutions: List<String>, current: String): String {
+        val j = preEvolutions.indexOfFirst { it.equals(current, ignoreCase = true) }
+        return if (j < 0) "" else preMethods.getOrNull(j) ?: preMethods.firstOrNull() ?: ""
+    }
+}
+
+/**
  * LogTabPokemonDetails: the name and abilities, the evolutions (with the
  * pre-evolutions when that box is ticked), the base stat graph (green from
  * 180, red at 40 and under) with its total, and the moves on two tabs:
@@ -87,6 +102,8 @@ internal fun LogPokemonDetail(
     team: Map<String, Pair<List<Int>, List<Int>>>,
     onPokemon: (RandomizerLog.Pokemon) -> Unit,
     onBack: () -> Unit,
+    /** A species' evolution methods, short (EvoText.short of its PokemonData evolution); null for none. */
+    evoMethodsOf: ((RandomizerLog.Pokemon) -> List<String>)? = null,
 ) {
     val types = p.types.mapNotNull { Gen3Types.idOf(it) }
     fun stab(move: String) = moveTypes[move.uppercase()]?.let { it in types } == true
@@ -113,11 +130,12 @@ internal fun LogPokemonDetail(
                 Modifier.fillMaxWidth().background(Pc.Page).border(1.dp, Pc.Border).padding(6.dp).horizontalScroll(rememberScrollState()),
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                prevos.forEach { EvoIcon(it, spriteOf, onPokemon) }
+                prevos.forEach { pre -> EvoIcon(pre, spriteOf, onPokemon, evoMethodsOf?.let { LogEvoLabels.into(it(pre), pre.evolutions, p.name) }) }
                 if (prevos.isNotEmpty()) PixText(">", 9, Pc.Dim)
                 EvoIcon(p, spriteOf, null)
                 if (evos.isNotEmpty()) PixText(">", 9, Pc.Dim)
-                evos.forEach { EvoIcon(it, spriteOf, onPokemon) }
+                val methods = evoMethodsOf?.invoke(p) ?: emptyList()
+                evos.forEachIndexed { i, evo -> EvoIcon(evo, spriteOf, onPokemon, evoMethodsOf?.let { LogEvoLabels.forward(methods, i) }) }
             }
         }
         // STAT GRAPH
@@ -188,7 +206,7 @@ internal fun LogPokemonDetail(
 }
 
 @Composable
-private fun EvoIcon(p: RandomizerLog.Pokemon, spriteOf: ((RandomizerLog.Pokemon) -> ImageBitmap?)?, onPokemon: ((RandomizerLog.Pokemon) -> Unit)?) {
+private fun EvoIcon(p: RandomizerLog.Pokemon, spriteOf: ((RandomizerLog.Pokemon) -> ImageBitmap?)?, onPokemon: ((RandomizerLog.Pokemon) -> Unit)?, method: String? = null) {
     Column(
         Modifier.then(if (onPokemon != null) Modifier.clickable { onPokemon(p) } else Modifier).padding(2.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -196,5 +214,6 @@ private fun EvoIcon(p: RandomizerLog.Pokemon, spriteOf: ((RandomizerLog.Pokemon)
         val art = spriteOf?.invoke(p)
         if (art != null) Image(art, p.name, Modifier.size(32.dp), filterQuality = FilterQuality.None)
         PixText(logTitle(p.name), 7, if (onPokemon == null) Pc.Gold else Pc.Text)
+        if (!method.isNullOrEmpty()) PixText(method, 7, Pc.Dim)
     }
 }

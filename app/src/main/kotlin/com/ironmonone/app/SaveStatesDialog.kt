@@ -72,7 +72,7 @@ fun SaveStatesDialog(
                 Spacer(Modifier.width(8.dp))
                 Column(Modifier.weight(1f)) {
                     Text(auto.title(), style = MaterialTheme.typography.bodyMedium, color = Gen3.Ink)
-                    Text(if (auto.exists) auto.savedLabel() + " · written when you leave" else "none yet",
+                    Text(if (auto.exists) auto.savedLabel() + " · kept up to date as you play and when you leave" else "none yet",
                         style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper)
                 }
                 Gen3Button("RESUME", accent = auto.exists, enabled = auto.exists) { onLoad(StateSlots.AUTO) }

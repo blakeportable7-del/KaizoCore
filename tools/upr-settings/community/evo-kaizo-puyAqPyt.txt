@@ -1,0 +1,24 @@
+I wanted to create a fun little variant of Kaizo IronmMON as just a side thing to do from time to time.
+
+Here are the rules.
+
+1. All Kaizo Ironmon Rules are still in play unless otherwise specified.
+2. Your pokemon evolves on every level up. You cannot cancel an evo.
+3. All TMs + Tutors  are 100% compatible and LEGAL.
+4. PIVOTS are BANNED unless at the required PIVOT Locations (See Rule 11)      
+5. GYM Spefific Rules 
+      - You are allowed to SKIP the Liam Fight in Brock's Gym
+      - You must defeat MISTY directly after Talking to Bill
+      - You must defeat Erika BEFORE Rocket Hideout
+6. Set Up Moves are banned on the Elite 4 + Champion Fights.
+7. All Abilities are LEGAL. Draining Healing Moves are Legal.
+8. 600 BST and lower Mons ARE LEGAL in LAB
+9. IF you get an HP under/overflow while in a dungeon, you are are allowed to leave and heal to fix. 
+    but you must immediately return to the same spot.
+10. If given the opportunity to break a EVO LOOP w/ a Stone, player MUST use it.
+11. To ensure EVO Loops are unlikely to have a huge effect you, YOU MUST Pivot to these CHECKPOINT Mons
+         - Dugtrio Pivot in Diglet Cave
+         - Zapdos Static in Power Plant (If Zapods is an illegal Mon, PIVOT to Articuno Static)
+
+
+Setting String if you want to try - 321GBIEEjIBAAQABwCRAAIeBhsEiAEAiAACCQCgEAAAAAAABRi45ATkAoYICTIGBALaAAUgEEZpcmUgUmVkIChVKSAxLjCXM9XVQzQM0A==

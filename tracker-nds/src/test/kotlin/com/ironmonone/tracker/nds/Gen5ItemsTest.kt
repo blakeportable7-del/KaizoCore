@@ -25,6 +25,6 @@ class Gen5ItemsTest {
         assertEquals("Gram 3", items[625])
         assertEquals("Paralyze Heal", items[22], "Gen 5 spelling, per the reference's GEN_5_ITEMS")
         assertTrue(items.values.none { it == "???" || it.isBlank() })
-        assertTrue(0 !in items, "id 0 is 'no item' and the panel draws '-' for it")
+        assertTrue(0 !in items, "id 0 is 'no item'; the panel draws the reference's '---' for it")
     }
 }

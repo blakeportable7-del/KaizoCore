@@ -69,7 +69,9 @@ fun FloatingTracker(
         Modifier
             .offset { IntOffset((frame.x * density).roundToInt(), (frame.y * density).roundToInt()) }
             .size(frame.w.dp, frame.h.dp)
-            .background(Pc.Page)
+            // The Main background colour and the player's image, once behind the whole window; the panel
+            // inside it paints nothing of its own (TrackerBackdrop.kt).
+            .hostBackdrop()
             .border(1.dp, Pc.Border),
     ) {
         Column(Modifier.size(frame.w.dp, frame.h.dp)) {
@@ -91,7 +93,9 @@ fun FloatingTracker(
                 PixText("TRACKER", 7, Pc.Dim, Modifier.weight(1f))
                 PixText("DOCK", 7, Pc.Text, Modifier.padding(start = 6.dp).clickable { onDock() })
             }
-            Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) { content() }
+            Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+                androidx.compose.runtime.CompositionLocalProvider(LocalBackdropHosted provides true) { content() }
+            }
         }
         // Resize grip
         Box(

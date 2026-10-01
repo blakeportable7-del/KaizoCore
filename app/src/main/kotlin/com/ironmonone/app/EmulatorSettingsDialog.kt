@@ -63,6 +63,8 @@ fun EmulatorSettingsDialog(
         // list used to be capped at 520dp with the buttons under it, which put them
         // off-screen in landscape (2026-09-27, audit).
         Column {
+            // Play as your Pokemon: a game with no tracker has no tracker gear, and this is reachable in every mode.
+            if (platform == Platform.GBA) { SpriteIsMeSettingsSection(); ShellDivider() }
             opts.groupBy { it.group }.forEach { (group, rows) ->
                 if (group == CoreOptions.LINK_IP_GROUP) {
                     LinkAddressField(values, rows, onChange)

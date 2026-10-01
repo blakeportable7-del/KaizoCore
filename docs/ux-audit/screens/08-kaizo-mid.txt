@@ -1,0 +1,34 @@
+TEXT:
+Kaizo IronMON
+GBC
+Pokémon Crystal (U)
+Original game
+GBC
+Pokémon Red (U)
+Original game
+DS
+Pokémon White 2 (U)
+Original game
+GBA
+Pokémon Emerald + Smart AI (Super Kaizo)
+Patched game
+DS
+Pokémon HeartGold (U)
+Original game
+GBA
+Pokémon Emerald (U)
+Original game
+MODE
+Standard
+Kaizo
+Super Kaizo
+Ultimate
+Start new run
+Home
+Play
+Library
+More
+
+CONTENT DESCRIPTIONS:
+Back to Home
+Selected

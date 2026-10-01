@@ -115,7 +115,7 @@ class Gen1TrackerTest {
         assertEquals("PIKACHU", foe.speciesName.uppercase()); assertEquals(4, foe.level); assertEquals(12, foe.curHp)
         assertEquals(13, foe.type1, "Electric is Gen 1 type 23, panel type 13")
         assertEquals(emptyList(), foe.movesSeen)
-        w.put(map.enemyMove, 84)
+        w.put(map.enemyMove, 84); w.put(0x0CD5L, 1)     // it has moved: wAILayer2Encouragement
         assertEquals(listOf("thundershock"), t.read().enemy!!.movesSeen.map { it.lowercase() })
         w.put(map.enemyMove, 52)                       // a move the opponent does not know is not recorded
         assertEquals(1, t.read().enemy!!.movesSeen.size)
@@ -123,6 +123,170 @@ class Gen1TrackerTest {
         s = t.read(); assertTrue(s.inBattle && !s.isWildBattle)
         w.put(map.inBattle, 0)
         s = t.read(); assertTrue(!s.inBattle); assertNull(s.enemy)
+    }
+
+    /**
+     * The Gen 1 reference records the move byte only once its turn counter
+     * (wAILayer2Encouragement, 0xCCD5) has left 0, and only when it is one of
+     * the moves the opponent had while the counter was 0 (Battle.lua:791-835).
+     */
+    @Test
+    fun `an opponent's move counts only after it has moved, and only from its moves at the start`() {
+        val map = Gen1Map.RED_BLUE
+        val w = overworld(map)
+        w.put(map.inBattle, 1)
+        val e = map.enemyMon
+        w.put(e, 0x03); w.be16(e + 1, 12); w.put(e + 5, 23); w.put(e + 6, 23); w.put(e + 8, 84); w.put(e + 9, 102)   // Thunder Shock, Mimic
+        w.put(e + 14, 4); w.be16(e + 15, 18)
+        val t = Gen1Tracker(w, rom(map, "POKEMON RED", 0x00))
+        fun seen() = t.read().enemy!!.movesSeen.map { it.lowercase() }
+        w.put(map.enemyMove, 84); w.put(0x0CD5L, 0)
+        assertEquals(emptyList(), seen(), "Thunder Shock left in the byte by the last battle: this Pikachu has not moved")
+        w.put(0x0CD5L, 1)
+        assertEquals(listOf("thundershock"), seen())
+        w.put(e + 9, 55); w.put(map.enemyMove, 55); w.put(0x0CD5L, 2)   // Mimic took Water Gun
+        assertEquals(listOf("thundershock"), seen(), "a move Mimic copied is not Pikachu's own")
+    }
+
+    /**
+     * Battle.updateBattleStatus (Gen 1 reference Battle.lua:589-624): party slot
+     * 1 at 0 HP is a loss once wIsInBattle reads 0. Mid-battle it is not, nor
+     * while the byte holds pokered's LOST_BATTLE (0xFF) before the blackout,
+     * and no other slot counts.
+     */
+    @Test
+    fun `a dead lead is a loss only once wIsInBattle reads 0, and only the lead counts`() {
+        val map = Gen1Map.RED_BLUE
+        val w = overworld(map)
+        w.put(map.inBattle, 2)
+        val e = map.enemyMon
+        w.put(e, 0x03); w.be16(e + 1, 12); w.put(e + 5, 23); w.put(e + 6, 23); w.put(e + 14, 4); w.be16(e + 15, 18)
+        val t = Gen1Tracker(w, rom(map, "POKEMON RED", 0x00))
+        assertTrue(t.read().inBattle)
+        w.be16(map.partyMons + 1, 0)                          // the lead faints
+        assertNull(t.read().gameOver, "mid-battle")
+        w.put(map.inBattle, 0xFF)
+        assertNull(t.read().gameOver, "LOST_BATTLE is not 0")
+        w.put(map.inBattle, 0)
+        assertEquals(GameOver.LOST, t.read().gameOver)
+        w.be16(map.partyMons + 1, 30)                         // healed lead, second slot fainted
+        w.be16(map.partyMons + Gen1Tracker.PARTY_STRIDE + 1, 0)
+        assertNull(t.read().gameOver, "only slot 1 counts")
+    }
+
+    @Test
+    fun `the player's condition is used, at the references' time`() {
+        // Blake, 2026-09-29: full control. A Standard run ends on the entire party, still only
+        // once wIsInBattle reads 0.
+        val map = Gen1Map.RED_BLUE
+        val w = overworld(map)
+        val t = Gen1Tracker(w, rom(map, "POKEMON RED", 0x00))
+        t.lossCondition = LossCondition.ENTIRE_PARTY
+        w.be16(map.partyMons + 1, 0)                          // the lead faints, others alive
+        assertNull(t.read().gameOver, "entire party: the lead alone is not a loss")
+        val count = t.read().party.size
+        for (k in 0 until count) w.be16(map.partyMons + k * Gen1Tracker.PARTY_STRIDE + 1, 0)
+        w.put(map.inBattle, 2)
+        assertNull(t.read().gameOver, "never mid-battle")
+        w.put(map.inBattle, 0)
+        assertEquals(GameOver.LOST, t.read().gameOver)
+    }
+
+    /**
+     * "Lv.12 (16)" on the cards (Gen 1 reference TrackerScreen.lua:722-765): the
+     * reference's evolution, ready a level early, and a stone evolution ready
+     * while that stone, by Gen 1's own item id, is in the bag. The opponent's
+     * is the same text in the default colour.
+     */
+    @Test
+    fun `the cards carry the evolution text, and a Thunder Stone in the bag readies Pikachu`() {
+        val map = Gen1Map.RED_BLUE
+        val w = overworld(map)                 // Charmander Lv.12 (16), Pikachu Lv.5 (THUNDER)
+        val t = Gen1Tracker(w, rom(map, "POKEMON RED", 0x00))
+        var s = t.read()
+        assertEquals(EvoText.Label("16", EvoText.Tone.WAITING), s.party[0].evo)
+        assertEquals(EvoText.Label("THUNDER", EvoText.Tone.WAITING), s.party[1].evo)
+        w.put(map.numItems, 3); w.put(map.items + 4, 0x21); w.put(map.items + 5, 1); w.put(map.items + 6, 0xFF)
+        s = t.read()
+        assertEquals(EvoText.Label("THUNDER", EvoText.Tone.READY), s.party[1].evo, "THUNDER_STONE, \$21")
+        w.put(map.items + 4, 96)
+        assertEquals(EvoText.Tone.WAITING, t.read().party[1].evo?.tone, "96 is Gen 3's Thunder Stone, not Gen 1's")
+        w.put(map.partyMons + 33, 15)
+        assertEquals(EvoText.Label("16", EvoText.Tone.READY), t.read().party[0].evo, "Lv.15, one short of 16")
+        w.put(map.inBattle, 1)
+        val e = map.enemyMon
+        w.put(e, 0x03); w.be16(e + 1, 12); w.put(e + 5, 23); w.put(e + 6, 23); w.put(e + 14, 4); w.be16(e + 15, 18)
+        assertEquals(EvoText.Label("THUNDER", EvoText.Tone.PLAIN), t.read().enemy?.evo)
+    }
+
+    /**
+     * In a battle (Gen 1 reference Battle.lua:695-761, DataHelper.lua:277-288):
+     * the stat mods at wPlayerMonStatMods and 0x14 on, 7 neutral; the enemy's
+     * live PP with "Count enemy PP usage"; and "Last move: X" once the trainer's
+     * next Pokemon is out, when pokered clears wAILayer2Encouragement and
+     * wEnemyMoveNum together.
+     */
+    @Test
+    fun `a battle shows the stat stages, the enemy's live PP and the last move line`() {
+        val map = Gen1Map.RED_BLUE
+        val w = overworld(map)
+        w.put(map.inBattle, 2)
+        val e = map.enemyMon
+        w.put(e, 0x03); w.be16(e + 1, 12); w.put(e + 5, 23); w.put(e + 6, 23); w.put(e + 8, 84); w.put(e + 25, 30)
+        w.put(e + 14, 4); w.be16(e + 15, 18)
+        for (i in 0 until 6) { w.put(map.statMods + i, 7); w.put(map.statMods + 0x14 + i, 7) }
+        w.put(map.statMods, 9)                                // your Attack +2
+        w.put(map.statMods + 0x14 + 2, 6)                     // its Speed -1
+        val t = Gen1Tracker(w, rom(map, "POKEMON RED", 0x00))
+        var s = t.read()
+        assertEquals(8, s.party[0].statStages["ATK"]); assertEquals(6, s.party[0].statStages["SPA"])
+        assertEquals(5, s.enemy!!.statStages["SPE"]); assertNull(s.enemy!!.statStages["SPD"], "one Special in Gen 1")
+        assertTrue(s.party[1].statStages.isEmpty(), "the stages are slot 1's, as the reference views it")
+        w.put(map.enemyMove, 84); w.put(map.aiTurns, 1); w.put(e + 25, 29)   // Thunder Shock used
+        s = t.read()
+        assertEquals(29, s.enemy!!.moveRows.single().pp, "live PP")
+        assertNull(s.lastAttackMove, "it has attacked since its counter moved")
+        TrackerPrefs.countEnemyPp = false
+        try { assertEquals(30, t.read().enemy!!.moveRows.single().pp, "base PP with the option off") } finally { TrackerPrefs.countEnemyPp = true }
+        w.put(map.enemyMove, 0); w.put(map.aiTurns, 0)
+        assertEquals("thundershock", t.read().lastAttackMove?.lowercase())
+        w.put(map.inBattle, 0)
+        s = t.read()
+        assertTrue(s.party[0].statStages.isEmpty()); assertNull(s.lastAttackMove)
+    }
+
+    /** "Team:" (TrackerScreen.lua:825-828): the one ball the reference knows, in a trainer battle only. */
+    @Test
+    fun `a trainer battle's team row is the opponent on the field`() {
+        val map = Gen1Map.RED_BLUE
+        val w = overworld(map)
+        val e = map.enemyMon
+        w.put(e, 0x03); w.be16(e + 1, 12); w.put(e + 5, 23); w.put(e + 6, 23); w.put(e + 14, 4); w.be16(e + 15, 18)
+        val t = Gen1Tracker(w, rom(map, "POKEMON RED", 0x00))
+        w.put(map.inBattle, 2)
+        assertEquals(listOf(true), t.read().enemyTeam)
+        w.be16(e + 1, 0)
+        assertEquals(listOf(false), t.read().enemyTeam, "fainted: the grey ball")
+        w.be16(e + 1, 12); w.put(map.inBattle, 1)
+        assertEquals(emptyList(), t.read().enemyTeam, "a wild battle")
+        w.put(map.inBattle, 0)
+        assertEquals(emptyList(), t.read().enemyTeam)
+    }
+
+    /**
+     * Program.updateMapLocation (Gen 1 reference Program.lua:1114-1129): the
+     * map is wCurMap, which makes the Time Machine's points possible. It has no
+     * name: the reference's Gen 1 names are RSE's.
+     */
+    @Test
+    fun `the map is wCurMap, Red's and Yellow's own, with no name`() {
+        val red = Gen1Map.RED_BLUE
+        val w = overworld(red); w.put(0x135EL, 12)
+        val s = Gen1Tracker(w, rom(red, "POKEMON RED", 0x00)).read()
+        assertEquals(12, s.mapId); assertNull(s.routeName)
+        val y = Gen1Map.YELLOW
+        val wy = overworld(y); wy.put(0x135DL, 33)
+        assertEquals(33, Gen1Tracker(wy, rom(y, "POKEMON YELLOW", 0x80)).read().mapId, "pokeyellow wCurMap 0xD35D")
     }
 
     @Test

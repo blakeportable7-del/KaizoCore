@@ -142,7 +142,9 @@ fun LogViewer(
             }
             val d = detail
             if (d != null) {
-                if (rules != null) LogPokemonDetail(d, log, badgeSet == "FRLG", logSprite, moveTypes, team, onPokemon = { detail = it }, onBack = { detail = null })
+                if (rules != null) LogPokemonDetail(d, log, badgeSet == "FRLG", logSprite, moveTypes, team, onPokemon = { detail = it }, onBack = { detail = null },
+                    // The same PokemonData evolution the info screen reads, in its short words.
+                    evoMethodsOf = tracker?.let { t -> { lp -> speciesByName[lp.name.uppercase()]?.let { com.ironmonone.tracker.EvoText.short(t.evolution(it)) } ?: emptyList() } })
                 else PokemonDetail(d, log, onBack = { detail = null })
                 return@Column
             }

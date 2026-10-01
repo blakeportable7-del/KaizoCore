@@ -1,0 +1,490 @@
+# id	status	ours	note
+nds-0001	MISSING	-	HGSS-style animated icon set (set 5) not ported, so no sprite-direction option
+nds-0002	MISSING	-	Animated icon set not ported, so no faster-animation option
+nds-0003	DONE	AutoTheme.kt:115	Auto Pokemon themes on DS by the DS tracker's rules (NdsAutoThemes): the Pokemon on the field, else the first standing; forms with their own theme; the DS gear shows the toggle (fix/ds-ui)
+nds-0004	DONE	NdsHeals.kt:50	calculateHealPercent: with 'show HP' a flat heal counts its raw HP, uncapped; the sum rounded floor(x + 0.5) as the ref (fix/ds-ui)
+nds-0005	NA	-	Dead in the ref: forced false on every load (Main.lua:125) and no toggle anywhere
+nds-0006	DONE	NdsExperience.kt:26	DS 'Experience bar', on by default: holding your level shows the bar in its place (fix/ds-ui)
+nds-0007	MISSING	PcTracker.kt:294	One fixed art set (ROM or bundled Gen 4 sprites); no icon set choice (ref default 2 = Stadium)
+nds-0008	DONE	PlayScreen.kt:1650	Gear 'Show random ball picker' (on) gates the ball on the no-party card (NdsTrackerPanel.kt:414)
+nds-0009	DONE	NdsTrackerPanel.kt:396	'Display repel usage' (off) draws the DS repel icon and bar out of battle
+nds-0010	PARTIAL	PcTracker.kt:429	DS card always right-aligns (= ref default); the gear toggle (default off) is read by the GBA panel only
+nds-0011	DONE	NdsTrackerPanel.kt:277	Your ACC and EVA stages beside the heals in battle; 'Show accuracy and evasion' on by default (fix/ds-ui)
+nds-0012	MISSING	NdsTrackerPanel.kt:131	DS card always shows the species; nickname not decoded; gear 'Show nicknames' is GBA-only
+nds-0013	DONE	NdsTrackerPanel.kt:268	Pokecenter counter ('Show Pokecenter heals', off by default), 10 to start, tap to step (StatMarks.bumpDsPokecenter) (fix/ds-ui)
+nds-0014	NA	-	BizHawk auto-updater bookkeeping
+nds-0015	NA	-	BizHawk auto-updater: opens the update notes after an update
+nds-0016	MISSING	PcTracker.kt:1458	No badge placement choice; badges are a row in the bottom carousel (HGSS: two stacked rows)
+nds-0017	DONE	NdsTrackerPanel.kt:472	'Kanto badges first' (off = Johto) orders the rows when both show and is ignored with one, as the ref
+nds-0018	DONE	NdsTrackerPanel.kt:472	'Show both badge sets' (on) draws both HGSS rows from the start
+nds-0019	MISSING	PcTracker.kt:1458	No single-set alignment (above/below/left/right); badges are a row in the carousel
+nds-0020	MISSING	-	No spacer option between the tracker and the badges
+nds-0021	DONE	DsView.kt:84	'Auto swap to enemy' on DS, off by default: swaps as each new opponent's pause ends; singles (fix/ds-ui)
+nds-0022	DONE	NdsMoveRules.kt:120	Variable-power moves calculated from weight, HP and PP as the DS tracker does (fix/ds-ui)
+nds-0023	MISSING	-	No doubles swap limit; no single-Pokemon swap view on DS
+nds-0024	DONE	DsView.kt:94	'Enable enemy locking', off by default: a tap on the enemy card's lock icon (fix/ds-ui)
+nds-0025	PARTIAL	NdsTrackerPanel.kt:151	Stats always shown (= ref default); no option to blank them before Platinum's first fight
+nds-0026	PARTIAL	NdsTrackerPanel.kt:78	Real PP for moves used this battle, base PP for remembered ones (= ref default); no toggle on DS
+nds-0027	DONE	NdsMoveRules.kt:47	Move effectiveness on DS move rows, shown after the reference's pause (fix/ds-ui)
+nds-0028	NA	-	Fixed outline colour (swatch borders, timer, coverage boxes); not editable in the ref
+nds-0029	MISSING	Theme.kt:69	Not editable: the lower box is drawn in the top box background (same default 222222)
+nds-0030	MISSING	PcTracker.kt:183	Not editable: the lower border follows the top box border (same default AAAAAA)
+nds-0031	PARTIAL	Theme.kt:77	Key edits Pc.Dim (quiet lines, default AAAAAA); the moves text follows top box text (ref default FFFFFF)
+nds-0032	MISSING	NdsTrackerPanel.kt:399	No gear icon (a SETUP text button), so no gear colour
+nds-0033	DONE	Theme.kt:76	Editable, default FFFF00 (Pc.Gold)
+nds-0034	DONE	Theme.kt:70	Editable, default 000000 (Pc.Page)
+nds-0035	MISSING	PcTracker.kt:181	Not editable: the move header follows top box text (same default)
+nds-0036	DONE	Theme.kt:75	Editable, default FF0000
+nds-0037	MISSING	PcTracker.kt:1001	Not editable; the physical glyph is drawn in lower-box text (white); ref default FFC631
+nds-0038	DONE	Theme.kt:74	Editable, default 00FF00
+nds-0039	MISSING	PcTracker.kt:1001	Not editable; the special glyph is drawn in lower-box text (white); ref default 7DB6FF
+nds-0040	DONE	Theme.kt:71	Editable, default 222222 (Pc.Ground)
+nds-0041	DONE	Theme.kt:72	Editable, default AAAAAA (Pc.Border)
+nds-0042	DONE	Theme.kt:73	Editable, default FFFFFF (Pc.Text)
+nds-0043	PARTIAL	NdsTrackerPanel.kt:143	Hidden Power and Judgment now by their real type (chosen type, held plate); move type icons not drawn (fix/ds-ui)
+nds-0044	MISSING	-	No move type icons, so nothing to colour
+nds-0045	MISSING	-	No move type icons on the move rows
+nds-0046	MISSING	-	No text shadows (AutoTheme.kt: the app draws none)
+nds-0047	DONE	PcTracker.kt:989	'Show physical special icons' (on) shows or hides the DS move glyphs
+nds-0048	MISSING	-	No transparent-background option
+nds-0049	DONE	DsView.kt:71	touch (Blake, 2026-09-29): one Pokemon at a time, SEE FOE / SEE MINE on the battle banner; singles only, doubles is nds-0052/0055/0023 (fix/ds-ui)
+nds-0050	NA	PcTracker.kt:466	touch, not buttons (Blake, 2026-09-29): a tap on a stat box cycles its prediction
+nds-0051	NA	PcTracker.kt:466	touch, not buttons (Blake, 2026-09-29): a stat is picked by tapping its box
+nds-0052	MISSING	-	touch, not buttons (Blake, 2026-09-29): needs a tap to pick the doubles target (and DS effectiveness)
+nds-0053	NA	-	Quickload combo that loads the next ROM file; the app's NEW RUN builds the next seed
+nds-0054	DONE	DsView.kt:94	touch (Blake, 2026-09-29): a tap on the lock icon locks the enemy; after the battle an ENEMY LOCKED banner keeps it reachable (fix/ds-ui)
+nds-0055	MISSING	-	touch, not buttons (Blake, 2026-09-29): needs a tap to pick the doubles target
+nds-0056	MISSING	PlayScreen.kt:2499	DS Coverage Calc passes fullyEvolvedSupported = false (no evolution data on DS)
+nds-0057	MISSING	-	Stadium brows need the Stadium icon set, which is not ported
+nds-0058	MISSING	-	Stadium brows not ported
+nds-0059	NA	-	BizHawk crash recovery (TRACKER-PARITY.md: n/a on a phone); the app auto-saves when the game is left
+nds-0060	NA	-	Quickload file paths on the desktop; the app's Run tab builds each seed
+nds-0061	NA	-	Quickload file paths on the desktop; the app's Run tab builds each seed
+nds-0062	NA	-	Quickload file paths on the desktop; the app's Run tab builds each seed
+nds-0063	NA	-	Quickload file paths on the desktop; the app's Run tab builds each seed
+nds-0064	NA	-	Quickload file paths on the desktop; the app's Run tab builds each seed
+nds-0065	PARTIAL	DsExtras.kt:39	'Show timer' (off, DS only) shows the clock; counts time away, not kept across app restarts (ref: saved)
+nds-0066	MISSING	DsExtras.kt:63	No transparent timer style
+nds-0067	MISSING	NdsTrackerPanel.kt:403	Timer sits under SETUP in the panel; ref draws it over the game at (0, 180.5), movable by middle drag
+nds-0068	MISSING	NdsTrackerPanel.kt:403	No timer placement (see nds-0067)
+nds-0069	PARTIAL	PlayScreen.kt:653	Gates milestone scoring (HGSS only); no points box on the main screen, no Run Over tourney button
+nds-0070	DONE	NdsTracker.kt:622	The DS's own 'Run is considered over when:' (TrackerOptions.dsLossCondition): default Lead, one setting for every DS game, checked only in a fetched battle; Kaizo Doubles offered too (fix/ds-ui)
+nds-0071	NA	-	One-time popup about the PC tracker's B2W2 intro patch; the app reads B2W2 by scanning for the heap shift
+nds-0072	PARTIAL	TrackerGearDialog.kt:139	DS gear gained Experience bar, Show accuracy and evasion, Show Pokecenter heals, Auto swap, Enemy locking, Auto themes (fix/ds-ui)
+nds-0073	MISSING	-	'Pokemon Icon Sets' button: no icon set screen
+nds-0074	PARTIAL	TrackerGearDialog.kt:144	Only the two HGSS badge toggles; no alignment or spacer
+nds-0075	DONE	TrackerGearDialog.kt:89	EDIT COLOR THEME opens the colour editor (Theme.kt:110)
+nds-0076	MISSING	-	'Pokemon Icon Sets' button: no icon set screen
+nds-0077	NA	-	Code identifier (frame name suffix)
+nds-0078	PARTIAL	TrackerGearDialog.kt:143	'Show timer' only; no transparent option
+nds-0079	DONE	TrackerGearDialog.kt:204	CLOSE
+nds-0080	PARTIAL	TrackerGearDialog.kt:97	Appearance options are mixed into the gear; several are not read on DS (see nds-0006, 0010-0013)
+nds-0081	PARTIAL	TrackerGearDialog.kt:144	HGSS toggles only (show both, which set leads, League swap); no alignments or spacer
+nds-0082	MISSING	-	No two-set alignment choices (above, below, left, right, left and right)
+nds-0083	DONE	TrackerGearDialog.kt:146	'Kanto badges first' picks which set leads (NdsTrackerPanel.kt:472)
+nds-0084	DONE	TrackerGearDialog.kt:204	CLOSE
+nds-0085	MISSING	-	No spacer toggle
+nds-0086	MISSING	-	No single-set alignment choices
+nds-0087	DONE	NdsTrackerPanel.kt:472	One set shown: Johto until the League is beaten, then Kanto (NdsTracker.readLeagueBeaten)
+nds-0088	DONE	PlayScreen.kt:2545	HGSS-only toggles: show both or one (auto swap), and which set leads
+nds-0089	PARTIAL	TrackerGearDialog.kt:144	See nds-0081
+nds-0090	NA	-	Game-name check in code
+nds-0091	NA	-	Game-name check in code
+nds-0092	MISSING	TrackerGearDialog.kt:107	Nothing applies on DS: the gear's battle toggles are GBA ones; no locking, doubles or Platinum 1st fight
+nds-0093	MISSING	-	No toggle; stats are always shown (see nds-0025)
+nds-0094	MISSING	TrackerGearDialog.kt:107	See nds-0092
+nds-0095	MISSING	-	Screen absent on DS (see nds-0092)
+nds-0096	PARTIAL	Theme.kt:110	8 of 14 colours, no colour-setting toggles, own theme string, no named themes; live apply and reset work
+nds-0097	NA	-	Swatch outline colour key, not text
+nds-0098	PARTIAL	Theme.kt:211	Imports the app's own 8-colour string; cannot read the ref's 14-colour + 6-flag theme strings
+nds-0099	PARTIAL	Theme.kt:197	Exports 8 AARRGGBB values, not the ref's theme string format
+nds-0100	DONE	Theme.kt:194	'Reset colours' (two taps) restores the defaults
+nds-0101	DONE	Theme.kt:134	Close
+nds-0102	MISSING	-	No saving a named theme file
+nds-0103	MISSING	-	No loading named themes (the ref ships 15 .colortheme files)
+nds-0104	PARTIAL	CoverageCalc.kt:60	BST-ordered buckets; max 6 types, opens on 2x (ref 0x), seed types (ref vanilla); no fully evolved, Shedinja, HP
+nds-0105	MISSING	NdsTracker.kt:632	DS coverage has no Shedinja rule (ref: 0x unless 2x or more)
+nds-0106	NA	-	Colour key of the bucket boxes
+nds-0107	MISSING	PlayScreen.kt:2499	Switch hidden on DS (fullyEvolvedSupported = false)
+nds-0108	DONE	CoverageCalc.kt:57	0x bucket (the ref opens on it, ours on 2x)
+nds-0109	DONE	CoverageCalc.kt:57	1x bucket
+nds-0110	DONE	CoverageCalc.kt:57	2x bucket
+nds-0111	DONE	CoverageCalc.kt:57	4x bucket
+nds-0112	DONE	CoverageCalc.kt:84	X closes
+nds-0113	DONE	NdsTrackerPanel.kt:647	Hidden Power: the run's one chosen type (StatMarks.dsHiddenPowerType), < and > on your Hidden Power row (fix/ds-ui)
+nds-0114	PARTIAL	PastRuns.kt:344	Gear EVO DATA, lead only; ref opens from the level label of the viewed Pokemon; no credits or View Site
+nds-0115	NA	-	Shell command that opens the web page
+nds-0116	DONE	PastRuns.kt:370	Name / BST / Percent sort row (no 'Sort by:' label)
+nds-0117	DONE	PastRuns.kt:370	Name
+nds-0118	DONE	PastRuns.kt:370	Percent, the default as in the ref
+nds-0119	MISSING	-	No data credit line
+nds-0120	MISSING	-	No 'View Site' link to the evo data site
+nds-0121	DONE	PastRuns.kt:361	X closes
+nds-0122	PARTIAL	TrackerGearDialog.kt:77	No Extras page: Coverage Calc and Tourney Tracker (HGSS only) are gear buttons; Stream Connect n/a
+nds-0123	DONE	TrackerGearDialog.kt:204	CLOSE
+nds-0124	DONE	TrackerGearDialog.kt:77	COVERAGE CALC
+nds-0125	PARTIAL	TrackerGearDialog.kt:77	Button only, no description line
+nds-0126	PARTIAL	TrackerGearDialog.kt:77	Button only, no description line
+nds-0127	DONE	TrackerGearDialog.kt:77	The button opens it
+nds-0128	DONE	TrackerGearDialog.kt:88	TOURNEY TRACKER, shown on HGSS only (its milestones are HGSS trainers)
+nds-0129	PARTIAL	TrackerGearDialog.kt:88	Button only, no description line
+nds-0130	PARTIAL	TrackerGearDialog.kt:88	Button only, no description line
+nds-0131	DONE	DsExtras.kt:302	CLEAR DATA, then CONFIRM CLEAR
+nds-0132	NA	-	Streamer.bot chat link (desktop; TRACKER-PARITY.md: n/a)
+nds-0133	NA	-	Stream Connect description
+nds-0134	NA	-	Stream Connect description
+nds-0135	NA	-	Stream Connect config button
+nds-0136	DONE	DsExtras.kt:274	'Tourney tracker on' toggle
+nds-0137	PARTIAL	TrackerGearDialog.kt:74	See nds-0122
+nds-0138	DONE	DsLogViewer.kt:595	TM, move (tap for details), badge, leader (tap opens the team)
+nds-0139	NA	-	Control name (the TM disc icon is not drawn)
+nds-0140	NA	-	Control name
+nds-0141	DONE	DsLogViewer.kt:602	TM%02d
+nds-0142	DONE	DsLogViewer.kt:619	Game, randomizer version, seed, settings string, Copy info
+nds-0143	DONE	DsLogViewer.kt:623	Game Name:
+nds-0144	DONE	DsLogViewer.kt:621	Game name written with the accent, as the ref's gsub
+nds-0145	DONE	DsLogViewer.kt:621	Same gsub
+nds-0146	DONE	DsLogViewer.kt:623	Randomizer Version:
+nds-0147	DONE	DsLogViewer.kt:623	Random Seed:
+nds-0148	DONE	DsLogViewer.kt:629	Settings String:
+nds-0149	DONE	DsLogViewer.kt:643	Seed Info dialog
+nds-0150	DONE	DsLogViewer.kt:655	Close
+nds-0151	DONE	DsLogViewer.kt:632	Copy info (to the clipboard)
+nds-0152	DONE	DsLogViewer.kt:103	Six tabs in the ref's order, back-arrow history, X closes; opened from the game-over popup
+nds-0153	DONE	DsLogViewer.kt:60	Pokemon tab
+nds-0154	DONE	DsLogViewer.kt:60	Trainers tab
+nds-0155	DONE	DsLogViewer.kt:60	Pivots tab
+nds-0156	DONE	DsLogViewer.kt:60	Gym TMs tab
+nds-0157	DONE	DsLogViewer.kt:60	Info tab
+nds-0158	DONE	DsLogViewer.kt:60	Search tab
+nds-0159	DONE	DsLogViewer.kt:555	Areas list, encounter type tabs, rows with levels and odds; a row opens the Pokemon
+nds-0160	DONE	DsLog.kt:284	Grass encounter type
+nds-0161	DONE	DsLog.kt:284	Ext. Grass encounter type
+nds-0162	DONE	DsLog.kt:284	Int. Grass encounter type
+nds-0163	DONE	DsLog.kt:284	Cave encounter type
+nds-0164	DONE	DsLog.kt:284	Shaking Spots encounter type
+nds-0165	DONE	DsLog.kt:284	Old Rod encounter type
+nds-0166	DONE	DsLog.kt:284	Headbutt(C) encounter type
+nds-0167	DONE	DsLog.kt:284	Headbutt(R) encounter type
+nds-0168	DONE	DsLog.kt:284	Dark Grass encounter type
+nds-0169	DONE	DsLog.kt:284	Tuesday encounter type
+nds-0170	DONE	DsLog.kt:284	Thursday encounter type
+nds-0171	DONE	DsLog.kt:284	Saturday encounter type
+nds-0172	DONE	DsLogViewer.kt:584	'Lv. a - b' levels
+nds-0173	DONE	DsLogViewer.kt:562	Areas
+nds-0174	PARTIAL	DsLogViewer.kt:284	Name search and Stats; no bookmark filter for marked Pokemon; the phone keyboard replaces the key grid
+nds-0175	DONE	DsLogViewer.kt:287	'Type below to search any pokemon:'
+nds-0176	DONE	DsLogViewer.kt:292	Stats button
+nds-0177	PARTIAL	DsLogViewer.kt:320	Stats, evos, moves/Gym TMs, abilities; no ability descriptions, no type matchups on the picture
+nds-0178	DONE	DsLogViewer.kt:361	Moves: level, name, STAB in green, tap for details
+nds-0179	DONE	DsLogViewer.kt:375	TM %02d
+nds-0180	PARTIAL	DsLogViewer.kt:376	Unlearnable TMs struck through in plain text; the ref draws them red
+nds-0181	DONE	DsLog.kt:108	(HA) on Gen 5's third ability
+nds-0182	DONE	DsLog.kt:121	'Level N' evolution text
+nds-0183	DONE	DsLogViewer.kt:346	Evos: None
+nds-0184	DONE	DsLogViewer.kt:340	Base Stats (N total)
+nds-0185	DONE	DsLogViewer.kt:340	Same heading
+nds-0186	PARTIAL	DsLogViewer.kt:382	Listed as '1. X'; no description on tap (ref: hover)
+nds-0187	DONE	DsLogViewer.kt:345	Evos:
+nds-0188	PARTIAL	DsLogViewer.kt:449	Location cards with a ball per Pokemon; no rival portrait
+nds-0189	PARTIAL	DsLogViewer.kt:672	Look for / With, name list, results; trainer rows have no thumbnail
+nds-0190	DONE	DsLogViewer.kt:686	Pokemon option
+nds-0191	DONE	DsLogViewer.kt:686	Trainers option
+nds-0192	DONE	DsLogViewer.kt:687	Move option
+nds-0193	DONE	DsLogViewer.kt:687	Ability option
+nds-0194	DONE	DsLogViewer.kt:686	Look for:
+nds-0195	DONE	DsLogViewer.kt:687	With:
+nds-0196	DONE	DsLogViewer.kt:714	None found
+nds-0197	DONE	DsLog.kt:165	Only ability
+nds-0198	DONE	DsLog.kt:165	1 of N abilities
+nds-0199	DONE	DsLogViewer.kt:714	Total: N
+nds-0200	NA	-	Placeholder text; real rows read 'Lv. a - b' (DsLog.kt:255)
+nds-0201	NA	-	Placeholder text
+nds-0202	DONE	DsLogViewer.kt:392	Six rankings, top ten each, arrows; the picture opens the Pokemon
+nds-0203	DONE	DsLogViewer.kt:420	Base Stats (N total)
+nds-0204	DONE	DsLogViewer.kt:420	Same heading
+nds-0205	DONE	DsLog.kt:321	Best Special Attackers
+nds-0206	DONE	DsLog.kt:329	Its description
+nds-0207	DONE	DsLog.kt:322	Best Physical Attackers
+nds-0208	DONE	DsLog.kt:330	Its description
+nds-0209	DONE	DsLog.kt:323	Biggest Special Walls
+nds-0210	DONE	DsLog.kt:331	Its description
+nds-0211	DONE	DsLog.kt:324	Best Defensive Tanks
+nds-0212	DONE	DsLog.kt:332	Its description
+nds-0213	DONE	DsLog.kt:325	Bulkiest Overall
+nds-0214	DONE	DsLog.kt:333	Its description
+nds-0215	DONE	DsLog.kt:326	Most Frail
+nds-0216	DONE	DsLog.kt:334	Its description
+nds-0217	NA	-	Placeholder text
+nds-0218	NA	-	Placeholder name
+nds-0219	NA	-	Placeholder heading
+nds-0220	PARTIAL	DsLogViewer.kt:476	Team, estimated stats, moves; first ability only (ref lists all 3), no item/ability descriptions, no portrait
+nds-0221	NA	-	Placeholder name
+nds-0222	PARTIAL	DsLogViewer.kt:454	Cards with badge and name; no trainer portraits
+nds-0223	NA	-	Control name
+nds-0224	DONE	DsLog.kt:89	Kanto Gyms use the Kanto badge art
+nds-0225	NA	-	Image path fragment
+nds-0226	DONE	DsLogViewer.kt:438	Group tabs separated by '|', the active one underlined
+nds-0227	PARTIAL	TrackerGearDialog.kt:40	One gear list instead of seven pages; many DS options missing or unread (see the settings rows)
+nds-0228	DONE	AboutScreen.kt:434	The version is shown in About
+nds-0229	DONE	TrackerGearDialog.kt:204	CLOSE
+nds-0230	MISSING	TrackerGearDialog.kt:107	See nds-0092
+nds-0231	PARTIAL	TrackerGearDialog.kt:97	See nds-0080
+nds-0232	PARTIAL	TrackerGearDialog.kt:83	See nds-0415
+nds-0233	PARTIAL	RunScreen.kt:293	See nds-0434
+nds-0234	NA	-	Quickload settings (desktop); the app's Run tab builds seeds
+nds-0235	NA	-	BizHawk script updater
+nds-0236	PARTIAL	TrackerGearDialog.kt:77	See nds-0122
+nds-0237	NA	-	Code identifier
+nds-0238	DONE	TrackerGearDialog.kt:74	The options menu, opened by SETUP (NdsTrackerPanel.kt:399)
+nds-0239	PARTIAL	NdsTrackerPanel.kt:660	One card with swap and lock; effectiveness, variable power, STAB colour, HP type, move info on tap, stars, ACC/EVA; doubles not read (fix/ds-ui)
+nds-0240	NA	-	Code identifier
+nds-0241	DONE	MoveHistoryStats.kt:66	Header tap lists the learn levels, 'No moves learned' when none (NdsTrackerPanel.kt:168)
+nds-0242	DONE	MoveHistoryStats.kt:68	Same
+nds-0243	DONE	NdsTrackerPanel.kt:323	Heals box: a tap opens the healing or status item list, with the reference's empty-bag text (fix/ds-ui)
+nds-0244	DONE	NdsTrackerPanel.kt:323	Same (fix/ds-ui)
+nds-0245	NA	-	Code identifier
+nds-0246	PARTIAL	NdsTrackerPanel.kt:143	Hidden Power and Judgment recoloured by their real type; no toggle (fix/ds-ui)
+nds-0247	DONE	NdsTrackerPanel.kt:651	Hidden Power type arrows, colour and type (fix/ds-ui)
+nds-0248	DONE	NdsMoveRules.kt:12	Judgment typed by the held plate (PLATE_TO_TYPE) (fix/ds-ui)
+nds-0249	MISSING	-	No move type icons
+nds-0250	NA	-	Code identifier
+nds-0251	DONE	NdsMoveRules.kt:172	Return and Frustration power from friendship, as the ref (fix/ds-ui)
+nds-0252	DONE	NdsTrackerPanel.kt:206; EncounterBook.kt:72	'Total seen: N' on the enemy card, every new active enemy counted, saved
+nds-0253	DONE	NdsTrackerPanel.kt:207; EncounterBook.kt:72	'Last level: N' (or ---) on the enemy card, recorded as it leaves or the battle ends
+nds-0254	NA	-	Code identifier
+nds-0255	PARTIAL	DsLogViewer.kt:520	Team view shows the item name; no 'Item:' label, no description on tap
+nds-0256	PARTIAL	DsLogViewer.kt:520	No held item shows nothing (ref: 'Item: None')
+nds-0257	DONE	NdsHeals.kt:89	Status item list (fix/ds-ui)
+nds-0258	DONE	NdsHeals.kt:84	Healing item list (fix/ds-ui)
+nds-0259	DONE	NdsHeals.kt:69	'Heals:' % and count, rounded as the ref (fix/ds-ui)
+nds-0260	DONE	NdsHeals.kt:75	'Status items: N' (fix/ds-ui)
+nds-0261	DONE	NdsLogData.kt:127	Nature berry note in the held item's text (tap the item)
+nds-0262	DONE	NdsLogData.kt:131	Same
+nds-0263	DONE	NdsLogData.kt:131	Same
+nds-0264	DONE	NdsTrackerPanel.kt:145	'Lv. N (evo)' with the friendship bar
+nds-0265	DONE	NdsTrackerPanel.kt:229	The enemy card hides its HP as the ref does; own card 'HP: cur/max' (fix/ds-ui)
+nds-0266	PARTIAL	PastRuns.kt:260	Shown for an empty list; a run with no area shows 'Badges: N' instead
+nds-0267	DONE	NdsTracker.kt:1019	Beating the champion (FINAL_FIGHT_ID) wins the run: the win popup, logged as won (fix/ds-ui)
+nds-0268	NA	-	Image path fragment
+nds-0269	NA	-	Game-name check in code
+nds-0270	NA	-	Game-name check in code
+nds-0271	NA	-	Builds MainScreen's controls; judged at nds-0239
+nds-0272	NA	-	Code identifier
+nds-0273	NA	-	Code identifier
+nds-0274	NA	-	Code identifier
+nds-0275	NA	-	Placeholder move name
+nds-0276	NA	-	Layout argument
+nds-0277	NA	-	Placeholder Pokemon name
+nds-0278	NA	-	Placeholder ability name
+nds-0279	DONE	PcTracker.kt:712	Pow column
+nds-0280	DONE	PcTracker.kt:713	Acc column
+nds-0281	NA	-	Code identifier
+nds-0282	NA	-	Code identifier
+nds-0283	NA	-	Code identifier
+nds-0284	NA	-	Image path fragment
+nds-0285	NA	-	Placeholder, replaced by 'Heals:' (nds-0259)
+nds-0286	NA	-	Placeholder text
+nds-0287	PARTIAL	PastRuns.kt:209	Compact card, not the main-screen view: no stats, item or badges of the run (kept per game, as the ref)
+nds-0288	DONE	PastRuns.kt:276	SWAP
+nds-0289	DONE	PastRuns.kt:291	Remove no-badge runs, with a confirmation
+nds-0290	DONE	PastRuns.kt:244	X closes
+nds-0291	DONE	PastRuns.kt:284	Minimum badges 0 to 8
+nds-0292	DONE	PastRuns.kt:279	Sort
+nds-0293	DONE	PastRuns.kt:280	Newest, the default
+nds-0294	DONE	PastRuns.kt:280	Oldest
+nds-0295	DONE	PastRuns.kt:280	A-Z by the fainted Pokemon
+nds-0296	MISSING	-	No icon set screen
+nds-0297	MISSING	-	No Stadium brows
+nds-0298	MISSING	-	No icon set screen
+nds-0299	MISSING	-	No icon set screen
+nds-0300	MISSING	-	Screen absent
+nds-0301	MISSING	-	No Stadium icon set
+nds-0302	NA	-	BizHawk quickload of ROM, JAR and settings files; the app's Run tab builds each seed
+nds-0303	NA	-	Quickload screen (desktop files and profiles)
+nds-0304	NA	-	Quickload screen (desktop files and profiles)
+nds-0305	NA	-	Quickload screen (desktop files and profiles)
+nds-0306	NA	-	Quickload screen (desktop files and profiles)
+nds-0307	NA	-	Quickload screen (desktop files and profiles)
+nds-0308	NA	-	Quickload screen (desktop files and profiles)
+nds-0309	NA	-	Quickload screen (desktop files and profiles)
+nds-0310	NA	-	Quickload screen (desktop files and profiles)
+nds-0311	NA	-	Quickload screen (desktop files and profiles)
+nds-0312	NA	-	Quickload screen (desktop files and profiles)
+nds-0313	NA	-	Quickload screen (desktop files and profiles)
+nds-0314	NA	-	Quickload screen (desktop files and profiles)
+nds-0315	NA	-	Quickload screen (desktop files and profiles)
+nds-0316	NA	-	Quickload screen (desktop files and profiles)
+nds-0317	NA	-	Quickload screen (desktop files and profiles)
+nds-0318	NA	-	Quickload screen (desktop files and profiles)
+nds-0319	NA	-	Quickload screen (desktop files and profiles)
+nds-0320	NA	-	Quickload screen (desktop files and profiles)
+nds-0321	PARTIAL	NdsTrackerPanel.kt:496	Random pick at start, lit ball and label; the HGSS middle ball is drawn raised, the ref draws it lower
+nds-0322	DONE	NdsTrackerPanel.kt:497	Left
+nds-0323	DONE	NdsTrackerPanel.kt:497	Middle
+nds-0324	DONE	NdsTrackerPanel.kt:497	Right
+nds-0325	DONE	NdsTrackerPanel.kt:517	Random ball:
+nds-0326	PARTIAL	TimeMachine.kt:91	GBA Time Machine: every 4 min out of battle, 10 kept (ref: 5 min, in battle too, 3 kept); no DS area name
+nds-0327	PARTIAL	TimeMachine.kt:112	'created 1 minute ago' rather than 'Just now'
+nds-0328	DONE	TimeMachine.kt:112	'created N minutes ago'
+nds-0329	PARTIAL	PlayScreen.kt:664	'Unknown Area' fallback exists, but DS points always get it (the DS area name is not passed)
+nds-0330	DONE	TimeMachine.kt:103	Reworded explanation of restore points
+nds-0331	DONE	TimeMachine.kt:103	Reworded explanation of restore points
+nds-0332	DONE	TimeMachine.kt:103	Reworded explanation of restore points
+nds-0333	DONE	TimeMachine.kt:103	Reworded explanation of restore points
+nds-0334	DONE	TimeMachine.kt:51	Restoring first saves the present as 'Return back to the future'
+nds-0335	DONE	TimeMachine.kt:110	Tap a point, then confirm
+nds-0336	NA	-	Control name
+nds-0337	NA	-	Control name
+nds-0338	NA	-	Placeholder text
+nds-0339	DONE	TimeMachine.kt:105	Empty-list text
+nds-0340	DONE	TimeMachine.kt:98	X closes
+nds-0341	DONE	TrackerGearDialog.kt:83	TIME MACHINE
+nds-0342	PARTIAL	GameOverDialog.kt:109	Cause pools and the win; line picked by attempt (ref random, death_quotes.txt, %enemy% tags); no tourney button
+nds-0343	DONE	GameOverDialog.kt:124	Continue playing
+nds-0344	DONE	GameOverDialog.kt:145	Open the log
+nds-0345	MISSING	-	No tourney scores button on the run-over popup
+nds-0346	DONE	GameOverDialog.kt:180	RUN OVER
+nds-0347	PARTIAL	PastRuns.kt:302	Same sets and bars, but computed from kept runs (removing no-badge runs changes them); ref keeps totals
+nds-0348	DONE	PastRuns.kt:183	Overall Progress
+nds-0349	DONE	PastRuns.kt:182	Black and White read 'Past N' (versionGroup 4)
+nds-0350	DONE	PastRuns.kt:310	X closes
+nds-0351	DONE	PastRuns.kt:313	Total runs:
+nds-0352	PARTIAL	PastRuns.kt:314	Sum of the logged runs' lengths; the ref counts all tracker time for the game
+nds-0353	NA	-	Streamer.bot connection (desktop; TRACKER-PARITY.md: n/a)
+nds-0354	NA	-	Streamer.bot config screen (desktop)
+nds-0355	NA	-	Streamer.bot config screen (desktop)
+nds-0356	NA	-	Streamer.bot config screen (desktop)
+nds-0357	NA	-	Streamer.bot config screen (desktop)
+nds-0358	NA	-	Streamer.bot config screen (desktop)
+nds-0359	NA	-	Streamer.bot config screen (desktop)
+nds-0360	NA	-	Streamer.bot config screen (desktop)
+nds-0361	NA	-	Streamer.bot config screen (desktop)
+nds-0362	NA	-	Streamer.bot config screen (desktop)
+nds-0363	NA	-	Streamer.bot config screen (desktop)
+nds-0364	NA	-	Streamer.bot config screen (desktop)
+nds-0365	NA	-	Streamer.bot config screen (desktop)
+nds-0366	NA	-	Streamer.bot config screen (desktop)
+nds-0367	NA	-	Streamer.bot config screen (desktop)
+nds-0368	NA	-	Streamer.bot config screen (desktop)
+nds-0369	PARTIAL	DsExtras.kt:63	HH:MM:SS, tap pauses, stops at run end; not saved, counts time away, no drag or transparency
+nds-0370	NA	-	Colour key of the transparent style
+nds-0371	NA	-	Colour key of the transparent style
+nds-0372	NA	-	Mouse button id; the drag it starts is judged at nds-0067
+nds-0373	PARTIAL	NdsTrackerPanel.kt:410	No-party card with ball and favourite names; no game name, attempts, 'Did you know?' or pictures
+nds-0374	MISSING	-	No 'Did you know?' run statistics on the start card
+nds-0375	MISSING	-	No 'Did you know?' run statistics on the start card
+nds-0376	MISSING	-	No 'Did you know?' run statistics on the start card
+nds-0377	MISSING	-	No 'Did you know?' run statistics on the start card
+nds-0378	MISSING	-	No 'Did you know?' run statistics on the start card
+nds-0379	MISSING	-	No 'Did you know?' run statistics on the start card
+nds-0380	MISSING	-	No 'Did you know?' run statistics on the start card
+nds-0381	MISSING	-	No 'Did you know?' run statistics on the start card
+nds-0382	MISSING	-	No 'Did you know?' run statistics on the start card
+nds-0383	MISSING	-	No 'Did you know?' run statistics on the start card
+nds-0384	MISSING	-	No 'Did you know?' run statistics on the start card
+nds-0385	MISSING	-	No 'Did you know?' run statistics on the start card
+nds-0386	MISSING	-	No 'Did you know?' run statistics on the start card
+nds-0387	MISSING	-	No 'Did you know?' run statistics on the start card
+nds-0388	MISSING	-	No 'Did you know?' run statistics on the start card
+nds-0389	MISSING	-	No 'Did you know?' run statistics on the start card
+nds-0390	MISSING	-	No 'Did you know?' run statistics on the start card
+nds-0391	MISSING	-	No 'Did you know?' run statistics on the start card
+nds-0392	MISSING	-	No 'Did you know?' run statistics on the start card
+nds-0393	DONE	Favorites.kt:87	Favourites kept per game
+nds-0394	DONE	RunScreen.kt:324	'Favorite N' boxes
+nds-0395	PARTIAL	PlayScreen.kt:1631	Attempt shown (landscape header, RUN tab), not on the DS start card, and not editable
+nds-0396	MISSING	-	The start card shows no game name
+nds-0397	MISSING	-	The start card shows no game name
+nds-0398	DONE	RunScreen.kt:340	Typing with name suggestions sets a favourite
+nds-0399	DONE	RunScreen.kt:293	The section folds closed
+nds-0400	DONE	RunScreen.kt:293	'Startup favorites' on the RUN tab (4 on Gen 4, 5 on Gen 5)
+nds-0401	PARTIAL	NdsTrackerPanel.kt:415	'FAVORITES: A / B' text; no pictures, no rotation
+nds-0402	NA	-	The ref's own name and version banner
+nds-0403	PARTIAL	DsExtras.kt:261	Breakdown, bonuses, clear; opened from the gear (HGSS) only, not from a points box or Run Over
+nds-0404	DONE	PlayScreen.kt:655	Milestone toast with the new total
+nds-0405	DONE	DsExtras.kt:302	EXPORT SCORES
+nds-0406	DONE	DsExtras.kt:271	X closes
+nds-0407	DONE	DsExtras.kt:282	Seed i/N
+nds-0408	DONE	DsExtras.kt:290	Bonuses
+nds-0409	DONE	DsExtras.kt:290	Select One to Remove:
+nds-0410	DONE	DsExtras.kt:290	Select One to Add:
+nds-0411	DONE	DsExtras.kt:286	Milestones
+nds-0412	DONE	DsExtras.kt:282	The seed's points
+nds-0413	DONE	DsExtras.kt:277	Cumulative score (no cumulative_score.txt file is written)
+nds-0414	PARTIAL	DsExtras.kt:303	Lines shown in the dialog but not copyable (ref: a text box to copy)
+nds-0415	PARTIAL	TrackerGearDialog.kt:83	Tracked Pokemon, past runs, statistics, restore points, run-over rule are in the gear; no Open a Log
+nds-0416	NA	-	Desktop file filter for Load Tracker Data
+nds-0417	DONE	TrackerGearDialog.kt:204	CLOSE
+nds-0418	DONE	TrackerGearDialog.kt:87	TRACKED POKEMON
+nds-0419	DONE	TrackerGearDialog.kt:84	PAST RUNS
+nds-0420	DONE	TrackerGearDialog.kt:85	STATISTICS
+nds-0421	MISSING	-	By decision the log opens only from the game-over popup (PARITY-FINDINGS)
+nds-0422	DONE	TrackerGearDialog.kt:83	TIME MACHINE
+nds-0423	NA	-	Loads a .trackerdata file through a desktop file dialog; the app keeps each run's data itself
+nds-0424	NA	-	Code identifier
+nds-0425	DONE	TrackerGearDialog.kt:189	The DS's own 'Run is considered over when:' with the DS labels (TrackerOptions.dsLossLabel) (fix/ds-ui)
+nds-0426	DONE	TrackerOptions.kt:99	'Lead Pokémon faints' (dsLossLabel)
+nds-0427	DONE	LossCondition.kt:11	Same label
+nds-0428	DONE	LossCondition.kt:12	Highest level faints
+nds-0429	DONE	LossCondition.kt:13	Entire party faints
+nds-0430	PARTIAL	TrackerGearDialog.kt:83	See nds-0415
+nds-0431	PARTIAL	DsExtras.kt:79	Name-sorted list, arrows, search; read-only card (ref: editable marks and note, times seen, last level)
+nds-0432	DONE	DsExtras.kt:101	Search box jumps to a name
+nds-0433	DONE	DsExtras.kt:91	X closes
+nds-0434	PARTIAL	RunScreen.kt:293	Favourites are edited on the RUN tab; no binding of tracker actions to buttons
+nds-0435	NA	-	Code identifier
+nds-0436	NA	-	Code identifier
+nds-0437	MISSING	-	No binding of swap, stat, prediction or lock to buttons
+nds-0438	NA	-	Builds the quickload combo
+nds-0439	NA	-	Quickload combo
+nds-0440	NA	-	Code identifier
+nds-0441	NA	-	Clears the quickload combo
+nds-0442	DONE	RunScreen.kt:293	Startup favorites on the RUN tab
+nds-0443	PARTIAL	RunScreen.kt:293	See nds-0434
+nds-0444	DONE	TrackerGearDialog.kt:204	CLOSE
+nds-0445	NA	-	UI framework class, not a screen; its uses are judged on the screens
+nds-0446	NA	-	UI framework class, not a screen; its uses are judged on the screens
+nds-0447	NA	-	UI framework class, not a screen; its uses are judged on the screens
+nds-0448	NA	-	UI framework class, not a screen; its uses are judged on the screens
+nds-0449	NA	-	Mouse button id
+nds-0450	NA	-	UI framework class, not a screen; its uses are judged on the screens
+nds-0451	NA	-	UI framework class, not a screen; its uses are judged on the screens
+nds-0452	NA	-	Mouse button id
+nds-0453	NA	-	UI framework class, not a screen; its uses are judged on the screens
+nds-0454	NA	-	UI framework class, not a screen; its uses are judged on the screens
+nds-0455	NA	-	UI framework class, not a screen; its uses are judged on the screens
+nds-0456	NA	-	UI framework class, not a screen; its uses are judged on the screens
+nds-0457	NA	-	Joypad key filter
+nds-0458	NA	-	UI framework class, not a screen; its uses are judged on the screens
+nds-0459	NA	-	UI framework class, not a screen; its uses are judged on the screens
+nds-0460	NA	-	Mouse button id
+nds-0461	NA	-	UI framework class, not a screen; its uses are judged on the screens
+nds-0462	NA	-	UI framework class, not a screen; its uses are judged on the screens
+nds-0463	NA	-	UI framework class, not a screen; its uses are judged on the screens
+nds-0464	NA	-	UI framework class, not a screen; its uses are judged on the screens
+nds-0465	NA	-	On-screen keyboard class; the phone's keyboard does its job
+nds-0466	DONE	DsLogViewer.kt:208	The search field's X clears it
+nds-0467	NA	-	UI framework class, not a screen; its uses are judged on the screens
+nds-0468	NA	-	UI framework class, not a screen; its uses are judged on the screens
+nds-0469	NA	-	UI framework class, not a screen; its uses are judged on the screens
+nds-0470	NA	-	UI framework class, not a screen; its uses are judged on the screens
+nds-0471	NA	-	BizHawk script update notes
+nds-0472	NA	-	BizHawk script update notes
+nds-0473	NA	-	BizHawk script update notes
+nds-0474	NA	-	BizHawk script auto-updater
+nds-0475	NA	-	BizHawk script auto-updater
+nds-0476	NA	-	BizHawk script auto-updater
+nds-0477	NA	-	BizHawk script auto-updater
+nds-0478	NA	-	BizHawk script auto-updater
+nds-0479	NA	-	BizHawk script auto-updater
+nds-0480	NA	-	BizHawk script auto-updater
+nds-0481	NA	-	BizHawk script auto-updater
+nds-0482	NA	-	BizHawk script auto-updater
+nds-0483	NA	-	BizHawk script auto-updater
+nds-0484	NA	-	BizHawk script auto-updater
+nds-0485	NA	-	BizHawk script auto-updater
+nds-0486	NA	-	BizHawk script auto-updater
+nds-0487	NA	-	BizHawk script auto-updater
+nds-0488	NA	-	BizHawk script auto-updater
+nds-0489	NA	-	BizHawk script auto-updater

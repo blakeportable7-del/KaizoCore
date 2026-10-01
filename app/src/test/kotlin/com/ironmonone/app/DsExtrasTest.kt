@@ -38,4 +38,13 @@ class DsExtrasTest {
         assertEquals("Seed #1 - Last milestone: Beat Gyms 5/6/7.", TourneyTracker(f).lines()[0])
         assertEquals("Bonuses: Evo Bonus (Lv. 30+)", TourneyTracker(f).lines()[1])
     }
+
+    @Test
+    fun `a tracked species shows only the abilities this run has seen`() {
+        assertEquals("---", trackedAbilityLine(emptyList()))
+        assertEquals("Levitate", trackedAbilityLine(listOf("Levitate")))
+        assertEquals("Levitate / Swift Swim", trackedAbilityLine(listOf("Levitate", "Swift Swim")))
+        val src = File("src/main/kotlin/com/ironmonone/app/DsExtras.kt").readText()
+        assertTrue("the randomizer's own abilities are not read there", !src.contains("info.ability1") && !src.contains("info.ability2"))
+    }
 }

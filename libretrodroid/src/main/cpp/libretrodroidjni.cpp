@@ -44,6 +44,7 @@
 #include "renderers/es2/imagerendereres2.h"
 #include "renderers/es3/imagerendereres3.h"
 #include "utils/jnistring.h"
+#include "streamtap.h"
 
 namespace libretrodroid {
 
@@ -568,6 +569,15 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_pause(
     }
 }
 
+// KaizoCore patch: see LibretroDroid::stepBot.
+JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_stepBot(
+    JNIEnv* env,
+    jclass obj,
+    jint frames
+) {
+    if (frames > 0) LibretroDroid::getInstance().stepBot((unsigned) frames);
+}
+
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_step(
     JNIEnv* env,
     jclass obj,
@@ -688,6 +698,71 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setAudioEn
     jboolean enabled
 ) {
     LibretroDroid::getInstance().setAudioEnabled(enabled);
+}
+
+// KaizoCore patch (2026-09-29): the stream kit's taps (streamtap.h). The Kotlin
+// stream server calls these from its own threads. None of them ever waits on the
+// emulation thread, and while capture is off the emulation thread does nothing
+// for them at all.
+
+JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setStreamCapture(
+    JNIEnv* env,
+    jclass obj,
+    jboolean on
+) {
+    StreamTap::setEnabled(on == JNI_TRUE);
+}
+
+// Newest frame as tightly packed RGB into a direct ByteBuffer. Returns the frame's
+// counter (> 0, `size` gets width and height), 0 when nothing is newer than
+// `afterCounter`, -1 when the buffer is too small (`size` says what is needed) and
+// -2 when `dst` is not a direct buffer.
+JNIEXPORT jlong JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_streamFrame(
+    JNIEnv* env,
+    jclass obj,
+    jobject dst,
+    jlong afterCounter,
+    jintArray size
+) {
+    auto* out = dst != nullptr ? static_cast<uint8_t*>(env->GetDirectBufferAddress(dst)) : nullptr;
+    const jlong capacity = dst != nullptr ? env->GetDirectBufferCapacity(dst) : -1;
+    if (out == nullptr || capacity < 0) return -2;
+
+    int width = 0;
+    int height = 0;
+    const int64_t counter = StreamTap::getInstance().copyFrame(
+        out, static_cast<size_t>(capacity), afterCounter, &width, &height);
+
+    if (counter != 0 && size != nullptr && env->GetArrayLength(size) >= 2) {
+        const jint dims[2] = { width, height };
+        env->SetIntArrayRegion(size, 0, 2, dims);
+    }
+    return counter;
+}
+
+// Buffered sound as interleaved stereo int16 (native byte order, little-endian on
+// every Android ABI) into a direct ByteBuffer. Returns the number of BYTES written,
+// a whole number of stereo frames; `info[0]` gets the sample rate in Hz. -1 when
+// `dst` is not a direct buffer.
+JNIEXPORT jint JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_streamAudio(
+    JNIEnv* env,
+    jclass obj,
+    jobject dst,
+    jintArray info
+) {
+    auto* out = dst != nullptr ? static_cast<int16_t*>(env->GetDirectBufferAddress(dst)) : nullptr;
+    const jlong capacity = dst != nullptr ? env->GetDirectBufferCapacity(dst) : -1;
+    if (out == nullptr || capacity < 0) return -1;
+
+    int rate = 0;
+    const size_t samples = StreamTap::getInstance().drainAudio(
+        out, static_cast<size_t>(capacity) / sizeof(int16_t), &rate);
+
+    if (info != nullptr && env->GetArrayLength(info) >= 1) {
+        const jint r = rate;
+        env->SetIntArrayRegion(info, 0, 1, &r);
+    }
+    return static_cast<jint>(samples * sizeof(int16_t));
 }
 
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setShaderConfig(

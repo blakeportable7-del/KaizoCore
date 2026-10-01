@@ -32,7 +32,6 @@ import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.OnLifecycleEvent
 import androidx.lifecycle.coroutineScope
-import com.swordfish.libretrodroid.KtUtils.awaitUninterruptibly
 import com.swordfish.libretrodroid.gamepad.GamepadsManager
 import java.util.*
 import java.util.concurrent.CountDownLatch
@@ -73,7 +72,7 @@ class GLRetroView(
     }
 
     var viewport: RectF by Delegates.observable(RectF(0f, 0f, 1f, 1f)) { _, _, value ->
-        runOnEmulationThread(true) {
+        runOnEmulationThread(true, Unit) {
             LibretroDroid.setViewport(value.left, value.top, value.width(), value.height())
         }
     }
@@ -190,41 +189,57 @@ class GLRetroView(
         LibretroDroid.writeMemory(address, data)
 
     fun serializeState(useEmulationThread: Boolean = true): ByteArray {
-        return runOnEmulationThread(useEmulationThread) {
+        return runOnEmulationThread(useEmulationThread, ByteArray(0)) {
             LibretroDroid.serializeState()
         }
     }
 
     // KaizoCore patch: resetCheat had a native binding and no wrapper.
     fun resetCheat(useEmulationThread: Boolean = true) {
-        runOnEmulationThread(useEmulationThread) { LibretroDroid.resetCheat() }
+        runOnEmulationThread(useEmulationThread, Unit) { LibretroDroid.resetCheat() }
     }
 
     fun setCheat(index: Int, enable: Boolean, code: String, useEmulationThread: Boolean = true) {
-        runOnEmulationThread(useEmulationThread) {
+        runOnEmulationThread(useEmulationThread, Unit) {
             LibretroDroid.setCheat(index, enable, code)
         }
     }
 
+    /**
+     * KaizoCore patch (2026-09-30): told before and after every state load, whoever loads it (a slot, undo,
+     * rewind, a restore point, the battle retry, the crash resume), so the app can keep the in-game save a
+     * core would otherwise roll back (melonDS writes the state's copy of the save to its .sav).
+     */
+    interface StateLoadListener {
+        fun beforeStateLoad()
+        fun afterStateLoad(loaded: Boolean)
+    }
+
+    @Volatile var stateLoadListener: StateLoadListener? = null
+
     fun unserializeState(data: ByteArray, useEmulationThread: Boolean = true): Boolean {
-        return runOnEmulationThread(useEmulationThread) {
+        val listener = stateLoadListener
+        runCatching { listener?.beforeStateLoad() }
+        val loaded = runOnEmulationThread(useEmulationThread, false) {
             LibretroDroid.unserializeState(data)
         }
+        runCatching { listener?.afterStateLoad(loaded) }
+        return loaded
     }
 
     fun serializeSRAM(useEmulationThread: Boolean = true): ByteArray {
-        return runOnEmulationThread(useEmulationThread) {
+        return runOnEmulationThread(useEmulationThread, ByteArray(0)) {
             LibretroDroid.serializeSRAM()
         }
     }
 
     fun unserializeSRAM(data: ByteArray, useEmulationThread: Boolean = true): Boolean {
-        return runOnEmulationThread(useEmulationThread) {
+        return runOnEmulationThread(useEmulationThread, false) {
             LibretroDroid.unserializeSRAM(data)
         }
     }
 
-    fun reset(useEmulationThread: Boolean = true) = runOnEmulationThread(useEmulationThread) {
+    fun reset(useEmulationThread: Boolean = true) = runOnEmulationThread(useEmulationThread, Unit) {
         LibretroDroid.reset()
     }
 
@@ -259,15 +274,15 @@ class GLRetroView(
     }
 
     fun getAvailableDisks(useEmulationThread: Boolean = true): Int {
-        return runOnEmulationThread(useEmulationThread) { LibretroDroid.availableDisks() }
+        return runOnEmulationThread(useEmulationThread, 0) { LibretroDroid.availableDisks() }
     }
 
     fun getCurrentDisk(useEmulationThread: Boolean = true): Int {
-        return runOnEmulationThread(useEmulationThread) { LibretroDroid.currentDisk() }
+        return runOnEmulationThread(useEmulationThread, 0) { LibretroDroid.currentDisk() }
     }
 
     fun changeDisk(index: Int, useEmulationThread: Boolean = true) {
-        runOnEmulationThread(useEmulationThread) { LibretroDroid.changeDisk(index) }
+        runOnEmulationThread(useEmulationThread, Unit) { LibretroDroid.changeDisk(index) }
     }
 
     private fun getGLESVersion(context: Context): Int {
@@ -356,7 +371,8 @@ class GLRetroView(
     inner class Renderer : GLSurfaceView.Renderer {
         override fun onDrawFrame(gl: GL10) = catchExceptions {
             if (isEmulationReady) {
-                LibretroDroid.step(this@GLRetroView)
+                if (!holdSteps) LibretroDroid.step(this@GLRetroView)
+                if (stepHooks.isNotEmpty()) for (hook in stepHooks) runCatching { hook.afterStep(this@GLRetroView) }
                 lifecycle?.coroutineScope?.launch {
                     retroGLEventsSubject.emit(GLRetroEvents.FrameRendered)
                 }
@@ -431,20 +447,39 @@ class GLRetroView(
         }
     }
 
-    private fun <T> runOnEmulationThread(useEmulationThread: Boolean, block: () -> T): T {
+    /**
+     * Runs [block] on the emulation thread and waits for it, [EMULATION_WAIT_MS] at most.
+     *
+     * KaizoCore patch (2026-09-30): this waited forever. The app calls it from the main thread (Time Machine every
+     * 15 seconds, the battle-start snapshot, save and load, cheats), and an emulation thread that never answers (its
+     * view torn down, or stalled while the window moves to another display) froze the whole app. A player's AYN
+     * Thor reported exactly that ANR: "Input dispatching timed out (Application does not have a focused window)".
+     * Now a job that never started is cancelled and [fallback] comes back; one that started is waited for a
+     * moment longer, since it is finishing.
+     */
+    private fun <T> runOnEmulationThread(useEmulationThread: Boolean, fallback: T, block: () -> T): T {
         if (!useEmulationThread || Thread.currentThread().name.startsWith("GLThread")) {
             return block()
         }
 
         val latch = CountDownLatch(1)
+        // 0 waiting, 1 started, 2 cancelled: whichever side moves it off 0 first decides, so a job either runs
+        // in full or not at all, and the caller knows which.
+        val phase = java.util.concurrent.atomic.AtomicInteger(0)
         var result: T? = null
         queueEvent {
-            result = block()
+            if (phase.compareAndSet(0, 1)) result = block()
             latch.countDown()
         }
 
-        latch.awaitUninterruptibly()
-        return result!!
+        if (!latch.await(EMULATION_WAIT_MS, java.util.concurrent.TimeUnit.MILLISECONDS)) {
+            if (phase.compareAndSet(0, 2) || !latch.await(EMULATION_GRACE_MS, java.util.concurrent.TimeUnit.MILLISECONDS)) {
+                Log.w(TAG_LOG, "The emulation thread did not answer in time; giving up on this call.")
+                return fallback
+            }
+        }
+        @Suppress("UNCHECKED_CAST")
+        return if (phase.get() == 1) result as T else fallback
     }
 
     private fun buildShader(config: ShaderConfig): GLRetroShader {
@@ -551,7 +586,7 @@ class GLRetroView(
     }
 
     private fun refreshAspectRatio() {
-        runOnEmulationThread(true) {
+        runOnEmulationThread(true, Unit) {
             LibretroDroid.refreshAspectRatio()
         }
     }
@@ -561,8 +596,38 @@ class GLRetroView(
         object SurfaceCreated : GLRetroEvents()
     }
 
+    /**
+     * KaizoCore patch: runs on the emulation thread right after every step, between two frames of the game.
+     * Only the debug build's test bot adds one (app/src/debug, bot/BotPort.kt); a players' build never does, so
+     * a step costs one empty-list check.
+     */
+    fun interface StepHook {
+        fun afterStep(view: GLRetroView)
+    }
+
     companion object {
         private val TAG_LOG = GLRetroView::class.java.simpleName
+
+        /**
+         * KaizoCore patch: how long a call waits for the emulation thread before giving up, and how much longer
+         * once its job has started. Together under Android's 5 seconds for input, so a stalled emulation thread
+         * can never freeze the app into "not responding".
+         */
+        const val EMULATION_WAIT_MS = 2_000L
+        const val EMULATION_GRACE_MS = 1_500L
+
+        /** KaizoCore patch: see [StepHook]. */
+        @JvmField
+        val stepHooks = java.util.concurrent.CopyOnWriteArrayList<StepHook>()
+
+        /**
+         * KaizoCore patch: while true the render loop runs no frame of its own and only calls the step hooks.
+         * Set only by the debug build's test bot while it plays frame by frame (it runs each frame itself, from
+         * its hook); a players' build never sets it.
+         */
+        @JvmField
+        @Volatile
+        var holdSteps = false
 
         const val MOTION_SOURCE_DPAD = LibretroDroid.MOTION_SOURCE_DPAD
         const val MOTION_SOURCE_ANALOG_LEFT = LibretroDroid.MOTION_SOURCE_ANALOG_LEFT

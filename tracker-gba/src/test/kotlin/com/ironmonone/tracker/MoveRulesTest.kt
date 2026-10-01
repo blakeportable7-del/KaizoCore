@@ -107,4 +107,36 @@ class MoveRulesTest {
         assertEquals("30", adjust(12, "0", acc = "30", src = Side(20), tgt = Side(20)).acc)
         assertEquals("100", adjust(329, "0", acc = "30", src = Side(100), tgt = Side(2)).acc)
     }
+
+    /**
+     * Low Kick was weight-based from Gen 3 on. The Gen 2 tracker's MoveData
+     * gives it 50 power and 90 accuracy (Ironmon-gen-2-tracker MoveData.lua:
+     * 938-943). The Gen 1 tracker's says "WT" but shows the ROM's 50: its
+     * randomization check reads Gen 1's 90% Blizzard as randomized, so it
+     * takes every power from the ROM (MoveData.lua:100-180).
+     */
+    @Test
+    fun `Low Kick shows its ROM power on the Game Boy games and WT on GBA`() {
+        assertEquals("50", MoveRules.basePower(67, 50, generation = 2))
+        assertEquals("50", MoveRules.basePower(67, 50, generation = 1))
+        assertEquals("WT", MoveRules.basePower(67, 1))
+        for (gen in 1..2) assertEquals(MoveRules.VARIABLE_POWER - MoveRules.LOW_KICK, MoveRules.variablePower(gen), "every other label stays, Gen $gen")
+    }
+
+    /**
+     * The Gen 1 tracker marks its move rows with its own chart (Utils.lua
+     * netEffectiveness over MoveData.lua TypeToEffectiveness), not only Type
+     * Defenses: Poison and Bug hit each other for 2x and Ghost does nothing
+     * to Psychic.
+     */
+    @Test
+    fun `Red, Blue and Yellow mark moves on the Gen 1 tracker's chart`() {
+        val BUG = 6; val PSYCHIC = 14
+        assertEquals(2.0, MoveRules.effectiveness(124, POISON, "PHY", listOf(BUG), gen1 = true))       // Sludge on a Bug
+        assertEquals(1.0, MoveRules.effectiveness(124, POISON, "PHY", listOf(BUG)))
+        assertEquals(0.0, MoveRules.effectiveness(122, GHOST, "PHY", listOf(PSYCHIC), gen1 = true))    // Lick on a Psychic
+        assertEquals(2.0, MoveRules.effectiveness(122, GHOST, "PHY", listOf(PSYCHIC)))
+        assertEquals(4.0, MoveRules.effectiveness(41, BUG, "PHY", listOf(POISON, GRASS), gen1 = true))  // Twineedle on Oddish
+        assertEquals(1.0, MoveRules.effectiveness(41, BUG, "PHY", listOf(POISON, GRASS)))
+    }
 }

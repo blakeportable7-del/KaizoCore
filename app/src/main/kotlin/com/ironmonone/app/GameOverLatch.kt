@@ -55,8 +55,17 @@ class GameOverLatch(private val family: GameOverFamily) {
      */
     private var awaitingClear = false
 
+    /**
+     * Whether the game in Play is a Kaizo IronMON run, the only kind the popup ends (2026-09-30, UX audit P0-1).
+     * GameOverHost keeps it current (PlayRules). While it is false no loss is latched: a Nuzlocke ends by its own
+     * rules, and its lead fainting opened GAME OVER, whose Retry undid a death and whose New game rolled an IronMON
+     * seed over the Kaizo run. A library game has no run to end at all.
+     */
+    var applies = true
+
     /** One tracker read. True exactly when the popup has just fired, so the caller logs the run once. */
     fun onRead(live: RunOutcome?, liveCause: NdsRunOver?): Boolean {
+        if (!applies) return false
         if (awaitingClear) {
             if (live == null) { awaitingClear = false; armed = true }
             return false
@@ -87,6 +96,9 @@ class GameOverLatch(private val family: GameOverFamily) {
         open = false
         armed = false
         awaitingClear = true
+        // The loss is undone: the stream's run-over view and its randomized data close again (StreamHub.ended).
+        outcome = null
+        dsCause = null
     }
 
     /** A new run: the tracker data starts over, as a new seed's does in the reference. */

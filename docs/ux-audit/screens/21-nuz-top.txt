@@ -1,0 +1,29 @@
+TEXT:
+Nuzlocke
+NUZLOCKE
+One wild Pokémon per area, and a Pokémon that faints stays dead. Pick the rules and a game. The tracker keeps the ledger while you play, warns you when a rule is broken and never stops the game.
+PRESET
+Standard
+Hardcore
+Randomizer
+Monotype
+Wedlocke
+Genlocke
+The two core rules and the common clauses: one catch per area, a faint is a death, a whiteout ends the run.
+GAME
+GBA
+smartai-emerald
+Pokémon Emerald + Smart AI (Super Kaizo) · verified
+GBA
+emerald-u
+Pokémon Emerald (U) · verified
+Plays the game as it is, with its own save.
+Pick a game.
+Start Nuzlocke
+Home
+Play
+Library
+More
+
+CONTENT DESCRIPTIONS:
+Back to Home

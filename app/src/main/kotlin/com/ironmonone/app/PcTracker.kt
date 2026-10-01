@@ -1,6 +1,8 @@
 package com.ironmonone.app
 
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.heightIn
@@ -12,6 +14,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,6 +22,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material3.Text
@@ -34,6 +38,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -83,13 +93,17 @@ import com.ironmonone.tracker.TrackedMon
  * is the same kind of face and the closest thing shipped on every device. The
  * app's own pixel font stays everywhere else - this is the tracker only.
  */
-val PcFont = androidx.compose.ui.text.font.FontFamily(
-    androidx.compose.ui.text.font.Typeface(
-        android.graphics.Typeface.create(
-            "sans-serif-condensed", android.graphics.Typeface.NORMAL,
+// Lazy: created at first draw, so the JVM unit tests can reach this file's plain
+// helpers (pcTypeColorByName) without Typeface.create, which they cannot run.
+val PcFont by lazy {
+    androidx.compose.ui.text.font.FontFamily(
+        androidx.compose.ui.text.font.Typeface(
+            android.graphics.Typeface.create(
+                "sans-serif-condensed", android.graphics.Typeface.NORMAL,
+            )
         )
     )
-)
+}
 
 val LocalRpx = androidx.compose.runtime.compositionLocalOf { 1.dp }
 
@@ -129,8 +143,11 @@ object PcRef {
  * One reference pixel becomes (pane width / 150), so the panel fills the pane
  * horizontally and every child keeps the reference's proportions exactly.
  */
-/** The widest the tracker canvas is allowed to get: the landscape pane. */
-private val MAX_CANVAS = 224.dp
+/**
+ * The widest the tracker canvas is allowed to get: the landscape pane on the phone. A second
+ * display (SecondScreenFrame) provides its own, sized to that display.
+ */
+val LocalCanvasMax = androidx.compose.runtime.compositionLocalOf { 224.dp }
 
 @Composable
 fun PcCanvas(
@@ -146,7 +163,7 @@ fun PcCanvas(
         // and no on-screen controls, so there is nothing to copy for that
         // case: cap the unit at the size it has in the split, and the tracker
         // is simply the same tracker with room left for the game and the pad.
-        val rpx = minOf(maxWidth, MAX_CANVAS) / PcRef.WIDTH
+        val rpx = minOf(maxWidth, LocalCanvasMax.current) / PcRef.WIDTH
         androidx.compose.runtime.CompositionLocalProvider(LocalRpx provides rpx) {
             content()
         }
@@ -168,6 +185,37 @@ object Pc {
     var Negative by mutableStateOf(Color(0xFFFF0000))    // Negative text color
     var Gold by mutableStateOf(Color(0xFFFFFF00))        // Intermediate text color: item + ability
     var Dim by mutableStateOf(Color(0xFFAAAAAA))         // Bottom box text color, used for the quiet lines
+
+    // A Gen 3 theme has three more colours than this palette: the lower box's own
+    // text, border and background, and the header text (Theme.lua's "Lower box
+    // text/border/background", "Header text"). Auto Pokemon Themes sets them; null
+    // keeps today's one-box look, so nothing changes unless a theme asks for it.
+    var HeaderX by mutableStateOf<Color?>(null)
+    var HeaderGroundX by mutableStateOf<Color?>(null)
+    var LowerTextX by mutableStateOf<Color?>(null)
+    var LowerBorderX by mutableStateOf<Color?>(null)
+    var LowerGroundX by mutableStateOf<Color?>(null)
+    val Header: Color get() = HeaderX ?: Text
+    val LowerText: Color get() = LowerTextX ?: Text
+    val LowerBorder: Color get() = LowerBorderX ?: Border
+    /**
+     * Theme flag 1 at "0" (Theme.MOVE_TYPES_ENABLED off): move names in the lower
+     * box text colour with a small bar in the move's type colour
+     * (TrackerScreen.lua:1530), instead of names in the type colour.
+     */
+    var moveTypeBar by mutableStateOf(false)
+    /**
+     * The DS tracker's "Alternate positive/negative text color" (ThemeFactory.lua:190-210):
+     * a DS theme whose two text colours are white and black gives the lower box its own
+     * pair for STAB power and the effectiveness marks. Null uses Positive and Negative,
+     * as DrawingUtils.convertColorKeyToColor falls back (DrawingUtils.lua:336-341).
+     */
+    var AltPositiveX by mutableStateOf<Color?>(null)
+    var AltNegativeX by mutableStateOf<Color?>(null)
+    val AltPositive: Color get() = AltPositiveX ?: Positive
+    val AltNegative: Color get() = AltNegativeX ?: Negative
+    /** A DS auto theme turns the physical and special icons on (formatPokemonTheme); null leaves them to the option. */
+    var categoryIconsX by mutableStateOf<Boolean?>(null)
 }
 
 /** Constants.MoveTypeColors, verbatim. */
@@ -220,12 +268,20 @@ object PcAssets {
         return load(context, "types/${typeName.lowercase()}.png")
     }
 
-    /** Gym badge art. [set] is FRLG, RSE or DPPT; [earned] picks the lit icon. */
+    /** Gym badge art. [set] is the tracker's badge set (FRLG, RSE, DPPT, RBY, GSC_K ...); [earned] picks the lit icon. */
     fun badge(context: android.content.Context, set: String, index: Int, earned: Boolean):
-        ImageBitmap? = load(
-            context,
-            "badges/${set}_badge$index${if (earned) "" else "_OFF"}.png",
-        )
+        ImageBitmap? = load(context, badgePath(set, index, earned))
+
+    /**
+     * The asset a badge is drawn from. Red, Blue and Yellow use FireRed's
+     * Kanto art, as the Gen 1 reference does for all three (GameSettings.lua
+     * setGameInfo: BADGE_PREFIX = "FRLG"); with no art of their own they drew
+     * as numbers here. GSC_J is the Johto half of Crystal's two rows.
+     */
+    fun badgePath(set: String, index: Int, earned: Boolean): String {
+        val art = when (set) { "RBY" -> "FRLG"; "GSC_J" -> "GSC"; else -> set }
+        return "badges/${art}_badge$index${if (earned) "" else "_OFF"}.png"
+    }
 
     /**
      * Status condition art, the reference's images/status (BRN, FNT, FRZ, PAR,
@@ -327,6 +383,8 @@ data class PcMove(
     val stab: Boolean = false,
     /** Effectiveness against the target when not neutral; null draws nothing. */
     val effect: Double? = null,
+    /** Your own Hidden Power on the DS card: the "<" and ">" that change its type (MainScreen's hiddenPowerArrowsFrame). */
+    val hiddenPowerArrows: Boolean = false,
 )
 
 @Composable
@@ -365,6 +423,36 @@ fun PixText(
         maxLines = if (wrap) Int.MAX_VALUE else 1,
         overflow = androidx.compose.ui.text.style.TextOverflow.Clip,
         softWrap = wrap)
+}
+
+/** The size a dialog label is drawn at, in sp: what was asked for, and never under [PcMin.LABEL_SP]. */
+internal fun dialogSp(size: Int): Int = size.coerceAtLeast(PcMin.LABEL_SP)
+
+/**
+ * A label for a tracker dialog (Tracker Setup, Rules): the tracker's face and palette, in sp so it follows the
+ * phone's font size, never under [PcMin.LABEL_SP], and always wrapping, so a big font grows the row instead of
+ * clipping the words (2026-09-30, UX audit P0-15). [PixText] stays for the tracker panel itself, where the
+ * reference's fixed pixel grid is the point; in a dialog it drew 6 to 8dp text that ignored the font setting.
+ */
+@Composable
+fun DialogText(
+    text: String,
+    size: Int = PcMin.LABEL_SP,
+    color: Color = Pc.Text,
+    modifier: Modifier = Modifier,
+    align: TextAlign = TextAlign.Start,
+    /** A section or dialog head: a screen reader can jump to it. */
+    heading: Boolean = false,
+    /** A mark that is not colour: the chosen tab is underlined. */
+    underline: Boolean = false,
+) {
+    val sp = dialogSp(size)
+    Text(
+        text, fontFamily = PcFont, fontSize = sp.sp, lineHeight = (sp + 5).sp, color = color,
+        textAlign = align, fontWeight = FontWeight.Normal,
+        textDecoration = if (underline) androidx.compose.ui.text.style.TextDecoration.Underline else null,
+        modifier = if (heading) modifier.semantics { heading() } else modifier,
+    )
 }
 
 @Composable
@@ -516,8 +604,10 @@ fun PcHeadBlock(
     sprite: ImageBitmap?,
     /** BRN, FNT, FRZ, PAR, PSN or SLP, drawn as the reference's status image over the icon; empty for none. */
     status: String = "",
-    /** Gen 1-3: the species id the Walking Pals icon set is keyed by; 0 draws the still sprite. */
+    /** The species id the Walking Pals icon is found by, numbered as [iconDex] says; 0 draws the still sprite. */
     iconSpecies: Int = 0,
+    /** How [iconSpecies] is numbered: WalkingPals.trackerDex for the GBA and Game Boy panel, national on the DS panel. */
+    iconDex: WalkingPals.Dex = WalkingPals.Dex.GEN3,
     /** The evolution in brackets after the level, "Lv.5 (30)" (EvoText). */
     evo: com.ironmonone.tracker.EvoText.Label? = null,
     /** "Lv." on the GBA trackers; the DS tracker writes "Lv. " (MainScreen.setUpEvo). */
@@ -528,6 +618,14 @@ fun PcHeadBlock(
     expFraction: Float? = null,
     /** In place of "cur/max" when the HP must not show ("Hide stats until summary shown"). */
     hpText: String? = null,
+    /** False drops the HP row and the level moves up: the DS tracker hides an opponent's (MainScreen.lua:872). */
+    showHp: Boolean = true,
+    /**
+     * The DS tracker's "Experience bar": while the level is held (its hover,
+     * MainScreen.onPokemonLevelHover) the level text gives way to the bar
+     * (setUpEvo blanks it, setUpEXPBar draws it). The fraction; null for none.
+     */
+    holdExpFraction: Double? = null,
     belowHead: (@Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit)? = null,
     statColumn: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit,
 ) {
@@ -535,9 +633,13 @@ fun PcHeadBlock(
     Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
         Column(Modifier.weight(1f)) {
             Row(Modifier.padding(2.rp)) {
-                Box {
-                    val animated = iconSpecies in 1..411 && TrackerOptions.animatedSprites &&
-                        WalkingPalsIcon(iconSpecies, status, 1.rp, PcRef.ICON.rp)
+                // TrackerScreen.Buttons.PokemonIcon: the icon is the tap target, as well as the name.
+                Box(if (onNameTap != null) Modifier.clickable { onNameTap() } else Modifier) {
+                    // Either set: Gen 1-3 by Gen 3's ids, Gen 4-9 and a Nat. Dex build's forms by national number (WalkingPals).
+                    val iconCtx = androidx.compose.ui.platform.LocalContext.current
+                    val pal = remember(iconSpecies, iconDex) { if (iconSpecies > 0) WalkingPals.find(iconCtx, iconSpecies, iconDex) else null }
+                    val animated = pal != null && TrackerOptions.animatedSprites &&
+                        WalkingPalsIcon(pal, status, 1.rp, PcRef.ICON.rp)
                     if (!animated) PcSprite(sprite)
                     // A name too wide for the symbol beside it: TrackerScreen.lua
                     // draws it over the icon instead, at the card's x + 23, y + 20.
@@ -580,20 +682,30 @@ fun PcHeadBlock(
                     // the fraction remaining: Negative at 20% or less,
                     // Intermediate at 50% or less, Default above that. This
                     // panel printed a bare "29/29" in plain white.
-                    Row {
-                        PixText("HP:", PcRef.FONT, Pc.Text, Modifier.width(16.rp))
-                        PixText(
-                            hpText ?: "$curHp/$maxHp", PcRef.FONT,
-                            when {
-                                maxHp <= 0 -> Pc.Text
-                                curHp * 5 <= maxHp -> Pc.Negative
-                                curHp * 2 <= maxHp -> Pc.Gold
-                                else -> Pc.Text
-                            },
-                        )
+                    if (showHp) {
+                        Row {
+                            PixText("HP:", PcRef.FONT, Pc.Text, Modifier.width(16.rp))
+                            PixText(
+                                hpText ?: "$curHp/$maxHp", PcRef.FONT,
+                                when {
+                                    maxHp <= 0 -> Pc.Text
+                                    curHp * 5 <= maxHp -> Pc.Negative
+                                    curHp * 2 <= maxHp -> Pc.Gold
+                                    else -> Pc.Text
+                                },
+                            )
+                        }
+                        Spacer(Modifier.height(1.rp))
                     }
-                    Spacer(Modifier.height(1.rp))
-                    PcLevelLine(level, evo, levelPrefix)
+                    if (holdExpFraction != null) {
+                        var held by remember { mutableStateOf(false) }
+                        Box(
+                            Modifier.height(PcRef.FONT.rp).pointerInput(Unit) {
+                                detectTapGestures(onPress = { held = true; tryAwaitRelease(); held = false })
+                            },
+                            contentAlignment = Alignment.CenterStart,
+                        ) { if (held) PcDsExpBar(holdExpFraction) else PcLevelLine(level, evo, levelPrefix) }
+                    } else PcLevelLine(level, evo, levelPrefix)
                     // TrackerScreen.lua:1242, 60 by 3, just under the level.
                     expFraction?.let { Spacer(Modifier.height(2.rp)); PcExpBar(it) }
                     }
@@ -637,6 +749,28 @@ fun PcHeadBlock(
     }
 }
 
+/**
+ * DrawingUtils.drawExperienceBar (DrawingUtils.lua:522-536), 62 by 4: a 59 by 3
+ * outline in top box border with a cap each end, and two rows filled from the
+ * left, Positive text below and that colour darkened (calcShadowColor, x0.88)
+ * above, floor(57 x fraction) wide (NdsExperience.barWidth).
+ */
+@Composable
+internal fun PcDsExpBar(fraction: Double, modifier: Modifier = Modifier) {
+    val w = com.ironmonone.tracker.nds.NdsExperience.barWidth(fraction)
+    val fill = Pc.Positive
+    val dark = Color(fill.red * 0.88f, fill.green * 0.88f, fill.blue * 0.88f, fill.alpha)
+    androidx.compose.foundation.Canvas(modifier.width(62.rp).height(4.rp)) {
+        val u = size.width / 62f
+        fun px(x: Int, y: Int, wide: Int, tall: Int, c: Color) = drawRect(c,
+            androidx.compose.ui.geometry.Offset(x * u, y * u), androidx.compose.ui.geometry.Size(wide * u, tall * u))
+        px(1, 0, 60, 1, Pc.Border); px(1, 3, 60, 1, Pc.Border)       // the outline, (x + 1, y, 59, 3)
+        px(1, 0, 1, 4, Pc.Border); px(60, 0, 1, 4, Pc.Border)
+        px(0, 1, 1, 2, Pc.Border); px(61, 1, 1, 2, Pc.Border)       // the caps
+        if (w > 0) { px(2, 2, w + 1, 1, fill); px(2, 1, w + 1, 1, dark) }
+    }
+}
+
 /** MoveData.BlankMove: an unknown slot, drawn as Constants.BLANKLINE. */
 private val BLANK_MOVE = PcMove(
     id = 0, name = "---", pp = 0, ppMax = null, power = null, acc = null,
@@ -665,34 +799,41 @@ fun PcMovesSection(
     referenceColumns: Boolean = false,
     /** "Right justified numbers", for [referenceColumns]. */
     rightJustify: Boolean = true,
+    /** The DS main screen's Hidden Power arrows on a row that carries them: true is ">" (onChangeHiddenPower "forward"). */
+    onHiddenPower: ((Boolean) -> Unit)? = null,
 ) {
     val numAlign = if (!referenceColumns || rightJustify) TextAlign.End else TextAlign.Start
     val headAlign = if (referenceColumns) TextAlign.Start else TextAlign.End
-    Box(Modifier.fillMaxWidth().height(1.dp).background(Pc.Border))
+    Box(Modifier.fillMaxWidth().height(1.dp).background(Pc.LowerBorder))
     Row(
-        Modifier.fillMaxWidth().padding(vertical = 1.rp, horizontal = 2.rp),
+        Modifier.fillMaxWidth()
+            .then(Pc.HeaderGroundX?.let { Modifier.background(TrackerBackground.boxFill(it)) } ?: Modifier)
+            .padding(vertical = 1.rp, horizontal = 2.rp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // Column widths are the gaps between the reference's own offsets:
         // name at 5, PP at 82, Pow at 102, Acc at 126, box ends at 145.
         Row(if (onHeaderTap != null) Modifier.weight(1f).clickable { onHeaderTap() } else Modifier.weight(1f)) {
-            PixText(header, PcRef.FONT, Pc.Text)
+            PixText(header, PcRef.FONT, Pc.Header)
             if (nextLevel != null) {
-                PixText(" (", PcRef.FONT, Pc.Text)
-                PixText("$nextLevel", PcRef.FONT, if (nextHot) Pc.Gold else Pc.Text)
-                PixText(")", PcRef.FONT, Pc.Text)
+                PixText(" (", PcRef.FONT, Pc.Header)
+                PixText("$nextLevel", PcRef.FONT, if (nextHot) Pc.Gold else Pc.Header)
+                PixText(")", PcRef.FONT, Pc.Header)
             }
         }
         if (catchText != null) {
-            PixText(catchText, PcRef.FONT, Pc.Text, if (onCatchTap != null) Modifier.clickable { onCatchTap() } else Modifier)
+            PixText(catchText, PcRef.FONT, Pc.Header, if (onCatchTap != null) Modifier.clickable { onCatchTap() } else Modifier)
         } else {
-            PixText("PP", PcRef.FONT, Pc.Text, Modifier.width(20.rp), headAlign)
-            PixText("Pow", PcRef.FONT, Pc.Text, Modifier.width(24.rp), headAlign)
-            PixText("Acc", PcRef.FONT, Pc.Text, Modifier.width(19.rp), headAlign)
+            PixText("PP", PcRef.FONT, Pc.Header, Modifier.width(20.rp), headAlign)
+            PixText("Pow", PcRef.FONT, Pc.Header, Modifier.width(24.rp), headAlign)
+            PixText("Acc", PcRef.FONT, Pc.Header, Modifier.width(19.rp), headAlign)
         }
     }
-    Box(Modifier.fillMaxWidth().height(1.rp).background(Pc.Border))
-    Column(Modifier.padding(vertical = 1.rp)) {
+    Box(Modifier.fillMaxWidth().height(1.rp).background(Pc.LowerBorder))
+    Column(
+        (Pc.LowerGroundX?.let { Modifier.fillMaxWidth().background(TrackerBackground.boxFill(it)) } ?: Modifier)
+            .padding(vertical = 1.rp)
+    ) {
         // FOUR rows, always. DataHelper.lua:256 starts from four placeholders
         // and fills what it knows, so the box is the same height whether a
         // Pokemon has one move or four - and an enemy with two moves seen
@@ -709,7 +850,18 @@ fun PcMovesSection(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 PcCategoryIcon(r.category)
-                PixText(r.name, PcRef.FONT, r.color, Modifier.weight(1f))
+                // A blank row takes the live quiet colour (BLANK_MOVE captured it once at start-up).
+                val nameColor = if (r.blank) Pc.Dim else if (Pc.moveTypeBar) Pc.LowerText else r.color
+                if (Pc.moveTypeBar && !r.blank) {
+                    Box(Modifier.width(2.rp).height(7.rp).background(r.color))
+                    Spacer(Modifier.width(2.rp))
+                }
+                PixText(r.name, PcRef.FONT, nameColor, Modifier.weight(1f))
+                if (r.hiddenPowerArrows && onHiddenPower != null) {
+                    // MainScreenUIInitializer.initHiddenPowerArrows: "<" and ">" in the lower box's text colour.
+                    PixText("<", PcRef.FONT, Pc.LowerText, Modifier.clickable { onHiddenPower(false) }.padding(horizontal = 3.rp))
+                    PixText(">", PcRef.FONT, Pc.LowerText, Modifier.clickable { onHiddenPower(true) }.padding(horizontal = 3.rp))
+                }
                 // ONE number, not cur/max. TrackerScreen.lua:1557 draws
                 // drawNumber(movePPOffset, y, move.pp, 2) - two digits in a
                 // 20-unit column - and DataHelper.lua:324 makes move.pp the
@@ -718,7 +870,7 @@ fun PcMovesSection(
                 // took the Pow and Acc columns off the right edge with it.
                 if (referenceColumns) {
                     Row(Modifier.width(20.rp), verticalAlignment = Alignment.CenterVertically) {
-                        PixText(if (r.blank) "---" else r.ppText ?: "${r.pp}", PcRef.FONT, Pc.Text, Modifier.width(12.rp), numAlign)
+                        PixText(if (r.blank) "---" else r.ppText ?: "${r.pp}", PcRef.FONT, Pc.LowerText, Modifier.width(12.rp), numAlign)
                         Spacer(Modifier.width(3.rp))
                         Box(Modifier.width(5.rp), contentAlignment = Alignment.Center) {
                             r.effect?.let { PcEffectGlyph(it, Modifier.wrapContentWidth(unbounded = true)) }
@@ -726,20 +878,20 @@ fun PcMovesSection(
                     }
                 } else PixText(
                     if (r.blank) "---" else "${r.pp}",
-                    PcRef.FONT, Pc.Text, Modifier.width(20.rp), TextAlign.End)
+                    PcRef.FONT, Pc.LowerText, Modifier.width(20.rp), TextAlign.End)
                 val shownPower = r.powerText?.let { if (it == "0") "---" else it }
                     ?: if (r.power == null || r.power == 0) "---" else "${r.power}"
                 // The effectiveness mark sits just left of the power digits, as
                 // the reference draws it at movePowerOffset - 5.
                 if (referenceColumns) {
-                    PixText(shownPower, PcRef.FONT, if (r.stab) Pc.Positive else Pc.Text, Modifier.width(24.rp), numAlign)
+                    PixText(shownPower, PcRef.FONT, if (r.stab) Pc.AltPositive else Pc.LowerText, Modifier.width(24.rp), numAlign)
                 } else Row(Modifier.width(24.rp), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
                     r.effect?.let { PcEffectGlyph(it); Spacer(Modifier.width(1.rp)) }
-                    PixText(shownPower, PcRef.FONT, if (r.stab) Pc.Positive else Pc.Text)
+                    PixText(shownPower, PcRef.FONT, if (r.stab) Pc.AltPositive else Pc.LowerText)
                 }
                 val shownAcc = r.accText?.let { if (it == "0") "---" else it }
                     ?: if (r.acc == null || r.acc == 0) "---" else "${r.acc}"
-                PixText(shownAcc, PcRef.FONT, Pc.Text, Modifier.width(19.rp), numAlign)
+                PixText(shownAcc, PcRef.FONT, Pc.LowerText, Modifier.width(19.rp), numAlign)
             }
         }
     }
@@ -779,9 +931,9 @@ internal val PcGameOverQuotes = listOf(
  * The end-of-run screen: how it ended, which attempt it was, and the team you
  * ended with.
  *
- * A win prints CONGRATULATIONS!!; a loss draws one of the announcer quotes,
- * picked by attempt number so it stays put while you look at it instead of
- * flickering on every tracker poll.
+ * A win prints CONGRATULATIONS!!; a loss shows the line DeathQuotes drew for
+ * this run, the same one the game over box shows: one per run, so it stays put
+ * while you look at it instead of flickering on every tracker poll.
  */
 @Composable
 fun PcGameOver(won: Boolean, attempt: Int, party: List<TrackedMon>, onGrade: (() -> Unit)? = null) {
@@ -796,9 +948,7 @@ fun PcGameOver(won: Boolean, attempt: Int, party: List<TrackedMon>, onGrade: (()
             Spacer(Modifier.height(5.dp))
             PixText(
                 if (won) "CONGRATULATIONS!!"
-                else PcGameOverQuotes[
-                    ((attempt % PcGameOverQuotes.size) + PcGameOverQuotes.size) %
-                        PcGameOverQuotes.size],
+                else DeathQuotes.shown(DeathQuotes.PC_SOURCE, attempt, PcGameOverQuotes),
                 9, if (won) Pc.Positive else Pc.Negative,
             )
             // GameOverScreen.NotesGrade: the score sheet, from here only.
@@ -955,7 +1105,7 @@ fun PcCategoryIcon(category: String?) {
     // NOT the move's type colour; and a STATUS move gets no icon at all -
     // TrackerScreen.lua:1521 only ever draws these two.
     // "Show physical special icons" off: the slot is held, the glyph is not drawn.
-    val glyph = if (!TrackerOptions.showCategoryIcons) null else when (category) {
+    val glyph = if (!(Pc.categoryIconsX ?: TrackerOptions.showCategoryIcons)) null else when (category) {
         "PHY" -> PcCategoryGlyphs.PHYSICAL
         "SPE" -> PcCategoryGlyphs.SPECIAL
         else -> null
@@ -967,7 +1117,7 @@ fun PcCategoryIcon(category: String?) {
                 val px = size.width / 7f
                 for (y in 0 until 7) for (x in 0 until 7) {
                     if (glyph[y][x] == 1) drawRect(
-                        color = Pc.Text,
+                        color = Pc.LowerText,
                         topLeft = androidx.compose.ui.geometry.Offset(x * px, y * px),
                         size = androidx.compose.ui.geometry.Size(px, px),
                     )
@@ -1095,17 +1245,29 @@ fun PcCarousel(
     lastAttack: String? = null,
     /** The hit would knock your Pokemon out: the sword turns red. */
     lastAttackLethal: Boolean = false,
-    weather: String? = null,
+    /** BattleSummary.line: the viewed battler's first battle detail, or null when it has none. */
+    battleDetailsSummary: String? = null,
+    /** No longer shown: the battle line follows the reference. The DS panel still passes it. */
     encounters: Int = 0,
     routeName: String? = null,
     routeSeen: Int = 0,
     routeTotal: Int = 0,
+    /** Battle.CurrentRoute.encounterArea when RouteData has it (hasInfo), or Walking outside battle. */
+    routeArea: String? = null,
     routeTrainers: Int = 0,
     routeBosses: Int = 0,
     steps: Int = 0,
     /** The pedometer needs a real step count on a real map, out of a game over. */
     pedometerAllowed: Boolean = false,
     onRouteTap: (() -> Unit)? = null,
+    /** TrackerScreen.Buttons.TrainerSummary: the Trainers line opens Trainers on Route. */
+    onTrainersTap: (() -> Unit)? = null,
+    /** TrackerScreen.Buttons.BattleDetailsSummary: the Battle line opens Battle Details. */
+    onBattleDetailsTap: (() -> Unit)? = null,
+    /** Calc Atk's hook on TrackerScreen.Buttons.LastAttackSummary: the last attack opens the calculator. */
+    onLastAttackTap: (() -> Unit)? = null,
+    /** HGSS: the League is beaten, so a single badge row is Kanto's (hgssBadgeRows). */
+    leagueBeaten: Boolean = false,
 ) {
     // TrackerScreen.getCurrentCarouselItem, item for item. The order is
     // CarouselTypes': BADGES, TRAINERS, LAST_ATTACK, ROUTE_INFO, NOTES,
@@ -1137,10 +1299,10 @@ fun PcCarousel(
             now.value < trainersUntil && routeTrainers > 0),
         Triple("lastAttack", 180, TrackerOptions.carouselShows("LastAttack") && inBattle && !lastAttack.isNullOrBlank()),
         Triple("route", 180, TrackerOptions.carouselShows("RouteInfo") &&
-            (earlyRoute || (inBattle && isWildBattle && !routeName.isNullOrBlank()))),
+            (earlyRoute || (inBattle && isWildBattle && routeArea != null && routeTotal > 0))),
         Triple("notes", 180, TrackerOptions.carouselShows("Notes") && !viewingOwn),
-        Triple("battleDetails", 180, TrackerOptions.carouselShows("BattleDetails") && inBattle &&
-            (weather != null || encounters > 1)),
+        // TrackerScreen.lua:772-777: in battle, while the viewed battler has a detail to summarize.
+        Triple("battleDetails", 180, TrackerOptions.carouselShows("BattleDetails") && inBattle && battleDetailsSummary != null),
         Triple("pedometer", 210, pedometerShows),
     )
     fun rotate() {
@@ -1163,26 +1325,19 @@ fun PcCarousel(
     if (!shown.third) return
 
     when (shown.first) {
-        "badges" -> PcBadgeRow(badges, badgeSet)
+        "badges" -> PcBadgeRow(badges, badgeSet, leagueBeaten)
         "pedometer" -> PcPedometerLine(steps)
-        "trainers" -> PcCarouselLine("Trainers defeated:", "$routeTrainersDefeated/$routeTrainers", Pc.Text)
+        "trainers" -> PcCarouselLine("Trainers defeated:", "$routeTrainersDefeated/$routeTrainers", Pc.LowerText, onTap = onTrainersTap)
         "notes" -> PcNoteRow(note, onEditNote)
-        "lastAttack" -> PcLastAttackLine(lastAttack ?: "", lastAttackLethal)
+        "lastAttack" -> PcLastAttackLine(lastAttack ?: "", lastAttackLethal, onLastAttackTap)
+        // "%s: %s %s": the area, seen/total (just seen when a seed puts more there), "Seen Pokemon".
         "route" -> PcCarouselLine(
-            routeName ?: "",
-            if (routeTotal > 0) "seen $routeSeen of $routeTotal here"
-            else "$routeSeen seen here",
-            Pc.Text,
+            (routeArea ?: "Walking") + ":",
+            (if (routeSeen > routeTotal) "$routeSeen" else "$routeSeen/$routeTotal") + " Seen Pok\u00e9mon",
+            Pc.LowerText,
             onTap = onRouteTap,
         )
-        "battleDetails" -> PcCarouselLine(
-            "Battle:",
-            listOfNotNull(
-                weather,
-                if (encounters > 1) "seen $encounters times" else null,
-            ).joinToString("  ·  "),
-            Pc.Dim,
-        )
+        "battleDetails" -> PcBattleSummaryLine(battleDetailsSummary ?: "", onBattleDetailsTap)
     }
 }
 
@@ -1195,12 +1350,12 @@ private fun PcCarouselLine(
     onTap: (() -> Unit)? = null,
 ) {
     Row(
-        Modifier.fillMaxWidth().background(Pc.Ground).border(1.dp, Pc.Border)
+        Modifier.fillMaxWidth().background(TrackerBackground.boxFill(Pc.LowerGroundX ?: Pc.Ground)).border(1.dp, Pc.LowerBorder)
             .then(if (onTap != null) Modifier.clickable { onTap() } else Modifier)
             .padding(horizontal = 6.dp, vertical = 5.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        PixText(label, 8, Pc.Text)
+        PixText(label, 8, Pc.LowerText)
         Spacer(Modifier.width(6.dp))
         PixText(value, 8, valueColor)
     }
@@ -1250,7 +1405,8 @@ fun PcPokemonInfo(
     types: List<Pair<String, Color>>,
     bst: String,
     weight: String?,
-    evolution: String?,
+    /** Utils.getDetailedEvolutionsInfo's lines, "Fire Stone" or "Level 30" over "Water Stone" (EvoText.detailed). */
+    evolution: List<String>,
     effectiveness: Map<Double, List<String>>,
     moveLevels: List<Int>,
     level: Int,
@@ -1263,8 +1419,26 @@ fun PcPokemonInfo(
     coverage: Map<Double, List<Int>> = emptyMap(),
     /** InfoScreen's ViewRandomEvos button, only when the species has revo data. */
     onRandomEvos: (() -> Unit)? = null,
+    /** InfoScreen's PreviousPokemon / NextPokemon arrows (showNextPokemon). */
+    onPrevious: (() -> Unit)? = null,
+    onNext: (() -> Unit)? = null,
+    /** InfoScreen's LookupPokemon: every species by name, to jump to one. */
+    lookup: (() -> List<Pair<Int, String>>)? = null,
+    onLookup: ((Int) -> Unit)? = null,
+    /** InfoScreen's History (Move History) and Resistances (Type Defenses) buttons. */
+    onHistory: (() -> Unit)? = null,
+    onResistances: (() -> Unit)? = null,
+    /** InfoScreen's NotepadTracking: the species' note, editable. */
+    onEditNote: (() -> Unit)? = null,
     onDismiss: () -> Unit,
 ) {
+    var lookupOpen by remember { mutableStateOf(false) }
+    if (lookupOpen && lookup != null && onLookup != null) {
+        // Built when the window opens: the names come from the game, which may not have
+        // been readable yet when this screen was first composed.
+        val names = remember { lookup() }
+        PcNameLookup("Look up a Pok\u00e9mon:", names, onPick = { lookupOpen = false; onLookup(it) }) { lookupOpen = false }
+    }
     androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
         Column(
             // Capped and scrollable: on a landscape phone these dialogs grew
@@ -1275,28 +1449,36 @@ fun PcPokemonInfo(
                 .verticalScroll(rememberScrollState())
                 .padding(14.dp)
         ) {
-            PixText(name, 11, Pc.Gold)
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                onPrevious?.let { Box(Modifier.clickable { it() }.padding(end = 8.dp)) { PixText("<", 11, Pc.Text) } }
+                PixText(name, 11, Pc.Gold, Modifier.weight(1f))
+                onNext?.let { Box(Modifier.clickable { it() }.padding(horizontal = 8.dp)) { PixText(">", 11, Pc.Text) } }
+                if (lookup != null && onLookup != null)
+                    Box(Modifier.clickable { lookupOpen = true }.padding(start = 4.dp)) { PixText("SEARCH", 8, Pc.Gold) }
+            }
             Spacer(Modifier.height(6.dp))
             Row { types.forEach { (t, c) -> PcTypeChip(t, c); Spacer(Modifier.width(4.dp)) } }
             Spacer(Modifier.height(8.dp))
 
             PcInfoRow("BST", bst)
             weight?.let { PcInfoRow("Weight", "$it kg") }
-            PcInfoRow(
-                "Evolves",
-                when {
-                    evolution == null -> "does not evolve"
-                    evolution.all { it.isDigit() } -> "at level $evolution"
-                    else -> evolution.lowercase()
-                },
-            )
-            onRandomEvos?.let { Spacer(Modifier.height(4.dp)); PcSmallButton("VIEW EVOS") { it() } }
+            // InfoScreen.lua:739-745: the method in the reference's words, its second way on a line of its own.
+            evolution.ifEmpty { listOf("---") }.forEachIndexed { i, line -> PcInfoRow(if (i == 0) "Evolves" else "", line) }
+            if (onRandomEvos != null || onHistory != null || onResistances != null) {
+                Spacer(Modifier.height(4.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    onRandomEvos?.let { PcSmallButton("VIEW EVOS") { it() } }
+                    onHistory?.let { PcSmallButton("HISTORY") { it() } }
+                    onResistances?.let { PcSmallButton("RESISTANCES") { it() } }
+                }
+            }
 
             Spacer(Modifier.height(8.dp))
             Box(Modifier.fillMaxWidth().height(1.dp).background(Pc.Border))
             Spacer(Modifier.height(8.dp))
 
             // Only the halves that matter: what beats it, and what it laughs off.
+            if (InfoScreenLines.hasNoWeaknesses(effectiveness)) PcInfoRow("Weak to", InfoScreenLines.NO_WEAKNESSES)
             effectiveness[4.0]?.let { PcInfoRow("4x from", it.joinToString(", "), Pc.Negative) }
             effectiveness[2.0]?.let { PcInfoRow("2x from", it.joinToString(", "), Pc.Negative) }
             effectiveness[0.5]?.let { PcInfoRow("Resists", it.joinToString(", "), Pc.Positive) }
@@ -1310,21 +1492,22 @@ fun PcPokemonInfo(
                 PcCoverage(coverage, coverage.values.sumOf { it.size })
             }
 
-            if (moveLevels.isNotEmpty()) {
-                Spacer(Modifier.height(8.dp))
-                Box(Modifier.fillMaxWidth().height(1.dp).background(Pc.Border))
-                Spacer(Modifier.height(8.dp))
-                PixText("Learns at", 8, Pc.Text)
-                Spacer(Modifier.height(3.dp))
-                // Levels already passed are dimmed; the next one is the one
-                // worth knowing about.
-                PixText(
-                    moveLevels.joinToString(", ") { if (it <= level) "$it" else "[$it]" },
-                    8, Pc.Dim, wrap = true,
-                )
-            }
+            // InfoScreen.lua:765-774: the learn levels always have their place, and say when there are none.
+            Spacer(Modifier.height(8.dp))
+            Box(Modifier.fillMaxWidth().height(1.dp).background(Pc.Border))
+            Spacer(Modifier.height(8.dp))
+            PixText("Learns at", 8, Pc.Text)
+            Spacer(Modifier.height(3.dp))
+            // Levels already passed are dimmed; the next one is the one
+            // worth knowing about.
+            PixText(InfoScreenLines.learnLevels(moveLevels, level), 8, Pc.Dim, wrap = true)
 
-            if (note.isNotBlank()) {
+            if (onEditNote != null) {
+                Spacer(Modifier.height(8.dp))
+                Box(Modifier.fillMaxWidth().clickable { onEditNote() }) {
+                    PcInfoRow("Note", note.ifBlank { "tap to add a note" }, if (note.isBlank()) Pc.Dim else Pc.Gold)
+                }
+            } else if (note.isNotBlank()) {
                 Spacer(Modifier.height(8.dp))
                 PcInfoRow("Note", note, Pc.Gold)
             }
@@ -1337,6 +1520,38 @@ fun PcPokemonInfo(
     }
 }
 
+/**
+ * The reference's lookup windows (InfoScreen.openPokemonInfoWindow and friends): a list of
+ * every name to pick from. A dropdown there; a filterable list here, since a phone has no
+ * dropdown that holds 400 names well.
+ */
+@Composable
+fun PcNameLookup(title: String, names: List<Pair<Int, String>>, onPick: (Int) -> Unit, onDismiss: () -> Unit) {
+    var query by remember { mutableStateOf("") }
+    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
+        Column(
+            Modifier.fillMaxWidth().heightIn(max = 480.dp).background(Pc.Ground).border(1.dp, Pc.Border).padding(12.dp)
+        ) {
+            PixText(title, 10, Pc.Gold)
+            Spacer(Modifier.height(6.dp))
+            androidx.compose.material3.OutlinedTextField(
+                value = query, onValueChange = { query = it }, singleLine = true,
+                textStyle = androidx.compose.ui.text.TextStyle(color = Pc.Text),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(6.dp))
+            val shown = names.filter { query.isBlank() || it.second.contains(query.trim(), ignoreCase = true) }
+            Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {
+                shown.take(400).forEach { (id, n) ->
+                    Box(Modifier.fillMaxWidth().clickable { onPick(id) }.padding(vertical = 5.dp)) { PixText(n, 9, Pc.Text) }
+                }
+            }
+            Spacer(Modifier.height(6.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) { PcSmallButton("CLOSE") { onDismiss() } }
+        }
+    }
+}
+
 @Composable
 private fun PcInfoRow(label: String, value: String, color: Color = Pc.Text) {
     Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
@@ -1345,107 +1560,28 @@ private fun PcInfoRow(label: String, value: String, color: Color = Pc.Text) {
     }
 }
 
-/**
- * The route info screen: InfoScreen's ROUTE_INFO mode.
- *
- * Everything that can appear here, split by how you meet it - walking,
- * surfing, each rod - with the ones you have actually seen marked. Trainer
- * count comes from the ported route data.
- *
- * The species lists are the VANILLA tables. A randomizer rewrites which
- * Pokemon appear on a route, so this is the shape of the route rather than a
- * promise about this seed, and the header says so rather than letting the list
- * read as fact.
- */
-@Composable
-fun PcRouteInfo(
-    routeName: String,
-    trainers: Int,
-    bosses: Int,
-    areas: Map<String, List<Int>>,
-    seen: Set<Int>,
-    nameOf: (Int) -> String,
-    onDismiss: () -> Unit,
-) {
-    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
-        Column(
-            // Capped and scrollable: on a landscape phone these dialogs grew
-            // past the window and pushed CLOSE off the bottom, leaving no
-            // visible way out.
-            Modifier.fillMaxWidth().heightIn(max = 420.dp)
-                .background(Pc.Ground).border(1.dp, Pc.Border)
-                .verticalScroll(rememberScrollState())
-                .padding(14.dp)
-        ) {
-            PixText(routeName, 11, Pc.Gold)
-            Spacer(Modifier.height(5.dp))
-            PixText(
-                if (trainers > 0)
-                    "$trainers trainers" + (if (bosses > 0) ", $bosses major" else "")
-                else "No trainers here",
-                8, if (bosses > 0) Pc.Gold else Pc.Dim,
-            )
-            Spacer(Modifier.height(8.dp))
-            Box(Modifier.fillMaxWidth().height(1.dp).background(Pc.Border))
-
-            if (areas.isEmpty()) {
-                Spacer(Modifier.height(8.dp))
-                PixText("Nothing wild appears here.", 8, Pc.Dim)
-            } else {
-                Column(
-                    Modifier.heightIn(max = 300.dp)
-                        .verticalScroll(androidx.compose.foundation.rememberScrollState())
-                ) {
-                    areas.forEach { (area, mons) ->
-                        Spacer(Modifier.height(8.dp))
-                        val here = mons.count { it in seen }
-                        Row(Modifier.fillMaxWidth()) {
-                            PixText(area, 8, Pc.Text, Modifier.weight(1f))
-                            PixText("$here/${mons.size}", 8, Pc.Dim)
-                        }
-                        Spacer(Modifier.height(3.dp))
-                        mons.forEach { id ->
-                            val found = id in seen
-                            PixText(
-                                (if (found) "+ " else "- ") + nameOf(id),
-                                8, if (found) Pc.Positive else Pc.Dim,
-                                Modifier.padding(start = 6.dp, top = 1.dp),
-                            )
-                        }
-                    }
-                }
-                Spacer(Modifier.height(8.dp))
-                PixText("Vanilla encounter table; a seed may differ.", 7, Pc.Dim)
-            }
-
-            Spacer(Modifier.height(12.dp))
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                PcSmallButton("CLOSE") { onDismiss() }
-            }
-        }
-    }
-}
-
 /** The eight gym badges, lit as they are earned - the PC tracker's badge row. */
 @Composable
-fun PcBadgeRow(badges: Int, set: String) {
+fun PcBadgeRow(badges: Int, set: String, leagueBeaten: Boolean = false) {
     val context = androidx.compose.ui.platform.LocalContext.current
+    // Gold, Silver and Crystal: both rows, always (GbBadgeRows.kt).
+    if (set == "GSC") {
+        Column { gscBadgeRows(badges).forEach { (art, bits) -> PcBadgeRow(bits, art) } }
+        return
+    }
     // HGSS has sixteen: Johto in bits 0-7 (set HGSS), Kanto in 8-15 (set
-    // HGSS_K, art already bundled). The Kanto row appears once the first
-    // Kanto badge is earned, so Johto-only runs keep the one-row shape.
-    if (set == "HGSS" && (badges shr 8) != 0) {
-        // badgesAppearance: which set leads, and whether the other is drawn at all.
-        val johto = (badges and 0xFF) to "HGSS_J"
-        val kanto = (badges shr 8) to "HGSS_K"
-        val order = if (TrackerOptions.kantoBadgesFirst) listOf(kanto, johto) else listOf(johto, kanto)
+    // HGSS_K, art already bundled). Which rows, in which order, is the DS
+    // tracker's badgesAppearance (hgssBadgeRows).
+    if (set == "HGSS") {
         Column {
-            (if (TrackerOptions.showBothBadgeSets) order else order.take(1)).forEach { (bits, art) -> PcBadgeRow(bits, art) }
+            hgssBadgeRows(badges, TrackerOptions.showBothBadgeSets, TrackerOptions.kantoBadgesFirst, leagueBeaten)
+                .forEach { (bits, art) -> PcBadgeRow(bits, art) }
         }
         return
     }
     val artSet = if (set == "HGSS_J") "HGSS" else set
     Row(
-        Modifier.fillMaxWidth().background(Pc.Ground).border(1.dp, Pc.Border)
+        Modifier.fillMaxWidth().background(TrackerBackground.boxFill(Pc.Ground)).border(1.dp, Pc.Border)
             .padding(horizontal = 4.dp, vertical = 3.dp),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically,
@@ -1489,12 +1625,16 @@ fun PcHealsRow(percent: Int, count: Int) {
  * column of the head block. Same numbers as [PcHealsRow].
  */
 @Composable
-fun PcHealsBlock(percent: Int, count: Int, wholeHp: Int? = null, pcHealsAttempt: Int? = null) {
+fun PcHealsBlock(
+    percent: Int, count: Int, wholeHp: Int? = null, pcHealsAttempt: Int? = null,
+    /** TrackerScreen.Buttons.HealsInBag: the heals text opens Heals in Bag on its All tab. */
+    onTap: (() -> Unit)? = null,
+) {
     // TrackerScreen.lua:1276 draws both lines in Default text. The colour
     // ramp here was invented, and it painted "0% HP (0)" bright red as though
     // something were wrong rather than simply reporting an empty bag.
     Row(Modifier.fillMaxWidth().padding(horizontal = 2.rp, vertical = 1.rp), verticalAlignment = Alignment.Top) {
-        Column(Modifier.weight(1f)) {
+        Column(Modifier.weight(1f).then(if (onTap != null) Modifier.clickable { onTap() } else Modifier)) {
             PixText("Heals:", PcRef.FONT, Pc.Text)
             // "Show heals as whole number": the HP the bag would restore, instead of the share of max HP.
             PixText(if (TrackerOptions.healsWhole && wholeHp != null) "$wholeHp HP ($count)" else "$percent% HP ($count)", PcRef.FONT, Pc.Text)
@@ -1524,7 +1664,7 @@ fun PcNoteRow(note: String, onEdit: () -> Unit) {
 fun PcCard(content: @Composable () -> Unit) {
     Column(
         Modifier.fillMaxWidth().padding(bottom = 2.rp)
-            .background(Pc.Ground).border(1.rp, Pc.Border),
+            .background(TrackerBackground.boxFill(Pc.Ground)).border(1.rp, Pc.Border),
     ) { content() }
 }
 
@@ -1548,15 +1688,139 @@ fun PcDiceButton(onClick: () -> Unit) {
     }
 }
 
-@Composable
-fun PcSmallButton(label: String, onClick: () -> Unit) {
-    Box(
-        Modifier.background(Color(0xFF303030)).clickable { onClick() }
-            .padding(horizontal = 3.rp, vertical = 1.rp)
-    ) { PixText(label, PcRef.FONT, Pc.Text) }
+/**
+ * The least a control or a label may be (2026-09-30, UX audit P0-14 and P0-15). Plain numbers, so a test can hold
+ * the sources to them.
+ */
+internal object PcMin {
+    /** A tracker button's touch box, in dp, both ways. The drawn button is 11 reference pixels tall, about 16dp. */
+    const val TOUCH_DP = 44
+    /** A dialog's row, tab or close mark: Android's own minimum, as Shell.touchTarget. */
+    const val DIALOG_TOUCH_DP = 48
+    /** A label in a tracker dialog, in sp: it follows the phone's font size and never drops under this. */
+    const val LABEL_SP = 12
+    /** The clear space between the RUN and SEE MINE touch boxes, in dp. */
+    const val BUTTON_GAP_DP = 10
 }
 
-/** Battle banner. RUN only appears in wild battles — trainers never allow it. */
+/**
+ * A button that asks twice (2026-09-30, UX audit P0-14): the first tap arms it, a second inside [WINDOW_MS] does
+ * the thing, and otherwise it disarms. It is the "Sure?" the library's deletes use (RomLibraryScreen's
+ * DISARM_MS), kept as a plain holder so the timing is proved on the JVM. RUN used to flee the wild battle on the
+ * first touch, and in a Nuzlocke a mis-tap next to SEE MINE cost the encounter.
+ */
+internal class ArmedTap(private val windowMs: Long = WINDOW_MS) {
+    /** When it was armed, or [NOT_ARMED]. State, so the label follows it and a timer keyed on it restarts on every arming. */
+    var armedAt by mutableStateOf(NOT_ARMED)
+        private set
+
+    val armed: Boolean get() = armedAt != NOT_ARMED
+
+    /** A tap at [now] (ms, on any steady clock). True: do the thing. False: this tap only armed it. */
+    fun tap(now: Long): Boolean {
+        if (armed && now - armedAt <= windowMs) { armedAt = NOT_ARMED; return true }
+        armedAt = now
+        return false
+    }
+
+    /** The window ran out, or the button left the screen. */
+    fun disarm() { armedAt = NOT_ARMED }
+
+    companion object {
+        const val WINDOW_MS = 3000L
+        const val NOT_ARMED = Long.MIN_VALUE
+    }
+}
+
+/**
+ * The tracker's small button: drawn 11 reference pixels tall, in a touch box of at least [PcMin.TOUCH_DP] both ways
+ * (2026-09-30, UX audit P0-14). The look is the tracker's and stays; only the box around it grew. SETUP is one.
+ */
+@Composable
+fun PcSmallButton(label: String, onClick: () -> Unit) = PcButton(label, onClick = onClick)
+
+/**
+ * [PcSmallButton] with a colour for its label, and [spoken] for a screen reader in place of the label. [alert]
+ * announces the change when the label changes under a finger (RUN turning into RUN?).
+ */
+@Composable
+internal fun PcButton(
+    label: String,
+    modifier: Modifier = Modifier,
+    color: Color = Pc.Text,
+    spoken: String? = null,
+    alert: Boolean = false,
+    onClick: () -> Unit,
+) {
+    Box(
+        modifier.sizeIn(minWidth = PcMin.TOUCH_DP.dp, minHeight = PcMin.TOUCH_DP.dp)
+            .clickable(role = Role.Button) { onClick() }
+            .semantics {
+                if (spoken != null) contentDescription = spoken
+                if (alert) liveRegion = LiveRegionMode.Polite
+            },
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(Modifier.background(Color(0xFF303030)).padding(horizontal = 3.rp, vertical = 1.rp)) {
+            PixText(label, PcRef.FONT, color)
+        }
+    }
+}
+
+/**
+ * What the banner's buttons say, drawn and spoken. The drawn words are the PC tracker's own short ones; a screen
+ * reader gets a sentence.
+ */
+internal object PcBannerCopy {
+    const val RUN = "RUN"
+    const val RUN_ARMED = "RUN?"
+    const val RUN_SPOKEN = "Run from this battle"
+    const val RUN_ARMED_SPOKEN = "Run away? Tap again to run"
+    const val SEE_MINE = "SEE MINE"
+    const val SEE_FOE = "SEE FOE"
+    const val SEE_MINE_SPOKEN = "Show my Pok\u00e9mon"
+    const val SEE_FOE_SPOKEN = "Show the opponent's Pok\u00e9mon"
+    const val TRAINER_SPOKEN = "Open the trainer's info"
+
+    fun run(armed: Boolean) = if (armed) RUN_ARMED else RUN
+    fun runSpoken(armed: Boolean) = if (armed) RUN_ARMED_SPOKEN else RUN_SPOKEN
+    /** The button offers the side that is not on screen. */
+    fun see(viewingOwn: Boolean) = if (viewingOwn) SEE_FOE else SEE_MINE
+    fun seeSpoken(viewingOwn: Boolean) = if (viewingOwn) SEE_FOE_SPOKEN else SEE_MINE_SPOKEN
+}
+
+/**
+ * The strip a battle banner is drawn as, with room for touch (2026-09-30, UX audit P0-14). The strip keeps its
+ * look and its height; the buttons in it sit in a band [PcMin.TOUCH_DP] tall, so their touch boxes are real
+ * space that never reaches the row above or the card below. The blank above and below the strip is the price.
+ * [fill] is the strip's own colour, so a banner decides for itself whether the tracker's image shows through.
+ */
+@Composable
+internal fun PcBannerBand(
+    fill: Color,
+    buttons: Boolean,
+    label: @Composable () -> Unit,
+    controls: @Composable RowScope.() -> Unit,
+) {
+    // The row's content is a button (11 reference pixels) or the label (9), inside a 1-pixel border either side.
+    val stripHeight = (if (buttons) PcRef.FONT + 2 + 2 else PcRef.FONT + 2).rp
+    Box(
+        Modifier.fillMaxWidth().heightIn(min = if (buttons) PcMin.TOUCH_DP.dp else 0.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(Modifier.fillMaxWidth().height(stripHeight).background(fill).border(1.rp, Pc.Border))
+        Row(Modifier.fillMaxWidth().padding(horizontal = 2.rp), verticalAlignment = Alignment.CenterVertically) {
+            // The label gives way, so the buttons are never squeezed off a narrow pane.
+            Box(Modifier.weight(1f)) { label() }
+            controls()
+        }
+    }
+}
+
+/**
+ * Battle banner. RUN only appears in wild battles: trainers never allow it. RUN asks twice (ArmedTap): the first
+ * tap draws it as RUN? in the warning colour, a second inside three seconds flees, and otherwise it disarms.
+ */
 @Composable
 fun PcBattleBanner(
     isWild: Boolean,
@@ -1566,30 +1830,48 @@ fun PcBattleBanner(
     /** TrainersOnRouteScreen: the TRAINER BATTLE banner opens Trainer Info for the opponent. */
     onTrainerTap: (() -> Unit)? = null,
 ) {
-    Row(
-        Modifier.fillMaxWidth().background(Pc.Ground).border(1.rp, Pc.Border)
-            .padding(horizontal = 2.rp, vertical = 1.rp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        PixText(
-            if (isWild) "WILD BATTLE" else "TRAINER BATTLE", PcRef.FONT,
-            if (isWild) Pc.Positive else Pc.Negative,
-            if (!isWild && onTrainerTap != null) Modifier.clickable { onTrainerTap() } else Modifier,
-        )
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            // The reference swaps between your Pokemon and the enemy's with a
-            // CONTROLLER BUTTON (Input.lua:178, Battle.togglePokemonViewed),
-            // so it needs nothing on screen. There is no controller here, so
-            // the same action needs somewhere to be tapped. This is the one
-            // control added rather than copied, and it exists only during a
-            // battle, which is the only time the reference's hotkey does
-            // anything either.
-            onSwapView?.let {
-                PcSmallButton(if (viewingOwn) "SEE FOE" else "SEE MINE", it)
-                Spacer(Modifier.width(2.rp))
+    val run = remember { ArmedTap() }
+    // A timer per arming: armedAt changes on every tap that arms, so an older timer never disarms a newer one.
+    LaunchedEffect(run.armedAt) {
+        if (run.armed) { kotlinx.coroutines.delay(ArmedTap.WINDOW_MS); run.disarm() }
+    }
+    PcBannerBand(
+        fill = TrackerBackground.boxFill(Pc.Ground),
+        buttons = onSwapView != null || isWild,
+        label = {
+            val trainerTap = if (isWild) null else onTrainerTap
+            Box(
+                if (trainerTap != null) {
+                    Modifier.heightIn(min = PcMin.TOUCH_DP.dp)
+                        .clickable(onClickLabel = PcBannerCopy.TRAINER_SPOKEN, role = Role.Button) { trainerTap() }
+                } else Modifier,
+                contentAlignment = Alignment.CenterStart,
+            ) {
+                PixText(
+                    if (isWild) "WILD BATTLE" else "TRAINER BATTLE", PcRef.FONT,
+                    if (isWild) Pc.Positive else Pc.Negative,
+                )
             }
-            if (isWild) PcSmallButton("RUN", onFlee)
+        },
+    ) {
+        // The reference swaps between your Pokemon and the enemy's with a
+        // CONTROLLER BUTTON (Input.lua:178, Battle.togglePokemonViewed),
+        // so it needs nothing on screen. There is no controller here, so
+        // the same action needs somewhere to be tapped. This is the one
+        // control added rather than copied, and it exists only during a
+        // battle, which is the only time the reference's hotkey does
+        // anything either.
+        onSwapView?.let {
+            PcButton(PcBannerCopy.see(viewingOwn), spoken = PcBannerCopy.seeSpoken(viewingOwn), onClick = it)
+        }
+        if (isWild) {
+            if (onSwapView != null) Spacer(Modifier.width(PcMin.BUTTON_GAP_DP.dp))
+            PcButton(
+                PcBannerCopy.run(run.armed),
+                color = if (run.armed) Pc.Negative else Pc.Text,
+                spoken = PcBannerCopy.runSpoken(run.armed),
+                alert = run.armed,
+            ) { if (run.tap(android.os.SystemClock.elapsedRealtime())) onFlee() }
         }
     }
 }

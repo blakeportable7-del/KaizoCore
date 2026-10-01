@@ -1,0 +1,193 @@
+# map id	reference key	name	trainers  (RouteData.Info[key].name and .trainers via tools/trainer-data/convert_route_info.py)
+1	1	Mom's House	
+2	2	Your Room	
+3	3	Rival's House	
+4	4	Rival's Room	
+5	5	Oak's Lab	326,327,328
+8	8	Pokémon Center	
+9	9	Pokémon Center 2F	
+10	10	PokéMart	
+12	12	Cerulean Gym	150,234,415
+15	15	Celadon Gym	132,133,160,265,266,267,402,417
+20	20	Fuchsia Gym	294,295,288,289,292,293,418
+25	25	Vermilion Gym	141,220,423,416
+27	27	Game Corner	357
+28	28	Pewter Gym	142,414
+34	34	Saffron Gym	280,281,282,283,462,463,464,420
+36	36	Cinnabar Gym	177,178,179,180,213,214,215,419
+37	37	Viridian Gym	296,297,322,323,324,392,400,401,350
+77	77	Safari Rest House	
+78	78	Pallet Town	
+79	79	Viridian City	
+80	80	Pewter City	
+81	81	Cerulean City	332,333,334,355
+82	82	Lavender Town	
+83	83	Vermilion City	
+84	84	Celadon City	
+85	85	Fuchsia City	
+86	86	Cinnabar Island	
+87	87	Indigo Plateau	
+88	88	Saffron City Conn.	
+89	89	Route 1	
+90	90	Route 2	
+91	91	Route 3	89,90,105,106,107,116,117,118
+92	92	Route 4	119
+93	93	Route 5	
+94	94	Route 6	111,112,145,146,151,152
+95	95	Route 7	
+96	96	Route 8	128,129,130,131,171,172,173,262,264,484,535,536
+97	97	Route 9	114,115,148,149,154,155,185,186,465
+98	98	Route 10	156,157,162,163,187,188
+99	99	Route 11	97,98,99,100,221,222,258,259,260,261
+100	100	Route 12	225,226,227,228,233,285,477,486
+101	101	Route 13	195,268,269,300,301,302,466,467,468,469
+102	102	Route 14	196,207,208,209,303,304,313,314,315,316,487
+103	103	Route 15	197,198,273,274,305,306,478,479,480,481,488
+104	104	Route 16	199,201,202,249,250,251,489
+105	105	Route 17	203,204,205,206,252,253,254,255,256,470
+106	106	Route 18	307,308,309
+107	107	Route 19	235,236,237,238,239,240,241,276,277,278,490
+108	108	Route 20	242,243,244,270,271,272,279,310,472,473
+109	109	Route 21 North	229,231,245,491
+110	110	Route 22	329,330,331,435,436,437
+111	111	Route 23	
+112	112	Route 24	92,110,122,123,143,144,356
+113	113	Route 25	93,94,95,153,125,182,183,184,471
+114	114	Mt. Moon 1F	181,91,120,121,169,108,109
+115	115	Mt. Moon B1F	
+116	116	Mt. Moon B2F	170,351,352,353,354
+117	117	Viridian Forest	102,103,104,531,532
+118	118	S.S. Anne Ext.	
+119	119	S.S. Anne 1F	
+120	120	S.S. Anne 2F	426,427,428
+121	121	S.S. Anne 3F	
+122	122	S.S. Anne B1F	
+123	123	S.S. Anne Deck	134,135
+124	124	Diglett's Cave B1F	
+125	125	Victory Road 1F	406,396
+126	126	Victory Road 2F	167,325,287,290,298
+127	127	Victory Road 3F	393,394,403,404,485
+128	128	Rocket Hideout B1F	358,359,360,361,362
+129	129	Rocket Hideout B2F	363
+130	130	Rocket Hideout B3F	364,365
+131	131	Rocket Hideout B4F	348,368,366,367
+132	132	Silph Co. 1F	
+133	133	Silph Co. 2F	336,337,373,374
+134	134	Silph Co. 3F	338,375
+135	135	Silph Co. 4F	339,376,377
+136	136	Silph Co. 5F	340,378,379,286
+137	137	Silph Co. 6F	341,380,381
+138	138	Silph Co. 7F	342,383,384,385,432,433,434
+139	139	Silph Co. 8F	343,382,386
+140	140	Silph Co. 9F	344,387,388
+141	141	Silph Co. 10F	345,389
+142	142	Silph Co. 11F	349,390,391
+143	143	Poké Mansion 1F	335,534
+144	144	Poké Mansion 2F	216
+145	145	Poké Mansion 3F	218,346
+146	146	Poké Mansion B1F	219,347
+147	147	Safari Zone Center	
+148	148	Safari Zone East	
+149	149	Safari Zone North	
+150	150	Safari Zone West	
+151	151	Cerulean Cave 1F	
+152	152	Cerulean Cave 2F	
+153	153	Cerulean Cave B1F	
+154	154	Rock Tunnel 1F	192,193,194,168,476,475,474
+155	155	Rock Tunnel B1F	158,159,189,190,191,164,165,166
+156	156	Seafoam Islands 1F	
+157	157	Seafoam Islands B1F	
+158	158	Seafoam Islands B2F	
+159	159	Seafoam Islands B3F	
+160	160	Seafoam Islands B4F	
+161	161	Pokémon Tower 1F	
+162	162	Pokémon Tower 2F	429,430,431
+163	163	Pokémon Tower 3F	441,442,443
+164	164	Pokémon Tower 4F	444,445,446
+165	165	Pokémon Tower 5F	447,448,449,450
+166	166	Pokémon Tower 6F	451,452,453
+167	167	Pokémon Tower 7F	369,370,371
+168	168	Power Plant	
+177	177	S.S. Anne Rooms	483,127,223,482,422,421,126,96
+178	178	S.S. Anne Rooms	138,139,224,140,136,137
+212	212	Indigo Plateau PC	
+213	213	Lorelei's Room	410
+214	214	Bruno's Room	411
+215	215	Agatha's Room	412
+216	216	Lance's Room	413
+217	217	Champion's Room	438,439,440
+219	219	Route 21 South	230,232,246,247,248
+228	228	Dojo	321,319,320,318,317
+230	230	One Island	
+232	232	Three Island	527,528,529,742
+233	233	Four Island	
+234	234	Five Island	
+237	237	Kindle Road	547,548,549,550,551,518,552,553,554,555,556,557
+238	238	Treasure Beach	546
+239	239	Cape Brink	
+240	240	Bond Bridge	523,558,519,559,561,560
+241	241	Three Isle Port	
+246	246	Resort Gorgeous	526,562,563,525,564,565,566
+247	247	Water Labyrinth	520
+248	248	Five Isle Meadow	567,568,569
+249	249	Memorial Pillar	570,571,572
+250	250	Outcast Island	573,574,575,576,540
+251	251	Green Path	517
+252	252	Water Path	577,291,578,579,580,581
+253	253	Ruin Valley	524,582,583,584,585
+254	254	Trainer Tower	586,587
+255	255	Canyon Entrance	588,589,590,521,522
+256	256	Sevault Canyon	591,593,596,598,599,600,601
+257	257	Tanoby Ruins	
+270	270	Berry Forest	
+271	271	One Island PC	
+280	280	Mt. Ember Base	537,538,595,597,592
+281	281	Mt. Ember Summit	
+282	282	Summit Path 1F	
+283	283	Summit Path 2F	
+284	284	Summit Path 3F	
+285	285	Ruby Path 1F	
+286	286	Ruby Path B1F- a	
+287	287	Ruby Path B2F- a	
+288	288	Ruby Path B3F	
+289	289	Ruby Path B1F- b	
+290	290	Ruby Path B2F- b	
+292	292	Rocket Warehouse	545,541,542,544,516,543
+293	293	Icefall Cave Entrance	
+294	294	Icefall Cave 1F	
+295	295	Icefall Cave B1F	
+296	296	Icefall Cave Back	539
+298	298	Trainer Tower 1F	
+299	299	Trainer Tower 2F	
+300	300	Trainer Tower 3F	
+301	301	Trainer Tower 4F	
+302	302	Trainer Tower 5F	
+303	303	Trainer Tower 6F	
+304	304	Trainer Tower 7F	
+305	305	Trainer Tower 8F	
+317	317	Pattern Bush	609,610,611,612,613,614,615,616,617,618,619,620
+321	321	Lost Cave Room 1	607
+322	322	Lost Cave Room 2	
+323	323	Lost Cave Room 3	
+324	324	Lost Cave Room 4	608
+325	325	Lost Cave Room 5	
+326	326	Lost Cave Room 6	
+327	327	Lost Cave Room 7	
+328	328	Lost Cave Room 8	
+329	329	Lost Cave Room 9	
+330	330	Lost Cave Room 10	606
+331	331	Lost Cave Room 11	
+332	332	Lost Cave Room 12	
+333	333	Lost Cave Room 13	
+334	334	Lost Cave Room 14	
+335	335	Monean Chamber	
+336	336	Liptoo Chamber	
+337	337	Weepth Chamber	
+338	338	Dilford Chamber	
+339	339	Scufib Chamber	
+340	340	Altering Cave	
+342	342	Birth Island	
+345	345	Navel Rock Summit	
+346	346	Navel Rock Base	
+362	362	Rixy Chamber	
+363	363	Viapois Chamber	

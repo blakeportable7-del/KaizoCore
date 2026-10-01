@@ -1,0 +1,30 @@
+TEXT:
+Kaizo IronMON
+Back
+Pick for
+Starter 1
+Random
+A different Pokémon each time. The game's own is Treecko.
+Bulbasaur
+#1
+Ivysaur
+#2
+Venusaur
+#3
+Charmander
+#4
+Charmeleon
+#5
+Charizard
+#6
+Squirtle
+#7
+Wartortle
+#8
+Home
+Play
+Library
+More
+
+CONTENT DESCRIPTIONS:
+Back to Home

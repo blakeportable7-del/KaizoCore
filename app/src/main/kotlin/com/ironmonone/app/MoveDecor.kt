@@ -2,6 +2,7 @@ package com.ironmonone.app
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -40,8 +41,13 @@ internal data class MoveContext(
     val hiddenPowerType: Int? = null,
     /** "Reveal info if randomized" off: the randomized facts to hide on these moves (InfoRules). */
     val hide: com.ironmonone.tracker.RandomizedFlags? = null,
-    /** Off, and your own moves: no effectiveness while the types are randomized. */
+    /** No effectiveness on these moves (InfoRules.hideEffectiveness): a ghost battle, or your own with the types randomized. */
     val hideEffectiveness: Boolean = false,
+    /**
+     * The game's generation, whose reference's move table and chart apply:
+     * 1 is the Gen 1 tracker, 2 the Gen 2 tracker, 3 Ironmon-Tracker.
+     */
+    val generation: Int = 3,
 )
 
 private fun kg(s: String?): Double? = s?.trim()?.toDoubleOrNull()
@@ -71,10 +77,15 @@ internal fun enemyMoveContext(e: EnemyInfo, lead: TrackedMon?, weather: String?,
         weather = weather,
     )
 
+/** MoveDecor's row conversion for code outside this package (the stream snapshot): the same PcMove the card draws. */
+internal object MoveDecorAccess {
+    fun MoveRow.shown(ctx: MoveContext?): PcMove = toPcMove(ctx)
+}
+
 /** One ROM move row as the PC tracker draws it (MoveRules). */
 internal fun MoveRow.toPcMove(ctx: MoveContext?): PcMove {
     val shownType = MoveRules.shownType(id, type, ctx?.hiddenPowerType)
-    val base = MoveRules.basePower(id, power)
+    val base = MoveRules.basePower(id, power, ctx?.generation ?: 3)
     val acc0 = (acc ?: 0).toString()
     // "Calculate variable damage" off: the labels stay labels, and Weather Ball
     // keeps its own type (the reference only recolours it with the option on).
@@ -109,7 +120,7 @@ internal fun MoveRow.toPcMove(ctx: MoveContext?): PcMove {
             ppText = "?".takeIf { h.movePP },
             powerText = if (h.movePower && adj.power != "0") "?" else adj.power,
             accText = if (h.moveAccuracy && adj.acc != "0") "?" else adj.acc,
-            effect = if (battling && t != null && TrackerOptions.showMoveEffectiveness) MoveRules.effectiveness(id, t, cat, ctx.targetTypes).takeIf { it != 1.0 } else null,
+            effect = if (battling && t != null && TrackerOptions.showMoveEffectiveness && !ctx.hideEffectiveness) MoveRules.effectiveness(id, t, cat, ctx.targetTypes, gen1 = ctx.generation == 1).takeIf { it != 1.0 } else null,
         )
     }
     return PcMove(
@@ -120,24 +131,25 @@ internal fun MoveRow.toPcMove(ctx: MoveContext?): PcMove {
         priority = priority, contact = contact,
         powerText = adj.power, accText = adj.acc,
         stab = battling && MoveRules.isStab(id, adj.type, cat, adj.power, ctx!!.attackerTypes),
-        effect = if (battling && TrackerOptions.showMoveEffectiveness && !ctx!!.hideEffectiveness) MoveRules.effectiveness(id, adj.type, cat, ctx.targetTypes).takeIf { it != 1.0 } else null,
+        effect = if (battling && TrackerOptions.showMoveEffectiveness && !ctx!!.hideEffectiveness) MoveRules.effectiveness(id, adj.type, cat, ctx.targetTypes, gen1 = ctx.generation == 1).takeIf { it != 1.0 } else null,
     )
 }
 
 /**
  * Drawing.drawMoveEffectiveness: a green chevron up for 2x (two for 4x), a red
  * chevron down for 1/2 (two for 1/4), and a red X where it has no effect. The
- * chevrons are the reference's 4 by 2, one pixel thick.
+ * chevrons are the reference's 4 by 2, one pixel thick. A DS theme's alternate
+ * pair colours them when it has one (DrawingUtils.lua:434-460).
  */
 @Composable
 internal fun PcEffectGlyph(effect: Double, modifier: Modifier = Modifier) {
     if (effect == 0.0) {
-        PixText("X", PcRef.FONT, Pc.Negative, modifier)
+        PixText("X", PcRef.FONT, Pc.AltNegative, modifier)
         return
     }
     val up = effect > 1.0
     val two = effect >= 4.0 || effect <= 0.25
-    val color = if (up) Pc.Positive else Pc.Negative
+    val color = if (up) Pc.AltPositive else Pc.AltNegative
     Canvas(modifier.width(5.rp).height(9.rp)) {
         val u = size.width / 5f
         fun chevron(y: Float, pointUp: Boolean) {
@@ -193,17 +205,32 @@ internal fun PcPixelImage(rows: List<String>, color: Color, modifier: Modifier =
  * knock your Pokemon out.
  */
 @Composable
-internal fun PcLastAttackLine(text: String, lethal: Boolean) {
+internal fun PcLastAttackLine(text: String, lethal: Boolean, onTap: (() -> Unit)? = null) {
     Row(
         Modifier.fillMaxWidth().background(Pc.Ground).border(1.dp, Pc.Border)
+            .then(if (onTap != null) Modifier.clickable(onClick = onTap) else Modifier)
             .padding(horizontal = 6.dp, vertical = 5.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         PcPixelImage(SWORD, if (lethal) Pc.Negative else Pc.Text)
         Spacer(Modifier.width(6.dp))
-        PixText(text, 8, Pc.Text)
+        PixText(text, 8, Pc.Text, Modifier.weight(1f))
+        // CalcAtk.lua afterRedraw: its list icon beside the line while the calculator can open.
+        if (onTap != null) PcPixelImage(CALC_LIST, Pc.Gold)
     }
 }
+
+/** CalcAtk.lua LIST_ICON, 9 by 8, as the extension draws it beside "Last Damage". */
+private val CALC_LIST = listOf(
+    "111111011",
+    "000000000",
+    "111111011",
+    "000000000",
+    "111111011",
+    "000000000",
+    "111111011",
+    "000000000",
+)
 
 /** Constants.Char widths, the reference font's pixel width per character; 1 where unlisted. */
 private val CHAR_WIDTH: Map<Char, Int> = mapOf('A' to 4, 'B' to 4, 'C' to 4, 'D' to 5, 'E' to 4, 'F' to 4, 'G' to 5, 'H' to 5, 'I' to 1, 'J' to 2, 'K' to 5, 'L' to 3, 'M' to 6, 'N' to 5, 'O' to 5, 'P' to 4, 'Q' to 5, 'R' to 5, 'S' to 4, 'T' to 3, 'U' to 4, 'V' to 4, 'W' to 7, 'X' to 4, 'Y' to 5, 'Z' to 4, 'a' to 4, 'b' to 4, 'c' to 3, 'd' to 4, 'e' to 4, 'f' to 1, 'g' to 4, 'h' to 4, 'i' to 1, 'j' to 2, 'k' to 4, 'l' to 1, 'm' to 7, 'n' to 4, 'o' to 4, 'p' to 4, 'q' to 3, 'r' to 2, 's' to 3, 't' to 2, 'u' to 4, 'v' to 3, 'w' to 5, 'x' to 3, 'y' to 3, 'z' to 3, '0' to 4, '1' to 4, '2' to 4, '3' to 4, '4' to 4, '5' to 4, '6' to 4, '7' to 4, '8' to 4, '9' to 4, '.' to 1, '-' to 2, '\'' to 1, ' ' to 1)

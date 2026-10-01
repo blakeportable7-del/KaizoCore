@@ -50,10 +50,15 @@ import kotlinx.coroutines.withContext
  *
  * The Nat. Dex .bps is imported ONCE and remembered; after that the choice is just a
  * radio button. An already-patched Nat. Dex ROM is accepted too and skips the patch.
+ *
+ * Library's second page, "Patched versions" (2026-09-30, UX audit P0-10): most games are ready as soon as they
+ * are added under My games, so this page is only for making a patched version, and it opens on Standard. It works
+ * on an exact copy of a game the tracker reads and on nothing else (RomIdentity.Result.exact): a file it cannot
+ * set up is told what it is and sent to My games through [onMyGames].
  */
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
-fun PrepareScreen(modifier: Modifier = Modifier) {
+fun PrepareScreen(modifier: Modifier = Modifier, onMyGames: () -> Unit = {}) {
     val context = LocalContext.current
     val store = remember { PrepStore(context) }
     val scope = rememberCoroutineScope()
@@ -92,6 +97,8 @@ fun PrepareScreen(modifier: Modifier = Modifier) {
                     context.contentResolver.openInputStream(uri)!!.use { i -> tmp.outputStream().buffered(1 shl 20).use { o -> copyWithProgress(i, o) { progress.at(it) } } }
                     var file = tmp
                     val head = tmp.inputStream().use { i -> val h = ByteArray(8); val n = i.read(h); if (n > 0) h.copyOf(n) else ByteArray(0) }
+                    // A .7z or .rar is not opened, and it is said so instead of "not a game" (2026-09-30, UX audit P0-11).
+                    LibraryImport.archiveKind(name, head)?.let { throw ArchiveNotOpened(it) }
                     if (ZipImport.isZip(name, head)) {
                         progress.start("Unpacking $name", tmp.length())
                         val inside = tmp.inputStream().use { ZipImport.extractToFiles(it, java.io.File(tmp.parentFile, tmp.name + ".d")) { progress.at(it) } }
@@ -107,6 +114,8 @@ fun PrepareScreen(modifier: Modifier = Modifier) {
                 // A file that is not a game is explained once, under the pick,
                 // with where to go next; it used to repeat here in red (audit, 2026-09-27).
                 romFile?.delete(); romName = n; romFile = f; romId = id
+                // A new file opens on Standard again: a choice made for the last one must not carry over to this game.
+                chosenOption = null
             }.onFailure { say(readFailure(it), error = true); runCatching { context.cacheDir.listFiles()?.filter { f -> f.name.startsWith("prep-") }?.forEach { f -> f.deleteRecursively() } } }
             progress.clear(); busy = false
         }
@@ -134,18 +143,43 @@ fun PrepareScreen(modifier: Modifier = Modifier) {
         }
     }
 
+    // The games already in My games that KaizoCore can make a patched version of (Blake, 2026-09-30: the page would
+    // only take a file from the phone's storage, so a game added and then cleared from Downloads could not be patched).
+    val yourGames by produceState(initialValue = emptyList<LibraryStore.Entry>(), busy) {
+        value = withContext(Dispatchers.IO) { store.library.list().filter { PrepRun.builtIns(it).isNotEmpty() } }
+    }
+
+    fun pickFromLibrary(e: LibraryStore.Entry) {
+        busy = true; message = null; needPatchImport = false
+        scope.launch {
+            runCatching { withContext(Dispatchers.IO) { PrepRun.copyFromLibrary(context, e, progress) } }
+                .onSuccess { (f, id) ->
+                    romFile?.delete(); romName = e.name; romFile = f; romId = id
+                    // Picked to be patched: open on its first patched version, not on the game as it is.
+                    chosenOption = e.kind?.let { k -> PrepRun.builtIns(k).firstOrNull()?.id }
+                }
+                .onFailure { say(readFailure(it), error = true) }
+            progress.clear(); busy = false
+        }
+    }
+
     fun prepare() {
         val file = romFile ?: return
         val id = romId ?: return
         val kind = id.kind ?: return
-        // A game recognised by its title but whose exact copy the app has not
-        // checked yet (Pokemon Black, today) cannot be listed on RUN: the
-        // tracker's addresses are per build and RUN only offers checked ones.
-        // PREP used to store it anyway and say "Ready on the RUN tab", which
-        // was never true (audit, 2026-09-27).
-        if (kind.expectedCrc == com.ironmonone.core.RomKind.CRC_UNKNOWN) {
-            say("This copy of ${kind.displayName} has not been checked by the app yet, so it cannot be randomized here. " +
-                "It plays from Library, All files, without the tracker. Nothing was changed.", error = true)
+        // Only an exact copy of a known game is stored: the list of prepared games (PrepStore.listPrepared) and the
+        // Kaizo screen read a stored file by its checksum, so anything else was stored, called "Ready for Kaizo
+        // IronMON" and never listed. A game recognised by its title alone (Pokemon Black, today) or whose checksum
+        // is another (a trimmed copy) used to get through here (audit, 2026-09-27; UX audit P0-11, 2026-09-30).
+        if (!id.exact) {
+            say(
+                if (kind.expectedCrc == com.ironmonone.core.RomKind.CRC_UNKNOWN)
+                    "This copy of ${kind.displayName} has not been checked by KaizoCore yet, so it cannot be set up here. " +
+                        "It plays from My games, without a tracker. Nothing was changed."
+                else "This file is not an exact copy of ${kind.displayName}, so it cannot be set up here. " +
+                    "It plays from My games, without a tracker. Nothing was changed.",
+                error = true,
+            )
             return
         }
         busy = true; message = null
@@ -153,56 +187,13 @@ fun PrepareScreen(modifier: Modifier = Modifier) {
         progress.clear()
         scope.launch {
             runCatching {
-                withContext(Dispatchers.IO) {
-                    val options = PrepOptions.forKind(kind)
-                    val opt = options.firstOrNull { it.id == chosenOption } ?: options.first()
-                    when (opt.mode) {
-                        PrepOptions.Mode.STANDARD -> {
-                            progress.start("Saving", 0L)
-                            (if (kind.isNatDex || kind.patchTag != null) "Already patched. Stored as is." else "Stored as a standard (vanilla) base.") to
-                                store.savePrepared(kind, file)
-                        }
-
-                        PrepOptions.Mode.PATCH -> {
-                            // Every failure below is worded for the player; none of them passes on an exception's own text (audit, 2026-09-27).
-                            val outKind = opt.out ?: throw PrepFailure(NOT_IN_THIS_BUILD)
-                            val patchFile = store.bundledPatch(context, opt.asset ?: throw PrepFailure(NOT_IN_THIS_BUILD))
-                                ?: throw PrepFailure(NOT_IN_THIS_BUILD)
-                            val tmp = java.io.File(context.cacheDir, "prep-patched-${outKind.id}.${outKind.fileExtension}")
-                            progress.start("Patching", 0L)
-                            val crc = Patcher.applyFiles(patchFile, file, tmp, kind.displayName) { done, total -> progress.done = done; progress.total = total }
-                            if (outKind.expectedCrc != RomKind.CRC_UNKNOWN && crc != outKind.expectedCrc) {
-                                tmp.delete()
-                                throw PrepFailure("The patch applied, but the result is not a version this app knows. " +
-                                    "Your dump is probably a different version of the game. Nothing was changed.")
-                            }
-                            file.delete()
-                            "Patched to ${outKind.displayName}." to store.savePrepared(outKind, tmp)
-                        }
-
-                        PrepOptions.Mode.NATDEX -> {
-                            // Bundled patch is used unless the user imported one.
-                            val patchFile = store.patchFileOrBundled(context, kind)
-                                ?: throw NeedPatch()
-                            progress.start("Patching", 0L)
-                            val out = Patcher.apply(patchFile.readBytes(), file.readBytes(), kind.displayName)
-                            val outKind = RomKind.allNatDex.firstOrNull {
-                                it.expectedCrc == com.ironmonone.patch.Crc32.of(out)
-                            } ?: throw PrepFailure(
-                                "The patch applied, but the result is not a Nat. Dex version this app knows. " +
-                                    "A newer Nat. Dex release needs an update of this app first. Nothing was changed.")
-                            "Patched to ${outKind.displayName}." to
-                                store.savePrepared(outKind, out)
-                        }
-                    }
-                }
-            }.onSuccess { (msg, _) -> say("$msg Ready on the Run tab."); romFile = null; romId = null }
+                withContext(Dispatchers.IO) { PrepRun.run(context, store, file, kind, chosenOption, progress) }
+            }.onSuccess { msg -> say("$msg Ready for Kaizo IronMON."); romFile = null; romId = null; romName = null }
                 .onFailure {
                     if (it is NeedPatch) {
                         // Not an error: a one-time step, with where to get the file (audit, 2026-09-27).
                         needPatchImport = true
-                        say("KaizoCore needs the National Dex patch for this game once. " +
-                            "It comes from the Nat. Dex Extension release page. Download the .bps for your game there, then import it here.")
+                        say(NEED_NATDEX_PATCH)
                     } else say(prepFailure(it), error = true)
                 }
             progress.clear(); busy = false
@@ -212,10 +203,10 @@ fun PrepareScreen(modifier: Modifier = Modifier) {
     Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(10.dp)) {
         Gen3Box(Modifier.fillMaxWidth()) {
             Column {
-        // Why this page exists, before anything else (audit, 2026-09-27).
+        // Why this page exists, before anything else (audit, 2026-09-27), and that most games never need it (UX audit P0-10, 2026-09-30).
         Text(
-            "Makes a game ready for the Run tab: checks your dump and, if you pick a ruleset patch, applies it. " +
-                "A clean dump added in All files is already ready.",
+            "Most games are ready as soon as you add them under My games. Use this page only to make a patched version, " +
+                "such as Faster FireRed, Nat. Dex or Super Kaizo, from a game you already added.",
             style = MaterialTheme.typography.bodyMedium,
             color = Gen3.Ink,
         )
@@ -223,7 +214,17 @@ fun PrepareScreen(modifier: Modifier = Modifier) {
 
         // The file name gets its own line: through the button label it was
         // re-cased and clipped (audit, 2026-09-27).
-        Gen3Button(if (romName == null) "CHOOSE ROM" else "CHOOSE ANOTHER", enabled = !busy) {
+        if (yourGames.isNotEmpty() && romName == null) {
+            Text("From your games", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, color = Gen3.Ink)
+            Spacer(Modifier.height(4.dp))
+            yourGames.forEach { e ->
+                LibraryPickRow(stripKnownExt(e.name), e.kind?.displayName ?: "", onClick = { if (!busy) pickFromLibrary(e) })
+            }
+            Spacer(Modifier.height(10.dp))
+            Text("Or from this phone's files", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, color = Gen3.Ink)
+            Spacer(Modifier.height(4.dp))
+        }
+        Gen3Button(if (romName == null) "CHOOSE A GAME FILE" else "CHOOSE ANOTHER", enabled = !busy) {
             pickRom.launch(arrayOf("*/*"))
         }
         romName?.let { n ->
@@ -232,32 +233,32 @@ fun PrepareScreen(modifier: Modifier = Modifier) {
                 maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
         }
 
-        // A game named by its header but whose exact copy is unchecked: said
-        // as soon as it is read, with Prepare off, not after a tap (audit, 2026-09-27).
-        val unchecked = romId?.kind?.expectedCrc == RomKind.CRC_UNKNOWN
+        // Only an exact copy of a game the tracker reads can be set up. Anything else is said as soon as it is
+        // read, with what it is and where it plays, and Prepare stays off (audit, 2026-09-27; UX audit P0-11, 2026-09-30).
+        val exact = romId?.exact == true
         romId?.let { id ->
             Spacer(Modifier.height(8.dp))
             Text(
                 id.summary,
                 style = MaterialTheme.typography.bodySmall,
                 color = when {
-                    !id.recognised -> Shell.dangerOnPaper
-                    unchecked -> Shell.hintOnPaper
-                    else -> Shell.goodOnPaper
+                    id.verdict == RomIdentity.Verdict.DAMAGED || id.verdict == RomIdentity.Verdict.NOT_A_GAME -> Shell.dangerOnPaper
+                    exact -> Shell.goodOnPaper
+                    else -> Shell.hintOnPaper
                 },
             )
-            if (!id.recognised) {
+            notSetUpHereLine(id.verdict)?.let { line ->
                 Spacer(Modifier.height(4.dp))
-                Text("To play it anyway, add it in Library, All files. To make a hack, use the Hacks tab.",
-                    style = MaterialTheme.typography.bodySmall, color = Shell.inkOnPaper)
-            } else if (unchecked) {
-                Spacer(Modifier.height(4.dp))
-                Text("This copy cannot be randomized here yet. It plays from Library, All files, without the tracker.",
-                    style = MaterialTheme.typography.bodySmall, color = Shell.inkOnPaper)
+                Text(line, style = MaterialTheme.typography.bodySmall, color = Shell.inkOnPaper)
+            }
+            // The button for the place it names (UX audit P0-13): a file that plays goes in under My games.
+            if (playsWithoutSetup(id.verdict)) {
+                Spacer(Modifier.height(8.dp))
+                Gen3Button("OPEN MY GAMES", enabled = !busy) { onMyGames() }
             }
             // Blake, 2026-09-07: "the prepare screen will be different and unique
             // to each rom." What this game gets, in its own words.
-            id.kind?.takeIf { !unchecked }?.let { k ->
+            id.kind?.takeIf { exact }?.let { k ->
                 Spacer(Modifier.height(6.dp))
                 PrepPlan.lines(k).forEach { line ->
                     Text(line, style = MaterialTheme.typography.bodySmall, color = Shell.inkOnPaper)
@@ -265,11 +266,11 @@ fun PrepareScreen(modifier: Modifier = Modifier) {
             }
         }
 
-        romId?.kind?.takeIf { !unchecked }?.let { k ->
+        romId?.kind?.takeIf { exact }?.let { k ->
             val options = PrepOptions.forKind(k)
             if (options.size > 1) {
                 Spacer(Modifier.height(14.dp))
-                val current = options.firstOrNull { it.id == chosenOption } ?: options.first()
+                val current = options.firstOrNull { it.id == chosenOption } ?: PrepOptions.default(k)
                 // The whole row is the touch target, not just the radio circle. A label
                 // that ignores taps is the bug the emulator test caught on 2026-08-30.
                 Column {
@@ -282,11 +283,24 @@ fun PrepareScreen(modifier: Modifier = Modifier) {
                             Spacer(Modifier.width(10.dp))
                             Column {
                                 Text(o.label, fontWeight = if (current.id == o.id) FontWeight.SemiBold else FontWeight.Normal)
-                                Text(PrepOptions.describe(o), style = MaterialTheme.typography.bodySmall, color = Shell.inkOnPaper)
+                                Text(PrepOptions.describe(o, k), style = MaterialTheme.typography.bodySmall, color = Shell.inkOnPaper)
                             }
                         }
                     }
                 }
+            }
+        }
+
+        // Picking Nat. Dex says what it adds before anything is made (Blake, 2026-09-30).
+        romId?.kind?.takeIf { exact }?.let { k ->
+            val picked = PrepOptions.forKind(k).firstOrNull { it.id == chosenOption } ?: PrepOptions.default(k)
+            if (picked.mode == PrepOptions.Mode.NATDEX) {
+                Spacer(Modifier.height(10.dp))
+                Text(NatDexInfo.WHAT, style = MaterialTheme.typography.titleSmall, color = Gen3.Ink)
+                NatDexInfo.lines(k).forEach { line ->
+                    Text("\u2022 $line", style = MaterialTheme.typography.bodySmall, color = Shell.inkOnPaper, modifier = Modifier.padding(vertical = 1.dp))
+                }
+                Text(NatDexInfo.CREDIT, style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper)
             }
         }
 
@@ -297,8 +311,16 @@ fun PrepareScreen(modifier: Modifier = Modifier) {
             Spacer(Modifier.height(14.dp))
         }
 
-        Gen3Button("PREPARE", enabled = !busy && romId?.recognised == true && !unchecked, accent = true) {
+        Gen3Button("PREPARE", enabled = !busy && exact, accent = true) {
             prepare()
+        }
+        // A disabled main button says why (UX audit P0-10, 2026-09-30).
+        if (!busy && !exact) {
+            Spacer(Modifier.height(4.dp))
+            Text(
+                if (romId == null) "Choose a game file first." else "This file cannot be set up here. See above.",
+                style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper,
+            )
         }
 
         if (needPatchImport) {
@@ -349,7 +371,7 @@ fun PrepareScreen(modifier: Modifier = Modifier) {
                     ShellBusy()
                 } else if (prepared!!.isEmpty()) {
                     Text(
-                        "Nothing yet. Add a ROM above and it is kept for good.",
+                        "Nothing yet. A game you make here is kept for good.",
                         style = MaterialTheme.typography.bodySmall,
                         color = Shell.hintOnPaper,
                     )
@@ -373,7 +395,7 @@ fun PrepareScreen(modifier: Modifier = Modifier) {
                     }
                     Spacer(Modifier.height(6.dp))
                     Text(
-                        "Pick one on the Run tab to randomize it.",
+                        "Pick one in Kaizo IronMON to randomize it.",
                         style = MaterialTheme.typography.bodySmall,
                         color = Shell.hintOnPaper,
                     )
@@ -383,33 +405,38 @@ fun PrepareScreen(modifier: Modifier = Modifier) {
     }
 }
 
-private class NeedPatch : Exception()
-
-/** A failure already worded for the player. */
-private class PrepFailure(message: String) : Exception(message)
-
 /** A zip with no game inside. */
 private class NoRomInZip : Exception()
 
-private const val NOT_IN_THIS_BUILD = "This option is not part of this version of the app. Pick another one."
+/** A .7z or .rar, which KaizoCore does not open ([kind] is ".7z" or ".rar"). */
+private class ArchiveNotOpened(val kind: String) : Exception()
+
+/**
+ * What to do with a file this page cannot set up, in one line under what it is; null where what it is already says
+ * (a damaged DS file has its own next step). "Patched versions" only works on an exact copy of a game the tracker
+ * reads, and a game that is not that still plays (UX audit P0-11, 2026-09-30).
+ */
+internal fun notSetUpHereLine(v: RomIdentity.Verdict): String? = when (v) {
+    RomIdentity.Verdict.EXACT, RomIdentity.Verdict.DAMAGED -> null
+    RomIdentity.Verdict.NOT_A_GAME -> "Choose a Game Boy, Game Boy Advance or DS game file, or a .zip holding one."
+    else -> "This page only works on an exact copy of a game the tracker reads. To play this one, add it under My games. To make a ROM hack, use ROM Hacks on Home."
+}
+
+/** A file that is not set up here but plays, so it gets the button to My games. */
+internal fun playsWithoutSetup(v: RomIdentity.Verdict): Boolean = when (v) {
+    RomIdentity.Verdict.EXACT, RomIdentity.Verdict.DAMAGED, RomIdentity.Verdict.NOT_A_GAME -> false
+    else -> true
+}
 
 /** Where the Nat. Dex patches are published. */
 private const val NATDEX_RELEASES = "https://github.com/CyanSMP64/NatDexExtension"
 
-private fun isNoSpace(t: Throwable): Boolean =
-    generateSequence(t) { it.cause }.any { (it.message ?: "").contains("ENOSPC") || (it.message ?: "").contains("No space left") }
-
 /** What a failed pick says to the player: never an exception's own text (audit, 2026-09-27). */
 private fun readFailure(t: Throwable): String = when {
+    t is ArchiveNotOpened -> LibraryImport.archiveLine(t.kind, verb = "choose")
     t is NoRomInZip -> "That zip has no game inside. Pick the .gba, .gbc, .gb or .nds file, or a zip holding one."
     isNoSpace(t) -> "Not enough free space on this phone to read that file. Free some space and try again."
     t is OutOfMemoryError -> "This phone ran out of memory reading that file. Close other apps and try again."
     else -> "Could not read that file. Pick it again, or copy it onto this phone first."
 }
 
-/** What a failed Prepare says to the player. */
-private fun prepFailure(t: Throwable): String = when {
-    t is PrepFailure -> t.message ?: "Setting up the game did not work. Nothing was changed."
-    isNoSpace(t) -> "Not enough free space on this phone to save the game. Free some space and try again."
-    else -> patchFailure(t)
-}

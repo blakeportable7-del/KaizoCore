@@ -1,0 +1,670 @@
+# id	status	ours	note
+gen1-0001	MISSING	-	No premade-ROM folder mode: each run is randomized on the device by NEW RUN
+gen1-0002	NA	ZxEngine.kt:21	Desktop Java artefact; the randomizer is built into the app (ZX engine), nothing to point at
+gen1-0003	DONE	RunScreen.kt:96	The Run tab's prepared ROM is the source every NEW RUN randomizes
+gen1-0004	DONE	RunScreen.kt:102	The Run tab picks the settings (.rnqs / preset) each NEW RUN uses
+gen1-0005	PARTIAL	TrackerOptions.kt:126	Ours is v9's inverse 'Allow bottom box rotation' (on): off freezes every view; GB ref only pins your view
+gen1-0006	DONE	TrackerOptions.autoSwapToEnemy	unpicked: each game's reference default, off on Game Boy (e0dda24)
+gen1-0007	NA	TrackerOptions.kt:22	Dead in GB refs: lab test is Hoenn map 17 (Gen 1 Route 6), empty in Gen 2; ours never shows on GB
+gen1-0008	DONE	TrackerGearDialog.kt; SummaryChecks	not applied on Game Boy, where both references crash on it (4cc528b)
+gen1-0009	DONE	TrackerOptions.kt:107	Off by default; stat and move numbers right-align when on (PcStatRow, PcMovesSection)
+gen1-0010	DONE	TrackerOptions.kt:23	On by default; PcCategoryIcon draws the PHYSICAL/SPECIAL glyphs only when on
+gen1-0011	DONE	MoveDecor.kt:117; MoveMatchup.kt	move rows and move info use Gen 1's chart on Red/Blue/Yellow (27acf9c)
+gen1-0012	DONE	MoveRules.kt:125	Low Kick shows its ROM power on GB (50), not the Gen 3 WT label (5a63a45, a5a875b)
+gen1-0013	DONE	EvoText.forOwnGb	'Lv.12 (16)' with readiness colours, each game's stone ids (e72b953)
+gen1-0014	DONE	Gen1Tracker/GbcTracker; LastAttack	stat stages, last move, live enemy PP (8298617)
+gen1-0015	DONE	TrackerOptions.kt:109	Off by default; heart, +/- and count (PcHealCounter). Auto-count is dead in GB refs and inert here
+gen1-0016	PARTIAL	TrackerOptions.kt:111	Start 10 vs 0 and colours match; switching it does not invert a running count (ref: 10 - n)
+gen1-0017	PARTIAL	StatMarks.kt:125	Always on: notes and marks save on every change; there is no switch to turn it off
+gen1-0018	PARTIAL	TrackerOptions.kt:68	Walking Pals (default) or Gen 7+ stills only; ref default is Original, five sets to cycle
+gen1-0019	DONE	LastAttack	'Last move: X' as the references time it (8298617)
+gen1-0020	PARTIAL	InfoRules.kt:32	On by default. Off on GB: randomization unknown so all enemy move facts hide; enemy types never hide
+gen1-0021	NA	TrackerOptions.kt:103	Dead in GB refs (exp fixed at 0/0, bar never fills). GB trackers here read no exp either
+gen1-0022	NA	-	BizHawk desktop pop-out window
+gen1-0023	MISSING	-	No folder-of-premade-ROMs mode
+gen1-0024	DONE	PlayScreen.kt:993	Always: NEW RUN or A+B+Start randomizes a fresh seed with the built-in engine (ref default off)
+gen1-0025	NA	TrackerOptions.kt:66	Dead in GB refs ('if false and', draw call commented out). GB trackers here read no repel
+gen1-0026	NA	TrackerOptions.kt:80	Dead in GB refs (step count forced to 0). Ours needs a map id GB trackers do not read
+gen1-0027	NA	-	Tracker updater
+gen1-0028	MISSING	-	No welcome message box on the tracker
+gen1-0029	PARTIAL	RunScreen.kt:293	Three typed names on the Run tab, empty by default (ref 1,4,7), shown as a text line without icons
+gen1-0030	PARTIAL	TrackerPanel.kt:551	No switch: favorites show on the no-party card whenever set (ref off by default)
+gen1-0031	DONE	TimeMachine; Gen1/Gen2 map reads	restore points by themselves on Game Boy, every 5 minutes (c36f368)
+gen1-0032	NA	-	Lua custom extensions
+gen1-0033	DONE	TrackerOptions.kt:26	Off by default; PcTeamView draws the party boxes above the panel
+gen1-0034	PARTIAL	AppShell.kt:56	A+B+Start held 0.9 s, then a confirm; fixed, not rebindable (Gen 2 ref default adds Select)
+gen1-0035	DONE	PcTracker.kt:1617	touch, not buttons (Blake, 2026-09-29): SEE FOE / SEE MINE on the battle banner swaps the view
+gen1-0036	NA	PcTracker.kt:466	touch, not buttons (Blake, 2026-09-29): a stat is picked by tapping its box
+gen1-0037	NA	PcTracker.kt:466	touch, not buttons (Blake, 2026-09-29): a tap on a stat box cycles its mark
+gen1-0038	MISSING	-	Icon set 1, Original (Besteon), not bundled
+gen1-0039	MISSING	-	Icon set 2, Stadium, not bundled
+gen1-0040	DONE	PcTracker.kt:280	Our still icons are this set (besteon images/pokemonUpdated), shown with Walking Pals off
+gen1-0041	MISSING	-	Icon set 4, Explorers, not bundled (Walking Pals are PMD sprites, but a different set)
+gen1-0042	MISSING	-	Icon set 5, Virtual Pet, not bundled
+gen1-0043	MISSING	-	No startup-screen Pokemon (by attempt, random, none or chosen)
+gen1-0044	NA	-	Lua custom-extension manager (BizHawk/mGBA scripts)
+gen1-0045	NA	-	Lua custom-extension manager (BizHawk/mGBA scripts)
+gen1-0046	NA	-	Lua custom-extension manager (BizHawk/mGBA scripts)
+gen1-0047	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0048	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0049	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0050	NA	-	Lua custom-extension manager (BizHawk/mGBA scripts)
+gen1-0051	NA	-	Lua custom-extension manager (BizHawk/mGBA scripts)
+gen1-0052	NA	-	Lua custom-extension manager (BizHawk/mGBA scripts)
+gen1-0053	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0054	NA	-	Lua custom-extension manager (BizHawk/mGBA scripts)
+gen1-0055	NA	-	Lua custom-extension manager (BizHawk/mGBA scripts)
+gen1-0056	NA	-	Lua custom-extension manager (BizHawk/mGBA scripts)
+gen1-0057	NA	-	Lua custom-extension manager (BizHawk/mGBA scripts)
+gen1-0058	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0059	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0060	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0061	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0062	PARTIAL	TrackerGearDialog.kt:74	Its switches and Time Machine sit in the gear; no IV estimate, no mid-run log (by decision)
+gen1-0063	PARTIAL	TrackerGearDialog.kt:74	No Extras page; its items sit in the gear dialog
+gen1-0064	DONE	TrackerGearDialog.kt:83	TIME MACHINE button in the gear
+gen1-0065	PARTIAL	IvEstimate	Gold, Silver, Crystal; not Gen 1, whose reference crashes on it (2fd2f92)
+gen1-0066	MISSING	-	No IV potential estimate
+gen1-0067	MISSING	-	IV estimate verdict line (no IV estimate)
+gen1-0068	MISSING	-	IV estimate verdict line (no IV estimate)
+gen1-0069	MISSING	-	IV estimate verdict line (no IV estimate)
+gen1-0070	MISSING	-	IV estimate verdict line (no IV estimate)
+gen1-0071	MISSING	-	IV estimate fallback line (no IV estimate)
+gen1-0072	MISSING	GameOverHost.kt:52	Not built by decision: the log opens only from game over (Inspect the log)
+gen1-0073	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0074	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0075	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0076	NA	TrackerGearDialog.kt:99	Dead in GB refs; see gen1-0007
+gen1-0077	NA	TrackerGearDialog.kt:104	Dead in GB refs; see gen1-0025
+gen1-0078	NA	TrackerGearDialog.kt:105	Dead in GB refs; see gen1-0026
+gen1-0079	NA	-	BizHawk desktop pop-out window
+gen1-0080	DONE	TrackerGearDialog.kt:204	CLOSE on the gear dialog
+gen1-0081	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0082	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0083	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0084	DONE	TrackerGearDialog.kt:97	All ten switches are in the gear's Options list; per-option parity at gen1-0006..0020
+gen1-0085	DONE	TrackerGearDialog.kt:97	The gear's Options section
+gen1-0086	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0087	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0088	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0089	DONE	TrackerOptions.autoSwapToEnemy	off by default on Game Boy (e0dda24)
+gen1-0090	DONE	TrackerGearDialog.kt; SummaryChecks	not applied on Game Boy, where both references crash on it (4cc528b)
+gen1-0091	NA	TrackerGearDialog.kt:115	Dead in GB refs; see gen1-0021
+gen1-0092	DONE	TrackerGearDialog.kt:101	Switch present, on by default
+gen1-0093	PARTIAL	TrackerGearDialog.kt:107	Gen 1 chart quirks missing on move rows; see gen1-0011
+gen1-0094	PARTIAL	TrackerGearDialog.kt:108	Low Kick stays WT on GB; see gen1-0012
+gen1-0095	DONE	EvoText.forOwnGb	readiness colours (e72b953)
+gen1-0096	DONE	Gen1Tracker/GbcTracker	stat stage arrows (8298617)
+gen1-0097	DONE	LastAttack	'Last move: X' (8298617)
+gen1-0098	PARTIAL	TrackerGearDialog.kt:121	See gen1-0020
+gen1-0099	DONE	TrackerGearDialog.kt:204	CLOSE on the gear dialog
+gen1-0100	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0101	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0102	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0103	DONE	GbGameOver.kt	the references' timing (battle byte 0), the player's condition, the lead by default (411f2ca, 5f61c37)
+gen1-0104	DONE	GameOverDialog.kt:182	Title reads GAME OVER
+gen1-0105	NA	-	Commented out in the ref; never drawn
+gen1-0106	DONE	GameOverDialog.kt:188	ATTEMPT N in the popup header
+gen1-0107	NA	-	Commented out in the ref; never drawn
+gen1-0108	DONE	GameOverDialog.kt:124	Continue playing closes the popup
+gen1-0109	DONE	GameOverDialog.kt:126	Restores the state taken as the battle began (PlayScreen battleStartState)
+gen1-0110	DONE	GameOverDialog.kt:126	Retry asks 'Are you sure?' first
+gen1-0111	DONE	GameOverDialog.kt:133	Always offered (ref only with a quickload mode on); copies ROM, log, state, notes
+gen1-0112	DONE	GameOverDialog.kt:134	'Saved to the attempts folder'
+gen1-0113	DONE	GameOverDialog.kt:135	'Unable to save' on failure
+gen1-0114	DONE	GameOverDialog.kt:145	Opens the run's log in the viewer when one was kept
+gen1-0115	PARTIAL	GameOverHost.kt:52	No log file picker: only the current run's own log can be opened
+gen1-0116	NA	-	Dead in GB refs (Hall of Fame check uses Gen 3 map ids; empty in Gen 2); our GB trackers never report a win
+gen1-0117	DONE	PcTracker.kt:786	Announcer quote, verbatim (PcGameOverQuotes); a team tap re-rolls it
+gen1-0118	DONE	PcTracker.kt:787	Announcer quote, verbatim (PcGameOverQuotes); a team tap re-rolls it
+gen1-0119	DONE	PcTracker.kt:788	Announcer quote, verbatim (PcGameOverQuotes); a team tap re-rolls it
+gen1-0120	DONE	PcTracker.kt:789	Announcer quote, verbatim (PcGameOverQuotes); a team tap re-rolls it
+gen1-0121	DONE	PcTracker.kt:790	Announcer quote, verbatim (PcGameOverQuotes); a team tap re-rolls it
+gen1-0122	DONE	PcTracker.kt:791	Announcer quote, verbatim (PcGameOverQuotes); a team tap re-rolls it
+gen1-0123	DONE	PcTracker.kt:792	Announcer quote, verbatim (PcGameOverQuotes); a team tap re-rolls it
+gen1-0124	DONE	PcTracker.kt:793	Announcer quote, verbatim (PcGameOverQuotes); a team tap re-rolls it
+gen1-0125	DONE	PcTracker.kt:794	Fragment of the quote '...obviously mismatched Pokemon.', present whole
+gen1-0126	DONE	PcTracker.kt:795	Fragment of the announcer quote 'The Pokemon returns to its Poke Ball.', present whole
+gen1-0127	DONE	PcTracker.kt:795	Fragment of the announcer quote 'The Pokemon returns to its Poke Ball.', present whole
+gen1-0128	DONE	PcTracker.kt:795	Fragment of the announcer quote 'The Pokemon returns to its Poke Ball.', present whole
+gen1-0129	DONE	PcTracker.kt:796	Announcer quote, verbatim (PcGameOverQuotes); a team tap re-rolls it
+gen1-0130	DONE	PcTracker.kt:797	Announcer quote, verbatim (PcGameOverQuotes); a team tap re-rolls it
+gen1-0131	DONE	PcTracker.kt:798	Announcer quote, verbatim (PcGameOverQuotes); a team tap re-rolls it
+gen1-0132	DONE	PcTracker.kt:799	Announcer quote, verbatim (PcGameOverQuotes); a team tap re-rolls it
+gen1-0133	DONE	PcTracker.kt:800	Announcer quote, verbatim (PcGameOverQuotes); a team tap re-rolls it
+gen1-0134	DONE	PcTracker.kt:801	Announcer quote, verbatim (PcGameOverQuotes); a team tap re-rolls it
+gen1-0135	DONE	PcTracker.kt:802	Announcer quote, verbatim (PcGameOverQuotes); a team tap re-rolls it
+gen1-0136	DONE	PcTracker.kt:803	Announcer quote, verbatim (PcGameOverQuotes); a team tap re-rolls it
+gen1-0137	DONE	PcTracker.kt:804	Announcer quote, verbatim (PcGameOverQuotes); a team tap re-rolls it
+gen1-0138	DONE	PcTracker.kt:805	Announcer quote, verbatim (PcGameOverQuotes); a team tap re-rolls it
+gen1-0139	DONE	PcTracker.kt:806	Announcer quote, verbatim (PcGameOverQuotes); a team tap re-rolls it
+gen1-0140	PARTIAL	GameOverDialog.kt:169	Team icons are our set (Walking Pals / Gen 7+ stills); tapping cycles them as in the ref
+gen1-0141	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0142	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0143	MISSING	-	Game over's premade-ROM save and log paths: no premade mode (gen1-0023)
+gen1-0144	DONE	PrepStore.kt:527	Save and log work on the generated run: ROM, log, state and notes are copied
+gen1-0145	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0146	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0147	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0148	MISSING	-	Premade-ROM folder not supported (gen1-0001)
+gen1-0149	NA	-	Lua console message; ours reports 'Unable to save' on the button instead
+gen1-0150	NA	-	Lua console message; ours reports 'Unable to save' on the button instead
+gen1-0151	NA	-	Lua console placeholder text
+gen1-0152	NA	-	Lua console message; ours reports 'Unable to save' on the button instead
+gen1-0153	NA	-	Lua console placeholder text
+gen1-0154	DONE	PrepStore.kt:527	Saving an attempt also copies the run's notes and marks (the ref's TDAT copy)
+gen1-0155	NA	-	Lua console message; ours reports 'Unable to save' on the button instead
+gen1-0156	NA	-	Lua console placeholder text
+gen1-0157	NA	-	Desktop file-dialog filter
+gen1-0158	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0159	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0160	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0161	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0162	DONE	PanelLookups.kt; PcTracker.kt:1288	GB info screen gets weight, evolution, weaknesses, learn levels, summaries, names (6e4a354, 1bb3bcf)
+gen1-0163	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0164	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0165	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0166	DONE	PcTracker.kt:1361	HISTORY opens Move History for the species (f7b8951)
+gen1-0167	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0168	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0169	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0170	PARTIAL	PcTracker.kt:1362	RESISTANCES button (f7b8951); on GB only for your own Pokemon. Card type icons open it too
+gen1-0171	NA	-	Route info broken in GB refs (Gen 1 reads Hoenn tables by Kanto map id; Gen 2 has names only)
+gen1-0172	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0173	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0174	DONE	PcTracker.kt:1410	CLOSE on the info screen
+gen1-0175	DONE	PcTracker.kt:1401	The info screen's note row opens the editor (f7b8951); the ref's form never saves the note
+gen1-0176	MISSING	-	No move search on the move info screen
+gen1-0177	MISSING	-	No move search on the move info screen
+gen1-0178	NA	-	BizHawk forms API property or placeholder, not user text
+gen1-0179	NA	-	BizHawk dropdown placeholder
+gen1-0180	NA	-	BizHawk forms API property or placeholder, not user text
+gen1-0181	NA	-	BizHawk forms API property or placeholder, not user text
+gen1-0182	NA	-	BizHawk forms API property or placeholder, not user text
+gen1-0183	NA	-	BizHawk forms API property or placeholder, not user text
+gen1-0184	PARTIAL	PcTracker.kt:1422; PanelLookups.kt	Pokemon look-up lists GB names (da90108); no move look-up
+gen1-0185	NA	-	No abilities in Gen 1/2 (the Gen 2 ref blanks this screen)
+gen1-0186	NA	-	No abilities in Gen 1/2
+gen1-0187	NA	-	No abilities in Gen 1/2
+gen1-0188	DONE	PcTracker.kt:1422; PanelLookups.kt	SEARCH on the info screen lists GB names (da90108)
+gen1-0189	DONE	PcTracker.kt:1422; PanelLookups.kt	'Look up a Pokemon:' list with GB names (da90108)
+gen1-0190	NA	-	BizHawk dropdown placeholder
+gen1-0191	NA	-	Route info broken in GB refs (see gen1-0171)
+gen1-0192	NA	-	Route info broken in GB refs (see gen1-0171)
+gen1-0193	NA	-	BizHawk dropdown placeholder
+gen1-0194	PARTIAL	PcTracker.kt:1288	Our Pokemon info draws no icon; the ref draws it in the chosen set
+gen1-0195	DONE	PanelLookups.kt; PcTracker.kt:1347	an opponent's info shows its BST on GB (GbLookups.baseStats)
+gen1-0196	MISSING	PlayScreen.kt:1695	GB master: no weights (trackerRef is Gen 3 only); fix/gameboy 1bb3bcf adds the ref tables
+gen1-0197	PARTIAL	PcTracker.kt:1350	GB master prints 'does not evolve' for every species; fix/gameboy adds the ref's evolutions
+gen1-0198	MISSING	-	Drowzee easter egg needs the Explorers icon set (absent)
+gen1-0199	MISSING	-	Explorers easter egg text absent
+gen1-0200	MISSING	PcTracker.kt:1388	GB master: no learnsets, so the line never shows; fix/gameboy reads them from the ROM
+gen1-0201	MISSING	-	No such line (nothing shows when empty); GB learnsets in progress
+gen1-0202	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0203	DONE	PanelLookups.kt; PcTracker.kt:1372	weaknesses per generation on GB (6e4a354)
+gen1-0204	MISSING	-	No message when a Pokemon has no weaknesses
+gen1-0205	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0206	DONE	HiddenPower.kt:86	Gen 2 Hidden Power: arrows set and remember its type (Gen 1 has no Hidden Power)
+gen1-0207	DONE	PcMoveInfo.kt:64	PHYSICAL / SPECIAL / STATUS tag
+gen1-0208	MISSING	PcMoveInfo.kt:108	GB move rows carry no contact flag: CONTACT shows '-'
+gen1-0209	MISSING	PcMoveInfo.kt:108	GB move rows carry no contact flag: CONTACT shows '-'
+gen1-0210	PARTIAL	PcMoveInfo.kt:108	Label present; value always '-' on GB
+gen1-0211	DONE	PcMoveInfo.kt:105	PP (current/max for your own moves)
+gen1-0212	DONE	PcMoveInfo.kt:106	POWER (variable-power labels as the ref's)
+gen1-0213	DONE	PcMoveInfo.kt:107	ACCURACY with %
+gen1-0214	MISSING	PcMoveInfo.kt:110	GB move rows carry no priority, so it never shows (Quick Attack, Counter...)
+gen1-0215	MISSING	PcMoveInfo.kt:121	GB master: 'No description for this one.'; fix/gameboy adds the refs' summaries
+gen1-0216	NA	-	Ability info: no abilities in Gen 1/2
+gen1-0217	NA	-	Route info broken in GB refs (see gen1-0171)
+gen1-0218	NA	-	Route info broken in GB refs (see gen1-0171)
+gen1-0219	PARTIAL	LogViewer.kt:59	GB logs get plain lists: no trainer filters, gym TM grouping or badges, trainer zoom, icons
+gen1-0220	DONE	LogViewer.kt:59	Full-screen log viewer: Pokemon, Trainers, Routes, TMs, Misc
+gen1-0221	DONE	LogViewer.kt:282	Stat block on a Pokemon's page (Gen 1's five stats)
+gen1-0222	DONE	LogViewer.kt:289	BST total
+gen1-0223	MISSING	LogViewer.kt:256	GB TMs are one plain list (gym grouping is Gen 3 only here); Gen 1 ref's gym TMs are FRLG's
+gen1-0224	MISSING	LogViewer.kt:256	No gym/other TM split on GB
+gen1-0225	DONE	LogViewer.kt:217	Party levels in the trainer list
+gen1-0226	MISSING	LogViewer.kt:169	No Rival/Gym/Elite 4/Boss filter on GB, only a FIND text search
+gen1-0227	DONE	LogViewer.kt:300	All evolutions listed at once
+gen1-0228	DONE	LogViewer.kt:272	Tapping a Pokemon opens its page
+gen1-0229	DONE	LogViewer.kt:307	Level-up moves on the Pokemon page
+gen1-0230	DONE	LogViewer.kt:316	TMs it can learn, on the Pokemon page
+gen1-0231	DONE	LogViewer.kt:268	TRAINERS tab
+gen1-0232	PARTIAL	LogViewer.kt:203	GB: parties inline (levels, items); no trainer page with each Pokemon's moves
+gen1-0233	DONE	LogViewer.kt:268	TMS tab
+gen1-0234	DONE	LogMisc.kt:44	MISC tab
+gen1-0235	DONE	LogViewer.kt:275	< BACK on a detail page; X closes the viewer
+gen1-0236	DONE	LogViewer.kt:187	Lists scroll instead of paging
+gen1-0237	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0238	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0239	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0240	DONE	LogMisc.kt:59	Share Seed button
+gen1-0241	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0242	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0243	DONE	LogViewer.kt:256	TM list in number order
+gen1-0244	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0245	PARTIAL	LogViewer.kt:187	GB log rows are text, no icons (icons need the Gen 3 name mapping)
+gen1-0246	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0247	NA	-	Internal sentinel (trainers named 'Unknown' are skipped)
+gen1-0248	NA	-	Internal sentinel (gym leader 'None')
+gen1-0249	DONE	LogViewer.kt:256	TM%02d + move name
+gen1-0250	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0251	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0252	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0253	MISSING	LogViewer.kt:272	GB log move lists draw no physical/special icons
+gen1-0254	MISSING	-	No gym badge art beside gym TMs or leaders in the GB log
+gen1-0255	MISSING	-	No 'Gym N' labels in the GB log
+gen1-0256	DONE	LogMisc.kt:109	Share Randomizer Seed dialog with a copy button
+gen1-0257	DONE	LogMisc.kt:62	Game line
+gen1-0258	DONE	LogMisc.kt:63	Randomizer version
+gen1-0259	DONE	LogMisc.kt:64	Seed
+gen1-0260	DONE	LogMisc.kt:65	Settings string
+gen1-0261	NA	-	BizHawk forms API property or placeholder, not user text
+gen1-0262	DONE	LogMisc.kt:123	CLOSE on the share dialog
+gen1-0263	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0264	DONE	MoveHistoryStats.kt:35; PanelLookups.kt	learn-level boxes filled from the ROM on GB (6e4a354, e1b46e1)
+gen1-0265	DONE	MoveHistoryStats.kt:51	'Moves / Min / Max' header
+gen1-0266	DONE	MoveHistoryStats.kt:52	Min column
+gen1-0267	DONE	MoveHistoryStats.kt:53	Max column
+gen1-0268	DONE	MoveHistoryStats.kt:56	'No tracked moves'
+gen1-0269	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0270	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0271	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0272	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0273	DONE	MoveHistoryStats.kt:35	One scrolling list
+gen1-0274	DONE	MoveHistoryStats.kt:47	X closes it
+gen1-0275	MISSING	-	Move History has no lookup for another Pokemon
+gen1-0276	MISSING	-	Move History has no lookup for another Pokemon
+gen1-0277	NA	-	BizHawk forms API property or placeholder, not user text
+gen1-0278	NA	-	BizHawk dropdown placeholder
+gen1-0279	NA	-	BizHawk forms API property or placeholder, not user text
+gen1-0280	NA	-	BizHawk forms API property or placeholder, not user text
+gen1-0281	NA	-	BizHawk forms API property or placeholder, not user text
+gen1-0282	NA	-	BizHawk forms API property or placeholder, not user text
+gen1-0283	MISSING	-	Move History has no lookup for another Pokemon
+gen1-0284	DONE	MoveHistoryStats.kt:68; PanelLookups.kt	GB learnsets reach Move History (6e4a354)
+gen1-0285	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0286	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0287	PARTIAL	TrackerGearDialog.kt:74	Gear dialog covers Setup, Gameplay, Data, Stats, Theme, Time Machine; no Streaming tools or Help link
+gen1-0288	DONE	TrackerGearDialog.kt:74	'TRACKER SETUP' heading
+gen1-0289	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0290	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0291	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0292	NA	-	BizHawk console fallback message
+gen1-0293	PARTIAL	TrackerGearDialog.kt:97	Setup switches are in the gear; no Edit Controls; icons are Walking Pals or Gen 7+ stills only
+gen1-0294	PARTIAL	TrackerGearDialog.kt:74	See gen1-0062
+gen1-0295	DONE	TrackerGearDialog.kt:97	Gameplay switches are in the gear
+gen1-0296	PARTIAL	RunScreen.kt:96	Run tab (ROM + settings, NEW RUN); no premade mode, no combo setting
+gen1-0297	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0298	PARTIAL	Theme.kt:66	8-colour DS editor + import/export; no lower-box/header slots, preset library, move-bar/shadow switches
+gen1-0299	PARTIAL	TrackerGearDialog.kt:191	Clear with confirm; no Save/Load of tracked data; auto-save always on
+gen1-0300	NA	-	Tracker updater
+gen1-0301	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0302	DONE	TrackerGearDialog.kt:78	STATS in the gear
+gen1-0303	PARTIAL	RunScreen.kt:293	Only the favorites exist (Run tab); no attempts edit, no welcome message
+gen1-0304	NA	-	Lua custom extensions
+gen1-0305	NA	-	Dead easter egg (canBeSeenToday is never set)
+gen1-0306	DONE	AboutScreen.kt:467	About screen credits the IronMON Tracker (besteon and contributors)
+gen1-0307	PARTIAL	AboutScreen.kt:72	No wiki link from the tracker; About has 'How it works', the gear has RULES
+gen1-0308	DONE	TrackerGearDialog.kt:204	CLOSE on the gear dialog
+gen1-0309	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0310	NA	-	Dead easter egg (canBeSeenToday is never set)
+gen1-0311	NA	-	Dead easter egg (canBeSeenToday is never set)
+gen1-0312	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0313	DONE	AboutScreen.kt:467	Credited on the About screen
+gen1-0314	DONE	AboutScreen.kt:467	Credited to besteon
+gen1-0315	PARTIAL	AboutScreen.kt:467	'and contributors' with a link; the names are not listed
+gen1-0316	PARTIAL	RunScreen.kt:96	Run tab + NEW RUN do generate-each-time; no premade ROMs, no JAR, no combo setting
+gen1-0317	PARTIAL	RunScreen.kt:96	The Run tab plays this part
+gen1-0318	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0319	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0320	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0321	MISSING	-	No premade-ROM mode
+gen1-0322	DONE	PlayScreen.kt:993	NEW RUN randomizes a fresh seed every time (gen1-0024)
+gen1-0323	MISSING	-	No premade-ROM folder
+gen1-0324	NA	ZxEngine.kt:21	Randomizer built in; no JAR
+gen1-0325	DONE	RunScreen.kt:96	Source ROM is the Run tab's prepared ROM
+gen1-0326	DONE	RunScreen.kt:102	Settings chosen on the Run tab
+gen1-0327	MISSING	-	The next-seed combo is not shown anywhere
+gen1-0328	PARTIAL	AppShell.kt:56	See gen1-0034
+gen1-0329	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0330	NA	-	No separate screen: the Run tab is a main tab
+gen1-0331	NA	-	Desktop file-path SET/Clear widget
+gen1-0332	NA	-	Desktop file-dialog filter
+gen1-0333	NA	-	Desktop file-dialog title
+gen1-0334	NA	-	Desktop file-dialog filter
+gen1-0335	NA	-	Desktop file-dialog title
+gen1-0336	NA	-	Desktop file-dialog filter
+gen1-0337	NA	-	Desktop file-dialog filter
+gen1-0338	NA	-	Desktop file-dialog title
+gen1-0339	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0340	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0341	PARTIAL	RunScreen.kt:96	One mode only (generate)
+gen1-0342	MISSING	-	Premade-ROM folder line (no premade mode)
+gen1-0343	DONE	RunScreen.kt:371	The Run tab shows the chosen settings
+gen1-0344	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0345	PARTIAL	TrackerGearDialog.kt:97	Team View, right-justify, PC heal switches present; rotation inverse; no Edit Controls; 2 icon options
+gen1-0346	DONE	TrackerGearDialog.kt:74	'TRACKER SETUP' heading
+gen1-0347	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0348	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0349	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0350	DONE	TrackerGearDialog.kt:103	'Show team view' switch
+gen1-0351	DONE	TrackerGearDialog.kt:117	'Right justified numbers' switch
+gen1-0352	PARTIAL	TrackerGearDialog.kt:125	See gen1-0005
+gen1-0353	DONE	TrackerGearDialog.kt:118	'Track PC Heals' switch
+gen1-0354	PARTIAL	TrackerGearDialog.kt:140	See gen1-0016
+gen1-0355	PARTIAL	TrackerGearDialog.kt:141	Walking Pals on/off instead of an icon-set chooser
+gen1-0356	PARTIAL	TrackerGearDialog.kt:141	See gen1-0018
+gen1-0357	PARTIAL	AboutScreen.kt:476	Set credits are on the About screen, not beside the switch
+gen1-0358	NA	-	touch, not buttons (Blake, 2026-09-29): no button bindings to rebind
+gen1-0359	DONE	TrackerGearDialog.kt:204	CLOSE on the gear dialog
+gen1-0360	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0361	NA	-	BizHawk desktop pop-out window
+gen1-0362	NA	-	touch, not buttons (Blake, 2026-09-29): no button bindings to edit
+gen1-0363	NA	-	touch, not buttons (Blake, 2026-09-29): no button bindings to edit
+gen1-0364	NA	-	touch, not buttons (Blake, 2026-09-29): no button bindings to edit
+gen1-0365	NA	-	touch, not buttons (Blake, 2026-09-29): no button bindings to edit
+gen1-0366	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0367	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0368	NA	-	Lua custom-extension manager (BizHawk/mGBA scripts)
+gen1-0369	NA	-	Lua custom-extension manager (BizHawk/mGBA scripts)
+gen1-0370	NA	-	Lua custom-extension manager (BizHawk/mGBA scripts)
+gen1-0371	NA	-	Lua custom-extension manager (BizHawk/mGBA scripts)
+gen1-0372	NA	-	Lua custom-extension manager (BizHawk/mGBA scripts)
+gen1-0373	NA	-	Lua custom-extension manager (BizHawk/mGBA scripts)
+gen1-0374	NA	-	Lua custom-extension manager (BizHawk/mGBA scripts)
+gen1-0375	NA	-	Lua custom-extension manager (BizHawk/mGBA scripts)
+gen1-0376	NA	-	Lua custom-extension manager (BizHawk/mGBA scripts)
+gen1-0377	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0378	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0379	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0380	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0381	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0382	NA	-	Lua custom-extension manager (BizHawk/mGBA scripts)
+gen1-0383	NA	-	Lua custom-extension manager (BizHawk/mGBA scripts)
+gen1-0384	NA	-	Lua custom-extension manager (BizHawk/mGBA scripts)
+gen1-0385	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0386	PARTIAL	TrackerPanel.kt:566	No-party card shows favorites; ATTEMPT row above; no title/version/game, controls help, welcome, icon
+gen1-0387	MISSING	-	No startup title
+gen1-0388	PARTIAL	AboutScreen.kt:434	App version is on the About screen, not the tracker
+gen1-0389	PARTIAL	RunScreen.kt:96	The game is named on the Run tab, not on the tracker
+gen1-0390	DONE	PlayScreen.kt:1631	ATTEMPT N sits above the tracker at all times
+gen1-0391	NA	-	touch, not buttons (Blake, 2026-09-29): no button bindings to list
+gen1-0392	MISSING	-	No help line (the swap itself is SEE FOE / SEE MINE)
+gen1-0393	MISSING	-	No help line for the next-seed combo
+gen1-0394	MISSING	-	No help line (Up+B+Select still works in the game)
+gen1-0395	MISSING	-	No startup Pokemon icon
+gen1-0396	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0397	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0398	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0399	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0400	PARTIAL	TrackerPanel.kt:551	See gen1-0030
+gen1-0401	MISSING	-	No welcome message
+gen1-0402	NA	-	Unused in the ref (isVisible returns false)
+gen1-0403	MISSING	-	No startup Pokemon (gen1-0043)
+gen1-0404	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0405	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0406	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0407	NA	-	Lua console print
+gen1-0408	MISSING	-	No startup-icon picker
+gen1-0409	MISSING	-	No startup-icon picker
+gen1-0410	NA	-	BizHawk forms API property or placeholder, not user text
+gen1-0411	NA	-	BizHawk dropdown placeholder
+gen1-0412	NA	-	BizHawk forms API property or placeholder, not user text
+gen1-0413	NA	-	BizHawk forms API property or placeholder, not user text
+gen1-0414	NA	-	BizHawk forms API property or placeholder, not user text
+gen1-0415	NA	-	BizHawk forms API property or placeholder, not user text
+gen1-0416	MISSING	-	Startup-icon and attempts dialogs absent
+gen1-0417	MISSING	-	Startup-icon and attempts dialogs absent
+gen1-0418	MISSING	-	The attempts count cannot be edited (only NEW RUN bumps it)
+gen1-0419	MISSING	-	The attempts count cannot be edited
+gen1-0420	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0421	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0422	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0423	PARTIAL	PcTracker.kt:1617	See gen1-0035
+gen1-0424	PARTIAL	AppShell.kt:56	See gen1-0034
+gen1-0425	MISSING	-	No save-erase hint
+gen1-0426	DONE	SideScreens.kt:181	Same rows; as in the GB refs only attempts is real, the rest read 0 (plus a Play Time row)
+gen1-0427	DONE	MoveHistoryStats.kt:95	STATS dialog
+gen1-0428	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0429	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0430	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0431	DONE	MoveHistoryStats.kt:119	Total Attempts
+gen1-0432	NA	MoveHistoryStats.kt:109	Always 0 in the GB refs (stat reads stubbed); ours shows 0 too (no GB stat reader)
+gen1-0433	NA	MoveHistoryStats.kt:109	Always 0 in the GB refs (stat reads stubbed); ours shows 0 too (no GB stat reader)
+gen1-0434	NA	MoveHistoryStats.kt:109	Always 0 in the GB refs (stat reads stubbed); ours shows 0 too (no GB stat reader)
+gen1-0435	NA	MoveHistoryStats.kt:109	Always 0 in the GB refs (stat reads stubbed); ours shows 0 too (no GB stat reader)
+gen1-0436	NA	MoveHistoryStats.kt:109	Always 0 in the GB refs (stat reads stubbed); ours shows 0 too (no GB stat reader)
+gen1-0437	NA	MoveHistoryStats.kt:109	Always 0 in the GB refs (stat reads stubbed); ours shows 0 too (no GB stat reader)
+gen1-0438	NA	MoveHistoryStats.kt:109	Always 0 in the GB refs (stat reads stubbed); ours shows 0 too (no GB stat reader)
+gen1-0439	DONE	MoveHistoryStats.kt:96	X closes it
+gen1-0440	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0441	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0442	PARTIAL	RunScreen.kt:293	Only the favorites exist (Run tab); no attempts edit, no welcome message
+gen1-0443	PARTIAL	RunScreen.kt:293	No Streamer Tools page; favorites are on the Run tab
+gen1-0444	MISSING	-	The count shows (ATTEMPT N) but cannot be edited
+gen1-0445	MISSING	-	No welcome message
+gen1-0446	MISSING	-	No edit buttons (attempts, welcome message)
+gen1-0447	PARTIAL	RunScreen.kt:293	Favorites typed by name on the Run tab; no icons
+gen1-0448	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0449	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0450	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0451	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0452	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0453	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0454	PARTIAL	TrackerPanel.kt:551	See gen1-0030
+gen1-0455	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0456	PARTIAL	TrackerPanel.kt:551	Favorites show as names, no icons
+gen1-0457	NA	-	No separate screen
+gen1-0458	MISSING	-	No welcome message
+gen1-0459	MISSING	-	No welcome message
+gen1-0460	MISSING	-	No welcome message
+gen1-0461	NA	-	BizHawk forms API property or placeholder, not user text
+gen1-0462	PARTIAL	RunScreen.kt:293	Favorites save as typed; no welcome-message save
+gen1-0463	MISSING	-	No welcome message to clear
+gen1-0464	PARTIAL	RunScreen.kt:293	Favorites need no cancel (saved as typed); welcome dialog absent
+gen1-0465	DONE	RunScreen.kt:331	Typed boxes with name suggestions (this game's dex) on the Run tab
+gen1-0466	DONE	TrackerPanel.kt:551	They show on the no-party card before a party exists
+gen1-0467	NA	-	BizHawk forms API property or placeholder, not user text
+gen1-0468	NA	-	BizHawk dropdown placeholder
+gen1-0469	NA	-	BizHawk forms API property or placeholder, not user text
+gen1-0470	NA	-	BizHawk forms API property or placeholder, not user text
+gen1-0471	NA	-	BizHawk forms API property or placeholder, not user text
+gen1-0472	NA	-	BizHawk forms API property or placeholder, not user text
+gen1-0473	PARTIAL	RunScreen.kt:293	See gen1-0029
+gen1-0474	NA	-	Lua parse pattern, not text
+gen1-0475	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0476	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0477	DONE	gen2/items.tsv	Gen 2 held items by name (cecddca)
+gen1-0478	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0479	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0480	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0481	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0482	DONE	TrackerOptions.kt:26	See gen1-0033
+gen1-0483	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0484	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0485	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0486	PARTIAL	TeamView.kt:31	Our icon set, not the chosen one
+gen1-0487	DONE	TeamView.kt:60	Lv.N in each box
+gen1-0488	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0489	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0490	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0491	DONE	TimeMachine	5-minute interval on Game Boy (c36f368)
+gen1-0492	DONE	TimeMachine.kt:97	TIME MACHINE heading
+gen1-0493	DONE	TimeMachine.kt:103	Same instruction
+gen1-0494	DONE	TimeMachine	named areas (c36f368)
+gen1-0495	DONE	TimeMachine.kt:112	'created N minutes ago'
+gen1-0496	DONE	TimeMachine.kt:51	Restoring first saves '>>  Return back to the future'
+gen1-0497	DONE	TimeMachine.kt:110	Tap once for 'Confirm restore?', again to restore
+gen1-0498	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0499	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0500	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0501	DONE	TimeMachine.kt:91	One scrolling list
+gen1-0502	DONE	TimeMachine	named areas (c36f368)
+gen1-0503	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0504	DONE	TimeMachine.kt:116	CREATE
+gen1-0505	DONE	TimeMachine.kt:98	X closes it
+gen1-0506	DONE	TimeMachine.kt:64	Used when no map name is known (always, on GB)
+gen1-0507	PARTIAL	gen2/landmarks.tsv	area names on Crystal; Gen 1 and Gold/Silver read Unknown Area (c36f368)
+gen1-0508	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0509	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0510	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0511	PARTIAL	TrackerGearDialog.kt:191	Clear with confirm; tracked data saves itself; no Save/Load files, no auto-save switch
+gen1-0512	DONE	TrackerGearDialog.kt:191	'Manage data' in the gear
+gen1-0513	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0514	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0515	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0516	PARTIAL	StatMarks.kt:125	Auto-saved on every change (StatMarks files), not a TDAT; no explanation text
+gen1-0517	DONE	SideScreens.kt:294	The new-run confirm says this run's stat notes are cleared
+gen1-0518	MISSING	-	No Save Data to keep them
+gen1-0519	PARTIAL	StatMarks.kt:125	See gen1-0017
+gen1-0520	MISSING	-	No save of tracked data to a named file (Backup zips everything instead)
+gen1-0521	MISSING	-	No load of tracked data from a file
+gen1-0522	DONE	TrackerGearDialog.kt:194	CLEAR TRACKED DATA
+gen1-0523	DONE	TrackerGearDialog.kt:204	CLOSE on the gear dialog
+gen1-0524	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0525	MISSING	-	No save dialog
+gen1-0526	MISSING	-	No save dialog
+gen1-0527	MISSING	-	No save dialog
+gen1-0528	MISSING	-	No save dialog
+gen1-0529	NA	-	Desktop file-dialog filter
+gen1-0530	PARTIAL	TrackerGearDialog.kt:194	Clears, but shows no 'Data Cleared!' confirmation
+gen1-0531	DONE	TrackerGearDialog.kt:196	'... Sure?' then YES, CLEAR
+gen1-0532	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0533	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0534	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0535	DONE	TrackerPanel.kt	move counts, badges, stat stages, evo text, last move, live PP, Gen 2 items (d7fa978)
+gen1-0536	PARTIAL	TrackerOptions.kt:68	Card icon is Walking Pals or a Gen 7+ still, not the chosen set
+gen1-0537	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0538	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0539	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0540	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0541	DONE	PcHeals.kt:93	Counter at the heals box's right edge when on
+gen1-0542	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0543	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0544	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0545	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0546	DONE	PcTracker.kt:1537	Enemy view's note line (tap to add a note) opens the editor; the ref's form never saves
+gen1-0547	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0548	NA	-	Pedometer dead in GB refs (steps forced to 0)
+gen1-0549	NA	-	Pedometer dead in GB refs (steps forced to 0)
+gen1-0550	NA	-	Pedometer dead in GB refs (steps forced to 0)
+gen1-0551	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0552	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0553	NA	-	Pedometer dead in GB refs (steps forced to 0)
+gen1-0554	NA	-	Pedometer dead in GB refs (steps forced to 0)
+gen1-0555	NA	-	Ball picker dead in GB refs (see gen1-0007)
+gen1-0556	NA	-	Ball picker dead in GB refs (see gen1-0007)
+gen1-0557	NA	-	Ball picker dead in GB refs (see gen1-0007)
+gen1-0558	DONE	GbBadgeRows.kt; PcTracker.kt:1458	RBY draws FRLG badge art; Crystal all 16, Johto 5/6 order fixed (78978f1)
+gen1-0559	PARTIAL	TrackerOptions.kt:126	See gen1-0005
+gen1-0560	DONE	Gen1Tracker/GbcTracker	live enemy PP with Count enemy PP usage (8298617)
+gen1-0561	DONE	Gen1Tracker/GbcTracker	live enemy PP (8298617)
+gen1-0562	MISSING	TrackerPanel.kt:692	Part of the missing last-move line on GB
+gen1-0563	NA	-	Route carousel dead in GB refs (encounter area never set)
+gen1-0564	NA	-	Route carousel dead in GB refs (encounter area never set)
+gen1-0565	DONE	PlayScreen.kt:2573	Note editor (NOTE)
+gen1-0566	DONE	PlayScreen.kt:2573	Editor for the enemy on screen, or the info screen's species
+gen1-0567	DONE	PlayScreen.kt:2573	No length cap here; the ref only states one
+gen1-0568	DONE	PlayScreen.kt:2584	SAVE stores the note (the ref's button never did)
+gen1-0569	NA	-	Does nothing in the ref; no abilities in Gen 1/2
+gen1-0570	DONE	PlayScreen.kt:2589	CANCEL
+gen1-0571	NA	-	Step-goal dialog; pedometer dead in GB refs
+gen1-0572	NA	-	Step-goal dialog; pedometer dead in GB refs
+gen1-0573	NA	-	Step-goal dialog; pedometer dead in GB refs
+gen1-0574	NA	-	Step-goal dialog; pedometer dead in GB refs
+gen1-0575	NA	-	Step-goal dialog; pedometer dead in GB refs
+gen1-0576	NA	TrackerOptions.kt:22	Dead in GB refs; see gen1-0007
+gen1-0577	PARTIAL	InfoRules.kt:32	See gen1-0020
+gen1-0578	DONE	TrackerPanel.kt:191	Enemy card line; kept in memory for the session (the ref saves it)
+gen1-0579	DONE	TrackerPanel.kt:192	'New encounter'
+gen1-0580	DONE	PcTracker.kt:1674	Lv.N
+gen1-0581	DONE	EvoText.forOwnGb	readiness colours (e72b953)
+gen1-0582	NA	TrackerOptions.kt:103	Dead in GB refs; see gen1-0021
+gen1-0583	DONE	PcTracker.kt:604	'HP:' with the value coloured at 50% / 20%
+gen1-0584	DONE	EvoText.forOwnGb	readiness colours (e72b953)
+gen1-0585	PARTIAL	PcTracker.kt:1526	'Heals:' + % HP (n); Gen 1 table matches, Gen 2 also counts berries/milk/Energy items the ref omits
+gen1-0586	DONE	PcTracker.kt:1526	'% HP (n)'
+gen1-0587	PARTIAL	PcHeals.kt:93	Counter, +/- and heart, without the 'PC Heals:' label
+gen1-0588	NA	-	Never shown in GB refs (wild flag never set); ours shows 'Seen (Wild): N'
+gen1-0589	DONE	TrackerPanel.kt:232	'Seen (Trainer): N', counted per species; the refs show it in every battle with 0
+gen1-0590	DONE	PcTracker.kt	'Team:' ball for the opponent on the field, as the references (4bd90c2)
+gen1-0591	PARTIAL	PcTracker.kt:713	Move column header ok; the in-battle Acc/Eva stage row (ref, in place of BST) absent on GB
+gen1-0592	MISSING	-	No evasion stage on GB (no stat stages read)
+gen1-0593	DONE	PcTracker.kt:712	Pow column header
+gen1-0594	DONE	PcTracker.kt:979	See gen1-0010
+gen1-0595	PARTIAL	MoveRules.kt:125	See gen1-0012
+gen1-0596	NA	-	Ball picker dead in GB refs (see gen1-0007)
+gen1-0597	DONE	PcTracker.kt:1635	Name, then 0x/1-4x/1-2x/2x/4x rows of type boxes; Gen 1 uses the Gen 1 tracker's chart
+gen1-0598	DONE	PcTracker.kt:1636	'0x Immunities'
+gen1-0599	DONE	PcTracker.kt:1636	'1/4x' and '1/2x Resistances'
+gen1-0600	DONE	PcTracker.kt:1636	'2x' and '4x Weaknesses'
+gen1-0601	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0602	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0603	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0604	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0605	DONE	PcTracker.kt:1641	X closes it
+gen1-0606	DONE	PcTracker.kt:1635	Fits one page
+gen1-0607	DONE	PcTracker.kt:1636	0x row
+gen1-0608	DONE	PcTracker.kt:1636	2x row
+gen1-0609	DONE	PcTracker.kt:1636	4x row
+gen1-0610	NA	-	Tracker self-updater (desktop install)
+gen1-0611	NA	-	Tracker self-updater (desktop install)
+gen1-0612	NA	-	Tracker self-updater (desktop install)
+gen1-0613	NA	-	Tracker self-updater (desktop install)
+gen1-0614	NA	-	Tracker self-updater (desktop install)
+gen1-0615	NA	-	Tracker self-updater (desktop install)
+gen1-0616	NA	-	Tracker self-updater (desktop install)
+gen1-0617	NA	-	Tracker self-updater (desktop install)
+gen1-0618	NA	-	Tracker self-updater (desktop install)
+gen1-0619	NA	-	Tracker self-updater (desktop install)
+gen1-0620	NA	-	Tracker self-updater (desktop install)
+gen1-0621	NA	-	Tracker self-updater (desktop install)
+gen1-0622	NA	-	Tracker self-updater (desktop install)
+gen1-0623	NA	-	Tracker self-updater (desktop install)
+gen1-0624	NA	-	Tracker self-updater (desktop install)
+gen1-0625	NA	-	Tracker self-updater (desktop install)
+gen1-0626	NA	-	Tracker self-updater (desktop install)
+gen1-0627	NA	-	Tracker self-updater (desktop install)
+gen1-0628	NA	-	Tracker self-updater (desktop install)
+gen1-0629	NA	-	Tracker self-updater (desktop install)
+gen1-0630	NA	-	Tracker self-updater (desktop install)
+gen1-0631	NA	-	Tracker self-updater (desktop install)
+gen1-0632	NA	-	Tracker self-updater (desktop install)
+gen1-0633	NA	-	Tracker self-updater (desktop install)
+gen1-0634	NA	-	Tracker self-updater (desktop install)
+gen1-0635	NA	-	Tracker self-updater (desktop install)
+gen1-0636	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0637	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0638	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0639	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0640	NA	-	Tracker self-updater (desktop install)
+gen1-0641	NA	-	Tracker self-updater (desktop install)
+gen1-0642	NA	-	Tracker self-updater (desktop install)
+gen1-0643	NA	-	Tracker self-updater (desktop install)
+gen1-0644	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0645	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0646	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0647	NA	-	Tracker self-updater (desktop install)
+gen1-0648	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0649	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0650	NA	-	Tracker self-updater (desktop install)
+gen1-0651	NA	-	Tracker self-updater (desktop install)
+gen1-0652	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0653	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0654	MISSING	GameOverHost.kt:52	No mid-run log, by decision (the log opens after a loss), so no warning screen
+gen1-0655	MISSING	-	Part of the mid-run log warning; not built by decision (see gen1-0654)
+gen1-0656	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0657	MISSING	-	Part of the mid-run log warning; not built by decision (see gen1-0654)
+gen1-0658	MISSING	-	Part of the mid-run log warning; not built by decision (see gen1-0654)
+gen1-0659	MISSING	-	Part of the mid-run log warning; not built by decision (see gen1-0654)
+gen1-0660	MISSING	-	Part of the mid-run log warning; not built by decision (see gen1-0654)
+gen1-0661	MISSING	-	Part of the mid-run log warning; not built by decision (see gen1-0654)
+gen1-0662	MISSING	-	Part of the mid-run log warning; not built by decision (see gen1-0654)
+gen1-0663	MISSING	-	Part of the mid-run log warning; not built by decision (see gen1-0654)
+gen1-0664	MISSING	-	Part of the mid-run log warning; not built by decision (see gen1-0654)
+gen1-0665	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0666	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0667	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298
+gen1-0668	MISSING	-	Part of the mid-run log warning; not built by decision (see gen1-0654)
+gen1-0669	NA	PcTracker.kt:162	Theme.COLORS key naming a colour slot on this screen, not text; palette is Pc, editor at gen1-0298

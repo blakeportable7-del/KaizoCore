@@ -1,5 +1,6 @@
 package com.ironmonone.app.stream
 
+import com.ironmonone.tracker.RunOutcome
 import java.net.NetworkInterface
 
 /**
@@ -17,8 +18,17 @@ object StreamHub {
         private set
     @Volatile var version: Long = 0L
         private set
-    @Volatile var attempts: String = "0"
+    /** The attempt number, only while a run is in play; empty in any other game (see [publish]). */
+    @Volatile var attempts: String = ""
     @Volatile var dex: String = "[]"
+
+    /**
+     * How the Kaizo IronMON run in Play ended, once its game-over popup has latched it (GameOverHost), else null
+     * (2026-09-30, IronMON rules check). The stream's run-over view and /dex.json, every species as randomized, wait
+     * for it: the randomizer's data is the log, which the PC tracker opens mid-run only behind a warning, and the
+     * tracker's live read used to open that tab at a Nuzlocke lead's faint while the run went on.
+     */
+    @Volatile var ended: RunOutcome? = null
     @Volatile var page: String = "<p>Tracker page missing from the build.</p>"
 
     @Volatile private var server: StreamServer? = null
@@ -27,9 +37,14 @@ object StreamHub {
 
     val running: Boolean get() = server != null
 
+    /** Called on the thread that started the stream, once it is up: MainActivity asks for the reminder's permission. */
+    @Volatile var onStarted: (() -> Unit)? = null
+
     fun publish(json: String, attempt: Int) {
         if (json != state) { state = json; version++ }
-        attempts = attempt.toString()
+        // Attempts belong to a run. Any other game (Play any game, ROM Hacks) would
+        // otherwise show the last run's number, which is stale, so it says nothing.
+        attempts = if (StreamSnapshot.isRun(json)) attempt.toString() else ""
     }
 
     /**
@@ -44,10 +59,11 @@ object StreamHub {
     fun start(filesDir: java.io.File): String? {
         if (server != null) return url()
         token = stableToken(java.io.File(filesDir, "prep/stream-token.txt"))
-        val s = StreamServer(token, { page }, { state }, { version }, { attempts }, { dex })
+        val s = StreamServer(token, { page }, { state }, { version }, { attempts }, { if (ended != null) dex else null }, NativeGameFeed, { wifiAddress() })
         val ok = runCatching { s.start(PORT) }.isSuccess
         if (!ok) return null
         server = s
+        onStarted?.invoke()
         return url()
     }
 
@@ -61,7 +77,12 @@ object StreamHub {
         return t
     }
 
-    fun url(): String = "http://${wifiAddress() ?: "<phone-ip>"}:$PORT/tracker?k=$token"
+    /**
+     * The address to open on the PC: the setup guide, which hands out the OBS scene and
+     * every individual link. (It was the tracker's own address until the game itself
+     * could be streamed, 2026-09-29.)
+     */
+    fun url(): String = "http://${wifiAddress() ?: "<phone-ip>"}:$PORT/?k=$token"
 
     /** The phone's LAN address: the first non-loopback IPv4 on an up interface. */
     fun wifiAddress(): String? = runCatching {

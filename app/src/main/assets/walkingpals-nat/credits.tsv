@@ -1,0 +1,765 @@
+# Who drew each Walking Pals sheet in this folder: PMD Sprite Collab 211e689353e1 (2026-09-30), github.com/PMDCollab/SpriteCollab.
+# Artists: the current credits.txt entries for the animations used (Idle, Walk, Sleep, Faint), then
+# tracker.json's credit for the folder, by the names in credit_names.txt (a Discord id where none is registered).
+# Licences as each contribution was given: CC_BY-NC_4 = CC BY-NC 4.0; PMDCollab_1 = use with credit;
+# PMDCollab_2 = use with credit, not for profit; Unspecified = Spike Chunsoft's own sprites from the PMD games.
+# The collab's terms for the whole repository: CC BY-NC 4.0 (non-commercial, credit the artists).
+# key	sprite	SpriteCollab folder	artists	licences
+6-mega-x	Charizard Mega X	sprite/0006/0001	Kevin0itachi, G〜, Kevin	PMDCollab_1, CC_BY-NC_4
+19-alola	Rattata Alola	sprite/0019/0001	NeroIntruder	PMDCollab_1
+20-alola	Raticate Alola	sprite/0020/0001	NeroIntruder, ShyStarryRain	PMDCollab_1
+25-cosplay	Pikachu Cosplay	sprite/0025/0007	◥θ┴θ◤	PMDCollab_1
+26-alola	Raichu Alola	sprite/0026/0001	baronessfaron	PMDCollab_1
+27-alola	Sandshrew Alola	sprite/0027/0001	Top_Kec, baronessfaron	CC_BY-NC_4
+28-alola	Sandslash Alola	sprite/0028/0001	baronessfaron	CC_BY-NC_4
+37-alola	Vulpix Alola	sprite/0037/0001	NeroIntruder, baronessfaron	PMDCollab_1
+38-alola	Ninetales Alola	sprite/0038/0001	NeroIntruder, baronessfaron	PMDCollab_1
+50-alola	Diglett Alola	sprite/0050/0001	Emboarger	PMDCollab_1
+51-alola	Dugtrio Alola	sprite/0051/0001	NeroIntruder	PMDCollab_2
+52-alola	Meowth Alola	sprite/0052/0001	ShyStarryRain	PMDCollab_1, PMDCollab_2
+52-galar	Meowth Galar	sprite/0052/0002	Smingle, Caitemis, G〜	CC_BY-NC_4
+53-alola	Persian Alola	sprite/0053/0001	Pink_no_tori	PMDCollab_1
+58-hisui	Growlithe Hisui	sprite/0058/0001	baronessfaron	PMDCollab_2
+59-hisui	Arcanine Hisui	sprite/0059/0001	baronessfaron, Emmuffin	PMDCollab_2
+65-mega	Alakazam Mega	sprite/0065/0001	Michael12, baronessfaron	CC_BY-NC_4
+74-alola	Geodude Alola	sprite/0074/0001	NeroIntruder	PMDCollab_1
+75-alola	Graveler Alola	sprite/0075/0001	NeroIntruder	PMDCollab_1
+76-alola	Golem Alola	sprite/0076/0001	NeroIntruder	PMDCollab_1
+77-galar	Ponyta Galar	sprite/0077/0001	Jhony-Rex, ◥θ┴θ◤, baronessfaron	PMDCollab_1
+78-galar	Rapidash Galar	sprite/0078/0001	Jhony-Rex, baronessfaron	PMDCollab_2
+79-galar	Slowpoke Galar	sprite/0079/0001	FissionCube	CC_BY-NC_4
+80-galar	Slowbro Galar	sprite/0080/0001	Pink_no_tori, baronessfaron	CC_BY-NC_4
+80-mega	Slowbro Mega	sprite/0080/0002	Soulja, Emmuffin	CC_BY-NC_4
+83-galar	Farfetch'd Galar	sprite/0083/0001	JFain	PMDCollab_1
+88-alola	Grimer Alola	sprite/0088/0001	Emboarger	PMDCollab_1
+89-alola	Muk Alola	sprite/0089/0001	NeroIntruder	PMDCollab_1
+94-mega	Gengar Mega	sprite/0094/0001	Michael12, Emboarger, baronessfaron	CC_BY-NC_4
+100-hisui	Voltorb Hisui	sprite/0100/0001	Axcel	PMDCollab_1
+101-hisui	Electrode Hisui	sprite/0101/0001	electronvolt, Gelius, teddg	CC_BY-NC_4
+103-alola	Exeggutor Alola	sprite/0103/0001	baronessfaron	PMDCollab_2
+105-alola	Marowak Alola	sprite/0105/0001	Emmuffin	PMDCollab_1
+110-galar	Weezing Galar	sprite/0110/0001	Jhony-Rex, baronessfaron	CC_BY-NC_4
+115-mega	Kangaskhan Mega	sprite/0115/0001	Deeshura	CC_BY-NC_4
+122-galar	Mr. Mime Galar	sprite/0122/0001	baronessfaron	CC_BY-NC_4
+128-paldea	Tauros Paldea	sprite/0128/0001	Limomon	CC_BY-NC_4
+128-paldea-aqua	Tauros Paldea Aqua	sprite/0128/0003	JFain	CC_BY-NC_4
+128-paldea-blaze	Tauros Paldea Blaze	sprite/0128/0002	Limomon	CC_BY-NC_4
+142-mega	Aerodactyl Mega	sprite/0142/0001	Caitemis	CC_BY-NC_4
+144-galar	Articuno Galar	sprite/0144/0001	baronessfaron	CC_BY-NC_4
+145-galar	Zapdos Galar	sprite/0145/0001	Jhony-Rex, Caitemis	PMDCollab_1
+146-galar	Moltres Galar	sprite/0146/0001	Jhony-Rex	PMDCollab_1
+150-mega-y	Mewtwo Mega Y	sprite/0150/0002	JFain	PMDCollab_1
+157-hisui	Typhlosion Hisui	sprite/0157/0001	Caitemis, Deeshura	PMDCollab_2, CC_BY-NC_4
+172-spiky	Pichu Spiky	sprite/0172/0001	◥θ┴θ◤, Spikey-Valentine	PMDCollab_1, PMDCollab_2, CC_BY-NC_4
+194-paldea	Wooper Paldea	sprite/0194/0002	Uni	CC_BY-NC_4
+199-galar	Slowking Galar	sprite/0199/0001	Soulja	CC_BY-NC_4
+208-mega	Steelix Mega	sprite/0208/0001	baronessfaron	CC_BY-NC_4
+211-hisui	Qwilfish Hisui	sprite/0211/0001	JFain, Fresco	PMDCollab_1, CC_BY-NC_4
+215-hisui	Sneasel Hisui	sprite/0215/0001	ShyStarryRain	PMDCollab_1
+222-galar	Corsola Galar	sprite/0222/0001	JFain	PMDCollab_1
+227-mega	Skarmory Mega	sprite/0227/0001	Johanne2	CC_BY-NC_4
+229-mega	Houndoom Mega	sprite/0229/0001	Top_Kec	PMDCollab_1
+248-mega	Tyranitar Mega	sprite/0248/0001	JFain	CC_BY-NC_4
+254-mega	Sceptile Mega	sprite/0254/0001	Emmuffin	PMDCollab_2
+263-galar	Zigzagoon Galar	sprite/0263/0001	Uni	CC_BY-NC_4
+264-galar	Linoone Galar	sprite/0264/0001	baronessfaron	CC_BY-NC_4
+282-mega	Gardevoir Mega	sprite/0282/0001	baronessfaron	PMDCollab_1
+302-mega	Sableye Mega	sprite/0302/0001	Emmuffin	CC_BY-NC_4
+303-mega	Mawile Mega	sprite/0303/0001	baronessfaron	CC_BY-NC_4
+308-mega	Medicham Mega	sprite/0308/0001	JFain	CC_BY-NC_4
+310-mega	Manectric Mega	sprite/0310/0001	Top_Kec	CC_BY-NC_4
+319-mega	Sharpedo Mega	sprite/0319/0001	baronessfaron	CC_BY-NC_4
+323-mega	Camerupt Mega	sprite/0323/0001	Caitemis	PMDCollab_2
+334-mega	Altaria Mega	sprite/0334/0001	Emmuffin	CC_BY-NC_4
+351-rainy	Castform Rainy	sprite/0351/0002	CHUNSOFT	Unspecified
+351-snowy	Castform Snowy	sprite/0351/0003	CHUNSOFT	Unspecified
+351-sunny	Castform Sunny	sprite/0351/0001	CHUNSOFT	Unspecified
+354-mega	Banette Mega	sprite/0354/0001	baronessfaron	PMDCollab_1
+358-mega	Chimecho Mega	sprite/0358/0001	Emmuffin	CC_BY-NC_4
+359-mega	Absol Mega	sprite/0359/0001	Emboarger	PMDCollab_1
+362-mega	Glalie Mega	sprite/0362/0001	baronessfaron	CC_BY-NC_4
+380-mega	Latias Mega	sprite/0380/0001	Emmuffin	CC_BY-NC_4
+381-mega	Latios Mega	sprite/0381/0001	Emmuffin	CC_BY-NC_4
+382-primal	Kyogre Primal	sprite/0382/0001	baronessfaron	PMDCollab_2
+383-primal	Groudon Primal	sprite/0383/0001	baronessfaron	PMDCollab_2, CC_BY-NC_4
+384-mega	Rayquaza Mega	sprite/0384/0001	Top_Kec	PMDCollab_1
+386-attack	Deoxys Attack	sprite/0386/0001	CHUNSOFT	Unspecified
+386-defense	Deoxys Defense	sprite/0386/0002	CHUNSOFT	Unspecified
+386-speed	Deoxys Speed	sprite/0386/0003	CHUNSOFT	Unspecified
+387	Turtwig	sprite/0387	CHUNSOFT	Unspecified
+388	Grotle	sprite/0388	CHUNSOFT, Caitemis	Unspecified
+389	Torterra	sprite/0389	CHUNSOFT	Unspecified
+390	Chimchar	sprite/0390	CHUNSOFT	Unspecified
+391	Monferno	sprite/0391	CHUNSOFT	Unspecified
+392	Infernape	sprite/0392	CHUNSOFT, Caitemis	Unspecified
+393	Piplup	sprite/0393	CHUNSOFT	Unspecified
+394	Prinplup	sprite/0394	CHUNSOFT	Unspecified
+395	Empoleon	sprite/0395	CHUNSOFT	Unspecified
+396	Starly	sprite/0396	CHUNSOFT, Emboarger, JFain	Unspecified, CC_BY-NC_4
+397	Staravia	sprite/0397	CHUNSOFT	Unspecified
+398	Staraptor	sprite/0398	CHUNSOFT, Audino	Unspecified
+399	Bidoof	sprite/0399	CHUNSOFT, Emmuffin	Unspecified, PMDCollab_1
+400	Bibarel	sprite/0400	CHUNSOFT	Unspecified
+401	Kricketot	sprite/0401	CHUNSOFT	Unspecified
+402	Kricketune	sprite/0402	CHUNSOFT	Unspecified
+403	Shinx	sprite/0403	CHUNSOFT	Unspecified
+404	Luxio	sprite/0404	CHUNSOFT, Caitemis	Unspecified, PMDCollab_1
+405	Luxray	sprite/0405	CHUNSOFT	Unspecified
+406	Budew	sprite/0406	CHUNSOFT, Uni	Unspecified, CC_BY-NC_4
+407	Roserade	sprite/0407	CHUNSOFT, JFain, G〜	Unspecified
+408	Cranidos	sprite/0408	CHUNSOFT	Unspecified
+409	Rampardos	sprite/0409	CHUNSOFT	Unspecified
+410	Shieldon	sprite/0410	CHUNSOFT	Unspecified
+411	Bastiodon	sprite/0411	CHUNSOFT	Unspecified
+412	Burmy	sprite/0412	CHUNSOFT, Caitemis	Unspecified, CC_BY-NC_4
+412-sand	Burmy Sand	sprite/0412/0001	CHUNSOFT	Unspecified
+412-trash	Burmy Trash	sprite/0412/0002	CHUNSOFT	Unspecified
+413	Wormadam	sprite/0413	CHUNSOFT	Unspecified
+413-sand	Wormadam Sand	sprite/0413/0001	CHUNSOFT	Unspecified
+413-trash	Wormadam Trash	sprite/0413/0002	CHUNSOFT	Unspecified
+414	Mothim	sprite/0414	CHUNSOFT	Unspecified
+415	Combee	sprite/0415	CHUNSOFT	Unspecified
+416	Vespiquen	sprite/0416	CHUNSOFT	Unspecified
+417	Pachirisu	sprite/0417	CHUNSOFT, baronessfaron, JFain	Unspecified, CC_BY-NC_4
+418	Buizel	sprite/0418	CHUNSOFT, Reimu\_needs\_$$$	Unspecified, PMDCollab_1
+419	Floatzel	sprite/0419	CHUNSOFT	Unspecified
+420	Cherubi	sprite/0420	CHUNSOFT	Unspecified
+421	Cherrim	sprite/0421	CHUNSOFT	Unspecified
+421-sunshine	Cherrim Sunshine	sprite/0421/0001	CHUNSOFT, Caitemis	Unspecified
+422	Shellos	sprite/0422	CHUNSOFT	Unspecified
+423	Gastrodon	sprite/0423	CHUNSOFT	Unspecified
+424	Ambipom	sprite/0424	CHUNSOFT	Unspecified
+425	Drifloon	sprite/0425	CHUNSOFT	Unspecified
+426	Drifblim	sprite/0426	CHUNSOFT	Unspecified
+427	Buneary	sprite/0427	CHUNSOFT, JFain	Unspecified, PMDCollab_1
+428	Lopunny	sprite/0428	CHUNSOFT	Unspecified
+428-mega	Lopunny Mega	sprite/0428/0001	JFain	PMDCollab_1
+429	Mismagius	sprite/0429	CHUNSOFT	Unspecified
+430	Honchkrow	sprite/0430	CHUNSOFT, Caitemis	Unspecified
+431	Glameow	sprite/0431	CHUNSOFT, baronessfaron	Unspecified, PMDCollab_1
+432	Purugly	sprite/0432	CHUNSOFT	Unspecified
+433	Chingling	sprite/0433	CHUNSOFT, anomalocaris	Unspecified, CC_BY-NC_4
+434	Stunky	sprite/0434	CHUNSOFT, JFain	Unspecified, CC_BY-NC_4
+435	Skuntank	sprite/0435	CHUNSOFT	Unspecified
+436	Bronzor	sprite/0436	CHUNSOFT	Unspecified
+437	Bronzong	sprite/0437	CHUNSOFT	Unspecified
+438	Bonsly	sprite/0438	CHUNSOFT	Unspecified
+439	Mime Jr 	sprite/0439	CHUNSOFT, JFain	Unspecified, CC_BY-NC_4
+440	Happiny	sprite/0440	CHUNSOFT, JFain	Unspecified, CC_BY-NC_4
+441	Chatot	sprite/0441	CHUNSOFT, JFain	Unspecified, CC_BY-NC_4
+442	Spiritomb	sprite/0442	CHUNSOFT	Unspecified
+443	Gible	sprite/0443	CHUNSOFT	Unspecified
+444	Gabite	sprite/0444	CHUNSOFT	Unspecified
+445	Garchomp	sprite/0445	CHUNSOFT	Unspecified
+446	Munchlax	sprite/0446	CHUNSOFT	Unspecified
+447	Riolu	sprite/0447	CHUNSOFT	Unspecified
+448	Lucario	sprite/0448	CHUNSOFT, Emmuffin	Unspecified, PMDCollab_1
+448-mega	Lucario Mega	sprite/0448/0001	baronessfaron	CC_BY-NC_4
+449	Hippopotas	sprite/0449	CHUNSOFT	Unspecified
+450	Hippowdon	sprite/0450	CHUNSOFT	Unspecified
+451	Skorupi	sprite/0451	CHUNSOFT	Unspecified
+452	Drapion	sprite/0452	CHUNSOFT	Unspecified
+453	Croagunk	sprite/0453	CHUNSOFT, Caitemis	Unspecified, CC_BY-NC_4
+454	Toxicroak	sprite/0454	CHUNSOFT	Unspecified
+455	Carnivine	sprite/0455	CHUNSOFT	Unspecified
+456	Finneon	sprite/0456	CHUNSOFT, JFain	Unspecified, PMDCollab_1
+457	Lumineon	sprite/0457	CHUNSOFT	Unspecified
+458	Mantyke	sprite/0458	CHUNSOFT	Unspecified
+459	Snover	sprite/0459	CHUNSOFT	Unspecified
+460	Abomasnow	sprite/0460	CHUNSOFT	Unspecified
+461	Weavile	sprite/0461	CHUNSOFT	Unspecified
+462	Magnezone	sprite/0462	CHUNSOFT	Unspecified
+463	Lickilicky	sprite/0463	CHUNSOFT	Unspecified
+464	Rhyperior	sprite/0464	CHUNSOFT	Unspecified
+465	Tangrowth	sprite/0465	CHUNSOFT	Unspecified
+466	Electivire	sprite/0466	CHUNSOFT	Unspecified
+467	Magmortar	sprite/0467	CHUNSOFT	Unspecified
+468	Togekiss	sprite/0468	CHUNSOFT	Unspecified
+469	Yanmega	sprite/0469	CHUNSOFT	Unspecified
+470	Leafeon	sprite/0470	CHUNSOFT, baronessfaron	Unspecified, PMDCollab_1
+471	Glaceon	sprite/0471	CHUNSOFT, JFain, baronessfaron	Unspecified, PMDCollab_1, CC_BY-NC_4
+472	Gliscor	sprite/0472	CHUNSOFT	Unspecified
+473	Mamoswine	sprite/0473	CHUNSOFT	Unspecified
+474	Porygon Z	sprite/0474	CHUNSOFT, Caitemis	Unspecified
+475	Gallade	sprite/0475	CHUNSOFT	Unspecified
+475-mega	Gallade Mega	sprite/0475/0001	JFain	PMDCollab_1
+476	Probopass	sprite/0476	CHUNSOFT	Unspecified
+477	Dusknoir	sprite/0477	CHUNSOFT, Caitemis	Unspecified, CC_BY-NC_4
+478	Froslass	sprite/0478	CHUNSOFT	Unspecified
+479	Rotom	sprite/0479	CHUNSOFT	Unspecified
+479-fan	Rotom Fan	sprite/0479/0004	Emmuffin	CC_BY-NC_4
+479-frost	Rotom Frost	sprite/0479/0003	Soulja	CC_BY-NC_4
+479-heat	Rotom Heat	sprite/0479/0001	Soulja	CC_BY-NC_4
+479-mow	Rotom Mow	sprite/0479/0005	JFain	PMDCollab_1
+479-wash	Rotom Wash	sprite/0479/0002	Emmuffin	CC_BY-NC_4
+480	Uxie	sprite/0480	CHUNSOFT	Unspecified
+481	Mesprit	sprite/0481	CHUNSOFT, baronessfaron	Unspecified, PMDCollab_1
+482	Azelf	sprite/0482	CHUNSOFT	Unspecified
+483	Dialga	sprite/0483	CHUNSOFT	Unspecified
+483-origin	Dialga Origin	sprite/0483/0001	baronessfaron	CC_BY-NC_4
+484	Palkia	sprite/0484	CHUNSOFT	Unspecified
+484-origin	Palkia Origin	sprite/0484/0001	baronessfaron	CC_BY-NC_4
+485	Heatran	sprite/0485	CHUNSOFT	Unspecified
+486	Regigigas	sprite/0486	CHUNSOFT	Unspecified
+487	Giratina	sprite/0487	CHUNSOFT	Unspecified
+487-origin	Giratina Origin	sprite/0487/0001	CHUNSOFT	Unspecified
+488	Cresselia	sprite/0488	CHUNSOFT, baronessfaron	Unspecified, PMDCollab_1
+489	Phione	sprite/0489	CHUNSOFT, Emmuffin	Unspecified, PMDCollab_1
+490	Manaphy	sprite/0490	CHUNSOFT, JFain	Unspecified, CC_BY-NC_4
+491	Darkrai	sprite/0491	CHUNSOFT, baronessfaron	Unspecified, PMDCollab_1
+491-mega	Darkrai Mega	sprite/0491/0002	Johanne2	CC_BY-NC_4
+492	Shaymin	sprite/0492	CHUNSOFT, JFain	Unspecified, CC_BY-NC_4
+492-sky	Shaymin Sky	sprite/0492/0001	CHUNSOFT, Emmuffin	Unspecified, PMDCollab_1
+493	Arceus	sprite/0493	JFain, baronessfaron	PMDCollab_1, PMDCollab_2
+494	Victini	sprite/0494	MonochromeKirby	PMDCollab_1
+495	Snivy	sprite/0495	NeroIntruder, G〜	PMDCollab_1
+496	Servine	sprite/0496	NeroIntruder	PMDCollab_1
+497	Serperior	sprite/0497	NeroIntruder	PMDCollab_1
+498	Tepig	sprite/0498	NeroIntruder, Emboarger, NikolaP, 3P1C	PMDCollab_1, PMDCollab_2
+499	Pignite	sprite/0499	NeroIntruder, Emboarger	PMDCollab_1
+500	Emboar	sprite/0500	NeroIntruder, Emboarger	PMDCollab_1
+501	Oshawott	sprite/0501	Emmuffin, ◥θ┴θ◤	PMDCollab_1
+502	Dewott	sprite/0502	JFain	PMDCollab_1, CC_BY-NC_4
+503	Samurott	sprite/0503	Top_Kec	PMDCollab_1
+503-hisui	Samurott Hisui	sprite/0503/0001	baronessfaron	CC_BY-NC_4
+504	Patrat	sprite/0504	Pink_no_tori, baronessfaron	PMDCollab_1
+505	Watchog	sprite/0505	baronessfaron	PMDCollab_1
+506	Lillipup	sprite/0506	baronessfaron	PMDCollab_1
+507	Herdier	sprite/0507	LightBlueBlaze	PMDCollab_2
+508	Stoutland	sprite/0508	JFain	
+509	Purrloin	sprite/0509	baronessfaron	PMDCollab_1
+510	Liepard	sprite/0510	LightBlueBlaze	PMDCollab_1
+511	Pansage	sprite/0511	Pokejavi.	CC_BY-NC_4
+512	Simisage	sprite/0512	baronessfaron	CC_BY-NC_4
+513	Pansear	sprite/0513	AllPatchedUp	PMDCollab_2
+515	Panpour	sprite/0515	Pokejavi.	CC_BY-NC_4
+517	Munna	sprite/0517	baronessfaron, ShyStarryRain	PMDCollab_1
+518	Musharna	sprite/0518	baronessfaron	PMDCollab_1
+519	Pidove	sprite/0519	powercristal, Caitemis	PMDCollab_1
+521	Unfezant	sprite/0521	Top_Kec	CC_BY-NC_4
+524	Roggenrola	sprite/0524	powercristal	PMDCollab_1, CC_BY-NC_4
+525	Boldore	sprite/0525	Soulja	CC_BY-NC_4
+526	Gigalith	sprite/0526	Soulja	CC_BY-NC_4
+527	Woobat	sprite/0527	NeroIntruder, ShyStarryRain	PMDCollab_1
+528	Swoobat	sprite/0528	NeroIntruder	PMDCollab_1
+529	Drilbur	sprite/0529	baronessfaron	CC_BY-NC_4
+530	Excadrill	sprite/0530	Soulja, Skycloud383	CC_BY-NC_4
+530-mega	Excadrill Mega	sprite/0530/0001	pi3.14, Soulja, DeltaL	CC_BY-NC_4
+531	Audino	sprite/0531	baronessfaron, Emmuffin	PMDCollab_1
+532	Timburr	sprite/0532	Katach314	PMDCollab_2
+533	Gurdurr	sprite/0533	Soulja, Inv3rse, Katach314	CC_BY-NC_4
+534	Conkeldurr	sprite/0534	Inv3rse, Soulja	CC_BY-NC_4
+535	Tympole	sprite/0535	JFain	PMDCollab_1
+536	Palpitoad	sprite/0536	JFain	PMDCollab_2
+537	Seismitoad	sprite/0537	Soulja	CC_BY-NC_4
+539	Sawk	sprite/0539	Emmuffin	CC_BY-NC_4
+540	Sewaddle	sprite/0540	Emboarger	PMDCollab_1
+541	Swadloon	sprite/0541	baronessfaron	PMDCollab_2
+542	Leavanny	sprite/0542	baronessfaron, G〜	PMDCollab_1
+543	Venipede	sprite/0543	baronessfaron, JFain, Soulja, pi3.14	CC_BY-NC_4
+544	Whirlipede	sprite/0544	G〜, Soulja	CC_BY-NC_4
+545	Scolipede	sprite/0545	baronessfaron	PMDCollab_2
+546	Cottonee	sprite/0546	Emmuffin	PMDCollab_2
+547	Whimsicott	sprite/0547	JFain	PMDCollab_1
+548	Petilil	sprite/0548	Emmuffin	PMDCollab_1
+549	Lilligant	sprite/0549	metalbear, baronessfaron, G〜, powercristal	PMDCollab_1, PMDCollab_2
+549-hisui	Lilligant Hisui	sprite/0549/0001	GustavoMusinTG, Soulja	CC_BY-NC_4
+550	Basculin	sprite/0550	Pink_no_tori	CC_BY-NC_4
+550-blue	Basculin Blue	sprite/0550/0001	Pink_no_tori	CC_BY-NC_4
+550-white	Basculin White	sprite/0550/0002	Pink_no_tori, Soulja	CC_BY-NC_4
+551	Sandile	sprite/0551	Noivern, baronessfaron	PMDCollab_1
+552	Krokorok	sprite/0552	Soulja	PMDCollab_2
+553	Krookodile	sprite/0553	Soulja	CC_BY-NC_4
+554	Darumaka	sprite/0554	Pink_no_tori, baronessfaron	PMDCollab_1
+554-galar	Darumaka Galar	sprite/0554/0001	Uni	CC_BY-NC_4
+555	Darmanitan	sprite/0555	Soulja, Michael12	CC_BY-NC_4
+555-galar	Darmanitan Galar	sprite/0555/0002	baronessfaron, Soulja	CC_BY-NC_4
+555-zen	Darmanitan Zen	sprite/0555/0001	baronessfaron	CC_BY-NC_4
+556	Maractus	sprite/0556	JFain	PMDCollab_1
+557	Dwebble	sprite/0557	Pink_no_tori, Leif	CC_BY-NC_4
+559	Scraggy	sprite/0559	Soulja	CC_BY-NC_4
+560	Scrafty	sprite/0560	baronessfaron	PMDCollab_1, PMDCollab_2
+560-mega	Scrafty Mega	sprite/0560/0001	pi3.14, Soulja, Emmuffin	CC_BY-NC_4
+561	Sigilyph	sprite/0561	Soulja	CC_BY-NC_4
+562	Yamask	sprite/0562	Michael12, baronessfaron	PMDCollab_1
+562-galar	Yamask Galar	sprite/0562/0001	Pokejavi.	CC_BY-NC_4
+563	Cofagrigus	sprite/0563	Pink_no_tori, baronessfaron	PMDCollab_2
+566	Archen	sprite/0566	Soulja	CC_BY-NC_4
+567	Archeops	sprite/0567	Top_Kec	PMDCollab_1
+568	Trubbish	sprite/0568	powercristal, cyboy_bit	PMDCollab_1
+569	Garbodor	sprite/0569	baronessfaron	CC_BY-NC_4
+570	Zorua	sprite/0570	Emmuffin, baronessfaron	PMDCollab_1
+570-hisui	Zorua Hisui	sprite/0570/0001	Ichor	PMDCollab_1
+571	Zoroark	sprite/0571	baronessfaron	PMDCollab_1, PMDCollab_2
+571-hisui	Zoroark Hisui	sprite/0571/0001	baronessfaron, Deeshura	PMDCollab_1, CC_BY-NC_4
+572	Minccino	sprite/0572	baronessfaron, powercristal	PMDCollab_1, CC_BY-NC_4
+573	Cinccino	sprite/0573	baronessfaron, Emmuffin	CC_BY-NC_4
+574	Gothita	sprite/0574	baronessfaron	PMDCollab_1
+575	Gothorita	sprite/0575	baronessfaron	PMDCollab_1
+576	Gothitelle	sprite/0576	baronessfaron	PMDCollab_1
+577	Solosis	sprite/0577	◥θ┴θ◤, Uni	PMDCollab_1, CC_BY-NC_4
+578	Duosion	sprite/0578	powercristal, Caitemis, baronessfaron, Emmuffin	PMDCollab_1
+579	Reuniclus	sprite/0579	Emmuffin	PMDCollab_1
+580	Ducklett	sprite/0580	baronessfaron	CC_BY-NC_4
+581	Swanna	sprite/0581	Katach314	CC_BY-NC_4
+582	Vanillite	sprite/0582	baronessfaron	CC_BY-NC_4
+583	Vanillish	sprite/0583	JFain	PMDCollab_1
+584	Vanilluxe	sprite/0584	baronessfaron	PMDCollab_2
+585	Deerling	sprite/0585	baronessfaron	PMDCollab_1
+586	Sawsbuck	sprite/0586	baronessfaron	PMDCollab_1, CC_BY-NC_4
+587	Emolga	sprite/0587	baronessfaron	PMDCollab_1
+588	Karrablast	sprite/0588	Pink_no_tori, Pokejavi.	CC_BY-NC_4
+589	Escavalier	sprite/0589	JFain	PMDCollab_1
+590	Foongus	sprite/0590	JFain	PMDCollab_1
+593	Jellicent	sprite/0593	G〜	PMDCollab_2
+594	Alomomola	sprite/0594	baronessfaron, Inv3rse	CC_BY-NC_4
+595	Joltik	sprite/0595	baronessfaron	PMDCollab_1
+596	Galvantula	sprite/0596	JFain	PMDCollab_1
+597	Ferroseed	sprite/0597	G〜, Emmuffin	PMDCollab_1, PMDCollab_2
+598	Ferrothorn	sprite/0598	Top_Kec	PMDCollab_2
+599	Klink	sprite/0599	baronessfaron, stressparticles	CC_BY-NC_4
+600	Klang	sprite/0600	baronessfaron	CC_BY-NC_4
+601	Klinklang	sprite/0601	baronessfaron	CC_BY-NC_4
+602	Tynamo	sprite/0602	mosscoated	CC_BY-NC_4
+603	Eelektrik	sprite/0603	powercristal, Soulja, Emmuffin	CC_BY-NC_4
+604	Eelektross	sprite/0604	Soulja	CC_BY-NC_4
+604-mega	Eelektross Mega	sprite/0604/0001	Top_Kec	CC_BY-NC_4
+605	Elgyem	sprite/0605	Limomon, Soulja	PMDCollab_2, CC_BY-NC_4
+606	Beheeyem	sprite/0606	Soulja	CC_BY-NC_4
+607	Litwick	sprite/0607	Emmuffin	PMDCollab_1
+608	Lampent	sprite/0608	baronessfaron	PMDCollab_1
+609	Chandelure	sprite/0609	baronessfaron	PMDCollab_1
+610	Axew	sprite/0610	baronessfaron, FrivolousAqua, G〜	CC_BY-NC_4
+611	Fraxure	sprite/0611	Top_Kec	PMDCollab_2
+612	Haxorus	sprite/0612	Pink_no_tori, baronessfaron, Deeshura	PMDCollab_1, CC_BY-NC_4
+613	Cubchoo	sprite/0613	Emboarger	PMDCollab_1
+614	Beartic	sprite/0614	baronessfaron	CC_BY-NC_4
+615	Cryogonal	sprite/0615	baronessfaron	CC_BY-NC_4
+617	Accelgor	sprite/0617	Johanne2	CC_BY-NC_4
+618	Stunfisk	sprite/0618	Emmuffin	CC_BY-NC_4
+619	Mienfoo	sprite/0619	JFain	PMDCollab_1
+620	Mienshao	sprite/0620	baronessfaron	PMDCollab_1
+621	Druddigon	sprite/0621	baronessfaron	PMDCollab_2
+622	Golett	sprite/0622	Soulja	CC_BY-NC_4
+623	Golurk	sprite/0623	Soulja, baronessfaron	CC_BY-NC_4
+624	Pawniard	sprite/0624	baronessfaron	PMDCollab_1
+625	Bisharp	sprite/0625	Emmuffin	PMDCollab_1
+627	Rufflet	sprite/0627	baronessfaron, ◥θ┴θ◤	CC_BY-NC_4
+628	Braviary	sprite/0628	Caitemis	PMDCollab_1
+628-hisui	Braviary Hisui	sprite/0628/0001	Soulja, baronessfaron	CC_BY-NC_4
+629	Vullaby	sprite/0629	baronessfaron	CC_BY-NC_4
+630	Mandibuzz	sprite/0630	powercristal	PMDCollab_1
+631	Heatmor	sprite/0631	baronessfaron	CC_BY-NC_4
+632	Durant	sprite/0632	baronessfaron	CC_BY-NC_4
+633	Deino	sprite/0633	Jhony-Rex, Emboarger, Uni	PMDCollab_1, PMDCollab_2
+634	Zweilous	sprite/0634	Pink_no_tori, baronessfaron	PMDCollab_1
+635	Hydreigon	sprite/0635	Top_Kec	PMDCollab_2
+636	Larvesta	sprite/0636	baronessfaron	PMDCollab_2
+637	Volcarona	sprite/0637	powercristal, pi3.14, Soulja	PMDCollab_1, CC_BY-NC_4
+638	Cobalion	sprite/0638	powercristal, Noo, Deeshura	PMDCollab_1
+639	Terrakion	sprite/0639	Emmuffin	CC_BY-NC_4
+640	Virizion	sprite/0640	baronessfaron	PMDCollab_1
+641	Tornadus	sprite/0641	Top_Kec	PMDCollab_2
+642	Thundurus	sprite/0642	Top_Kec	PMDCollab_2
+643	Reshiram	sprite/0643	Top_Kec	PMDCollab_1, CC_BY-NC_4
+644	Zekrom	sprite/0644	Top_Kec	PMDCollab_1
+645	Landorus	sprite/0645	Top_Kec	PMDCollab_2
+645-therian	Landorus Therian	sprite/0645/0001	pi3.14, baronessfaron	CC_BY-NC_4
+646	Kyurem	sprite/0646	Emmuffin	CC_BY-NC_4
+646-black	Kyurem Black	sprite/0646/0001	Top_Kec	CC_BY-NC_4
+646-white	Kyurem White	sprite/0646/0002	Top_Kec	PMDCollab_1
+647	Keldeo	sprite/0647	baronessfaron	PMDCollab_1
+648	Meloetta	sprite/0648	baronessfaron, Ariakyu	PMDCollab_1, CC_BY-NC_4
+648-pirouette	Meloetta Pirouette	sprite/0648/0001	baronessfaron	PMDCollab_1
+649	Genesect	sprite/0649	Emboarger	PMDCollab_1
+650	Chespin	sprite/0650	Emmuffin, G〜	PMDCollab_1, PMDCollab_2, CC_BY-NC_4
+651	Quilladin	sprite/0651	◥θ┴θ◤, baronessfaron, Soulja	CC_BY-NC_4
+652	Chesnaught	sprite/0652	Soulja	CC_BY-NC_4
+653	Fennekin	sprite/0653	Smalusion, Emmuffin	PMDCollab_1
+654	Braixen	sprite/0654	Emmuffin, baronessfaron	PMDCollab_1, CC_BY-NC_4
+655	Delphox	sprite/0655	Jhony-Rex, Emmuffin	PMDCollab_1
+656	Froakie	sprite/0656	Emmuffin	PMDCollab_1
+657	Frogadier	sprite/0657	Caitemis	CC_BY-NC_4
+658	Greninja	sprite/0658	Jhony-Rex, Soulja	PMDCollab_1, CC_BY-NC_4
+659	Bunnelby	sprite/0659	pi3.14, baronessfaron	PMDCollab_2
+660	Diggersby	sprite/0660	pi3.14, Soulja	CC_BY-NC_4
+661	Fletchling	sprite/0661	Axcel	PMDCollab_1, CC_BY-NC_4
+662	Fletchinder	sprite/0662	Emmuffin, Soulja	CC_BY-NC_4
+663	Talonflame	sprite/0663	Michael12, Soulja, Emmuffin	CC_BY-NC_4
+664	Scatterbug	sprite/0664	Riodise, baronessfaron	CC_BY-NC_4
+665	Spewpa	sprite/0665	Emmuffin, baronessfaron	CC_BY-NC_4
+666	Vivillon	sprite/0666	Emmuffin	PMDCollab_1, CC_BY-NC_4
+667	Litleo	sprite/0667	Caitemis	PMDCollab_1
+668-female	Pyroar female	sprite/0668/0000/0000/0002	baronessfaron, ZoroarkDX	PMDCollab_2
+669	Flabebe	sprite/0669	baronessfaron	PMDCollab_1
+670	Floette	sprite/0670	baronessfaron	PMDCollab_1, PMDCollab_2, CC_BY-NC_4
+670-eternal	Floette Eternal	sprite/0670/0005	Emmuffin	PMDCollab_2
+670-mega	Floette Mega	sprite/0670/0006	pi3.14, DeltaL	CC_BY-NC_4
+671	Florges	sprite/0671	baronessfaron	PMDCollab_1
+672	Skiddo	sprite/0672	TawnySoup	PMDCollab_1
+673	Gogoat	sprite/0673	JFain	CC_BY-NC_4
+674	Pancham	sprite/0674	baronessfaron	CC_BY-NC_4
+675	Pangoro	sprite/0675	Soulja	CC_BY-NC_4
+676	Furfrou	sprite/0676	baronessfaron	PMDCollab_1
+677	Espurr	sprite/0677	NeroIntruder	PMDCollab_1
+678	Meowstic	sprite/0678	NeroIntruder, Emmuffin	PMDCollab_1, PMDCollab_2, CC_BY-NC_4
+678-female	Meowstic female	sprite/0678/0000/0000/0002	NeroIntruder, G〜	PMDCollab_1, PMDCollab_2, CC_BY-NC_4
+679	Honedge	sprite/0679	Emmuffin	CC_BY-NC_4
+680	Doublade	sprite/0680	Emmuffin	PMDCollab_2
+681	Aegislash	sprite/0681	Top_Kec	PMDCollab_1
+681-blade	Aegislash Blade	sprite/0681/0001	Top_Kec	PMDCollab_1, CC_BY-NC_4
+682	Spritzee	sprite/0682	baronessfaron	PMDCollab_1
+683	Aromatisse	sprite/0683	baronessfaron, stressparticles	CC_BY-NC_4
+684	Swirlix	sprite/0684	mixy:3	CC_BY-NC_4
+685	Slurpuff	sprite/0685	mixy:3	CC_BY-NC_4
+686	Inkay	sprite/0686	baronessfaron	CC_BY-NC_4
+687	Malamar	sprite/0687	Soulja, pi3.14, JFain	CC_BY-NC_4
+688	Binacle	sprite/0688	Soulja	CC_BY-NC_4
+689	Barbaracle	sprite/0689	Soulja	CC_BY-NC_4
+690	Skrelp	sprite/0690	Top_Kec	CC_BY-NC_4
+691	Dragalge	sprite/0691	baronessfaron	PMDCollab_1
+691-mega	Dragalge Mega	sprite/0691/0001	pi3.14, Soulja, DeltaL	CC_BY-NC_4
+692	Clauncher	sprite/0692	Jhony-Rex, baronessfaron	PMDCollab_1
+693	Clawitzer	sprite/0693	Pink_no_tori, baronessfaron	PMDCollab_1
+694	Helioptile	sprite/0694	Emmuffin, Leif	PMDCollab_1, CC_BY-NC_4
+695	Heliolisk	sprite/0695	Emmuffin	PMDCollab_2
+696	Tyrunt	sprite/0696	NeroIntruder, baronessfaron, Tainted#3886	CC_BY-NC_4
+697	Tyrantrum	sprite/0697	Soulja, Jhony-Rex	CC_BY-NC_4
+698	Amaura	sprite/0698	Emmuffin	PMDCollab_1
+699	Aurorus	sprite/0699	Emmuffin	PMDCollab_1, PMDCollab_2
+700	Sylveon	sprite/0700	baronessfaron	CC_BY-NC_4
+701	Hawlucha	sprite/0701	Emmuffin	CC_BY-NC_4
+701-mega	Hawlucha Mega	sprite/0701/0001	Emmuffin, Soulja	CC_BY-NC_4
+702	Dedenne	sprite/0702	Inv3rse, baronessfaron	CC_BY-NC_4
+703	Carbink	sprite/0703	Caitemis	PMDCollab_1
+704	Goomy	sprite/0704	Emmuffin	PMDCollab_1
+705	Sliggoo	sprite/0705	NeroIntruder, Emmuffin	PMDCollab_1, PMDCollab_2
+705-hisui	Sliggoo Hisui	sprite/0705/0001	Emmuffin	PMDCollab_2
+706	Goodra	sprite/0706	Emmuffin	PMDCollab_1
+706-hisui	Goodra Hisui	sprite/0706/0001	Emmuffin	PMDCollab_1
+707	Klefki	sprite/0707	◥θ┴θ◤, Emmuffin	PMDCollab_1
+708	Phantump	sprite/0708	Emmuffin, ShyStarryRain	PMDCollab_1
+709	Trevenant	sprite/0709	baronessfaron	PMDCollab_2
+710	Pumpkaboo	sprite/0710	baronessfaron	PMDCollab_1
+710-large	Pumpkaboo Large	sprite/0710/0002	baronessfaron	PMDCollab_1
+710-small	Pumpkaboo Small	sprite/0710/0001	baronessfaron	PMDCollab_1
+710-super	Pumpkaboo Super	sprite/0710/0003	baronessfaron	PMDCollab_1
+711	Gourgeist	sprite/0711	JFain, baronessfaron	PMDCollab_1, PMDCollab_2
+711-super	Gourgeist Super	sprite/0711/0003	Emmuffin	CC_BY-NC_4
+712	Bergmite	sprite/0712	baronessfaron	CC_BY-NC_4
+713	Avalugg	sprite/0713	baronessfaron	CC_BY-NC_4
+713-hisui	Avalugg Hisui	sprite/0713/0001	baronessfaron, Emmuffin	CC_BY-NC_4
+714	Noibat	sprite/0714	JFain, Emboarger, G〜, baronessfaron	PMDCollab_1, CC_BY-NC_4
+715	Noivern	sprite/0715	Soulja, Top_Kec	CC_BY-NC_4
+716	Xerneas	sprite/0716	baronessfaron	PMDCollab_1
+717	Yveltal	sprite/0717	Deleca7755, Top_Kec	PMDCollab_1
+718	Zygarde	sprite/0718	Soulja, Emmuffin, Deeshura, DeltaL	CC_BY-NC_4
+718-10	Zygarde 10	sprite/0718/0001	baronessfaron, NikolaP	PMDCollab_1
+718-complete	Zygarde Complete	sprite/0718/0002	baronessfaron	CC_BY-NC_4
+718-mega	Zygarde Mega	sprite/0718/0005	pi3.14, DeltaL	CC_BY-NC_4
+719	Diancie	sprite/0719	Emmuffin	PMDCollab_1
+719-mega	Diancie Mega	sprite/0719/0001	baronessfaron	CC_BY-NC_4
+720	Hoopa	sprite/0720	programmedsleepstate	PMDCollab_1
+720-unbound	Hoopa Unbound	sprite/0720/0001	Emboarger	PMDCollab_1, CC_BY-NC_4
+721	Volcanion	sprite/0721	Dejais	PMDCollab_1
+722	Rowlet	sprite/0722	Reimu\_needs\_$$$, Emmuffin	PMDCollab_1
+723	Dartrix	sprite/0723	Reimu\_needs\_$$$	PMDCollab_1, PMDCollab_2
+724	Decidueye	sprite/0724	Reimu\_needs\_$$$, Audino	PMDCollab_1
+724-hisui	Decidueye Hisui	sprite/0724/0001	baronessfaron	CC_BY-NC_4
+725	Litten	sprite/0725	Top_Kec	PMDCollab_1
+726	Torracat	sprite/0726	baronessfaron, ◥θ┴θ◤, Kawaiitron	CC_BY-NC_4
+727	Incineroar	sprite/0727	avalancheman, G〜, mixy:3	PMDCollab_1, PMDCollab_2
+728	Popplio	sprite/0728	◥θ┴θ◤, JFain	PMDCollab_1, PMDCollab_2
+729	Brionne	sprite/0729	◥θ┴θ◤, baronessfaron	PMDCollab_1
+730	Primarina	sprite/0730	baronessfaron, ◥θ┴θ◤, JFain	PMDCollab_1
+731	Pikipek	sprite/0731	FlowerSnek	CC_BY-NC_4
+733	Toucannon	sprite/0733	G〜	CC_BY-NC_4
+734	Yungoos	sprite/0734	baronessfaron	CC_BY-NC_4
+736	Grubbin	sprite/0736	Soulja	CC_BY-NC_4
+737	Charjabug	sprite/0737	Soulja	CC_BY-NC_4
+738	Vikavolt	sprite/0738	Soulja	CC_BY-NC_4
+739	Crabrawler	sprite/0739	Soulja	CC_BY-NC_4
+740	Crabominable	sprite/0740	Soulja	PMDCollab_2, CC_BY-NC_4
+741	Oricorio	sprite/0741	baronessfaron	CC_BY-NC_4
+741-pa-u	Oricorio Pa U	sprite/0741/0002	baronessfaron	CC_BY-NC_4
+741-pom-pom	Oricorio Pom Pom	sprite/0741/0001	baronessfaron	CC_BY-NC_4
+742	Cutiefly	sprite/0742	baronessfaron, Mitsubachi, Emmuffin	PMDCollab_1, CC_BY-NC_4
+743	Ribombee	sprite/0743	baronessfaron	PMDCollab_1
+744	Rockruff	sprite/0744	baronessfaron	PMDCollab_1
+745	Lycanroc	sprite/0745	baronessfaron, Emmuffin, JFain	PMDCollab_1, PMDCollab_2, CC_BY-NC_4
+745-dusk	Lycanroc Dusk	sprite/0745/0002	Emmuffin	PMDCollab_2
+745-midnight	Lycanroc Midnight	sprite/0745/0001	baronessfaron	PMDCollab_1
+746	Wishiwashi	sprite/0746	baronessfaron	CC_BY-NC_4
+746-school	Wishiwashi School	sprite/0746/0001	Top_Kec	CC_BY-NC_4
+747	Mareanie	sprite/0747	baronessfaron	PMDCollab_1
+748	Toxapex	sprite/0748	baronessfaron	CC_BY-NC_4
+749	Mudbray	sprite/0749	Ichor, bwappi	PMDCollab_1, PMDCollab_2
+750	Mudsdale	sprite/0750	bwappi	CC_BY-NC_4
+751	Dewpider	sprite/0751	Soulja	CC_BY-NC_4
+752	Araquanid	sprite/0752	Soulja	CC_BY-NC_4
+753	Fomantis	sprite/0753	Emmuffin	PMDCollab_1
+754	Lurantis	sprite/0754	baronessfaron	PMDCollab_1
+755	Morelull	sprite/0755	baronessfaron	PMDCollab_1
+757	Salandit	sprite/0757	baronessfaron, Soulja	PMDCollab_1, CC_BY-NC_4
+758	Salazzle	sprite/0758	Soulja	CC_BY-NC_4
+759	Stufful	sprite/0759	JFain	PMDCollab_2
+760	Bewear	sprite/0760	baronessfaron	CC_BY-NC_4
+761	Bounsweet	sprite/0761	baronessfaron	PMDCollab_1
+762	Steenee	sprite/0762	JFain	PMDCollab_1
+763	Tsareena	sprite/0763	baronessfaron	PMDCollab_1
+764	Comfey	sprite/0764	baronessfaron	PMDCollab_1
+766	Passimian	sprite/0766	baronessfaron	CC_BY-NC_4
+767	Wimpod	sprite/0767	Soulja	CC_BY-NC_4
+768	Golisopod	sprite/0768	Soulja, Michael12	CC_BY-NC_4
+769	Sandygast	sprite/0769	Emmuffin	PMDCollab_1
+770	Palossand	sprite/0770	baronessfaron	PMDCollab_2, CC_BY-NC_4
+771	Pyukumuku	sprite/0771	G〜, Soulja	PMDCollab_2, CC_BY-NC_4
+772	Type Null	sprite/0772	Top_Kec	PMDCollab_1, CC_BY-NC_4
+773	Silvally	sprite/0773	Top_Kec	PMDCollab_1, CC_BY-NC_4
+774	Minior	sprite/0774	baronessfaron	PMDCollab_1
+774-red	Minior Red	sprite/0774/0001	Emboarger	PMDCollab_1
+775	Komala	sprite/0775	Emmuffin	CC_BY-NC_4
+776	Turtonator	sprite/0776	Emmuffin	PMDCollab_2
+777	Togedemaru	sprite/0777	Emmuffin	PMDCollab_1, PMDCollab_2
+778	Mimikyu	sprite/0778	baronessfaron	PMDCollab_2
+779	Bruxish	sprite/0779	baronessfaron	PMDCollab_2
+780	Drampa	sprite/0780	Emmuffin	PMDCollab_1
+780-mega	Drampa Mega	sprite/0780/0001	pi3.14, Soulja, DeltaL	CC_BY-NC_4
+781	Dhelmise	sprite/0781	baronessfaron	PMDCollab_1
+782	Jangmo o	sprite/0782	Top_Kec, Soulja	PMDCollab_1, CC_BY-NC_4
+783	Hakamo o	sprite/0783	Top_Kec	PMDCollab_1
+784	Kommo o	sprite/0784	Top_Kec	PMDCollab_1
+785	Tapu Koko	sprite/0785	baronessfaron	PMDCollab_1
+786	Tapu Lele	sprite/0786	baronessfaron	PMDCollab_1
+787	Tapu Bulu	sprite/0787	JFain	PMDCollab_1
+788	Tapu Fini	sprite/0788	JFain, baronessfaron	PMDCollab_1
+789	Cosmog	sprite/0789	Emboarger, Yari	PMDCollab_1
+790	Cosmoem	sprite/0790	baronessfaron	PMDCollab_1
+791	Solgaleo	sprite/0791	nataniel-sama	PMDCollab_1
+792	Lunala	sprite/0792	baronessfaron	CC_BY-NC_4
+793	Nihilego	sprite/0793	Emmuffin	PMDCollab_1
+794	Buzzwole	sprite/0794	Top_Kec, Soulja	PMDCollab_1, CC_BY-NC_4
+795	Pheromosa	sprite/0795	baronessfaron, Emmuffin	PMDCollab_2
+796	Xurkitree	sprite/0796	Top_Kec	PMDCollab_1
+797	Celesteela	sprite/0797	Top_Kec	PMDCollab_1
+798	Kartana	sprite/0798	Top_Kec, Soulja	PMDCollab_1, CC_BY-NC_4
+799	Guzzlord	sprite/0799	Top_Kec	PMDCollab_1
+800	Necrozma	sprite/0800	Jhony-Rex, Top_Kec, Deeshura	PMDCollab_1, CC_BY-NC_4
+800-ultra	Necrozma Ultra	sprite/0800/0003	baronessfaron	PMDCollab_1
+801	Magearna	sprite/0801	baronessfaron	PMDCollab_1
+802	Marshadow	sprite/0802	Dejais	PMDCollab_1, CC_BY-NC_4
+803	Poipole	sprite/0803	Emboarger	PMDCollab_1, PMDCollab_2
+804	Naganadel	sprite/0804	Top_Kec	PMDCollab_1
+805	Stakataka	sprite/0805	Top_Kec	PMDCollab_1
+806	Blacephalon	sprite/0806	Top_Kec	PMDCollab_1
+807	Zeraora	sprite/0807	Emmuffin, Caitemis	PMDCollab_1, PMDCollab_2
+807-mega	Zeraora Mega	sprite/0807/0001	pi3.14, DeltaL	CC_BY-NC_4
+808	Meltan	sprite/0808	FlowerSnek	CC_BY-NC_4
+809	Melmetal	sprite/0809	Jhony-Rex, DeltaL, Soulja	CC_BY-NC_4
+810	Grookey	sprite/0810	bwappi, JFain	CC_BY-NC_4
+811	Thwackey	sprite/0811	baronessfaron	CC_BY-NC_4
+812	Rillaboom	sprite/0812	baronessfaron	CC_BY-NC_4
+813	Scorbunny	sprite/0813	NeroIntruder, Emmuffin	PMDCollab_1
+814	Raboot	sprite/0814	Emmuffin	PMDCollab_1
+815	Cinderace	sprite/0815	NeroIntruder	PMDCollab_1
+816	Sobble	sprite/0816	JFain, G〜, baronessfaron	PMDCollab_1, PMDCollab_2, CC_BY-NC_4
+817	Drizzile	sprite/0817	JFain	PMDCollab_2
+818	Inteleon	sprite/0818	TawnySoup	PMDCollab_2
+819	Skwovet	sprite/0819	Jhony-Rex, Soulja	CC_BY-NC_4
+820	Greedent	sprite/0820	Jhony-Rex, Soulja	CC_BY-NC_4
+821	Rookidee	sprite/0821	Michael12, Soulja, Caitemis	CC_BY-NC_4
+822	Corvisquire	sprite/0822	Emmuffin	CC_BY-NC_4
+823	Corviknight	sprite/0823	nataniel-sama, ◥θ┴θ◤, G〜, Soulja	PMDCollab_1, PMDCollab_2, CC_BY-NC_4
+824	Blipbug	sprite/0824	Soulja	CC_BY-NC_4
+825	Dottler	sprite/0825	Soulja	CC_BY-NC_4
+826	Orbeetle	sprite/0826	Jhony-Rex, Soulja	CC_BY-NC_4
+827	Nickit	sprite/0827	Top_Kec	PMDCollab_2
+828	Thievul	sprite/0828	Smalusion	PMDCollab_1
+829	Gossifleur	sprite/0829	baronessfaron	CC_BY-NC_4
+830	Eldegoss	sprite/0830	Top_Kec, Emmuffin	CC_BY-NC_4
+831	Wooloo	sprite/0831	Emmuffin, JFain	PMDCollab_1
+832	Dubwool	sprite/0832	Top_Kec	CC_BY-NC_4
+833	Chewtle	sprite/0833	nataniel-sama, Emmuffin, Soulja	CC_BY-NC_4
+834	Drednaw	sprite/0834	nataniel-sama, Soulja	CC_BY-NC_4
+835	Yamper	sprite/0835	RelicCipher, baronessfaron, Emmuffin	PMDCollab_1, CC_BY-NC_4
+836	Boltund	sprite/0836	Top_Kec	CC_BY-NC_4
+840	Applin	sprite/0840	Emmuffin	PMDCollab_1
+841	Flapple	sprite/0841	JFain, Emmuffin	PMDCollab_2
+842	Appletun	sprite/0842	Emmuffin	PMDCollab_1
+843	Silicobra	sprite/0843	Soulja	CC_BY-NC_4
+844	Sandaconda	sprite/0844	Soulja	CC_BY-NC_4
+845	Cramorant	sprite/0845	G〜, Emmuffin, Top_Kec	CC_BY-NC_4
+846	Arrokuda	sprite/0846	Jhony-Rex, Noo, Caitemis	PMDCollab_1
+847	Barraskewda	sprite/0847	Soulja	CC_BY-NC_4
+848	Toxel	sprite/0848	baronessfaron	PMDCollab_2
+849	Toxtricity	sprite/0849	baronessfaron	PMDCollab_2
+849-lowkey	Toxtricity Lowkey	sprite/0849/0001	JFain	CC_BY-NC_4
+850	Sizzlipede	sprite/0850	Soulja	CC_BY-NC_4
+851	Centiskorch	sprite/0851	Soulja	CC_BY-NC_4
+852	Clobbopus	sprite/0852	Emmuffin, Uni	PMDCollab_1, PMDCollab_2, CC_BY-NC_4
+853	Grapploct	sprite/0853	Soulja	CC_BY-NC_4
+854	Sinistea	sprite/0854	baronessfaron	PMDCollab_1
+855	Polteageist	sprite/0855	JFain	CC_BY-NC_4
+856	Hatenna	sprite/0856	baronessfaron	PMDCollab_1
+857	Hattrem	sprite/0857	baronessfaron	PMDCollab_1
+858	Hatterene	sprite/0858	baronessfaron	PMDCollab_1
+859	Impidimp	sprite/0859	baronessfaron	PMDCollab_2
+860	Morgrem	sprite/0860	JFain, Soulja	PMDCollab_1, CC_BY-NC_4
+861	Grimmsnarl	sprite/0861	baronessfaron	PMDCollab_2
+862	Obstagoon	sprite/0862	baronessfaron	CC_BY-NC_4
+863	Perrserker	sprite/0863	Johanne2	CC_BY-NC_4
+864	Cursola	sprite/0864	JFain	PMDCollab_1
+865	Sirfetch d	sprite/0865	baronessfaron	PMDCollab_2
+867	Runerigus	sprite/0867	Top_Kec	CC_BY-NC_4
+868	Milcery	sprite/0868	Riodise	CC_BY-NC_4
+869	Alcremie	sprite/0869	Emmuffin	PMDCollab_1
+871	Pincurchin	sprite/0871	Michael12, Shadowcrafts	CC_BY-NC_4
+872	Snom	sprite/0872	JFain, ◥θ┴θ◤	PMDCollab_1
+873	Frosmoth	sprite/0873	Jhony-Rex, Caitemis, Emmuffin	PMDCollab_1, CC_BY-NC_4
+874	Stonjourner	sprite/0874	baronessfaron, Emmuffin	CC_BY-NC_4
+875	Eiscue	sprite/0875	baronessfaron	PMDCollab_1
+875-noice	Eiscue Noice	sprite/0875/0001	Emmuffin, baronessfaron	CC_BY-NC_4
+876	Indeedee	sprite/0876	JFain	PMDCollab_1
+876-female	Indeedee female	sprite/0876/0000/0000/0002	JFain	PMDCollab_1
+877	Morpeko	sprite/0877	Emmuffin, Uni	PMDCollab_2
+877-hangry	Morpeko Hangry	sprite/0877/0001	Emmuffin, JFain	PMDCollab_2, CC_BY-NC_4
+879	Copperajah	sprite/0879	nataniel-sama, Emmuffin	CC_BY-NC_4
+880	Dracozolt	sprite/0880	Soulja	CC_BY-NC_4
+881	Arctozolt	sprite/0881	Soulja	CC_BY-NC_4
+882	Dracovish	sprite/0882	baronessfaron, JFain	PMDCollab_2, CC_BY-NC_4
+883	Arctovish	sprite/0883	Soulja	CC_BY-NC_4
+884	Duraludon	sprite/0884	Soulja	CC_BY-NC_4
+885	Dreepy	sprite/0885	Jhony-Rex, Caitemis	PMDCollab_1
+886	Drakloak	sprite/0886	Jhony-Rex, Caitemis	PMDCollab_1
+887	Dragapult	sprite/0887	Emmuffin	PMDCollab_2
+888	Zacian	sprite/0888	baronessfaron	CC_BY-NC_4
+888-crowned-sword	Zacian Crowned Sword	sprite/0888/0001	Jhony-Rex, baronessfaron	CC_BY-NC_4
+889	Zamazenta	sprite/0889	FerMrack, DeltaL	CC_BY-NC_4
+889-crowned-shield	Zamazenta Crowned Shield	sprite/0889/0001	FerMrack, DeltaL	CC_BY-NC_4
+890	Eternatus	sprite/0890	Soulja	CC_BY-NC_4
+890-eternamax	Eternatus Eternamax	sprite/0890/0001	JFain, G〜	CC_BY-NC_4
+891	Kubfu	sprite/0891	Top_Kec	CC_BY-NC_4
+892	Urshifu	sprite/0892	baronessfaron	PMDCollab_2
+892-rapid-strike	Urshifu Rapid Strike	sprite/0892/0001	baronessfaron	PMDCollab_2
+894	Regieleki	sprite/0894	baronessfaron	PMDCollab_1
+895	Regidrago	sprite/0895	baronessfaron	PMDCollab_1
+896	Glastrier	sprite/0896	JFain	CC_BY-NC_4
+897	Spectrier	sprite/0897	baronessfaron	PMDCollab_1
+898	Calyrex	sprite/0898	FerMrack, DeltaL	CC_BY-NC_4
+899	Wyrdeer	sprite/0899	VOID	CC_BY-NC_4
+900	Kleavor	sprite/0900	Soulja	CC_BY-NC_4
+901	Ursaluna	sprite/0901	Emmuffin, baronessfaron	PMDCollab_2, CC_BY-NC_4
+901-bloodmoon	Ursaluna Bloodmoon	sprite/0901/0001	Soulja	CC_BY-NC_4
+902	Basculegion	sprite/0902	Soulja	CC_BY-NC_4
+902-female	Basculegion female	sprite/0902/0000/0000/0002	Soulja	CC_BY-NC_4
+903	Sneasler	sprite/0903	Soulja	CC_BY-NC_4
+904	Overqwil	sprite/0904	JFain	PMDCollab_1
+905	Enamorus	sprite/0905	baronessfaron	PMDCollab_2
+905-therian	Enamorus Therian	sprite/0905/0001	baronessfaron	PMDCollab_2
+906	Sprigatito	sprite/0906	Emmuffin, baronessfaron	PMDCollab_1, CC_BY-NC_4
+907	Floragato	sprite/0907	◥θ┴θ◤, Soulja	CC_BY-NC_4
+908	Meowscarada	sprite/0908	LazerBlitz	CC_BY-NC_4
+909	Fuecoco	sprite/0909	JFain, G〜, Caitemis	PMDCollab_1, CC_BY-NC_4
+910	Crocalor	sprite/0910	Soulja, pi3.14	CC_BY-NC_4
+911	Skeledirge	sprite/0911	Soulja, pi3.14	CC_BY-NC_4
+912	Quaxly	sprite/0912	JFain, NickOnimura	PMDCollab_1, CC_BY-NC_4
+913	Quaxwell	sprite/0913	Emmuffin	CC_BY-NC_4
+914	Quaquaval	sprite/0914	Top_Kec	CC_BY-NC_4
+915	Lechonk	sprite/0915	Emboarger	PMDCollab_1
+916	Oinkologne	sprite/0916	DavKriz	CC_BY-NC_4
+917	Tarountula	sprite/0917	G〜	CC_BY-NC_4
+918	Spidops	sprite/0918	baronessfaron	CC_BY-NC_4
+919	Nymble	sprite/0919	JFain	PMDCollab_1
+920	Lokix	sprite/0920	Soulja	PMDCollab_2
+921	Pawmi	sprite/0921	ShyStarryRain, JFain	PMDCollab_1, PMDCollab_2
+922	Pawmo	sprite/0922	ShyStarryRain	PMDCollab_2
+923	Pawmot	sprite/0923	baronessfaron	PMDCollab_1
+924	Tandemaus	sprite/0924	baronessfaron	PMDCollab_2
+925	Maushold	sprite/0925	baronessfaron	PMDCollab_2, CC_BY-NC_4
+926	Fidough	sprite/0926	Emmuffin	PMDCollab_1, PMDCollab_2
+927	Dachsbun	sprite/0927	baronessfaron	CC_BY-NC_4
+928	Smoliv	sprite/0928	Emmuffin	PMDCollab_1
+929	Dolliv	sprite/0929	G〜	CC_BY-NC_4
+930	Arboliva	sprite/0930	JFain, pi3.14	CC_BY-NC_4
+932	Nacli	sprite/0932	DavKriz, baronessfaron	CC_BY-NC_4
+933	Naclstack	sprite/0933	Soulja	CC_BY-NC_4
+934	Garganacl	sprite/0934	baronessfaron	CC_BY-NC_4
+935	Charcadet	sprite/0935	Emmuffin	PMDCollab_1
+936	Armarouge	sprite/0936	Soulja	CC_BY-NC_4
+937	Ceruledge	sprite/0937	baronessfaron	PMDCollab_1
+938	Tadbulb	sprite/0938	Inv3rse, Soulja	CC_BY-NC_4
+939	Bellibolt	sprite/0939	G〜	PMDCollab_2, CC_BY-NC_4
+940	Wattrel	sprite/0940	Soulja, DavKriz	CC_BY-NC_4
+941	Kilowattrel	sprite/0941	Soulja, DavKriz	CC_BY-NC_4
+945	Grafaiai	sprite/0945	G〜	CC_BY-NC_4
+946	Bramblin	sprite/0946	Johanne2	CC_BY-NC_4
+948	Toedscool	sprite/0948	pi3.14, Gelius	CC_BY-NC_4
+951	Capsakid	sprite/0951	pi3.14, Soulja	CC_BY-NC_4
+952	Scovillain	sprite/0952	pi3.14, baronessfaron, Soulja	PMDCollab_2
+953	Rellor	sprite/0953	Johanne2	CC_BY-NC_4
+955	Flittle	sprite/0955	Emmuffin	CC_BY-NC_4
+957	Tinkatink	sprite/0957	JFain	PMDCollab_1
+958	Tinkatuff	sprite/0958	JFain	PMDCollab_1
+959	Tinkaton	sprite/0959	Emmuffin	PMDCollab_2
+960	Wiglett	sprite/0960	Limomon	CC_BY-NC_4
+961	Wugtrio	sprite/0961	baronessfaron	CC_BY-NC_4
+963	Finizen	sprite/0963	baronessfaron	PMDCollab_2
+964	Palafin	sprite/0964	baronessfaron	PMDCollab_2
+964-hero	Palafin Hero	sprite/0964/0001	G〜	CC_BY-NC_4
+965	Varoom	sprite/0965	Soulja	CC_BY-NC_4
+966	Revavroom	sprite/0966	Soulja	CC_BY-NC_4
+967	Cyclizar	sprite/0967	baronessfaron	PMDCollab_2
+968	Orthworm	sprite/0968	Soulja, baronessfaron, DavKriz	CC_BY-NC_4
+969	Glimmet	sprite/0969	G〜	CC_BY-NC_4
+970	Glimmora	sprite/0970	G〜	PMDCollab_2
+971	Greavard	sprite/0971	pi3.14, baronessfaron	CC_BY-NC_4
+972	Houndstone	sprite/0972	baronessfaron	CC_BY-NC_4
+974	Cetoddle	sprite/0974	pi3.14, DeltaL	CC_BY-NC_4
+975	Cetitan	sprite/0975	pi3.14, DeltaL, Soulja	CC_BY-NC_4
+976	Veluza	sprite/0976	FlowerSnek	PMDCollab_2
+977	Dondozo	sprite/0977	Soulja	CC_BY-NC_4
+978	Tatsugiri	sprite/0978	Emmuffin	CC_BY-NC_4
+978-mega	Tatsugiri Mega	sprite/0978/0003	Emmuffin	CC_BY-NC_4
+979	Annihilape	sprite/0979	Top_Kec	CC_BY-NC_4
+980	Clodsire	sprite/0980	Katach314	CC_BY-NC_4
+981	Farigiraf	sprite/0981	Top_Kec	PMDCollab_2
+982	Dudunsparce	sprite/0982	pi3.14, baronessfaron	CC_BY-NC_4
+983	Kingambit	sprite/0983	Top_Kec	PMDCollab_2
+984	Great Tusk	sprite/0984	G〜, Soulja	CC_BY-NC_4
+985	Scream Tail	sprite/0985	baronessfaron	CC_BY-NC_4
+987	Flutter Mane	sprite/0987	baronessfaron	PMDCollab_1, PMDCollab_2
+988	Slither Wing	sprite/0988	Soulja, baronessfaron	CC_BY-NC_4
+989	Sandy Shocks	sprite/0989	Soulja, G〜	CC_BY-NC_4
+990	Iron Treads	sprite/0990	G〜	CC_BY-NC_4
+991	Iron Bundle	sprite/0991	JFain	PMDCollab_1
+992	Iron Hands	sprite/0992	pi3.14, Soulja	CC_BY-NC_4
+994	Iron Moth	sprite/0994	pi3.14, Soulja	CC_BY-NC_4
+995	Iron Thorns	sprite/0995	Soulja	CC_BY-NC_4
+996	Frigibax	sprite/0996	Soulja, pi3.14, Inv3rse	CC_BY-NC_4
+997	Arctibax	sprite/0997	Soulja, pi3.14	CC_BY-NC_4
+998	Baxcalibur	sprite/0998	Soulja, pi3.14	CC_BY-NC_4
+999-roaming	Gimmighoul Roaming	sprite/0999/0001	G〜	PMDCollab_2
+1000	Gholdengo	sprite/1000	baronessfaron, G〜	PMDCollab_2
+1003	Ting Lu	sprite/1003	G〜	CC_BY-NC_4
+1004	Chi Yu	sprite/1004	pi3.14, DeltaL	CC_BY-NC_4
+1005	Roaring Moon	sprite/1005	FerMrack, Soulja, pi3.14	CC_BY-NC_4
+1006	Iron Valiant	sprite/1006	Emmuffin	CC_BY-NC_4
+1007	Koraidon	sprite/1007	baronessfaron	CC_BY-NC_4
+1009	Walking Wake	sprite/1009	baronessfaron, G〜, Soulja	CC_BY-NC_4
+1010	Iron Leaves	sprite/1010	pi3.14, Emmuffin	CC_BY-NC_4
+1011	Dipplin	sprite/1011	Soulja	CC_BY-NC_4
+1012	Poltchageist	sprite/1012	Shadowcrafts, Emmuffin	CC_BY-NC_4
+1013	Sinistcha	sprite/1013	Shadowcrafts, Emmuffin	CC_BY-NC_4
+1015	Munkidori	sprite/1015	JFain	PMDCollab_2
+1016	Fezandipiti	sprite/1016	Emmuffin	CC_BY-NC_4
+1017	Ogerpon	sprite/1017	baronessfaron	PMDCollab_2
+1017-cornerstone	Ogerpon Cornerstone	sprite/1017/0003	baronessfaron	PMDCollab_2
+1017-hearthflame	Ogerpon Hearthflame	sprite/1017/0002	baronessfaron	PMDCollab_2
+1017-wellspring	Ogerpon Wellspring	sprite/1017/0001	baronessfaron	PMDCollab_2
+1018	Archaludon	sprite/1018	Soulja	CC_BY-NC_4
+1019	Hydrapple	sprite/1019	Soulja, Emmuffin	CC_BY-NC_4
+1020	Gouging Fire	sprite/1020	G〜	CC_BY-NC_4
+1021	Raging Bolt	sprite/1021	Michael12, pi3.14, Caitemis	CC_BY-NC_4
+1024	Terapagos	sprite/1024	G〜	CC_BY-NC_4
+1024-terastal	Terapagos Terastal	sprite/1024/0001	G〜, JFain	CC_BY-NC_4
+1025	Pecharunt	sprite/1025	G〜	PMDCollab_2

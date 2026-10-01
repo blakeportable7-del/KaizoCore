@@ -1,0 +1,36 @@
+TEXT:
+GBA settings
+Play as your Pokemon
+Your character becomes a Pokemon while you walk around. It changes the picture only: not the game, not your save.
+Play as your Pokemon
+Video
+Video filter
+Default  ›
+LCD and CRT mimic a screen; Upscale smooths pixel art.
+Colour correction
+Off
+GBA
+GBC
+Auto
+GBA reproduces the original screen's washed colours.
+Frame blending
+Off  ›
+Blends frames like the real LCD; fixes flicker some games rely on.
+Performance
+Frameskip
+Off
+Auto
+Auto (threshold)
+Fixed interval
+Frameskip interval
+−
+0
++
+Idle loop removal (restart)
+Remove known
+Detect and remove
+
+CONTENT DESCRIPTIONS:
+Less
+Value, from 0 to 10
+More

@@ -155,7 +155,7 @@ object ZxEngine {
         handler: com.dabomstew.pkrandomzx.romhandlers.RomHandler,
         dest: File,
     ) {
-        val sidecar = File(dest.parentFile, dest.nameWithoutExtension + ".species.tsv")
+        val sidecar = Randomizers.sidecarFor(dest)
         sidecar.bufferedWriter().use { w ->
             handler.pokemon.forEach { p ->
                 p ?: return@forEach

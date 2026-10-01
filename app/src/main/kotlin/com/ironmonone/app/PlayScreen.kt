@@ -148,19 +148,8 @@ fun PlayScreen(
         // A failed NEW RUN lands here, so say WHY rather than implying the
         // user simply has not randomized yet.
         val failure = remember(gameKeyForRom) { store.lastRunError() }
-        Column(modifier.fillMaxSize().padding(16.dp)) {
-            if (!session.isRun) {
-                EmptyState("That ROM is gone.",
-                    "${session.title} is no longer in the library. Pick another on the ROMs tab.")
-            } else if (failure != null) {
-                EmptyState("New run failed.", newRunFailureCopy(failure))
-            } else {
-                EmptyState(
-                    "No run yet.",
-                    "Randomize one on the Run tab, then come back here.",
-                )
-            }
-        }
+        // Each case says what happened and has a button to the next step (PlayNothing, 2026-09-30).
+        PlayNothing(modifier, session.isRun, session.title, failure)
         return
     }
 
@@ -252,6 +241,9 @@ fun PlayScreen(
     // The Game Boy trackers' move table, for the enemy card's run-wide moves (trackerRef is Gen 3 only).
     var gbLookup by remember(session.id) { mutableStateOf<((Int) -> com.ironmonone.tracker.MoveRow?)?>(null) }
     var gbNames by remember(session.id) { mutableStateOf<((Int) -> String)?>(null) }
+    // The Game Boy tracker's answers to the panel's lookups (GbLookups), which trackerRef gives on Gen 3.
+    var gbRef by remember(session.id) { mutableStateOf<com.ironmonone.tracker.GbLookups?>(null) }
+    val panelLookups = remember(session.id) { PanelLookups({ trackerRef }, { gbRef }) }
     var gearDialog by remember { mutableStateOf(false) }
     var rulesDialog by remember { mutableStateOf(false) }
     // The run, through one interface, whichever tracker is producing it.
@@ -311,9 +303,10 @@ fun PlayScreen(
         }
     }
 
-    // The ball call wins when there is one; otherwise the three favorites, the way the PC tracker's new-game screen lists them.
-    // As many favorites as this game's PC tracker keeps (three on Gen 1 to 3, four or five on DS), in the order typed.
-    val favoriteLine = remember(session.id) { Favorites.line(Favorites.slots(store, session.kind?.id, Favorites.slotCount(session.kind)).filter { it.isNotBlank() }) }
+    // The favorites, the way the PC tracker's new-game screen lists them: as many as this game's PC tracker keeps (three on
+    // Gen 1 to 3, four or five on DS, nine on a Nat. Dex build), in the order typed. In a Kaizo IronMON run's lab, also the
+    // ball holding one the mode lets you take (FavoriteBall), worked out again once the tracker is up.
+    val favoriteLine = remember(session.id, trackerRef) { FavoriteBall.shown(store, session, trackerRef, context.filesDir) }
     var facecam by remember { mutableStateOf(false) }
     var muted by remember(session.id) { mutableStateOf(prefs0.muted) }
     // CHEATS. Per game, never on a tracked game (CheatStore.allowed). Sent
@@ -396,7 +389,7 @@ fun PlayScreen(
     fun finishLayoutEdit(keep: Boolean) {
         if (keep) {
             // A layout put back to the default is stored as no file, as RESET used to leave it.
-            if (padLayout == PadLayout.default(landscape, nds = platform == com.ironmonone.core.Platform.NDS)) store.layouts.reset(layoutKey)
+            if (padLayout == PadLayout.default(landscape, nds = platform == com.ironmonone.core.Platform.NDS, gb = platform == com.ironmonone.core.Platform.GBC)) store.layouts.reset(layoutKey)
             else store.layouts.save(layoutKey, padLayout)
         } else {
             ui.layoutBefore?.let { padLayout = it }
@@ -417,7 +410,7 @@ fun PlayScreen(
             layout = padLayout, selected = selectedElement, landscape = landscape,
             isDs = platform == com.ironmonone.core.Platform.NDS,
             onEdit = { padLayout = it },
-            onReset = { padLayout = PadLayout.default(landscape, nds = platform == com.ironmonone.core.Platform.NDS); selectedElement = null },
+            onReset = { padLayout = PadLayout.default(landscape, nds = platform == com.ironmonone.core.Platform.NDS, gb = platform == com.ironmonone.core.Platform.GBC); selectedElement = null },
             onDone = { finishLayoutEdit(true) },
             skin = padSkin, onSkin = { padSkin = it; store.setPadSkin(it) },
             onCancel = { finishLayoutEdit(false) },
@@ -445,14 +438,88 @@ fun PlayScreen(
     // Per-species stat notes, the tracker's core mechanic. Reset per run, since a
     // new seed re-randomizes every base stat and old notes would mislead.
     val statMarks = remember(session.id) { StatMarks(store.marksFile(session)) }
+    // Auto Pokemon Themes (AutoThemes.lua afterProgramDataUpdate): Gen 3 and Game Boy leads.
+    // A DS game follows the DS tracker's own (PokemonThemeManager.lua): its playerPokemon.
+    val autoThemeParty = trackerState?.party?.map { it.mon.species to it.mon.isEgg }
+    val autoThemeDs = ndsState?.let(AutoTheme::dsPokemon)
+    LaunchedEffect(autoThemeParty, autoThemeDs, TrackerOptions.autoPokemonThemes) {
+        if (autoThemeDs != null) AutoTheme.onDs(autoThemeDs, TrackerOptions.autoPokemonThemes)
+        else AutoTheme.onGba(autoThemeParty ?: emptyList(), TrackerOptions.autoPokemonThemes)
+    }
+    androidx.compose.runtime.DisposableEffect(Unit) { onDispose { AutoTheme.release(); dsView.clear() } }
+    SpriteIsMeHost(retro, platform)   // Play as your Pokemon: the one line the Play screen knows of it (SpriteIsMe.kt)
+
+    // ---- Route info (InfoScreen ROUTE_INFO) and the carousel's route line ----
+    // Open Book: RandomizerLog.Data.Routes, parsed from this run's log once and kept.
+    var logRouteCache by remember(session.id) { mutableStateOf<Map<Int, LogRoute>?>(null) }
+    fun logRoutesByMap(): Map<Int, LogRoute> {
+        logRouteCache?.let { return it }
+        val t = trackerRef ?: return emptyMap()
+        val k = session.kind ?: return emptyMap()
+        val set = trackerState?.badgeSet ?: return emptyMap()
+        if (set != "RSE" && set != "FRLG") return emptyMap()
+        val built = runCatching {
+            val f = store.currentRunLogFor(k) ?: return@runCatching emptyMap()
+            val log = RandomizerLog.parse(f) ?: return@runCatching emptyMap()
+            LogRoutes.build(log, LogTrainerRules(t, set == "FRLG"), t).associateBy { it.mapId }
+        }.getOrDefault(emptyMap())
+        logRouteCache = built
+        return built
+    }
+    val areaToLog = mapOf(
+        "Walking" to LogEncType.GRASS, "Surfing" to LogEncType.SURFING, "RockSmash" to LogEncType.ROCKSMASH,
+        "Old Rod" to LogEncType.OLDROD, "Good Rod" to LogEncType.GOODROD, "Super Rod" to LogEncType.SUPERROD,
+    )
+    /** The route info screen's data: [raw] is a RouteData key (the look-up lists those), or null for where the player is. */
+    fun routeSource(raw: Int?): RouteInfoSource? {
+        val t = trackerRef ?: return null
+        val here = trackerState?.mapId
+        val rawId = raw ?: here?.let { t.routeKey(it) } ?: return null
+        val mapId = t.mapIdFromRouteKey(rawId)
+        val vanilla = t.routeEncountersRaw(rawId)
+        val name = t.routeNameRaw(rawId) ?: trackerState?.routeName ?: ""
+        if (vanilla.isEmpty() && name.isBlank()) return null
+        return RouteInfoSource(
+            mapId = mapId, name = name, vanilla = vanilla,
+            safari = if (t.isSafariMap(mapId)) statMarks.safariSeen(mapId) else emptyList(),
+            tracked = { area -> statMarks.seenOnRouteArea(mapId, area) },
+            logged = { area ->
+                val type = areaToLog[area] ?: return@RouteInfoSource null
+                val byName = (1..(if (t.expandedSpeciesIds) 1300 else 411)).associateBy { t.speciesName(it).uppercase() }
+                logRoutesByMap()[mapId]?.areas?.get(type)
+                    ?.map { w -> RouteIcon(byName[w.name.uppercase()], w.rate, w.levelMin, w.levelMax) }
+                    // "table.sort ... rate desc, then pokemonID"
+                    ?.sortedWith(compareByDescending<RouteIcon> { it.rate ?: 0.0 }.thenBy { it.species ?: 0 })
+            },
+        )
+    }
+    // TrackerScreen CarouselItems ROUTE_INFO: in a wild battle the battle's area when RouteData has
+    // it; otherwise Walking (showEarlyRouteEncounters). (area, seen, total)
+    val routeCarousel: Triple<String?, Int, Int> = run {
+        val t = trackerRef
+        val m = trackerState?.mapId
+        if (t == null || m == null) return@run Triple(null, 0, 0)
+        val areas = t.routeEncounters(m)
+        val battleArea = trackerState?.encounterArea?.takeIf { trackerState?.isWildBattle == true && it in areas }
+        val area = battleArea ?: "Walking".takeIf { it in areas }
+        if (area == null) Triple(null, 0, 0)
+        else Triple(area, statMarks.seenOnRouteArea(m, area).size, areas[area].orEmpty().size)
+    }
     var marksVersion by remember { mutableStateOf(0) }   // bump to redraw cells
-    // Encounter counts, so a species you keep running into is obvious.
-    val encounters = remember { HashMap<Int, Int>() }
-    // The level a species was at the PREVIOUS time it was met. The reference's
-    // enemy card shows "Last seen Lv.N" in place of the HP line, so it needs
-    // the level from before this encounter, not the current one.
-    val lastSeenLevel = remember { HashMap<Int, Int>() }
-    var enemyLastSeen by remember { mutableStateOf<Int?>(null) }
+    // Encounter counts and last-seen levels are the run's (StatMarks), written by the
+    // reference's rules (EncounterBook). They used to live here and died with the screen.
+    val encounterBook = remember(session.id) { EncounterBook.of(session.id) }
+    LaunchedEffect(trackerState) {
+        if (encounterBook.onGba(statMarks, EncounterBook.gbaUpdate(trackerState), save = Demo.mode == null)) marksVersion++
+        if (session.isRun && trackerState != null) session.kind?.let { k -> RunClock.observe(RunClock.key(k.id, store.attempt()), android.os.SystemClock.elapsedRealtime()) }
+    }
+    LaunchedEffect(ndsState) {
+        if (encounterBook.onDs(statMarks, EncounterBook.dsUpdate(ndsState), save = Demo.mode == null)) marksVersion++
+        if (session.isRun && ndsState != null) session.kind?.let { k -> RunClock.observe(RunClock.key(k.id, store.attempt()), android.os.SystemClock.elapsedRealtime()) }
+        if (session.isRun) ndsState?.let { s -> if (PcHeals.observeDsSurvival(statMarks, Integer.bitCount(s.badges), PcHeals.limitForLastRunCached(), s.leagueBeaten)) marksVersion++ }
+    }
+    // The DS main screen's pause on move effectiveness after each new opponent.
+    val dsFxReady = rememberDsEffectivenessReady(ndsState)
     var lastCountedSpecies by remember { mutableStateOf(-1) }
     var trackerOpen by remember { mutableStateOf(true) }
     // The last touch anywhere on the play area, for the landscape chip strip's fade.
@@ -506,12 +573,12 @@ fun PlayScreen(
         val notes = com.ironmonone.app.stream.StreamSnapshot.Notes(
             marksOf = { statMarks.of(it) }, noteOf = { statMarks.noteFor(it) },
             movesSeenOf = { statMarks.movesSeenFor(it).map { m -> m.name } }, abilityOf = { statMarks.abilityFor(it) },
-            encountersOf = { encounters[it] ?: 0 }, lastSeenLevelOf = { lastSeenLevel[it] },
+            encountersOf = { statMarks.totalEncounters(it) }, lastSeenLevelOf = { statMarks.lastLevelSeen(it) },
             routeSeenOf = { statMarks.seenOnRoute(it).size },
         )
         val run = com.ironmonone.app.stream.StreamSnapshot.Run(
             session.title, platform.name, store.attempt(), session.tracked,
-            if (session.isRun) store.lastSeed() else null)
+            if (session.isRun) store.lastSeed() else null, session.isRun, session.kind?.generation?.number ?: 3)
         val gba = trackerState; val nds = ndsState; val ref = trackerRef
         val json = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
             com.ironmonone.app.stream.Json.write(
@@ -532,12 +599,23 @@ fun PlayScreen(
         }
     }
     val enemySpecies = view?.enemySpeciesId ?: -1
-    val enemyMarks = remember(enemySpecies, marksVersion) {
-        if (enemySpecies > 0) statMarks.of(enemySpecies) else IntArray(StatMarks.COUNT)
+    // The opponent's notebook: a locked DS opponent's while one is locked (DsViewState); counting stays live.
+    val notebookSpecies = dsView.locked?.mon?.species ?: enemySpecies
+    val enemyMarks = remember(notebookSpecies, marksVersion) {
+        if (notebookSpecies > 0) statMarks.of(notebookSpecies) else IntArray(StatMarks.COUNT)
     }
-    val enemyEncounters = encounters[enemySpecies] ?: 0
-    val enemyNote = remember(enemySpecies, marksVersion) {
-        if (enemySpecies > 0) statMarks.noteFor(enemySpecies) else ""
+    // DataHelper.lua:398: this battle kind's count, wild or trainer, at most 999; the DS
+    // tracker's "Total seen" counts both. "Last seen" is from before this battle.
+    val enemyEncounters = remember(notebookSpecies, marksVersion, trackerState?.isWildBattle, ndsState != null) {
+        when {
+            notebookSpecies <= 0 -> 0
+            ndsState != null -> statMarks.totalEncounters(notebookSpecies)
+            else -> statMarks.encounters(notebookSpecies, trackerState?.isWildBattle == true).coerceAtMost(999)
+        }
+    }
+    val enemyLastSeen = remember(notebookSpecies, marksVersion) { if (notebookSpecies > 0) statMarks.lastLevelSeen(notebookSpecies) else null }
+    val enemyNote = remember(notebookSpecies, marksVersion) {
+        GhostCard.note(trackerState?.enemy, if (notebookSpecies > 0) statMarks.noteFor(notebookSpecies) else "")
     }
     var noteDialog by remember { mutableStateOf(false) }
     val side = remember { SideScreenState() }
@@ -553,7 +631,10 @@ fun PlayScreen(
     // `noteDialog` alone left the flag false with no dialog to raise it again
     // - and from that moment every hardware key was dead with no way back
     // except leaving the tab, which reboots the core.
-    val noteDialogVisible = noteDialog && enemySpecies > 0
+    // The note editor is for the enemy on screen, or for the species an info screen asked about.
+    var noteForSpecies by remember { mutableStateOf<Int?>(null) }
+    val noteSpecies = noteForSpecies ?: notebookSpecies
+    val noteDialogVisible = noteDialog && noteSpecies > 0
     // Any dialog with a text field takes the keyboard back from the game:
     // the note, the cheats (code entry) and the settings (link address).
     // Also the tracked-Pokemon and log searches, and the layout editor's typeable
@@ -566,7 +647,7 @@ fun PlayScreen(
     }
     // If the enemy disappears mid-edit the dialog unmounts; drop the intent
     // too so a later tap can open it again.
-    LaunchedEffect(enemySpecies) { if (enemySpecies <= 0) noteDialog = false }
+    LaunchedEffect(enemySpecies) { if (enemySpecies <= 0 && noteForSpecies == null) noteDialog = false }
     // Fleeing is wild-only on BOTH consoles; a trainer battle never offers it.
     val inBattleNow = view?.inBattle == true
     // The reference snapshots the core when a battle begins
@@ -575,10 +656,12 @@ fun PlayScreen(
     // the current battle; a new battle replaces it, a new run drops it.
     var battleStartState by remember(session.id) { mutableStateOf<ByteArray?>(null) }
     val gameOverLatch = remember(session.id) { GameOverLatch(gameOverFamily(platform)) }
-    // TimeMachineScreen: a restore point every four minutes on a map, out of battle.
-    val timeMachine = remember(session.id) { TimeMachine() }
-    // SeedLogger: the DS tracker's past runs, per game family, and when this run began for its playtime.
-    val pastRunStore = remember(ndsState?.badgeSet) { ndsState?.badgeSet?.let { PastRunStore(store.pastRunsFile(it)) } }
+    // TimeMachineScreen: a restore point every four minutes on a map, out of battle; five on a Game Boy game.
+    val timeMachine = remember(session.id) {
+        TimeMachine(if (platform == com.ironmonone.core.Platform.GBC) TimeMachine.GB_WAIT_MS else TimeMachine.WAIT_MS)
+    }
+    // SeedLogger: the DS tracker's past runs, per game (SeedLogger.lua:233), and when this run began for its playtime.
+    val pastRunStore = remember(ndsState?.gameName, ndsState?.badgeSet) { ndsState?.let { pastRunStoreFor(it, store::pastRunsFile) } }
     val runStartedAt = remember(session.id) { System.currentTimeMillis() }
     val runTimer = remember(session.id) { RunTimer(runStartedAt) }
     // TourneyTracker, HeartGold / SoulSilver only, keyed on the seed as the reference keys on the ROM hash.
@@ -604,6 +687,9 @@ fun PlayScreen(
         else {
             battleStartState = runCatching { retro?.serializeState() }.getOrNull()?.takeIf { it.isNotEmpty() }
             gameOverLatch.onBattleBegan()   // Battle.beginNewBattle: GameOverScreen.isDisplayed = false
+            // The same snapshot keeps the auto slot fresh (AutoSave), so a crash mid-battle resumes at its start.
+            val now = System.currentTimeMillis()
+            battleStartState?.let { s -> AutoSave.of(context.filesDir, session).takeIf { Demo.mode == null && it.battleDue(now) }?.save(s, now, store.stateStamp(session)) }
         }
     }
     val wildBattleNow = view?.let { it.inBattle && it.isWildBattle } == true
@@ -651,13 +737,32 @@ fun PlayScreen(
 
     LaunchedEffect(enemySpecies) {
         if (enemySpecies > 0 && enemySpecies != lastCountedSpecies) {
-            // Read the previous sighting BEFORE recording this one.
-            enemyLastSeen = lastSeenLevel[enemySpecies]
-            trackerState?.enemy?.level?.let { lastSeenLevel[enemySpecies] = it }
-            encounters[enemySpecies] = (encounters[enemySpecies] ?: 0) + 1
-            // Also record it against the map it was met on, which is the other
-            // half of the reference's route info: what this route actually held.
-            trackerState?.mapId?.let { statMarks.seeOnRoute(it, enemySpecies) }
+            // Battle.lua:505: a Pokemon Tower ghost records nothing (GhostCard.recordsEncounter).
+            // Its count and last level are EncounterBook's, above.
+            val records = GhostCard.recordsEncounter(trackerState)
+            // Battle.incrementEnemyEncounter: a WILD Pokemon is recorded against the
+            // map and the encounter area it was met in (Tracker.TrackRouteEncounter),
+            // only where RouteData has that area. Trainer Pokemon used to be recorded
+            // too, which the reference never does (2026-09-28).
+            // DS: Tracker.updateEncounterData for a new wild enemy (enemyTrainerID 0), by area name.
+            ndsState?.takeIf { it.isWildBattle && it.enemyTrainerId == 0 && Demo.mode == null }?.let { st ->
+                st.enemy?.mon?.level?.let { lv -> if (statMarks.seeDsEncounter(st.areaName, enemySpecies, lv)) marksVersion++ }
+            }
+            // Never from a staged screenshot battle (Demo), which would write into this save's records.
+            // Gen 3 only: the Game Boy references record no route encounters (Gen 2 reference
+            // Battle.lua:522-525 has TrackRouteEncounter commented out), though their map is read now.
+            trackerState?.takeIf { it.isWildBattle && records && Demo.mode == null && trackerRef != null }?.let { st ->
+                st.mapId?.let { m ->
+                    statMarks.seeOnRoute(m, enemySpecies)
+                    val area = st.encounterArea
+                    if (area != null && trackerRef?.routeEncounters(m)?.containsKey(area) == true)
+                        statMarks.seeOnRouteArea(m, area, enemySpecies)
+                    // Tracker.TrackSafariEncounter's record, kept with the run and shown on the route screen.
+                    trackerRef?.takeIf { it.isSafariMap(m) }?.let { t ->
+                        t.safariEncounters(t.rawMapId(m)).forEach { (sp, lv) -> if (statMarks.seeSafari(m, sp, lv)) marksVersion++ }
+                    }
+                }
+            }
             lastCountedSpecies = enemySpecies
         } else if (enemySpecies <= 0) {
             lastCountedSpecies = -1
@@ -738,11 +843,16 @@ fun PlayScreen(
                 ndsTrackerRef = tracker
             }
             tracker?.let { t ->
-                t.lossCondition = TrackerOptions.lossCondition
+                // The DS tracker's own FAINT_DETECTION, never the Gen 3 per-settings-file condition.
+                t.lossCondition = TrackerOptions.dsLossCondition
+                // tracker.hasRunEnded(): the latch has fired this run (and no Retry is pending).
+                t.runEnded = !gameOverLatch.armed
                 ndsState = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
                     runCatching { t.read() }.getOrNull()
                 } ?: ndsState
                 Demo.mode?.takeIf { it.startsWith("nds") }?.let { m -> ndsState = runCatching { Demo.nds(t, m) }.getOrNull() ?: ndsState }
+                // The Nuzlocke ledger follows every poll here too, not only the ones a tracker panel draws (2026-09-30).
+                NuzlockeTracking.observeNds(context.applicationContext.filesDir, ndsState)
             }
         }
     }
@@ -754,9 +864,9 @@ fun PlayScreen(
         val reader = com.ironmonone.tracker.MemoryReader { addr, len -> r.readMemory(addr, len) }
         if (platform == com.ironmonone.core.Platform.GBC) {
             // Crystal: WRAM through the core's SYSTEM_RAM, tables from the
-            // ROM file itself. Produces the same TrackerState as Gen 3, so
-            // the panel below needs nothing; trackerRef stays null, and the
-            // GBA-only lookups it powers (descriptions, learnsets) are off.
+            // ROM file itself. Produces the same TrackerState as Gen 3;
+            // trackerRef stays null, and the panel's lookups (move summaries,
+            // learn levels, weight, evolution, weaknesses) come from gbRef.
             val romBytes = runCatching { rom.readBytes() }.getOrNull() ?: return@LaunchedEffect
             // Gen 2 (Crystal, Gold, Silver) or Gen 1 (Red, Blue, Yellow), picked from the header.
             val gbc = if (com.ironmonone.tracker.Gen2Map.forRom(romBytes) != null) com.ironmonone.tracker.GbcTracker(reader, romBytes) else null
@@ -764,6 +874,7 @@ fun PlayScreen(
             val read: () -> com.ironmonone.tracker.TrackerState = { gbc?.read() ?: gb1!!.read() }
             gbLookup = { id -> gbc?.moveRowFor(id) ?: gb1?.moveRowFor(id) }
             gbNames = { id -> gbc?.speciesName(id) ?: gb1?.speciesName(id) ?: "#$id" }
+            gbRef = gbc ?: gb1
             while (true) {
                 val visible = lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)
                 if (!visible) { kotlinx.coroutines.delay(1000); continue }
@@ -775,6 +886,7 @@ fun PlayScreen(
                 Demo.mode?.takeIf { it.startsWith("gb-") }?.let { m ->
                     trackerState = runCatching { if (gbc != null) Demo.gb2(gbc, m) else Demo.gb1(gb1!!, m) }.getOrNull() ?: trackerState
                 }
+                NuzlockeTracking.observe(context.applicationContext.filesDir, trackerState)
             }
         }
         var tracker: com.ironmonone.tracker.GbaTracker? = null
@@ -804,11 +916,10 @@ fun PlayScreen(
                     }.getOrNull()
                 }
                 trackerRef = tracker
-                // No lab ball call here. None of the four PC trackers matches the
-                // favorites against the starter balls; they show the favorites on
-                // their startup or title screen and nothing more, and so does the
-                // no-party card. An earlier build invented a match and it was cut
-                // on 2026-09-07 ("no guess work, trackers ... are clones of pc").
+                // The favorite-in-ball line reads this tracker's starter balls
+                // (FavoriteBall, through favoriteLine's remember on trackerRef).
+                // No PC tracker has it, which is why it was cut on 2026-09-07; it
+                // is back on Blake's word (2026-10-01), in Kaizo IronMON runs only.
             }
             tracker?.let { t ->
                 t.lossCondition = TrackerOptions.lossCondition
@@ -824,6 +935,8 @@ fun PlayScreen(
                 }
                 trackerState = fresh ?: trackerState
                 Demo.mode?.takeIf { it.startsWith("gba") }?.let { m -> trackerState = runCatching { Demo.gba(t, m) }.getOrNull() ?: trackerState }
+                // The Nuzlocke ledger follows every poll, not only the ones a tracker panel draws (hidden, clean view).
+                NuzlockeTracking.observe(context.applicationContext.filesDir, trackerState)
             }
         }
     }
@@ -879,9 +992,8 @@ fun PlayScreen(
      * in-game save was kept; on GBA that was false every time.
      *
      * Written on pause, on leaving the tab, and before a reboot; loaded into
-     * the core at view creation via saveRAMState. Kept across NEW RUN on
-     * purpose: save in-game, re-roll, press Continue is the intended fast
-     * restart, skipping the intro and clock.
+     * the core at view creation via saveRAMState. A new seed keeps it, in every
+     * game: Continue on its title screen opens it (RunSaves, 2026-09-30).
      */
     fun sramFile() = store.sramFile(session)
 
@@ -908,6 +1020,8 @@ fun PlayScreen(
     }
 
     fun newRun() {
+        // A randomized Nuzlocke's next game keeps its rules in a ledger of its own (2026-09-30, UX audit P0-8).
+        val nuzlocke = if (session.isRun) NuzlockeTracking.current(context.applicationContext.filesDir)?.ledger else null
         scope.launch {
             status = "Rolling a new seed…"
             // Stop the core BEFORE the randomizer overwrites current.gba/.nds:
@@ -933,23 +1047,20 @@ fun PlayScreen(
             kotlinx.coroutines.delay(500)
             val ok = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                 runCatching {
-                    val (romId, settingsName) = store.loadLastRun()
-                        ?: throw RunSetupProblem("Randomize once on the Run tab first.")
-                    val prepared = store.listPrepared()
-                        .firstOrNull { it.first.id == romId }
-                        ?: throw RunSetupProblem("The prepared ROM is missing. Prepare it again on the Run tab.")
-                    val settings = store.listSettings()
-                        .firstOrNull { it.name == settingsName }
-                        ?: throw RunSetupProblem("The settings \"$settingsName\" are missing. Pick settings on the Run tab.")
-                    store.rotateRuns(prepared.first)
-                    val dest = store.currentRunFor(prepared.first)
-                    val seed = java.security.SecureRandom().nextLong()
-                    com.ironmonone.app.engine.Randomizers
-                        .randomize(prepared.first, prepared.second, settings, dest, seed, secondPass = store.secondPassSettings(prepared.first))
-                    seed
+                    // The last run's game and settings again. A run made ahead for exactly
+                    // those (NextRun) is moved in within seconds; otherwise it is randomized
+                    // now. The rotate, seed, attempt and notes are PrepStore.installRun's,
+                    // the same code the Run tab goes through.
+                    val (k, prepared, settings) = RunStart.lastInputs(store)
+                    // The passes as RUN has them switched now (ExtraPasses): a stage made the other way is not taken.
+                    val started = RunStart.start(store, k, prepared, settings, seed = null, app = NextRunJob.appStamp(context),
+                        prePass = ExtraPasses.prePassFor(context, store, k, settings),
+                        secondPass = ExtraPasses.secondPassFor(context, store, k, settings), countAttempt = nuzlocke == null)
+                    nuzlocke?.let { NuzlockeStore(context.applicationContext.filesDir).startNextRandomized(it, k, started.seed, System.currentTimeMillis()) }
+                    started.seed to settings.name
                 }
             }
-            ok.onSuccess { seed ->
+            ok.onSuccess { (seed, settingsName) ->
                 status = "New run (seed %016x). Rebooting…".format(seed)
                 trackerState = null
                 ndsState = null
@@ -958,18 +1069,14 @@ fun PlayScreen(
                 gameOverLatch.reset()
                 timeMachine.clear()
                 statMarks.clear()
-                encounters.clear()
-            lastSeenLevel.clear()
-            enemyLastSeen = null
+                encounterBook.reset()
                 lastCountedSpecies = -1
                 marksVersion++
-                store.setLastRunError(null)
-                store.bumpAttempt()
-                store.saveLastSeed(seed)
+                TrackerOptions.startRunWith(settingsName)
                 gameKeyForRom++
                 gameKey++
                 gameActive = true
-                status = "New run (seed %016x). New ball call incoming.".format(seed)
+                status = ("New run (seed %016x)." + if (TrackerOptions.ballPickerShows()) " New ball call incoming." else "").format(seed)
             }.onFailure {
                 // Plain copy, never a null (which showed nothing) or an exception's
                 // class name; the exception itself goes to the log (2026-09-27, audit).
@@ -1069,8 +1176,9 @@ fun PlayScreen(
 
     /**
      * Auto-save: slot 0, written when the game is left (pause, tab switch,
-     * exit). Silent, no thumbnail capture (the surface may be gone), and
-     * skipped when the core cannot answer. What RESUME in STATES loads.
+     * exit), and while it is played (AutoSave). Silent, no thumbnail capture
+     * (the surface may be gone), and skipped when the core cannot answer.
+     * What RESUME in STATES loads.
      */
     fun autoSave() {
         val v = retro ?: return
@@ -1080,18 +1188,9 @@ fun PlayScreen(
         // fires. That was a confirmed ANR (input dispatch timed out, 5s).
         val st = runCatching { v.serializeState(useEmulationThread = false) }.getOrNull()
         if (st == null || st.isEmpty()) return
-        val f = slotFile(StateSlots.AUTO)
-        val stamp = store.stateStamp(session)
-        val stampFile = slotStamp(StateSlots.AUTO)
-        Thread {
-            runCatching {
-                f.parentFile?.mkdirs()
-                val tmp = File(f.parentFile, f.name + ".tmp")
-                tmp.writeBytes(st)
-                if (!tmp.renameTo(f)) { f.delete(); tmp.renameTo(f) }
-                stampFile.writeText(stamp)
-            }
-        }.start()
+        // Every write of the slot goes through its one writer: in order, flushed, the stamp after the state.
+        // leaving: this is the moment the game is left or paused, which is what lets it open back here (CrashResume).
+        AutoSave.of(context.filesDir, session).save(st, System.currentTimeMillis(), store.stateStamp(session), leaving = true)
     }
 
     fun loadState(which: Int = saveSlot, keepUndo: Boolean = false) {
@@ -1105,7 +1204,8 @@ fun PlayScreen(
         // between reads. It looks like a tracker bug and is not one.
         val want = store.stateStamp(session)
         val got = runCatching { slotStamp(which).readText().trim() }.getOrNull()
-        if (got != null && got != want) {
+        // A run with no seed on disk (a NEW RUN cut off halfway) matches nothing, not even another unknown.
+        if (got != null && (got != want || !PrepStore.stampKnown(want))) {
             status = "Slot $which belongs to a different run - not loaded."
             return
         }
@@ -1131,8 +1231,13 @@ fun PlayScreen(
                 val msg = if (ok) (if (slot == StateSlots.AUTO) "Resumed from the auto-save." else "Loaded slot $slot.")
                 else "Could not load slot $slot. The save may be damaged."
                 status = msg
+                // In the run's events (RunEvents): which slot, and when that state was saved.
+                val slotName = if (slot == StateSlots.AUTO) "auto" else "$slot"
+                if (ok) store.runEvents(session)?.add(RunEvents.Kind.LOAD, slotName, "saved ${f.lastModified()}")
                 if (ok && before != null) ui.toastAction = Triple(msg, "Undo") {
-                    status = if (retro?.unserializeState(before) == true) "Load undone." else "Could not undo the load."
+                    val undone = retro?.unserializeState(before) == true
+                    if (undone) store.runEvents(session)?.add(RunEvents.Kind.UNDO, slotName)
+                    status = if (undone) "Load undone." else "Could not undo the load."
                 }
             }
         }
@@ -1201,7 +1306,7 @@ fun PlayScreen(
     // Direct serialize (no emulation-thread hop) for the same reason as
     // persistSram: this runs on the main thread on a timer.
     fun startRewind() {
-        if (!rewindAllowed) { status = "Rewind is off on a tracked game."; return }
+        if (!rewindAllowed) { status = "Rewind is off in a Kaizo IronMON run and in a Nuzlocke."; return }
         if (raHardcore) { status = "Rewind is off in RetroAchievements hardcore."; return }
         if (rewinding) return
         rewinding = true; applyAudio()
@@ -1216,6 +1321,14 @@ fun PlayScreen(
         }
     }
     fun stopRewind() { rewinding = false }
+    // Crash insurance: the auto slot every three minutes of play (AutoSave),
+    // snapshotted on the emulation thread and written off the main one.
+    LaunchedEffect(retro, session.id) {
+        val r = retro ?: return@LaunchedEffect
+        AutoSave.of(context.filesDir, session).keepFresh(r, stamp = { store.stateStamp(session) }, playing = {
+            gameActive && ui.coreUp === r && Demo.mode == null && lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
+        })
+    }
     LaunchedEffect(retro, rewindAllowed, session.id) {
         val r = retro ?: return@LaunchedEffect
         if (!rewindAllowed) return@LaunchedEffect
@@ -1270,9 +1383,13 @@ fun PlayScreen(
         if (raSummary.loggedIn) {
             if (!session.isRun) { raBusy = "Looking up this game..."; com.swordfish.libretrodroid.LibretroDroid.cheevosLoadGame(rom.absolutePath, RetroAchievements.consoleId(platform)) }
         } else raStore.load()?.let { (u, t) -> raBusy = "Signing in..."; com.swordfish.libretrodroid.LibretroDroid.cheevosLogin(u, t, true) }
-        StateSlots.auto(context.filesDir, session).takeIf { it.exists }?.let {
-            status = "Auto-save from ${it.savedLabel()}: File > States > Resume."
-        }
+        // The run after this one, made in the background while this one is played.
+        if (session.isRun) NextRunJob.prepare(context)
+        // The app closed with this game open (a crash, a call, a kill): back where it was, from
+        // its own auto slot only (CrashResume). Otherwise the slot is offered, as it always was.
+        CrashResume.atCoreUp(store.playMarker, session, StateSlots.auto(context.filesDir, session), store.stateStamp(session),
+            loadsAllowed = !(raStore.hardcore && !session.isRun), events = store.runEvents(session),
+            why = { CrashResume.lastExit(context) }, load = { bytes -> r.unserializeState(bytes) })?.let { status = it }
     }
 
     // DS sprites come out of the player's own ROM (RomSprites): decode once per
@@ -1380,12 +1497,12 @@ fun PlayScreen(
             val slotHas = remember(saveSlot, slotsVersion) { slotFile(saveSlot).exists() }
             com.ironmonone.app.gen3.Gen3Button("States, slot $saveSlot" + if (slotHas) "" else " (empty)",
                 onClick = { statesDialog = true })
-            com.ironmonone.app.gen3.Gen3Button("SAVE", onClick = { saveState() })
-            com.ironmonone.app.gen3.Gen3Button("LOAD", onClick = { askLoad() })
+            com.ironmonone.app.gen3.Gen3Button("SAVE STATE", onClick = { saveState() })
+            com.ironmonone.app.gen3.Gen3Button("LOAD STATE", onClick = { askLoad() })
             if (rewindAllowed) HoldChip("REWIND", onDown = { startRewind() }, onUp = { stopRewind() }, big = true)
             MenuRule()
             // The game.
-            if (session.isRun) com.ironmonone.app.gen3.Gen3Button("NEW RUN", accent = true,
+            if (session.isRun) com.ironmonone.app.gen3.Gen3Button(if (NuzlockeTracking.inPlay()) "NEW NUZLOCKE" else "NEW RUN", accent = true,
                 onClick = { confirmNewRun = true })
             // Speed opens a picker (see speedOptions).
             com.ironmonone.app.gen3.Gen3Button("Speed $speedLabel", accent = speed > 1 || slow > 1,
@@ -1402,7 +1519,10 @@ fun PlayScreen(
                     onClick = { dsTopOnly = !dsTopOnly })
             }
             // 2.4: the rules for this game and mode, readable mid-run.
-            if (session.tracked) com.ironmonone.app.gen3.Gen3Button("RULES", onClick = { rulesDialog = true })
+            // A Nuzlocke's own rules in a Nuzlocke game, not the IronMON rulebook (2026-09-30, UX audit P0-6).
+            if (session.tracked) com.ironmonone.app.gen3.Gen3Button("RULES", onClick = { if (NuzlockeTracking.inPlay()) NuzlockeLedgerRequest.openRules() else rulesDialog = true })
+            // The second screen is view only, so the tracker's SETUP there cannot be tapped: this is the way in from the phone.
+            if (session.tracked && TrackerOptions.trackerOnSecondScreen) com.ironmonone.app.gen3.Gen3Button("TRACKER SETUP", onClick = { menuOpen = false; gearDialog = true })
             MenuRule()
             // Tools.
             com.ironmonone.app.gen3.Gen3Button("CAM", accent = facecam,
@@ -1414,7 +1534,7 @@ fun PlayScreen(
                     else {
                         val url = com.ironmonone.app.stream.StreamHub.start(context.filesDir)
                         streamOn = url != null
-                        status = if (url != null) "OBS browser source: $url" else "Port ${com.ironmonone.app.stream.StreamHub.PORT} is busy."
+                        status = if (url != null) "On your PC, open $url" else "Port ${com.ironmonone.app.stream.StreamHub.PORT} is busy."
                     }
                 })
             com.ironmonone.app.gen3.Gen3Button("CLEAN VIEW", onClick = { onClean(true); menuOpen = false })
@@ -1429,7 +1549,7 @@ fun PlayScreen(
                 accent = cheatsAllowed && cheats.any { it.enabled },
                 onClick = {
                     if (cheatsAllowed) cheatsDialog = true
-                    else status = "Cheats are off on a tracked game. Play it from the library untracked, or a hack, to use them."
+                    else status = "Cheats are off in a Kaizo IronMON run, a Nuzlocke and RetroAchievements hardcore."
                 })
             // With a controller attached the on-screen pad is optional; the
             // switch lives here rather than as a row under the pad, which
@@ -1564,22 +1684,28 @@ fun PlayScreen(
                   if (dsScreens) NdsTrackerPanel(
                       state = ndsState, onFlee = { flee() }, onGear = { gearDialog = true }, timer = if (TrackerOptions.showTimer) runTimer else null,
                       favoriteLine = favoriteLine,
-                      randomBall = ndsTrackerRef?.randomBall?.takeIf { TrackerOptions.showBallPicker },
+                      randomBall = ndsTrackerRef?.randomBall?.takeIf { TrackerOptions.ballPickerShows() },
                       onTypeDefenses = { n, a, b -> typeDefenses = n to com.ironmonone.tracker.Gen3Types.defenses(com.ironmonone.tracker.nds.Gen4Types.idOf(a) ?: -1, com.ironmonone.tracker.nds.Gen4Types.idOf(b) ?: (com.ironmonone.tracker.nds.Gen4Types.idOf(a) ?: -1)) },
                       enemyMarks = enemyMarks, enemyEncounters = enemyEncounters,
                       onCycleMark = { i ->
-                          ndsState?.enemy?.let { statMarks.cycle(it.mon.species, i) }
+                          if (notebookSpecies > 0) statMarks.cycle(notebookSpecies, i)
                           marksVersion++
                       },
                       enemyNote = enemyNote,
                       onEditNote = { noteDialog = true },
                       attempt = store.attempt(),
                       coverage = ndsCoverage,
-                        revealedEnemyAbility = ndsState?.enemy
-                            ?.let { statMarks.abilityFor(it.mon.species) },
-                        movesSeenRunWide = ndsState?.enemy?.let { statMarks.movesSeenFor(it.mon.species) } ?: emptyList(),
+                        enemyLastLevel = enemyLastSeen,
+                        movesSeenRunWide = if (notebookSpecies > 0) statMarks.movesSeenFor(notebookSpecies) else emptyList(),
                         moveInfoFor = { id -> ndsTrackerRef?.moveInfoFor(id) },
                         onMoveHistory = { sp, n, lv -> side.moveHistory = Triple(sp, n, lv) },
+                        encounterArea = ndsState?.let { com.ironmonone.tracker.nds.NdsEncounterTables.area(it.badgeSet, it.areaName) },
+                        encountersSeen = ndsState?.let { statMarks.dsEncountersIn(it.areaName) } ?: emptyMap(),
+                        speciesNameOf = { sp -> ndsTrackerRef?.speciesName(sp) ?: "#$sp" },
+                        hiddenPowerType = statMarks.dsHiddenPowerType(), effectivenessReady = dsFxReady,
+                        onStepHiddenPower = { f -> statMarks.stepDsHiddenPower(f); marksVersion++ },
+                        pokecenterCount = statMarks.dsPokecenterCount(), onPokecenter = { up -> statMarks.bumpDsPokecenter(up); marksVersion++ },
+                        stackBoth = true,
                   )
                   else TrackerPanel(
                       onTrainerInfo = { trackerState?.opponentTrainerId?.let { id -> trackerRef?.trainer(id)?.let { side.trainerInfo = it } } },
@@ -1597,32 +1723,37 @@ fun PlayScreen(
                 revealedEnemyAbility2 = trackerState?.enemy
                     ?.let { statMarks.secondAbilityFor(it.species) },
                 routeName = trackerState?.routeName,
-                routeSeen = trackerState?.mapId?.let { statMarks.seenOnRoute(it).size } ?: 0,
-                routeTotal = trackerState?.routeSpecies?.size ?: 0,
+                routeSeen = routeCarousel.second,
+                routeTotal = routeCarousel.third,
                 routeTrainers = trackerState?.routeTrainers?.size ?: 0,
                 routeBosses = trackerState?.routeBosses ?: 0,
                 steps = trackerState?.steps ?: 0,
-                onMoveDescription = { id -> trackerRef?.moveDescription(id) },
+                onMoveDescription = panelLookups::moveDescription,
                 onAbilityDescription = { name ->
                     trackerRef?.let { t -> t.abilityIdOf(name)?.let(t::abilityDescription) }
                 },
-                onWeight = { sp -> trackerRef?.weight(sp) },
-                onEvolution = { sp -> trackerRef?.evolution(sp) },
-                onEffectiveness = { sp ->
-                    trackerRef?.effectivenessAgainst(sp) ?: emptyMap()
-                },
-                onMoveLevels = { sp ->
-                    trackerRef?.learnset(sp)?.map { it.first } ?: emptyList()
-                },
+                onWeight = panelLookups::weight,
+                onEvolution = panelLookups::evolutionDetails,
+                onEffectiveness = panelLookups::effectiveness,
+                onMoveLevels = panelLookups::moveLevels,
                 onSpeciesNote = { sp -> statMarks.noteFor(sp) },
-                onRouteAreas = {
-                    trackerState?.mapId?.let { trackerRef?.routeEncounterAreas(it) }
-                        ?: emptyMap()
+                onRouteSource = { raw -> routeSource(raw) },
+                onRouteLookup = { trackerRef?.routeLookupList() ?: emptyList() },
+                routeArea = routeCarousel.first,
+                onSpeciesBase = panelLookups::speciesBase,
+                // Gen 3 ids run to 411 (1283 with the Nat. Dex); Red/Blue/Yellow have 151, Gold/Silver/Crystal 251.
+                speciesTotal = when {
+                    trackerRef?.expandedSpeciesIds == true -> 1283
+                    gbRef != null -> if (session.kind?.generation?.number == 1) 151 else 251
+                    else -> 411
                 },
-                onRouteSeenSet = {
-                    trackerState?.mapId?.let { statMarks.seenOnRoute(it) } ?: emptySet()
-                },
-                onSpeciesName = { sp -> trackerRef?.speciesName(sp) ?: "#$sp" },
+                onEditNoteFor = { sp -> noteForSpecies = sp; noteDialog = true },
+                onHealsInBag = if (trackerRef?.hasCatchRates == true) { { side.healsDialog = true } } else null,
+                onTrainersOnRoute = if (trackerRef?.hasTrainerData == true) { { side.trainersDialog = true } } else null,
+                onBattleDetails = if (trackerRef?.hasBattleDetails == true) { { side.battleDetailsDialog = true } } else null,
+                onCalcAtk = { side.openCalcAtk(trackerRef, trackerState) },
+                pcHealsLimit = remember(session.id, store.attempt()) { if (session.isRun) PcHeals.limitForLastRun() else null },
+                onSpeciesName = panelLookups::speciesName,
                       favoriteLine = favoriteLine, spriteFor = spriteFor,
                       enemyMarks = enemyMarks, enemyEncounters = enemyEncounters,
                       enemyLastSeenLevel = enemyLastSeen,
@@ -1637,8 +1768,11 @@ fun PlayScreen(
                       // Landscape: your lead and the enemy together.
                       stackBoth = true,
                       onCatchRates = { side.catchHpAdjust = 0; side.catchRatesDialog = true },
+                      generation = session.kind?.generation?.number ?: 3,
                   )
                   }
+    // The tracker on a second display when there is one (SecondScreen.kt); the phone keeps the game.
+    val trackerOnSecond = SecondScreenHost(session.tracked && !streamClean && trackerOpen && TrackerOptions.trackerOnSecondScreen) { trackerContent() }
 
     // The tracker pane, hoisted so it can be laid out two ways: as a
     // full-height column beside the game, or - for DS landscape - as a
@@ -1907,6 +2041,7 @@ fun PlayScreen(
                         }
                         GLRetroView(ctx, data).also { view ->
                             retro = view
+                            view.stateLoadListener = SaveGuard.listener(platform, File(ctx.filesDir, "saves"), rom)   // loading a state keeps the in-game save
                             view.cheevosListener = RetroAchievements.listener(
                                 mainPost = { r -> view.post(r) },
                                 onEvent = { type, title, desc, points, badge, result ->
@@ -2119,7 +2254,7 @@ fun PlayScreen(
             // the order is game, pad, tracker: the buttons sit under the game
             // where the thumbs already are, and the TRACKER is the piece that
             // takes whatever height is left over.
-            if (streamClean || !session.tracked) Spacer(Modifier.weight(1f))
+            if (streamClean || !session.tracked || trackerOnSecond) Spacer(Modifier.weight(1f))
 
             if (streamClean) {
                 // Capture layout: no pad, no notice.
@@ -2157,7 +2292,7 @@ fun PlayScreen(
                     )
                 }
             }
-            if (streamClean || !session.tracked) {
+            if (streamClean || !session.tracked || trackerOnSecond) {
                 // Nothing here: the weighted spacer that holds the pad at the
                 // bottom is now ABOVE the pad, because the pad comes first.
             } else if (dsScreens) {
@@ -2170,22 +2305,27 @@ fun PlayScreen(
                     NdsTrackerPanel(
                         state = ndsState, onFlee = { flee() }, onGear = { gearDialog = true }, timer = if (TrackerOptions.showTimer) runTimer else null,
                         favoriteLine = favoriteLine,
-                        randomBall = ndsTrackerRef?.randomBall?.takeIf { TrackerOptions.showBallPicker },
+                        randomBall = ndsTrackerRef?.randomBall?.takeIf { TrackerOptions.ballPickerShows() },
                         onTypeDefenses = { n, a, b -> typeDefenses = n to com.ironmonone.tracker.Gen3Types.defenses(com.ironmonone.tracker.nds.Gen4Types.idOf(a) ?: -1, com.ironmonone.tracker.nds.Gen4Types.idOf(b) ?: (com.ironmonone.tracker.nds.Gen4Types.idOf(a) ?: -1)) },
                         enemyMarks = enemyMarks, enemyEncounters = enemyEncounters,
                         onCycleMark = { i ->
-                            ndsState?.enemy?.let { statMarks.cycle(it.mon.species, i) }
+                            if (notebookSpecies > 0) statMarks.cycle(notebookSpecies, i)
                             marksVersion++
                         },
                         enemyNote = enemyNote,
                         onEditNote = { noteDialog = true },
                         attempt = store.attempt(),
                         coverage = ndsCoverage,
-                        revealedEnemyAbility = ndsState?.enemy
-                            ?.let { statMarks.abilityFor(it.mon.species) },
-                        movesSeenRunWide = ndsState?.enemy?.let { statMarks.movesSeenFor(it.mon.species) } ?: emptyList(),
+                        enemyLastLevel = enemyLastSeen,
+                        movesSeenRunWide = if (notebookSpecies > 0) statMarks.movesSeenFor(notebookSpecies) else emptyList(),
                         moveInfoFor = { id -> ndsTrackerRef?.moveInfoFor(id) },
                         onMoveHistory = { sp, n, lv -> side.moveHistory = Triple(sp, n, lv) },
+                        encounterArea = ndsState?.let { com.ironmonone.tracker.nds.NdsEncounterTables.area(it.badgeSet, it.areaName) },
+                        encountersSeen = ndsState?.let { statMarks.dsEncountersIn(it.areaName) } ?: emptyMap(),
+                        speciesNameOf = { sp -> ndsTrackerRef?.speciesName(sp) ?: "#$sp" },
+                        hiddenPowerType = statMarks.dsHiddenPowerType(), effectivenessReady = dsFxReady,
+                        onStepHiddenPower = { f -> statMarks.stepDsHiddenPower(f); marksVersion++ },
+                        pokecenterCount = statMarks.dsPokecenterCount(), onPokecenter = { up -> statMarks.bumpDsPokecenter(up); marksVersion++ },
                     )
                 }
             } else Box(
@@ -2212,32 +2352,37 @@ fun PlayScreen(
                 revealedEnemyAbility2 = trackerState?.enemy
                     ?.let { statMarks.secondAbilityFor(it.species) },
                 routeName = trackerState?.routeName,
-                routeSeen = trackerState?.mapId?.let { statMarks.seenOnRoute(it).size } ?: 0,
-                routeTotal = trackerState?.routeSpecies?.size ?: 0,
+                routeSeen = routeCarousel.second,
+                routeTotal = routeCarousel.third,
                 routeTrainers = trackerState?.routeTrainers?.size ?: 0,
                 routeBosses = trackerState?.routeBosses ?: 0,
                 steps = trackerState?.steps ?: 0,
-                onMoveDescription = { id -> trackerRef?.moveDescription(id) },
+                onMoveDescription = panelLookups::moveDescription,
                 onAbilityDescription = { name ->
                     trackerRef?.let { t -> t.abilityIdOf(name)?.let(t::abilityDescription) }
                 },
-                onWeight = { sp -> trackerRef?.weight(sp) },
-                onEvolution = { sp -> trackerRef?.evolution(sp) },
-                onEffectiveness = { sp ->
-                    trackerRef?.effectivenessAgainst(sp) ?: emptyMap()
-                },
-                onMoveLevels = { sp ->
-                    trackerRef?.learnset(sp)?.map { it.first } ?: emptyList()
-                },
+                onWeight = panelLookups::weight,
+                onEvolution = panelLookups::evolutionDetails,
+                onEffectiveness = panelLookups::effectiveness,
+                onMoveLevels = panelLookups::moveLevels,
                 onSpeciesNote = { sp -> statMarks.noteFor(sp) },
-                onRouteAreas = {
-                    trackerState?.mapId?.let { trackerRef?.routeEncounterAreas(it) }
-                        ?: emptyMap()
+                onRouteSource = { raw -> routeSource(raw) },
+                onRouteLookup = { trackerRef?.routeLookupList() ?: emptyList() },
+                routeArea = routeCarousel.first,
+                onSpeciesBase = panelLookups::speciesBase,
+                // Gen 3 ids run to 411 (1283 with the Nat. Dex); Red/Blue/Yellow have 151, Gold/Silver/Crystal 251.
+                speciesTotal = when {
+                    trackerRef?.expandedSpeciesIds == true -> 1283
+                    gbRef != null -> if (session.kind?.generation?.number == 1) 151 else 251
+                    else -> 411
                 },
-                onRouteSeenSet = {
-                    trackerState?.mapId?.let { statMarks.seenOnRoute(it) } ?: emptySet()
-                },
-                onSpeciesName = { sp -> trackerRef?.speciesName(sp) ?: "#$sp" },
+                onEditNoteFor = { sp -> noteForSpecies = sp; noteDialog = true },
+                onHealsInBag = if (trackerRef?.hasCatchRates == true) { { side.healsDialog = true } } else null,
+                onTrainersOnRoute = if (trackerRef?.hasTrainerData == true) { { side.trainersDialog = true } } else null,
+                onBattleDetails = if (trackerRef?.hasBattleDetails == true) { { side.battleDetailsDialog = true } } else null,
+                onCalcAtk = { side.openCalcAtk(trackerRef, trackerState) },
+                pcHealsLimit = remember(session.id, store.attempt()) { if (session.isRun) PcHeals.limitForLastRun() else null },
+                onSpeciesName = panelLookups::speciesName,
                 favoriteLine = favoriteLine, spriteFor = spriteFor,
                 enemyMarks = enemyMarks, enemyEncounters = enemyEncounters,
                 enemyLastSeenLevel = enemyLastSeen,
@@ -2250,6 +2395,7 @@ fun PlayScreen(
                 attempt = store.attempt(),
                 coverage = coverage,
                 onCatchRates = { side.catchHpAdjust = 0; side.catchRatesDialog = true },
+                generation = session.kind?.generation?.number ?: 3,
             ) }
 
         }
@@ -2258,9 +2404,9 @@ fun PlayScreen(
       // Landscape: the tracker sits BESIDE the game, the way BizHawk and the PC
       // tracker sit side by side, and collapses to an arrow tab so the game can
       // have the whole screen back.
-      if (landscape && !streamClean) trackerPane()
+      if (landscape && !streamClean && !trackerOnSecond) trackerPane()
     }
-    if (landscape && !streamClean && session.tracked && TrackerOptions.landscapeTracker == LandscapeTracker.FLOATING) {
+    if (landscape && !streamClean && session.tracked && !trackerOnSecond && TrackerOptions.landscapeTracker == LandscapeTracker.FLOATING) {
         FloatingTracker(
             frame = floatFrame, windowW = windowWidthDp, windowH = windowHeightDp,
             onFrame = { floatFrame = it },
@@ -2364,6 +2510,7 @@ fun PlayScreen(
     LaunchedEffect(view?.outcome, ndsState?.runOver, gameOverLatch.armed) {
         if (gameOverLatch.onRead(view?.outcome, ndsState?.runOver)) {
             runTimer.stop()
+            RunHistoryHook.recordRunEnd(store, session, trackerRef, trackerState, ndsState, gameOverLatch.outcome == com.ironmonone.tracker.RunOutcome.WON)
             // Program.onRunEnded: log the run once, from the DS state that ended it.
             val nds = ndsState; val ps = pastRunStore
             if (nds != null && ps != null && Demo.mode == null)
@@ -2383,11 +2530,15 @@ fun PlayScreen(
 
     typeDefenses?.let { (n, b) -> TypeDefensesDialog(n, b, onClose = { typeDefenses = null }) }
 
-    SideScreenDialogs(side, trackerRef, ndsTrackerRef, trackerState, statMarks, encounters, lastSeenLevel, enemySpecies, gbNames, spriteFor, store.attempt(),
+    SideScreenDialogs(side, trackerRef, ndsTrackerRef, trackerState, statMarks, enemySpecies, gbNames, spriteFor, store.attempt(),
         timeMachine = timeMachine, snapshot = { runCatching { retro?.serializeState() }.getOrNull() },
-        onRestore = { bytes ->
+        onRestore = { rp ->
             if (raHardcore) status = "Loading a state is off in RetroAchievements hardcore."
-            else status = if (retro?.unserializeState(bytes) == true) "Restored." else "Could not restore. The save may be damaged."
+            else {
+                val ok = retro?.unserializeState(rp.bytes) == true
+                if (ok) store.runEvents(session)?.add(RunEvents.Kind.RESTORE, rp.label, "made ${rp.timestamp}")
+                status = if (ok) "Restored." else "Could not restore. The save may be damaged."
+            }
         },
         pastRunStore = pastRunStore,
         tourney = tourney, currentSeed = store.lastSeedText().ifEmpty { session.id },
@@ -2398,13 +2549,13 @@ fun PlayScreen(
         val gba = trackerRef
         if (nds != null) {
             CoverageCalcDialog(
-                seed = CoverageCalc.seedTypes(ndsState?.party?.firstOrNull()?.moves?.map { Triple(it.id, it.category, it.type) } ?: emptyList(), excluded = emptySet()),
+                seed = ndsCoverageSeed(ndsState?.party?.firstOrNull()?.moves ?: emptyList(), statMarks.dsHiddenPowerType()),
                 allTypes = com.ironmonone.tracker.Gen3Types.ALL.map { com.ironmonone.tracker.Gen3Types.name(it) },
                 compute = { types, _ -> nds.coverage(types) },
                 name = { nds.speciesName(it) }, bst = { nds.speciesBst(it) },
                 sprite = { id -> remember(id) { PcAssets.dsSprite(ctx, id, false) } },
                 fullyEvolvedSupported = false, sortByBst = true,
-                noDataNote = if (nds.hasSpeciesData()) null else "No species data for this ROM yet. Randomize it on the Run tab and the buckets fill in.",
+                noDataNote = if (nds.hasSpeciesData()) null else "No species data for this ROM yet. Randomize it in Kaizo IronMON and the buckets fill in.",
                 onClose = { coverageCalc = false },
             )
         } else if (gba != null) {
@@ -2414,7 +2565,7 @@ fun PlayScreen(
                 compute = { types, fe -> gba.coverage(types.mapNotNull { com.ironmonone.tracker.Gen3Types.idOf(it) }, fe) },
                 name = { gba.speciesName(it) }, bst = { gba.baseStats(it)?.bst ?: 0 },
                 sprite = { id -> spriteFor(id) },
-                fullyEvolvedSupported = true, sortByBst = false,
+                fullyEvolvedSupported = true, sortByBst = true,
                 onClose = { coverageCalc = false },
             )
         } else coverageCalc = false
@@ -2423,7 +2574,7 @@ fun PlayScreen(
     if (rulesDialog) {
         val fam = session.kind?.family ?: ""
         val runMode = if (session.isRun) store.loadLastRun()?.second?.let { RnqsInfo.of(store.settingsFile(it)).ruleset } else null
-        RulesDialog(family = fam, mode = runMode, onDismiss = { rulesDialog = false })
+        RulesDialog(family = fam, mode = runMode, natDex = session.kind?.isNatDex == true, kind = session.kind, onDismiss = { rulesDialog = false })
     }
 
     if (gearDialog) {
@@ -2431,7 +2582,7 @@ fun PlayScreen(
             speciesName = { id -> trackerRef?.speciesName(id) ?: ndsTrackerRef?.speciesName(id) ?: gbNames?.invoke(id) ?: "#$id" },
             marks = statMarks,
             onCleared = { marksVersion++ },
-            onRules = { gearDialog = false; rulesDialog = true },
+            onRules = { gearDialog = false; if (NuzlockeTracking.inPlay()) NuzlockeLedgerRequest.openRules() else rulesDialog = true },
             onCoverage = { gearDialog = false; coverageCalc = true },
             onStats = if (platform == com.ironmonone.core.Platform.NDS) null else { { gearDialog = false; side.statsDialog = true } },
             onTrainers = if (trackerRef?.hasTrainerData == true) { { gearDialog = false; side.trainersDialog = true } } else null,
@@ -2447,14 +2598,20 @@ fun PlayScreen(
             onTourney = if (ndsState?.badgeSet == "HGSS") { { gearDialog = false; side.tourney = true } } else null,
             showTimerToggle = ndsState != null,
             onColorTheme = { gearDialog = false; side.colorTheme = true },
+            showAutoThemes = true,
+            runSettingsName = remember(session.id) { if (session.isRun) runCatching { store.loadLastRun()?.second }.getOrNull() else null },
             showBadgeOptions = ndsState?.badgeSet == "HGSS",
+            gameBoy = platform == com.ironmonone.core.Platform.GBC,
+            // The Gen 2 reference's IV estimate, on the lead; the Gen 1 one fails (IvEstimate).
+            ivPotential = (gbRef as? com.ironmonone.tracker.GbcTracker)?.let { g -> { g.ivPotential(trackerState?.party?.firstOrNull()) } },
+            ds = platform == com.ironmonone.core.Platform.NDS,
             onDismiss = { gearDialog = false },
         )
     }
 
     if (confirmNewRun) {
         // Shell look since 2026-09-27 (audit); it was the tracker's pixel font and palette.
-        NewRunConfirmDialog(onConfirm = { confirmNewRun = false; newRun() }, onDismiss = { confirmNewRun = false })
+        NewRunConfirmDialog(beforeRead = { persistSram() }, onConfirm = { confirmNewRun = false; newRun() }, onDismiss = { confirmNewRun = false })
     }
     PlayDialogs(
         ui,
@@ -2468,9 +2625,9 @@ fun PlayScreen(
 
     // Note editor for the species on screen. Notes are per species and per run,
     // sitting beside the stat marks.
-    if (noteDialog && enemySpecies > 0) {
-        var draft by remember(enemySpecies) { mutableStateOf(enemyNote) }
-        androidx.compose.ui.window.Dialog(onDismissRequest = { noteDialog = false }) {
+    if (noteDialog && noteSpecies > 0) {
+        var draft by remember(noteSpecies) { mutableStateOf(statMarks.noteFor(noteSpecies)) }
+        androidx.compose.ui.window.Dialog(onDismissRequest = { noteDialog = false; noteForSpecies = null }) {
             Column(
                 Modifier.background(Pc.Ground)
                     .border(1.dp, Pc.Border).padding(12.dp)
@@ -2487,11 +2644,11 @@ fun PlayScreen(
                 Spacer(Modifier.height(10.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     PcTarget("SAVE") {
-                        statMarks.setNote(enemySpecies, draft)
+                        statMarks.setNote(noteSpecies, draft)
                         marksVersion++
-                        noteDialog = false
+                        noteDialog = false; noteForSpecies = null
                     }
-                    PcTarget("CANCEL") { noteDialog = false }
+                    PcTarget("CANCEL") { noteDialog = false; noteForSpecies = null }
                 }
             }
         }
@@ -2516,6 +2673,9 @@ fun PlayScreen(
         onDispose {
             persistSram()
             autoSave()
+            // Closed the normal way: nothing to resume at the next launch (CrashResume).
+            CrashResume.left(store.playMarker, (context as? android.app.Activity)?.isFinishing != false,
+                lifecycleOwner.lifecycle.currentState == Lifecycle.State.DESTROYED)
             CloudSync.syncInBackground(context)
             releaseAllCoreKeys()
             QuickActions.clear()

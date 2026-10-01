@@ -38,8 +38,3 @@ libretrodroid/build/
 
 # Release artefacts are attached to GitHub releases, not committed.
 dist/
-
-.vendor/
-dist/
-app/src/main/assets/patches/
-presets/*NatDex*

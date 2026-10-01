@@ -32,6 +32,26 @@ import com.ironmonone.tracker.GbaTracker
 import com.ironmonone.tracker.Gen3Types
 
 /**
+ * NotebookPokemonNoteView.buildScreen's two ability lines (NotebookPokemonNoteView.lua:273-298).
+ * Where unknown abilities may show (PokemonData.canShowUnknownAbilities: Open Book, or a game
+ * whose abilities were not randomized with "Show data for vanilla game" on), the species' ROM
+ * abilities, the first suffixed " /" when there are two. Otherwise only the tracked ones: the
+ * first suffixed " /" over "?" until a second is seen, and "---" twice before any. The page
+ * used to fall back to the ROM's abilities whenever none were tracked, which on a randomized
+ * game named them before the player had seen them.
+ */
+internal fun notebookAbilityLines(tracked: List<String>, rom: List<String>, canShowUnknown: Boolean): Pair<String, String> {
+    val blank = "---"
+    if (canShowUnknown) return when {
+        rom.size >= 2 -> "${rom[0]} /" to rom[1]
+        rom.size == 1 -> rom[0] to blank
+        else -> blank to blank
+    }
+    val first = tracked.firstOrNull() ?: return blank to blank
+    return "$first /" to (tracked.getOrNull(1) ?: "?")
+}
+
+/**
  * The Notebook, four screens from the reference in one dialog:
  * NotebookIndexScreen (Pokemon seen and trainers fought, each a row that
  * opens its list), NotebookPokemonSeen (every species with a tracked note,
@@ -140,10 +160,12 @@ fun NotebookDialog(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         PcSprite(spriteFor(id))
                         Column(Modifier.padding(start = 8.dp)) {
-                            if (base != null) {
-                                PcTypeChip(Gen3Types.name(base.type1), pcTypeColor(base.type1))
-                                if (base.type2 != base.type1) PcTypeChip(Gen3Types.name(base.type2), pcTypeColor(base.type2))
-                            }
+                            // NotebookPokemonNoteView.lua:260: "Reveal info if randomized" off hides randomized types as "?".
+                            if (base != null) InfoRules.typeIcons(
+                                listOf(Gen3Types.name(base.type1) to base.type1) +
+                                    (if (base.type2 != base.type1) listOf(Gen3Types.name(base.type2) to base.type2) else emptyList()),
+                                InfoRules.hidesRandomizedTypes(tracker?.randomized()),
+                            ).forEach { (name, type) -> PcTypeChip(name, pcTypeColor(type)) }
                         }
                         Spacer(Modifier.weight(1f))
                         val m = marks.of(id)
@@ -158,7 +180,12 @@ fun NotebookDialog(
                     @Composable fun line(k: String, v: String) { Row { PixText(k, 8, Pc.Dim, Modifier.width(96.dp)); PixText(v, 8, Pc.Text, wrap = true) } }
                     line("BST", base?.bst?.toString() ?: "---")
                     line("Last level", lastLevelOf(id)?.toString() ?: "---")
-                    line("Abilities", (marks.abilitiesFor(id).ifEmpty { null } ?: tracker?.possibleAbilities(id) ?: emptyList()).ifEmpty { listOf("---") }.joinToString(" / "))
+                    val (ability1, ability2) = notebookAbilityLines(
+                        marks.abilitiesFor(id), tracker?.possibleAbilities(id) ?: emptyList(),
+                        InfoRules.canShowAbilities(tracker?.randomized()),
+                    )
+                    line("Abilities", ability1)
+                    line("", ability2)
                     line("Encounters", encountersOf(id).toString())
                     Spacer(Modifier.height(4.dp))
                     PixText("Moves seen", 8, Pc.Gold)

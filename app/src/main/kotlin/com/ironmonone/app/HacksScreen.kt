@@ -50,7 +50,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * The HACK tab: make a ROM hack in three steps (Blake, 2026-09-27: "a rom hack
+ * The ROM Hacks screen: make a ROM hack in three steps (Blake, 2026-09-27: "a rom hack
  * page where you can upload your roms and patch and patch in the app, like the
  * main menu section").
  *
@@ -58,7 +58,7 @@ import kotlinx.coroutines.withContext
  * is saved as its own game beside the original, which is never touched, and
  * lands in Your ROM hacks with a Play button.
  *
- * Everything underneath is the ROMs tab's library: the same files, the same
+ * Everything underneath is the library of My games: the same files, the same
  * identity matching (a patch is offered only for the exact ROM it was made
  * for), the same import code (LibraryImport). This page only puts the steps in
  * order. Nothing is downloaded; the player brings the patch file.
@@ -69,7 +69,8 @@ fun HacksScreen(modifier: Modifier = Modifier, onPlay: () -> Unit = {}) {
     val scope = rememberCoroutineScope()
     val store = remember { PrepStore(context) }
     val progress = remember { FileProgress() }
-    val importer = remember { LibraryImport(context, store, progress) }
+    // forHacks: an added game turns up in step 1 here, and has no Play button of its own to point at (2026-09-30).
+    val importer = remember { LibraryImport(context, store, progress, forHacks = true) }
     val roms = remember { mutableStateListOf<LibraryStore.Entry>() }
     val patches = remember { mutableStateListOf<LibraryStore.PatchEntry>() }
     var busy by remember { mutableStateOf(false) }
@@ -102,9 +103,15 @@ fun HacksScreen(modifier: Modifier = Modifier, onPlay: () -> Unit = {}) {
     }
 
     // Games a patch can go on: anything that plays. Clean dumps first, since
-    // almost every hack is made for one.
+    // almost every hack is made for one, then the real games of another language or revision.
     val games = roms.filter { it.platform != null }
-        .sortedBy { if (it.category == LibraryStore.Category.CLEAN) 0 else 1 }
+        .sortedBy {
+            when (it.category) {
+                LibraryStore.Category.CLEAN -> 0
+                LibraryStore.Category.OTHER_VERSIONS -> 1
+                else -> 2
+            }
+        }
     val game = games.firstOrNull { it.name == gameName }
     val patch = patches.firstOrNull { it.name == patchName }
     val fits = game != null && patch != null && patch.matches(game)
@@ -132,7 +139,7 @@ fun HacksScreen(modifier: Modifier = Modifier, onPlay: () -> Unit = {}) {
             r.onSuccess { e ->
                 made = e
                 status = "Made ${stripKnownExt(e.name)}. Your original ${stripKnownExt(base.name)} is unchanged." +
-                    if (e.verified) " It is also ready on the Run tab to randomize." else ""
+                    if (e.verified) " It is also ready in Kaizo IronMON to randomize." else ""
             }.onFailure {
                 made = null
                 status = patchFailure(it)
@@ -183,7 +190,7 @@ fun HacksScreen(modifier: Modifier = Modifier, onPlay: () -> Unit = {}) {
             StepHeader("1", "Pick your game", "ADD A GAME", enabled = !busy) { addGame.launch(arrayOf("*/*")) }
         }
         if (games.isEmpty()) item(key = "nogames") {
-            Hint("No games yet. Tap Add a game and pick your own dump (.gba, .gbc, .gb or .nds, or a zip).")
+            Hint("No games yet. Tap Add a game and pick your own game file (.gba, .gbc, .gb or .nds, or a .zip holding one).")
         }
         items(games, key = { "g-" + it.name }) { e ->
             ChoiceRow(
@@ -199,7 +206,7 @@ fun HacksScreen(modifier: Modifier = Modifier, onPlay: () -> Unit = {}) {
         }
 
         // ---- where to find one: the hacks made for the picked game ----
-        if (loaded) item(key = "find") { FindHacks(game?.kind, startOpen = patches.isEmpty()) }
+        if (loaded) item(key = "find") { FindHacks(game, startOpen = patches.isEmpty()) }
 
         // ---- 2. the patch ----
         item(key = "step2") {
@@ -215,8 +222,10 @@ fun HacksScreen(modifier: Modifier = Modifier, onPlay: () -> Unit = {}) {
         // fill the step greyed out (audit, 2026-09-27); one tap shows them.
         val fitting = if (game == null) patches.toList() else patches.filter { it.matches(game) }
         val shown = if (game == null || showAllPatches) patches.toList() else fitting
+        // Why, when a patch of this game's family is there but for another version of it: the hack's base next to
+        // the player's own ("Radical Red needs FireRed 1.0 (US). Your FireRed is 1.1..."), not only "none fits" (2026-09-30, UX audit P1).
         if (game != null && patches.isNotEmpty() && fitting.isEmpty() && !showAllPatches) item(key = "nofit") {
-            Hint("None of your patches is made for ${stripKnownExt(game.name)}. Add one with Add a patch.")
+            Hint(HackLinks.noFitReason(game, patches.toList()) ?: "None of your patches is made for ${stripKnownExt(game.name)}. Add one with Add a patch.")
         }
         items(shown, key = { "p-" + it.name }) { p ->
             val forThis = game != null && p.matches(game)
@@ -260,7 +269,8 @@ fun HacksScreen(modifier: Modifier = Modifier, onPlay: () -> Unit = {}) {
                 Gen3Header("Your ROM hacks")
                 Text(
                     "Every game you have patched, plus any finished hack you added. " +
-                        "A finished hack file (already patched) goes in with Add a game and shows up here.",
+                        "A finished hack file (already patched) goes in with Add a game. It shows up here when KaizoCore can tell it was " +
+                        "changed; when it cannot, it is under My games, Other versions.",
                     style = MaterialTheme.typography.bodySmall, color = Shell.hintOnNight,
                 )
             }
@@ -359,14 +369,14 @@ private fun HackCard(e: LibraryStore.Entry, busy: Boolean, onPlay: () -> Unit, o
     var armed by remember(e.name) { mutableStateOf(false) }
     // Disarms by itself, so a stray tap later does not delete (audit, 2026-09-27).
     LaunchedEffect(armed) { if (armed) { kotlinx.coroutines.delay(DISARM_MS); armed = false } }
-    val tracked = GameSession.trackerKind(e.kind, e.crc) != null
     Gen3Box(Modifier.fillMaxWidth()) {
         Column {
             Text(stripKnownExt(e.name), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, color = Gen3.Ink)
+            // The subtitle says whether the tracker works ("Tracker works", "No tracker"): nothing is added to it here (2026-09-30).
             Text(
-                e.subtitle + if (tracked) " · the tracker works on it" else " · plays without the tracker",
+                e.subtitle,
                 style = MaterialTheme.typography.bodySmall,
-                color = if (tracked) Shell.goodOnPaper else Shell.inkOnPaper,
+                color = if (e.tracked) Shell.goodOnPaper else Shell.inkOnPaper,
             )
             Spacer(Modifier.height(8.dp))
             androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -384,18 +394,20 @@ private fun HackCard(e: LibraryStore.Entry, busy: Boolean, onPlay: () -> Unit, o
  * Folded when the player already has patches, so steps 1 to 3 stay close.
  */
 @Composable
-private fun FindHacks(picked: com.ironmonone.core.RomKind?, startOpen: Boolean) {
+private fun FindHacks(game: LibraryStore.Entry?, startOpen: Boolean) {
     val context = LocalContext.current
+    val picked = game?.kind
     val pickedFamily = HackLinks.baseIdOf(picked)?.let(HackLinks::familyOf)
         ?.takeIf { f -> HackLinks.families.any { it.key == f } }
-    var family by remember { mutableStateOf(pickedFamily ?: HackLinks.families.first().key) }
+    // No game picked, no family: it used to start on FireRed's list, which read as the answer for any game (2026-09-30, UX audit P1).
+    var family by remember { mutableStateOf<String?>(pickedFamily) }
     LaunchedEffect(pickedFamily) { pickedFamily?.let { family = it } }
     var open by remember { mutableStateOf(startOpen) }
-    val label = HackLinks.families.first { it.key == family }.label
+    val label = family?.let { f -> HackLinks.families.first { it.key == f }.label }
     // A picked game with no hacks listed (Gold, Ruby) used to read "Find a
     // hack for FireRed" with no word why (audit, 2026-09-27).
-    val noneForPicked = picked != null && pickedFamily == null
-    val links = HackLinks.forFamily(family)
+    val noneForPicked = game != null && pickedFamily == null
+    val links = family?.let(HackLinks::forFamily) ?: emptyList()
     val shape = androidx.compose.foundation.shape.RoundedCornerShape(Shell.cardRadius)
 
     Column(Modifier.fillMaxWidth().padding(top = 6.dp).clip(shape).background(Shell.paper)
@@ -406,10 +418,20 @@ private fun FindHacks(picked: com.ironmonone.core.RomKind?, startOpen: Boolean) 
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(Modifier.weight(1f)) {
-                Text(if (noneForPicked) "No hacks listed for ${picked!!.displayName} yet" else "Find a hack for $label",
+                Text(
+                    when {
+                        noneForPicked -> "No hacks listed for ${picked?.displayName ?: stripKnownExt(game!!.name)} yet"
+                        label == null -> "Find a hack"
+                        else -> "Find a hack for $label"
+                    },
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Medium, color = Shell.inkOnPaper)
-                Text(if (noneForPicked) "Browse the hacks for other games." else "${links.size} hack${if (links.size == 1) "" else "s"}. Each opens its creator's page.",
+                Text(
+                    when {
+                        noneForPicked -> "Browse the hacks for other games."
+                        label == null -> "Pick a game in step 1 to see hacks made for it."
+                        else -> "${links.size} hack${if (links.size == 1) "" else "s"}. Each opens its creator's page."
+                    },
                     style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper)
             }
             androidx.compose.material3.Icon(
@@ -419,13 +441,13 @@ private fun FindHacks(picked: com.ironmonone.core.RomKind?, startOpen: Boolean) 
             )
         }
         if (open) Column(Modifier.padding(start = 14.dp, end = 14.dp, bottom = 14.dp)) {
-            if (noneForPicked) {
-                Text("Browse other games:", style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper)
+            if (noneForPicked || game == null) {
+                Text(if (noneForPicked) "Browse other games:" else "Or browse by game:", style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper)
                 Spacer(Modifier.height(6.dp))
             }
             ShellSegmented(
                 values = HackLinks.families.map { it.key },
-                selected = family,
+                selected = family ?: "",
                 label = { k -> HackLinks.families.first { it.key == k }.label },
                 onSelect = { family = it },
             )

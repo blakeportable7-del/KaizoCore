@@ -47,4 +47,17 @@ class NotebookTest {
         assertEquals(1, done.notebookTrainerTotals(true).first)
         assertEquals(fresh.notebookTrainerTotals(true).second, done.notebookTrainerTotals(true).second)
     }
+
+    @Test
+    fun `a trainer RouteData lists on two floors counts once in the totals`() {
+        // Ruby/Sapphire's RouteData puts Sootopolis Gym's trainers on both floors (RouteData.lua:4485, 4493).
+        val fresh = tracker(GameMap.RUBY_U)
+        val done = tracker(GameMap.RUBY_U, setOf(128))
+        assertEquals(listOf(109, 110), (0..400).filter { 128 in done.trainersOnRoute(it) })
+        assertEquals(1, done.notebookTrainerTotals(true).first)
+        val unique = (0..400).flatMap { fresh.trainersOnRoute(it) }.distinct().count { fresh.trainerCounts(it) }
+        assertEquals(unique, fresh.notebookTrainerTotals(true).second)
+        // The per-area rows still count each floor, as NotebookTrainersByArea's combined areas do.
+        assertEquals(2, done.notebookAreas(true, true).filter { it.routeId in 109..110 }.sumOf { it.defeated })
+    }
 }

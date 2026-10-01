@@ -1,0 +1,88 @@
+# Battles that are not a wild first encounter, Generation 4 (2026-09-29): a wild battle at PLACE at exactly LEVEL is
+# a set battle (a static), not the area's first encounter.
+#
+# Columns: game, place, level, species, note, and for a few rows the national dex number of the species.
+#   game: dp = Diamond and Pearl, pt = Platinum, hgss = HeartGold and SoulSilver. hg or ss only for a place whose
+#   level differs between the two versions (Ho-Oh, Lugia). A species that differs at the same level (Dialga or
+#   Palkia, Kyogre or Groudon, Latios or Latias) stays one row of the shared key.
+#   place: the area name the DS tracker reports for the map the battle happens in, spelled exactly as the tracker's
+#   location table spells it for that map's header id (gen4/locations-pt.tsv for dp and pt, gen4/locations-hgss.tsv
+#   for hgss), typos included. Two are the table's mistakes and are kept as they read: Valor Cavern (Azelf) is
+#   "Verity Cavern" (id 316) and Platinum's Rock Peak Ruins (Regirock) is "Rpck Peak Ruins" (id 592). If the table
+#   is fixed, change those rows.
+#   level: the level the game's script gives the battle. species: the vanilla species, a note for people (a
+#   randomized game changes it and keeps the place and level).
+#
+# Sources, all re-read by tools/nuzlocke/gen4_statics.py --check:
+#   pt: the script line that starts the battle in pret pokeplatinum c248fb3 (the Platinum dump is byte-identical to
+#       that build), the map header whose scriptsArchiveID is that script, and the header's id in
+#       generated/map_headers.txt looked up in the tracker table.
+#   hgss, hg, ss: the script line in pret pokeheartgold 9d8b759 (the game sets FLAG_ENGAGING_STATIC_POKEMON right
+#       before each static WildBattle; the trap-tile battles of Team Rocket HQ are RocketTrapBattle), the map whose
+#       scriptsBank is that script, its id in include/constants/maps.h looked up in the tracker table. The levels of
+#       Ho-Oh and Lugia come from the script's own GetGameVersion split (7 = HeartGold).
+#   dp: pret has no script source for Diamond and Pearl, so the Diamond dump is read: script archive
+#       fielddata/script/scr_seq_release.narc, the command words at a recorded offset (0x124 WildBattle, 0x2BD
+#       LegendaryBattle, numbers from pokediamond's scrcmd.c), and the arm9 map header table whose scripts_bank names
+#       that script file. No Pearl dump exists; the two versions share the script archive except where a script
+#       reads the version (Dialga or Palkia at Spear Pillar).
+#
+# Not listed: roamers (Mesprit and Cresselia only start roaming in these games, Raikou, Entei, the Kanto Latias or
+# Latios, Platinum's three birds), gifts, eggs, trades, honey trees, the catching tutorials and trainer battles.
+# A row whose level an ordinary encounter of the area can also be (walking: grass, cave floor, swarm, radio, Poke
+# Radar, Rock Smash, Headbutt; or surf and fishing) has the species' national dex number as its sixth column: the
+# reader takes a wild battle for the static only when it is that species, so the ordinary encounter of another
+# species at that level is not taken for it and the area's first encounter is still counted. A randomized game
+# changes the species and does not match those rows.
+# Rows with a species check (each collision is re-proved by --check): dp Old Chateau L15 Rotom; dp Route 209 L25
+# Spiritomb; dp Valley Windworks L22 Drifloon; pt Route 209 L25 Spiritomb; pt Valley Windworks L15 Drifloon; hgss Mt.
+# Silver Cave L50 Moltres; hgss Route 25 L40 Suicune; hgss Seafoam Islands L50 Articuno; hgss Union Cave L20 Lapras.
+#
+# game	place	level	species	note	dex (optional)
+dp	Acuity Cavern	50	Uxie	fixed battle in the cave under Lake Acuity
+dp	Flower Paradise	30	Shaymin	event Pokemon (the research doc: the Oak's Letter event)
+dp	Hall of Origin	80	Arceus	event Pokemon (the research doc: the Azure Flute event)
+dp	Newmoon Island	40	Darkrai	event Pokemon (the research doc: the Member Card event); level 40 here, 50 in Platinum
+dp	Old Chateau	15	Rotom	scripted battle at the TV; the Gastly of the house are level 15 too	479
+dp	Route 209	25	Spiritomb	scripted battle at the Hallowed Tower once the Spiritomb counter of Underground talks reaches 32; ordinary surf or fishing encounters at this level also match (Goldeen, Golduck, Magikarp, Psyduck, Seaking)	442
+dp	Snowpoint Temple	70	Regigigas	fixed battle at the bottom of the temple; level 70 here, 1 in Platinum
+dp	Spear Pillar	47	Dialga (Diamond) or Palkia (Pearl)	story battle; the script picks Dialga in Diamond and Palkia in Pearl
+dp	Stark Mountain	70	Heatran	fixed battle in the last room; level 70 here, 50 in Platinum
+dp	Turnback Cave	70	Giratina	fixed battle in the Giratina room; level 70 here, 47 in Platinum
+dp	Valley Windworks	22	Drifloon	fixed battle, Fridays only (the script compares the day of week with 5); level 22 here, 15 in Platinum; ordinary surf or fishing encounters at this level also match (Finneon, Magikarp, Pelipper, Shellder, Tentacool, Tentacruel, Wingull)	425
+dp	Verity Cavern	50	Azelf	fixed battle in Valor Cavern; the tracker's table names that map Verity Cavern by mistake
+pt	Acuity Cavern	50	Uxie	fixed battle in the cave under Lake Acuity
+pt	Distortion World	47	Giratina (Origin Forme)	story battle in the Giratina room
+pt	Flower Paradise	30	Shaymin	event Pokemon, needs the Oak's Letter and the Shaymin event
+pt	Hall of Origin	80	Arceus	event Pokemon, needs the Arceus event
+pt	Iceberg Ruins	30	Regice	fixed battle; needs the game cleared and an event Regigigas in the party
+pt	Iron Ruins	30	Registeel	fixed battle; needs the game cleared and an event Regigigas in the party
+pt	Newmoon Island	50	Darkrai	event Pokemon, needs the Member Card and the Darkrai event; level 50 here, 40 in Diamond and Pearl
+pt	Old Chateau	20	Rotom	scripted battle at the TV, night only and once a day; level 20 here, 15 in Diamond and Pearl
+pt	Route 209	25	Spiritomb	scripted battle at the Hallowed Tower after the Odd Keystone and 32 Underground talks; ordinary surf or fishing encounters at this level also match (Goldeen, Golduck, Magikarp, Psyduck)	442
+pt	Rpck Peak Ruins	30	Regirock	fixed battle; needs the game cleared and an event Regigigas in the party; the tracker's table spells this map Rpck Peak Ruins
+pt	Snowpoint Temple	1	Regigigas	fixed battle at level 1; needs Regirock, Regice and Registeel in the party
+pt	Spear Pillar	70	Dialga or Palkia	two battles, Platinum has both in every copy
+pt	Stark Mountain	50	Heatran	fixed battle, shown after the game is cleared and Buck has been talked to; level 50 here, 70 in Diamond and Pearl
+pt	Turnback Cave	47	Giratina (Altered Forme)	fixed battle in the Giratina room, only while Giratina is not caught
+pt	Valley Windworks	15	Drifloon	fixed battle, Fridays only and gone for the day once beaten; level 15 here, 22 in Diamond and Pearl; honey-tree battles on this map roll levels 5 to 15 and can match too; ordinary surf or fishing encounters at this level also match (Finneon, Magikarp)	425
+pt	Verity Cavern	50	Azelf	fixed battle in Valor Cavern; the tracker's table names that map Verity Cavern by mistake
+hgss	Burned Tower	40	Suicune	fixed battle in the basement, opened by the Hall of Fame script; the Route 25 battle comes first
+hgss	Cerulean Cave	70	Mewtwo	fixed battle at the end of the cave
+hgss	Embedded Tower	50	Rayquaza, Kyogre (HeartGold) or Groudon (SoulSilver)	three room battles at level 50 in both versions; Kyogre only in HeartGold, Groudon only in SoulSilver
+hgss	Lake of Rage	30	Gyarados (the red one)	fixed battle; the script forces it to be shiny
+hgss	Mt. Silver Cave	50	Moltres	fixed battle in the Moltres chamber; the wild Pokemon of the mountain are level 50 too	146
+hgss	Pewter City	40	Latios (HeartGold) or Latias (SoulSilver)	event Pokemon behind a special gate (the research doc: the Enigma Stone event)
+hgss	Route 10	50	Zapdos	fixed battle outside the Power Plant, unlocked by the Earth Badge
+hgss	Route 11	50	Snorlax	fixed battle on the road; the script starts it only while a radio tune is playing (the Poke Flute channel)
+hgss	Route 12	50	Snorlax	fixed battle, a second Snorlax; same radio condition as the one on Route 11
+hgss	Route 25	40	Suicune	fixed battle on Route 25; ordinary surf or fishing encounters at this level also match (Goldeen, Magikarp, Seaking)	245
+hgss	Route 36	20	Sudowoodo	fixed battle at the tree
+hgss	Seafoam Islands	50	Articuno	fixed battle on the lowest floor; ordinary surf or fishing encounters at this level also match (Slowbro)	144
+hgss	Team Rocket HQ	21	Koffing or Geodude	forced trap-tile battles on B1F that cannot be fled (RocketTrapBattle; the game does not flag them static)
+hgss	Team Rocket HQ	23	Electrode (three) or Voltorb (trap tiles)	the three Electrodes on B2F and the Voltorb trap-tile battles on B1F
+hgss	Union Cave	20	Lapras	fixed battle on B2F, Fridays only; the wild Pokemon of the cave are level 20 too	131
+hg	Bell Tower	45	Ho-Oh	fixed battle on the roof of the tower
+hg	Whirl Islands	70	Lugia	fixed battle in the cave on the lowest floor
+ss	Bell Tower	70	Ho-Oh	fixed battle on the roof of the tower
+ss	Whirl Islands	45	Lugia	fixed battle in the cave on the lowest floor

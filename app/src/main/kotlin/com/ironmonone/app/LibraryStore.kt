@@ -31,8 +31,16 @@ import java.io.File
  *
  * Nothing here downloads, fetches or bundles anything. Files arrive only
  * through the import calls, from a picker the player drove.
+ *
+ * A DS game's in-game save is the one thing that follows the file NAME, not the
+ * game: melonDS writes it as <ROM name>.sav in [savesDir] (SaveGuard.dsSaveFile).
+ * Renaming the file, or adding the same game again under another name, used to
+ * leave the save behind (UX audit, 2026-09-30); [rename] and [adoptDsSave] keep
+ * it with the game. Game Boy and GBA saves are keyed by CRC (SessionPaths) and
+ * were never at risk. [savesDir] is null where there are no cores' saves to
+ * keep, which is every test that builds a store on a bare folder.
  */
-class LibraryStore(private val root: File) {
+class LibraryStore(private val root: File, private val savesDir: File? = savesDirFor(root)) {
 
     private val patchDir = File(root, "patches")
 
@@ -42,8 +50,10 @@ class LibraryStore(private val root: File) {
     enum class Category(val title: String, val blurb: String) {
         CLEAN("Clean ROMs", "Verified dumps. The tracker and the randomizer start here."),
         PATCHED("Patched", "A known build made from a clean ROM, like Nat. Dex."),
-        HACK("ROM hacks", "A Pokémon game that is not a clean dump. Plays without a tracker."),
-        OTHER("Other games", "Not a game this app knows. Plays like any emulator."),
+        // A real game the tracker cannot read is not a ROM hack (2026-09-30, UX audit P0-11): another language or revision goes here.
+        OTHER_VERSIONS("Other versions", "Real Pokémon games the tracker does not read, such as another language or revision. They play without the tracker."),
+        HACK("ROM hacks", "Pokémon games that have been changed. They play without the tracker."),
+        OTHER("Other games", "Games the tracker does not read. They play like in any emulator."),
     }
 
     data class Entry(
@@ -57,29 +67,39 @@ class LibraryStore(private val root: File) {
         /** Which library file and patch made this one, when it came from APPLY. */
         val baseName: String? = null,
         val patchName: String? = null,
+        /** Which case identification found (RomIdentity.Verdict); null for an entry built without one. */
+        val verdict: RomIdentity.Verdict? = null,
     ) {
         val sizeBytes: Long get() = file.length()
         val verified: Boolean get() = kind != null && kind.expectedCrc != RomKind.CRC_UNKNOWN && kind.expectedCrc == crc
         /** Header says a supported game but the CRC is not pinned yet: shelved as clean, labelled unverified. */
         val unverified: Boolean get() = kind != null && kind.expectedCrc == RomKind.CRC_UNKNOWN
+        /** The tracker reads this file: the same test GameSession.trackerKind makes. */
+        val tracked: Boolean get() = verified
         val category: Category get() = when {
             verified && (kind!!.isNatDex || kind.patchTag != null) -> Category.PATCHED
             // Made by a patch and not a known build: a hack, even if the header
             // still names a game whose CRC is not pinned.
             patchName != null -> if (platform != null) Category.HACK else Category.OTHER
             verified || unverified -> Category.CLEAN
-            kind != null -> Category.HACK
-            platform != null && (summary.contains("but modified") || summary.contains("not a revision")) -> Category.HACK
-            platform != null -> Category.OTHER
-            else -> Category.OTHER
+            // The verdict, not the words of the summary: what shows a file was changed is its size, and nothing else does.
+            else -> when (verdict) {
+                RomIdentity.Verdict.OTHER_LANGUAGE, RomIdentity.Verdict.OTHER_VERSION -> Category.OTHER_VERSIONS
+                RomIdentity.Verdict.CHANGED -> Category.HACK
+                null -> if (kind != null) Category.OTHER_VERSIONS else Category.OTHER
+                else -> Category.OTHER
+            }
         }
-        /** What the card says under the name. */
+        /**
+         * What the card says under the name. Says whether the tracker works ("Tracker works" and "No tracker", the
+         * Words table of the UX audit), so no caller adds its own; for a file the tracker cannot read it is the
+         * summary itself, which says what it is and that it still plays.
+         */
         val subtitle: String get() = when {
-            verified && (kind!!.isNatDex || kind.patchTag != null) -> kind.displayName + " · verified"
+            verified && (kind!!.isNatDex || kind.patchTag != null) -> kind.displayName + " · Tracker works"
             // Names without their file extensions, and no checksum talk (audit, 2026-09-27).
-            patchName != null -> "${stripKnownExt(patchName)} on ${baseName?.let(::stripKnownExt) ?: "?"}"
-            verified -> kind!!.displayName + " · verified"
-            unverified -> kind!!.displayName + " · a copy this app has not checked yet"
+            patchName != null -> "${stripKnownExt(patchName)} on ${baseName?.let(::stripKnownExt) ?: "?"} · " + if (verified) "Tracker works" else "No tracker"
+            verified -> kind!!.displayName + " · Tracker works"
             else -> summary
         }
     }
@@ -156,7 +176,9 @@ class LibraryStore(private val root: File) {
     fun refuse(name: String, e: Entry): String? {
         if (e.platform == null) {
             delete(e)
-            return "$name is not a game this app plays, or the file is damaged. Nothing was added."
+            // A damaged DS header has its own next step; anything else is not a game, or did not copy whole (2026-09-30, UX audit P0-11).
+            return if (e.verdict == RomIdentity.Verdict.DAMAGED) e.summary
+            else "$name is not a Game Boy, Game Boy Advance or DS game file, or the copy is damaged. Nothing was added."
         }
         val same = list().firstOrNull { it.file != e.file && it.crc == e.crc } ?: return null
         delete(e)
@@ -170,34 +192,54 @@ class LibraryStore(private val root: File) {
             r.gbHeader != null -> Platform.GBC
             else -> Platform.fromExtension(f.extension)
         }
-        return Entry(f, f.name, r.crc, r.kind, platform, r.summary, baseName, patchName)
+        // A file with no header at all that plays only because of its extension must not read "not a game" beside a Play button.
+        val summary = if (r.verdict == RomIdentity.Verdict.NOT_A_GAME && platform != null)
+            "A ${consoleName(platform)} file with no readable header. It may still play, without a tracker."
+        else r.summary
+        return Entry(f, f.name, r.crc, r.kind, platform, summary, baseName, patchName, r.verdict)
     }
+
+    private fun consoleName(p: Platform) = when (p) { Platform.GBA -> "GBA"; Platform.NDS -> "DS"; Platform.GBC -> "Game Boy" }
 
     /**
      * Sidecar format version. Bumped when identification changes its mind
-     * about a file (v2: DS header checksum), so entries written under an
+     * about a file (v2: DS header checksum, v3: the verdict and its words, 2026-09-30), so entries written under an
      * older rule are re-identified on the next list() instead of keeping a
-     * verdict that is now wrong.
+     * verdict that is now wrong. A v2 sidecar is re-read from the file's header and the checksum it already
+     * holds, not hashed again: a 512 MB DS game is seconds, and every screen that lists the library would do it at once.
      */
-    private val SIDECAR_VERSION = "v2"
+    private val SIDECAR_VERSION = "v3"
 
     private fun write(e: Entry) = runCatching {
         // A full disk must not take the library down with it.
         sidecar(e.file).writeText(
             listOf(SIDECAR_VERSION, "%08x".format(e.crc), e.kind?.id ?: "-", e.platform?.name ?: "-",
-                e.baseName ?: "-", e.patchName ?: "-", e.summary).joinToString("\n"))
+                e.baseName ?: "-", e.patchName ?: "-", e.verdict?.name ?: "-", e.summary).joinToString("\n"))
     }.let { }
 
     private fun read(f: File): Entry? {
         val all = runCatching { sidecar(f).readLines() }.getOrNull() ?: return null
         if (all.firstOrNull() != SIDECAR_VERSION) return null
         val lines = all.drop(1)
-        if (lines.size < 6) return null
+        if (lines.size < 7) return null
         val crc = lines[0].toLongOrNull(16) ?: return null
         val kind = RomKind.byId(lines[1].takeIf { it != "-" })
         val platform = lines[2].takeIf { it != "-" }?.let { p -> Platform.entries.firstOrNull { it.name == p } }
-        return Entry(f, f.name, crc, kind, platform, lines.drop(5).joinToString("\n"),
-            lines[3].takeIf { it != "-" }, lines[4].takeIf { it != "-" })
+        val verdict = RomIdentity.Verdict.entries.firstOrNull { it.name == lines[5] }
+        return Entry(f, f.name, crc, kind, platform, lines.drop(6).joinToString("\n"),
+            lines[3].takeIf { it != "-" }, lines[4].takeIf { it != "-" }, verdict)
+    }
+
+    /** A v2 sidecar's file identified again from its header, keeping the checksum, base and patch it recorded; null when there is none. */
+    private fun migrate(f: File): Entry? {
+        val all = runCatching { sidecar(f).readLines() }.getOrNull() ?: return null
+        if (all.firstOrNull() != "v2") return null
+        val lines = all.drop(1)
+        if (lines.size < 6) return null
+        val crc = lines[0].toLongOrNull(16) ?: return null
+        return runCatching {
+            describe(f, RomIdentity.identifyWithCrc(f, crc), lines[3].takeIf { it != "-" }, lines[4].takeIf { it != "-" })
+        }.getOrNull()?.also { write(it) }
     }
 
     /** Every ROM on hand, newest first. A missing sidecar is rebuilt, not an error. */
@@ -206,12 +248,16 @@ class LibraryStore(private val root: File) {
             .filter { it.isFile && !it.name.endsWith(".meta") && !it.name.endsWith(".tmp") &&
                 it.name != selection.name }
             .sortedByDescending { it.lastModified() }
-            .map { f -> read(f) ?: describe(f, RomIdentity.identify(f), null, null).also { write(it) } }
+            .map { f -> read(f) ?: migrate(f) ?: describe(f, RomIdentity.identify(f), null, null).also { write(it) } }
+            .also { noteDsSaves(it) }
 
     fun find(name: String): Entry? =
         File(root, name).takeIf { it.isFile }?.let { read(it) ?: list().firstOrNull { e -> e.name == name } }
 
-    /** Rename the file (the extension is kept; saves are keyed by CRC, so nothing is lost). */
+    /**
+     * Rename the file (the extension is kept). Saves are keyed by CRC, so nothing is lost, except a DS game's in-game
+     * save, which melonDS keeps under the file's name: it is moved to the new name, with its .before-load copy (2026-09-30, UX audit).
+     */
     fun rename(e: Entry, newStem: String): Entry {
         // Only a real file extension is cut: "FireRed 1.2.1" is a name, not "FireRed 1.2" plus ".1" (audit, 2026-09-27).
         val ext = knownExtOf(e.name) ?: ""
@@ -219,9 +265,84 @@ class LibraryStore(private val root: File) {
         val target = unique(root, if (ext.isEmpty()) stem else "$stem.$ext")
         if (!e.file.renameTo(target)) return e
         sidecar(e.file).renameTo(sidecar(target))
+        synchronized(SAVES_LOCK) {
+            if (isDs(e)) { moveDsSave(e.file, target); noteDsSave(e.crc, target) }
+        }
         val renamed = e.copy(file = target, name = target.name)
         if (selectedLibraryName() == e.name) selectLibrary(renamed)
         return renamed
+    }
+
+    // -------------------------------------------------------- a DS game's in-game save
+
+    private fun isDs(e: Entry) = (e.kind?.platform ?: e.platform) == Platform.NDS
+
+    /**
+     * Where the stem of the file a DS game's save lives under is kept: beside the game's save states (saves/lib/<id>/,
+     * the id GameSession.forLibrary makes), so it goes into a backup with them and a restored phone still knows it.
+     */
+    private fun dsMarker(crc: Long): File? = savesDir?.let { File(it, "lib/lib-%08x/ds-save-name.txt".format(crc)) }
+
+    private fun noteDsSave(crc: Long, rom: File) {
+        val marker = dsMarker(crc) ?: return
+        SafeWrite.text(marker, rom.nameWithoutExtension)
+    }
+
+    /** Every DS game in [entries] that has no marker yet gets one, so a game added before this existed is covered too. */
+    private fun noteDsSaves(entries: List<Entry>) {
+        if (savesDir == null) return
+        synchronized(SAVES_LOCK) {
+            for (e in entries) if (isDs(e) && dsMarker(e.crc)?.exists() == false) noteDsSave(e.crc, e.file)
+        }
+    }
+
+    /** Whether some file in the library, other than [except], has [stem] for its name. */
+    private fun stemInUse(stem: String, except: File): Boolean = (root.listFiles() ?: emptyArray()).any {
+        it.isFile && it != except && !it.name.endsWith(".meta") && !it.name.endsWith(".tmp") && it.nameWithoutExtension == stem
+    }
+
+    /**
+     * Move the in-game save of the DS game [from] to the name of [to], and the .before-load copy SaveGuard keeps
+     * beside it. Nothing is ever overwritten: a save already under the new name is set aside as .replaced, so the
+     * game being moved keeps its own and the other is still on the phone.
+     */
+    private fun moveDsSave(from: File, to: File) {
+        val dir = savesDir ?: return
+        val fromSave = SaveGuard.dsSaveFile(dir, from)
+        val toSave = SaveGuard.dsSaveFile(dir, to)
+        if (fromSave == toSave) return
+        for ((src, dst) in listOf(fromSave to toSave, SaveGuard.DsWatch(fromSave).backup to SaveGuard.DsWatch(toSave).backup)) {
+            if (!src.isFile) continue
+            if (dst.exists()) setAside(dst)
+            if (!src.renameTo(dst)) { src.copyTo(dst, overwrite = true); src.delete() }
+        }
+    }
+
+    private fun setAside(f: File) {
+        var n = 1
+        var to = File(f.parentFile, f.name + ".replaced")
+        while (to.exists()) to = File(f.parentFile, f.name + ".replaced" + ++n)
+        f.renameTo(to)
+    }
+
+    /**
+     * Keep a DS game's in-game save with the game when it comes back under another file name (deleted and added again,
+     * or added on a phone a backup was restored to). Call it for a file the player added and [refuse] let stay. The
+     * game is known by its CRC: the stem its save was last under is read from the marker, and when that stem is free
+     * (no file in the library uses it now, so the save cannot be another game's) and the new name has no save yet, the
+     * save moves. Then the marker names the new stem. Does nothing for a game that is not a DS game.
+     */
+    fun adoptDsSave(e: Entry) {
+        if (savesDir == null || !isDs(e)) return
+        val marker = dsMarker(e.crc) ?: return
+        synchronized(SAVES_LOCK) {
+            val was = runCatching { marker.takeIf { it.isFile }?.readText()?.trim() }.getOrNull()?.takeIf { it.isNotEmpty() }
+            val now = e.file.nameWithoutExtension
+            if (was != null && was != now && !stemInUse(was, except = e.file) &&
+                !SaveGuard.dsSaveFile(savesDir, e.file).exists()
+            ) moveDsSave(File(root, "$was.nds"), e.file)
+            noteDsSave(e.crc, e.file)
+        }
     }
 
     /**
@@ -243,7 +364,8 @@ class LibraryStore(private val root: File) {
                 e.baseName?.let { b -> out += "$stem on ${stripKnownExt(b)}" }
                 k?.let { out += "$stem (${it.displayName.substringBefore(" (")} hack)" }
             }
-            k != null -> out += k.displayName.substringBefore(" (") + " hack"
+            // A game the header names whose checksum is not the pinned one: another copy of it, not a hack (2026-09-30).
+            k != null -> out += k.displayName.substringBefore(" (")
         }
         return out.filter { it.isNotBlank() && it != stripKnownExt(e.name) }.take(4)
     }
@@ -389,6 +511,29 @@ class LibraryStore(private val root: File) {
             ((this[o + 2].toLong() and 0xFF) shl 16) or ((this[o + 3].toLong() and 0xFF) shl 24)
 
     companion object {
+        /**
+         * One lock for the saves folder's markers and moves. Every screen makes its own PrepStore, so its own
+         * LibraryStore, and two of them list the library at once.
+         */
+        private val SAVES_LOCK = Any()
+
+        /** The games in the order a player thinks of them: Game Boy, then GBA, then DS. */
+        private val TRACKED_ORDER = listOf(
+            "Red", "Blue", "Yellow", "Gold", "Silver", "Crystal", "Ruby", "Sapphire", "Emerald", "FireRed", "LeafGreen",
+            "Diamond", "Pearl", "Platinum", "HeartGold", "SoulSilver", "Black", "White", "Black 2", "White 2",
+        )
+
+        /**
+         * The games the tracker reads: those with a build whose checksum is pinned (a header alone is not read, see
+         * GameSession.trackerKind), so Black, whose copy has not been checked, is not among them. A test holds this
+         * list to every pinned build, so a game added to RomKind is not left out of what the empty page promises.
+         */
+        fun trackedGames(): List<String> {
+            val pinned = RomKind.allV1.filter { it.expectedCrc != RomKind.CRC_UNKNOWN }
+                .map { it.displayName.substringAfter(' ').substringBefore(" (") }.toSet()
+            return TRACKED_ORDER.filter { it in pinned }
+        }
+
         /** Guess whether a picked file is a patch by name, so ADD can route it. */
         fun looksLikePatch(name: String): Boolean =
             name.lowercase().let {
@@ -403,6 +548,13 @@ class LibraryStore(private val root: File) {
         private val ILLEGAL_IN_NAME = Regex("[/\\\\:*?\"<>|\\x00-\\x1F\\x7F]")
     }
 }
+
+/**
+ * The cores' saves folder for a library kept the way PrepStore keeps it: filesDir/prep/library beside filesDir/saves
+ * (PlayScreen's savesDirectory). Null for a library anywhere else, which has none.
+ */
+internal fun savesDirFor(libraryRoot: File): File? =
+    libraryRoot.takeIf { it.name == "library" && it.parentFile?.name == "prep" }?.parentFile?.parentFile?.let { File(it, "saves") }
 
 /** The file extensions this app reads. Anything else after a dot is part of the name. */
 private val KNOWN_EXTS = setOf("gba", "gbc", "gb", "nds", "zip", "ips", "bps", "ups", "xdelta", "vcdiff")

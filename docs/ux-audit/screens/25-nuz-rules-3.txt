@@ -1,0 +1,25 @@
+TEXT:
+Nuzlocke
+HARDCORE
+Level caps
+No Pokémon above the highest level on the next boss's team. Checked when a boss battle starts; passing it inside the battle is allowed.
+Rivals and team leaders are bosses
+The cap also applies before rival and villain team battles.
+No items in battle
+A warning when the bag loses an item during a battle. Poke Balls are fine.
+Set battle style
+A warning while the game's battle style option is on Shift.
+VARIANTS
+Wedlocke pairs
+One male and one female. You skip encounters of the gender you have more of, and genderless Pokémon cannot be caught.
+Genlocke
+The survivors at the Champion are saved so the next game can carry them on.
+SAFARI ZONE
+Start Nuzlocke
+Home
+Play
+Library
+More
+
+CONTENT DESCRIPTIONS:
+Back to Home

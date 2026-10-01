@@ -58,10 +58,55 @@ import androidx.compose.ui.window.Dialog
 import java.io.File
 
 /**
+ * The user's whole theme (2026-09-29): the eight colours the editor names, and what a
+ * preset or an auto theme adds to them, which are the lower box's own text, border and
+ * background, the header's text and its ground, the DS tracker's alternate positive and
+ * negative pair, the move-type bar and the category icons. The user's theme was only the
+ * eight until now, so an auto theme letting go could only clear the rest to nothing, and
+ * a preset with a lower box of its own would have been lost with it. [keys] is in
+ * [ThemeStore.KEYS] order. A null extra falls back the way [Pc]'s getters do.
+ */
+data class WholeTheme(
+    val page: Color, val ground: Color, val border: Color, val text: Color,
+    val positive: Color, val negative: Color, val gold: Color, val dim: Color,
+    val headerX: Color? = null, val headerGroundX: Color? = null, val lowerTextX: Color? = null,
+    val lowerBorderX: Color? = null, val lowerGroundX: Color? = null,
+    val altPositiveX: Color? = null, val altNegativeX: Color? = null,
+    val moveTypeBar: Boolean = false, val categoryIconsX: Boolean? = null,
+) {
+    val keys: List<Color> get() = listOf(page, ground, border, text, positive, negative, gold, dim)
+    val header: Color get() = headerX ?: text
+    val lowerText: Color get() = lowerTextX ?: text
+    val lowerBorder: Color get() = lowerBorderX ?: border
+    val lowerGround: Color get() = lowerGroundX ?: ground
+
+    /** True when nothing rides on the eight colours. */
+    val plain: Boolean
+        get() = headerX == null && headerGroundX == null && lowerTextX == null && lowerBorderX == null &&
+            lowerGroundX == null && altPositiveX == null && altNegativeX == null && !moveTypeBar && categoryIconsX == null
+
+    companion object {
+        /** The eight colours in [ThemeStore.KEYS] order, and nothing else. */
+        fun ofKeys(keys: List<Color>): WholeTheme {
+            require(keys.size == 8) { "eight colours, not ${keys.size}" }
+            return WholeTheme(keys[0], keys[1], keys[2], keys[3], keys[4], keys[5], keys[6], keys[7])
+        }
+    }
+}
+
+/**
  * ColorSchemeScreen.lua: the eight colours of the palette by the DS
  * tracker's names, edited as AARRGGBB hex and applied live, saved to
  * prep/theme.txt, with the reference's import and export of a theme string
  * (eight hex values, comma separated) and a reset to the default scheme.
+ *
+ * What is saved is the whole theme (2026-09-29, [WholeTheme]). The file is still one
+ * line that starts with the eight AARRGGBB values, so a file from before presets loads
+ * as it always did. A theme with more than those eight (a preset with a lower box of its
+ * own) continues after a bar, nine comma separated tokens: the header text, header ground,
+ * lower text, lower border, lower ground, alternate positive and alternate negative as a
+ * colour or a dash for none, then the move-type bar as 1 or 0 and the category icons as
+ * 1, 0 or a dash. A plain theme is written exactly as it was, so its export is unchanged.
  */
 object ThemeStore {
     class Key(val name: String, val get: () -> Color, val set: (Color) -> Unit, val default: Color)
@@ -78,36 +123,122 @@ object ThemeStore {
     )
     private var file: File? = null
 
+    /** What a fresh install shows and what Reset colours returns to: the eight defaults, nothing extra. */
+    val FACTORY: WholeTheme by lazy { WholeTheme.ofKeys(KEYS.map { it.default }) }
+
+    private fun isHexDigit(c: Char) = c in '0'..'9' || c in 'a'..'f' || c in 'A'..'F'
+
     fun hex(c: Color): String = String.format("%08X", (c.value shr 32).toLong() and 0xFFFFFFFFL)
-    fun parse(s: String): Color? = s.trim().removePrefix("#").takeIf { it.length == 8 || it.length == 6 }?.let { h ->
-        h.toLongOrNull(16)?.let { v -> Color(if (h.length == 6) (0xFF000000L or v) else v) }
+    // Digits only: toLongOrNull(16) also takes a sign, and "-12345" is six characters.
+    fun parse(s: String): Color? = s.trim().removePrefix("#")
+        .takeIf { d -> (d.length == 8 || d.length == 6) && d.all { c -> isHexDigit(c) } }?.let { h ->
+            h.toLongOrNull(16)?.let { v -> Color(if (h.length == 6) (0xFF000000L or v) else v) }
+        }
+
+    /** The whole theme as it shows now, whichever of the user's or an auto theme's it is. */
+    fun snapshot(): WholeTheme = WholeTheme(
+        page = Pc.Page, ground = Pc.Ground, border = Pc.Border, text = Pc.Text,
+        positive = Pc.Positive, negative = Pc.Negative, gold = Pc.Gold, dim = Pc.Dim,
+        headerX = Pc.HeaderX, headerGroundX = Pc.HeaderGroundX, lowerTextX = Pc.LowerTextX,
+        lowerBorderX = Pc.LowerBorderX, lowerGroundX = Pc.LowerGroundX,
+        altPositiveX = Pc.AltPositiveX, altNegativeX = Pc.AltNegativeX,
+        moveTypeBar = Pc.moveTypeBar, categoryIconsX = Pc.categoryIconsX,
+    )
+
+    /** Puts every colour and override of [w] on the palette, the extras that are null included. Nothing is saved. */
+    fun show(w: WholeTheme) {
+        Pc.Page = w.page; Pc.Ground = w.ground; Pc.Border = w.border; Pc.Text = w.text
+        Pc.Positive = w.positive; Pc.Negative = w.negative; Pc.Gold = w.gold; Pc.Dim = w.dim
+        Pc.HeaderX = w.headerX; Pc.HeaderGroundX = w.headerGroundX; Pc.LowerTextX = w.lowerTextX
+        Pc.LowerBorderX = w.lowerBorderX; Pc.LowerGroundX = w.lowerGroundX
+        Pc.AltPositiveX = w.altPositiveX; Pc.AltNegativeX = w.altNegativeX
+        Pc.moveTypeBar = w.moveTypeBar; Pc.categoryIconsX = w.categoryIconsX
     }
 
-    fun export(): String = KEYS.joinToString(",") { hex(it.get()) }
-    fun import(s: String): Boolean {
-        val parts = s.split(',').map { parse(it) ?: return false }
-        if (parts.size != KEYS.size) return false
-        KEYS.forEachIndexed { i, k -> k.set(parts[i]) }
-        save(); return true
+    /** [w] becomes the user's own theme: shown and saved. */
+    fun adopt(w: WholeTheme) { show(w); save() }
+
+    /**
+     * One colour edited in the editor, then saved. Two extras follow their key while they
+     * still hold its old value, because the editor has no row of its own for them: a
+     * preset's header ground is the main background (the reference draws the header on it),
+     * and its lower text is the bottom box text. Without this, editing either after picking
+     * a preset changed the quiet lines and left the moves table and the header as they were.
+     */
+    fun edit(k: Key, c: Color) {
+        val before = k.get()
+        k.set(c)
+        if (k === KEYS[0] && Pc.HeaderGroundX == before) Pc.HeaderGroundX = c
+        if (k === KEYS[7] && Pc.LowerTextX == before) Pc.LowerTextX = c
+        save()
     }
-    fun reset() { KEYS.forEach { it.set(it.default) }; save() }
+
+    /** The theme as one line, see the class comment. A plain theme is just its eight colours. */
+    fun encode(w: WholeTheme): String {
+        val keys = w.keys.joinToString(",") { hex(it) }
+        if (w.plain) return keys
+        val colours = listOf(w.headerX, w.headerGroundX, w.lowerTextX, w.lowerBorderX, w.lowerGroundX, w.altPositiveX, w.altNegativeX)
+            .map { c -> c?.let { hex(it) } ?: "-" }
+        val flags = listOf(if (w.moveTypeBar) "1" else "0", w.categoryIconsX?.let { if (it) "1" else "0" } ?: "-")
+        return keys + "|" + (colours + flags).joinToString(",")
+    }
+
+    /** The theme [s] holds, or null when it is not one. A bar with the wrong tail after it is not one either. */
+    fun decode(s: String): WholeTheme? {
+        val text = s.trim()
+        val bar = text.indexOf('|')
+        val keys = (if (bar < 0) text else text.substring(0, bar)).split(',').map { parse(it) ?: return null }
+        if (keys.size != KEYS.size) return null
+        if (bar < 0) return WholeTheme.ofKeys(keys)
+        val tail = text.substring(bar + 1).split(',').map { it.trim() }
+        if (tail.size != 9) return null
+        // A colour, or a dash for none: a plain loop, so a bad token is told apart from a dash.
+        val colours = ArrayList<Color?>()
+        for (t in tail.take(7)) colours += if (t == "-") null else (parse(t) ?: return null)
+        val typeBar = when (tail[7]) { "1" -> true; "0" -> false; else -> return null }
+        val icons: Boolean? = when (tail[8]) { "1" -> true; "0" -> false; "-" -> null; else -> return null }
+        return WholeTheme.ofKeys(keys).copy(
+            headerX = colours[0], headerGroundX = colours[1], lowerTextX = colours[2], lowerBorderX = colours[3],
+            lowerGroundX = colours[4], altPositiveX = colours[5], altNegativeX = colours[6],
+            moveTypeBar = typeBar, categoryIconsX = icons,
+        )
+    }
+
+    fun export(): String = encode(snapshot())
+    fun import(s: String): Boolean {
+        val w = decode(s) ?: return false
+        adopt(w); return true
+    }
+    fun reset() { adopt(FACTORY) }
 
     fun load(f: File) {
         file = f
         if (!f.isFile) return
-        runCatching { import(f.readText().trim()) }
+        runCatching {
+            val text = f.readText().trim()
+            // The colours are what matter: a damaged tail must not cost the player the eight.
+            (decode(text) ?: decode(text.substringBefore('|')))?.let { show(it) }
+        }
     }
-    fun save() { file?.let { f -> runCatching { f.parentFile?.mkdirs(); f.writeText(export()) } } }
+    fun save() { file?.let { SafeWrite.text(it, export()) } }
+
+    /** Tests only: stop writing to the file [load] was given. */
+    internal fun detach() { file = null }
 }
 
 /**
  * The tracker colour editor. Shell-styled since 2026-09-27 (audit): pixel text
  * at 7 to 10 px, a 15dp "X" and 21dp hex fields were the old look. Only the
  * swatches use the tracker's colours, because they ARE those colours.
+ *
+ * Since 2026-09-29 it opens on the presets (the PC tracker's, or the DS tracker's on a DS
+ * game [ds]) and the image behind the tracker, ThemePicker.kt, and the hex editor follows.
  */
 @Composable
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
-fun ColorThemeDialog(onClose: () -> Unit) {
+fun ColorThemeDialog(ds: Boolean = false, onClose: () -> Unit) {
+    // What is edited and saved is the user's own theme, never an auto theme showing.
+    androidx.compose.runtime.DisposableEffect(Unit) { AutoTheme.suspend(); onDispose { AutoTheme.resume() } }
     var importText by remember { mutableStateOf("") }
     var importError by remember { mutableStateOf<String?>(null) }
     var showExport by remember { mutableStateOf(false) }
@@ -133,6 +264,12 @@ fun ColorThemeDialog(onClose: () -> Unit) {
                         Icon(Icons.Filled.Close, contentDescription = "Close", tint = Shell.inkOnPaper)
                     }
                 }
+                ThemePresetSection(ds) { refreshEdits() }
+                Spacer(Modifier.height(16.dp))
+                TrackerImageSection()
+                Spacer(Modifier.height(16.dp))
+                Text("Edit colours", style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Medium, color = Shell.inkOnPaper)
                 Text("Hex, 6 or 8 digits (RRGGBB or AARRGGBB). A colour applies once it is valid.",
                     style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper)
                 Spacer(Modifier.height(8.dp))
@@ -141,7 +278,7 @@ fun ColorThemeDialog(onClose: () -> Unit) {
                     val v = edits[k.name] ?: ""
                     val valid = ThemeStore.parse(v) != null
                     fun apply(text: String) {
-                        ThemeStore.parse(text)?.let { c -> k.set(c); ThemeStore.save(); applied++ }
+                        ThemeStore.parse(text)?.let { c -> ThemeStore.edit(k, c); applied++ }
                     }
                     Column(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {

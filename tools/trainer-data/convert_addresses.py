@@ -23,7 +23,7 @@ WANT = ["gBattleTerrain", "gBattleWeather", "gBattleStructPtr", "gStatuses3", "g
         "gBattleOutcome", "gBattleMainFunc", "gMapHeader", "gLevelUpLearnsets", "gSaveBlock1ptr", "gSaveBlock2ptr",
         "bagPocket_Items_offset", "bagPocket_Berries_offset", "bagPocket_Balls_offset", "bagPocket_Balls_Size",
         "HandleTurnActionSelectionState", "ReturnFromBattleToOverworld",
-        "gSpecialVar_Result", "gameVarsOffset", "gTasks", "Task_HandleConfirmStarterInput"]
+        "gSpecialVar_Result", "gameVarsOffset", "gTasks", "Task_HandleConfirmStarterInput", "gBattlerPartyIndexes", "sSpecialFlags"]
 out = root / "tracker-gba/src/test/resources/gen3/addresses.tsv"
 out.parent.mkdir(parents=True, exist_ok=True)
 n = 0
@@ -51,14 +51,16 @@ with open(out, "w", encoding="utf-8", newline=nl) as f:
     for code, name in NAMES.items():
         e = ma[code]
         if e is None: continue
-        for block in ("VERSION_POINTER_OFFSETS", "GLOBAL"):
+        # POINTER_OFFSETS is Black 2 and White 2's table since 6.3.11: offsets from the base MAIN_POINTER names,
+        # under the same symbols the old fixed addresses had (NdsPointerOffsets, NdsAddressAuditTest).
+        for block in ("VERSION_POINTER_OFFSETS", "POINTER_OFFSETS", "GLOBAL"):
             t = e[block]
             if t is None: continue
             for k in sorted(dict(t).keys()):
                 v = t[k]
                 if isinstance(v, (int, float)):
                     f.write(name + tab + str(k) + tab + ("0x%08X" % int(v)) + nl); n += 1
-        for k in ("GLOBAL_POINTER", "VERSION_POINTER_OFFSET"):
+        for k in ("GLOBAL_POINTER", "VERSION_POINTER_OFFSET", "MAIN_POINTER"):
             v = e[k]
             if isinstance(v, (int, float)):
                 f.write(name + tab + str(k) + tab + ("0x%08X" % int(v)) + nl); n += 1

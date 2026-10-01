@@ -1,0 +1,30 @@
+TEXT:
+Kaizo IronMON
+Build your own
+Start from
+Step 1 of 5
+Pokémon Emerald (U)
+Begin with the game as it is, or with one of its official modes, and change what you like.
+The game as it is
+Nothing is randomized until you say so on the next pages.
+Standard
+The official Standard settings. Whatever you leave alone stays as they have it.
+Kaizo
+The official Kaizo settings. Whatever you leave alone stays as they have it.
+Super Kaizo
+The official Super Kaizo settings. Whatever you leave alone stays as they have it.
+Ultimate
+The official Ultimate settings. Whatever you leave alone stays as they have it.
+Survival
+The official Survival settings. Whatever you leave alone stays as they have it.
+Kaizo Doubles
+The official Kaizo Doubles settings. Whatever you leave alone stays as they have it.
+Cancel
+Next
+Home
+Play
+Library
+More
+
+CONTENT DESCRIPTIONS:
+Back to Home

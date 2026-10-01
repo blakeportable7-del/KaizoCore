@@ -101,6 +101,8 @@ object PokemonDecoder {
         val atk: Int, val def: Int, val spe: Int, val spAtk: Int, val spDef: Int,
         /** Total experience, growth substructure +4. TeamViewArea's EXP bar reads it. */
         val exp: Long = 0,
+        /** IV word bit 30 (Program.lua:983 isEgg). */
+        val isEgg: Boolean = false,
     )
 
     fun isEmpty(mon: ByteArray): Boolean = mon.u32(PID) == 0L
@@ -129,6 +131,7 @@ object PokemonDecoder {
             ivs = List(6) { ((ivWord shr (it * 5)) and 0x1F).toInt() },
             evs = List(6) { plain.u8(e + it) },
             abilitySlot = ((ivWord shr 31) and 1).toInt(),
+            isEgg = ((ivWord shr 30) and 1) == 1L,
             nature = (pid % 25).toInt(),
             shiny = ((mon.u32(OTID) xor pid xor (pid ushr 16) xor (mon.u32(OTID) ushr 16)) and 0xFFFF) < 8,
             status = mon.u32(layout.status),

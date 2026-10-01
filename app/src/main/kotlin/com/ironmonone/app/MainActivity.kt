@@ -28,10 +28,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -49,16 +48,27 @@ import androidx.compose.ui.unit.sp
 import com.ironmonone.app.gen3.Gen3
 import com.ironmonone.app.gen3.Gen3Header
 import com.swordfish.libretrodroid.LibretroDroid
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
-private enum class Tab(val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
-    // Five tabs with icons (Blake, 2026-09-27). Seven pixel-font labels did not
+internal enum class Tab(val label: String) {
+    // Tabs with icons (Blake, 2026-09-27). Seven pixel-font labels did not
     // fit a phone bar. PREP and ROMS are the two pages of LIBRARY; KEYS and
-    // INFO are the two pages of MORE.
-    PLAY("Play", androidx.compose.material.icons.Icons.Filled.PlayArrow),
-    RUN("Run", androidx.compose.material.icons.Icons.Filled.Refresh),
-    LIBRARY("Library", androidx.compose.material.icons.Icons.Filled.List),
-    HACKS("Hacks", androidx.compose.material.icons.Icons.Filled.Build),
-    MORE("More", androidx.compose.material.icons.Icons.Filled.Menu),
+    // INFO are the two pages of MORE. Four since 2026-09-29: HOME, the main
+    // menu, is first and is where the app opens. RUN and HACKS stopped being
+    // tabs and are screens opened from Home's buttons (HomeMode, AppNav).
+    HOME("Home"),
+    PLAY("Play"),
+    LIBRARY("Library"),
+    MORE("More"),
+}
+
+/** The bar's icon for a tab. Not in the enum, so the tab list is plain data that a test reads (2026-09-29). */
+private fun Tab.icon(): androidx.compose.ui.graphics.vector.ImageVector = when (this) {
+    Tab.HOME -> androidx.compose.material.icons.Icons.Filled.Home
+    Tab.PLAY -> androidx.compose.material.icons.Icons.Filled.PlayArrow
+    Tab.LIBRARY -> androidx.compose.material.icons.Icons.Filled.List
+    Tab.MORE -> androidx.compose.material.icons.Icons.Filled.Menu
 }
 
 /** The two pages inside a tab, switched by a segmented control at its top. */
@@ -151,18 +161,31 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Demo.mode = intent?.getStringExtra("demo")
+        CrashLog.installHandler(this)
         // PREP and ADD FILES stream picks into the cache; a pick that was never
         // finished (a crash, a second tap) is worthless after a restart and, at
         // 512 MB a DS dump, fills a phone. Swept every launch.
         runCatching { cacheDir.listFiles()?.filter { it.name.startsWith("prep-") || it.name.startsWith("import-") }?.forEach { it.deleteRecursively() } }
         TrackerOptions.load(java.io.File(filesDir, "prep/tracker-options.txt"))
+        // A new run knows whether its settings file is one KaizoCore comes with (CustomRuns, IronMON rules check R2).
+        val appContext = applicationContext
+        CustomRuns.bundled = { ExtraPasses.bundled(appContext) }
         HiddenPowerTypes.load(java.io.File(filesDir, "prep/hidden-power.txt"))
         PcHeals.load(java.io.File(filesDir, "prep/pc-heals.txt"))
+        RunClock.load(java.io.File(filesDir, "prep/run-clock.txt"))
+        DeathQuotes.load(java.io.File(filesDir, DeathQuotes.FILE))
         SummaryChecks.load(java.io.File(filesDir, "prep/summary-checked.txt"))
         ThemeStore.load(java.io.File(filesDir, "prep/theme.txt"))
+        ThemePresets.load(java.io.File(filesDir, ThemePresets.FILE))
+        TrackerBackground.load(filesDir)
+        NextRunJob.load(PrepStore(this))
         (getSystemService(INPUT_SERVICE) as InputManager)
             .registerInputDeviceListener(deviceListener, null)
         Controllers.refresh()
+        // The stream reminder (StreamReminder): from Android 13 the phone asks once, as the stream is turned on.
+        com.ironmonone.app.stream.StreamHub.onStarted = {
+            if (com.ironmonone.app.stream.StreamReminder.shouldAsk(this)) requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 71)
+        }
         // Text with no colour of its own takes the light ink: on the dark
         // shell the default (black) was invisible.
         setContent {
@@ -177,7 +200,19 @@ class MainActivity : ComponentActivity() {
     override fun onDestroy() {
         (getSystemService(INPUT_SERVICE) as InputManager)
             .unregisterInputDeviceListener(deviceListener)
+        com.ironmonone.app.stream.StreamHub.onStarted = null
         super.onDestroy()
+    }
+
+    // While the stream is on, leaving KaizoCore pauses the game: a notification brings the player back (UX audit P0-19).
+    override fun onStop() {
+        super.onStop()
+        com.ironmonone.app.stream.StreamReminder.left(this)
+    }
+
+    override fun onStart() {
+        super.onStart()
+        com.ironmonone.app.stream.StreamReminder.back(this)
     }
 
     /** Route controller AND keyboard keys into the core, same path as the pad. */
@@ -273,50 +308,30 @@ class MainActivity : ComponentActivity() {
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 private fun App() {
     val appContext = androidx.compose.ui.platform.LocalContext.current
-    var tab by remember {
-        mutableStateOf(when (runCatching { PrepStore(appContext).startingPoint() }.getOrDefault("PREP")) {
-            "PLAY" -> Tab.PLAY
-            "RUN" -> Tab.RUN
-            else -> Tab.LIBRARY
-        })
-    }
-    // Which page of LIBRARY (0 set up a game, 1 all files) and MORE (0
-    // controls, 1 backup and info) is showing.
-    var libraryPage by remember { mutableStateOf(0) }
-    var morePage by remember { mutableStateOf(0) }
+    // Where the app opens: Home, or Play when it is being reopened after closing in the
+    // middle of a game, so CrashResume finds that game up (PrepStore.startingPoint, 2026-09-29).
+    val start = remember { runCatching { PrepStore(appContext).startingPoint(Demo.mode) }.getOrDefault("HOME") }
+    // The tab, the screen open on Home (Kaizo IronMON, Nuzlocke, ROM Hacks) and which page of
+    // LIBRARY (0 set up a game, 1 all files) and MORE (0 controls, 1 backup and info) is showing.
+    // Plain data in AppNav, so where every button and Back leads is tested (2026-09-29).
+    var nav by remember { mutableStateOf(AppNav.opening(start)) }
+    val tab = nav.tab
+    // The welcome, on the first launch that opens on Home (Welcome.showAtLaunch).
+    var welcome by remember { mutableStateOf(runCatching { Welcome.showAtLaunch(appContext.filesDir, start, Demo.mode) }.getOrDefault(false)) }
     // A crash or freeze last session is offered at launch, not only on INFO,
     // where hardly anyone would find it (audit, 2026-09-27). Android ending the
     // app in the background to free memory is normal and is not announced.
+    // The dialog sends the report to Blake when the player says so, or offers the share sheet
+    // (CrashReportLaunch, 2026-09-29). `--es demo crash` stages it with a sample report.
     var launchCrash by remember {
-        mutableStateOf(runCatching { CrashLog.collect(appContext) }.getOrNull()
-            ?.takeIf { "CRASH" in it || "ANR" in it })
+        mutableStateOf(
+            if (Demo.mode == "crash") demoReport(appContext)
+            else runCatching { CrashLog.collect(appContext) }.getOrNull()
+                ?.takeIf { "CRASH" in it || "ANR" in it }
+        )
     }
-    launchCrash?.let { text ->
-        ShellDialog("KaizoCore closed unexpectedly", onDismiss = { launchCrash = null }) {
-            Text("It happened last time you played. Your saves are kept. A report says where the app failed, " +
-                "with your phone model and the app version, and helps get it fixed.",
-                style = androidx.compose.material3.MaterialTheme.typography.bodyMedium, color = Gen3.Ink)
-            Spacer(Modifier.height(10.dp))
-            // FlowRow: at a large font two buttons in a Row ran off the dialog.
-            androidx.compose.foundation.layout.FlowRow(
-                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
-                verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
-            ) {
-                com.ironmonone.app.gen3.Gen3Button("Send report", accent = true) {
-                    runCatching {
-                        val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                            type = "text/plain"
-                            putExtra(android.content.Intent.EXTRA_SUBJECT, "KaizoCore crash report")
-                            putExtra(android.content.Intent.EXTRA_TEXT, text)
-                        }
-                        appContext.startActivity(android.content.Intent.createChooser(send, "Send crash report"))
-                    }
-                    launchCrash = null
-                }
-                com.ironmonone.app.gen3.Gen3Button("Not now") { launchCrash = null }
-            }
-        }
-    }
+    launchCrash?.let { text -> CrashReportLaunch(text, onClose = { launchCrash = null }) }
+    UpdatePrompt(show = tab != Tab.PLAY && launchCrash == null)
     // The preset being edited, with the generation of the ROM it targets.
     var editing by remember { mutableStateOf<Pair<java.io.File, String?>?>(null) }
     val landscape =
@@ -339,10 +354,27 @@ private fun App() {
     val fullscreen = editing == null && (clean || (landscape && tab == Tab.PLAY && !showChrome))
     androidx.activity.compose.BackHandler(enabled = clean) { clean = false }
     androidx.activity.compose.BackHandler(enabled = fullscreen && !clean) { showChrome = true }
-    // Back on any other tab goes to Play; it used to close the app, even with
-    // a game running (audit, 2026-09-27). On Play the system handles it.
-    // Screens and editors register their own handlers later, so theirs win.
-    androidx.activity.compose.BackHandler(enabled = editing == null && tab != Tab.PLAY) { tab = Tab.PLAY }
+    // Back from Library or More returns to where the player came from: Play, as it always
+    // did (it used to close the app, even with a game running: audit, 2026-09-27), or Home.
+    // A mode screen's Back is Home, and on Home and Play the system handles it (AppNav.back,
+    // 2026-09-29). Screens and editors register their own handlers later, so theirs win.
+    androidx.activity.compose.BackHandler(enabled = editing == null && nav.back() != null) { nav.back()?.let { nav = it } }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    // Answering the welcome, with either button or Back, writes its flag and it is never shown
+    // again. The write is off the main thread because SafeWrite syncs to disk. "Add your games"
+    // goes on to Library's All files page, where Add files is.
+    fun closeWelcome(addGames: Boolean) {
+        scope.launch(Dispatchers.IO) { Welcome.markSeen(appContext.filesDir) }
+        welcome = false
+        if (addGames) nav = nav.addGames()
+    }
+    // Back on the welcome is "Look around": it is skippable, and a first screen that closed
+    // the app would only show itself again at the next launch.
+    androidx.activity.compose.BackHandler(enabled = welcome) { closeWelcome(addGames = false) }
+    if (welcome) {
+        WelcomeScreen(onAddGames = { closeWelcome(addGames = true) }, onLookAround = { closeWelcome(addGames = false) })
+        return
+    }
 
     Column(
         Modifier.fillMaxSize().background(Shell.night)
@@ -376,12 +408,12 @@ private fun App() {
                 1f,
             ) == 0f
             androidx.compose.animation.Crossfade(
-                targetState = editing to tab,
+                targetState = Triple(editing, tab, nav.mode),
                 animationSpec = androidx.compose.animation.core.tween(
                     if (reduceMotion) 0 else 120,
                 ),
                 label = "tab",
-            ) { (editingNow, tabNow) ->
+            ) { (editingNow, tabNow, modeNow) ->
             editingNow?.let { file ->
                 EditorScreen(
                     file.first, file.second,
@@ -393,27 +425,58 @@ private fun App() {
                 // picture there and anything behind it is either invisible or
                 // a distraction. ScreenBackground owns the scrim, so the
                 // contrast guarantees from M1 hold over any artwork.
-                Tab.RUN -> ScreenBackground(null) {
-                    RunScreen(Modifier.fillMaxSize(), onEdit = { f, g -> editing = f to g }, onPlay = { tab = Tab.PLAY })
+                // Home is the main menu; its four buttons open Library's All files page or one of
+                // three screens under a top bar with a back control to Home (2026-09-29). PLAY_ANY is
+                // never held (AppNav.open sends it to Library), so it reads as Home here.
+                Tab.HOME -> when (modeNow) {
+                    // Your stats is a screen on Home like a mode's, under the same top bar, from the link under the buttons (AppNav.stats).
+                    null, HomeMode.PLAY_ANY -> if (nav.stats) ModeScreen(StatsCopy.TITLE, onBack = { nav = nav.home() }) {
+                        CareerStatsScreen(Modifier.fillMaxSize())
+                    } else HomeScreen(
+                        Modifier.fillMaxSize(),
+                        onContinue = { nav = nav.play() },
+                        onMode = { nav = nav.open(it) },
+                        onLibrary = { nav = nav.pick(Tab.LIBRARY) },
+                        onMore = { nav = nav.pick(Tab.MORE) },
+                        onStats = { nav = nav.openStats() },
+                    )
+                    HomeMode.KAIZO -> ModeScreen(HomeMode.KAIZO.title, onBack = { nav = nav.home() }) {
+                        ScreenBackground(null) {
+                            RunScreen(Modifier.fillMaxSize(), onEdit = { f, g -> editing = f to g }, onPlay = { nav = nav.play() },
+                                // The empty game list's Add a game button: Library's games page (2026-09-30, UX audit P0-13).
+                                onAddGame = { nav = nav.openMyGames() })
+                        }
+                    }
+                    HomeMode.NUZLOCKE -> ModeScreen(HomeMode.NUZLOCKE.title, onBack = { nav = nav.home() }) {
+                        ScreenBackground(null) {
+                            NuzlockeScreen(Modifier.fillMaxSize(), onPlay = { nav = nav.play() }, onAddGame = { nav = nav.openMyGames() })
+                        }
+                    }
+                    HomeMode.HACKS -> ModeScreen(HomeMode.HACKS.title, onBack = { nav = nav.home() }) {
+                        ScreenBackground(null) {
+                            HacksScreen(Modifier.fillMaxSize(), onPlay = { nav = nav.play() })
+                        }
+                    }
                 }
-                Tab.PLAY -> PlayScreen(
+                // Where Play's empty screen sends the player (PlayNothing): Play takes no new parameters (2026-09-30).
+                Tab.PLAY -> androidx.compose.runtime.CompositionLocalProvider(
+                    LocalShellNav provides ShellNav(openMyGames = { nav = nav.openMyGames() }, openKaizo = { nav = nav.open(HomeMode.KAIZO) }),
+                ) { PlayScreen(
                     Modifier.fillMaxSize(),
                     fullscreen = fullscreen,
                     landscape = landscape,
                     onExitFullscreen = { showChrome = true },
                     clean = clean,
                     onClean = { clean = it },
-                )
-                Tab.LIBRARY -> TabPages(listOf("Set up a game", "All files"), libraryPage, { libraryPage = it }) {
-                    if (libraryPage == 0) PrepareScreen(Modifier.fillMaxSize())
-                    else RomLibraryScreen(Modifier.fillMaxSize(), onPlay = { tab = Tab.PLAY })
+                ) }
+                // My games first, the games list; Patched versions second (2026-09-30, UX audit P0-10). AppNav.MY_GAMES_PAGE is 0.
+                Tab.LIBRARY -> TabPages(listOf("My games", "Patched versions"), nav.libraryPage, { nav = nav.withLibraryPage(it) }) {
+                    if (nav.libraryPage == AppNav.MY_GAMES_PAGE) RomLibraryScreen(Modifier.fillMaxSize(), onPlay = { nav = nav.play() })
+                    else PrepareScreen(Modifier.fillMaxSize(), onMyGames = { nav = nav.withLibraryPage(AppNav.MY_GAMES_PAGE) })
                 }
-                Tab.HACKS -> ScreenBackground(null) {
-                    HacksScreen(Modifier.fillMaxSize(), onPlay = { tab = Tab.PLAY })
-                }
-                Tab.MORE -> TabPages(listOf("Controls", "Backup and info"), morePage, { morePage = it }) {
-                    if (morePage == 0) ControlsScreen(Modifier.fillMaxSize())
-                    else AboutScreen(Modifier.fillMaxSize())
+                Tab.MORE -> TabPages(listOf("Controls", "Backup and info"), nav.morePage, { nav = nav.withMorePage(it) }) {
+                    if (nav.morePage == 0) ControlsScreen(Modifier.fillMaxSize())
+                    else AboutScreen(Modifier.fillMaxSize(), onStats = { nav = nav.openStats() })
                 }
             }
             }
@@ -426,7 +489,7 @@ private fun App() {
                     .padding(horizontal = 6.dp, vertical = 6.dp)
                     .selectableGroup(),
             ) {
-                // Labels stop growing at a 1.3 font scale so five fit one row.
+                // Labels stop growing at a 1.3 font scale so the tabs fit one row.
                 val fontScale = LocalDensity.current.fontScale
                 val labelSp = (12f * minOf(fontScale, 1.3f) / fontScale).sp
                 Tab.entries.forEach { t ->
@@ -435,7 +498,7 @@ private fun App() {
                         Modifier.weight(1f)
                             .heightIn(min = Shell.touchTarget)
                             .clip(androidx.compose.foundation.shape.RoundedCornerShape(14.dp))
-                            .selectable(selected = active, role = androidx.compose.ui.semantics.Role.Tab) { tab = t; showChrome = false }
+                            .selectable(selected = active, role = androidx.compose.ui.semantics.Role.Tab) { nav = nav.pick(t); showChrome = false }
                             .padding(vertical = 6.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
@@ -445,7 +508,7 @@ private fun App() {
                                 .padding(horizontal = 16.dp, vertical = 4.dp),
                         ) {
                             androidx.compose.material3.Icon(
-                                t.icon, contentDescription = null,
+                                t.icon(), contentDescription = null,
                                 tint = if (active) Shell.accentOnNight else Shell.hintOnNight,
                                 modifier = Modifier.size(22.dp),
                             )

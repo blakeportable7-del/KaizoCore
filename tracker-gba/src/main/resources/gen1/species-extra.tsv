@@ -1,0 +1,151 @@
+1	Bulbasaur	16	6.9
+2	Ivysaur	32	13.0
+3	Venusaur		100.0
+4	Charmander	16	8.5
+5	Charmeleon	36	19.0
+6	Charizard		90.5
+7	Squirtle	16	9.0
+8	Wartortle	36	22.5
+9	Blastoise		85.5
+10	Caterpie	7	2.9
+11	Metapod	10	9.9
+12	Butterfree		32.0
+13	Weedle	7	3.2
+14	Kakuna	10	10.0
+15	Beedrill		29.5
+16	Pidgey	18	1.8
+17	Pidgeotto	36	30.0
+18	Pidgeot		39.5
+19	Rattata	20	3.5
+20	Raticate		18.5
+21	Spearow	20	2.0
+22	Fearow		38.0
+23	Ekans	22	6.9
+24	Arbok		65.0
+25	Pikachu	THUNDER	6.0
+26	Raichu		30.0
+27	Sandshrew	22	12.0
+28	Sandslash		29.5
+29	Nidoran	16	7.0
+30	Nidorina	MOON	20.0
+31	Nidoqueen		60.0
+32	Nidoran M	16	9.0
+33	Nidorino	MOON	19.5
+34	Nidoking		62.0
+35	Clefairy	MOON	7.5
+36	Clefable		40.0
+37	Vulpix	FIRE	9.9
+38	Ninetales		19.9
+39	Jigglypuff	MOON	5.5
+40	Wigglytuff		12.0
+41	Zubat	22	7.5
+42	Golbat	FRIEND	55.0
+43	Oddish	21	5.4
+44	Gloom	LEAF	8.6
+45	Vileplume		18.6
+46	Paras	24	5.4
+47	Parasect		29.5
+48	Venonat	31	30.0
+49	Venomoth		12.5
+50	Diglett	26	0.8
+51	Dugtrio		33.3
+52	Meowth	28	4.2
+53	Persian		32.0
+54	Psyduck	33	19.6
+55	Golduck		76.6
+56	Mankey	28	28.0
+57	Primeape		32.0
+58	Growlithe	FIRE	19.0
+59	Arcanine		155.0
+60	Poliwag	25	12.4
+61	Poliwhirl	WATER37	20.0
+62	Poliwrath		54.0
+63	Abra	16	19.5
+64	Kadabra	37	56.5
+65	Alakazam		48.0
+66	Machop	28	19.5
+67	Machoke	37	70.5
+68	Machamp		130.0
+69	Bellsprout	21	4.0
+70	Weepinbell	LEAF	6.4
+71	Victreebel		15.5
+72	Tentacool	30	45.5
+73	Tentacruel		55.0
+74	Geodude	25	20.0
+75	Graveler	37	105.0
+76	Golem		300.0
+77	Ponyta	40	30.0
+78	Rapidash		95.0
+79	Slowpoke	WATER37	36.0
+80	Slowbro		78.5
+81	Magnemite	30	6.0
+82	Magneton		60.0
+83	Farfetch'd		15.0
+84	Doduo	31	39.2
+85	Dodrio		85.2
+86	Seel	34	90.0
+87	Dewgong		120.0
+88	Grimer	38	30.0
+89	Muk		30.0
+90	Shellder	WATER	4.0
+91	Cloyster		132.5
+92	Gastly	25	0.1
+93	Haunter	37	0.1
+94	Gengar		40.5
+95	Onix	30	210.0
+96	Drowzee	26	32.4
+97	Hypno		75.6
+98	Krabby	28	6.5
+99	Kingler		60.0
+100	Voltorb	30	10.4
+101	Electrode		66.6
+102	Exeggcute	LEAF	2.5
+103	Exeggutor		120.0
+104	Cubone	28	6.5
+105	Marowak		45.0
+106	Hitmonlee		49.8
+107	Hitmonchan		50.2
+108	Lickitung		65.5
+109	Koffing	35	1.0
+110	Weezing		9.5
+111	Rhyhorn	42	115.0
+112	Rhydon		120.0
+113	Chansey		34.6
+114	Tangela		35.0
+115	Kangaskhan		80.0
+116	Horsea	32	8.0
+117	Seadra	40	25.0
+118	Goldeen	33	15.0
+119	Seaking		39.0
+120	Staryu	WATER	34.5
+121	Starmie		80.0
+122	Mr.Mime		54.5
+123	Scyther	30	56.0
+124	Jynx		40.6
+125	Electabuzz		30.0
+126	Magmar		44.5
+127	Pinsir		55.0
+128	Tauros		88.4
+129	Magikarp	20	10.0
+130	Gyarados		235.0
+131	Lapras		220.0
+132	Ditto		4.0
+133	Eevee	EEVEE_STONES	6.5
+134	Vaporeon		29.0
+135	Jolteon		24.5
+136	Flareon		25.0
+137	Porygon		36.5
+138	Omanyte	40	7.5
+139	Omastar		35.0
+140	Kabuto	40	11.5
+141	Kabutops		40.5
+142	Aerodactyl		59.0
+143	Snorlax		460.0
+144	Articuno		55.4
+145	Zapdos		52.6
+146	Moltres		60.0
+147	Dratini	30	3.3
+148	Dragonair	55	16.5
+149	Dragonite		210.0
+150	Mewtwo		122.0
+151	Mew		4.0

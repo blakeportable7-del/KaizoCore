@@ -1,0 +1,490 @@
+# id	tracker	area	key	text	kind  (tools/parity/extract_inventory.py)
+nds-0001	nds	DEFAULT_SETTINGS/animatedSprites	CHANGE_DIRECTION	default False	setting
+nds-0002	nds	DEFAULT_SETTINGS/animatedSprites	FASTER_ANIMATIONS	default False	setting
+nds-0003	nds	DEFAULT_SETTINGS/appearance	AUTO_POKEMON_THEMES	default False	setting
+nds-0004	nds	DEFAULT_SETTINGS/appearance	BAG_HEALS_SHOW_HP_INSTEAD	default False	setting
+nds-0005	nds	DEFAULT_SETTINGS/appearance	BLIND_MODE	default False	setting
+nds-0006	nds	DEFAULT_SETTINGS/appearance	EXPERIENCE_BAR	default True	setting
+nds-0007	nds	DEFAULT_SETTINGS/appearance	ICON_SET_INDEX	default 2	setting
+nds-0008	nds	DEFAULT_SETTINGS/appearance	RANDOM_BALL_PICKER	default True	setting
+nds-0009	nds	DEFAULT_SETTINGS/appearance	REPEL_ICON	default False	setting
+nds-0010	nds	DEFAULT_SETTINGS/appearance	RIGHT_JUSTIFIED_NUMBERS	default True	setting
+nds-0011	nds	DEFAULT_SETTINGS/appearance	SHOW_ACCURACY_AND_EVASION	default True	setting
+nds-0012	nds	DEFAULT_SETTINGS/appearance	SHOW_NICKNAME	default False	setting
+nds-0013	nds	DEFAULT_SETTINGS/appearance	SHOW_POKECENTER_HEALS	default False	setting
+nds-0014	nds	DEFAULT_SETTINGS/automaticUpdates	LAST_DAY_CHECKED	default	setting
+nds-0015	nds	DEFAULT_SETTINGS/automaticUpdates	UPDATE_WAS_DONE	default True	setting
+nds-0016	nds	DEFAULT_SETTINGS/badgesAppearance	DOUBLE_BADGE_ALIGNMENT	default LEFT_AND_RIGHT	setting
+nds-0017	nds	DEFAULT_SETTINGS/badgesAppearance	PRIMARY_BADGE_SET	default JOHTO	setting
+nds-0018	nds	DEFAULT_SETTINGS/badgesAppearance	SHOW_BOTH_BADGES	default True	setting
+nds-0019	nds	DEFAULT_SETTINGS/badgesAppearance	SINGLE_BADGE_ALIGNMENT	default RIGHT	setting
+nds-0020	nds	DEFAULT_SETTINGS/badgesAppearance	SPACER	default True	setting
+nds-0021	nds	DEFAULT_SETTINGS/battle	AUTO_SWAP_TO_ENEMY	default False	setting
+nds-0022	nds	DEFAULT_SETTINGS/battle	CALCULATE_VARIABLE_DAMAGE	default True	setting
+nds-0023	nds	DEFAULT_SETTINGS/battle	DOUBLES_MODE	default False	setting
+nds-0024	nds	DEFAULT_SETTINGS/battle	ENABLE_ENEMY_LOCKING	default False	setting
+nds-0025	nds	DEFAULT_SETTINGS/battle	SHOW_1ST_FIGHT_STATS_PLATINUM	default True	setting
+nds-0026	nds	DEFAULT_SETTINGS/battle	SHOW_ACTUAL_ENEMY_PP	default True	setting
+nds-0027	nds	DEFAULT_SETTINGS/battle	SHOW_MOVE_EFFECTIVENESS	default True	setting
+nds-0028	nds	DEFAULT_SETTINGS/colorScheme	Black	default 4278190080	setting
+nds-0029	nds	DEFAULT_SETTINGS/colorScheme	Bottom box background color	default 4280427042	setting
+nds-0030	nds	DEFAULT_SETTINGS/colorScheme	Bottom box border color	default 4289374890	setting
+nds-0031	nds	DEFAULT_SETTINGS/colorScheme	Bottom box text color	default 4294967295	setting
+nds-0032	nds	DEFAULT_SETTINGS/colorScheme	Gear icon color	default 4292598747	setting
+nds-0033	nds	DEFAULT_SETTINGS/colorScheme	Intermediate text color	default 4294967040	setting
+nds-0034	nds	DEFAULT_SETTINGS/colorScheme	Main background color	default 4278190080	setting
+nds-0035	nds	DEFAULT_SETTINGS/colorScheme	Move header text color	default 4294967295	setting
+nds-0036	nds	DEFAULT_SETTINGS/colorScheme	Negative text color	default 4294901760	setting
+nds-0037	nds	DEFAULT_SETTINGS/colorScheme	Physical icon color	default 4294952497	setting
+nds-0038	nds	DEFAULT_SETTINGS/colorScheme	Positive text color	default 4278255360	setting
+nds-0039	nds	DEFAULT_SETTINGS/colorScheme	Special icon color	default 4286428927	setting
+nds-0040	nds	DEFAULT_SETTINGS/colorScheme	Top box background color	default 4280427042	setting
+nds-0041	nds	DEFAULT_SETTINGS/colorScheme	Top box border color	default 4289374890	setting
+nds-0042	nds	DEFAULT_SETTINGS/colorScheme	Top box text color	default 4294967295	setting
+nds-0043	nds	DEFAULT_SETTINGS/colorSettings	Color move names by type	default True	setting
+nds-0044	nds	DEFAULT_SETTINGS/colorSettings	Color move type icons	default False	setting
+nds-0045	nds	DEFAULT_SETTINGS/colorSettings	Draw move type icons	default False	setting
+nds-0046	nds	DEFAULT_SETTINGS/colorSettings	Draw shadows	default True	setting
+nds-0047	nds	DEFAULT_SETTINGS/colorSettings	Show phys/spec move icons	default True	setting
+nds-0048	nds	DEFAULT_SETTINGS/colorSettings	Transparent backgrounds	default False	setting
+nds-0049	nds	DEFAULT_SETTINGS/controls	CHANGE_VIEW	default Start	setting
+nds-0050	nds	DEFAULT_SETTINGS/controls	CYCLE_PREDICTION	default R	setting
+nds-0051	nds	DEFAULT_SETTINGS/controls	CYCLE_STAT	default L	setting
+nds-0052	nds	DEFAULT_SETTINGS/controls	LEFT_EFFECTIVENESS	default L	setting
+nds-0053	nds	DEFAULT_SETTINGS/controls	LOAD_NEXT_SEED	default A B Start Select	setting
+nds-0054	nds	DEFAULT_SETTINGS/controls	LOCK_ENEMY	default Select	setting
+nds-0055	nds	DEFAULT_SETTINGS/controls	RIGHT_EFFECTIVENESS	default R	setting
+nds-0056	nds	DEFAULT_SETTINGS/coverageCalc	FULLY_EVOLVED_ONLY	default False	setting
+nds-0057	nds	DEFAULT_SETTINGS/extras	BROWS_ENABLED	default False	setting
+nds-0058	nds	DEFAULT_SETTINGS/extras	BROWS_FRAMES	default 8	setting
+nds-0059	nds	DEFAULT_SETTINGS/extras	RECOVERY_ENABLED	default True	setting
+nds-0060	nds	DEFAULT_SETTINGS/quickLoad	JAR_PATH	default	setting
+nds-0061	nds	DEFAULT_SETTINGS/quickLoad	LOAD_TYPE	default GENERATE_ROMS	setting
+nds-0062	nds	DEFAULT_SETTINGS/quickLoad	ROMS_FOLDER_PATH	default	setting
+nds-0063	nds	DEFAULT_SETTINGS/quickLoad	ROM_PATH	default	setting
+nds-0064	nds	DEFAULT_SETTINGS/quickLoad	SETTINGS_PATH	default	setting
+nds-0065	nds	DEFAULT_SETTINGS/timer	ENABLED	default False	setting
+nds-0066	nds	DEFAULT_SETTINGS/timer	TRANSPARENT	default False	setting
+nds-0067	nds	DEFAULT_SETTINGS/timer	XPOS	default 0	setting
+nds-0068	nds	DEFAULT_SETTINGS/timer	YPOS	default 180.5	setting
+nds-0069	nds	DEFAULT_SETTINGS/tourneyTracker	ENABLED	default False	setting
+nds-0070	nds	DEFAULT_SETTINGS/trackedInfo	FAINT_DETECTION	default 0	setting
+nds-0071	nds	DEFAULT_SETTINGS/trackedInfo	FIRST_TIME_BW2	default True	setting
+nds-0072	nds	screens	AppearanceOptionsScreen	screen file ui/AppearanceOptionsScreen.lua	screen
+nds-0073	nds	ui/AppearanceOptionsScreen.lua		Pok	ui
+nds-0074	nds	ui/AppearanceOptionsScreen.lua		Badges Appearance	ui
+nds-0075	nds	ui/AppearanceOptionsScreen.lua		Edit Color Theme	ui
+nds-0076	nds	ui/AppearanceOptionsScreen.lua		mon Icon Sets	ui
+nds-0077	nds	ui/AppearanceOptionsScreen.lua		Frame	ui
+nds-0078	nds	ui/AppearanceOptionsScreen.lua		Timer	ui
+nds-0079	nds	ui/AppearanceOptionsScreen.lua		Go back	ui
+nds-0080	nds	ui/AppearanceOptionsScreen.lua		Tracker Appearance	ui
+nds-0081	nds	screens	BadgesAppearanceScreen	screen file ui/BadgesAppearanceScreen.lua	screen
+nds-0082	nds	ui/BadgesAppearanceScreen.lua		Double Badge Alignment	ui
+nds-0083	nds	ui/BadgesAppearanceScreen.lua		Double Badge Order	ui
+nds-0084	nds	ui/BadgesAppearanceScreen.lua		Go back	ui
+nds-0085	nds	ui/BadgesAppearanceScreen.lua		Spacer	ui
+nds-0086	nds	ui/BadgesAppearanceScreen.lua		Alignment	ui
+nds-0087	nds	ui/BadgesAppearanceScreen.lua		Show one (will auto swap)	ui
+nds-0088	nds	ui/BadgesAppearanceScreen.lua		HGSS Settings	ui
+nds-0089	nds	ui/BadgesAppearanceScreen.lua		Badges Appearance	ui
+nds-0090	nds	ui/BadgesAppearanceScreen.lua		Pokemon HeartGold	ui
+nds-0091	nds	ui/BadgesAppearanceScreen.lua		Pokemon SoulSilver	ui
+nds-0092	nds	screens	BattleOptionsScreen	screen file ui/BattleOptionsScreen.lua	screen
+nds-0093	nds	ui/BattleOptionsScreen.lua		Platinum: Show 1st fight stats	ui
+nds-0094	nds	ui/BattleOptionsScreen.lua		Battle Settings	ui
+nds-0095	nds	ui/BattleOptionsScreen.lua		Go back	ui
+nds-0096	nds	screens	ColorSchemeScreen	screen file ui/ColorSchemeScreen.lua	screen
+nds-0097	nds	ui/ColorSchemeScreen.lua		Black	ui
+nds-0098	nds	ui/ColorSchemeScreen.lua		Import theme	ui
+nds-0099	nds	ui/ColorSchemeScreen.lua		Export theme	ui
+nds-0100	nds	ui/ColorSchemeScreen.lua		Restore defaults	ui
+nds-0101	nds	ui/ColorSchemeScreen.lua		Go back	ui
+nds-0102	nds	ui/ColorSchemeScreen.lua		Save theme	ui
+nds-0103	nds	ui/ColorSchemeScreen.lua		Load theme	ui
+nds-0104	nds	screens	CoverageCalcScreen	screen file ui/CoverageCalcScreen.lua	screen
+nds-0105	nds	ui/CoverageCalcScreen.lua		Shedinja	ui
+nds-0106	nds	ui/CoverageCalcScreen.lua		Black	ui
+nds-0107	nds	ui/CoverageCalcScreen.lua		Fully evolved only	ui
+nds-0108	nds	ui/CoverageCalcScreen.lua		0x	ui
+nds-0109	nds	ui/CoverageCalcScreen.lua		1x	ui
+nds-0110	nds	ui/CoverageCalcScreen.lua		2x	ui
+nds-0111	nds	ui/CoverageCalcScreen.lua		4x	ui
+nds-0112	nds	ui/CoverageCalcScreen.lua		Go back	ui
+nds-0113	nds	ui/CoverageCalcScreen.lua		Hidden Power	ui
+nds-0114	nds	screens	EvoDataScreen	screen file ui/EvoDataScreen.lua	screen
+nds-0115	nds	ui/EvoDataScreen.lua		start "" "%s"	ui
+nds-0116	nds	ui/EvoDataScreen.lua		Sort by:	ui
+nds-0117	nds	ui/EvoDataScreen.lua		Name	ui
+nds-0118	nds	ui/EvoDataScreen.lua		Percent	ui
+nds-0119	nds	ui/EvoDataScreen.lua		Data from brdy and Harkenn	ui
+nds-0120	nds	ui/EvoDataScreen.lua		View Site	ui
+nds-0121	nds	ui/EvoDataScreen.lua		Close	ui
+nds-0122	nds	screens	ExtrasScreen	screen file ui/ExtrasScreen.lua	screen
+nds-0123	nds	ui/ExtrasScreen.lua		Go back	ui
+nds-0124	nds	ui/ExtrasScreen.lua		Coverage Calc	ui
+nds-0125	nds	ui/ExtrasScreen.lua		Shows how many Pok	ui
+nds-0126	nds	ui/ExtrasScreen.lua		your moves can hit.	ui
+nds-0127	nds	ui/ExtrasScreen.lua		Open	ui
+nds-0128	nds	ui/ExtrasScreen.lua		Tourney Tracker	ui
+nds-0129	nds	ui/ExtrasScreen.lua		Auto tracks your scores	ui
+nds-0130	nds	ui/ExtrasScreen.lua		for Crozwords' tourneys.	ui
+nds-0131	nds	ui/ExtrasScreen.lua		Clear Tourney Scores	ui
+nds-0132	nds	ui/ExtrasScreen.lua		Stream Connect	ui
+nds-0133	nds	ui/ExtrasScreen.lua		Connects to streaming	ui
+nds-0134	nds	ui/ExtrasScreen.lua		services for chat interaction.	ui
+nds-0135	nds	ui/ExtrasScreen.lua		Open Config	ui
+nds-0136	nds	ui/ExtrasScreen.lua		Enabled	ui
+nds-0137	nds	ui/ExtrasScreen.lua		Extras	ui
+nds-0138	nds	screens	GymTMScreen	screen file ui/LogViewer/GymTMScreen.lua	screen
+nds-0139	nds	ui/LogViewer/GymTMScreen.lua		TMIcon	ui
+nds-0140	nds	ui/LogViewer/GymTMScreen.lua		TMLabel	ui
+nds-0141	nds	ui/LogViewer/GymTMScreen.lua		TM%02d	ui
+nds-0142	nds	screens	InfoScreen	screen file ui/LogViewer/InfoScreen.lua	screen
+nds-0143	nds	ui/LogViewer/InfoScreen.lua		Game Name:	ui
+nds-0144	nds	ui/LogViewer/InfoScreen.lua		Pokemon	ui
+nds-0145	nds	ui/LogViewer/InfoScreen.lua		Pok	ui
+nds-0146	nds	ui/LogViewer/InfoScreen.lua		Randomizer Version:	ui
+nds-0147	nds	ui/LogViewer/InfoScreen.lua		Random Seed:	ui
+nds-0148	nds	ui/LogViewer/InfoScreen.lua		Settings String:	ui
+nds-0149	nds	ui/LogViewer/InfoScreen.lua		Seed Info	ui
+nds-0150	nds	ui/LogViewer/InfoScreen.lua		Close	ui
+nds-0151	nds	ui/LogViewer/InfoScreen.lua		Copy info	ui
+nds-0152	nds	screens	LogViewerScreen	screen file ui/LogViewer/LogViewerScreen.lua	screen
+nds-0153	nds	ui/LogViewer/LogViewerScreen.lua		Pok	ui
+nds-0154	nds	ui/LogViewer/LogViewerScreen.lua		Trainers	ui
+nds-0155	nds	ui/LogViewer/LogViewerScreen.lua		Pivots	ui
+nds-0156	nds	ui/LogViewer/LogViewerScreen.lua		Gym TMs	ui
+nds-0157	nds	ui/LogViewer/LogViewerScreen.lua		Info	ui
+nds-0158	nds	ui/LogViewer/LogViewerScreen.lua		Search	ui
+nds-0159	nds	screens	PivotsScreen	screen file ui/LogViewer/PivotsScreen.lua	screen
+nds-0160	nds	ui/LogViewer/PivotsScreen.lua		Grass	ui
+nds-0161	nds	ui/LogViewer/PivotsScreen.lua		Ext. Grass	ui
+nds-0162	nds	ui/LogViewer/PivotsScreen.lua		Int. Grass	ui
+nds-0163	nds	ui/LogViewer/PivotsScreen.lua		Cave	ui
+nds-0164	nds	ui/LogViewer/PivotsScreen.lua		Shaking Spots	ui
+nds-0165	nds	ui/LogViewer/PivotsScreen.lua		Old Rod	ui
+nds-0166	nds	ui/LogViewer/PivotsScreen.lua		Headbutt(C)	ui
+nds-0167	nds	ui/LogViewer/PivotsScreen.lua		Headbutt(R)	ui
+nds-0168	nds	ui/LogViewer/PivotsScreen.lua		Dark Grass	ui
+nds-0169	nds	ui/LogViewer/PivotsScreen.lua		Tuesday	ui
+nds-0170	nds	ui/LogViewer/PivotsScreen.lua		Thursday	ui
+nds-0171	nds	ui/LogViewer/PivotsScreen.lua		Saturday	ui
+nds-0172	nds	ui/LogViewer/PivotsScreen.lua		Lv.	ui
+nds-0173	nds	ui/LogViewer/PivotsScreen.lua		Areas	ui
+nds-0174	nds	screens	PokemonOverviewScreen	screen file ui/LogViewer/PokemonOverviewScreen.lua	screen
+nds-0175	nds	ui/LogViewer/PokemonOverviewScreen.lua		Click the keys below to search any pokemon:	ui
+nds-0176	nds	ui/LogViewer/PokemonOverviewScreen.lua		Stats	ui
+nds-0177	nds	screens	PokemonStatScreen	screen file ui/LogViewer/PokemonStatScreen.lua	screen
+nds-0178	nds	ui/LogViewer/PokemonStatScreen.lua		Moves	ui
+nds-0179	nds	ui/LogViewer/PokemonStatScreen.lua		TM %02d	ui
+nds-0180	nds	ui/LogViewer/PokemonStatScreen.lua		Gym TMs	ui
+nds-0181	nds	ui/LogViewer/PokemonStatScreen.lua		(HA)	ui
+nds-0182	nds	ui/LogViewer/PokemonStatScreen.lua		Level	ui
+nds-0183	nds	ui/LogViewer/PokemonStatScreen.lua		None	ui
+nds-0184	nds	ui/LogViewer/PokemonStatScreen.lua		Base Stats (	ui
+nds-0185	nds	ui/LogViewer/PokemonStatScreen.lua		total)	ui
+nds-0186	nds	ui/LogViewer/PokemonStatScreen.lua		Abilities	ui
+nds-0187	nds	ui/LogViewer/PokemonStatScreen.lua		Evos:	ui
+nds-0188	nds	screens	RivalOverviewScreen	screen file ui/LogViewer/RivalOverviewScreen.lua	screen
+nds-0189	nds	screens	SearchScreen	screen file ui/LogViewer/SearchScreen.lua	screen
+nds-0190	nds	ui/LogViewer/SearchScreen.lua		Pok	ui
+nds-0191	nds	ui/LogViewer/SearchScreen.lua		Trainers	ui
+nds-0192	nds	ui/LogViewer/SearchScreen.lua		Move	ui
+nds-0193	nds	ui/LogViewer/SearchScreen.lua		Ability	ui
+nds-0194	nds	ui/LogViewer/SearchScreen.lua		Look for:	ui
+nds-0195	nds	ui/LogViewer/SearchScreen.lua		With:	ui
+nds-0196	nds	ui/LogViewer/SearchScreen.lua		None found	ui
+nds-0197	nds	ui/LogViewer/SearchScreen.lua		Only ability	ui
+nds-0198	nds	ui/LogViewer/SearchScreen.lua		1 of	ui
+nds-0199	nds	ui/LogViewer/SearchScreen.lua		Total:	ui
+nds-0200	nds	ui/LogViewer/SearchScreen.lua		Lv. 30 - 100	ui
+nds-0201	nds	ui/LogViewer/SearchScreen.lua		Total: 18	ui
+nds-0202	nds	screens	StatsScreen	screen file ui/LogViewer/StatsScreen.lua	screen
+nds-0203	nds	ui/LogViewer/StatsScreen.lua		Base Stats (	ui
+nds-0204	nds	ui/LogViewer/StatsScreen.lua		total)	ui
+nds-0205	nds	ui/LogViewer/StatsScreen.lua		Best Special Attackers	ui
+nds-0206	nds	ui/LogViewer/StatsScreen.lua		The highest amount of Special Attack and Speed.	ui
+nds-0207	nds	ui/LogViewer/StatsScreen.lua		Best Physical Attackers	ui
+nds-0208	nds	ui/LogViewer/StatsScreen.lua		The highest amount of Attack and Speed.	ui
+nds-0209	nds	ui/LogViewer/StatsScreen.lua		Biggest Special Walls	ui
+nds-0210	nds	ui/LogViewer/StatsScreen.lua		The highest amount of HP and Special Defense.	ui
+nds-0211	nds	ui/LogViewer/StatsScreen.lua		Best Defensive Tanks	ui
+nds-0212	nds	ui/LogViewer/StatsScreen.lua		The highest amount of HP and Defense.	ui
+nds-0213	nds	ui/LogViewer/StatsScreen.lua		Bulkiest Overall	ui
+nds-0214	nds	ui/LogViewer/StatsScreen.lua		The highest amount of HP, Defense, and Special Defense.	ui
+nds-0215	nds	ui/LogViewer/StatsScreen.lua		Most Frail	ui
+nds-0216	nds	ui/LogViewer/StatsScreen.lua		The worst amount of HP, Defense and Special Defense.	ui
+nds-0217	nds	ui/LogViewer/StatsScreen.lua		The highest amount of special attack and speed.	ui
+nds-0218	nds	ui/LogViewer/StatsScreen.lua		Kyogre	ui
+nds-0219	nds	ui/LogViewer/StatsScreen.lua		Strongest Special Attackers	ui
+nds-0220	nds	screens	TeamInfoScreen	screen file ui/LogViewer/TeamInfoScreen.lua	screen
+nds-0221	nds	ui/LogViewer/TeamInfoScreen.lua		Shauntal	ui
+nds-0222	nds	screens	TrainerGroupOverviewScreen	screen file ui/LogViewer/TrainerGroupOverviewScreen.lua	screen
+nds-0223	nds	ui/LogViewer/TrainerGroupOverviewScreen.lua		Image	ui
+nds-0224	nds	ui/LogViewer/TrainerGroupOverviewScreen.lua		Kanto Gyms	ui
+nds-0225	nds	ui/LogViewer/TrainerGroupOverviewScreen.lua		_badge	ui
+nds-0226	nds	screens	TrainerOverviewScreen	screen file ui/LogViewer/TrainerOverviewScreen.lua	screen
+nds-0227	nds	screens	MainOptionsScreen	screen file ui/MainOptionsScreen.lua	screen
+nds-0228	nds	ui/MainOptionsScreen.lua		Tracker version:	ui
+nds-0229	nds	ui/MainOptionsScreen.lua		Go back	ui
+nds-0230	nds	ui/MainOptionsScreen.lua		Battle Settings	ui
+nds-0231	nds	ui/MainOptionsScreen.lua		Tracker Appearance	ui
+nds-0232	nds	ui/MainOptionsScreen.lua		Tracked Info	ui
+nds-0233	nds	ui/MainOptionsScreen.lua		Tracker Setup	ui
+nds-0234	nds	ui/MainOptionsScreen.lua		New Run Settings	ui
+nds-0235	nds	ui/MainOptionsScreen.lua		Check for Updates	ui
+nds-0236	nds	ui/MainOptionsScreen.lua		Extras	ui
+nds-0237	nds	ui/MainOptionsScreen.lua		Frame	ui
+nds-0238	nds	ui/MainOptionsScreen.lua		Config	ui
+nds-0239	nds	screens	MainScreen	screen file ui/MainScreen.lua	screen
+nds-0240	nds	ui/MainScreen.lua		StatPrediction	ui
+nds-0241	nds	ui/MainScreen.lua		This Pok	ui
+nds-0242	nds	ui/MainScreen.lua		mon does not learn any moves.	ui
+nds-0243	nds	ui/MainScreen.lua		You currently do not have any	ui
+nds-0244	nds	ui/MainScreen.lua		items.	ui
+nds-0245	nds	ui/MainScreen.lua		StatName	ui
+nds-0246	nds	ui/MainScreen.lua		Color move names by type	ui
+nds-0247	nds	ui/MainScreen.lua		Hidden Power	ui
+nds-0248	nds	ui/MainScreen.lua		Judgment	ui
+nds-0249	nds	ui/MainScreen.lua		Draw move type icons	ui
+nds-0250	nds	ui/MainScreen.lua		NameIconFrame	ui
+nds-0251	nds	ui/MainScreen.lua		Return	ui
+nds-0252	nds	ui/MainScreen.lua		Total seen:	ui
+nds-0253	nds	ui/MainScreen.lua		Last level:	ui
+nds-0254	nds	ui/MainScreen.lua		StatNumber	ui
+nds-0255	nds	ui/MainScreen.lua		Item:	ui
+nds-0256	nds	ui/MainScreen.lua		Item: None	ui
+nds-0257	nds	ui/MainScreen.lua		Status	ui
+nds-0258	nds	ui/MainScreen.lua		Healing	ui
+nds-0259	nds	ui/MainScreen.lua		Heals:	ui
+nds-0260	nds	ui/MainScreen.lua		Status items:	ui
+nds-0261	nds	ui/MainScreen.lua		Your Pok	ui
+nds-0262	nds	ui/MainScreen.lua		mon will dislike this.	ui
+nds-0263	nds	ui/MainScreen.lua		Yum!	ui
+nds-0264	nds	ui/MainScreen.lua		Lv.	ui
+nds-0265	nds	ui/MainScreen.lua		HP:	ui
+nds-0266	nds	ui/MainScreen.lua		No data was found.	ui
+nds-0267	nds	ui/MainScreen.lua		You won!	ui
+nds-0268	nds	ui/MainScreen.lua		_badge	ui
+nds-0269	nds	ui/MainScreen.lua		Pokemon HeartGold	ui
+nds-0270	nds	ui/MainScreen.lua		Pokemon SoulSilver	ui
+nds-0271	nds	screens	MainScreenUIInitializer	screen file ui/MainScreenUIInitializer.lua	screen
+nds-0272	nds	ui/MainScreenUIInitializer.lua		Frame	ui
+nds-0273	nds	ui/MainScreenUIInitializer.lua		NameIconFrame	ui
+nds-0274	nds	ui/MainScreenUIInitializer.lua		PPPowAccFrame	ui
+nds-0275	nds	ui/MainScreenUIInitializer.lua		Tail Whip	ui
+nds-0276	nds	ui/MainScreenUIInitializer.lua		Bottom	ui
+nds-0277	nds	ui/MainScreenUIInitializer.lua		Gorebyss	ui
+nds-0278	nds	ui/MainScreenUIInitializer.lua		Honey Gather	ui
+nds-0279	nds	ui/MainScreenUIInitializer.lua		Pow	ui
+nds-0280	nds	ui/MainScreenUIInitializer.lua		Acc	ui
+nds-0281	nds	ui/MainScreenUIInitializer.lua		StatName	ui
+nds-0282	nds	ui/MainScreenUIInitializer.lua		StatNumber	ui
+nds-0283	nds	ui/MainScreenUIInitializer.lua		StatPrediction	ui
+nds-0284	nds	ui/MainScreenUIInitializer.lua		_badge	ui
+nds-0285	nds	ui/MainScreenUIInitializer.lua		Heals in bag:	ui
+nds-0286	nds	ui/MainScreenUIInitializer.lua		this is a test	ui
+nds-0287	nds	screens	PastRunsScreen	screen file ui/PastRunsScreen.lua	screen
+nds-0288	nds	ui/PastRunsScreen.lua		Swap	ui
+nds-0289	nds	ui/PastRunsScreen.lua		Delete 0 Badge Runs	ui
+nds-0290	nds	ui/PastRunsScreen.lua		Go back	ui
+nds-0291	nds	ui/PastRunsScreen.lua		Minimum Badges	ui
+nds-0292	nds	ui/PastRunsScreen.lua		Sort By	ui
+nds-0293	nds	ui/PastRunsScreen.lua		Newest	ui
+nds-0294	nds	ui/PastRunsScreen.lua		Oldest	ui
+nds-0295	nds	ui/PastRunsScreen.lua		A - Z	ui
+nds-0296	nds	screens	PokemonIconsScreen	screen file ui/PokemonIconsScreen.lua	screen
+nds-0297	nds	ui/PokemonIconsScreen.lua		Enable Brows	ui
+nds-0298	nds	ui/PokemonIconsScreen.lua		Pok	ui
+nds-0299	nds	ui/PokemonIconsScreen.lua		mon Icon Sets	ui
+nds-0300	nds	ui/PokemonIconsScreen.lua		Go back	ui
+nds-0301	nds	ui/PokemonIconsScreen.lua		Stadium	ui
+nds-0302	nds	screens	QuickLoadScreen	screen file ui/QuickLoadScreen.lua	screen
+nds-0303	nds	ui/QuickLoadScreen.lua		Set	ui
+nds-0304	nds	ui/QuickLoadScreen.lua		New Run Combo:	ui
+nds-0305	nds	ui/QuickLoadScreen.lua		New Run Type	ui
+nds-0306	nds	ui/QuickLoadScreen.lua		Use batch of seeds	ui
+nds-0307	nds	ui/QuickLoadScreen.lua		Generate ROMs	ui
+nds-0308	nds	ui/QuickLoadScreen.lua		Batch Setup	ui
+nds-0309	nds	ui/QuickLoadScreen.lua		ROMs Folder	ui
+nds-0310	nds	ui/QuickLoadScreen.lua		Missing files have been detected. Fill these in before saving a profile.	ui
+nds-0311	nds	ui/QuickLoadScreen.lua		.qlp	ui
+nds-0312	nds	ui/QuickLoadScreen.lua		*.qlp	ui
+nds-0313	nds	ui/QuickLoadScreen.lua		Save Profile	ui
+nds-0314	nds	ui/QuickLoadScreen.lua		Load Profile	ui
+nds-0315	nds	ui/QuickLoadScreen.lua		ROM Creation	ui
+nds-0316	nds	ui/QuickLoadScreen.lua		ROM to randomize	ui
+nds-0317	nds	ui/QuickLoadScreen.lua		Randomizer JAR	ui
+nds-0318	nds	ui/QuickLoadScreen.lua		Settings file	ui
+nds-0319	nds	ui/QuickLoadScreen.lua		New Run Settings	ui
+nds-0320	nds	ui/QuickLoadScreen.lua		Go back	ui
+nds-0321	nds	screens	RandomBallScreen	screen file ui/RandomBallScreen.lua	screen
+nds-0322	nds	ui/RandomBallScreen.lua		Left	ui
+nds-0323	nds	ui/RandomBallScreen.lua		Middle	ui
+nds-0324	nds	ui/RandomBallScreen.lua		Right	ui
+nds-0325	nds	ui/RandomBallScreen.lua		Random ball:	ui
+nds-0326	nds	screens	RestorePointsScreen	screen file ui/RestorePointsScreen.lua	screen
+nds-0327	nds	ui/RestorePointsScreen.lua		Just now	ui
+nds-0328	nds	ui/RestorePointsScreen.lua		s ago	ui
+nds-0329	nds	ui/RestorePointsScreen.lua		Unknown	ui
+nds-0330	nds	ui/RestorePointsScreen.lua		Savestates are created as you	ui
+nds-0331	nds	ui/RestorePointsScreen.lua		play in case of softlocks or other	ui
+nds-0332	nds	ui/RestorePointsScreen.lua		major issues. You can load these	ui
+nds-0333	nds	ui/RestorePointsScreen.lua		to return to an earlier state.	ui
+nds-0334	nds	ui/RestorePointsScreen.lua		Back to present	ui
+nds-0335	nds	ui/RestorePointsScreen.lua		Load restore point	ui
+nds-0336	nds	ui/RestorePointsScreen.lua		Icon	ui
+nds-0337	nds	ui/RestorePointsScreen.lua		Label	ui
+nds-0338	nds	ui/RestorePointsScreen.lua		10 minutes ago	ui
+nds-0339	nds	ui/RestorePointsScreen.lua		No restore points available.	ui
+nds-0340	nds	ui/RestorePointsScreen.lua		Go back	ui
+nds-0341	nds	ui/RestorePointsScreen.lua		Restore Points	ui
+nds-0342	nds	screens	RunOverScreen	screen file ui/RunOverScreen.lua	screen
+nds-0343	nds	ui/RunOverScreen.lua		Dismiss	ui
+nds-0344	nds	ui/RunOverScreen.lua		Open Log	ui
+nds-0345	nds	ui/RunOverScreen.lua		View Tourney Scores	ui
+nds-0346	nds	ui/RunOverScreen.lua		Run Over!	ui
+nds-0347	nds	screens	StatisticsScreen	screen file ui/StatisticsScreen.lua	screen
+nds-0348	nds	ui/StatisticsScreen.lua		Overall Progress	ui
+nds-0349	nds	ui/StatisticsScreen.lua		Past N	ui
+nds-0350	nds	ui/StatisticsScreen.lua		Go back	ui
+nds-0351	nds	ui/StatisticsScreen.lua		Total runs:	ui
+nds-0352	nds	ui/StatisticsScreen.lua		Playtime:	ui
+nds-0353	nds	screens	StreamerbotConfigScreen	screen file ui/StreamerbotConfigScreen.lua	screen
+nds-0354	nds	ui/StreamerbotConfigScreen.lua		start "" "%s"	ui
+nds-0355	nds	ui/StreamerbotConfigScreen.lua		DataFolder	ui
+nds-0356	nds	ui/StreamerbotConfigScreen.lua		Json File (*.JSON)|*.json|All files (*.*)|*.*	ui
+nds-0357	nds	ui/StreamerbotConfigScreen.lua		SELECT ANY JSON FILE	ui
+nds-0358	nds	ui/StreamerbotConfigScreen.lua		Disconnect	ui
+nds-0359	nds	ui/StreamerbotConfigScreen.lua		Connect	ui
+nds-0360	nds	ui/StreamerbotConfigScreen.lua		Set	ui
+nds-0361	nds	ui/StreamerbotConfigScreen.lua		Streamerbot Code	ui
+nds-0362	nds	ui/StreamerbotConfigScreen.lua		Role Permissions	ui
+nds-0363	nds	ui/StreamerbotConfigScreen.lua		Connection Status:	ui
+nds-0364	nds	ui/StreamerbotConfigScreen.lua		Online: Connection Established.	ui
+nds-0365	nds	ui/StreamerbotConfigScreen.lua		Connection Folder	ui
+nds-0366	nds	ui/StreamerbotConfigScreen.lua		Stream Connect	ui
+nds-0367	nds	ui/StreamerbotConfigScreen.lua		Help	ui
+nds-0368	nds	ui/StreamerbotConfigScreen.lua		Go back	ui
+nds-0369	nds	screens	TimerScreen	screen file ui/TimerScreen.lua	screen
+nds-0370	nds	ui/TimerScreen.lua		Black	ui
+nds-0371	nds	ui/TimerScreen.lua		White	ui
+nds-0372	nds	ui/TimerScreen.lua		Middle	ui
+nds-0373	nds	screens	TitleScreen	screen file ui/TitleScreen.lua	screen
+nds-0374	nds	ui/TitleScreen.lua		You get out of the lab %percent% of the time.	ui
+nds-0375	nds	ui/TitleScreen.lua		You run sub 300 BST Pok	ui
+nds-0376	nds	ui/TitleScreen.lua		mon %percent% of the time.	ui
+nds-0377	nds	ui/TitleScreen.lua		You run 300 - 400 BST Pok	ui
+nds-0378	nds	ui/TitleScreen.lua		You run 400 - 500 BST Pok	ui
+nds-0379	nds	ui/TitleScreen.lua		You run 500+ BST Pok	ui
+nds-0380	nds	ui/TitleScreen.lua		You lose to sub 300 BST Pok	ui
+nds-0381	nds	ui/TitleScreen.lua		You lose to 300 - 400 BST Pok	ui
+nds-0382	nds	ui/TitleScreen.lua		You lose to 400 - 500 BST Pok	ui
+nds-0383	nds	ui/TitleScreen.lua		You lose to 500+ BST Pok	ui
+nds-0384	nds	ui/TitleScreen.lua		You use %data% types the most.	ui
+nds-0385	nds	ui/TitleScreen.lua		You lose to %data% types the most.	ui
+nds-0386	nds	ui/TitleScreen.lua		You run %data% the most.	ui
+nds-0387	nds	ui/TitleScreen.lua		You lose to %data% the most.	ui
+nds-0388	nds	ui/TitleScreen.lua		Your moves are %data% the most.	ui
+nds-0389	nds	ui/TitleScreen.lua		Your enemies have %data% the most.	ui
+nds-0390	nds	ui/TitleScreen.lua		Your abilities are %data% the most.	ui
+nds-0391	nds	ui/TitleScreen.lua		Fun statistics will be shown here once you play enough.	ui
+nds-0392	nds	ui/TitleScreen.lua		Did you know?	ui
+nds-0393	nds	ui/TitleScreen.lua		.faves	ui
+nds-0394	nds	ui/TitleScreen.lua		Favorite	ui
+nds-0395	nds	ui/TitleScreen.lua		Attempts:	ui
+nds-0396	nds	ui/TitleScreen.lua		Pokemon	ui
+nds-0397	nds	ui/TitleScreen.lua		Pok	ui
+nds-0398	nds	ui/TitleScreen.lua		Set	ui
+nds-0399	nds	ui/TitleScreen.lua		Close	ui
+nds-0400	nds	ui/TitleScreen.lua		Edit Favorites	ui
+nds-0401	nds	ui/TitleScreen.lua		Favorites	ui
+nds-0402	nds	ui/TitleScreen.lua		NDS Ironmon Tracker	ui
+nds-0403	nds	screens	TourneyTrackerScreen	screen file ui/TourneyTrackerScreen.lua	screen
+nds-0404	nds	ui/TourneyTrackerScreen.lua		New total:	ui
+nds-0405	nds	ui/TourneyTrackerScreen.lua		Tourney Scores	ui
+nds-0406	nds	ui/TourneyTrackerScreen.lua		Close	ui
+nds-0407	nds	ui/TourneyTrackerScreen.lua		Seed	ui
+nds-0408	nds	ui/TourneyTrackerScreen.lua		Bonuses	ui
+nds-0409	nds	ui/TourneyTrackerScreen.lua		Select One to Remove:	ui
+nds-0410	nds	ui/TourneyTrackerScreen.lua		Select One to Add:	ui
+nds-0411	nds	ui/TourneyTrackerScreen.lua		Milestones	ui
+nds-0412	nds	ui/TourneyTrackerScreen.lua		Seed Score:	ui
+nds-0413	nds	ui/TourneyTrackerScreen.lua		Cumulative Score:	ui
+nds-0414	nds	ui/TourneyTrackerScreen.lua		Export Scores	ui
+nds-0415	nds	screens	TrackedInfoScreen	screen file ui/TrackedInfoScreen.lua	screen
+nds-0416	nds	ui/TrackedInfoScreen.lua		*.trackerdata	ui
+nds-0417	nds	ui/TrackedInfoScreen.lua		Go back	ui
+nds-0418	nds	ui/TrackedInfoScreen.lua		Tracked Pok	ui
+nds-0419	nds	ui/TrackedInfoScreen.lua		Past Runs	ui
+nds-0420	nds	ui/TrackedInfoScreen.lua		Statistics	ui
+nds-0421	nds	ui/TrackedInfoScreen.lua		Open a Log	ui
+nds-0422	nds	ui/TrackedInfoScreen.lua		Restore Points	ui
+nds-0423	nds	ui/TrackedInfoScreen.lua		Load Tracker Data	ui
+nds-0424	nds	ui/TrackedInfoScreen.lua		Frame	ui
+nds-0425	nds	ui/TrackedInfoScreen.lua		Run is considered over when:	ui
+nds-0426	nds	ui/TrackedInfoScreen.lua		Lead Pok	ui
+nds-0427	nds	ui/TrackedInfoScreen.lua		mon faints	ui
+nds-0428	nds	ui/TrackedInfoScreen.lua		Highest level faints	ui
+nds-0429	nds	ui/TrackedInfoScreen.lua		Entire party faints	ui
+nds-0430	nds	ui/TrackedInfoScreen.lua		Tracked Info	ui
+nds-0431	nds	screens	TrackedPokemonScreen	screen file ui/TrackedPokemonScreen.lua	screen
+nds-0432	nds	ui/TrackedPokemonScreen.lua		Search	ui
+nds-0433	nds	ui/TrackedPokemonScreen.lua		Go back	ui
+nds-0434	nds	screens	TrackerSetupScreen	screen file ui/TrackerSetupScreen.lua	screen
+nds-0435	nds	ui/TrackerSetupScreen.lua		Value	ui
+nds-0436	nds	ui/TrackerSetupScreen.lua		BindButton	ui
+nds-0437	nds	ui/TrackerSetupScreen.lua		Bind	ui
+nds-0438	nds	ui/TrackerSetupScreen.lua		Add button	ui
+nds-0439	nds	ui/TrackerSetupScreen.lua		Start New Run:	ui
+nds-0440	nds	ui/TrackerSetupScreen.lua		LOAD_NEXT_SEEDValue	ui
+nds-0441	nds	ui/TrackerSetupScreen.lua		Clear	ui
+nds-0442	nds	ui/TrackerSetupScreen.lua		Edit Favorites	ui
+nds-0443	nds	ui/TrackerSetupScreen.lua		Tracker Setup	ui
+nds-0444	nds	ui/TrackerSetupScreen.lua		Go back	ui
+nds-0445	nds	screens	BarGraph	screen file ui/UIBaseClasses/BarGraph.lua	screen
+nds-0446	nds	screens	Box	screen file ui/UIBaseClasses/Box.lua	screen
+nds-0447	nds	screens	Component	screen file ui/UIBaseClasses/Component.lua	screen
+nds-0448	nds	screens	DragDropEventListener	screen file ui/UIBaseClasses/DragDropEventListener.lua	screen
+nds-0449	nds	ui/UIBaseClasses/DragDropEventListener.lua		Middle	ui
+nds-0450	nds	screens	Frame	screen file ui/UIBaseClasses/Frame.lua	screen
+nds-0451	nds	screens	HoverEventListener	screen file ui/UIBaseClasses/HoverEventListener.lua	screen
+nds-0452	nds	ui/UIBaseClasses/HoverEventListener.lua		Left	ui
+nds-0453	nds	screens	Icon	screen file ui/UIBaseClasses/Icon.lua	screen
+nds-0454	nds	screens	ImageField	screen file ui/UIBaseClasses/ImageField.lua	screen
+nds-0455	nds	screens	ImageLabel	screen file ui/UIBaseClasses/ImageLabel.lua	screen
+nds-0456	nds	screens	JoypadEventListener	screen file ui/UIBaseClasses/JoypadEventListener.lua	screen
+nds-0457	nds	ui/UIBaseClasses/JoypadEventListener.lua		Touch	ui
+nds-0458	nds	screens	Layout	screen file ui/UIBaseClasses/Layout.lua	screen
+nds-0459	nds	screens	MouseClickEventListener	screen file ui/UIBaseClasses/MouseClickEventListener.lua	screen
+nds-0460	nds	ui/UIBaseClasses/MouseClickEventListener.lua		Left	ui
+nds-0461	nds	screens	MovementAnimation	screen file ui/UIBaseClasses/MovementAnimation.lua	screen
+nds-0462	nds	screens	ScreenStack	screen file ui/UIBaseClasses/ScreenStack.lua	screen
+nds-0463	nds	screens	ScrollBar	screen file ui/UIBaseClasses/ScrollBar.lua	screen
+nds-0464	nds	screens	ScrollEventListener	screen file ui/UIBaseClasses/ScrollEventListener.lua	screen
+nds-0465	nds	screens	SearchKeyboard	screen file ui/UIBaseClasses/SearchKeyboard.lua	screen
+nds-0466	nds	ui/UIBaseClasses/SearchKeyboard.lua		Clear	ui
+nds-0467	nds	screens	SettingToggleButton	screen file ui/UIBaseClasses/SettingToggleButton.lua	screen
+nds-0468	nds	screens	TextField	screen file ui/UIBaseClasses/TextField.lua	screen
+nds-0469	nds	screens	TextLabel	screen file ui/UIBaseClasses/TextLabel.lua	screen
+nds-0470	nds	screens	TextStyle	screen file ui/UIBaseClasses/TextStyle.lua	screen
+nds-0471	nds	screens	UpdateNotesScreen	screen file ui/UpdateNotesScreen.lua	screen
+nds-0472	nds	ui/UpdateNotesScreen.lua		Close	ui
+nds-0473	nds	ui/UpdateNotesScreen.lua		Update	ui
+nds-0474	nds	screens	UpdaterScreen	screen file ui/UpdaterScreen.lua	screen
+nds-0475	nds	ui/UpdaterScreen.lua		start "" "%s"	ui
+nds-0476	nds	ui/UpdaterScreen.lua		Update successful! The Tracker	ui
+nds-0477	nds	ui/UpdaterScreen.lua		will now restart in 3 seconds.	ui
+nds-0478	nds	ui/UpdaterScreen.lua		Error updating, please try again.	ui
+nds-0479	nds	ui/UpdaterScreen.lua		Installing update, please wait...	ui
+nds-0480	nds	ui/UpdaterScreen.lua		Do not close the tracker.	ui
+nds-0481	nds	ui/UpdaterScreen.lua		No update available.	ui
+nds-0482	nds	ui/UpdaterScreen.lua		Current version:	ui
+nds-0483	nds	ui/UpdaterScreen.lua		View Release Notes	ui
+nds-0484	nds	ui/UpdaterScreen.lua		Ignore	ui
+nds-0485	nds	ui/UpdaterScreen.lua		Install	ui
+nds-0486	nds	ui/UpdaterScreen.lua		Tracker Updates	ui
+nds-0487	nds	ui/UpdaterScreen.lua		Go back	ui
+nds-0488	nds	ui/UpdaterScreen.lua		New update available!	ui
+nds-0489	nds	ui/UpdaterScreen.lua		Latest version:	ui

@@ -1,0 +1,362 @@
+# id	status	ours	note
+gba-0309	NA	-	Error when the PC add-on is not installed; animated sprites are built in here
+gba-0310	NA	-	Console error for a typed button combo; tracker actions here are touch buttons
+gba-0311	NA	-	Typed file-path check; the ROM to randomize is picked from the Library
+gba-0312	NA	-	Typed file-path check; the randomizer is built into the app
+gba-0313	PARTIAL	app/src/main/kotlin/com/ironmonone/app/TrackerPanel.kt:111	Ability text by tapping an ability on a card; no lookup of any ability by name
+gba-0314	NA	-	mGBA sidebar list of typed commands; each command's feature is judged on its own row
+gba-0315	NA	-	mGBA sidebar list of typed commands; each command's feature is judged on its own row
+gba-0316	DONE	app/src/main/kotlin/com/ironmonone/app/TrackerPanel.kt:296	The tracker box itself (party and enemy cards)
+gba-0317	PARTIAL	app/src/main/kotlin/com/ironmonone/app/AboutScreen.kt:198	No version check; About's 'Latest build' opens the releases page
+gba-0318	NA	-	mGBA sidebar header for the typed-command screens
+gba-0319	MISSING	-	No extension system; chosen add-ons (Auto Pokemon Themes) are built in instead
+gba-0320	PARTIAL	app/src/main/kotlin/com/ironmonone/app/MoveHistoryStats.kt:118	Game Stats' ten rows exist (STATS in the gear); Play Time reads 'not kept'
+gba-0321	DONE	app/src/main/kotlin/com/ironmonone/app/TrackerGearDialog.kt:97	Gameplay options are checkboxes in the tracker gear
+gba-0322	DONE	app/src/main/kotlin/com/ironmonone/app/TrackerGearDialog.kt:74	Setup options are checkboxes in the tracker gear
+gba-0323	PARTIAL	app/src/main/kotlin/com/ironmonone/app/RouteInfoScreen.kt:118; app/src/main/kotlin/com/ironmonone/app/TrackerPanel.kt:111	Route and Pokemon lookup by name; move and ability info only for what is on screen
+gba-0324	MISSING	-	English only; no tracker language setting
+gba-0325	PARTIAL	app/src/main/kotlin/com/ironmonone/app/PcMoveInfo.kt:63	Move info by tapping a move on a card; no lookup of any move by name
+gba-0326	MISSING	-	No update check, so nothing flags a new version
+gba-0327	DONE	app/src/main/kotlin/com/ironmonone/app/RouteInfoScreen.kt:122	Route info's Percentages/Levels show the original (vanilla) encounter table
+gba-0328	NA	-	mGBA sidebar list of typed commands; each command's feature is judged on its own row
+gba-0329	PARTIAL	app/src/main/kotlin/com/ironmonone/app/TrackerPanel.kt:419; app/src/main/kotlin/com/ironmonone/app/PcTracker.kt:1324	Lookup of any species by name (SEARCH), with its info; no EXP yield
+gba-0330	DONE	app/src/main/kotlin/com/ironmonone/app/RunScreen.kt:358; app/src/main/kotlin/com/ironmonone/app/RunJob.kt:80	Run tab: game, mode and settings file; each new run randomizes a fresh ROM
+gba-0331	DONE	app/src/main/kotlin/com/ironmonone/app/RouteInfoScreen.kt:118	Route info with SEARCH over every route that has encounters
+gba-0332	DONE	app/src/main/kotlin/com/ironmonone/app/TrackerPanel.kt:296	The tracker panel
+gba-0333	DONE	app/src/main/kotlin/com/ironmonone/app/TrackerGearDialog.kt:40	The tracker gear: setup, options, notebook, manage data
+gba-0334	MISSING	-	No extension system, so nothing to allow
+gba-0335	PARTIAL	app/src/main/kotlin/com/ironmonone/app/TrackerGearDialog.kt:141; app/src/main/kotlin/com/ironmonone/app/PcTracker.kt:559	Animated Walking Pals icons in the tracker; no popout window, stream page shows no sprites
+gba-0336	MISSING	-	English only; the tracker never reads the game's language
+gba-0337	DONE	StatMarks.kt:146	marks, notes, routes, moves, abilities and encounter counts/levels all save on change
+gba-0338	DONE	app/src/main/kotlin/com/ironmonone/app/TrackerGearDialog.kt:112; app/src/main/kotlin/com/ironmonone/app/TrackerPanel.kt:603	Option in the gear; a battle opens on the enemy card
+gba-0339	DONE	app/src/main/kotlin/com/ironmonone/app/TrackerGearDialog.kt:108; app/src/main/kotlin/com/ironmonone/app/MoveDecor.kt:81	Option in the gear, applied in the move power calc
+gba-0340	DONE	app/src/main/kotlin/com/ironmonone/app/TrackerGearDialog.kt:109; tracker-gba/src/main/kotlin/com/ironmonone/tracker/GbaTracker.kt:3515	Option in the gear; the tracker reads the enemy's live PP
+gba-0341	PARTIAL	app/src/main/kotlin/com/ironmonone/app/PcTracker.kt:466	Stats are marked by tapping the mark column; no button combo to cycle a highlighter
+gba-0342	MISSING	-	No update check or channel to opt into
+gba-0343	DONE	app/src/main/kotlin/com/ironmonone/app/TrackerGearDialog.kt:114; app/src/main/kotlin/com/ironmonone/app/TrackerPanel.kt:116	Option in the gear; symbol after the name
+gba-0344	DONE	app/src/main/kotlin/com/ironmonone/app/TrackerGearDialog.kt:105; app/src/main/kotlin/com/ironmonone/app/PcTracker.kt:1170	Option in the gear; pedometer in the carousel
+gba-0345	DONE	app/src/main/kotlin/com/ironmonone/app/TrackerGearDialog.kt:104; app/src/main/kotlin/com/ironmonone/app/TrackerPanel.kt:502	Option in the gear; repel bar outside battle
+gba-0346	NA	-	Typed file-path error; files are picked in the app
+gba-0347	DONE	app/src/main/kotlin/com/ironmonone/app/RunJob.kt:80	Every new run randomizes a fresh ROM on the phone
+gba-0348	NA	-	Console error for the OPTION command
+gba-0349	PARTIAL	app/src/main/kotlin/com/ironmonone/app/PcTracker.kt:466; app/src/main/kotlin/com/ironmonone/app/StatMarks.kt:409	Tap a stat to cycle its mark; no button combo
+gba-0350	NA	-	Sets the game's Button Mode so L/R tracker combos don't open Help; no L/R combos here
+gba-0351	PARTIAL	app/src/main/kotlin/com/ironmonone/app/TrackerGearDialog.kt:140; app/src/main/kotlin/com/ironmonone/app/PcHeals.kt:34	Toggle exists but does not invert the current count as the reference does (MGBA.lua:500)
+gba-0352	DONE	app/src/main/kotlin/com/ironmonone/app/TrackerGearDialog.kt:101; app/src/main/kotlin/com/ironmonone/app/PcTracker.kt:989	Option in the gear; P/S glyphs beside moves
+gba-0353	PARTIAL	app/src/main/kotlin/com/ironmonone/app/RomLibraryScreen.kt:320	A pre-randomized ROM can be added and played from Library; no numbered batch that advances
+gba-0354	PARTIAL	app/src/main/kotlin/com/ironmonone/app/PlayScreen.kt:2552	New run is a button with a confirm; no button combo
+gba-0355	DONE	app/src/main/kotlin/com/ironmonone/app/engine/Randomizers.kt:29	The randomizer engine is built in; no JAR to point at
+gba-0356	DONE	app/src/main/kotlin/com/ironmonone/app/TrackerGearDialog.kt:121; app/src/main/kotlin/com/ironmonone/app/InfoRules.kt:33	Option in the gear, applied by InfoRules
+gba-0357	DONE	app/src/main/kotlin/com/ironmonone/app/TrackerGearDialog.kt:117; app/src/main/kotlin/com/ironmonone/app/TrackerPanel.kt:126	Option in the gear, applied to stat and move numbers
+gba-0358	PARTIAL	app/src/main/kotlin/com/ironmonone/app/RomLibraryScreen.kt:320	Library holds imported ROMs; no folder of premade ROMs played in order
+gba-0359	DONE	app/src/main/kotlin/com/ironmonone/app/RunScreen.kt:358	Pick, import or edit a .rnqs settings file; presets bundled
+gba-0360	DONE	app/src/main/kotlin/com/ironmonone/app/TrackerGearDialog.kt:110; app/src/main/kotlin/com/ironmonone/app/TrackerPanel.kt:665	Option in the gear; '~ N% to catch' in wild battles
+gba-0361	DONE	app/src/main/kotlin/com/ironmonone/app/TrackerGearDialog.kt:102; app/src/main/kotlin/com/ironmonone/app/PcTracker.kt:1528	Option in the gear; heals as HP instead of percent
+gba-0362	DONE	app/src/main/kotlin/com/ironmonone/app/TrackerGearDialog.kt:111; app/src/main/kotlin/com/ironmonone/app/TrackerPanel.kt:692	Option in the gear; last attack damage in the carousel
+gba-0363	DONE	app/src/main/kotlin/com/ironmonone/app/TrackerGearDialog.kt:107; app/src/main/kotlin/com/ironmonone/app/MoveDecor.kt:112	Option in the gear; effectiveness marks beside move power
+gba-0364	PARTIAL	app/src/main/kotlin/com/ironmonone/app/PcTracker.kt:738; app/src/main/kotlin/com/ironmonone/app/AutoTheme.kt:82	Move type always shown as name colour; no toggle (only Auto Themes switch to a type bar)
+gba-0365	DONE	app/src/main/kotlin/com/ironmonone/app/TrackerGearDialog.kt:113; app/src/main/kotlin/com/ironmonone/app/TrackerPanel.kt:98	Option in the gear; nickname in place of the species
+gba-0366	DONE	app/src/main/kotlin/com/ironmonone/app/TrackerGearDialog.kt:100; app/src/main/kotlin/com/ironmonone/app/TrackerPanel.kt:467	Option in the gear; the starter's info in the lab
+gba-0367	DONE	app/src/main/kotlin/com/ironmonone/app/RunScreen.kt:253	The ROM to randomize is picked on the Run tab from the Library
+gba-0368	PARTIAL	app/src/main/kotlin/com/ironmonone/app/PcTracker.kt:1617	SEE FOE / SEE MINE button in battle; not bindable to a pad button
+gba-0369	DONE	app/src/main/kotlin/com/ironmonone/app/TrackerGearDialog.kt:118; app/src/main/kotlin/com/ironmonone/app/PcHeals.kt:93	Option in the gear; PC heal counter in the heals box
+gba-0370	DONE	app/src/main/kotlin/com/ironmonone/app/TrackerGearDialog.kt:119; app/src/main/kotlin/com/ironmonone/app/TrackerPanel.kt:648	Option in the gear; stats hidden until a summary is opened
+gba-0371	NA	-	Typed file-path check; settings files are picked in the app
+gba-0372	NA	-	mGBA sidebar instructions
+gba-0373	NA	-	Console input instructions
+gba-0374	NA	-	Console syntax instructions
+gba-0375	NA	-	Console syntax example
+gba-0376	NA	-	Blank line (extraction noise)
+gba-0377	NA	-	Console help instructions
+gba-0378	NA	-	Console instruction; the wiki itself is judged at gba-0399
+gba-0379	PARTIAL	app/src/main/kotlin/com/ironmonone/app/TrackerPanel.kt:111	Ability text by tapping an ability on a card; no lookup of any ability by name
+gba-0380	NA	-	Typed-command syntax error; nothing is typed here
+gba-0381	NA	-	Typed name not found; nothing is typed here
+gba-0382	NA	-	Lists the console's commands
+gba-0383	MISSING	app/src/main/kotlin/com/ironmonone/app/PrepStore.kt:472	Attempts only go up by one per new run; the count can't be set or corrected by hand
+gba-0384	NA	-	Typed-command syntax error
+gba-0385	MISSING	app/src/main/kotlin/com/ironmonone/app/PrepStore.kt:472	No way to set the attempt counter
+gba-0386	PARTIAL	app/src/main/kotlin/com/ironmonone/app/AboutScreen.kt:198	No version check; About's 'Latest build' opens the releases page
+gba-0387	MISSING	-	No update check
+gba-0388	MISSING	-	No update check
+gba-0389	DONE	TrackerGearDialog.kt:194; StatMarks.kt:506	Clear wipes marks, notes, routes, moves, abilities, encounter counts and levels
+gba-0390	DONE	TrackerGearDialog.kt:199; StatMarks.kt:506	confirmed clear of all of this run's tracked data
+gba-0391	PARTIAL	app/src/main/kotlin/com/ironmonone/app/AboutScreen.kt:467	About credits 'besteon and contributors' with a link; no contributor list
+gba-0392	PARTIAL	app/src/main/kotlin/com/ironmonone/app/AboutScreen.kt:467	About names besteon's tracker; no created-by/team list
+gba-0393	PARTIAL	app/src/main/kotlin/com/ironmonone/app/AboutScreen.kt:441	About credits the tracker and add-ons; not the tracker team list
+gba-0394	NA	-	Console help
+gba-0395	NA	-	Console syntax error
+gba-0396	NA	-	Console error
+gba-0397	NA	-	Console help label
+gba-0398	NA	-	Console help label
+gba-0399	PARTIAL	app/src/main/kotlin/com/ironmonone/app/AboutScreen.kt:72	In-app 'How it works' steps; no wiki pages on tracker features
+gba-0400	DONE	app/src/main/kotlin/com/ironmonone/app/PcMoveInfo.kt:85; app/src/main/kotlin/com/ironmonone/app/MoveDecor.kt:59	Pick the type on your Hidden Power's info; used for colour, STAB and effectiveness
+gba-0401	NA	-	Console syntax error
+gba-0402	NA	-	Can't arise: the picker is on your own Hidden Power move
+gba-0403	NA	-	Can't arise: the picker is on your own Hidden Power move
+gba-0404	NA	-	Types are picked, not typed
+gba-0405	DONE	app/src/main/kotlin/com/ironmonone/app/PcMoveInfo.kt:85	The picked type shows on the move popup
+gba-0406	DONE	app/src/main/kotlin/com/ironmonone/app/MoveDecor.kt:59	The chosen type drives in-battle effectiveness
+gba-0407	DONE	app/src/main/kotlin/com/ironmonone/app/MoveDecor.kt:112	Effectiveness marks follow the 'Show move effectiveness' option
+gba-0408	NA	-	Console pointer to the mGBA sidebar
+gba-0409	MISSING	-	No extension system
+gba-0410	MISSING	-	No extension system
+gba-0411	MISSING	-	No extension system
+gba-0412	MISSING	-	English only; no language setting
+gba-0413	NA	-	Console syntax error
+gba-0414	NA	-	Typed language not found
+gba-0415	MISSING	-	No language setting
+gba-0416	PARTIAL	app/src/main/kotlin/com/ironmonone/app/AboutScreen.kt:292; app/src/main/kotlin/com/ironmonone/app/Backup.kt:36	Restore brings tracked data back with the whole backup; no load of one saved attempt's data
+gba-0417	NA	-	Console syntax error
+gba-0418	NA	-	File/game mismatch check of the TDAT loader
+gba-0419	NA	-	Typed file not found
+gba-0420	PARTIAL	app/src/main/kotlin/com/ironmonone/app/PcMoveInfo.kt:63	Move info by tapping a move on a card; no lookup of any move by name
+gba-0421	NA	-	Typed-command syntax error
+gba-0422	NA	-	Typed name not found
+gba-0423	DONE	app/src/main/kotlin/com/ironmonone/app/PcTracker.kt:1537; app/src/main/kotlin/com/ironmonone/app/PlayScreen.kt:2585	Tap the enemy's note line to write a note, kept per species per run
+gba-0424	NA	-	Typed-command syntax error
+gba-0425	NA	-	Can't arise: the note editor opens from a card
+gba-0426	NA	-	Console rule message; notes open from the enemy card
+gba-0427	DONE	app/src/main/kotlin/com/ironmonone/app/PlayScreen.kt:2585	SAVE stores the note; it shows on the card
+gba-0428	DONE	app/src/main/kotlin/com/ironmonone/app/TrackerGearDialog.kt:211	Options are checkboxes in the gear
+gba-0429	NA	-	Console syntax error
+gba-0430	NA	-	Console error
+gba-0431	DONE	app/src/main/kotlin/com/ironmonone/app/TrackerGearDialog.kt:211	The checkbox shows the off state
+gba-0432	DONE	app/src/main/kotlin/com/ironmonone/app/TrackerGearDialog.kt:211	The checkbox shows the on state
+gba-0433	DONE	app/src/main/kotlin/com/ironmonone/app/TrackerGearDialog.kt:211	A tap flips the checkbox and saves
+gba-0434	DONE	app/src/main/kotlin/com/ironmonone/app/PcHeals.kt:105; app/src/main/kotlin/com/ironmonone/app/PcHeals.kt:93	+ and - beside the PC heal counter set it by hand, 0 to 99
+gba-0435	NA	-	Console syntax error
+gba-0436	DONE	app/src/main/kotlin/com/ironmonone/app/PcHeals.kt:93	The new count shows in the heals box
+gba-0437	PARTIAL	app/src/main/kotlin/com/ironmonone/app/TrackerPanel.kt:419; app/src/main/kotlin/com/ironmonone/app/PcTracker.kt:1324	Lookup of any species by name (SEARCH) opens its info; no EXP yield
+gba-0438	NA	-	Typed-command syntax error
+gba-0439	NA	-	Typed name not found
+gba-0440	DONE	app/src/main/kotlin/com/ironmonone/app/PlayScreen.kt:2552; app/src/main/kotlin/com/ironmonone/app/SideScreens.kt:289	New Run randomizes the next seed and loads it
+gba-0441	DONE	app/src/main/kotlin/com/ironmonone/app/PcTracker.kt:915; app/src/main/kotlin/com/ironmonone/app/PcTracker.kt:1561	Lab ball call with a reroll die
+gba-0442	DONE	app/src/main/kotlin/com/ironmonone/app/TrackerPanel.kt:557	The chosen ball shows in the lab
+gba-0443	PARTIAL	app/src/main/kotlin/com/ironmonone/app/AboutScreen.kt:198	'Latest build' opens the releases page; no notes in the app
+gba-0444	DONE	app/src/main/kotlin/com/ironmonone/app/RouteInfoScreen.kt:118	Route info SEARCH lists every route, floors included
+gba-0445	NA	-	Typed-command syntax error
+gba-0446	NA	-	Typed name not found
+gba-0447	PARTIAL	app/src/main/kotlin/com/ironmonone/app/GameOverHost.kt:67; app/src/main/kotlin/com/ironmonone/app/AboutScreen.kt:291	Save this attempt at game over, or a whole-app backup any time; no named save of tracked data
+gba-0448	NA	-	Typed file-name error
+gba-0449	PARTIAL	app/src/main/kotlin/com/ironmonone/app/PrepStore.kt:527	Save this attempt copies tracked data to files/attempts/; not a named save
+gba-0450	MISSING	-	No in-app updater
+gba-0451	NA	-	mGBA script restart steps
+gba-0452	NA	-	mGBA script restart steps
+gba-0453	NA	-	mGBA script restart steps
+gba-0454	NA	-	mGBA script restart steps
+gba-0455	MISSING	-	No in-app updater
+gba-0456	NA	-	Console syntax error prefix
+gba-0457	NA	-	Console command instructions
+gba-0458	NA	-	Console help label
+gba-0459	NA	-	Console help label
+gba-0460	NA	-	Console instruction (OPTION #)
+gba-0461	NA	-	Console instruction (INSTALLEXT)
+gba-0462	MISSING	-	No extension system, so no installed list
+gba-0463	PARTIAL	app/src/main/kotlin/com/ironmonone/app/AboutScreen.kt:291; app/src/main/kotlin/com/ironmonone/app/GameOverHost.kt:67	Whole-app backup/restore and Save this attempt; no save/load of tracked data alone
+gba-0464	NA	-	Console instruction fragment
+gba-0465	NA	-	Console instruction fragment
+gba-0466	DONE	PcTracker.kt:1617; PcTracker.kt:466	touch, not buttons (Blake, 2026-09-29): view swap on the battle banner, tap a stat to mark, tap the name for info
+gba-0467	NA	-	Console table header
+gba-0468	NA	-	Console table header; options are checkboxes
+gba-0469	DONE	app/src/main/kotlin/com/ironmonone/app/PcTracker.kt:1635; app/src/main/kotlin/com/ironmonone/app/PcTracker.kt:1375	'0x Immunities' in Type Defenses; 'Immune to' in Pokemon info
+gba-0470	NA	-	Console table header
+gba-0471	DONE	app/src/main/kotlin/com/ironmonone/app/PcMoveInfo.kt:64	PHYSICAL tag on move info
+gba-0472	DONE	app/src/main/kotlin/com/ironmonone/app/PcTracker.kt:1635; app/src/main/kotlin/com/ironmonone/app/PcTracker.kt:1373	1/4x and 1/2x Resistances in Type Defenses and Pokemon info
+gba-0473	DONE	app/src/main/kotlin/com/ironmonone/app/PcMoveInfo.kt:64	SPECIAL tag on move info
+gba-0474	DONE	app/src/main/kotlin/com/ironmonone/app/PcMoveInfo.kt:64	STATUS tag on move info
+gba-0475	NA	-	Console instruction
+gba-0476	DONE	app/src/main/kotlin/com/ironmonone/app/PcTracker.kt:1635; app/src/main/kotlin/com/ironmonone/app/PcTracker.kt:1371	2x and 4x Weaknesses in Type Defenses and Pokemon info
+gba-0477	NA	-	Console instruction
+gba-0478	MISSING	-	English only; no current-language setting
+gba-0479	NA	-	Console table header
+gba-0480	NA	-	Console table header
+gba-0481	DONE	app/src/main/kotlin/com/ironmonone/app/PcMoveInfo.kt:107	ACCURACY on move info
+gba-0482	DONE	app/src/main/kotlin/com/ironmonone/app/PcMoveInfo.kt:64	Category tag on move info
+gba-0483	DONE	app/src/main/kotlin/com/ironmonone/app/PcMoveInfo.kt:108	CONTACT on move info
+gba-0484	DONE	tracker-gba/src/main/kotlin/com/ironmonone/tracker/GbaTracker.kt:2890	Emerald-only effect under its own 'In Emerald:' label, in every game, as InfoScreen.lua:1033
+gba-0485	DONE	app/src/main/kotlin/com/ironmonone/app/PcMoveInfo.kt:110	Priority 0 is left off, as the PC InfoScreen does
+gba-0486	DONE	app/src/main/kotlin/com/ironmonone/app/PcMoveInfo.kt:105	PP on move info
+gba-0487	DONE	app/src/main/kotlin/com/ironmonone/app/PcMoveInfo.kt:106	POWER on move info
+gba-0488	DONE	app/src/main/kotlin/com/ironmonone/app/PcMoveInfo.kt:110	PRIORITY on move info when not 0
+gba-0489	DONE	app/src/main/kotlin/com/ironmonone/app/PcMoveInfo.kt:121	Move summary on move info
+gba-0490	DONE	app/src/main/kotlin/com/ironmonone/app/PcTracker.kt:1347	BST on Pokemon info
+gba-0491	MISSING	app/src/main/kotlin/com/ironmonone/app/PcTracker.kt:1288	Pokemon info has no EXP yield; the PC InfoScreen shows it (InfoScreen.lua:729)
+gba-0492	DONE	app/src/main/kotlin/com/ironmonone/app/PcTracker.kt:1350	Evolves line on Pokemon info
+gba-0493	DONE	app/src/main/kotlin/com/ironmonone/app/PcTracker.kt:1348	Weight shown in kg
+gba-0494	DONE	app/src/main/kotlin/com/ironmonone/app/PcTracker.kt:1401	'tap to add a note' when the species has none
+gba-0495	DONE	app/src/main/kotlin/com/ironmonone/app/PcTracker.kt:1388	'Learns at' levels, the ones still to come bracketed
+gba-0496	DONE	app/src/main/kotlin/com/ironmonone/app/PcTracker.kt:1352	'does not evolve'
+gba-0497	DONE	app/src/main/kotlin/com/ironmonone/app/PcTracker.kt:1537	NOTE line
+gba-0498	DONE	app/src/main/kotlin/com/ironmonone/app/PcTracker.kt:1348	Weight on Pokemon info
+gba-0499	PARTIAL	app/src/main/kotlin/com/ironmonone/app/PlayScreen.kt:2552	New run is a button; no button combo
+gba-0500	PARTIAL	app/src/main/kotlin/com/ironmonone/app/RunScreen.kt:187	One mode, generate each run; a premade ROM is played from Library instead
+gba-0501	NA	-	PC [quickload] folder instructions; files are picked in the app
+gba-0502	DONE	app/src/main/kotlin/com/ironmonone/app/RunScreen.kt:253	Source ROM from the Library on the Run tab
+gba-0503	DONE	app/src/main/kotlin/com/ironmonone/app/engine/Randomizers.kt:29	Randomizer built in; no JAR needed
+gba-0504	NA	-	Console table header
+gba-0505	MISSING	-	No numbered batch of premade ROMs
+gba-0506	NA	-	Console label
+gba-0507	NA	-	Console label
+gba-0508	DONE	app/src/main/kotlin/com/ironmonone/app/RunScreen.kt:358	Settings file picked or imported on the Run tab
+gba-0509	NA	-	Console table header
+gba-0510	NA	-	Console command text
+gba-0511	DONE	app/src/main/kotlin/com/ironmonone/app/RouteInfoScreen.kt:122	Percentages/Levels show the original table
+gba-0512	DONE	app/src/main/kotlin/com/ironmonone/app/PcTracker.kt:1213; app/src/main/kotlin/com/ironmonone/app/RouteInfoScreen.kt:139	'N/M Seen Pokemon' in the carousel; seen icons in route info
+gba-0513	DONE	app/src/main/kotlin/com/ironmonone/app/RouteInfoScreen.kt:139	Tracked view: species met there in order of appearance, '?' for the rest
+gba-0514	PARTIAL	app/src/main/kotlin/com/ironmonone/app/RouteInfoScreen.kt:117	A map with no route data shows '---', not 'UNKNOWN AREA (id)'
+gba-0515	DONE	app/src/main/kotlin/com/ironmonone/app/MoveDecor.kt:134	X for no effect
+gba-0516	DONE	app/src/main/kotlin/com/ironmonone/app/MoveDecor.kt:133	One down chevron for 1/2x
+gba-0517	DONE	app/src/main/kotlin/com/ironmonone/app/MoveDecor.kt:133	Two down chevrons for 1/4x
+gba-0518	DONE	app/src/main/kotlin/com/ironmonone/app/MoveDecor.kt:133	One up chevron for 2x
+gba-0519	DONE	app/src/main/kotlin/com/ironmonone/app/MoveDecor.kt:133	Two up chevrons for 4x
+gba-0520	DONE	app/src/main/kotlin/com/ironmonone/app/PcTracker.kt:990	Physical glyph beside the move
+gba-0521	DONE	app/src/main/kotlin/com/ironmonone/app/PcTracker.kt:991	Special glyph beside the move
+gba-0522	DONE	app/src/main/kotlin/com/ironmonone/app/PcTracker.kt:986	Status moves get no glyph, as in the reference
+gba-0523	DONE	app/src/main/kotlin/com/ironmonone/app/TrackerPanel.kt:127	ATK row
+gba-0524	DONE	app/src/main/kotlin/com/ironmonone/app/TrackerPanel.kt:137	BST row
+gba-0525	DONE	app/src/main/kotlin/com/ironmonone/app/PcTracker.kt:1458; app/src/main/assets/stream/tracker.html:66	Badge row; the stream page shows the count
+gba-0526	DONE	app/src/main/kotlin/com/ironmonone/app/TrackerPanel.kt:665	'~ N% to catch' in wild battles
+gba-0527	DONE	app/src/main/kotlin/com/ironmonone/app/TrackerPanel.kt:128	DEF row
+gba-0528	DONE	app/src/main/kotlin/com/ironmonone/app/TrackerPanel.kt:126	HP row
+gba-0529	DONE	app/src/main/kotlin/com/ironmonone/app/PcTracker.kt:713	Acc column header
+gba-0530	DONE	app/src/main/kotlin/com/ironmonone/app/PcTracker.kt:711	PP column header
+gba-0531	DONE	app/src/main/kotlin/com/ironmonone/app/PcTracker.kt:712	Pow column header
+gba-0532	DONE	app/src/main/assets/stream/tracker.html:58; app/src/main/kotlin/com/ironmonone/app/PcTracker.kt:738	The stream page has a Type column; the app shows type as the name colour
+gba-0533	DONE	app/src/main/kotlin/com/ironmonone/app/TrackerPanel.kt:122; app/src/main/kotlin/com/ironmonone/app/PcTracker.kt:1516	Heals line under the lead
+gba-0534	DONE	TrackerPanel.kt:191; StatMarks.kt:163	'Last seen Lv.N' saved with the run's tracked data
+gba-0535	DONE	app/src/main/kotlin/com/ironmonone/app/PcTracker.kt:1674	Lv. line
+gba-0536	PARTIAL	app/src/main/kotlin/com/ironmonone/app/TrackerPanel.kt:192; app/src/main/kotlin/com/ironmonone/app/PlayScreen.kt:516	Shown when no earlier level is known; that memory resets when the Play tab closes
+gba-0537	DONE	app/src/main/kotlin/com/ironmonone/app/TrackerPanel.kt:503; app/src/main/kotlin/com/ironmonone/app/Repel.kt:63	Repel bar outside battle
+gba-0538	PARTIAL	app/src/main/kotlin/com/ironmonone/app/TrackerPanel.kt:232; app/src/main/kotlin/com/ironmonone/app/PlayScreen.kt:512	One combined count, labelled by battle type, in memory only; the reference keeps wild/trainer apart
+gba-0539	PARTIAL	app/src/main/kotlin/com/ironmonone/app/TrackerPanel.kt:232; app/src/main/kotlin/com/ironmonone/app/PlayScreen.kt:512	One combined count, labelled by battle type, in memory only; the reference keeps wild/trainer apart
+gba-0540	DONE	app/src/main/kotlin/com/ironmonone/app/TrackerPanel.kt:131	SPA row
+gba-0541	DONE	app/src/main/kotlin/com/ironmonone/app/TrackerPanel.kt:134	SPD row
+gba-0542	DONE	app/src/main/kotlin/com/ironmonone/app/TrackerPanel.kt:136	SPE row
+gba-0543	DONE	app/src/main/kotlin/com/ironmonone/app/PcHeals.kt:93	PC heal counter in the heals box (Track PC Heals)
+gba-0544	DONE	app/src/main/kotlin/com/ironmonone/app/TrackerPanel.kt:236; app/src/main/kotlin/com/ironmonone/app/PcTracker.kt:1020	The trainer's team as pokeballs, fainted ones greyed
+gba-0545	MISSING	-	No update check
+gba-0546	DONE	app/src/main/kotlin/com/ironmonone/app/AboutScreen.kt:434	About shows the installed version
+gba-0547	MISSING	-	No in-app download and install
+gba-0548	MISSING	-	No update check
+gba-0549	PARTIAL	app/src/main/kotlin/com/ironmonone/app/AboutScreen.kt:198	'Latest build' opens the releases page; no in-app check
+gba-0550	MISSING	-	No update check
+gba-0551	PARTIAL	app/src/main/kotlin/com/ironmonone/app/AboutScreen.kt:198	Release notes only on the releases page it opens
+gba-0725	NA	-	Links a Twitch reward to an event in Streamer.bot
+gba-0726	NA	-	Links a Twitch reward to an event in Streamer.bot
+gba-0727	PARTIAL	app/src/main/kotlin/com/ironmonone/app/PlayScreen.kt:1494; app/src/main/kotlin/com/ironmonone/app/stream/StreamHub.kt:44	STREAM starts the page server OBS reads; it connects to no bot (no Streamer.bot link)
+gba-0728	PARTIAL	app/src/main/kotlin/com/ironmonone/app/PlayScreen.kt:1496; app/src/main/kotlin/com/ironmonone/app/stream/StreamHub.kt:54	Tapping STREAM ON stops the page server; there is no bot connection to drop
+gba-0729	NA	-	Streamer.bot import code
+gba-0730	PARTIAL	app/src/main/kotlin/com/ironmonone/app/stream/StreamServer.kt:90	The stream index page lists the OBS sources; no setup guide
+gba-0731	NA	-	Per-event Streamer.bot options
+gba-0732	MISSING	-	No reward queue; viewer ball picks don't exist
+gba-0733	MISSING	-	No reward queue; viewer ball picks don't exist
+gba-0734	MISSING	-	No reward queue; viewer ball picks don't exist
+gba-0735	NA	-	Renames a Streamer.bot chat command
+gba-0736	NA	-	Twitch role permissions for chat commands
+gba-0737	NA	-	Sets Streamer.bot connection fields
+gba-0738	PARTIAL	app/src/main/kotlin/com/ironmonone/app/TrackerPanel.kt:111	In-app: tap an ability on a card for its text; no lookup by name; no chat
+gba-0739	PARTIAL	app/src/main/kotlin/com/ironmonone/app/TrackerPanel.kt:111	In-app: tap an ability on a card for its text; no lookup by name; no chat
+gba-0740	DONE	app/src/main/kotlin/com/ironmonone/app/AboutScreen.kt:434; app/src/main/kotlin/com/ironmonone/app/RunScreen.kt:218	In-app: version in About, game and attempt on the Run tab; no chat
+gba-0741	DONE	app/src/main/kotlin/com/ironmonone/app/AboutScreen.kt:434; app/src/main/kotlin/com/ironmonone/app/RunScreen.kt:218	In-app: version in About, game and attempt on the Run tab; no chat
+gba-0742	DONE	app/src/main/kotlin/com/ironmonone/app/Notebook.kt:159; app/src/main/assets/stream/tracker.html:73	Any species' BST in the Notebook (include unseen); overlay shows lead/enemy BST; no chat
+gba-0743	DONE	app/src/main/kotlin/com/ironmonone/app/Notebook.kt:159; app/src/main/assets/stream/tracker.html:73	Any species' BST in the Notebook (include unseen); overlay shows lead/enemy BST; no chat
+gba-0744	MISSING	-	No viewer ball-pick queue
+gba-0745	MISSING	-	No viewer ball-pick queue
+gba-0746	DONE	app/src/main/kotlin/com/ironmonone/app/CoverageCalc.kt:60; app/src/main/kotlin/com/ironmonone/app/CoverageCalc.kt:109	In-app Coverage Calc: lead's types, add/drop types, fully-evolved switch; no chat
+gba-0747	DONE	app/src/main/kotlin/com/ironmonone/app/CoverageCalc.kt:60; app/src/main/kotlin/com/ironmonone/app/CoverageCalc.kt:109	In-app Coverage Calc: lead's types, add/drop types, fully-evolved switch; no chat
+gba-0748	PARTIAL	app/src/main/kotlin/com/ironmonone/app/Notebook.kt:126; tracker-gba/src/main/kotlin/com/ironmonone/tracker/GbaTracker.kt:2403	Notebook lists defeated/total per map; dungeon floors not merged into one area; no chat
+gba-0749	PARTIAL	app/src/main/kotlin/com/ironmonone/app/Notebook.kt:126; tracker-gba/src/main/kotlin/com/ironmonone/tracker/GbaTracker.kt:2403	Notebook lists defeated/total per map; dungeon floors not merged into one area; no chat
+gba-0750	DONE	app/src/main/kotlin/com/ironmonone/app/RunScreen.kt:300; app/src/main/kotlin/com/ironmonone/app/Favorites.kt:13	Favorites on the Run tab and the no-party card; no chat
+gba-0751	DONE	app/src/main/kotlin/com/ironmonone/app/RunScreen.kt:300; app/src/main/kotlin/com/ironmonone/app/Favorites.kt:13	Favorites on the Run tab and the no-party card; no chat
+gba-0752	MISSING	-	No GachaMon (cards, GachaDex collection)
+gba-0753	MISSING	-	No GachaMon (cards, GachaDex collection)
+gba-0754	MISSING	-	No GachaMon (cards, GachaDex collection)
+gba-0755	MISSING	-	No GachaMon (cards, GachaDex collection)
+gba-0756	PARTIAL	app/src/main/kotlin/com/ironmonone/app/MoveHistoryStats.kt:118	In-app Game Stats; Play Time is 'not kept'; no chat
+gba-0757	PARTIAL	app/src/main/kotlin/com/ironmonone/app/MoveHistoryStats.kt:118	In-app Game Stats; Play Time is 'not kept'; no chat
+gba-0758	DONE	app/src/main/kotlin/com/ironmonone/app/HealsInBag.kt:33	In-app Heals in Bag by HP/PP/Status/Battle/All; no chat
+gba-0759	DONE	app/src/main/kotlin/com/ironmonone/app/HealsInBag.kt:33	In-app Heals in Bag by HP/PP/Status/Battle/All; no chat
+gba-0760	MISSING	-	No chat commands at all: viewers can't query tracker data; the overlay is display-only
+gba-0761	MISSING	-	No chat commands at all: viewers can't query tracker data; the overlay is display-only
+gba-0762	DONE	app/src/main/kotlin/com/ironmonone/app/LogMisc.kt:32; app/src/main/kotlin/com/ironmonone/app/LogMisc.kt:31	Log's Misc tab: version, seed, settings string, Share Seed (after game over); no chat
+gba-0763	DONE	app/src/main/kotlin/com/ironmonone/app/LogMisc.kt:32; app/src/main/kotlin/com/ironmonone/app/LogMisc.kt:31	Log's Misc tab: version, seed, settings string, Share Seed (after game over); no chat
+gba-0764	PARTIAL	app/src/main/kotlin/com/ironmonone/app/PcMoveInfo.kt:63	In-app: tap a move on a card for its info; no lookup by name; no chat
+gba-0765	PARTIAL	app/src/main/kotlin/com/ironmonone/app/PcMoveInfo.kt:63	In-app: tap a move on a card for its info; no lookup by name; no chat
+gba-0766	PARTIAL	app/src/main/kotlin/com/ironmonone/app/RouteInfoScreen.kt:118	Seen wilds per route via Route Info search; no pivot summary, no Safari levels; no chat
+gba-0767	PARTIAL	app/src/main/kotlin/com/ironmonone/app/RouteInfoScreen.kt:118	Seen wilds per route via Route Info search; no pivot summary, no Safari levels; no chat
+gba-0768	PARTIAL	app/src/main/kotlin/com/ironmonone/app/TrackerPanel.kt:419; app/src/main/kotlin/com/ironmonone/app/PcTracker.kt:1324; app/src/main/kotlin/com/ironmonone/app/Notebook.kt:93	Any species' info via SEARCH, Notebook for tracked data; no dex no., no wild/trainer split; no chat
+gba-0769	PARTIAL	app/src/main/kotlin/com/ironmonone/app/TrackerPanel.kt:419; app/src/main/kotlin/com/ironmonone/app/PcTracker.kt:1324; app/src/main/kotlin/com/ironmonone/app/Notebook.kt:93	Any species' info via SEARCH, Notebook for tracked data; no dex no., no wild/trainer split; no chat
+gba-0770	PARTIAL	app/src/main/kotlin/com/ironmonone/app/Notebook.kt:89; app/src/main/kotlin/com/ironmonone/app/PcTracker.kt:1458	Badges, Notebook trainers fought and species seen; no fully-evolved-seen %; no chat
+gba-0771	PARTIAL	app/src/main/kotlin/com/ironmonone/app/Notebook.kt:89; app/src/main/kotlin/com/ironmonone/app/PcTracker.kt:1458	Badges, Notebook trainers fought and species seen; no fully-evolved-seen %; no chat
+gba-0772	PARTIAL	app/src/main/kotlin/com/ironmonone/app/RandomEvos.kt:36	In-app Random Evos for party/enemy (VIEW EVOS); no lookup by name; no chat
+gba-0773	PARTIAL	app/src/main/kotlin/com/ironmonone/app/RandomEvos.kt:36	In-app Random Evos for party/enemy (VIEW EVOS); no lookup by name; no chat
+gba-0774	DONE	app/src/main/kotlin/com/ironmonone/app/RouteInfoScreen.kt:118; app/src/main/kotlin/com/ironmonone/app/Notebook.kt:126	In-app: Route Info search (seen wilds) and Notebook areas (trainers beaten); no chat
+gba-0775	DONE	app/src/main/kotlin/com/ironmonone/app/RouteInfoScreen.kt:118; app/src/main/kotlin/com/ironmonone/app/Notebook.kt:126	In-app: Route Info search (seen wilds) and Notebook areas (trainers beaten); no chat
+gba-0776	PARTIAL	app/src/main/kotlin/com/ironmonone/app/Notebook.kt:97	Notebook lists noted species with their notes; FIND matches names, not note text; no chat
+gba-0777	PARTIAL	app/src/main/kotlin/com/ironmonone/app/Notebook.kt:97	Notebook lists noted species with their notes; FIND matches names, not note text; no chat
+gba-0778	PARTIAL	app/src/main/kotlin/com/ironmonone/app/Notebook.kt:93; app/src/main/kotlin/com/ironmonone/app/Notebook.kt:164	Notebook shows one species' tracked info; no search by move or ability; no chat
+gba-0779	PARTIAL	app/src/main/kotlin/com/ironmonone/app/Notebook.kt:93; app/src/main/kotlin/com/ironmonone/app/Notebook.kt:164	Notebook shows one species' tracked info; no search by move or ability; no chat
+gba-0780	MISSING	app/src/main/kotlin/com/ironmonone/app/LogTms.kt:58	No TMs-in-bag view during a run; the log's TMs tab only after game over
+gba-0781	MISSING	app/src/main/kotlin/com/ironmonone/app/LogTms.kt:58	No TMs-in-bag view during a run; the log's TMs tab only after game over
+gba-0782	PARTIAL	app/src/main/kotlin/com/ironmonone/app/Theme.kt:86	In-app export is an 8-colour string, not the Gen 3 theme code; no preset names; no chat
+gba-0783	PARTIAL	app/src/main/kotlin/com/ironmonone/app/Theme.kt:86	In-app export is an 8-colour string, not the Gen 3 theme code; no preset names; no chat
+gba-0784	PARTIAL	app/src/main/kotlin/com/ironmonone/app/TrainerScreens.kt:63	In-app Trainer Info for the opponent and route trainers; no usable items, no lookup by name/id; no chat
+gba-0785	PARTIAL	app/src/main/kotlin/com/ironmonone/app/TrainerScreens.kt:63	In-app Trainer Info for the opponent and route trainers; no usable items, no lookup by name/id; no chat
+gba-0786	PARTIAL	app/src/main/kotlin/com/ironmonone/app/Notebook.kt:126; tracker-gba/src/main/kotlin/com/ironmonone/tracker/GbaTracker.kt:2406	Notebook lists unfinished areas by map id; not ordered by level, no dungeon/doubles filters; no chat
+gba-0787	PARTIAL	app/src/main/kotlin/com/ironmonone/app/Notebook.kt:126; tracker-gba/src/main/kotlin/com/ironmonone/tracker/GbaTracker.kt:2406	Notebook lists unfinished areas by map id; not ordered by level, no dungeon/doubles filters; no chat
+gba-0788	DONE	app/src/main/kotlin/com/ironmonone/app/PcTracker.kt:1635; app/src/main/kotlin/com/ironmonone/app/TrackerPanel.kt:419	Type Defenses and weaknesses for any species via Pokemon info SEARCH; no chat
+gba-0789	DONE	app/src/main/kotlin/com/ironmonone/app/PcTracker.kt:1635; app/src/main/kotlin/com/ironmonone/app/TrackerPanel.kt:419	Type Defenses and weaknesses for any species via Pokemon info SEARCH; no chat
+gba-0790	PARTIAL	app/src/main/kotlin/com/ironmonone/app/RunScreen.kt:300	Favorites are edited on the Run tab; viewers can't change them
+gba-0791	PARTIAL	app/src/main/kotlin/com/ironmonone/app/RunScreen.kt:300	Favorites are edited on the Run tab; viewers can't change them
+gba-0792	PARTIAL	app/src/main/kotlin/com/ironmonone/app/RunScreen.kt:300	Favorites are edited on the Run tab; viewers can't change them
+gba-0793	PARTIAL	app/src/main/kotlin/com/ironmonone/app/RunScreen.kt:300	Favorites are edited on the Run tab; viewers can't change them
+gba-0794	MISSING	-	No tracker languages to switch to
+gba-0795	PARTIAL	app/src/main/kotlin/com/ironmonone/app/Theme.kt:87	A theme can be imported in-app; viewers can't change it, no preset names
+gba-0796	MISSING	app/src/main/kotlin/com/ironmonone/app/PcTracker.kt:915	Viewers can't pick the starter ball; only the tracker's own random ball call
+gba-0797	MISSING	app/src/main/kotlin/com/ironmonone/app/PcTracker.kt:915	Viewers can't pick a ball that must last until it gets out
+gba-0798	MISSING	-	No GachaMon
+gba-0799	MISSING	-	No GachaMon
+gba-0800	PARTIAL	app/src/main/assets/stream/tracker.html:86; app/src/main/kotlin/com/ironmonone/app/stream/StreamSnapshot.kt:64	Overlay shows RUN WON/OVER and the SSE state carries the outcome; no bot trigger
+gba-0801	PARTIAL	app/src/main/kotlin/com/ironmonone/app/stream/StreamSnapshot.kt:64; app/src/main/kotlin/com/ironmonone/app/stream/StreamServer.kt:106	state.json/SSE carry outcome and party species; not a WON/LOSS id pushed to a bot
+gba-0802	NA	-	Streamer.bot text-file connection folder
+gba-0803	NA	-	Streamer.bot transport choice
+gba-0804	PARTIAL	app/src/main/kotlin/com/ironmonone/app/PlayScreen.kt:1494	STREAM / STREAM ON shows whether the server runs; no client connection status
+gba-0805	NA	-	Extension and Streamer.bot plumbing
+gba-0806	NA	-	Streamer.bot HTTP mode setting
+gba-0807	NA	-	Streamer.bot HTTP mode setting
+gba-0808	NA	-	Streamer.bot import code
+gba-0809	NA	-	Empty-state text of the Streamer.bot Game tab
+gba-0810	MISSING	-	No reward queue; viewer ball picks don't exist
+gba-0811	DONE	app/src/main/kotlin/com/ironmonone/app/PlayScreen.kt:1496	'Stream server stopped.' and the STREAM button off
+gba-0812	MISSING	-	No sign that OBS or any client has connected
+gba-0813	PARTIAL	app/src/main/kotlin/com/ironmonone/app/PlayScreen.kt:1421	STREAM ON shows the URL to use; can't tell whether OBS is attached
+gba-0814	PARTIAL	app/src/main/kotlin/com/ironmonone/app/stream/StreamHub.kt:64; app/src/main/kotlin/com/ironmonone/app/PlayScreen.kt:1421	The phone's IP is shown in the stream URL; not settable
+gba-0815	PARTIAL	app/src/main/kotlin/com/ironmonone/app/stream/StreamHub.kt:14	Fixed port 8642 in the URL; not settable
+gba-0816	NA	-	Header of the Streamer.bot settings
+gba-0817	NA	-	Reward-title placeholder until Streamer.bot connects
+gba-0818	NA	-	Completes a Twitch redeem
+gba-0819	MISSING	-	Rule of the viewer ball-pick redeem, which is absent
+gba-0820	NA	-	Posts to Twitch chat
+gba-0821	MISSING	-	Part of the viewer ball-pick queue, which is absent
+gba-0822	MISSING	-	Keyword of the viewer ball-pick redeem, which is absent
+gba-0823	MISSING	-	Keyword of the viewer ball-pick redeem, which is absent
+gba-0824	MISSING	-	Keyword of the viewer ball-pick redeem, which is absent
+gba-0825	MISSING	-	Keyword of the viewer ball-pick redeem, which is absent
+gba-0826	MISSING	app/src/main/kotlin/com/ironmonone/app/PlayScreen.kt:1494	The stream server must be switched on by hand after each app start
+gba-0827	NA	-	Reset-to-default in Streamer.bot prompts
+gba-0828	NA	-	Streamer.bot update prompt
+gba-0829	NA	-	Streamer.bot update prompt
+gba-0830	NA	-	Streamer.bot code version prompt
+gba-0831	NA	-	Streamer.bot code version prompt
+gba-0832	NA	-	Streamer.bot code version prompt
+gba-0833	NA	-	Streamer.bot transport option
+gba-0834	NA	-	Streamer.bot transport option
+gba-0835	NA	-	Streamer.bot transport option
+gba-0836	NA	-	Config tab for Streamer.bot chat commands
+gba-0837	NA	-	Config tab for Streamer.bot game events
+gba-0838	MISSING	-	No reward queue; viewer ball picks don't exist
+gba-0839	NA	-	Config tab for Twitch channel rewards
+gba-0840	PARTIAL	app/src/main/kotlin/com/ironmonone/app/PlayScreen.kt:1421	Stream on/off and its URL in the FILE menu; no status screen
+gba-0841	NA	-	BizHawk transport warning
+gba-0842	NA	-	Streamer.bot import setup warning

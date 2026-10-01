@@ -1,0 +1,35 @@
+TEXT:
+Set up a game
+All files
+Your own dumps, hacks and patches. Nothing is downloaded and nothing leaves this phone. Files are sorted by what they are, and a patch is only ever offered for the game it fits.
+Add files
+Play
+Patch
+Rename
+Delete
+DS
+heartgold-u
+Pokémon HeartGold (U) · verified · tracked
+NDS · 128 MB
+Play
+Patch
+Rename
+Delete
+GBA
+emerald-u  (playing)
+Pokémon Emerald (U) · verified · tracked
+GBA · 16 MB
+Play
+Patch (1)
+Rename
+Delete
+PATCHED
+1
+A known build made from a clean ROM, like Nat. Dex.
+Home
+Play
+Library
+More
+
+CONTENT DESCRIPTIONS:
+

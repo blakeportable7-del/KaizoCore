@@ -1,0 +1,28 @@
+TEXT:
+NUZLOCKE  STANDARD
+X
+AREAS
+TEAM
+GRAVE
+LOG
+RULES
+Pokémon Emerald (U)
+Started Sep 29, 22:51. In progress.
+Tap a rule to change it. It applies from now on, and the log says it was changed.
+THE RULES
+First encounter per area
+ON
+A fainted Pokémon is dead
+ON
+A whiteout ends the run
+ON
+Slow start
+ON
+CLAUSES
+Dupes clause
+ON
+Dupes: only lines you still own
+off
+
+CONTENT DESCRIPTIONS:
+

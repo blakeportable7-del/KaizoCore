@@ -74,6 +74,15 @@ class SideScreenState {
     var trackedPokemon by mutableStateOf(false)
     var tourney by mutableStateOf(false)
     var colorTheme by mutableStateOf(false)
+    /** Calc Atk, open with what it filled in from the last hit (null fill: opened empty). */
+    var calcAtkOpen by mutableStateOf(false)
+    var calcAtkFill by mutableStateOf<com.ironmonone.tracker.CalcAtk.Fill?>(null)
+
+    /** Calc Atk's configureOptions in battle: fill from the last hit, then open. */
+    fun openCalcAtk(t: GbaTracker?, s: TrackerState?) {
+        calcAtkFill = if (t != null && s != null) calcAtkFill(t, s) else null
+        calcAtkOpen = true
+    }
 }
 
 /** The side screens themselves: Move History, Random Evos, Heals In Bag, Notebook, Catch Rates, Battle Details, Trainers On Route, Trainer Info, Stats. */
@@ -84,22 +93,29 @@ fun SideScreenDialogs(
     ndsTrackerRef: NdsTracker?,
     trackerState: TrackerState?,
     statMarks: StatMarks,
-    encounters: Map<Int, Int>,
-    lastSeenLevel: Map<Int, Int>,
     enemySpecies: Int,
     gbNames: ((Int) -> String)?,
     spriteFor: (Int) -> ImageBitmap?,
     attempt: Int,
     timeMachine: TimeMachine? = null,
     snapshot: () -> ByteArray? = { null },
-    onRestore: (ByteArray) -> Unit = {},
+    /** The restore point itself, not only its bytes: the run's events name which one (RunEvents). */
+    onRestore: (TimeMachine.RestorePoint) -> Unit = {},
     pastRunStore: PastRunStore? = null,
     dsSpriteOf: @Composable (Int) -> ImageBitmap? = { null },
     tourney: TourneyTracker? = null,
     currentSeed: String = "",
 ) {
-    if (s.colorTheme) ColorThemeDialog { s.colorTheme = false }
-    if (s.trackedPokemon) TrackedPokemonDialog(statMarks, encounters.keys, ndsTrackerRef, dsSpriteOf) { s.trackedPokemon = false }
+    // Tracker.getAbilities for the Gen 3 tracker, whose Battle Details shows Loafing only once
+    // Truant is tracked (BattleDetailsScreen.lua:1574-1588). Set here rather than in PlayScreen,
+    // which is near the verifier's limit (see SideScreenState).
+    androidx.compose.runtime.SideEffect { trackerRef?.trackedAbilities = statMarks::abilitiesFor }
+    // A DS game gets the DS tracker's preset themes, any other game the PC tracker's (ThemePresets).
+    if (s.colorTheme) ColorThemeDialog(ds = ndsTrackerRef != null) { s.colorTheme = false }
+    // A Nuzlocke's own rules, asked for by Rules in the File menu or Tracker Setup (2026-09-30, UX audit P0-6).
+    NuzlockeLedgerRequested()
+    if (s.calcAtkOpen) CalcAtkDialog(s.calcAtkFill, enemyStats = null) { s.calcAtkOpen = false }
+    if (s.trackedPokemon) TrackedPokemonDialog(statMarks, statMarks.encounteredSpecies(), ndsTrackerRef, dsSpriteOf) { s.trackedPokemon = false }
     if (s.tourney && tourney != null) TourneyDialog(tourney, currentSeed) { s.tourney = false }
     if (s.pastRuns && pastRunStore != null) PastRunsDialog(pastRunStore, dsSpriteOf) { s.pastRuns = false }
     if (s.statistics && pastRunStore != null) StatisticsDialog(pastRunStore) { s.statistics = false }
@@ -118,7 +134,7 @@ fun SideScreenDialogs(
             onCreate = { timeMachine.create(null, trackerState?.routeName, System.currentTimeMillis(), snapshot) },
             onRestore = { rp ->
                 timeMachine.backupCurrent(System.currentTimeMillis(), snapshot)
-                onRestore(rp.bytes)
+                onRestore(rp)
                 s.timeMachineDialog = false
             },
         ) { s.timeMachineDialog = false; timeMachine.viewing = false; timeMachine.cleanup() }
@@ -142,8 +158,8 @@ fun SideScreenDialogs(
     if (s.notebookDialog) {
         NotebookDialog(
             tracker = trackerRef, marks = statMarks,
-            encountersOf = { encounters[it] ?: 0 }, seenSpecies = encounters.keys.toSet(),
-            lastLevelOf = { lastSeenLevel[it] }, lastSeenSpecies = enemySpecies.takeIf { it > 0 },
+            encountersOf = { statMarks.totalEncounters(it) }, seenSpecies = statMarks.encounteredSpecies(),
+            lastLevelOf = { statMarks.lastLevelSeen(it) }, lastSeenSpecies = enemySpecies.takeIf { it > 0 },
             speciesName = { id -> trackerRef?.speciesName(id) ?: gbNames?.invoke(id) ?: "#$id" },
             spriteFor = spriteFor,
         ) { s.notebookDialog = false }
@@ -164,16 +180,28 @@ fun SideScreenDialogs(
         val mapId = st?.mapId
         if (gba != null && mapId != null) {
             val list = remember(mapId, st.routeTrainers) { gba.trainersForRoute(mapId).mapNotNull { gba.trainer(it) } }
-            TrainersOnRouteDialog(st.routeName ?: "This map", list, onTrainer = { s.trainerInfo = it; s.trainersDialog = false }, onClose = { s.trainersDialog = false })
+            TrainersOnRouteDialog(
+                st.routeName ?: "This map", list, onTrainer = { s.trainerInfo = it; s.trainersDialog = false }, onClose = { s.trainersDialog = false },
+                // FireRed and LeafGreen only, and only for a place with pictures (FrlgPictures.placeFor, 2026-09-29).
+                pictures = FrlgPictures.placeFor(st.badgeSet, mapId),
+            )
         } else s.trainersDialog = false
     }
     s.trainerInfo?.let { t ->
         val gba = trackerRef
+        val st = trackerState
         TrainerInfoDialog(
-            t, routeName = trackerState?.mapId?.let { m -> gba?.routeInfo(m)?.first },
-            leadLevel = trackerState?.party?.firstOrNull()?.mon?.level,
-            speciesName = { gba?.speciesName(it) ?: "#$it" }, itemName = { gba?.itemName(it) ?: "#$it" }, moveName = { gba?.moveName(it) ?: "#$it" },
+            t, routeName = st?.mapId?.let { m -> gba?.routeInfo(m)?.first },
+            leadLevel = st?.party?.firstOrNull()?.mon?.level,
+            canShowTeams = InfoRules.canShowTrainerTeams(gba?.trainerTeamsRandomized()),
+            // TrainerInfoScreen.lua:325: in the battle against this trainer, a fainted Pokemon shows.
+            faintedSlots = if (st != null && st.inBattle && st.opponentTrainerId == t.id) st.enemyParty.filter { !it.alive }.map { it.slot }.toSet() else emptySet(),
+            giovanni = TrainerInfoView.isGiovanni(gba?.isRse == false, t.id),
+            // Resources.Game.ItemNames has no entry for 0 (TrainerInfoScreen.lua:293).
+            itemName = { id -> gba?.itemName(id)?.takeIf { id != 0 && it.isNotBlank() && !it.startsWith("#") } },
+            spriteFor = spriteFor,
             onClose = { s.trainerInfo = null },
+            routePictures = FrlgPictures.placeFor(st?.badgeSet, st?.mapId),
         )
     }
     if (s.statsDialog) {
@@ -256,7 +284,7 @@ fun Modifier.holdSizeWhileLoading(ui: PlayUiState, loading: Boolean): Modifier =
 /** A new-run failure we raised ourselves, whose message is already plain copy. */
 class RunSetupProblem(message: String) : Exception(message)
 
-private const val NEW_RUN_FAILED = "Could not start a new run. Try again from the Run tab."
+private const val NEW_RUN_FAILED = "Could not start a new run. Try again from Kaizo IronMON on Home."
 
 /**
  * What the player reads when NEW RUN fails. Our own setup problems say what to
@@ -284,17 +312,58 @@ private fun DialogBody(text: String) {
     Spacer(Modifier.height(16.dp))
 }
 
-/** Start a new run, in the shell's look (it was 8sp pixel font on the tracker's palette). */
+/**
+ * Start a new run, in the shell's look (it was 8sp pixel font on the tracker's palette).
+ *
+ * It works out for itself what is in Play (2026-09-30, UX audit P0-1, P0-2, P0-8), so PlayScreen, at the verifier's
+ * limit, only says yes or no: a Kaizo IronMON run, a randomized Nuzlocke (the next game keeps its rules), or a
+ * library game, where A+B+Start has no run to start and says so. And it says what the new seed opens with: the
+ * in-game save stays, in every game, and New Game on the title screen is the clean start (RunSaves). [beforeRead]
+ * writes the running game's battery save to disk first: the app writes it only when it pauses, so this read an older
+ * save or none, said "no save" and, in rc32's first builds, offered no way to keep it (Blake, 2026-09-30).
+ */
 @Composable
-fun NewRunConfirmDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
-    ShellDialog("Start a new run?", onDismiss) {
-        Text("The current run ends and a new seed is rolled.", style = MaterialTheme.typography.bodyMedium, color = Shell.inkOnPaper)
+fun NewRunConfirmDialog(beforeRead: () -> Unit, onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val filesDir = context.applicationContext.filesDir
+    val store = remember { PrepStore(filesDir) }
+    val session = remember { runCatching { store.session() }.getOrNull() }
+    if (session == null || !session.isRun) {
+        ShellDialog("No run to start", onDismiss) {
+            DialogBody(NewRunCopy.NOT_A_RUN)
+            Gen3Button("OK", accent = true, onClick = onDismiss)
+        }
+        return
+    }
+    val nuzlocke = remember { PlayRules.kind(session, filesDir) == PlayRules.Kind.NUZLOCKE }
+    val plan = remember {
+        runCatching { beforeRead() }
+        runCatching {
+            val kind = store.loadLastRun()?.first?.let { id -> com.ironmonone.core.RomKind.byId(id) } ?: return@runCatching null
+            RunSaves.planOnNewSeed(RunSaves.file(filesDir, kind, store.currentRunFor(kind)), kind)
+        }.getOrNull()
+    }
+    ShellDialog(if (nuzlocke) "Start the next Nuzlocke?" else "Start a new run?", onDismiss) {
+        Text(if (nuzlocke) NewRunCopy.NUZLOCKE else NewRunCopy.IRONMON, style = MaterialTheme.typography.bodyMedium, color = Shell.inkOnPaper)
         Spacer(Modifier.height(8.dp))
-        // What survives and what does not, as the old dialog said.
-        Text("Your in-game save is kept, so Continue starts straight into the new seed. Stat notes for this run are cleared.",
-            style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper)
+        Text(NewRunCopy.save(plan), style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper)
         Spacer(Modifier.height(16.dp))
-        ConfirmButtons("YES, NEW RUN", onConfirm, "CANCEL", onDismiss)
+        ConfirmButtons(if (nuzlocke) "YES, NEW NUZLOCKE" else "YES, NEW RUN", onConfirm, "CANCEL", onDismiss)
+    }
+}
+
+/** The new-run dialog's words (2026-09-30), kept apart so a test can hold them. */
+internal object NewRunCopy {
+    const val IRONMON = "The current run ends and a new game is randomized. Stat notes for this run are cleared."
+    const val NUZLOCKE = "The current run ends and a new game is randomized with the same rules. " +
+        "This run's ledger stays in your runs on the Nuzlocke screen."
+    const val NOT_A_RUN = "A+B+Start starts a new run only in a Kaizo IronMON game or a randomized Nuzlocke. " +
+        "This game is from your library, so there is no run to start."
+    fun save(plan: RunSaves.Plan?): String = when (plan) {
+        null, RunSaves.Plan.NONE -> "The new game starts from the title screen with no save."
+        RunSaves.Plan.NO_TEAM -> "Your in-game save stays. It has no Pokémon in it yet, so Continue on the title screen skips the intro."
+        RunSaves.Plan.HOLDS_TEAM -> "Your in-game save stays, and it holds this run's team. Continue brings that team along, and New Game starts fresh."
+        RunSaves.Plan.UNREAD -> "Your in-game save stays. Continue on the title screen opens it, and New Game starts fresh."
     }
 }
 
@@ -313,9 +382,10 @@ fun PlayDialogs(
     onSpeed: (String) -> Unit,
     onLayoutDone: (keep: Boolean) -> Unit,
 ) {
+    val restartFiles = androidx.compose.ui.platform.LocalContext.current.applicationContext.filesDir
     if (ui.confirmReset) ShellDialog("Restart the game?", { ui.confirmReset = false }) {
         DialogBody("Anything not saved is lost.")
-        ConfirmButtons("RESTART", { ui.confirmReset = false; onRestart() }, "CANCEL", { ui.confirmReset = false })
+        ConfirmButtons("RESTART", { ui.confirmReset = false; onRestart(); RunRestarts.log(restartFiles) }, "CANCEL", { ui.confirmReset = false })
     }
     ui.confirmLoad?.let { n ->
         ShellDialog(if (n == StateSlots.AUTO) "Resume from the auto-save?" else "Load slot $n?", { ui.confirmLoad = null }) {

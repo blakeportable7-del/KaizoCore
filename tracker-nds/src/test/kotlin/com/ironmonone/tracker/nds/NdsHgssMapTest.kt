@@ -64,6 +64,23 @@ class NdsHgssMapTest {
     }
 
     @Test
+    fun `the League event byte reads beaten from 3`() {
+        // Program.HGSS_checkLeagueDefeated (Program.lua:583-586): u8 at versionRel + 0x1000, >= 3.
+        val image = ram()
+        val hgss = NdsTracker(reader(image), null, NdsGameMap.HGSS)
+        assertEquals(false, hgss.readLeagueBeaten())
+        image[(versionRel + 0x1000).toInt()] = 2
+        assertEquals(false, hgss.readLeagueBeaten(), "2 is not beaten yet")
+        image[(versionRel + 0x1000).toInt()] = 3
+        assertEquals(true, hgss.readLeagueBeaten())
+        assertEquals(false, NdsTracker(reader(image), null, NdsGameMap.PLATINUM).readLeagueBeaten(), "Platinum has no League byte")
+        // And the state carries it to the panel's badge row, once there is a party to show.
+        Gen4.encodeParty(pid = 0x1234567L, species = 155, level = 12, curHp = 30, maxHp = 34, moves = listOf(33, 0, 0, 0))
+            .copyInto(image, (versionRel + NdsGameMap.HGSS.playerBase).toInt())
+        assertEquals(true, NdsTracker(reader(image), null, NdsGameMap.HGSS).read().leagueBeaten)
+    }
+
+    @Test
     fun `detect and the map agree on this image`() {
         assertEquals(NdsGameMap.HGSS, NdsGameMap.detect(reader(ram())))
     }

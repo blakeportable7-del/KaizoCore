@@ -147,4 +147,24 @@ class StatMarksTest {
         assertEquals(listOf("Bite", "Tackle"), again.movesSeenFor(261).map { it.name })
         assertEquals(0, again.movesSeenFor(261).first().id)
     }
+
+    /**
+     * The eight note files are written whole or not at all (2026-09-30, UX audit P0-3). They were written in place,
+     * which empties the file first, so a kill or a crash in that moment blanked the run's marks or notes. Here no
+     * temp file can be made, so every save fails: each file has to be exactly what it was.
+     */
+    @Test
+    fun `a save that cannot finish leaves each of the eight note files as it was`() {
+        val m = marks()
+        m.cycle(25, 0); m.setNote(25, "fast"); m.seeOnRoute(17, 261); m.addMovesSeen(25, listOf(84 to "Thunder Shock"), 5)
+        m.revealAbility(25, "Static"); m.trackEncounter(25, wild = true); m.seeSafari(40, 111, 25); m.seeDsEncounter("Route 201", 396, 3)
+        val names = listOf("marks.txt", "notes.txt", "routes.txt", "moves.txt", "abilities.txt", "encounters.txt", "safari.txt", "ds-encounters.txt")
+        val before = names.associateWith { File(dir, it).readText() }
+        for (n in names) assertTrue(before.getValue(n).isNotBlank(), "$n holds nothing to lose")
+        for (n in names) assertTrue(File(dir, "$n.tmp").mkdirs(), "a folder in the temp file's place")
+        m.cycle(25, 1); m.setNote(25, "slow"); m.seeOnRoute(17, 263); m.addMovesSeen(25, listOf(85 to "Thunderbolt"), 9)
+        m.revealAbility(25, "Lightning Rod"); m.trackEncounter(25, wild = true); m.seeSafari(40, 112, 27); m.seeDsEncounter("Route 201", 399, 4)
+        for (n in names) assertEquals(before.getValue(n), File(dir, n).readText(), "$n was written in place")
+        assertFalse("bufferedWriter()" in File("src/main/kotlin/com/ironmonone/app/StatMarks.kt").readText())
+    }
 }

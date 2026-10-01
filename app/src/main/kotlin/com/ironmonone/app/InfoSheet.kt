@@ -27,8 +27,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+
+/** The X in an info card's corner: what a screen reader calls it, and its touch box, in dp (2026-09-30, UX audit). */
+internal object InfoSheetClose {
+    const val SPOKEN = "Close"
+    const val TOUCH_DP = PcMin.DIALOG_TOUCH_DP
+}
 
 /**
  * The frame the tracker's info popups share (a move, an ability, a name),
@@ -50,8 +59,10 @@ fun InfoCard(
         Modifier.widthIn(max = 440.dp).fillMaxWidth().heightIn(max = 460.dp)
             .background(Pc.Ground).border(2.dp, Pc.Border),
     ) {
+        // The header stays 50dp tall: the X is drawn 34dp as before, inside a 48dp touch box whose 7dp margin
+        // takes the place of the row's old padding (2026-09-30, UX audit: it read "X" and was a 34dp target).
         Row(
-            Modifier.fillMaxWidth().background(Pc.Page).padding(start = 14.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
+            Modifier.fillMaxWidth().background(Pc.Page).padding(start = 14.dp, end = 1.dp, top = 1.dp, bottom = 1.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
@@ -62,9 +73,15 @@ fun InfoCard(
             headerExtra()
             Spacer(Modifier.weight(1f))
             Box(
-                Modifier.size(34.dp).border(1.dp, Pc.Border).clickable { onDismiss() },
+                Modifier.size(InfoSheetClose.TOUCH_DP.dp)
+                    .clickable(role = Role.Button) { onDismiss() }
+                    .semantics { contentDescription = InfoSheetClose.SPOKEN },
                 contentAlignment = Alignment.Center,
-            ) { Text("X", fontFamily = com.ironmonone.app.gen3.Gen3.PixelFont, fontSize = 12.sp, color = Pc.Text) }
+            ) {
+                Box(Modifier.size(34.dp).border(1.dp, Pc.Border), contentAlignment = Alignment.Center) {
+                    Text("X", fontFamily = com.ironmonone.app.gen3.Gen3.PixelFont, fontSize = 12.sp, color = Pc.Text)
+                }
+            }
         }
         Box(Modifier.fillMaxWidth().height(1.dp).background(Pc.Border.copy(alpha = 0.5f)))
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 14.dp, vertical = 12.dp), content = content)

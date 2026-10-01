@@ -1,0 +1,30 @@
+TEXT:
+Kaizo IronMON
+Run
+Attempt 14
+seed d16952de40ff74a5
+Back to attempt 14
+Play is on Pokémon Emerald (U) from the Library. Your run is where you left it.
+GAME
+GBA
+Pokémon FireRed 1.1 + Faster FireRed 1.3.2
+Patched game
+DS
+Pokémon White 2 + Faster B2W2
+Patched game
+GBC
+Pokémon Crystal (U)
+Original game
+GBC
+Pokémon Red (U)
+Original game
+DS
+Pokémon White 2 (U)
+Start new run
+Home
+Play
+Library
+More
+
+CONTENT DESCRIPTIONS:
+Back to Home

@@ -1,0 +1,139 @@
+# Who is who in Generation 2 (Gold, Silver, Crystal): the trainer class and party numbers the game stores, and how the
+# fight reads in the ledger (2026-09-29).
+#
+# Sources: the pret disassemblies pokegold (Gold and Silver, one trainer table) and pokecrystal. Class numbers are the
+# order of TrainerGroups (constants/trainer_constants.asm: FALKNER 1 ... CLAIR 8, RIVAL1 9, WILL 11, BRUNO 13, KAREN 14,
+# KOGA 15, CHAMPION 16, BROCK 17 ... BLUE 64, GRUNTF 66, and MYSTICALMAN 67 in Crystal only); a party number is the
+# 1-based position inside its class (RIVAL1_2_CYNDAQUIL is 5). These are the values the game keeps in
+# wOtherTrainerClass and wOtherTrainerID during a battle. Every number was walked back out of the Gold (U) and
+# Crystal (U) dumps (tools/nuzlocke/gen2_trainer_rom.py --check compares 1036 parties) and every boss row was
+# matched with the trainer or loadtrainer line of the map script that starts the fight.
+#
+# The Team Rocket executives are all named EXECUTIVE by the games; Archer, Proton, Petrel and Ariana are the
+# community's names (Bulbapedia, HeartGold and SoulSilver), matched to the fights by team and place. The two Petrel
+# and the two Ariana fights are told apart by where they happen.
+#
+# game: * = Gold, Silver and Crystal; gs = Gold and Silver; c = Crystal. A row for one game wins over a * row.
+# class: the trainer class number. no: the party number, or 0 = every party of the class; a row with a nonzero no wins
+#   over the no 0 row of its class. Every class of both games has a no 0 row.
+# label: how the fight reads in the ledger. group: Gym (Johto and Kanto leaders), Elite4 (the four and the Champion),
+#   Boss (Rocket executives, Red, Eusine), Rival (Silver), Other.
+#
+# game	class	no	label	group
+*	1	0	Leader Falkner	Gym
+*	1	1	Leader Falkner	Gym
+*	2	0	Leader Whitney	Gym
+*	2	1	Leader Whitney	Gym
+*	3	0	Leader Bugsy	Gym
+*	3	1	Leader Bugsy	Gym
+*	4	0	Leader Morty	Gym
+*	4	1	Leader Morty	Gym
+*	5	0	Leader Pryce	Gym
+*	5	1	Leader Pryce	Gym
+*	6	0	Leader Jasmine	Gym
+*	6	1	Leader Jasmine	Gym
+*	7	0	Leader Chuck	Gym
+*	7	1	Leader Chuck	Gym
+*	8	0	Leader Clair	Gym
+*	8	1	Leader Clair	Gym
+*	9	0	Rival Silver	Rival
+*	9	1	Rival Silver, Cherrygrove City	Rival
+*	9	2	Rival Silver, Cherrygrove City	Rival
+*	9	3	Rival Silver, Cherrygrove City	Rival
+*	9	4	Rival Silver, Azalea Town	Rival
+*	9	5	Rival Silver, Azalea Town	Rival
+*	9	6	Rival Silver, Azalea Town	Rival
+*	9	7	Rival Silver, Burned Tower	Rival
+*	9	8	Rival Silver, Burned Tower	Rival
+*	9	9	Rival Silver, Burned Tower	Rival
+*	9	10	Rival Silver, Goldenrod Tunnel	Rival
+*	9	11	Rival Silver, Goldenrod Tunnel	Rival
+*	9	12	Rival Silver, Goldenrod Tunnel	Rival
+*	9	13	Rival Silver, Victory Road	Rival
+*	9	14	Rival Silver, Victory Road	Rival
+*	9	15	Rival Silver, Victory Road	Rival
+*	10	0	Pokemon Prof.	Other
+*	11	0	Elite Four Will	Elite4
+*	11	1	Elite Four Will	Elite4
+*	12	0	PKMN Trainer	Other
+*	13	0	Elite Four Bruno	Elite4
+*	13	1	Elite Four Bruno	Elite4
+*	14	0	Elite Four Karen	Elite4
+*	14	1	Elite Four Karen	Elite4
+*	15	0	Elite Four Koga	Elite4
+*	15	1	Elite Four Koga	Elite4
+*	16	0	Champion Lance	Elite4
+*	16	1	Champion Lance	Elite4
+*	17	0	Leader Brock	Gym
+*	17	1	Leader Brock	Gym
+*	18	0	Leader Misty	Gym
+*	18	1	Leader Misty	Gym
+*	19	0	Leader Lt. Surge	Gym
+*	19	1	Leader Lt. Surge	Gym
+*	20	0	Scientist	Other
+*	21	0	Leader Erika	Gym
+*	21	1	Leader Erika	Gym
+*	22	0	Youngster	Other
+*	23	0	Schoolboy	Other
+*	24	0	Bird Keeper	Other
+*	25	0	Lass	Other
+*	26	0	Leader Janine	Gym
+*	26	1	Leader Janine	Gym
+*	27	0	Cooltrainer (M)	Other
+*	28	0	Cooltrainer (F)	Other
+*	29	0	Beauty	Other
+*	30	0	Pokemaniac	Other
+*	31	0	Team Rocket Grunt	Other
+*	32	0	Gentleman	Other
+*	33	0	Skier	Other
+*	34	0	Teacher	Other
+*	35	0	Leader Sabrina	Gym
+*	35	1	Leader Sabrina	Gym
+*	36	0	Bug Catcher	Other
+*	37	0	Fisher	Other
+*	38	0	Swimmer (M)	Other
+*	39	0	Swimmer (F)	Other
+*	40	0	Sailor	Other
+*	41	0	Super Nerd	Other
+*	42	0	Rival Silver	Rival
+*	42	1	Rival Silver, Mt. Moon	Rival
+*	42	2	Rival Silver, Mt. Moon	Rival
+*	42	3	Rival Silver, Mt. Moon	Rival
+*	42	4	Rival Silver, Indigo Plateau	Rival
+*	42	5	Rival Silver, Indigo Plateau	Rival
+*	42	6	Rival Silver, Indigo Plateau	Rival
+*	43	0	Guitarist	Other
+*	44	0	Hiker	Other
+*	45	0	Biker	Other
+*	46	0	Leader Blaine	Gym
+*	46	1	Leader Blaine	Gym
+*	47	0	Burglar	Other
+*	48	0	Firebreather	Other
+*	49	0	Juggler	Other
+*	50	0	Blackbelt	Other
+*	51	0	Team Rocket Executive	Boss
+*	51	1	Executive Archer	Boss
+*	51	2	Executive Proton	Boss
+*	51	3	Executive Petrel, Radio Tower	Boss
+*	51	4	Executive Petrel, Team Rocket HQ	Boss
+*	52	0	Psychic	Other
+*	53	0	Picnicker	Other
+*	54	0	Camper	Other
+*	55	0	Team Rocket Executive	Boss
+*	55	1	Executive Ariana, Radio Tower	Boss
+*	55	2	Executive Ariana, Team Rocket HQ	Boss
+*	56	0	Sage	Other
+*	57	0	Medium	Other
+*	58	0	Boarder	Other
+*	59	0	Pokefan (M)	Other
+*	60	0	Kimono Girl	Other
+*	61	0	Twins	Other
+*	62	0	Pokefan (F)	Other
+*	63	0	Boss Red	Boss
+*	63	1	Boss Red	Boss
+*	64	0	Leader Blue	Gym
+*	64	1	Leader Blue	Gym
+*	65	0	Officer	Other
+*	66	0	Team Rocket Grunt	Other
+c	67	0	Boss Eusine	Boss
+c	67	1	Boss Eusine	Boss

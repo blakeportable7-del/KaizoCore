@@ -1,0 +1,42 @@
+# kind	id	name	amount and CONSTANT or PERCENTAGE, or what it cures (ItemData, NDS-Ironmon-Tracker)
+heal	23	Full Restore	100	PERCENTAGE
+heal	24	Max Potion	100	PERCENTAGE
+heal	158	Sitrus Berry	25	PERCENTAGE
+heal	162	Aguav Berry	12.5	PERCENTAGE
+heal	208	Enigma Berry	12.5	PERCENTAGE
+heal	159	Figy Berry	12.5	PERCENTAGE
+heal	163	Iapapa Berry	12.5	PERCENTAGE
+heal	161	Mago Berry	12.5	PERCENTAGE
+heal	160	Wiki Berry	12.5	PERCENTAGE
+heal	35	Energy Root	200	CONSTANT
+heal	25	Hyper Potion	200	CONSTANT
+heal	33	Moomoo Milk	100	CONSTANT
+heal	32	Lemonade	80	CONSTANT
+heal	31	Soda Pop	60	CONSTANT
+heal	26	Super Potion	50	CONSTANT
+heal	34	EnergyPowder	50	CONSTANT
+heal	30	Fresh Water	50	CONSTANT
+heal	43	Berry Juice	20	CONSTANT
+heal	17	Potion	20	CONSTANT
+heal	504	RageCandyBar	20	CONSTANT
+heal	134	Sweet Heart	20	CONSTANT
+heal	155	Oran Berry	10	CONSTANT
+status	23	Full Restore	All
+status	591	Casteliacone	All
+status	27	Full Heal	All
+status	36	Heal Powder	All
+status	42	Lava Cookie	All
+status	157	Lum Berry	All
+status	54	Old Gateau	All
+status	19	Burn Heal	Burn
+status	152	Rawst Berry	Burn
+status	156	Persim Berry	Confusion
+status	153	Aspear Berry	Freeze
+status	20	Ice Heal	Freeze
+status	219	Mental Herb	Infatuation
+status	149	Cheri Berry	Paralysis
+status	22	Paralyze Heal	Paralysis
+status	18	Antidote	Poison
+status	151	Pecha Berry	Poison
+status	21	Awakening	Sleep
+status	150	Chesto Berry	Sleep

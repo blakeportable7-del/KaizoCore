@@ -16,10 +16,44 @@ object SummaryChecks {
 
     fun checked(attempt: Int): Boolean = attempt in checked
 
+    /**
+     * Whether the viewed Pokemon's stats are hidden now. DataHelper.lua:140-151: on a
+     * randomized game, until this attempt has checked a summary, the VIEWED Pokemon, yours or
+     * the opponent's, is drawn from a blank stand-in that keeps only its icon, name and level.
+     * Never on a Game Boy game ([generation] 1 or 2): the Game Boy references have no summary
+     * screen to watch. Their GameSettings.initialize sets only WRAM and ROM addresses (Gen 1
+     * reference GameSettings.lua:138-223) and never calls setEwramAddresses (:505), the one
+     * place sMonSummaryScreen is set (:526); with the option on, Program.lua:253-257 reads that
+     * nil address on every update, a Lua error (the Gen 2 reference is the same). Hiding the
+     * card anyway hid it for good: nothing on a Game Boy game ever marks a summary as seen.
+     */
+    fun hidesStats(optionOn: Boolean, gameDataRandomized: Boolean, attempt: Int, generation: Int): Boolean =
+        optionOn && generation >= 3 && gameDataRandomized && !checked(attempt)
+
+    /** [hidesStats] with the option as set. */
+    fun hides(attempt: Int, gameDataRandomized: Boolean, generation: Int = 3): Boolean =
+        hidesStats(TrackerOptions.hideStatsUntilSummary, gameDataRandomized, attempt, generation)
+
     fun mark(attempt: Int) {
         if (attempt in checked) return
         checked += attempt
         runCatching { file?.let { it.parentFile?.mkdirs(); it.writeText(checked.joinToString("\n", postfix = "\n")) } }
+    }
+
+    /** A new run took attempt [attempt]: an earlier run under the same number (another settings file's) is not it. */
+    fun forget(attempt: Int) {
+        if (!checked.remove(attempt)) return
+        runCatching { file?.let { it.parentFile?.mkdirs(); it.writeText(checked.joinToString("\n", postfix = "\n")) } }
+    }
+
+    /**
+     * GameOptionsScreen.lua:204-210: turning "Hide stats until summary shown" on sets
+     * hasCheckedSummary false, so the card hides again until a summary is opened. Only the
+     * current attempt's mark matters, so every mark goes.
+     */
+    fun forgetAll() {
+        checked.clear()
+        runCatching { file?.let { it.parentFile?.mkdirs(); it.writeText("") } }
     }
 
     fun load(f: File) {

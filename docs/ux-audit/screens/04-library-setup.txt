@@ -1,0 +1,31 @@
+TEXT:
+Set up a game
+All files
+Makes a game ready for Kaizo IronMON: checks your dump and, if you pick a ruleset patch, applies it. A clean dump added in All files is already ready.
+Choose ROM
+Prepare
+Already prepared
+Pokémon FireRed 1.1 + Faster FireRed 1.3.2
+16 MB
+Pokémon White 2 + Faster B2W2
+512 MB
+Pokémon Crystal (U)
+2 MB
+Pokémon Red (U)
+1 MB
+Pokémon White 2 (U)
+512 MB
+Pokémon Emerald + Smart AI (Super Kaizo)
+16 MB
+Pokémon HeartGold (U)
+128 MB
+Pokémon Emerald (U)
+16 MB
+Pick one in Kaizo IronMON to randomize it.
+Home
+Play
+Library
+More
+
+CONTENT DESCRIPTIONS:
+

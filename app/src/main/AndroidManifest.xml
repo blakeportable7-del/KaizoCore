@@ -5,13 +5,31 @@
          access the user picks, and no ROM is ever sent anywhere. CAMERA feeds the
          optional on-screen facecam bubble for streaming; nothing is recorded. -->
     <uses-permission android:name="android.permission.CAMERA" />
-    <!-- INTERNET is for the stream server the player starts by hand: an HTTP
-         server on the phone that OBS on the same Wi-Fi reads. The app makes
-         no outbound connection of its own. -->
+    <!-- INTERNET is for the stream server the player starts by hand (an HTTP
+         server on the phone that OBS on the same Wi-Fi reads), RetroAchievements
+         when the player signs in, and since 2026-09-29 two requests to
+         willowcreek.group: once a day the update check reads
+         /kaizocore/latest.json (UpdateCheck, a switch on INFO turns it off),
+         and after a crash a report goes to /api/kaizocore-crash only when the
+         player says so (CrashReport). Nothing else goes out, and no ROM, save
+         or file name ever does. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- REQUEST_INSTALL_PACKAGES: Update on INFO and in the update prompt hands the
+         build latest.json names (size and SHA-256 checked) to Android's own installer
+         (UpdateInstall, 2026-09-29). Android still asks the player to allow it once and
+         to confirm the install. Sideload only: Google Play restricts this permission,
+         so drop it and the one-tap path before any Play submission. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <!-- UPDATE_PACKAGES_WITHOUT_USER_ACTION (Android 12+, granted at install, no prompt):
+         with it, an update session asking USER_ACTION_NOT_REQUIRED is honoured once
+         KaizoCore installed the build it replaces, so the tap on Update is the one tap.
+         Without it the emulator asked to confirm every time (2026-09-29). -->
+    <uses-permission android:name="android.permission.UPDATE_PACKAGES_WITHOUT_USER_ACTION" />
     <!-- VIBRATE: the phone's motor plays a game's rumble (Game Boy Player,
          rumble carts, the DS Rumble Pak). Off in SETTINGS if unwanted. -->
     <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- The stream reminder (StreamReminder): one notification while the stream is on and KaizoCore is in the background. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-feature android:name="android.hardware.camera.any" android:required="false" />
 
     <!-- A 32MB ROM, a 26MB patch and a 32MB output are held at once while patching. -->
@@ -26,7 +44,7 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:configChanges="orientation|screenSize|keyboardHidden|screenLayout|smallestScreenSize|keyboard|navigation|uiMode">
+            android:configChanges="orientation|screenSize|keyboardHidden|screenLayout|smallestScreenSize|keyboard|navigation|uiMode|density">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

@@ -1,0 +1,50 @@
+# Battles that are not a wild first encounter, Generation 2 (2026-09-29): a wild battle at this place at exactly this
+# level is a set battle (a static), not the area's first encounter.
+#
+# game: gs = Gold and Silver, g = Gold only, s = Silver only (only where a level differs between them), c = Crystal.
+# place: a place of areas-gen2.tsv (the landmark the map belongs to). level: the level in the script.
+# species: the vanilla species, a note for humans; a randomized game changes the species and keeps the place and level.
+# dex (optional sixth column): the national dex number the wild Pokemon must be. Only the rows listed below carry it.
+#
+# Every row is a loadwildmon followed by startbattle in a map script of pokegold or pokecrystal. Every startbattle in both
+# trees was read (15 wild battles in pokegold, 14 in pokecrystal) and each level and species was read back out of the Gold
+# (U) and Crystal (U) dumps through the randomizer's StaticPokemon offsets (gen2_offsets.ini); Silver's own levels are the
+# other branch of the same checkver script, which is in the Gold dump too. gen2_statics.py --check redoes all of it.
+#
+# A row without a dex number exists only when no ordinary wild slot of that place has the same level (grass, surf, fishing
+# wherever a map has water, Headbutt trees, Rock Smash, swarms; in every version the row covers), because the reader matches
+# on place and level alone and would call that encounter a static. The wild tables are data/wild/*.asm. These rows have a
+# dex number because an ordinary slot of the same place has that level too; they count only when the wild Pokemon is that
+# species, so a randomized game (which changes the species) does not see them as statics:
+#   c, Lapras at Union Cave, level 20 (ordinary level 20 slots there: Corsola, Geodude, Goldeen, Krabby, Magikarp, Quagsire, Staryu, Tentacruel)
+#   gs, Lapras at Union Cave, level 20 (ordinary level 20 slots there: Corsola, Goldeen, Krabby, Magikarp, Quagsire, Rattata, Staryu, Tentacruel)
+#   s, Lugia at Whirl Islands, level 40 (ordinary level 40 slots there: Horsea, Kingler, Krabby, Seadra)
+# Left out on purpose (found by the same scan):
+# - Raikou and Entei (and Suicune in Gold and Silver), level 40: they roam and turn up on any route. BATTLETYPE_ROAMING (5).
+# - The Bug-Catching Contest: BATTLETYPE_CONTEST (6). A contest battle is recognised by its battle type and needs no row.
+# - The Dude's catching tutorial on Route 29 (a level 5 Rattata): BATTLETYPE_TUTORIAL (3); it is the Dude's catch.
+# - The unused Entei script in Burned Tower B1F (pokegold): labelled unreferenced, nothing runs it.
+# Battle types also identify statics: FORCEITEM (10) is Snorlax, Lugia and Ho-Oh, TRAP (9) the Rocket HQ floor tiles,
+# FORCESHINY (7) Red Gyarados, and in Crystal SUICUNE (12) and CELEBI (11). Sudowoodo, the Electrode and Lapras are NORMAL.
+#
+# game	place	level	species	note	dex (optional)
+gs	Lake of Rage	30	Gyarados	the Red Gyarados, forced shiny (battle type FORCESHINY)
+gs	Mahogany Town	21	Geodude or Koffing	Team Rocket HQ B1F floor-tile traps, 7 Geodude and 7 Koffing, forced battles that cannot be run from (battle type TRAP)
+gs	Mahogany Town	23	Voltorb or Electrode	8 Voltorb floor-tile traps in Team Rocket HQ B1F (battle type TRAP) and 3 Electrode in the B2F generator room (ordinary battle type)
+gs	Route 36	20	Sudowoodo	the tree on the way to Ecruteak, needs the Squirtbottle, ordinary battle type
+gs	Union Cave	20	Lapras	Union Cave B2F on Fridays only, ordinary battle type	131
+gs	Vermilion City	50	Snorlax	wakes to the Poke Flute radio, holds an item (battle type FORCEITEM)
+g	Tin Tower	40	Ho-Oh	Rainbow Wing, holds an item (battle type FORCEITEM)
+g	Whirl Islands	70	Lugia	Silver Wing, holds an item (battle type FORCEITEM)
+s	Tin Tower	70	Ho-Oh	Rainbow Wing, holds an item (battle type FORCEITEM)
+s	Whirl Islands	40	Lugia	Silver Wing, holds an item (battle type FORCEITEM)	249
+c	Ilex Forest	30	Celebi	Ilex Forest shrine with the GS Ball, not obtainable on a US cartridge (battle type CELEBI)
+c	Lake of Rage	30	Gyarados	the Red Gyarados, forced shiny (battle type FORCESHINY)
+c	Mahogany Town	21	Geodude or Koffing	Team Rocket HQ B1F floor-tile traps, 7 Geodude and 7 Koffing, forced battles that cannot be run from (battle type TRAP)
+c	Mahogany Town	23	Voltorb or Electrode	8 Voltorb floor-tile traps in Team Rocket HQ B1F (battle type TRAP) and 3 Electrode in the B2F generator room (ordinary battle type)
+c	Route 36	20	Sudowoodo	the tree on the way to Ecruteak, needs the Squirtbottle, ordinary battle type
+c	Tin Tower	40	Suicune	Tin Tower 1F after the Clear Bell, cannot run (battle type SUICUNE)
+c	Tin Tower	60	Ho-Oh	Rainbow Wing, holds an item (battle type FORCEITEM)
+c	Union Cave	20	Lapras	Union Cave B2F on Fridays only, ordinary battle type	131
+c	Vermilion City	50	Snorlax	wakes to the Poke Flute radio, holds an item (battle type FORCEITEM)
+c	Whirl Islands	60	Lugia	Silver Wing, holds an item (battle type FORCEITEM)

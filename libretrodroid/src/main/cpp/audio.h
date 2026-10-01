@@ -39,7 +39,8 @@ private:
 
 public:
     Audio(int32_t sampleRate, double refreshRate, bool preferLowLatencyAudio);
-    ~Audio() override = default;
+    // LOCAL MODIFICATION (KaizoCore): closes the stream first, see audio.cpp.
+    ~Audio() override;
 
     void start();
     void stop();

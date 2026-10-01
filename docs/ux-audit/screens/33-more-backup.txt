@@ -1,0 +1,25 @@
+TEXT:
+Controls
+Backup and info
+How it works
+KaizoCore plays IronMON on your phone: a randomized Pokemon game with a tracker beside it. Lose the run and you start again with a brand new game.
+1
+Library: add your own game file. KaizoCore never downloads games.
+2
+Home, Kaizo IronMON: pick a mode and start a new run. Every run is a new game.
+3
+Play: play it. The tracker fills in as you go. When a run ends, start the next one in Kaizo IronMON.
+Library also keeps all your files. ROM Hacks on Home turns a game you own into a ROM hack. More, Controls sets up a controller or keyboard.
+Your stats
+Runs started, wins, your best run in each game and mode, and the time you have played, across every game.
+Open your stats
+Last session ended unexpectedly
+KaizoCore closed unexpectedly on Sep 29, 2026.
+Tap Send report and it goes to Blake. It says where the app failed, which is what makes a crash fixable rather than guessed at.
+Home
+Play
+Library
+More
+
+CONTENT DESCRIPTIONS:
+

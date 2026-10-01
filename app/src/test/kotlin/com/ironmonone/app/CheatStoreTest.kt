@@ -27,11 +27,14 @@ class CheatStoreTest {
     }
 
     @Test
-    fun `never on a tracked game`() {
-        val tracked = GameSession.forRun(File("/x/current.gba"), RomKind.FIRERED_U_V11)
-        assertFalse(CheatStore.allowed(tracked))
+    fun `never in a run or a Nuzlocke, and on in plain play`() {
+        val run = GameSession.forRun(File("/x/current.gba"), RomKind.FIRERED_U_V11)
+        assertFalse(CheatStore.allowed(run, nuzlocke = false))
+        val plainTracked = GameSession(File("/x/fr.gba"), Platform.GBA, RomKind.FIRERED_U_V11, "fr", "lib-2", isRun = false)
+        assertTrue(CheatStore.allowed(plainTracked, nuzlocke = false), "a plain game from the library, tracker and all")
+        assertFalse(CheatStore.allowed(plainTracked, nuzlocke = true), "the same game with a Nuzlocke on it")
         val hack = GameSession(File("/x/hack.gba"), Platform.GBA, null, "hack", "lib-1", isRun = false)
-        assertTrue(CheatStore.allowed(hack))
+        assertTrue(CheatStore.allowed(hack, nuzlocke = false))
     }
 
     @Test

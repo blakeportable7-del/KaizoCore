@@ -25,14 +25,29 @@ import androidx.compose.ui.window.Dialog
 import com.ironmonone.tracker.GbaTracker
 
 /**
- * HealsInBagScreen.lua: the bag by tab (HP, PP, Status, Battle, All), each
+ * HealsInBagScreen.lua's tabs. All comes first and the screen opens on it (HealsInBagScreen.Tabs,
+ * lua:8-34; initialize, :105; the tracker's Heals tap, TrackerScreen.lua:332); it opened on HP.
+ * All lists every item in the bag with no helpful colouring, since it builds its rows without
+ * one (:266-279); only 69 of anything turns green there (:303).
+ */
+internal object HealsTabs {
+    val ORDER = listOf("All", "HP", "PP", "Status", "Battle")
+
+    fun rows(rows: List<GbaTracker.BagRow>, tab: String): List<GbaTracker.BagRow> =
+        if (tab == "All") rows else rows.filter { it.category == tab }
+
+    fun green(row: GbaTracker.BagRow, tab: String): Boolean = (row.helpful && tab != "All") || row.quantity == 69
+}
+
+/**
+ * HealsInBagScreen.lua: the bag by tab (All, HP, PP, Status, Battle), each
  * item with its count, green when it would help the lead right now (or when
  * there are 69 of it, as the reference has it). Refreshed with every poll.
  */
 @Composable
 fun HealsInBagDialog(rows: List<GbaTracker.BagRow>, onClose: () -> Unit) {
-    var tab by remember { mutableStateOf("HP") }
-    val tabs = listOf("HP", "PP", "Status", "Battle", "All")
+    var tab by remember { mutableStateOf(HealsTabs.ORDER.first()) }
+    val tabs = HealsTabs.ORDER
     Dialog(onDismissRequest = onClose) {
         Column(Modifier.width(300.dp).background(Pc.Page).border(1.dp, Pc.Border).padding(8.dp).verticalScroll(rememberScrollState())) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -47,10 +62,10 @@ fun HealsInBagDialog(rows: List<GbaTracker.BagRow>, onClose: () -> Unit) {
                 }
             }
             Spacer(Modifier.height(6.dp))
-            val shown = if (tab == "All") rows else rows.filter { it.category == tab }
+            val shown = HealsTabs.rows(rows, tab)
             if (shown.isEmpty()) PixText("Nothing in the bag for this.", 8, Pc.Dim)
             shown.forEach { r ->
-                val c = if (r.helpful || r.quantity == 69) Pc.Positive else Pc.Text
+                val c = if (HealsTabs.green(r, tab)) Pc.Positive else Pc.Text
                 Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
                     PixText(r.name, 8, c, Modifier.weight(1f))
                     PixText("x${r.quantity}", 8, c, Modifier.width(50.dp), TextAlign.End)

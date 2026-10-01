@@ -1,0 +1,32 @@
+TEXT:
+Kaizo IronMON
+Build your own
+The world
+Step 3 of 5
+Pokémon Emerald (U)
+The game's own trainer teams.
+Trainer levels
+Raise every trainer Pokémon's level by a percent. The randomizer stops at 50%.
+0%
++10%
++20%
++30%
++40%
++50%
+Levels stay as the game has them.
+Items on the ground
+Item balls and hidden items.
+Unchanged
+Shuffle
+Random
+Random, spread evenly
+Item balls and hidden items stay where they are.
+Back
+Next
+Home
+Play
+Library
+More
+
+CONTENT DESCRIPTIONS:
+Back to Home

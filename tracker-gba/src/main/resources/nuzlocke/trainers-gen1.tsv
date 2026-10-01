@@ -1,0 +1,85 @@
+# Who is who in Generation 1 (Red, Blue, Yellow), 2026-09-29: the ledger label and group of each trainer.
+#
+# One row per trainer class, then the specific class:no rows. Source: the pret disassemblies pokered and pokeyellow
+# (constants/trainer_constants.asm and data/trainers/names.asm for the 47 classes, data/trainers/parties.asm for the
+# parties, data/maps/objects/*.asm and scripts/*.asm for which party number each fight uses); the ROM dumps hold the
+# same class names, parties, trainer objects and fight-start scripts, and `python tools/nuzlocke/gen1_trainers.py
+# --check` reads them back.
+#
+# game: * for Red, Blue and Yellow, or rb / y for a row only that game has.
+# class: the class number, what wTrainerClass holds in a trainer battle (BROCK is 34, GIOVANNI 29, RIVAL3 43).
+# no: the party number within the class (wTrainerNo, 1 based); 0 stands for every party of the class. A row with a
+# nonzero no wins over the no 0 row of its class, and a game-specific row wins over a * row.
+# group: Gym, Elite4, Boss, Rival or Other (Elite4 also holds the Champion).
+#
+# Notes on particular classes:
+# - The eight gym leaders: seven have a class of their own with one party (Brock 34, Misty 35, Lt. Surge 36, Erika 37,
+#   Koga 38, Blaine 39, Sabrina 40). Giovanni (29) has three parties: 1 is the Rocket Hideout B4F fight, 2 the Silph Co.
+#   11F fight (both Boss) and 3 the Viridian Gym fight (Gym).
+# - The Elite Four are Lorelei 44, Bruno 33, Agatha 46 and Lance 47, one party each. The Champion is class 43 (RIVAL3),
+#   which only that fight uses; its party number follows the rival's starter (Red and Blue: 1 Blastoise, 2 Venusaur,
+#   3 Charizard; Yellow: 1 Jolteon, 2 Flareon, 3 Vaporeon).
+# - The rival is class 25 (RIVAL1: Oak's Lab, Route 22, Cerulean City), 42 (RIVAL2: S.S. Anne, Pokemon Tower, Silph Co.,
+#   Route 22) and 43. The game lets the player name him; Blue is the default name, so the label says Blue.
+# - There are no Rocket executives in Red and Blue. Yellow's Jessie and James are class 30 (ROCKET) parties 42 to 45,
+#   started by the scripts of Mt. Moon B2F, Rocket Hideout B4F, Pokemon Tower 7F and Silph Co. 11F (parties.asm marks
+#   them `Jessie & James`, and IsFightingJessieJames in home/trainers2.asm gives class 30 parties from 42 up their
+#   picture). Parties 46 to 49 of Yellow's class 30 are four unused ones that share that picture; they are not fights.
+# - Prof. Oak (26) has three parties that no map object or script ever starts. Chief (27) and the first Juggler (13) have
+#   no party at all. They are here because every class has a row.
+#
+# game	class	no	label	group
+*	1	0	Youngster	Other
+*	2	0	Bug Catcher	Other
+*	3	0	Lass	Other
+*	4	0	Sailor	Other
+*	5	0	Jr. Trainer M	Other
+*	6	0	Jr. Trainer F	Other
+*	7	0	Pokemaniac	Other
+*	8	0	Super Nerd	Other
+*	9	0	Hiker	Other
+*	10	0	Biker	Other
+*	11	0	Burglar	Other
+*	12	0	Engineer	Other
+*	13	0	Juggler	Other
+*	14	0	Fisherman	Other
+*	15	0	Swimmer	Other
+*	16	0	Cue Ball	Other
+*	17	0	Gambler	Other
+*	18	0	Beauty	Other
+*	19	0	Psychic	Other
+*	20	0	Rocker	Other
+*	21	0	Juggler	Other
+*	22	0	Tamer	Other
+*	23	0	Bird Keeper	Other
+*	24	0	Blackbelt	Other
+*	25	0	Rival Blue	Rival
+*	26	0	Prof. Oak	Other
+*	27	0	Chief	Other
+*	28	0	Scientist	Other
+*	29	0	Boss Giovanni	Boss
+*	29	1	Boss Giovanni	Boss
+*	29	2	Boss Giovanni	Boss
+*	29	3	Leader Giovanni	Gym
+*	30	0	Team Rocket Grunt	Other
+y	30	42	Boss Jessie and James	Boss
+y	30	43	Boss Jessie and James	Boss
+y	30	44	Boss Jessie and James	Boss
+y	30	45	Boss Jessie and James	Boss
+*	31	0	Cooltrainer M	Other
+*	32	0	Cooltrainer F	Other
+*	33	0	Elite Four Bruno	Elite4
+*	34	0	Leader Brock	Gym
+*	35	0	Leader Misty	Gym
+*	36	0	Leader Lt. Surge	Gym
+*	37	0	Leader Erika	Gym
+*	38	0	Leader Koga	Gym
+*	39	0	Leader Blaine	Gym
+*	40	0	Leader Sabrina	Gym
+*	41	0	Gentleman	Other
+*	42	0	Rival Blue	Rival
+*	43	0	Champion Blue	Elite4
+*	44	0	Elite Four Lorelei	Elite4
+*	45	0	Channeler	Other
+*	46	0	Elite Four Agatha	Elite4
+*	47	0	Elite Four Lance	Elite4

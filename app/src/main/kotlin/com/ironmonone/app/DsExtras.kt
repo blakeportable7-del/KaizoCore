@@ -115,7 +115,9 @@ fun TrackedPokemonDialog(marks: StatMarks, seen: Set<Int>, tracker: NdsTracker?,
                         PixText(tracker?.speciesName(id) ?: "#$id", 9, Pc.Text)
                         if (info != null) {
                             PixText(listOf(info.type1, info.type2).filter { it.isNotEmpty() }.distinct().joinToString("/") + "  BST ${info.bst}", 7, Pc.Dim)
-                            PixText(marks.abilitiesFor(id).ifEmpty { null }?.joinToString(" / ") ?: listOf(info.ability1, info.ability2).filter { it.isNotEmpty() }.distinct().joinToString(" / "), 7, Pc.Gold)
+                            // Only the abilities this run has seen (StatMarks): the randomizer's own list was shown for a species
+                            // with none tracked, which the DS tracker never does (2026-09-30, IronMON rules check).
+                            PixText(trackedAbilityLine(marks.abilitiesFor(id)), 7, Pc.Gold)
                         }
                     }
                     val m = marks.of(id)
@@ -304,3 +306,10 @@ fun TourneyDialog(t: TourneyTracker, currentSeed: String, onClose: () -> Unit) {
         }
     }
 }
+
+/**
+ * The Tracked Pokemon screen's ability line on a DS game: the abilities this run has seen, else "---". The DS
+ * reference never lists an opponent's possible abilities (MainScreen.lua shows "Total seen" and "Last level" there),
+ * and the randomizer's own list gave them away (2026-09-30, IronMON rules check).
+ */
+internal fun trackedAbilityLine(seen: List<String>): String = seen.ifEmpty { null }?.joinToString(" / ") ?: "---"

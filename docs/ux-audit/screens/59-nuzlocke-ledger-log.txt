@@ -1,0 +1,25 @@
+TEXT:
+NUZLOCKE  STANDARD
+X
+AREAS
+TEAM
+GRAVE
+LOG
+RULES
+WARNINGS
+Revived  Sep 30, 02:24
+Treecko died at Route 102 and has HP again. Revives are not allowed; box it.
+OK
+No nickname  Sep 29, 23:05
+Zigzagoon has no nickname.
+OK
+NOTES
+ADD A NOTE
+WHAT HAPPENED
+Sep 30, 02:24  Route 102: Wurmple Lv 3 fainted.
+Sep 30, 02:24  Route 101: Zigzagoon Lv 3 caught.
+Sep 29, 23:05  Route 102: Wurmple Lv 3 fainted.
+Sep 29, 23:05  Treecko (Treecko Lv 7) died at Route 102: wild Wurmple Lv 3.
+
+CONTENT DESCRIPTIONS:
+

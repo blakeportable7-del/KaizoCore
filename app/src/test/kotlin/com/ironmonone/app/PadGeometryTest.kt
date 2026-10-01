@@ -66,6 +66,19 @@ class PadGeometryTest {
         assertTrue(!PadLayout.MYBOY_PORTRAIT.abxyDiamond)
     }
 
+    /** Blake, 2026-09-30: in portrait "the a and b buttons should be positioned like a normal gba emulator". */
+    @Test
+    fun `portrait A and B sit on the GBA's diagonal, B lower left of A`() {
+        for (gb in listOf(false, true)) for ((w, h) in portraitAreas) for (scale in listOf(1f, PortraitBudget.PAD_FLOOR)) {
+            val l = PadLayout.default(false, nds = false, gb = gb)
+            val a = PadGeometry.centre(l, PadLayout.Element.A, w, h * scale, false, PadSkin.OUTLINE, scale)
+            val b = PadGeometry.centre(l, PadLayout.Element.B, w, h * scale, false, PadSkin.OUTLINE, scale)
+            val button = PadGeometry.BUTTON * scale
+            assertTrue(a.first - b.first >= button, "A a full button right of B at ${w}x${h * scale} (gb $gb): $a $b")
+            assertTrue(a.second < b.second, "A higher than B at ${w}x${h * scale} (gb $gb): $a $b")
+        }
+    }
+
     @Test
     fun `the emulator layouts and the outline skin are what ships`() {
         assertEquals(PadLayout.MYBOY_PORTRAIT, PadLayout.default(false, nds = false))

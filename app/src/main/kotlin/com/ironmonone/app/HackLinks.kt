@@ -46,6 +46,8 @@ object HackLinks {
         HackLink("Faster FireRed", "DrMaple", "Quality of life for IronMON: faster, hidden items marked. KaizoCore already includes it.",
             "https://github.com/DrMaple/Faster-FireRed/releases", setOf("firered-u-v11"), "FireRed 1.1 (US)"),
         // ---- Emerald ----
+        HackLink("Faster Emerald", "DrMaple", "Quality of life for IronMON: shorter intro, instant healing, hidden items marked. KaizoCore already includes it.",
+            "https://github.com/DrMaple/Faster-Emerald/releases", setOf("emerald-u"), "Emerald (US)"),
         HackLink("Emerald Kaizo", "SinisterHoodedFigure", "A very hard Emerald. Every mistake counts.",
             PC + "395830/", setOf("emerald-u"), "Emerald (US)"),
         HackLink("Run & Bun", "dekzeh", "A difficulty hack with about 500 hand-built battles.",
@@ -74,6 +76,8 @@ object HackLinks {
         HackLink("Volt White", "Drayano", "All 649 Pokémon and harder trainers.",
             PC + "247696/", setOf("white-u"), "White (US)"),
         // ---- Black 2 / White 2 ----
+        HackLink("Faster Black 2 / White 2", "SilverstarStream", "Skips most cutscenes, made for the randomizer. KaizoCore already includes it.",
+            "https://github.com/SilverstarStream/faster_black2_white2/releases", setOf("black2-u", "white2-u"), "Black 2 or White 2 (US/EU)"),
         HackLink("Blaze Black 2 Redux", "Drayano and AphexCubed", "The modern remake of Blaze Black 2, with difficulty modes. Patches are on Drayano's Google Drive, linked here.",
             "https://x.com/Drayano60/status/1507817345103929344", setOf("black2-u"), "Black 2 (US)"),
         HackLink("Volt White 2 Redux", "Drayano and AphexCubed", "The modern remake of Volt White 2, with difficulty modes. Patches are on Drayano's Google Drive, linked here.",
@@ -115,6 +119,66 @@ object HackLinks {
 
     /** The clean game a picked library entry comes from: a patched kind names its base. */
     fun baseIdOf(kind: com.ironmonone.core.RomKind?): String? = kind?.let { it.baseId ?: it.id }
+
+    // ---------------------------------------------------- why none of the player's patches fits
+
+    private fun gameOf(k: com.ironmonone.core.RomKind) = k.displayName.substringAfter(' ').substringBefore(" (")
+
+    /** "1.1" for FireRed v1.1; null for a game with one release. */
+    private fun revisionOf(k: com.ironmonone.core.RomKind): String? =
+        k.displayName.substringAfterLast(" v", "").takeIf { it.isNotEmpty() && it[0].isDigit() }
+
+    /** The base game as a hack's page says it: "FireRed 1.0 (US)", "Emerald (US)". */
+    private fun needsOf(k: com.ironmonone.core.RomKind) = gameOf(k) + (revisionOf(k)?.let { " $it" } ?: "") + " (US)"
+
+    /** The game a patch says it is for, by the checksum it carries or the game the player declared: null when that is no game this app knows. */
+    private fun baseOf(p: LibraryStore.PatchEntry): com.ironmonone.core.RomKind? = p.forCrc?.let { crc ->
+        com.ironmonone.core.RomKind.all.firstOrNull { it.expectedCrc != com.ironmonone.core.RomKind.CRC_UNKNOWN && it.expectedCrc == crc }
+    }
+
+    /**
+     * The game as it comes, from a build made of it: a patched kind names its base, a Nat. Dex kind is the Nat. Dex
+     * capable game of its family, any other kind is itself.
+     */
+    private fun cleanBaseOf(k: com.ironmonone.core.RomKind): com.ironmonone.core.RomKind? = when {
+        k.baseId != null -> com.ironmonone.core.RomKind.byId(k.baseId)
+        k.isNatDex -> com.ironmonone.core.RomKind.allV1.firstOrNull { it.natDexCapable && it.family == k.family && it.titleDetect == k.titleDetect }
+        else -> k
+    }
+
+    /** A patch file's hack, named as its page names it when the file name says so ("Radical Red 4.1" is Radical Red), else the file's own name. */
+    private fun hackNameOf(p: LibraryStore.PatchEntry): String =
+        all.filter { p.name.contains(it.name, ignoreCase = true) }.maxByOrNull { it.name.length }?.name ?: stripKnownExt(p.name)
+
+    /**
+     * Why none of the player's patches fits [game], from the game each patch says it is for and the hack's own name
+     * (2026-09-30, UX audit P1): "Radical Red needs FireRed 1.0 (US). Your FireRed is 1.1, so it will not fit. Add a
+     * FireRed 1.0 file to use it." Null when no patch is for this game's family, or the game is one this app does not
+     * know: that is a different problem, and the caller says "none is made for it".
+     */
+    fun noFitReason(game: LibraryStore.Entry, patches: List<LibraryStore.PatchEntry>): String? {
+        val picked = game.kind ?: return null
+        val alreadyPatched = picked.isNatDex || picked.baseId != null
+        val mine = cleanBaseOf(picked) ?: return null
+        for (p in patches) {
+            val wanted = baseOf(p)?.let { cleanBaseOf(it) } ?: continue
+            if (familyOf(wanted.id) != familyOf(mine.id)) continue
+            val hack = hackNameOf(p)
+            val needs = needsOf(wanted)
+            val file = needs.substringBefore(" (")
+            val a = if (file.first() in "AEIOU") "an" else "a"
+            return when {
+                // The patch is for the very game the picked one was made from: the picked one is already patched.
+                wanted.id == mine.id && alreadyPatched ->
+                    "$hack needs $needs. The game you picked is already patched, so it will not fit. Pick your original $file instead."
+                wanted.id == mine.id ->
+                    "$hack needs $needs. The file you picked is not an exact copy of it, so it will not fit. Add $a $file file to use it."
+                else ->
+                    "$hack needs $needs. Your ${gameOf(mine)} is ${revisionOf(mine) ?: "another release"}, so it will not fit. Add $a $file file to use it."
+            }
+        }
+        return null
+    }
 
     /**
      * What is wrong, if anything, with patching [picked] with [link]: a

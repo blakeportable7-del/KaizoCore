@@ -19,12 +19,21 @@ data class RnqsInfo(
     /** The Gen 1 second pass ("RBY PART 2.rnqs"): applied by the app after the chosen preset, never chosen itself. */
     val secondPass: Boolean get() = fileName.removeSuffix(".rnqs").removeSuffix(".RNQS").lowercase().replace(Regex("[^a-z0-9]"), "").contains("part2")
 
+    /** The 60% levels pre-pass ("RSE PRE-PASS.rnqs"): applied by the app before the chosen preset (ExtraPasses), never chosen itself. */
+    val prePass: Boolean get() = fileName.removeSuffix(".rnqs").removeSuffix(".RNQS").lowercase().replace(Regex("[^a-z0-9]"), "").contains("prepass")
+
+    /** Either of the two: a file the app runs around a preset, so no Mode row or settings list offers it. */
+    val appliedByApp: Boolean get() = secondPass || prePass
+
     /** "RSE Nat. Dex Kaizo" style label for the picker. */
     val label: String get() = buildString {
         append(gameTag ?: "?")
         if (natDex) append(" Nat. Dex")
-        append(" ")
-        append(RULESET_LABELS[ruleset] ?: ruleset ?: "?")
+        // A game's file with no ruleset word in it (a build made in Build your own) is just the game, not "FRLG ?" (2026-09-29).
+        if (ruleset != null || gameTag == null) {
+            append(" ")
+            append(RULESET_LABELS[ruleset] ?: ruleset ?: "?")
+        }
     }
 
     companion object {
@@ -47,7 +56,7 @@ data class RnqsInfo(
             "kaizo" to "Kaizo", "superkaizo" to "Super Kaizo", "standard" to "Standard",
             "ultimate" to "Ultimate", "survival" to "Survival", "kaizodoubles" to "Kaizo Doubles",
             "chaoskaizo" to "Chaos Kaizo", "evokaizo" to "Evo Kaizo",
-            "survivalrevival" to "Survival Revival", "ironmonjourney" to "Ironmon Journey",
+            "survivalrevival" to "Survival Revival", "ironmonjourney" to "IronMON Journey",
         )
 
         /** "Super Kaizo" for "superkaizo"; the raw key if it has no label yet. */
@@ -87,7 +96,8 @@ data class RnqsInfo(
             val counts = parsed.groupingBy { it.second.label }.eachCount()
             return parsed.map { (name, info) ->
                 val stem = name.removeSuffix(".rnqs").removeSuffix(".RNQS")
-                if ((counts[info.label] ?: 0) > 1 || info.gameTag == null) stem to info.label
+                // A file with no ruleset word is titled by its own name too: "FRLG" alone says nothing (2026-09-29).
+                if ((counts[info.label] ?: 0) > 1 || info.gameTag == null || info.ruleset == null) stem to info.label
                 else info.label to name
             }
         }

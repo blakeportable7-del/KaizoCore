@@ -1,0 +1,472 @@
+# Where the player is, for the Nuzlocke area a wild encounter belongs to, Generation 2 (2026-09-29).
+#
+# game: gs = Gold and Silver, c = Crystal.
+#   gs: id = wMapGroup * 256 + wMapNumber (GbcTracker reads both bytes; group and map number are 1-based as the game
+#       stores them, so Falkner's gym is group 10, map 7 = 2567). place = the landmark that map's header names
+#       (pokegold data/maps/maps.asm, 4th argument of the map macro; names from data/maps/landmarks.asm), which is the
+#       town or route a house, gate, cave floor or tower floor belongs to, exactly as the game itself files it: every floor
+#       of Union Cave, Sprout Tower or Tin Tower and every building of a town share one place. detail = the map itself
+#       (constants/map_constants.asm). Gold and Silver use one map table.
+#   c : id = wCurLandmark, the landmark number (pokecrystal constants/landmark_constants.asm: Johto 1..46, Kanto 47..94,
+#       Fast Ship 95). place = the landmark name (data/maps/landmarks.asm, the game's own text in Title Case: the sign
+#       prints SILVER CAVE for Mt. Silver, RADIO TOWER for the Goldenrod one, POWER PLANT, UNDERGROUND and FAST SHIP for the
+#       S.S. Aqua); detail is the same.
+#       wCurLandmark is 0 (LANDMARK_SPECIAL) in the link and mobile rooms and 0xFF inside any map of the GATE environment
+#       (gates, both Underground Path entrances, the Underground Path itself, Victory Road Gate, the Battle Tower gate) and
+#       both National Park gates: those are not places, so a tracker keeps the last real landmark. There is no row for 0 or 255.
+#       Crystal has one landmark Gold and Silver lack: Battle Tower (Crystal 29), so Crystal's numbers from 29 up are one
+#       higher than Gold's landmark ids; the two tables are separate on purpose.
+#   Maps without a gs row: the thirteen unused beta maps (ten Pokemon Center 2F betas that no warp leads to, Olivine House
+#   Beta, Safari Zone Beta and its gate, whose only warps are marked inaccessible) and the four link rooms (Pokemon Center
+#   2F, Trade Center, Colosseum, Time Capsule), whose landmark is SPECIAL: a tracker keeps the last real map for those.
+# Kanto and Johto share these tables. Regions by landmark: Johto is landmark 1..46 (Gold 1..45), Kanto 47..94 (Gold 46..93),
+#   and the Fast Ship 95 (Gold 94); the game's own RegionCheck counts Victory Road, Route 23, Indigo Plateau, Routes 26 to 28
+#   and Tohjo Falls as Johto for music, which is not a geographic split.
+#
+# game	id	place	detail
+gs	257	Olivine City	Olivine Pokemon Center 1F
+gs	258	Olivine City	Olivine Gym
+gs	259	Olivine City	Olivine Tim's House
+gs	261	Olivine City	Olivine Punishment Speech House
+gs	262	Olivine City	Olivine Good Rod House
+gs	263	Olivine City	Olivine Cafe
+gs	264	Olivine City	Olivine Mart
+gs	265	Route 38	Route 38 Ecruteak Gate
+gs	266	Route 39	Route 39 Barn
+gs	267	Route 39	Route 39 Farmhouse
+gs	268	Route 38	Route 38
+gs	269	Route 39	Route 39
+gs	270	Olivine City	Olivine City
+gs	513	Mahogany Town	Mahogany Red Gyarados Speech House
+gs	514	Mahogany Town	Mahogany Gym
+gs	515	Mahogany Town	Mahogany Pokemon Center 1F
+gs	516	Route 42	Route 42 Ecruteak Gate
+gs	517	Route 42	Route 42
+gs	518	Route 44	Route 44
+gs	519	Mahogany Town	Mahogany Town
+gs	769	Sprout Tower	Sprout Tower 1F
+gs	770	Sprout Tower	Sprout Tower 2F
+gs	771	Sprout Tower	Sprout Tower 3F
+gs	772	Tin Tower	Tin Tower 1F
+gs	773	Tin Tower	Tin Tower 2F
+gs	774	Tin Tower	Tin Tower 3F
+gs	775	Tin Tower	Tin Tower 4F
+gs	776	Tin Tower	Tin Tower 5F
+gs	777	Tin Tower	Tin Tower 6F
+gs	778	Tin Tower	Tin Tower 7F
+gs	779	Tin Tower	Tin Tower 8F
+gs	780	Tin Tower	Tin Tower 9F
+gs	781	Burned Tower	Burned Tower 1F
+gs	782	Burned Tower	Burned Tower B1F
+gs	783	National Park	National Park
+gs	784	National Park	National Park Bug-Catching Contest
+gs	785	Radio Tower	Radio Tower 1F
+gs	786	Radio Tower	Radio Tower 2F
+gs	787	Radio Tower	Radio Tower 3F
+gs	788	Radio Tower	Radio Tower 4F
+gs	789	Radio Tower	Radio Tower 5F
+gs	790	Ruins of Alph	Ruins of Alph Outside
+gs	791	Ruins of Alph	Ruins of Alph Ho-Oh Chamber
+gs	792	Ruins of Alph	Ruins of Alph Kabuto Chamber
+gs	793	Ruins of Alph	Ruins of Alph Omanyte Chamber
+gs	794	Ruins of Alph	Ruins of Alph Aerodactyl Chamber
+gs	795	Ruins of Alph	Ruins of Alph Inner Chamber
+gs	796	Ruins of Alph	Ruins of Alph Research Center
+gs	797	Union Cave	Union Cave 1F
+gs	798	Union Cave	Union Cave B1F
+gs	799	Union Cave	Union Cave B2F
+gs	800	Slowpoke Well	Slowpoke Well B1F
+gs	801	Slowpoke Well	Slowpoke Well B2F
+gs	802	Lighthouse	Olivine Lighthouse 1F
+gs	803	Lighthouse	Olivine Lighthouse 2F
+gs	804	Lighthouse	Olivine Lighthouse 3F
+gs	805	Lighthouse	Olivine Lighthouse 4F
+gs	806	Lighthouse	Olivine Lighthouse 5F
+gs	807	Lighthouse	Olivine Lighthouse 6F
+gs	808	Mahogany Town	Mahogany Mart 1F
+gs	809	Mahogany Town	Team Rocket Base B1F
+gs	810	Mahogany Town	Team Rocket Base B2F
+gs	811	Mahogany Town	Team Rocket Base B3F
+gs	812	Ilex Forest	Ilex Forest
+gs	813	Goldenrod City	Goldenrod Underground
+gs	814	Goldenrod City	Goldenrod Underground Switch Room Entrances
+gs	815	Goldenrod City	Goldenrod Dept. Store B1F
+gs	816	Goldenrod City	Goldenrod Underground Warehouse
+gs	817	Mt. Mortar	Mt. Mortar 1F Outside
+gs	818	Mt. Mortar	Mt. Mortar 1F Inside
+gs	819	Mt. Mortar	Mt. Mortar 2F Inside
+gs	820	Mt. Mortar	Mt. Mortar B1F
+gs	821	Ice Path	Ice Path 1F
+gs	822	Ice Path	Ice Path B1F
+gs	823	Ice Path	Ice Path B2F Mahogany Side
+gs	824	Ice Path	Ice Path B2F Blackthorn Side
+gs	825	Ice Path	Ice Path B3F
+gs	826	Whirl Islands	Whirl Islands NW
+gs	827	Whirl Islands	Whirl Islands NE
+gs	828	Whirl Islands	Whirl Islands SW
+gs	829	Whirl Islands	Whirl Islands Cave
+gs	830	Whirl Islands	Whirl Islands SE
+gs	831	Whirl Islands	Whirl Islands B1F
+gs	832	Whirl Islands	Whirl Islands B2F
+gs	833	Whirl Islands	Whirl Islands Lugia Chamber
+gs	834	Silver Cave	Silver Cave Room 1
+gs	835	Silver Cave	Silver Cave Room 2
+gs	836	Silver Cave	Silver Cave Room 3
+gs	837	Silver Cave	Silver Cave Item Rooms
+gs	838	Dark Cave	Dark Cave Violet Entrance
+gs	839	Dark Cave	Dark Cave Blackthorn Entrance
+gs	840	Dragon's Den	Dragon's Den 1F
+gs	841	Dragon's Den	Dragon's Den B1F
+gs	842	Tohjo Falls	Tohjo Falls
+gs	843	Diglett's Cave	Diglett's Cave
+gs	844	Mt. Moon	Mt. Moon
+gs	845	Underground	Underground Path
+gs	846	Rock Tunnel	Rock Tunnel 1F
+gs	847	Rock Tunnel	Rock Tunnel B1F
+gs	850	Victory Road	Victory Road
+gs	1025	Ecruteak City	Ecruteak Tin Tower Entrance
+gs	1026	Ecruteak City	Ecruteak Tin Tower Back Entrance
+gs	1027	Ecruteak City	Ecruteak Pokemon Center 1F
+gs	1028	Ecruteak City	Ecruteak Lugia Speech House
+gs	1029	Ecruteak City	Dance Theater
+gs	1030	Ecruteak City	Ecruteak Mart
+gs	1031	Ecruteak City	Ecruteak Gym
+gs	1032	Ecruteak City	Ecruteak Itemfinder House
+gs	1033	Ecruteak City	Ecruteak City
+gs	1281	Blackthorn City	Blackthorn Gym 1F
+gs	1282	Blackthorn City	Blackthorn Gym 2F
+gs	1283	Blackthorn City	Blackthorn Dragon Speech House
+gs	1284	Blackthorn City	Blackthorn Emy's House
+gs	1285	Blackthorn City	Blackthorn Mart
+gs	1286	Blackthorn City	Blackthorn Pokemon Center 1F
+gs	1287	Blackthorn City	Move Deleter's House
+gs	1288	Route 45	Route 45
+gs	1289	Route 46	Route 46
+gs	1290	Blackthorn City	Blackthorn City
+gs	1537	Cinnabar Island	Cinnabar Pokemon Center 1F
+gs	1539	Route 19	Route 19 Fuchsia Gate
+gs	1540	Seafoam Islands	Seafoam Gym
+gs	1541	Route 19	Route 19
+gs	1542	Route 20	Route 20
+gs	1543	Route 21	Route 21
+gs	1544	Cinnabar Island	Cinnabar Island
+gs	1793	Cerulean City	Cerulean Gym Badge Speech House
+gs	1794	Cerulean City	Cerulean Police Station
+gs	1795	Cerulean City	Cerulean Trade Speech House
+gs	1796	Cerulean City	Cerulean Pokemon Center 1F
+gs	1798	Cerulean City	Cerulean Gym
+gs	1799	Cerulean City	Cerulean Mart
+gs	1800	Route 10	Route 10 Pokemon Center 1F
+gs	1802	Power Plant	Power Plant
+gs	1803	Route 25	Bill's House
+gs	1804	Route 4	Route 4
+gs	1805	Route 9	Route 9
+gs	1806	Route 10	Route 10 North
+gs	1807	Route 24	Route 24
+gs	1808	Route 25	Route 25
+gs	1809	Cerulean City	Cerulean City
+gs	2049	Azalea Town	Azalea Pokemon Center 1F
+gs	2050	Azalea Town	Charcoal Kiln
+gs	2051	Azalea Town	Azalea Mart
+gs	2052	Azalea Town	Kurt's House
+gs	2053	Azalea Town	Azalea Gym
+gs	2054	Route 33	Route 33
+gs	2055	Azalea Town	Azalea Town
+gs	2305	Lake of Rage	Lake of Rage Hidden Power House
+gs	2306	Lake of Rage	Lake of Rage Magikarp House
+gs	2307	Route 43	Route 43 Mahogany Gate
+gs	2308	Route 43	Route 43 Gate
+gs	2309	Route 43	Route 43
+gs	2310	Lake of Rage	Lake of Rage
+gs	2561	Route 32	Route 32
+gs	2562	Route 35	Route 35
+gs	2563	Route 36	Route 36
+gs	2564	Route 37	Route 37
+gs	2565	Violet City	Violet City
+gs	2566	Violet City	Violet Mart
+gs	2567	Violet City	Violet Gym
+gs	2568	Violet City	Earl's Pokemon Academy
+gs	2569	Violet City	Violet Nickname Speech House
+gs	2570	Violet City	Violet Pokemon Center 1F
+gs	2571	Violet City	Violet Kyle's House
+gs	2572	Route 32	Route 32 Ruins of Alph Gate
+gs	2573	Route 32	Route 32 Pokemon Center 1F
+gs	2574	Route 35	Route 35 Goldenrod Gate
+gs	2575	Route 35	Route 35 National Park Gate
+gs	2576	Route 36	Route 36 Ruins of Alph Gate
+gs	2577	Route 36	Route 36 National Park Gate
+gs	2817	Route 34	Route 34
+gs	2818	Goldenrod City	Goldenrod City
+gs	2819	Goldenrod City	Goldenrod Gym
+gs	2820	Goldenrod City	Goldenrod Bike Shop
+gs	2821	Goldenrod City	Goldenrod Happiness Rater
+gs	2822	Goldenrod City	Bill's Family's House
+gs	2823	Goldenrod City	Goldenrod Magnet Train Station
+gs	2824	Goldenrod City	Goldenrod Flower Shop
+gs	2825	Goldenrod City	Goldenrod Pokemon Center 1F
+gs	2826	Goldenrod City	Goldenrod PP Speech House
+gs	2827	Goldenrod City	Goldenrod Name Rater
+gs	2828	Goldenrod City	Goldenrod Dept. Store 1F
+gs	2829	Goldenrod City	Goldenrod Dept. Store 2F
+gs	2830	Goldenrod City	Goldenrod Dept. Store 3F
+gs	2831	Goldenrod City	Goldenrod Dept. Store 4F
+gs	2832	Goldenrod City	Goldenrod Dept. Store 5F
+gs	2833	Goldenrod City	Goldenrod Dept. Store 6F
+gs	2834	Goldenrod City	Goldenrod Dept. Store Elevator
+gs	2835	Goldenrod City	Goldenrod Game Corner
+gs	2836	Route 34	Ilex Forest Azalea Gate
+gs	2837	Route 34	Route 34 Ilex Forest Gate
+gs	2838	Route 34	Day Care
+gs	3073	Route 6	Route 6
+gs	3074	Route 11	Route 11
+gs	3075	Vermilion City	Vermilion City
+gs	3076	Vermilion City	Vermilion Fishing Speech House
+gs	3077	Vermilion City	Vermilion Pokemon Center 1F
+gs	3079	Vermilion City	Pokemon Fan Club
+gs	3080	Vermilion City	Vermilion Magnet Train Speech House
+gs	3081	Vermilion City	Vermilion Mart
+gs	3082	Vermilion City	Vermilion Diglett's Cave Speech House
+gs	3083	Vermilion City	Vermilion Gym
+gs	3084	Route 6	Route 6 Saffron Gate
+gs	3085	Route 6	Route 6 Underground Path Entrance
+gs	3329	Route 1	Route 1
+gs	3330	Pallet Town	Pallet Town
+gs	3331	Pallet Town	Red's House 1F
+gs	3332	Pallet Town	Red's House 2F
+gs	3333	Pallet Town	Blue's House
+gs	3334	Pallet Town	Oak's Lab
+gs	3585	Route 3	Route 3
+gs	3586	Pewter City	Pewter City
+gs	3587	Pewter City	Pewter Nidoran Speech House
+gs	3588	Pewter City	Pewter Gym
+gs	3589	Pewter City	Pewter Mart
+gs	3590	Pewter City	Pewter Pokemon Center 1F
+gs	3592	Pewter City	Pewter Snooze Speech House
+gs	3841	Olivine City	Olivine Port
+gs	3842	Vermilion City	Vermilion Port
+gs	3843	Fast Ship	Fast Ship 1F
+gs	3844	Fast Ship	Fast Ship Cabins NNW NNE NE
+gs	3845	Fast Ship	Fast Ship Cabins SW SSW NW
+gs	3846	Fast Ship	Fast Ship Cabins SE SSE Captain's Cabin
+gs	3847	Fast Ship	Fast Ship B1F
+gs	3848	Olivine City	Olivine Port Passage
+gs	3849	Vermilion City	Vermilion Port Passage
+gs	3850	Mt. Moon	Mt. Moon Square
+gs	3851	Mt. Moon	Mt. Moon Gift Shop
+gs	3852	Tin Tower	Tin Tower Roof
+gs	4097	Route 23	Route 23
+gs	4098	Indigo Plateau	Indigo Plateau Pokemon Center 1F
+gs	4099	Indigo Plateau	Will's Room
+gs	4100	Indigo Plateau	Koga's Room
+gs	4101	Indigo Plateau	Bruno's Room
+gs	4102	Indigo Plateau	Karen's Room
+gs	4103	Indigo Plateau	Lance's Room
+gs	4104	Indigo Plateau	Hall of Fame
+gs	4353	Route 13	Route 13
+gs	4354	Route 14	Route 14
+gs	4355	Route 15	Route 15
+gs	4356	Route 18	Route 18
+gs	4357	Fuchsia City	Fuchsia City
+gs	4358	Fuchsia City	Fuchsia Mart
+gs	4359	Fuchsia City	Safari Zone Main Office
+gs	4360	Fuchsia City	Fuchsia Gym
+gs	4361	Fuchsia City	Bill's Older Sister's House
+gs	4362	Fuchsia City	Fuchsia Pokemon Center 1F
+gs	4364	Fuchsia City	Safari Zone Warden's Home
+gs	4365	Route 15	Route 15 Fuchsia Gate
+gs	4609	Route 8	Route 8
+gs	4610	Route 12	Route 12
+gs	4611	Route 10	Route 10 South
+gs	4612	Lavender Town	Lavender Town
+gs	4613	Lavender Town	Lavender Pokemon Center 1F
+gs	4615	Lavender Town	Mr. Fuji's House
+gs	4616	Lavender Town	Lavender Speech House
+gs	4617	Lavender Town	Lavender Name Rater
+gs	4618	Lavender Town	Lavender Mart
+gs	4619	Lavender Town	Soul House
+gs	4620	Lav Radio Tower	Lav Radio Tower 1F
+gs	4621	Route 8	Route 8 Saffron Gate
+gs	4622	Route 12	Route 12 Super Rod House
+gs	4865	Route 28	Route 28
+gs	4866	Silver Cave	Silver Cave Outside
+gs	4867	Silver Cave	Silver Cave Pokemon Center 1F
+gs	4868	Route 28	Route 28 Steel Wing House
+gs	5377	Route 7	Route 7
+gs	5378	Route 16	Route 16
+gs	5379	Route 17	Route 17
+gs	5380	Celadon City	Celadon City
+gs	5381	Celadon City	Celadon Dept. Store 1F
+gs	5382	Celadon City	Celadon Dept. Store 2F
+gs	5383	Celadon City	Celadon Dept. Store 3F
+gs	5384	Celadon City	Celadon Dept. Store 4F
+gs	5385	Celadon City	Celadon Dept. Store 5F
+gs	5386	Celadon City	Celadon Dept. Store 6F
+gs	5387	Celadon City	Celadon Dept. Store Elevator
+gs	5388	Celadon City	Celadon Mansion 1F
+gs	5389	Celadon City	Celadon Mansion 2F
+gs	5390	Celadon City	Celadon Mansion 3F
+gs	5391	Celadon City	Celadon Mansion Roof
+gs	5392	Celadon City	Celadon Mansion Roof House
+gs	5393	Celadon City	Celadon Pokemon Center 1F
+gs	5395	Celadon City	Celadon Game Corner
+gs	5396	Celadon City	Celadon Game Corner Prize Room
+gs	5397	Celadon City	Celadon Gym
+gs	5398	Celadon City	Celadon Cafe
+gs	5399	Route 16	Route 16 Fuchsia Speech House
+gs	5400	Route 16	Route 16 Gate
+gs	5401	Route 7	Route 7 Saffron Gate
+gs	5402	Route 17	Route 17 Route 18 Gate
+gs	5633	Route 40	Route 40
+gs	5634	Route 41	Route 41
+gs	5635	Cianwood City	Cianwood City
+gs	5636	Cianwood City	Mania's House
+gs	5637	Cianwood City	Cianwood Gym
+gs	5638	Cianwood City	Cianwood Pokemon Center 1F
+gs	5639	Cianwood City	Cianwood Pharmacy
+gs	5640	Cianwood City	Cianwood Photo Studio
+gs	5641	Cianwood City	Cianwood Lugia Speech House
+gs	5889	Route 2	Route 2
+gs	5890	Route 22	Route 22
+gs	5891	Viridian City	Viridian City
+gs	5892	Viridian City	Viridian Gym
+gs	5893	Viridian City	Viridian Nickname Speech House
+gs	5894	Viridian City	Trainer House 1F
+gs	5895	Viridian City	Trainer House B1F
+gs	5896	Viridian City	Viridian Mart
+gs	5897	Viridian City	Viridian Pokemon Center 1F
+gs	5899	Route 2	Route 2 Nugget House
+gs	5900	Route 2	Route 2 Gate
+gs	5901	Route 26	Victory Road Gate
+gs	6145	Route 26	Route 26
+gs	6146	Route 27	Route 27
+gs	6147	Route 29	Route 29
+gs	6148	New Bark Town	New Bark Town
+gs	6149	New Bark Town	Elm's Lab
+gs	6150	New Bark Town	Player's House 1F
+gs	6151	New Bark Town	Player's House 2F
+gs	6152	New Bark Town	Player's Neighbor's House
+gs	6153	New Bark Town	Elm's House
+gs	6154	Route 26	Route 26 Heal House
+gs	6155	Route 26	Day of Week Siblings House
+gs	6156	Route 27	Route 27 Sandstorm House
+gs	6157	Route 29	Route 29 Route 46 Gate
+gs	6401	Route 5	Route 5
+gs	6402	Saffron City	Saffron City
+gs	6403	Saffron City	Fighting Dojo
+gs	6404	Saffron City	Saffron Gym
+gs	6405	Saffron City	Saffron Mart
+gs	6406	Saffron City	Saffron Pokemon Center 1F
+gs	6408	Saffron City	Mr. Psychic's House
+gs	6409	Saffron City	Saffron Magnet Train Station
+gs	6410	Saffron City	Silph Co. 1F
+gs	6411	Saffron City	Copycat's House 1F
+gs	6412	Saffron City	Copycat's House 2F
+gs	6413	Route 5	Route 5 Underground Path Entrance
+gs	6414	Route 5	Route 5 Saffron Gate
+gs	6415	Route 5	Route 5 Cleanse Tag House
+gs	6657	Route 30	Route 30
+gs	6658	Route 31	Route 31
+gs	6659	Cherrygrove City	Cherrygrove City
+gs	6660	Cherrygrove City	Cherrygrove Mart
+gs	6661	Cherrygrove City	Cherrygrove Pokemon Center 1F
+gs	6662	Cherrygrove City	Cherrygrove Gym Speech House
+gs	6663	Cherrygrove City	Guide Gent's House
+gs	6664	Cherrygrove City	Cherrygrove Evolution Speech House
+gs	6665	Route 30	Route 30 Berry House
+gs	6666	Route 30	Mr. Pokemon's House
+gs	6667	Route 31	Route 31 Violet Gate
+c	1	New Bark Town	New Bark Town
+c	2	Route 29	Route 29
+c	3	Cherrygrove City	Cherrygrove City
+c	4	Route 30	Route 30
+c	5	Route 31	Route 31
+c	6	Violet City	Violet City
+c	7	Sprout Tower	Sprout Tower
+c	8	Route 32	Route 32
+c	9	Ruins of Alph	Ruins of Alph
+c	10	Union Cave	Union Cave
+c	11	Route 33	Route 33
+c	12	Azalea Town	Azalea Town
+c	13	Slowpoke Well	Slowpoke Well
+c	14	Ilex Forest	Ilex Forest
+c	15	Route 34	Route 34
+c	16	Goldenrod City	Goldenrod City
+c	17	Radio Tower	Radio Tower
+c	18	Route 35	Route 35
+c	19	National Park	National Park
+c	20	Route 36	Route 36
+c	21	Route 37	Route 37
+c	22	Ecruteak City	Ecruteak City
+c	23	Tin Tower	Tin Tower
+c	24	Burned Tower	Burned Tower
+c	25	Route 38	Route 38
+c	26	Route 39	Route 39
+c	27	Olivine City	Olivine City
+c	28	Lighthouse	Lighthouse
+c	29	Battle Tower	Battle Tower
+c	30	Route 40	Route 40
+c	31	Whirl Islands	Whirl Islands
+c	32	Route 41	Route 41
+c	33	Cianwood City	Cianwood City
+c	34	Route 42	Route 42
+c	35	Mt. Mortar	Mt. Mortar
+c	36	Mahogany Town	Mahogany Town
+c	37	Route 43	Route 43
+c	38	Lake of Rage	Lake of Rage
+c	39	Route 44	Route 44
+c	40	Ice Path	Ice Path
+c	41	Blackthorn City	Blackthorn City
+c	42	Dragon's Den	Dragon's Den
+c	43	Route 45	Route 45
+c	44	Dark Cave	Dark Cave
+c	45	Route 46	Route 46
+c	46	Silver Cave	Silver Cave
+c	47	Pallet Town	Pallet Town
+c	48	Route 1	Route 1
+c	49	Viridian City	Viridian City
+c	50	Route 2	Route 2
+c	51	Pewter City	Pewter City
+c	52	Route 3	Route 3
+c	53	Mt. Moon	Mt. Moon
+c	54	Route 4	Route 4
+c	55	Cerulean City	Cerulean City
+c	56	Route 24	Route 24
+c	57	Route 25	Route 25
+c	58	Route 5	Route 5
+c	59	Underground	Underground
+c	60	Route 6	Route 6
+c	61	Vermilion City	Vermilion City
+c	62	Diglett's Cave	Diglett's Cave
+c	63	Route 7	Route 7
+c	64	Route 8	Route 8
+c	65	Route 9	Route 9
+c	66	Rock Tunnel	Rock Tunnel
+c	67	Route 10	Route 10
+c	68	Power Plant	Power Plant
+c	69	Lavender Town	Lavender Town
+c	70	Lav Radio Tower	Lav Radio Tower
+c	71	Celadon City	Celadon City
+c	72	Saffron City	Saffron City
+c	73	Route 11	Route 11
+c	74	Route 12	Route 12
+c	75	Route 13	Route 13
+c	76	Route 14	Route 14
+c	77	Route 15	Route 15
+c	78	Route 16	Route 16
+c	79	Route 17	Route 17
+c	80	Route 18	Route 18
+c	81	Fuchsia City	Fuchsia City
+c	82	Route 19	Route 19
+c	83	Route 20	Route 20
+c	84	Seafoam Islands	Seafoam Islands
+c	85	Cinnabar Island	Cinnabar Island
+c	86	Route 21	Route 21
+c	87	Route 22	Route 22
+c	88	Victory Road	Victory Road
+c	89	Route 23	Route 23
+c	90	Indigo Plateau	Indigo Plateau
+c	91	Route 26	Route 26
+c	92	Route 27	Route 27
+c	93	Tohjo Falls	Tohjo Falls
+c	94	Route 28	Route 28
+c	95	Fast Ship	Fast Ship

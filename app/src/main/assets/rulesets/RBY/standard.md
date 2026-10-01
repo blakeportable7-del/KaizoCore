@@ -21,8 +21,9 @@ Every ruleset builds on the ones before it, so they are all here in order, then 
     - Note: During the lab fight(s) only, you may hold banned items.
 - Stolen Items: You may not intentionally steal items from wild pokemon with moves like Thief, Covet, etc. Stealing them from a trainer battle is fine.
     - Note: If you steal from a wild pokemon that you do not end up catching in that battle, throw the item away.
-- Accidental Kills/Catches: - If you accidentally kill a Pokémon while trying to catch it, you will no longer be able to capture or kill a Pokémon from that Route.
- - If you catch a pokemon (accidental or otherwise) that you don't mean to add to your team you can immediately deposit it in the PC without viewing any information about its stats or moves. And then continue as if it never happened.
+- Accidental Kills/Catches:
+    - If you accidentally kill a Pokémon while trying to catch it, you will no longer be able to capture or kill a Pokémon from that Route.
+    - If you catch a pokemon (accidental or otherwise) that you don't mean to add to your team you can immediately deposit it in the PC without viewing any information about its stats or moves. And then continue as if it never happened.
     - Note: You may throw pokéballs at a pokemon for reasons like being unable to run or if you are trying to scout its moves without risking killing it.
 - No Redos: You may not re-fight trainers at any point using the VS Seeker or other means. You may not abuse respawning items by picking them up more than once
 - Shiny Clause: If you encounter a shiny, you are allowed to kill it for EXP as a bonus kill in addition to your allotted 1 catch/kill for that route.
@@ -38,16 +39,29 @@ Every ruleset builds on the ones before it, so they are all here in order, then 
 1) It is recommended that you play Pokémon Yellow instead of Red or Blue. The main reason for this is that Brock is a bit easier in Yellow, but future gyms will be a bit tougher. This is ensures an appropriate level of difficulty.
 2) You are allowed to buy one Fresh Water but only to give it to the guard to enter Saffron City. You cannot use it for healing.
 3) If you randomly get a drink item to get into Saffron City earlier, you may do so but with some restrictions:
-- You may collect items and fight non-story related trainers
-- You may NOT buy a drink to replace the item you turned in
-- You may NOT skip Rock Tunnel or otherwise enter Rocket Game Corner, Lavender Town, Celadon Gym
+    - You may collect items and fight non-story related trainers
+    - You may NOT buy a drink to replace the item you turned in
+    - You may NOT skip Rock Tunnel or otherwise enter Rocket Game Corner, Lavender Town, Celadon Gym
 4) The randomizer setting for "Force Change" an evolution is disabled. This is to add a bit more variety in evos, and to stop Dratini from directly evolving into Dragonite.
 5) Unlike other Pokémon games, Gen 1 does not have a fluctuating exp curve option. As such, two separate randomizer settings files and "randomizations" are required to produce a proper Ironmon game. The main reason this is necessary is to prevent your Pokémon from evolving into legendary Pokémon.
 6) For more details on rules updates for Gen 1 Kaizo, please see the associated PasteBin (https://pastebin.com/XgD2iwLc)
 
+### Settings notes
+
+NOTE: To properly randomize Gen 1 games for Ironmon, you must do one of the following. This is necessary to prevent Pokémon from evolving into legendaries.
+- Use the Pseudo-Fluctuating Growth patch for your game ROM + the settings string from PART 1.
+    1. Pseduo-Fluctuating for Pokémon Red: (Download) (https://www.stealmylyrics.com/kaizo/patch/)
+    2. Pseduo-Fluctuating for Pokémon Blue: (Download) (https://www.stealmylyrics.com/kaizo/patch/)
+    3. Pseduo-Fluctuating for Pokémon Yellow: (Download) (https://www.stealmylyrics.com/kaizo/patch/)
+- Use two separate setting strings and apply them in the correct order: PART 1 first, then PART 2.
+    1. First load your original Pokémon game ROM and a setting string from the PART 1 section below. Then randomize.
+    2. Next, load the ROM from step 1 and the setting string from the PART 2 section. Then randomize.
+    3. You must perform both of these steps each time you want to randomize a new Ironmon game.
+In KaizoCore, PREPARE's pseudo-fluctuating growth patch is the first way, and a run on the patched game takes PART 1 only. On a game without it, runs take PART 2 as well, the second way. PART 2 is a switch on RUN, yours either way.
+
 ## Sources
 
-- IronMON rules gist by valiant-code: https://gist.github.com/valiant-code/adb18d248fa0fae7da6b639e2ee8f9c1 (gist updated 2026-08-31)
-- game-specific rules gist by UTDZac: https://gist.github.com/UTDZac/a147c497424dfbd537d8c4b0c22b5621 (saved 2026-09-05)
+- IronMON rules gist by valiant-code: https://gist.github.com/valiant-code/adb18d248fa0fae7da6b639e2ee8f9c1 (rules last changed 2025-02-23)
+- game-specific rules and settings gist by UTDZac: https://gist.github.com/UTDZac/a147c497424dfbd537d8c4b0c22b5621 (last changed 2026-07-05)
 
-Generated 2026-09-06 by tools/rules/build_rules.py. Rulesets get revised; if this reads behind the gist, regenerate.
+Generated 2026-10-01 by tools/rules/build_rules.py. Rulesets get revised; if this reads behind a source, regenerate.

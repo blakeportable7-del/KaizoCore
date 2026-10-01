@@ -2,6 +2,7 @@ package com.ironmonone.app
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -20,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.ironmonone.tracker.nds.NdsMoveInfo
+import com.ironmonone.tracker.nds.NdsMoveRules
 import com.ironmonone.tracker.nds.NdsTrackedMon
 import com.ironmonone.tracker.nds.NdsTrackerState
 
@@ -43,40 +45,162 @@ private fun categoryOf(category: String): String = when (category.uppercase()) {
     else -> "?"
 }
 
-private fun movesOf(p: NdsTrackedMon): List<PcMove> =
-    p.moves.mapIndexed { i, m ->
-        PcMove(
-            id = m.id,
-            name = m.name,
-            pp = p.mon.pp.getOrElse(i) { 0 },
-            // Base PP raised by this mon's PP Ups, same rule as Gen 3.
-            ppMax = m.pp.takeIf { it > 0 }?.let { base ->
-                base + (base / 5) * p.mon.ppUps.getOrElse(i) { 0 }
-            },
-            power = m.power,
-            acc = m.accuracy,
-            color = pcTypeColorByName(m.type),
-            typeName = m.type,
-            category = categoryOf(m.category),
-        )
-    }
-
-/** A move this species used in an EARLIER battle, drawn from the ROM's table at base PP. */
-private fun rememberedMove(m: NdsMoveInfo): PcMove = PcMove(
-    id = m.id, name = m.name, pp = m.pp, ppMax = null, power = m.power, acc = m.accuracy,
-    color = pcTypeColorByName(m.type), typeName = m.type, category = categoryOf(m.category),
+/**
+ * Who a card's moves are aimed at, the reference's opposingPokemon: its types and
+ * held item (MainScreen.setUpMoveEffectiveness), its species for its weight and
+ * its battle stat stages (checkForVariableMoves), and the Hidden Power type the
+ * tracker keeps for the run. [showEffect] is whether the effectiveness marks
+ * draw; the variable powers do not wait for it.
+ */
+internal data class NdsMoveContext(
+    val targetTypes: List<String>,
+    val targetHeldItem: Int,
+    val hiddenPowerType: String,
+    val showEffect: Boolean = true,
+    val targetSpecies: Int = 0,
+    val targetStages: Map<String, Int> = emptyMap(),
 )
 
 /**
- * The enemy's move rows: what it has used across the WHOLE run, most recent
- * first, this battle's live rows winning where they overlap. The panel used
- * to draw only this battle, so a second meeting with a species started blind.
+ * MainScreen.setUpMoves works out effectiveness only with an opposing Pokemon
+ * (lua:547-549), MainScreen.show clears it outside battle (lua:1013-1016), and
+ * the setting (SHOW_MOVE_EFFECTIVENESS, on by default) and the pause after each
+ * new opponent (moveEffectivenessEnabled) gate it ([show], lua:362). The
+ * reference draws one of your Pokemon in battle, the one on the field, against
+ * the [opponent] (the locked one while an opponent is locked,
+ * Program.getPokemonToDraw lua:545-548), and the opponent against it; only the
+ * card of the Pokemon on the field is aimed. Types are the ones the cards show,
+ * the randomizer's (the reference reads its static PokemonData instead).
  */
-private fun enemyMovesOf(e: NdsTrackedMon, runWide: List<StatMarks.SeenMove>, moveInfoFor: (Int) -> NdsMoveInfo?): List<PcMove> {
-    val now = movesOf(e)
-    val merged = runWide.mapNotNull { sm -> now.firstOrNull { it.id == sm.id } ?: moveInfoFor(sm.id)?.let(::rememberedMove) } + now
-    return merged.distinctBy { if (it.id != 0) it.id.toString() else it.name }
+internal fun ndsMoveContext(state: NdsTrackerState, card: NdsTrackedMon, enemyCard: Boolean, hiddenPowerType: String, show: Boolean, opponent: NdsTrackedMon? = state.enemy): NdsMoveContext? {
+    if (!state.inBattle) return null
+    val enemy = opponent ?: return null
+    val active = state.playerActive ?: state.party.firstOrNull() ?: return null
+    val target = when {
+        enemyCard -> active
+        card.mon.pid == active.mon.pid -> enemy
+        else -> return null
+    }
+    val types = listOfNotNull(target.info?.type1, target.info?.type2).filter { it.isNotBlank() }
+    // Your side's live stages ride on the party entry of the Pokemon on the field (NdsTracker.read);
+    // the opponent carries its own.
+    val stages = if (enemyCard) (state.party.firstOrNull { it.mon.pid == active.mon.pid } ?: active).statStages else enemy.statStages
+    return NdsMoveContext(types, target.mon.heldItem, hiddenPowerType, show, target.mon.species, stages)
 }
+
+/** NdsMoveRules.effectivenessDelayFrames at 60 frames a second, for the game [badgeSet] names. */
+internal fun ndsEffectivenessDelayMs(badgeSet: String, firstOfBattle: Boolean): Long =
+    NdsMoveRules.effectivenessDelayFrames(if (badgeSet.startsWith("BW")) 5 else 4, firstOfBattle) * 1000L / 60
+
+/**
+ * BattleHandlerBase._logNewEnemy (lua:126-137): each new opponent turns move
+ * effectiveness off (Program.disableMoveEffectiveness) until _setUpDelay frames
+ * have passed, a battle's first opponent counted apart on Gen 5. False during
+ * that pause. Kept out of PlayScreen, which sits at ART's verifier limit.
+ */
+@Composable
+internal fun rememberDsEffectivenessReady(state: NdsTrackerState?): Boolean {
+    var ready by remember { mutableStateOf(true) }
+    var enemiesThisBattle by remember { mutableStateOf(0) }
+    androidx.compose.runtime.LaunchedEffect(state?.inBattle) { if (state?.inBattle != true) enemiesThisBattle = 0 }
+    androidx.compose.runtime.LaunchedEffect(state?.enemy?.mon?.pid) {
+        if (state?.enemy == null) return@LaunchedEffect
+        enemiesThisBattle++
+        ready = false
+        kotlinx.coroutines.delay(ndsEffectivenessDelayMs(state.badgeSet, enemiesThisBattle == 1))
+        ready = true
+    }
+    return ready
+}
+
+/** The mark beside a move's power, or null for none (Drawing: only 0, 1/4, 1/2, 2 and 4 draw). */
+internal fun ndsMoveEffect(m: NdsMoveInfo, ctx: NdsMoveContext?): Double? =
+    ctx?.takeIf { it.showEffect }?.let { NdsMoveRules.effectiveness(m, it.targetTypes, it.targetHeldItem, it.hiddenPowerType) }?.takeIf { it != 1.0 }
+
+private fun typesOf(p: NdsTrackedMon): List<String> = listOfNotNull(p.info?.type1, p.info?.type2).filter { it.isNotBlank() }
+
+/**
+ * One DS move row for [user]'s move [m] (MainScreen.readMovesIntoUI, lua:443-522):
+ *
+ * - the move table's facts, WT, <HP, VAR and the rest printed as MoveData's
+ *   text (lua:507), unless Return's own rule (NdsMoveRules.returnPower) or, with
+ *   "Calculate variable damage" on, checkForVariableMoves (lua:420-441, the
+ *   opponent from [ctx]) gives a number;
+ * - your own Hidden Power named and coloured by the run's type (lua:450-454,
+ *   482-485: the type's name for a moment after the arrows, which the row
+ *   carries), your own Judgment coloured by its plate (lua:455-460);
+ * - the power drawn as STAB in battle (lua:503-506, MoveUtils.isSTAB) and the
+ *   effectiveness mark against [ctx]'s target.
+ */
+internal fun ndsMoveRow(
+    m: NdsMoveInfo, user: NdsTrackedMon, pp: Int, ppMax: Int?, inBattle: Boolean, ctx: NdsMoveContext?,
+    own: Boolean = true,
+    hiddenPowerType: String = StatMarks.DS_HIDDEN_POWER_TYPES[0],
+    hiddenPowerJustChanged: Boolean = false,
+    calcVariable: Boolean = TrackerOptions.calculateVariableDamage,
+): PcMove {
+    val hiddenPower = own && m.name == "Hidden Power"
+    val plate = if (own && m.name == "Judgment") NdsMoveRules.PLATE_TO_TYPE[user.mon.heldItem] else null
+    val shownType = if (hiddenPower) hiddenPowerType else plate ?: m.type
+    val target = ctx?.let { NdsMoveRules.Side(weightKg = com.ironmonone.tracker.nds.NdsLogData.weight(it.targetSpecies), statStages = it.targetStages) }
+    val self = NdsMoveRules.Side(user.mon.curHp, user.mon.maxHp, com.ironmonone.tracker.nds.NdsLogData.weight(user.mon.species))
+    val power = (if (calcVariable) NdsMoveRules.variablePower(m.name, pp, self, target, !own, inBattle) else null)
+        ?: NdsMoveRules.returnPower(m.name, user.mon.friendship, !own)
+    return PcMove(
+        id = m.id,
+        name = if (hiddenPower && hiddenPowerJustChanged) hiddenPowerType.lowercase().replaceFirstChar { it.uppercase() } else m.name,
+        pp = pp, ppMax = ppMax, power = m.power,
+        powerText = power ?: m.powerText.ifEmpty { null }, acc = m.accuracy,
+        color = pcTypeColorByName(shownType), typeName = shownType, category = categoryOf(m.category),
+        stab = inBattle && NdsMoveRules.isStab(m, typesOf(user), user.mon.heldItem),
+        effect = ndsMoveEffect(m, ctx),
+        hiddenPowerArrows = hiddenPower,
+    )
+}
+
+private fun movesOf(
+    p: NdsTrackedMon, inBattle: Boolean = false, ctx: NdsMoveContext? = null, own: Boolean = true,
+    hiddenPowerType: String = StatMarks.DS_HIDDEN_POWER_TYPES[0], hiddenPowerJustChanged: Boolean = false,
+): List<PcMove> =
+    p.moves.mapIndexed { i, m ->
+        // Base PP raised by this mon's PP Ups, same rule as Gen 3.
+        val ppMax = m.pp.takeIf { it > 0 }?.let { base -> base + (base / 5) * p.mon.ppUps.getOrElse(i) { 0 } }
+        ndsMoveRow(m, p, p.mon.pp.getOrElse(i) { 0 }, ppMax, inBattle, ctx, own, hiddenPowerType, hiddenPowerJustChanged)
+    }
+
+/**
+ * The enemy's move rows: what it has used across the WHOLE run, most recent
+ * first, this battle's live rows winning where they overlap (a move seen in an
+ * earlier battle is drawn from the table at base PP). The panel used to draw
+ * only this battle, so a second meeting with a species started blind. A move
+ * it may have forgotten since carries MoveUtils.getStars' "*" (readMovesIntoUI,
+ * MainScreen.lua:487-490), judged on the four slots shown, each at the level
+ * it was last seen at (this battle's, the level now).
+ */
+internal fun enemyMovesOf(e: NdsTrackedMon, runWide: List<StatMarks.SeenMove>, moveInfoFor: (Int) -> NdsMoveInfo?, inBattle: Boolean = false, ctx: NdsMoveContext? = null): List<PcMove> {
+    val now = movesOf(e, inBattle, ctx, own = false)
+    val merged = (runWide.mapNotNull { sm -> now.firstOrNull { it.id == sm.id } ?: moveInfoFor(sm.id)?.let { ndsMoveRow(it, e, it.pp, null, inBattle, ctx, own = false) } } + now)
+        .distinctBy { if (it.id != 0) it.id.toString() else it.name }
+    val seenAt = merged.take(4).map { r -> r.id to (runWide.firstOrNull { it.id == r.id }?.lastLv ?: e.mon.level) }
+    val stars = NdsMoveRules.stars(seenAt, e.mon.level, e.moveLevels)
+    return merged.mapIndexed { i, r -> if (stars.getOrElse(i) { false }) r.copy(name = r.name + "*") else r }
+}
+
+/**
+ * CoverageCalcScreen's starting types (CoverageCalcScreen.lua:545-554): each of
+ * your moves that is not a status move and has a power, Hidden Power by the
+ * run's type.
+ */
+internal fun ndsCoverageSeed(moves: List<NdsMoveInfo>, hiddenPowerType: String): List<String> =
+    CoverageCalc.seedTypes(
+        moves.filter { !NdsMoveRules.noPower(it) }
+            .map { Triple(it.id, it.category, if (it.name == "Hidden Power") hiddenPowerType else it.type) },
+        excluded = emptySet(),
+    )
+
+/** MainScreen's move hover (lua:1026-1044, text set at lua:518-520): the move's description, nothing for an empty row. */
+internal fun ndsMoveDescription(r: PcMove, gen: Int): String? =
+    r.id.takeIf { it > 0 && !r.blank }?.let { com.ironmonone.tracker.nds.NdsLogData.moveDescription(it, gen) }?.takeIf { it.isNotBlank() }
 
 /**
  * MainScreen.setUpEvo: "Lv. N (evo)" on both cards, the evolution picked by
@@ -97,6 +221,37 @@ internal fun ndsEvoLabel(m: com.ironmonone.tracker.nds.Gen4.Mon, own: Boolean): 
     return com.ironmonone.tracker.EvoText.Label(raw, com.ironmonone.tracker.EvoText.Tone.PLAIN)
 }
 
+/** The DS card's HP, item and ability lines; a null [hp] draws no HP row at all. */
+internal data class NdsHeadLines(val hp: String?, val item: String, val ability: String)
+
+/**
+ * MainScreen.setUpMainPokemonInfo, and setEnemySpecificControls for an opponent.
+ * Your own Pokemon: "HP: cur/max" (MainScreen.lua:883), the held item by
+ * GEN_5_ITEMS with "---" for none (lua:860-889), the ability. An opponent's HP
+ * line is hidden (lua:872, pokemonHP.setVisibility(not isEnemy); the "HP: ?/?"
+ * it is then given at lua:581 never shows), its item line reads "Total seen"
+ * and its ability line "Last level" (lua:600-601). The enemy card showed the
+ * opponent's exact HP until 2026-09-29.
+ */
+internal fun ndsHeadLines(
+    m: com.ironmonone.tracker.nds.Gen4.Mon,
+    enemy: Boolean,
+    itemName: String = "",
+    abilityName: String = "",
+    encounters: Int = 0,
+    lastLevel: Int? = null,
+): NdsHeadLines =
+    if (enemy) NdsHeadLines(
+        hp = null,
+        item = "Total seen: $encounters",
+        ability = "Last level: " + (lastLevel?.toString() ?: "---"),
+    )
+    else NdsHeadLines(
+        hp = "${m.curHp}/${m.maxHp}",
+        item = if (m.heldItem == 0) "---" else itemName,
+        ability = abilityName,
+    )
+
 private fun typeChipsOf(p: NdsTrackedMon): List<Pair<String, androidx.compose.ui.graphics.Color>> {
     val info = p.info ?: return emptyList()
     val chips = mutableListOf<Pair<String, androidx.compose.ui.graphics.Color>>()
@@ -107,22 +262,126 @@ private fun typeChipsOf(p: NdsTrackedMon): List<Pair<String, androidx.compose.ui
     return chips
 }
 
+/**
+ * The DS heals box on one card: MainScreen.setUpMiscInfo's healFrame, "Heals:"
+ * over "Status items:" (lua:801-809), each opening its list on a tap (the hover,
+ * onItemBagInfoHover, lua:265-284), and the Pokecenter counter beside them when
+ * it shows ([pokecenter], null when not).
+ */
+internal data class NdsHealsView(
+    val heals: String,
+    val status: String,
+    val healingList: List<String>,
+    val statusList: List<String>,
+    val pokecenter: Int?,
+    /** Your ACC and EVA stages in battle, beside the heals (accEvaFrame); null when they do not show. */
+    val accEva: Pair<Int, Int>? = null,
+)
+
+/**
+ * Which card carries the heals box and what it reads. The reference shows it on
+ * your own Pokemon only (healFrame hidden for an opponent, lua:812), measured
+ * against playerPokemon (NdsTrackerState.healsPid), "% " or " HP" by "Bag heals
+ * show HP instead" ([showHp]). ACC and EVA (accEvaFrame, setUpMiscInfo lua:791-
+ * 793 and setUpStatStages lua:336-358) show there in battle with "Show accuracy
+ * and evasion" on ([accEvaOn]): your side's stages, which NdsTracker puts on the
+ * Pokemon on the field. The Pokecenter counter (survivalHealFrame, lua:794-799) needs its
+ * setting and gives way to both the tourney points and ACC and EVA.
+ */
+internal fun ndsHealsView(
+    state: NdsTrackerState, card: NdsTrackedMon, showHp: Boolean,
+    pokecenterOn: Boolean, pokecenterCount: Int, tourneyOn: Boolean, accEvaOn: Boolean,
+): NdsHealsView? {
+    val carrier = state.playerPokemon
+    if (carrier == null || card.mon.pid != carrier.mon.pid) return null
+    val maxHp = card.mon.maxHp
+    val stages = carrier.statStages
+    val accEva = if (accEvaOn && state.inBattle) (stages["ACC"] ?: 6) to (stages["EVA"] ?: 6) else null
+    return NdsHealsView(
+        heals = com.ironmonone.tracker.nds.NdsHeals.healsLine(state.healingItems, maxHp, showHp),
+        status = com.ironmonone.tracker.nds.NdsHeals.statusLine(state.statusItems),
+        healingList = com.ironmonone.tracker.nds.NdsHeals.healingList(state.healingItems),
+        statusList = com.ironmonone.tracker.nds.NdsHeals.statusList(state.statusItems),
+        pokecenter = pokecenterCount.takeIf { pokecenterOn && accEva == null && !tourneyOn },
+        accEva = accEva,
+    )
+}
+
+/**
+ * MainScreen.onPokemonLevelHover / setUpEXPBar (lua:134-145, 323-334): your own
+ * Pokemon's bar fraction while its level is held, when "Experience bar" is on
+ * ([on]); the opponent's card never has one.
+ */
+internal fun ndsExpFraction(m: com.ironmonone.tracker.nds.Gen4.Mon, on: Boolean): Double? =
+    if (on) com.ironmonone.tracker.nds.NdsExperience.fraction(m.level, m.experience) else null
+
+/** IconDrawer LEFT_ARROW and RIGHT_ARROW (IconDrawer.lua:998-1021), 3 by 5, in top box text. */
+private val DS_LEFT_ARROW = listOf("001", "010", "100", "010", "001")
+private val DS_RIGHT_ARROW = listOf("100", "010", "001", "010", "100")
+
+@Composable
+private fun NdsHealsBlock(v: NdsHealsView, onList: (String, List<String>) -> Unit, onPokecenter: (Boolean) -> Unit) {
+    Row(Modifier.fillMaxWidth().padding(horizontal = 2.rp, vertical = 1.rp), verticalAlignment = Alignment.Top) {
+        Column(Modifier.weight(1f)) {
+            PixText(v.heals, PcRef.FONT, Pc.Text, Modifier.clickable { onList("Healing", v.healingList) })
+            PixText(v.status, PcRef.FONT, Pc.Text, Modifier.clickable { onList("Status", v.statusList) })
+        }
+        v.accEva?.let { (acc, eva) ->
+            // accEvaFrame: "ACC" over "EVA", each with its stage marks.
+            Column(Modifier.width(30.rp)) {
+                PcStatRow("ACC", "", acc)
+                PcStatRow("EVA", "", eva)
+            }
+        }
+        v.pokecenter?.let { n ->
+            // survivalHealFrame: the heart (images/icons/heart.png) over "<", the count, ">".
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                val ctx = androidx.compose.ui.platform.LocalContext.current
+                remember { PcAssets.icon(ctx, "heart") }?.let { heart ->
+                    androidx.compose.foundation.Image(heart, "Pokecenter heals", Modifier.width(12.rp).height(10.rp),
+                        filterQuality = androidx.compose.ui.graphics.FilterQuality.None)
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    PcPixelImage(DS_LEFT_ARROW, Pc.Text, Modifier.clickable { onPokecenter(false) }.padding(horizontal = 2.rp))
+                    PixText(n.toString(), PcRef.FONT, Pc.Text)
+                    PcPixelImage(DS_RIGHT_ARROW, Pc.Text, Modifier.clickable { onPokecenter(true) }.padding(horizontal = 2.rp))
+                }
+            }
+        }
+    }
+}
+
 @Composable
 private fun NdsPartyCard(
     onMoveHistory: ((Int, String, Int) -> Unit)? = null,
     onTypeDefenses: ((String, String, String) -> Unit)? = null,
     p: NdsTrackedMon,
-    healPercent: Int = -1,
-    healCount: Int = 0,
+    /** The heals box, on the card of the Pokemon it is measured against (ndsHealsView). */
+    heals: NdsHealsView? = null,
+    /** A heals list opened: ("Healing" or "Status", its lines). */
+    onHealsList: (String, List<String>) -> Unit = { _, _ -> },
+    onPokecenter: (Boolean) -> Unit = {},
     /** MainScreen's hover text on your ability and held item; a tap on a phone. */
     onInfo: ((String, String, String) -> Unit)? = null,
     gen: Int = 4,
+    /** Its moves against the opponent, when this is the Pokemon on the field (ndsMoveContext). */
+    moveCtx: NdsMoveContext? = null,
+    /** Program.isInBattle, for the STAB colour. */
+    inBattle: Boolean = false,
+    /** Tracker.getCurrentHiddenPowerType, and whether the arrows were just pressed. */
+    hiddenPowerType: String = StatMarks.DS_HIDDEN_POWER_TYPES[0],
+    hiddenPowerJustChanged: Boolean = false,
+    /** MainScreen.onChangeHiddenPower: true for ">" (forward). */
+    onHiddenPower: ((Boolean) -> Unit)? = null,
 ) {
     val m = p.mon
     val context = androidx.compose.ui.platform.LocalContext.current
     val sprite = remember(m.species, m.shiny) {
         PcAssets.dsSprite(context, m.species, m.shiny)
     }
+    // MainScreen.lua:860-889: GEN_5_ITEMS[heldItem].name, "---" for no item (entry 0)
+    // and blank for an id the table lacks.
+    val lines = ndsHeadLines(m, enemy = false, itemName = p.itemName, abilityName = p.abilityName)
     PcCard {
         PcHeadBlock(
             name = p.speciesName + (if (m.shiny) " *" else ""),
@@ -130,18 +389,22 @@ private fun NdsPartyCard(
             level = m.level, curHp = m.curHp, maxHp = m.maxHp,
             typeChips = typeChipsOf(p),
             onTypesTap = p.info?.let { i -> onTypeDefenses?.let { cb -> { cb(p.speciesName, i.type1, i.type2) } } },
-            itemLine = p.itemName.takeIf { it != "-" } ?: "",
-            abilityLine = p.abilityName,
+            hpText = lines.hp, showHp = lines.hp != null,
+            itemLine = lines.item,
+            abilityLine = lines.ability,
             onAbilityTap = onInfo?.let { cb -> { cb(p.abilityName, "Ability",
                 com.ironmonone.tracker.nds.NdsLogData.abilityDescription(m.abilityId, gen)) } },
-            onItemTap = onInfo?.takeIf { p.itemName != "-" }?.let { cb -> { cb(p.itemName, "Held item",
+            onItemTap = onInfo?.takeIf { m.heldItem != 0 && p.itemName.isNotBlank() }?.let { cb -> { cb(p.itemName, "Held item",
                 com.ironmonone.tracker.nds.NdsLogData.heldItemDescription(m.heldItem, m.nature)) } },
             evo = ndsEvoLabel(m, own = true),
             levelPrefix = "Lv. ",
+            holdExpFraction = ndsExpFraction(m, TrackerOptions.dsExpBar),
             sprite = sprite,
-            belowHead = if (healPercent >= 0) {
-                { PcHealsBlock(healPercent, healCount, wholeHp = healPercent * m.maxHp / 100) }
-            } else null,
+            // The Walking Pals icon by its national number, behind the GBA panel's two switches; the still sprite
+            // with them off, with no sheet, or for an egg (whose species is what will hatch).
+            iconSpecies = if (m.isEgg) 0 else m.species,
+            iconDex = WalkingPals.Dex.NATIONAL,
+            belowHead = heals?.let { v -> { NdsHealsBlock(v, onHealsList, onPokecenter) } },
         ) {
             PcStatRow("HP", "${m.maxHp}", p.statStages["HP"], nature = m.nature)
             PcStatRow("ATK", "${m.atk}", p.statStages["ATK"], nature = m.nature)
@@ -152,7 +415,7 @@ private fun NdsPartyCard(
             PcStatRow("BST", p.info?.bst?.toString() ?: "?")
         }
         PcMovesSection(
-            movesOf(p),
+            movesOf(p, inBattle, moveCtx, own = true, hiddenPowerType, hiddenPowerJustChanged),
             header = if (p.movesTotal > 0) {
                 // Reference wording is "Moves 4/16 (13)" - no colon
                 // (Utils.getMovesLearnedHeader). The GBA panel already
@@ -161,6 +424,8 @@ private fun NdsPartyCard(
                     (p.nextMoveLevel?.let { " ($it)" } ?: "")
             } else "Moves",
             onHeaderTap = onMoveHistory?.let { cb -> { cb(p.mon.species, p.speciesName, p.mon.level) } },
+            onMoveTap = onInfo?.let { cb -> { r -> ndsMoveDescription(r, gen)?.let { d -> cb(r.name.removeSuffix("*"), "", d) } } },
+            onHiddenPower = onHiddenPower,
         )
     }
 }
@@ -170,7 +435,8 @@ private fun NdsEnemyCard(
     onMoveHistory: ((Int, String, Int) -> Unit)? = null,
     onTypeDefenses: ((String, String, String) -> Unit)? = null,
     e: NdsTrackedMon,
-    revealedAbility: String?,
+    /** Tracker.getLastLevelSeen, or null before any battle with this species has ended. */
+    lastLevel: Int?,
     marks: IntArray,
     encounters: Int,
     onCycleMark: (Int) -> Unit,
@@ -179,11 +445,25 @@ private fun NdsEnemyCard(
     /** Every move this species has used this run, most recent first (the reference's trackMove). */
     movesSeenRunWide: List<StatMarks.SeenMove> = emptyList(),
     moveInfoFor: (Int) -> NdsMoveInfo? = { null },
+    /** The encounter frame's pin and "seen/total" (wild battles in areas with vanilla data). */
+    encounterLine: (@Composable () -> Unit)? = null,
+    /** Its moves against your Pokemon on the field (ndsMoveContext). */
+    moveCtx: NdsMoveContext? = null,
+    /** A move's description on a tap: (name, description). */
+    onMoveInfo: ((String, String) -> Unit)? = null,
+    gen: Int = 4,
+    /** The lock icon: null hides it ("Enable enemy locking" off), else whether this opponent is locked. */
+    lock: Boolean? = null,
+    onLock: () -> Unit = {},
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val sprite = remember(e.mon.species) {
         PcAssets.dsSprite(context, e.mon.species, false)
     }
+    // MainScreen.setEnemySpecificControls: no HP row, the item line reads "Total seen"
+    // and the ability line "Last level" (an ability it reveals goes into its note,
+    // Tracker.trackAbilityNote).
+    val lines = ndsHeadLines(e.mon, enemy = true, encounters = encounters, lastLevel = lastLevel)
     PcCard {
         PcHeadBlock(
             name = e.speciesName,
@@ -192,13 +472,14 @@ private fun NdsEnemyCard(
             curHp = e.mon.curHp, maxHp = e.mon.maxHp,
             typeChips = typeChipsOf(e),
             onTypesTap = e.info?.let { i -> onTypeDefenses?.let { cb -> { cb(e.speciesName, i.type1, i.type2) } } },
-            itemLine = "",
-            // Revealed-on-activation, like the PC tracker: until a battle
-            // trigger shows the ability, the line stays unrevealed.
-            abilityLine = revealedAbility ?: "---",
+            hpText = lines.hp, showHp = lines.hp != null,
+            itemLine = lines.item,
+            abilityLine = lines.ability,
             evo = ndsEvoLabel(e.mon, own = false),
             levelPrefix = "Lv. ",
             sprite = sprite,
+            iconSpecies = if (e.mon.isEgg) 0 else e.mon.species,
+            iconDex = WalkingPals.Dex.NATIONAL,
         ) {
             // Enemy stats are unknown: this column is the notebook.
             PcMarkColumn(marks, onCycleMark)
@@ -210,17 +491,17 @@ private fun NdsEnemyCard(
         }
         androidx.compose.foundation.layout.Box(
             Modifier.fillMaxWidth().height(1.dp).background(Pc.Border))
-        Column(Modifier.padding(4.dp)) {
-            if (encounters > 1) {
-                PixText("seen $encounters times", 7, Pc.Dim)
-                Spacer(Modifier.height(2.dp))
-            }
-
+        // infoBottomFrame (MainScreenUIInitializer.lua:657-718): the lock icon, then the encounter frame.
+        Row(Modifier.padding(4.dp), verticalAlignment = Alignment.CenterVertically) {
+            lock?.let { DsLockIcon(it, onLock); Spacer(Modifier.width(3.dp)) }
+            encounterLine?.invoke()
         }
         androidx.compose.foundation.layout.Box(
             Modifier.fillMaxWidth().height(1.dp).background(Pc.Border))
         // The reference's tracked moves for this opponent: only what it has used, this run.
-        PcMovesSection(enemyMovesOf(e, movesSeenRunWide, moveInfoFor), header = "Moves", onHeaderTap = onMoveHistory?.let { cb -> { cb(e.mon.species, e.speciesName, e.mon.level) } })
+        PcMovesSection(enemyMovesOf(e, movesSeenRunWide, moveInfoFor, inBattle = true, ctx = moveCtx), header = "Moves",
+            onHeaderTap = onMoveHistory?.let { cb -> { cb(e.mon.species, e.speciesName, e.mon.level) } },
+            onMoveTap = onMoveInfo?.let { cb -> { r -> ndsMoveDescription(r, gen)?.let { d -> cb(r.name.removeSuffix("*"), d) } } })
         PcNoteRow(note, onEditNote)
     }
 }
@@ -287,8 +568,8 @@ internal fun ndsRunOverLines(cause: com.ironmonone.tracker.nds.NdsRunOver): List
  * The DS end-of-run card. Same shape as the GBA one, but the message comes from
  * the cause rather than a single pool.
  *
- * The line is chosen by attempt number, not at random: a message that reshuffles
- * on every tracker poll is unreadable.
+ * The line is DeathQuotes' draw for this run, one per run and the same one the
+ * game over box shows: a message that reshuffles on every tracker poll is unreadable.
  */
 @Composable
 fun PcNdsRunOver(
@@ -299,7 +580,7 @@ fun PcNdsRunOver(
     val won = cause == com.ironmonone.tracker.nds.NdsRunOver.WON
     val lines = NDS_RUN_OVER_MESSAGES[cause]
         ?: NDS_RUN_OVER_MESSAGES.getValue(com.ironmonone.tracker.nds.NdsRunOver.STANDARD)
-    val line = lines[((attempt % lines.size) + lines.size) % lines.size]
+    val line = DeathQuotes.shown(DeathQuotes.dsSource(cause), attempt, lines, forLoss = !won)
     PcCard {
         Column(Modifier.fillMaxWidth().padding(6.dp)) {
             PixText(if (won) "R u n  W o n" else "R u n  O v e r", 11, Pc.Gold)
@@ -338,7 +619,7 @@ fun PcNdsRunOver(
 @Composable
 fun NdsTrackerPanel(
     /** The startup favorites line, shown before a party exists, as the DS tracker's title screen shows them. */
-    favoriteLine: String? = null,
+    favoriteLine: FavoritesShown? = null,
     /** RandomBallScreen: 1, 2 or 3 for Left, Middle, Right; null hides it (option off, or no tracker yet). */
     randomBall: Int? = null,
     /** Move History for a card: (species, name, level). */
@@ -354,23 +635,59 @@ fun NdsTrackerPanel(
     enemyNote: String = "",
     onEditNote: () -> Unit = {},
     attempt: Int = 0,
-    coverage: Map<Double, List<Int>> = emptyMap(),
+    /**
+     * Not drawn on the main panel since 2026-09-30 (IronMON rules check): the DS tracker's main screen has no coverage,
+     * only its Coverage Calc screen, which is COVERAGE CALC in Tracker Setup here. Kept so Play's calls stand.
+     */
+    @Suppress("UNUSED_PARAMETER") coverage: Map<Double, List<Int>> = emptyMap(),
     /** The enemy's ability, once a battle trigger has revealed it this run. */
-    revealedEnemyAbility: String? = null,
+    /** The opponent's last level seen (the enemy card's ability line). */
+    enemyLastLevel: Int? = null,
     movesSeenRunWide: List<StatMarks.SeenMove> = emptyList(),
     moveInfoFor: (Int) -> NdsMoveInfo? = { null },
     /** Opens the tracker's gear (the reference's SettingsGear). */
     onGear: (() -> Unit)? = null,
     /** TimerScreen: the run clock, when the option is on. */
     timer: RunTimer? = null,
+    /** LOCATION_DATA encounters for the current area (null hides the encounter frame). */
+    encounterArea: com.ironmonone.tracker.nds.NdsEncounterTables.Area? = null,
+    /** Tracker.getEncounterData(area).encountersSeen: species to the levels met at. */
+    encountersSeen: Map<Int, List<Int>> = emptyMap(),
+    speciesNameOf: (Int) -> String = { "#$it" },
+    /** Tracker.getCurrentHiddenPowerType: the run's one Hidden Power type (StatMarks.dsHiddenPowerType). */
+    hiddenPowerType: String = StatMarks.DS_HIDDEN_POWER_TYPES[0],
+    /** False during the pause after a new opponent (BattleHandlerBase._logNewEnemy, moveEffectivenessEnabled). */
+    effectivenessReady: Boolean = true,
+    /** Tracker.increaseHiddenPowerType / decreaseHiddenPowerType (StatMarks.stepDsHiddenPower): true for ">". */
+    onStepHiddenPower: ((Boolean) -> Unit)? = null,
+    /** Tracker.getPokecenterCount (StatMarks.dsPokecenterCount), and its "<" and ">" (true for ">"). */
+    pokecenterCount: Int = 10,
+    onPokecenter: ((Boolean) -> Unit)? = null,
+    /** Your Pokemon AND the opponent together instead of swapping between them: landscape, as on GBA. */
+    stackBoth: Boolean = false,
 ) {
+    // The run-over card is a Kaizo IronMON run's only (PlayRules, 2026-09-30).
+    val ironmonOver = ironmonGameOverCard(state?.runOver != null)
+    // SHOW_MOVE_EFFECTIVENESS (on by default, MiscConstants.lua:41): the gear's "Show move effectiveness".
+    val showEffectiveness = TrackerOptions.showMoveEffectiveness && effectivenessReady
     // Same reference canvas as the GBA panel. Without it this panel would keep
     // the shared boxes' new REFERENCE-pixel sizes at 1dp each, i.e. the right
     // proportions at the wrong scale - the two trackers must not drift apart.
     var dsInfo by remember { mutableStateOf<Triple<String, String?, String?>?>(null) }
+    // MainScreen.onChangeHiddenPower: the row names the new type for 90 frames, scaled to the
+    // emulator's speed, so a second and a half (justChangedHiddenPower, lua:296-310).
+    var hiddenPowerChangedAt by remember { mutableStateOf(0L) }
+    androidx.compose.runtime.LaunchedEffect(hiddenPowerChangedAt) {
+        if (hiddenPowerChangedAt != 0L) { kotlinx.coroutines.delay(1500); hiddenPowerChangedAt = 0L }
+    }
+    var encounterOpen by remember { mutableStateOf(false) }
+    if (encounterOpen) encounterArea?.let { a ->
+        DsEncounterDialog(a, encountersSeen, speciesNameOf) { encounterOpen = false }
+    } ?: run { encounterOpen = false }
     dsInfo?.let { (title, sub, body) -> PcInfoDialog(title, sub, body?.ifBlank { null }) { dsInfo = null } }
     PcCanvas(modifier.fillMaxWidth()) {
-      Column(Modifier.fillMaxWidth().background(Pc.Page).padding(PcRef.MARGIN.rp)) {
+      // The Main background colour, and the player's image over it (TrackerBackdrop.kt).
+      Column(Modifier.fillMaxWidth().then(trackerBackdrop()).padding(PcRef.MARGIN.rp)) {
           // The reference's gear sits at the top of the tracker screen; SETUP is its NavigationMenu.ButtonSetup.
           onGear?.let { g ->
               Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
@@ -384,6 +701,7 @@ fun NdsTrackerPanel(
               Spacer(Modifier.height(3.dp))
           }
           timer?.let { RunTimerLine(it); Spacer(Modifier.height(3.dp)) }
+          NuzlockeNdsPanel(state) // the Nuzlocke run's area, cap and graveyard, when this game has one (2026-09-30)
         when {
             state == null -> PcCard {
                 PixText("DS tracker: waiting for the game...", 8, Pc.Dim,
@@ -395,12 +713,14 @@ fun NdsTrackerPanel(
                     // The memory address line was a debug read-out in front of players (audit, 2026-09-27).
                     PixText("No Pokemon yet. The tracker fills in when you get your first one.", 8, Pc.Dim, wrap = true)
                     randomBall?.let { Spacer(Modifier.height(4.dp)); RandomBallRow(it, hgss = state.badgeSet == "HGSS") }
-                    favoriteLine?.let { Spacer(Modifier.height(3.dp)); PixText(it, 7, Pc.Gold, wrap = true) }
+                    favoriteLine?.list?.let { Spacer(Modifier.height(3.dp)); PixText(it, 7, Pc.Gold, wrap = true) }
                 }
             }
 
-            // A finished run goes above the team, not under it.
-            state.runOver != null -> {
+            // A lost run goes above the team, not under it, while its battle lasts. A win
+            // ends the run as the final battle ends: the popup (RunOverScreen) says so and
+            // the team stays, as the reference's main screen does.
+            state.runOver != null && state.runOver != com.ironmonone.tracker.nds.NdsRunOver.WON && ironmonOver -> {
                 // Bound locally: runOver comes from another module, so it
                 // cannot be smart-cast in place.
                 val cause = state.runOver!!
@@ -408,23 +728,60 @@ fun NdsTrackerPanel(
             }
 
             else -> {
+                // ONE Pokemon at a time, as the DS tracker's main screen draws it
+                // (Program.getPokemonToDraw, lua:537-555): your playerPokemon, or the
+                // opponent, the locked one while one is locked. Portrait swaps them from
+                // the battle banner (Start, CHANGE_VIEW, in the reference); landscape
+                // stacks both, yours on top, as the GBA panel does. This used to stack the
+                // opponent over all six of your cards.
+                val view = dsView
+                // The animated icons do not walk in battle, as on the GBA panel (Battle.inActiveBattle).
+                androidx.compose.runtime.SideEffect { SpriteMotion.inBattle = state.inBattle }
+                androidx.compose.runtime.LaunchedEffect(attempt) { view.forAttempt(attempt) }
+                androidx.compose.runtime.LaunchedEffect(state.inBattle, view.locked) { view.onRead(state) }
+                androidx.compose.runtime.LaunchedEffect(effectivenessReady) { view.onPause(effectivenessReady, state, TrackerOptions.dsAutoSwapToEnemy) }
+                val shownEnemy = view.shownEnemy(state)
+                // With no Pokemon of yours read (a battle before the party is found), the opponent shows.
+                val showEnemy = shownEnemy != null && (stackBoth || view.viewingEnemy || state.playerPokemon == null)
+                // No swap control when both are on screen; none during the pause after a new opponent.
+                val onSwap = if (!stackBoth && view.canSwap(state, effectivenessReady)) { { view.swap(state, effectivenessReady) } } else null
                 if (state.inBattle) {
-                    PcBattleBanner(state.isWildBattle, onFlee)
+                    PcBattleBanner(state.isWildBattle, onFlee, viewingOwn = !showEnemy, onSwapView = onSwap)
                     Spacer(Modifier.height(4.dp))
-                    state.enemy?.let {
-                        NdsEnemyCard(onMoveHistory = onMoveHistory, onTypeDefenses = onTypeDefenses, it, revealedEnemyAbility, enemyMarks,
-                            enemyEncounters, onCycleMark, enemyNote, onEditNote,
-                            movesSeenRunWide, moveInfoFor)
-                    }
+                } else if (onSwap != null) {
+                    // After the battle a locked opponent stays in reach (readMemory keeps it while locked).
+                    DsLockedBanner(viewingOwn = !showEnemy, onSwap)
+                    Spacer(Modifier.height(4.dp))
                 }
-                state.party.forEachIndexed { i, p ->
+                if (stackBoth || !showEnemy) state.playerPokemon?.let { p ->
                     NdsPartyCard(onMoveHistory = onMoveHistory, onTypeDefenses = onTypeDefenses, p,
-                        healPercent = if (i == 0) state.healPercent else -1,
-                        healCount = state.healCount,
+                        heals = ndsHealsView(state, p, TrackerOptions.healsWhole, TrackerOptions.dsPokecenterHeals,
+                            pokecenterCount, TrackerOptions.tourneyTracker, TrackerOptions.dsAccEva),
+                        onHealsList = { kind, lines ->
+                            dsInfo = Triple("$kind Items", "", lines.joinToString("\n").ifEmpty { com.ironmonone.tracker.nds.NdsHeals.emptyText(kind) })
+                        },
+                        onPokecenter = { up -> onPokecenter?.invoke(up) },
                         onInfo = { t, sub, body -> dsInfo = Triple(t, sub, body) },
+                        moveCtx = ndsMoveContext(state, p, enemyCard = false, hiddenPowerType, showEffectiveness, opponent = shownEnemy),
+                        inBattle = state.inBattle,
+                        hiddenPowerType = hiddenPowerType, hiddenPowerJustChanged = hiddenPowerChangedAt != 0L,
+                        onHiddenPower = onStepHiddenPower?.let { step -> { forward -> step(forward); hiddenPowerChangedAt = System.currentTimeMillis() } },
                         gen = if (state.badgeSet.startsWith("BW")) 5 else 4)
                 }
-                PcCoverage(coverage, coverage.values.sumOf { it.size })
+                if (showEnemy) shownEnemy?.let {
+                    // readTrackedEncountersIntoLabel: only in a wild battle, and only where the
+                    // area has vanilla data.
+                    val area = encounterArea?.takeIf { state.isWildBattle }
+                    NdsEnemyCard(onMoveHistory = onMoveHistory, onTypeDefenses = onTypeDefenses, it, enemyLastLevel, enemyMarks,
+                        enemyEncounters, onCycleMark, enemyNote, onEditNote,
+                        movesSeenRunWide, moveInfoFor,
+                        encounterLine = area?.let { a -> { DsEncounterLine(a, encountersSeen.size) { encounterOpen = true } } },
+                        moveCtx = ndsMoveContext(state, it, enemyCard = true, hiddenPowerType, showEffectiveness, opponent = it),
+                        onMoveInfo = { n, d -> dsInfo = Triple(n, "", d) },
+                        gen = if (state.badgeSet.startsWith("BW")) 5 else 4,
+                        lock = (view.locked != null).takeIf { TrackerOptions.dsEnemyLocking },
+                        onLock = { view.toggleLock(state, TrackerOptions.dsEnemyLocking) })
+                }
                 PcCarousel(
                     inBattle = state.inBattle,
                     badges = state.badges,
@@ -432,10 +789,29 @@ fun NdsTrackerPanel(
                     note = enemyNote,
                     onEditNote = onEditNote,
                     encounters = enemyEncounters,
+                    leagueBeaten = state.leagueBeaten,
                 )
             }
         }
     }
+    }
+}
+
+/**
+ * MainScreen.updateBadgeLayout (lua:1348-1377) for HeartGold and SoulSilver: the badge rows as
+ * (badge bits, badge art set), Johto in bits 0-7 of [badges] and Kanto in 8-15. With "Show both
+ * badge sets" on, the reference's default (MiscConstants.lua:82), both rows show from the start,
+ * Kanto first when it is the primary set; with it off there is one row, Johto until the League is
+ * beaten and Kanto after (Program.lua:583-586, MainScreen.lua:1285-1295), and the primary set
+ * does not come into it. The Kanto row used to wait for the first Kanto badge.
+ */
+internal fun hgssBadgeRows(badges: Int, showBoth: Boolean, kantoFirst: Boolean, leagueBeaten: Boolean): List<Pair<Int, String>> {
+    val johto = (badges and 0xFF) to "HGSS_J"
+    val kanto = ((badges shr 8) and 0xFF) to "HGSS_K"
+    return when {
+        showBoth -> if (kantoFirst) listOf(kanto, johto) else listOf(johto, kanto)
+        leagueBeaten -> listOf(kanto)
+        else -> listOf(johto)
     }
 }
 

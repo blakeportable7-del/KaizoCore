@@ -1,0 +1,35 @@
+TEXT:
+Nuzlocke
+THE RULES
+✓
+First encounter per area
+Only the first wild Pokémon you meet in each area can be caught.
+✓
+A fainted Pokémon is dead
+It goes to the graveyard the moment it faints. No revives.
+✓
+A whiteout ends the run
+Your whole party fainted. Off: the run goes on with the Pokémon you have boxed.
+✓
+Slow start
+The rules begin once you hold Poke Balls, so the first routes are free.
+CLAUSES
+✓
+Dupes clause
+A first encounter from an evolution line you already caught does not count, and the area stays open.
+Dupes: only lines you still own
+A line whose Pokémon all died is open again. Off: a caught line stays a dupe for the whole run.
+✓
+Shiny clause
+A shiny is a free extra. It does not use up the area.
+Gifts count
+A gift Pokémon uses up the area where you got it. Off: gifts are free. Your starter never counts.
+Static Pokémon count
+Start Nuzlocke
+Home
+Play
+Library
+More
+
+CONTENT DESCRIPTIONS:
+Back to Home

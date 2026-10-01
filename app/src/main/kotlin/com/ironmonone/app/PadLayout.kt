@@ -90,8 +90,11 @@ data class PadLayout(
          * the old controls with X sitting on A in DS portrait. The original pads
          * stay as presets for a layout file that predates this.
          */
-        fun default(landscape: Boolean, nds: Boolean) =
-            if (nds) (if (landscape) SUPERNDS_LANDSCAPE else SUPERNDS_PORTRAIT) else myBoy(landscape)
+        fun default(landscape: Boolean, nds: Boolean, gb: Boolean = false) =
+            if (nds) (if (landscape) SUPERNDS_LANDSCAPE else SUPERNDS_PORTRAIT)
+            // A Game Boy has no L or R: My Boy!'s layout without them (QA, 2026-09-29: two dead buttons).
+            else if (gb) myBoy(landscape).let { it.copy(places = it.places - Element.L - Element.R) }
+            else myBoy(landscape)
 
         /**
          * 2.1, DS: the layout of the most-downloaded DS emulator on Google Play,
@@ -144,8 +147,10 @@ data class PadLayout(
          * console's diagonal, L and R as pills at mid height on each edge, SELECT and
          * START as two small pills at the bottom centre.
          * Portrait: the controls sit in a band under the game; L and R at the top
-         * corners, the D-pad at the left, A above B stacked at the right, SELECT and
-         * START at the bottom centre.
+         * corners, the D-pad at the left, A and B at the right on the console's
+         * diagonal (B lower and to the left of A), SELECT and START at the bottom centre.
+         * Until 2026-09-30 A sat straight above B; Blake: "the a and b buttons should be
+         * positioned like a normal gba emulator".
          */
         val MYBOY_LANDSCAPE = PadLayout(mapOf(
             Element.DPAD to Place(0.13f, 0.78f),
@@ -160,7 +165,9 @@ data class PadLayout(
             // L in the cross's empty top-left cell, SELECT and START right of its down arrow: on a
             // 360dp phone the cross reaches x 180, so 0.14 and 0.40 sat on the arrows (PadGeometryTest).
             Element.L to Place(0.08f, 0.12f, 0.9f), Element.R to Place(0.86f, 0.12f, 0.9f),
-            Element.A to Place(0.86f, 0.40f), Element.B to Place(0.86f, 0.72f),
+            // A high at the right, B a full button to its left and lower, as on a GBA: clear of the cross's arm
+            // and of START on a 360dp phone and at the band's 55% floor (PadGeometryTest).
+            Element.A to Place(0.88f, 0.42f), Element.B to Place(0.68f, 0.62f),
             Element.SELECT to Place(0.43f, 0.88f), Element.START to Place(0.63f, 0.88f),
         ), opacity = 1f, dsLayout = "top-bottom")
         fun myBoy(landscape: Boolean) = if (landscape) MYBOY_LANDSCAPE else MYBOY_PORTRAIT
@@ -178,7 +185,7 @@ class LayoutStore(private val dir: File) {
     private fun file(key: String) = File(dir, "$key.properties")
 
     fun load(key: String, landscape: Boolean): PadLayout {
-        val d = PadLayout.default(landscape, nds = key.endsWith("-nds"))
+        val d = PadLayout.default(landscape, nds = key.endsWith("-nds"), gb = key.endsWith("-gbc"))
         val p = runCatching { Properties().apply { file(key).inputStream().use { load(it) } } }.getOrNull() ?: return d
         val places = PadLayout.Element.entries.filter { it in d.places }.associateWith { e ->
             val x = p.getProperty("${e.name}.x")?.toFloatOrNull()

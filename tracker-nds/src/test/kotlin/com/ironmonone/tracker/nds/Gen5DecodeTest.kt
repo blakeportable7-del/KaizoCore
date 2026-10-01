@@ -29,6 +29,24 @@ class Gen5DecodeTest {
     }
 
     @Test
+    fun `a nickname is read from block C in both generations, and an unnamed Pokemon reads none`() {
+        for (gen5 in listOf(false, true)) {
+            val named = Gen4.encodeParty(pid = 0x1234ABCDL, species = 25, level = 5, curHp = 20, maxHp = 20, moves = listOf(1, 0, 0, 0), gen5 = gen5, nickname = "Sparky 2")
+            val m = assertNotNull(Gen4.decodeParty(named, gen5 = gen5))
+            assertEquals("Sparky 2", m.nickname, "gen5 = $gen5")
+            assertEquals(true, m.nicknamed)
+            val plain = assertNotNull(Gen4.decodeParty(Gen4.encodeParty(pid = 0x1234ABCDL, species = 25, level = 5, curHp = 20, maxHp = 20, moves = listOf(1, 0, 0, 0), gen5 = gen5), gen5 = gen5))
+            assertEquals("", plain.nickname, "an entry with no name written reads none")
+            assertEquals(false, plain.nicknamed)
+            val full = Gen4.encodeParty(pid = 0x1234ABCDL, species = 25, level = 5, curHp = 20, maxHp = 20, moves = listOf(1, 0, 0, 0), gen5 = gen5, nickname = "ABCDEFGHIJ")
+            assertEquals("ABCDEFGHIJ", Gen4.decodeParty(full, gen5 = gen5)!!.nickname, "ten letters, and nothing more")
+        }
+        // The codes themselves, as a Generation 4 name holds them: 0x012B is A, 0x0145 is a, 0x0121 is 0, 0x01DE is the space.
+        val e = Gen4.encodeParty(pid = 0x0000_00AAL, species = 25, level = 5, curHp = 20, maxHp = 20, moves = listOf(1, 0, 0, 0), nickname = "Az 09")
+        assertEquals("Az 09", Gen4.decodeParty(e)!!.nickname)
+    }
+
+    @Test
     fun `a Gen 5 entry is not mistaken for a Gen 4 one`() {
         val entry = Gen4.encodeParty(pid = 0x1L, species = 25, level = 5, curHp = 20, maxHp = 20,
             moves = listOf(1, 0, 0, 0), gen5 = true)

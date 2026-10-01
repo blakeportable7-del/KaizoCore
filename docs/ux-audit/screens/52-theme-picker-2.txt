@@ -1,0 +1,34 @@
+TEXT:
+Save these colours
+Image behind the tracker
+Your own photo, kept inside KaizoCore and scaled to at most 1280 px on its long side. The boxes keep their own colours: give a box colour 8 hex digits (AARRGGBB) to let the image show through it.
+The OBS stream page has its own colours and does not show the image.
+Choose image
+Edit colours
+Hex, 6 or 8 digits (RRGGBB or AARRGGBB). A colour applies once it is valid.
+Main background color
+FF37445B
+Top box background color
+FF47424C
+Top box border color
+FFAAAAAA
+Top box text color
+FFA6AEC5
+Positive text color
+FF2D9FFE
+Negative text color
+FFD82F27
+Intermediate text color
+FFD2E070
+Bottom box text color
+FFA6AEC5
+
+CONTENT DESCRIPTIONS:
+Main background color, hex
+Top box background color, hex
+Top box border color, hex
+Top box text color, hex
+Positive text color, hex
+Negative text color, hex
+Intermediate text color, hex
+Bottom box text color, hex

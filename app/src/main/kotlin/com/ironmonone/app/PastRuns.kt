@@ -36,8 +36,8 @@ import java.util.Locale
 /**
  * The DS tracker's PastRun (PastRun.lua) and SeedLogger: one line per run
  * that ended, with the Pokemon that fainted, the Pokemon that did it, where,
- * the badges and how far the run got. Kept as a TSV per game family under
- * the prep folder, read back for the Past Runs and Statistics screens.
+ * the badges and how far the run got. Kept as a TSV per game under the prep
+ * folder (pastRunStoreFor), read back for the Past Runs and Statistics screens.
  */
 class PastRun(
     val date: Long,
@@ -69,40 +69,76 @@ class PastRun(
 
         /** Program.onRunEnded: the run that just ended, from the DS tracker's last state. */
         fun fromDs(state: NdsTrackerState, won: Boolean, seconds: Int): PastRun? {
-            val fainted = state.party.firstOrNull { it.mon.curHp <= 0 } ?: state.party.firstOrNull() ?: return null
-            val enemy = state.enemy ?: fainted
+            // Program.onRunEnded logs playerPokemon and enemyPokemon: in battle your Pokemon on
+            // the field and the opponent; a win ends the run as its battle ends, when they are
+            // still the last battle's.
+            val fainted = state.playerActive ?: state.lastBattlePlayer.takeIf { won }
+                ?: state.party.firstOrNull { it.mon.curHp <= 0 } ?: state.party.firstOrNull() ?: return null
+            val enemy = state.enemy ?: state.lastBattleEnemy.takeIf { won } ?: fainted
             val progress = if (won) WON else maxOf(state.progress, if (state.located) PAST_LAB else NOWHERE)
             return PastRun(System.currentTimeMillis(), seconds, runMon(fainted), runMon(enemy), state.areaName, Integer.bitCount(state.badges), progress)
         }
     }
 }
 
-class PastRunStore(private val file: File) {
+/**
+ * SeedLogger's log for the game [state] reads. The reference keeps one per game
+ * (SeedLogger(self, gameInfo.NAME) writes savedData/<name>.pastlog, SeedLogger.lua:233),
+ * so Diamond, Pearl and Platinum each have their own. Builds before 2026-09-28 kept
+ * one per badge set (pastruns-DPPT.tsv shared by all three, HGSS by HeartGold and
+ * SoulSilver): which game each of those runs came from was never written down, so
+ * that file is read alongside the game's own rather than guessed apart.
+ */
+fun pastRunStoreFor(state: NdsTrackerState, fileFor: (String) -> File): PastRunStore =
+    if (state.gameName.isEmpty()) PastRunStore(fileFor(state.badgeSet))
+    else PastRunStore(fileFor(state.gameName), legacy = fileFor(state.badgeSet), gameName = state.gameName)
+
+class PastRunStore(
+    private val file: File,
+    legacy: File? = null,
+    /** GameInfo NAME of the game the log belongs to, for the one label that differs by game. */
+    private val gameName: String = "",
+) {
     private val runs = ArrayList<PastRun>()
+    /** The per-family file older builds wrote; its runs show here too, and new runs never go into it. */
+    private val legacy: File? = legacy?.takeIf { it.absoluteFile != file.absoluteFile }
+    private val fromLegacy = HashSet<PastRun>()
     var version by mutableStateOf(0)
         private set
 
     init { load() }
 
     private fun load() {
-        runs.clear()
-        if (!file.isFile) return
-        runCatching {
-            file.forEachLine { line ->
-                val p = line.split('\t'); if (p.size < 7) return@forEachLine
-                val f = PastRun.RunMon.decode(p[2]) ?: return@forEachLine
-                val e = PastRun.RunMon.decode(p[3]) ?: return@forEachLine
-                runs += PastRun(p[0].toLongOrNull() ?: return@forEachLine, p[1].toIntOrNull() ?: 0, f, e, p[4], p[5].toIntOrNull() ?: 0, p[6].toIntOrNull() ?: 0)
-            }
-        }
+        runs.clear(); fromLegacy.clear()
+        legacy?.let { l -> read(l).let { runs += it; fromLegacy += it } }
+        runs += read(file)
     }
 
-    private fun save() {
+    private fun read(f: File): List<PastRun> {
+        val out = ArrayList<PastRun>()
+        if (!f.isFile) return out
         runCatching {
-            file.parentFile?.mkdirs()
-            file.writeText(runs.joinToString("") { r ->
-                listOf(r.date, r.seconds, r.fainted.encode(), r.enemy.encode(), r.location, r.badges, r.progress).joinToString("\t") + "\n"
-            })
+            f.forEachLine { line ->
+                val p = line.split('\t'); if (p.size < 7) return@forEachLine
+                val fm = PastRun.RunMon.decode(p[2]) ?: return@forEachLine
+                val e = PastRun.RunMon.decode(p[3]) ?: return@forEachLine
+                out += PastRun(p[0].toLongOrNull() ?: return@forEachLine, p[1].toIntOrNull() ?: 0, fm, e, p[4], p[5].toIntOrNull() ?: 0, p[6].toIntOrNull() ?: 0)
+            }
+        }
+        return out
+    }
+
+    private fun write(f: File, list: List<PastRun>) {
+        f.parentFile?.mkdirs()
+        f.writeText(list.joinToString("") { r ->
+            listOf(r.date, r.seconds, r.fainted.encode(), r.enemy.encode(), r.location, r.badges, r.progress).joinToString("\t") + "\n"
+        })
+    }
+
+    private fun save(legacyChanged: Boolean = false) {
+        runCatching {
+            write(file, runs.filter { it !in fromLegacy })
+            if (legacyChanged) legacy?.let { write(it, runs.filter { r -> r in fromLegacy }) }
         }
         version++
     }
@@ -113,8 +149,13 @@ class PastRunStore(private val file: File) {
     fun totalRunsPastLab() = runs.count { it.progress > PastRun.NOWHERE }
     fun totalSeconds() = runs.sumOf { it.seconds.toLong() }
 
-    /** SeedLogger.removeNoBadgeRuns. */
-    fun removeNoBadgeRuns() { runs.removeAll { it.badges == 0 }; save() }
+    /** SeedLogger.removeNoBadgeRuns; the older shared file loses its no-badge runs too, as it did before. */
+    fun removeNoBadgeRuns() {
+        val gone = runs.filter { it.badges == 0 }.toSet()
+        runs.removeAll(gone)
+        val legacyChanged = fromLegacy.removeAll(gone)
+        save(legacyChanged)
+    }
 
     /** SeedLogger.getPastRunHashesSorted: NEWEST, OLDEST or A_TO_Z (by the fainted Pokemon's name), then the badge filter. */
     fun sorted(sort: String, minBadges: Int): List<PastRun> {
@@ -141,7 +182,9 @@ class PastRunStore(private val file: File) {
         fun bst(name: String, forEnemy: Boolean) = name to listOf("< 300" to (0..299), "300 - 399" to (300..399), "400 - 499" to (400..499), "500+" to (500..800)).map { (label, range) ->
             label to runs.count { (if (forEnemy) it.enemy else it.fainted).bst in range }
         }
-        val progress = "Overall Progress" to (listOf("Past Lab" to runs.count { it.progress > PastRun.NOWHERE }) +
+        // StatisticsScreen.lua:52-53: Black and White (VERSION_GROUP 4) call the first milestone "Past N".
+        val pastLab = if (com.ironmonone.tracker.nds.NdsLogData.gameNamed(gameName)?.versionGroup == 4) "Past N" else "Past Lab"
+        val progress = "Overall Progress" to (listOf(pastLab to runs.count { it.progress > PastRun.NOWHERE }) +
             (1..8).map { n -> (if (n == 1) "1 Badge" else "$n Badges") to runs.count { it.badges >= n } } +
             listOf("Won" to runs.count { it.progress == PastRun.WON }))
         return listOf(

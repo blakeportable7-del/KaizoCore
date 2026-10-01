@@ -31,6 +31,12 @@ internal fun GameOverHost(
     /** The game picture's bounds on screen: the popup sits over it. */
     gameFrame: androidx.compose.ui.geometry.Rect? = null,
 ) {
+    // Here and not in PlayScreen, which sits at the verifier's limit: the popup is for Kaizo IronMON runs only.
+    val filesDir = androidx.compose.ui.platform.LocalContext.current.applicationContext.filesDir
+    latch.applies = PlayRules.ironmonGameOver(PlayRules.kind(session, filesDir))
+    // The stream's run-over view and its randomized data wait for this, not for the tracker's live read.
+    val ended = if (latch.applies) latch.outcome else null
+    androidx.compose.runtime.SideEffect { com.ironmonone.app.stream.StreamHub.ended = ended }
     if (!latch.open || hidden) return
     val team: List<GameOverMon> = ndsState?.party?.map { GameOverMon(it.mon.species, it.speciesName, it.mon.level, it.mon.curHp == 0, it.mon.shiny) }
         ?: trackerState?.party?.map { GameOverMon(it.mon.species, it.speciesName, it.mon.level, it.mon.curHp == 0, it.mon.shiny) }
@@ -41,6 +47,9 @@ internal fun GameOverHost(
     // every action it can carry. Never taken outside Demo.mode.
     val logFile = (if (session.isRun) session.kind?.let { store.currentRunLogFor(it) } else null)
         ?: Demo.mode?.let { ctx.getExternalFilesDir(null)?.let { d -> java.io.File(d, "demo.log") }?.takeIf { it.isFile } }
+    // The death card: the run as RunHistoryHook filed it. The staged screenshot modes show a
+    // made-up one so the layout can be checked; never outside Demo.mode.
+    val card = if (Demo.mode != null) Demo.deathCard(store.attempt()) else RunHistoryHook.card.takeIf { session.isRun }
     GameOverDialog(
         family = family,
         won = latch.outcome == com.ironmonone.tracker.RunOutcome.WON,
@@ -57,17 +66,35 @@ internal fun GameOverHost(
             // player in the lost battle with nothing to press.
             if (battleStartState != null) {
                 val ok = retro?.unserializeState(battleStartState) == true
-                if (ok) latch.retried()
+                if (ok) { latch.retried(); store.runEvents(session)?.add(RunEvents.Kind.RETRY, "battle start"); RunHistoryHook.retried(store, session) }
                 onStatus(if (ok) "Back to the start of the battle." else "Could not restore the battle.")
             } else latch.retried()
         },
         onSaveAttempt = {
             val kind = session.kind
             if (kind == null || !session.isRun) false
-            else store.saveAttempt(kind, store.attempt(), store.lastSeedText(), runCatching { retro?.serializeState() }.getOrNull())
+            else {
+                // The state is taken where it always was; the copying (a whole ROM) goes off the main thread.
+                val state = runCatching { retro?.serializeState() }.getOrNull()
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    store.saveAttempt(kind, store.attempt(), store.lastSeedText(), state)
+                }
+            }
         },
         onNewGame = { latch.close(); onNewGame() },
         onGrade = onGrade,
         gameFrame = gameFrame,
+        card = card,
+        onShare = card?.let { c ->
+            {
+                runCatching {
+                    val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(android.content.Intent.EXTRA_TEXT, c.shareText())
+                    }
+                    ctx.startActivity(android.content.Intent.createChooser(send, "Share this run"))
+                }
+            }
+        },
     )
 }

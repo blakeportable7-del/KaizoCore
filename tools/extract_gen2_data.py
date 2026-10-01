@@ -10,6 +10,17 @@ because a randomizer changes them and a table would not know.
 
 Output: tracker-gba/src/main/resources/gen2/species.tsv and moves.tsv, same
 shape as the gen4 tables (id TAB Name).
+
+  MiscData.lua     MiscData.Items, a Lua list of 256 item names whose first
+                   entry is item 0 ("---"): the reference looks a held item up
+                   as MiscData.Items[id + 1] (Program.lua readNewPokemonGen2,
+                   DataHelper.lua:173-174). Written as items.tsv, id TAB name,
+                   ids 1..255 (0 is no item); the names as the reference prints them.
+  RouteData.lua    RouteData.setupRouteInfoAsGSC, RouteData.Info[id] = { name }
+                   for ids 1..95: Crystal's landmark ids (constants/
+                   landmark_constants.asm), which the reference reads at
+                   gMapHeader, wCurLandmark. Written as landmarks.tsv, id TAB
+                   name, verbatim (one reads "Bell Tower|Tin Tower").
 """
 import re
 import sys
@@ -46,6 +57,22 @@ def main():
             moves.append((int(mid.group(1)), m.group(1)))
     moves.sort()
     (OUT / "moves.tsv").write_text("\n".join("%d\t%s" % x for x in moves) + "\n", encoding="utf-8")
+
+    misc = (REF / "MiscData.lua").read_text(encoding="utf-8")
+    body = misc[misc.index("MiscData.Items = {"):]
+    body = body[body.index("{") + 1:body.index("\n}")]
+    items = re.findall(r"^\s*\"([^\"]*)\",?\s*$", body, re.M)
+    if len(items) != 256 or items[0] != "---":
+        raise SystemExit("MiscData.Items: expected 256 names from \"---\", got %d" % len(items))
+    (OUT / "items.tsv").write_text("\n".join("%d\t%s" % (i, n) for i, n in enumerate(items) if i > 0) + "\n", encoding="utf-8")
+
+    route = (REF / "RouteData.lua").read_text(encoding="utf-8")
+    gsc = route[route.index("function RouteData.setupRouteInfoAsGSC()"):]
+    gsc = gsc[:gsc.index("\nend")]
+    marks = [(int(i), n) for i, n in re.findall(r"RouteData\.Info\[(\d+)\]\s*=\s*\{\s*name\s*=\s*\"([^\"]*)\"", gsc)]
+    if [i for i, _ in marks] != list(range(1, 96)):
+        raise SystemExit("setupRouteInfoAsGSC: expected ids 1..95, got %s" % [i for i, _ in marks])
+    (OUT / "landmarks.tsv").write_text("\n".join("%d\t%s" % m for m in marks) + "\n", encoding="utf-8")
 
     for f in sorted(OUT.glob("*.tsv")):
         lines = f.read_text(encoding="utf-8").splitlines()

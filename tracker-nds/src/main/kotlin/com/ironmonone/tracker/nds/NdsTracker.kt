@@ -32,6 +32,12 @@ data class NdsMoveInfo(
     val category: String = "",
     /** The move id, for the run-wide move memory. 0 when the row was built without one. */
     val id: Int = 0,
+    /**
+     * The power as the reference prints it when it is not a number (WT, <HP, VAR...):
+     * MainScreen.lua:507 sets the power label to MoveData's own string. Empty for a
+     * plain number or "---"; [power] is 0 for these, so it would print "---".
+     */
+    val powerText: String = "",
 )
 
 data class NdsTrackedMon(
@@ -54,6 +60,8 @@ data class NdsTrackedMon(
     val statStages: Map<String, Int> = emptyMap(),
     /** SLP/PSN/BRN/FRZ/PAR, or empty when healthy. */
     val statusCondition: String = "",
+    /** The species' level-up levels, ascending, repeats kept (PokemonData movelvls for the version group). */
+    val moveLevels: List<Int> = emptyList(),
 )
 
 data class NdsTrackerState(
@@ -84,6 +92,11 @@ data class NdsTrackerState(
     /** Carried healing as a share of the lead's max HP, and the item count. */
     val healPercent: Int = 0,
     val healCount: Int = 0,
+    /** The bag's healing and status items, id to quantity (Program.scanForHealingItems). */
+    val healingItems: Map<Int, Int> = emptyMap(),
+    val statusItems: Map<Int, Int> = emptyMap(),
+    /** The Pokemon the heals are measured against (Program.getHealingTotals' playerPokemon); its card carries the box. */
+    val healsPid: Long = 0L,
     /** null while the run is alive; otherwise how it ended. */
     val runOver: NdsRunOver? = null,
     /** PlaythroughConstants.PROGRESS: 0 nowhere, 1 past the lab, 2 won. */
@@ -101,8 +114,33 @@ data class NdsTrackerState(
     /** Every reveal since the last read, oldest first, including Gen 4
      *  messages [NdsTracker.pollAbilityTrigger] caught between reads. */
     val abilitiesRevealed: List<Pair<Int, String>> = emptyList(),
+    /** HGSS: the League has been beaten (Program.HGSS_checkLeagueDefeated), which moves a lone badge row to Kanto. */
+    val leagueBeaten: Boolean = false,
+    /** GameInfo NAME of the game being read ("Pokemon Pearl"): the key of its past-runs log. Empty when unknown. */
+    val gameName: String = "",
+    /**
+     * Your Pokemon on the field, in a fetched battle: the reference's playerPokemon
+     * there (BattleHandlerBase.getActivePokemonInBattle), which Program.onRunEnded
+     * logs as the one that fainted. Null outside battle.
+     */
+    val playerActive: NdsTrackedMon? = null,
+    /**
+     * Your Pokemon on the field and the opponent as the last fetched battle left
+     * them. A win ends the run after its battle (BattleHandlerBase._onEndOfBattle),
+     * when the reference's playerPokemon and enemyPokemon still hold these.
+     */
+    val lastBattlePlayer: NdsTrackedMon? = null,
+    val lastBattleEnemy: NdsTrackedMon? = null,
 ) : com.ironmonone.tracker.RunView {
     override val enemySpeciesId: Int get() = enemy?.mon?.species ?: -1
+
+    /**
+     * Program's playerPokemon (Program.lua:521-535): your Pokemon on the field in a
+     * fetched battle, else the first party member standing that is not an egg; the
+     * one [healsPid] names, as its party entry, which carries your side's battle
+     * stages. The lead when nothing else is known; null before a party is read.
+     */
+    val playerPokemon: NdsTrackedMon? get() = party.firstOrNull { it.mon.pid == healsPid } ?: party.firstOrNull()
     override val outcome: com.ironmonone.tracker.RunOutcome? get() = runOver?.let {
         if (it == NdsRunOver.WON) com.ironmonone.tracker.RunOutcome.WON
         else com.ironmonone.tracker.RunOutcome.LOST
@@ -151,20 +189,62 @@ class NdsTracker(
      */
     val randomBall: Int = (1..3).random()
 
-    /** GameOverScreen.LossConditions: which faint ends the run. The app sets it from its options. */
+    /**
+     * settings.trackedInfo.FAINT_DETECTION, "Run is considered over when:"
+     * (TrackedInfoScreen.lua:238-244), ON_FIRST_SLOT_FAINT by default
+     * (MiscConstants.lua:91). The app sets it from its DS option; how each
+     * value is read is [runHasEnded].
+     */
     @Volatile var lossCondition: com.ironmonone.tracker.LossCondition = com.ironmonone.tracker.LossCondition.LEAD
+    /**
+     * BattleHandlerBase._faintMonIndex: the battle-party slot the run hangs on,
+     * chosen at the first check of a battle and kept to its end, -1 before that
+     * and between battles (BattleHandlerBase.lua:237-243, 370).
+     */
+    private var faintMonIndex = -1
+    /** BattleHandlerBase.inBattleAndFetched, for the battle last read: the loss checks run only then. */
+    private var battleFetched = false
+    /**
+     * tracker.hasRunEnded(): the run has already ended, by a loss or a win. The
+     * app sets it from its game-over latch, which is the reference's
+     * Program.onRunEnded / tracker.setRunOver pair. While it is set a battle's
+     * end changes nothing (BattleHandlerBase._onEndOfBattle, lua:350).
+     */
+    @Volatile var runEnded: Boolean = false
+    /** Your Pokemon on the field and the opponent, as the last fetched battle read them. */
+    private var lastBattlePlayer: NdsTrackedMon? = null
+    private var lastBattleEnemy: NdsTrackedMon? = null
     private val ramStart = 0x02000000L
     private val ramEnd = 0x02400000L
     /**
-     * Absolute maps: a scan whenever the fixed address holds nothing, on a
-     * cooldown so the 4 MB walk runs about once every few seconds, never once
-     * and never again (a latch here hid the party on Blake's phone for a whole
-     * evening: the first scan ran before the starter existed and nothing ever
-     * rescanned). [scanShift] is where the party sat relative to the PC address.
+     * Absolute maps without a pointer (Black, White, and Black 2 and White 2 while their pointer cannot
+     * be used): a scan whenever the fixed address holds nothing, on a cooldown so the 4 MB walk runs about
+     * once every few seconds, never once and never again (a latch here hid the party on Blake's phone for a
+     * whole evening: the first scan ran before the starter existed and nothing ever rescanned). [scanShift]
+     * is where the party sat relative to the PC address.
      */
     private var readsSinceScan = SCAN_EVERY
     var scanShift: Long = 0
         private set
+
+    /**
+     * How the heap addresses in [live] were found. POINTER: read from the game's own pointer, which is how
+     * every read of Black 2 and White 2 goes while the pointer can be used (NDS-Ironmon-Tracker 6.3.11).
+     * SCAN: the party was searched for in RAM, because the pointer could not be used or led to no party
+     * while a battle was on. STATIC: the map's own fixed addresses, before either has happened.
+     */
+    enum class BaseSource { STATIC, POINTER, SCAN }
+    var baseSource: BaseSource = BaseSource.STATIC
+        private set
+    /** How many 4 MB party scans have run. A Black 2 or White 2 whose pointer works makes none. */
+    var scans: Int = 0
+        private set
+    /** The base the pointer named on the last read, or null when it could not be used (none, or not a map with a pointer). */
+    var pointerBase: Long? = null
+        private set
+    /** The pointer's base that [live] is at, and a base the scan found the party away from (ignored until the pointer changes). */
+    private var followedBase: Long? = null
+    private var distrustedBase: Long? = null
     /**
      * Tracker.getFirstPokemonID: the first Pokemon this tracker saw in the
      * party. The log viewer matches it against the log's starters to pick the
@@ -173,6 +253,19 @@ class NdsTracker(
     @Volatile var firstPokemonId: Int = 0
         private set
     private val chunk = 0x20000
+
+    /**
+     * GameInfo NAME of the game this tracker reads, from the cartridge header's
+     * code: "Pokemon Pearl", where the map serves Diamond and Pearl alike. The
+     * reference keys its past-runs log by it (SeedLogger(self, gameInfo.NAME),
+     * savedData/<name>.pastlog, SeedLogger.lua:233). A header that cannot be
+     * read, or names a game this map does not serve, gives the map's first game.
+     */
+    val gameName: String = run {
+        val code = runCatching { NdsGameMap.gameCode(memory) }.getOrNull()
+        val game = code?.takeIf { it in map.gameCodes }?.let { NdsLogData.game(it) } ?: NdsLogData.gameFor(map, "")
+        game?.name ?: ""
+    }
 
     // Offsets come from the game's NdsGameMap (copied from NDS-Ironmon-Tracker's
     // MemoryAddresses.lua); Platinum unless detect() said otherwise.
@@ -185,10 +278,13 @@ class NdsTracker(
      * constant number of bytes away from the clean ROM's (measured 2026-09-08:
      * the party, the enemy party, the trainer id, the battle pointers and the
      * battle PIDs all sat 0x40 below the PC tracker's addresses on one
-     * randomized Black 2, 0x54 on another; the clean ROM sat exactly on
-     * them). The battle flag lives in static memory and never moves. When
-     * the fixed party address holds no Pokemon, findParty() scans, and the
-     * whole map follows the shift it finds.
+     * randomized Black 2, 0x54 on another). The battle flag lives in static
+     * memory and never moves.
+     *
+     * Black 2 and White 2 are told where their heap is by a pointer in main RAM, which
+     * [followPointer] reads on every read, so [live] is that base's map (NDS-Ironmon-Tracker
+     * 6.3.11). Anywhere else, or when that pointer cannot be used, the fixed party address that
+     * holds no Pokemon makes findParty() scan, and the whole map follows the shift it finds.
      */
     var live: NdsGameMap = map
         private set
@@ -201,18 +297,25 @@ class NdsTracker(
      *  for the whole battle. */
     private val enemyBattleMonPidOffset get() = live.enemyBattleMonPid
     /** VERSION_POINTER_OFFSETS.playerBattleMonPID / statStages / subscript. */
-    private val playerBattleMonPidOffset = live.playerBattleMonPid
-    private val statStagesPlayerOffset = live.statStagesPlayer
-    private val statStagesEnemyOffset = live.statStagesEnemy
-    private val battleSubscriptMsgsOffset = live.battleSubscriptMsgs
-    /** GLOBAL (not pointer-relative) in that project's table. */
+    private val playerBattleMonPidOffset get() = live.playerBattleMonPid
+    private val statStagesPlayerOffset get() = live.statStagesPlayer
+    private val statStagesEnemyOffset get() = live.statStagesEnemy
+    private val battleSubscriptMsgsOffset get() = live.battleSubscriptMsgs
+    /**
+     * GLOBAL (not pointer-relative) in that project's table, on every game, Black 2 and White 2 included:
+     * it is the one address no pointer and no heap shift moves, which is what makes it the way to tell a
+     * battle is on when the heap is not where the tracker thinks (see [scanAllowed]). Always the map's own.
+     */
     private val battleStatusGlobal = map.battleStatus
-    // Bag pockets, Platinum. Items and berries are separate lists, and both
-    // move to a different address while a battle is running.
-    private val itemStartNoBattle = live.itemStartNoBattle
-    private val itemStartBattle = live.itemStartBattle
-    private val berryBagStart = live.berryBagStart
-    private val berryBagStartBattle = live.berryBagStartBattle
+    // Bag pockets. Items and berries are separate lists, and on Gen 4 both
+    // move to a different address while a battle is running. Like every heap
+    // address they follow [live]: they used to be copied from it once, before
+    // any scan, so a Black 2 whose heap sat 0x40 below the PC tracker's
+    // addresses walked an empty bag (parity audit, 2026-09-28).
+    private val itemStartNoBattle get() = live.itemStartNoBattle
+    private val itemStartBattle get() = live.itemStartBattle
+    private val berryBagStart get() = live.berryBagStart
+    private val berryBagStartBattle get() = live.berryBagStartBattle
 
     /**
      * Battle-status words, from BattleHandlerBase.BATTLE_STATUS_TYPES: 0x2100 and
@@ -235,8 +338,9 @@ class NdsTracker(
      * leaves the levels alone, so a static table stays correct across every
      * seed. Gen 4 learnsets live in the ROM's narc archives rather than in
      * RAM, so there is nothing to read live; the reference ships the same
-     * table (PokemonData.POKEMON_MASTER_LIST movelvls, version group 2 for
-     * Platinum) and so does this.
+     * table (PokemonData.POKEMON_MASTER_LIST movelvls, one list per version
+     * group, Program.lua:327) and so does this: the map names the table
+     * (tools/trainer-data/convert_nds_movelevels.py writes the Gen 4 ones).
      */
     private val moveLevels = HashMap<Int, List<Int>>()
 
@@ -272,7 +376,11 @@ class NdsTracker(
     init {
         loadPairs("/${map.dataDir}/species.tsv", speciesNames)
         loadPairs("/${map.dataDir}/abilities.tsv", abilityNames)
-        loadPairs("/${map.dataDir}/items.tsv", itemNames)
+        // MainScreen.lua:860 names the held item from ItemData.GEN_5_ITEMS on EVERY DS
+        // game, Diamond to White 2. Gen 4 read Platinum's own table, which stops at 467,
+        // so an HGSS Apricorn, Apricorn Ball, Sport or Park Ball (468-536) showed "#id"
+        // (parity audit, 2026-09-28); D/P/Pt names now follow the reference's spelling too.
+        loadPairs("/gen5/items.tsv", itemNames)
         loadMoves()
         loadMoveLevels()
         sidecar?.takeIf { it.exists() }?.let(::loadSidecar)
@@ -320,6 +428,7 @@ class NdsTracker(
                             type = p[4],
                             pp = p.getOrNull(5)?.toIntOrNull() ?: 0,
                             category = p.getOrNull(6) ?: "",
+                            powerText = p.getOrNull(7)?.trim() ?: "",
                         )
                     }
                 }
@@ -374,20 +483,34 @@ class NdsTracker(
     }
     private var lastMapId = 0
     private var lastAreaName = ""
+    /** Program.lua:86: the Bug Catching weekday, Tuesday (2) until one has been read. */
+    private var dayOfWeek = 2
 
     /**
      * Program.updateLocation: the child map header, then the parent, looked up
      * in LocationData; the Mystery Zone (id 0's name) never replaces a known
-     * area. The HGSS bug-catching weekday rename is not read.
+     * area.
+     *
+     * HGSS (Program.lua:601-611): the IronMON patch writes the real weekday
+     * only while the player stands in either contest gatehouse (child maps 102
+     * and 104), so it is read there and kept, and the National Park's "Bug
+     * Catching" area becomes "Tues", "Thurs" or "Sat Bug Catching" by it, any
+     * other day reading as Tuesday.
      */
     private fun updateLocation() {
-        if (map.childMapHeader == 0L) return
+        if (live.childMapHeader == 0L) return
         val versionRel = if (map.absolute) 0L else versionPointer()
         if (!map.absolute && versionRel == 0L) return
-        val cb = memory.read(ramStart + versionRel + map.childMapHeader, 2); if (cb.size < 2) return
-        val pb = memory.read(ramStart + versionRel + map.parentMapHeader, 2)
+        // The map headers are heap too and follow [live] (a shifted Black 2 read Black City's id 0 here).
+        val cb = memory.read(ramStart + versionRel + live.childMapHeader, 2); if (cb.size < 2) return
+        val pb = memory.read(ramStart + versionRel + live.parentMapHeader, 2)
         val child = cb.u16(0); val parent = if (pb.size == 2) pb.u16(0) else 0
-        val name = locations[child] ?: locations[parent] ?: return
+        if ((child == 102 || child == 104) && map.dayOfWeek != 0L) {
+            val d = memory.read(ramStart + versionRel + map.dayOfWeek, 2)
+            if (d.size == 2) dayOfWeek = d.u16(0)
+        }
+        var name = locations[child] ?: locations[parent] ?: return
+        if (name == "Bug Catching") name = BUG_CATCHING_DAYS[dayOfWeek] ?: BUG_CATCHING_DAYS.getValue(2)
         lastMapId = child
         if (name != locations[0]) lastAreaName = name
     }
@@ -475,37 +598,133 @@ class NdsTracker(
     }
 
     /**
-     * Whether the run is over, and what killed it.
-     *
-     * The loss condition is the reference's default, ON_FIRST_SLOT_FAINT: the
-     * LEAD fainting ends the run, not a full party wipe.
-     *
-     * The cause decides which closing line is shown, recreated from
-     * SeedLogger.figureOutCause. Order matters there: a Shedinja that also
-     * happens to be 100 BST below you is still reported as a Shedinja loss.
+     * What ended a lost run, recreated from SeedLogger.figureOutCause: the cause
+     * picks the closing line. [fainted] is the reference's playerPokemon when the
+     * run ends, your Pokemon on the field. Order matters there: a Shedinja that
+     * also happens to be 100 BST below you is still reported as a Shedinja loss.
      */
-    internal fun readRunOver(
-        lead: NdsTrackedMon?,
+    internal fun runOverCause(
+        fainted: NdsTrackedMon?,
         enemy: NdsTrackedMon?,
-    ): NdsRunOver? {
-        if (lead == null) return null
-        // Level 0 means the slot has not decoded yet, not a dead Pokemon.
-        if (lead.mon.curHp != 0 || lead.mon.level <= 0) return null
+    ): NdsRunOver {
         val enemyName = enemy?.speciesName?.uppercase() ?: ""
         val enemyAbility = enemy?.abilityName?.uppercase() ?: ""
-        val leadBst = lead.info?.bst ?: 0
+        val faintedBst = fainted?.info?.bst ?: 0
         val enemyBst = enemy?.info?.bst ?: 0
         return when {
             enemyName == "SHEDINJA" -> NdsRunOver.SHEDINJA
             enemyAbility == "IMPOSTER" -> NdsRunOver.IMPOSTER
-            leadBst > 0 && enemyBst > 0 && leadBst - enemyBst >= 100 ->
+            faintedBst > 0 && enemyBst > 0 && faintedBst - enemyBst >= 100 ->
                 NdsRunOver.ENEMY_LOWER_BST
             else -> NdsRunOver.STANDARD
         }
     }
 
     /**
-     * Healing carried, as a share of [maxHp].
+     * BattleHandlerBase.checkIfRunHasEnded (BattleHandlerBase.lua:226-247), which
+     * Program.readMemory calls every tick but which does nothing unless a battle
+     * is running and its data has been fetched: a faint outside battle, or one
+     * noticed only after the battle, never ends a DS run. Everything here reads
+     * the battle's own copy of your party (playerBattleBase), not the party:
+     *
+     * - Entire party faints: every Pokemon in that copy at 0 HP (_hasPartyWiped).
+     * - Lead Pokemon faints: slot 1 of that copy at 0 HP.
+     * - Highest level faints: the slot with the highest level, picked at the
+     *   first check of the battle and watched until it ends, even if levels
+     *   change (_calculateHighestPlayerMonIndex). It walks the slots with
+     *   pairs(), which in Lua 5.1 to 5.4 visits slots 2 to 6 and then the lead
+     *   (slot 0 lives in the hash part; checked with lupa), and keeps the first
+     *   strictly higher level: on a tie the later slot is watched, and the lead
+     *   only when it is the highest alone.
+     *
+     * Gen 5 reads the HP from each party member's battle data instead
+     * (BattleHandlerGen5._hasPartyWiped and _playerSlotHasFainted, lua:226-255):
+     * the pointers at mainBattleDataPtr + 4i, in address order, HP at + 0x10.
+     * With no pointer at all the Gen 5 override would call the party wiped (its
+     * loop never runs); that is taken as nothing read, as Gen 4's own check does.
+     * The Gen 5 reference then waits for the battle screen's HP byte to reach 0
+     * (_onPlayerSlotFainted); not ported, see the note on [read].
+     */
+    internal fun runHasEnded(versionRel: Long): Boolean {
+        val party = battleParty(versionRel)
+        val gen5 = map.absolute
+        if (lossCondition == com.ironmonone.tracker.LossCondition.ENTIRE_PARTY) {
+            val wiped = if (gen5) gen5PartyPointers().let { p -> p.isNotEmpty() && p.all { battleHp(it) == 0 } }
+                else party.isNotEmpty() && party.values.all { it.curHp == 0 }
+            if (wiped) return true
+        }
+        // Kaizo Doubles: either of the battle copy's first two slots. No DS reference has it; the
+        // app offers it on every game (Blake, 2026-09-29: full control).
+        if (lossCondition == com.ironmonone.tracker.LossCondition.EITHER_OF_FIRST_TWO)
+            return if (gen5) gen5PartyPointers().take(2).any { battleHp(it) == 0 }
+                else (0..1).any { party[it]?.curHp == 0 }
+        if (faintMonIndex == -1) faintMonIndex = when (lossCondition) {
+            com.ironmonone.tracker.LossCondition.HIGHEST_LEVEL -> highestLevelSlot(party)
+            com.ironmonone.tracker.LossCondition.LEAD -> 0
+            com.ironmonone.tracker.LossCondition.ENTIRE_PARTY, com.ironmonone.tracker.LossCondition.EITHER_OF_FIRST_TWO -> -1
+        }
+        if (faintMonIndex < 0) return false
+        return if (gen5) gen5PartyPointers().getOrNull(faintMonIndex)?.let { battleHp(it) == 0 } ?: false
+            else party[faintMonIndex]?.curHp == 0
+    }
+
+    /** _calculateHighestPlayerMonIndex over [party]: pairs() order, slots 2 to 6 then the lead, first strictly higher level; -1 for none. */
+    private fun highestLevelSlot(party: Map<Int, Gen4.Mon>): Int {
+        var maxLevel = 0
+        var slot = -1
+        for (i in listOf(1, 2, 3, 4, 5, 0)) {
+            val m = party[i] ?: continue
+            if (m.level > maxLevel) { maxLevel = m.level; slot = i }
+        }
+        return slot
+    }
+
+    /** BattleHandlerBase._getPlayerParty: the battle's copy of your party, slot to Pokemon, empty slots left out. */
+    private fun battleParty(versionRel: Long): Map<Int, Gen4.Mon> {
+        if (live.playerBattleBase == 0L) return emptyMap()
+        val out = LinkedHashMap<Int, Gen4.Mon>()
+        for (slot in 0 until 6) {
+            val b = memory.read(ramStart + versionRel + live.playerBattleBase + slot.toLong() * map.entrySize, map.entrySize)
+            if (b.size < map.entrySize) break
+            Gen4.decodeParty(b, gen5 = map.generation == 5)?.let { out[slot] = it }
+        }
+        return out
+    }
+
+    /** BattleHandlerGen5._readPlayerPartyPointers: your party's battle data, the non-zero words at mainBattleDataPtr + 4i, ascending. */
+    private fun gen5PartyPointers(): List<Long> =
+        (0 until 6).mapNotNull { i -> ptr(ramStart + live.mainBattleDataPtr + 4L * i) }.sorted()
+
+    /** BATTLE_STAT_OFFSETS curHP: the HP a Gen 5 battle data block holds. */
+    private fun battleHp(battleData: Long): Int = memory.read(battleData + 0x10, 2).let { if (it.size == 2) it.u16(0) else -1 }
+
+    /**
+     * Your Pokemon on the field (BattleHandlerBase.getActivePokemonInBattle for
+     * the player). Gen 4: the battle-party entry carrying the PID at
+     * playerBattleMonPID (BattleHandlerGen4._getPokemonData). Gen 5: the
+     * Pokemon the first battler record points at, with its live HP and level
+     * from the battle data (_getPokemonData, _readBattleStats).
+     */
+    private fun readPlayerActive(versionRel: Long): NdsTrackedMon? {
+        if (map.absolute) {
+            val bd = ptr(ramStart + live.mainBattleDataPtr) ?: return null
+            val pd = ptr(bd) ?: return null
+            val d = Gen4.decodeParty(memory.read(pd, map.entrySize), gen5 = true) ?: return null
+            fun u16At(off: Long, fallback: Int) = memory.read(bd + off, 2).let { if (it.size == 2) it.u16(0) else fallback }
+            return decorate(d.copy(curHp = u16At(0x10, d.curHp), maxHp = u16At(0x0E, d.maxHp), level = u16At(0x18, d.level) % 256))
+        }
+        val pid = u32(ramStart + versionRel + playerBattleMonPidOffset)
+        if (pid == 0L) return null
+        return battleParty(versionRel).values.firstOrNull { it.pid == pid }?.let(::decorate)
+    }
+
+    /** Healing carried, as a share of [maxHp] rounded as the reference rounds, and the count (NdsHeals.totals). */
+    internal fun readHeals(maxHp: Int, inBattle: Boolean): Pair<Int, Int> =
+        NdsHeals.totals(readBag(inBattle).first, maxHp, showHp = false)
+
+    /**
+     * Program.scanForHealingItems (Program.lua:334-377): the healing items and the
+     * status items in the bag, each id to its quantity (NdsHeals' tables).
      *
      * Gen 4 stores bag slots as a u32: item id in the low half, quantity in the
      * high half, and NO encryption - unlike Gen 3, where the quantity is XORed.
@@ -516,12 +735,14 @@ class NdsTracker(
      * running. The battle bag is populated a few frames AFTER the battle flag
      * flips, so a read in that window returns garbage; the reference guards it
      * by sanity-checking the first battle slot and falling back, and so does
-     * this.
+     * this. A quantity outside 1 to 999 is dropped as a bad read, which the
+     * reference does not do.
      */
-    internal fun readHeals(maxHp: Int, inBattle: Boolean): Pair<Int, Int> {
-        if (maxHp <= 0) return 0 to 0
+    internal fun readBag(inBattle: Boolean): Pair<Map<Int, Int>, Map<Int, Int>> {
+        val healing = LinkedHashMap<Int, Int>()
+        val status = LinkedHashMap<Int, Int>()
         val versionRel = versionPointer()
-        if (!map.absolute && versionRel == 0L) return 0 to 0
+        if (!map.absolute && versionRel == 0L) return healing to status
         var itemStart = itemStartNoBattle
         var berryStart = berryBagStart
         if (inBattle) {
@@ -536,8 +757,6 @@ class NdsTracker(
             }
         }
 
-        var total = 0.0
-        var count = 0
         for (start in listOf(itemStart, berryStart)) {
             var addr = ramStart + versionRel + start
             // 400 slots is far beyond any real bag; the null terminator is what
@@ -547,18 +766,15 @@ class NdsTracker(
                 val id = (word and 0xFFFFL).toInt()
                 if (id == 0) break
                 val qty = ((word shr 16) and 0xFFFFL).toInt()
-                val heal = GEN4_HEAL_ITEMS[id]
-                if (heal != null && qty in 1..999) {
-                    val perItem =
-                        if (heal.second) maxHp * heal.first / 100.0 else heal.first
-                    total += minOf(perItem, maxHp.toDouble()) * qty
-                    count += qty
+                if (qty in 1..999) {
+                    // healingItems[id] = quantity, statusItems[id] = quantity: Full Restore is both.
+                    if (NdsHeals.isHeal(id)) healing[id] = qty
+                    if (NdsHeals.isCure(id)) status[id] = qty
                 }
                 addr += 4
             }
         }
-        val pct = ((total / maxHp) * 100).toInt().coerceIn(0, 9999)
-        return pct to count
+        return healing to status
     }
 
     /**
@@ -575,6 +791,8 @@ class NdsTracker(
     companion object {
         /** Reads between scans while no party decodes; the tracker reads a few times a second. */
         const val SCAN_EVERY = 20
+        /** Program.lua:606-609, dayToNewName: the contest days the IronMON HGSS patch uses. */
+        private val BUG_CATCHING_DAYS = mapOf(2 to "Tues Bug Catching", 4 to "Thurs Bug Catching", 6 to "Sat Bug Catching")
         /** The last raw party and enemy bytes read while nothing decoded, for the bug report. */
         @Volatile var lastDump: String? = null
     }
@@ -633,6 +851,20 @@ class NdsTracker(
         return bits
     }
 
+    /**
+     * Program.HGSS_checkLeagueDefeated (Program.lua:583-586): the League event byte
+     * at versionRel + 0x1000 reaching 3 means the Champion is beaten; the main
+     * screen's single badge row then shows Kanto (MainScreen.lua:1285-1295). Only
+     * HeartGold and SoulSilver have the byte.
+     */
+    internal fun readLeagueBeaten(): Boolean {
+        if (map.leagueBeaten == 0L) return false
+        val versionRel = versionPointer()
+        if (!map.absolute && versionRel == 0L) return false
+        val b = memory.read(ramStart + versionRel + map.leagueBeaten, 1)
+        return b.isNotEmpty() && b.u8(0) >= 3
+    }
+
     /** Second link of the chain, shared by the party and battle lookups. */
     private fun versionPointer(): Long {
         // Gen 5: no chain, every offset is already relative to main RAM.
@@ -649,6 +881,39 @@ class NdsTracker(
         val base = ramStart + versionRel + playerBaseOffset
         return if (base in ramStart until ramEnd) base else 0
     }
+
+    /**
+     * Black 2 and White 2 (NDS-Ironmon-Tracker 6.3.11): where the heap is comes from one pointer in main RAM,
+     * read again on every read, so nothing is latched. A usable pointer that has changed takes [live] to
+     * its new base at once. One the scan has shown to lead nowhere while a battle was on (see [scanAllowed])
+     * is left alone until its value changes. A pointer that cannot be used leaves [live] as it was, and
+     * the scan looks for the party as it always did. A game with no pointer table does nothing here.
+     */
+    private fun followPointer() {
+        val table = map.pointerOffsets ?: return
+        val base = table.baseOf(u32(ramStart + table.pointer))
+        pointerBase = base
+        if (base == null || base == distrustedBase) return
+        distrustedBase = null
+        if (baseSource == BaseSource.POINTER && base == followedBase) return
+        live = map.atPointerBase(base)
+        followedBase = base
+        baseSource = BaseSource.POINTER
+        partyBase = 0L   // read() takes the party from the new map
+    }
+
+    /**
+     * Whether a party scan may run now. Without a pointer to lean on, always (on its cooldown). With a
+     * pointer that can be used, only while the fixed battle flag says a battle is on and no party decodes where
+     * the pointer says: a battle cannot happen without a party, so the pointer is wrong for this ROM and the
+     * scan is right. Before the first Pokemon nothing decodes either, and a scan then would only walk 4 MB to
+     * find nothing, or old bytes left over from the run before.
+     */
+    private fun scanAllowed(): Boolean = map.pointerOffsets == null || pointerBase == null || battleFlagSet()
+
+    /** The fixed battle-status word says a battle is running ([inBattleWords]). */
+    private fun battleFlagSet(): Boolean =
+        memory.read(ramStart + battleStatusGlobal, 2).let { it.size == 2 && it.u16(0) in inBattleWords }
 
     /**
      * Fallback: sweep main RAM for a valid party entry. Two-stage — a cheap
@@ -697,12 +962,14 @@ class NdsTracker(
     }
 
     fun read(): NdsTrackerState {
+        followPointer()
         if (partyBase == 0L) {
             partyBase = if (map.absolute) ramStart + live.playerBase
                 else resolvePartyViaPointers().takeIf { it != 0L } ?: findParty()
             if (partyBase == 0L) {
                 return NdsTrackerState(
-                    0, emptyList(), located = false, badgeSet = map.badgePrefix, resolvedBase = rawPointerChain())
+                    0, emptyList(), located = false, badgeSet = map.badgePrefix, resolvedBase = rawPointerChain(),
+                    gameName = gameName)
             }
         }
 
@@ -717,15 +984,19 @@ class NdsTracker(
             if (mon == null) {
                 if (slot == 0) {
                     probe = "party @%08X: ".format(partyBase) + Gen4.probe(bytes, map.generation == 5)
-                    if (map.absolute && readsSinceScan >= SCAN_EVERY) {
+                    if (map.absolute && readsSinceScan >= SCAN_EVERY && scanAllowed()) {
                         readsSinceScan = 0
+                        scans++
                         val found = findParty()
                         probe += if (found != 0L) " | scan found a party at %08X (shift %s%X from the PC address)".format(found, if (found >= ramStart + live.playerBase) "+" else "-", kotlin.math.abs(found - (ramStart + live.playerBase)))
                             else " | scan found no party in RAM"
                         if (found != 0L) {
+                            // A usable pointer that led to no party in a battle: the party is elsewhere, and this value of the pointer is not to be trusted again.
+                            if (baseSource == BaseSource.POINTER) distrustedBase = pointerBase
                             partyBase = found
                             scanShift = found - (ramStart + map.playerBase)
                             live = if (scanShift == 0L) map else map.shifted(scanShift, map.name, map.gameCodes)
+                            baseSource = BaseSource.SCAN
                             return read()
                         }
                     }
@@ -749,6 +1020,7 @@ class NdsTracker(
             lastDump = buildString {
                 appendLine("party @%08X: %s".format(partyBaseRead, hex(partyBaseRead, map.entrySize)))
                 appendLine("probe: " + (probe ?: "-"))
+                appendLine("base: %s, pointer %s, scans %d".format(baseSource, pointerBase?.let { "names %06X".format(it) } ?: "not usable", scans))
                 appendLine("header @023FFE00: %s  header @027FFE00: %s".format(hex(0x023FFE00L, 16), hex(0x027FFE00L, 16)))
                 appendLine("ram @02000000: %s  ram @02200000: %s".format(hex(0x02000000L, 16), hex(0x02200000L, 16)))
                 appendLine("enemy @%08X: %s".format(ramStart + live.enemyBase, hex(ramStart + live.enemyBase, map.entrySize)))
@@ -760,20 +1032,29 @@ class NdsTracker(
             val eb = memory.read(ramStart + live.enemyBase, map.entrySize)
             probe = (probe ?: "") + " | enemy @%08X: ".format(ramStart + live.enemyBase) + Gen4.probe(eb, map.generation == 5)
         }
-        var lead = party.firstOrNull()
-        // In battle the LEAD also carries stage data; the reference draws
-        // chevrons on both sides of the screen.
+        val lead = party.firstOrNull()
+        val battleRel = if (map.absolute) 0L else battle?.third ?: 0L
+        val fetchedNow = battle != null && battleFetched
+        val playerActive = if (fetchedNow) runCatching { readPlayerActive(battleRel) }.getOrNull() else null
+        // Your side in battle is the Pokemon on the field (the reference's playerPokemon,
+        // BattleHandlerBase.getActivePokemonInBattle): its party entry carries your live
+        // stages (BattleHandlerGen4._updateStatStages, BattleHandlerGen5._readBattleStats)
+        // and is the one ability triggers are matched against (getAllPokemonInBattle). The
+        // lead stands in when that Pokemon is not found. Both used to be the lead, whichever
+        // Pokemon was out.
+        var onField = lead
         if (battle != null && lead != null && battle.third != 0L) {
-            lead = lead.copy(statStages =
+            val i = party.indexOfFirst { it.mon.pid == playerActive?.mon?.pid }.coerceAtLeast(0)
+            party[i] = party[i].copy(statStages =
                 if (map.absolute) ptr(ramStart + live.mainBattleDataPtr)
                     ?.let { readStatStagesGen5(it + 0xFC) } ?: emptyMap()
                 else readStatStages(battle.third, isEnemy = false))
-            party[0] = lead
+            onField = party[i]
         }
         val revealed = when {
             battle == null || battle.third == 0L -> { lastAbilityTrigger.fill(-1L); null }
-            map.absolute -> readAbilityTriggerGen5(lead, battle.first)
-            else -> readAbilityTrigger(battle.third, lead, battle.first)
+            map.absolute -> readAbilityTriggerGen5(onField, battle.first)
+            else -> readAbilityTrigger(battle.third, onField, battle.first)
         }
         pollVersionRel = if (battle != null && !map.absolute) battle.third else 0L
         val allRevealed = if (battle == null || battle.third == 0L || map.absolute) {
@@ -781,15 +1062,40 @@ class NdsTracker(
             listOfNotNull(revealed)
         } else {
             val queued = synchronized(pendingMsgs) { val q = pendingMsgs.toList(); pendingMsgs.clear(); q }
-            (queued.mapNotNull { resolveAbilityMsg(it, lead, battle.first) } + listOfNotNull(revealed)).distinct()
+            (queued.mapNotNull { resolveAbilityMsg(it, onField, battle.first) } + listOfNotNull(revealed)).distinct()
         }
-        val heals = readHeals(lead?.mon?.maxHp ?: 0, battle != null)
+        val bag = readBag(battle != null)
         runCatching { updateLocation() }
-        // BattleHandlerBase._onEndOfBattle: a battle that just ended against a lab rival is Past Lab, against the champion is Won.
+        // Program.readMemory: battleHandler:checkIfRunHasEnded() after the battle is read,
+        // and only a fetched battle is checked. Gen 5 addresses are main-RAM ones.
+        // BattleHandlerGen5._onPlayerSlotFainted then waits up to 480 frames for the
+        // battle screen's HP byte (someBattleUIPtr + UI_HP_OFFSET) to reach 0; the
+        // Black 2 battle dump reads that byte as 0 while the lead shows 8/19, so the
+        // address is unconfirmed and the wait is not copied: the run ends on the 0.
+        val lost = fetchedNow && runHasEnded(battleRel)
+        if (fetchedNow) { lastBattlePlayer = playerActive; lastBattleEnemy = battle?.first }
+        // Program.getHealingTotals measures the bag against playerPokemon's max HP: in battle
+        // the Pokemon on the field, otherwise the party's first that is standing and not an
+        // egg (PokemonDataReader.decryptPokemonInfo with checkingParty, lua:292-322).
+        val healsFor = (if (fetchedNow) playerActive else party.firstOrNull { it.mon.curHp > 0 && !it.mon.isEgg }) ?: lead
+        val heals = NdsHeals.totals(bag.first, healsFor?.mon?.maxHp ?: 0, showHp = false)
+        // BattleHandlerBase._onEndOfBattle (lua:348-373), unless the run has already
+        // ended: the trainer goes on the defeated list, a lab rival makes the run Past
+        // Lab, and FINAL_FIGHT_ID (TrainerData.lua) sets progress WON and ends the run
+        // (Program.onRunEnded: the win popup, the run logged as won). The champion
+        // fight ending used to set the progress and nothing else, so no DS run was won.
+        // The final opponent must also be down in the last read of the battle: the
+        // reference takes any end of that battle as the win, and a state loaded or a
+        // Time Machine point restored in the middle of it ends it too, which filed a
+        // WON and a new best in the run history (review, 2026-09-29).
+        var won = false
         if (wasInBattle && battle == null) {
-            if (lastTrainerId != 0) defeatedTrainers.add(lastTrainerId)
-            if (lastTrainerId in map.labTrainerIds && progress < 1) progress = 1
-            if (map.finalTrainerId != 0 && lastTrainerId == map.finalTrainerId) progress = 2
+            if (!runEnded) {
+                if (lastTrainerId != 0) defeatedTrainers.add(lastTrainerId)
+                if (lastTrainerId in map.labTrainerIds && progress < 1) progress = 1
+                else if (map.finalTrainerId != 0 && lastTrainerId == map.finalTrainerId && lastBattleEnemy?.mon?.curHp == 0) { progress = 2; won = true }
+            }
+            faintMonIndex = -1
         }
         wasInBattle = battle != null
         if (firstPokemonId == 0) party.firstOrNull()?.let { firstPokemonId = it.mon.species }
@@ -810,11 +1116,21 @@ class NdsTracker(
             repelDuration = repelDuration,
             healPercent = heals.first,
             healCount = heals.second,
-            runOver = if (lossCondition.lost(party.map { it.mon.level to it.mon.curHp })) readRunOver(lead, battle?.first) else null,
+            healingItems = bag.first,
+            statusItems = bag.second,
+            healsPid = healsFor?.mon?.pid ?: 0L,
+            // A win is reported on the read the final battle ended, the loss causes while
+            // the battle lasts; the app's latch holds either for the rest of the run.
+            runOver = if (won) NdsRunOver.WON else if (lost) runOverCause(playerActive ?: lead, battle?.first) else null,
+            playerActive = playerActive,
+            lastBattlePlayer = lastBattlePlayer,
+            lastBattleEnemy = lastBattleEnemy,
             progress = progress,
             enemyTrainerId = if (battle != null) lastTrainerId else 0,
             mapId = lastMapId,
             areaName = lastAreaName,
+            leagueBeaten = readLeagueBeaten(),
+            gameName = gameName,
         )
     }
 
@@ -825,6 +1141,7 @@ class NdsTracker(
      * — and it matters here because fleeing is a wild-only action.
      */
     private fun readBattle(): Triple<NdsTrackedMon?, Boolean, Long>? {
+        battleFetched = false
         val statusBytes = memory.read(ramStart + battleStatusGlobal, 2)
         if (statusBytes.size < 2) return null
         if (statusBytes.u16(0) !in inBattleWords) return null
@@ -832,6 +1149,7 @@ class NdsTracker(
 
         val versionRel = versionPointer()
         if (!map.absolute && versionRel == 0L) return Triple(null, false, 0L)
+        battleFetched = gen4BattleFetched(versionRel)
 
         val trainerBytes = memory.read(ramStart + versionRel + enemyTrainerIdOffset, 2)
         val isWild = trainerBytes.size == 2 && trainerBytes.u16(0) == 0
@@ -868,6 +1186,22 @@ class NdsTracker(
     }
 
     /**
+     * BattleHandlerGen4._tryToFetchBattleData (BattleHandlerGen4.lua:93-112): the
+     * battle's copy of your party starts with your lead's PID, the enemy party has
+     * a Pokemon, and each side has a battler on the field (a PID at its battle PID
+     * address, _readBattlePIDInfo). The reference tries 60 frames after the battle
+     * flag and, on a failure, not again that battle; here every read tries.
+     */
+    private fun gen4BattleFetched(versionRel: Long): Boolean {
+        if (live.playerBattleBase == 0L) return false
+        val first = u32(ramStart + versionRel + live.playerBattleBase)
+        if (first == 0L || u32(ramStart + versionRel + enemyBaseOffset) == 0L) return false
+        if (first != u32(ramStart + versionRel + playerBaseOffset)) return false
+        return u32(ramStart + versionRel + playerBattleMonPidOffset) != 0L &&
+            u32(ramStart + versionRel + enemyBattleMonPidOffset) != 0L
+    }
+
+    /**
      * The 8 battle stat-stage bytes: HP, ATK, DEF, SPE, then SPA, SPD, ACC,
      * EVA, 6 = neutral. The reference's sanity rule is ported verbatim: any
      * value outside 0..12, or a sum under 3, means the block is not really
@@ -901,6 +1235,11 @@ class NdsTracker(
         val battlePid = u32(ramStart + live.playerBattleBase)
         val enemyPid = u32(ramStart + live.enemyBase)
         if (battlePid == 0L || enemyPid == 0L || battlePid != leadPid) return Triple(null, false, 0L)
+        // _readAmountOfBattlers (lua:60-69): 2 is singles, doubles or triples, 3 to 6 a
+        // multi battle; any other count refuses the fetch (lua:127-142).
+        var battlers = 0
+        while (battlers < 7 && u32(ramStart + live.mainBattleDataPtr + 0x18 + 0x1CL * battlers) != 0L) battlers++
+        battleFetched = battlers in 2..6
         val trainer = memory.read(ramStart + live.enemyTrainerId, 2)
         val isWild = trainer.size == 2 && trainer.u16(0) == 0
         if (trainer.size == 2) lastTrainerId = trainer.u16(0)
@@ -917,7 +1256,7 @@ class NdsTracker(
             memory.read(battleDataBase + off, 2).let { if (it.size == 2) it.u16(0) else fallback }
         val curHp = u16At(0x10, d.curHp)
         val maxHp = u16At(0x0E, d.maxHp)
-        val status = memory.read(battleDataBase + 0x20, 4).let { if (it.size == 4) it.u32(0) else d.status }
+        val status = memory.read(battleDataBase + 0x20, 20).let { if (it.size == 20) gen5StatusBits(it) else d.status }
         val moves = List(4) { i -> u16At(0x104 + i * 14L, 0) }
         val pp = List(4) { i ->
             memory.read(battleDataBase + 0x104 + i * 14L + 2, 1).let { if (it.size == 1) it.u8(0) else 0 }
@@ -928,16 +1267,20 @@ class NdsTracker(
     }
 
     /**
-     * Gen 5 stage bytes (PokemonDataReader.readBattleStatStages, GEN == 5):
-     * ATK, DEF, SPA, SPD, then SPE, ACC, EVA - no HP. Same sanity rule as
-     * Gen 4: a value outside 0..12 means this is not stage data yet.
+     * Gen 5 stage bytes (PokemonDataReader.readBattleStatStages, GEN == 5,
+     * PokemonDataReader.lua:345-383): ATK, DEF, SPA, SPD, then SPE, ACC, EVA,
+     * and no HP. The reference's sanity rule is the Gen 4 one: a value outside
+     * 0..12, or a sum under 3, means the block is not stage data yet, and
+     * EVERY stage reads 6. This used to skip ACC and EVA and hand back nothing
+     * at all for a bad block (parity audit, 2026-09-28).
      */
     private fun readStatStagesGen5(base: Long): Map<String, Int> {
         val b = memory.read(base, 8)
         if (b.size < 8) return emptyMap()
-        val v = listOf(b.u8(0), b.u8(1), b.u8(2), b.u8(3), b.u8(4))
-        if (v.any { it !in 0..12 }) return emptyMap()
-        return mapOf("ATK" to v[0], "DEF" to v[1], "SPA" to v[2], "SPD" to v[3], "SPE" to v[4])
+        val names = listOf("ATK", "DEF", "SPA", "SPD", "SPE", "ACC", "EVA")
+        val stages = names.mapIndexed { i, n -> n to b.u8(i) }.toMap()
+        val ok = stages.values.all { it in 0..12 } && stages.values.sum() >= 3
+        return if (ok) stages else names.associateWith { 6 }
     }
 
     private fun readStatStages(versionRel: Long, isEnemy: Boolean): Map<String, Int> {
@@ -1081,6 +1424,11 @@ class NdsTracker(
      * (BattleHandlerBase.lua:265, `currentPP < maxPP` then trackMove). Slots
      * whose move is unknown to the table are kept, since they cannot be judged.
      * Slots, PP and PP Ups stay aligned so the card's columns line up.
+     *
+     * Every move in gen4/moves.tsv and gen5/moves.tsv has a base PP (Gen5MovesTest
+     * holds both tables to it), so the keep-branch only ever sees an id outside
+     * the table. It used to see 21 real Gen 5 moves, which the old extraction
+     * wrote with PP 0, and showed them before the opponent had used them.
      */
     internal fun usedOnly(mon: Gen4.Mon, basePp: (Int) -> Int): Gen4.Mon {
         val keep = mon.moves.indices.filter { i ->
@@ -1102,11 +1450,13 @@ class NdsTracker(
             speciesName = speciesName(mon.species),
             info = info,
             abilityName = abilityNames[mon.abilityId] ?: "-",
+            // An id GEN_5_ITEMS lacks has no name there (heldItemInfo nil -> ""), never "#id".
             itemName = if (mon.heldItem == 0) "-"
-            else itemNames[mon.heldItem] ?: "#${mon.heldItem}",
+            else itemNames[mon.heldItem] ?: "",
             moves = mon.moves.filter { it != 0 }.map {
                 moveInfo[it] ?: NdsMoveInfo("#$it", 0, 0, "")
             },
+            moveLevels = levels,
             movesLearned = levels.count { it <= mon.level },
             movesTotal = levels.size,
             nextMoveLevel = levels.firstOrNull { it > mon.level },

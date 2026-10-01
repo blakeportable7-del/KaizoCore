@@ -5,11 +5,16 @@ the PC tracker gets.
 
     python tools/trainer-data/convert_rivals.py <ironmon_tracker dir> <out dir>
 
-The app already carries routes/trainers/trainerroutes TSVs from an earlier
-port. This adds:
+Classes and groups come from convert_trainers.py, map names and trainers from
+convert_route_info.py. This writes:
 
     rivals-frlg.tsv   trainer id, which rival ("Middle" and friends for FRLG)
-    rivals-rse.tsv    the same for Ruby, Sapphire and Emerald (their ids never disagree)
+    rivals-rse.tsv    the same for Emerald (setupTrainersAsEmerald)
+    rivals-rs.tsv     the same for Ruby and Sapphire (setupTrainersAsRubySapphire)
+
+Ruby/Sapphire and Emerald used to share one file, the union of both games' rivals. The ids do
+disagree: 592, 593, 599, 600, 768 and 769 are rivals only in Emerald, and in R/S 599 and 600 are
+Courtney, so a Ruby run that fought her was taken for Brendan's (parity audit, 2026-09-28).
 """
 import sys, pathlib
 from lupa import LuaRuntime
@@ -55,7 +60,8 @@ def rivals(g, acc):
 tab = chr(9); nl = chr(10)
 tables = {
     "frlg": [(3, "setupRouteInfoAsFRLG", "setupTrainersAsFRLG")],
-    "rse": [(2, "setupRouteInfoAsRSE", "setupTrainersAsEmerald"), (1, "setupRouteInfoAsRSE", "setupTrainersAsRubySapphire")],
+    "rse": [(2, "setupRouteInfoAsRSE", "setupTrainersAsEmerald")],
+    "rs": [(1, "setupRouteInfoAsRSE", "setupTrainersAsRubySapphire")],
 }
 for name, setups in tables.items():
     acc = {}

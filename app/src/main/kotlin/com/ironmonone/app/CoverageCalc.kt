@@ -41,8 +41,9 @@ import androidx.compose.ui.window.DialogProperties
  * pick another, CLEAR; a "fully evolved only" switch; then every species in
  * the game bucketed by the BEST multiplier any chosen type gets against it,
  * 0x, 1/4x, 1/2x, 1x, 2x, 4x, with Shedinja counted as 0x unless something
- * is super effective. Tap a bucket to see its Pokemon. The Gen 3 screen lists
- * them in dex order; the DS screen sorts them by BST, highest first.
+ * is super effective. Tap a bucket to see its Pokemon, highest BST first on
+ * both (the Gen 3 screen's Pager.defaultSort, CoverageCalcScreen.lua:132-134,
+ * breaks ties by id; it was listed in dex order here until 2026-09-29).
  */
 object CoverageCalc {
     /** CoverageCalcScreen.getPartyPokemonEffectiveMoveTypes: damage-dealing moves with no type-based multiplier. */
@@ -52,6 +53,9 @@ object CoverageCalc {
     fun seedTypes(moves: List<Triple<Int, String, String>>, excluded: Set<Int> = GEN3_EXCLUDED_MOVES): List<String> =
         moves.filter { (id, cat, type) -> !cat.startsWith("STA", ignoreCase = true) && id !in excluded && type.isNotBlank() }
             .map { it.third }.distinct().take(6)
+
+    /** CoverageCalcScreen.lua:132: BST, highest first, then id. */
+    fun byBst(ids: List<Int>, bst: (Int) -> Int): List<Int> = ids.sortedWith(compareByDescending<Int> { bst(it) }.thenBy { it })
 }
 
 private val BUCKETS = listOf(0.0 to "0x", 0.25 to "1/4x", 0.5 to "1/2x", 1.0 to "1x", 2.0 to "2x", 4.0 to "4x")
@@ -139,7 +143,7 @@ fun CoverageCalcDialog(
                 }
             }
             Spacer(Modifier.height(6.dp))
-            val ids = (data[tab] ?: emptyList()).let { if (sortByBst) it.sortedByDescending(bst) else it }
+            val ids = (data[tab] ?: emptyList()).let { if (sortByBst) CoverageCalc.byBst(it, bst) else it }
             LazyColumn(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 items(ids, key = { it }) { id ->
                     Row(Modifier.fillMaxWidth().background(Pc.Page).border(1.dp, Pc.Border).padding(4.dp), verticalAlignment = Alignment.CenterVertically) {

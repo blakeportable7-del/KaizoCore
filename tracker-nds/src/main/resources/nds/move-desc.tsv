@@ -1,0 +1,560 @@
+# move id	Gen 4 description	Gen 5 description
+1	Inflicts regular damage and makes contact.	Inflicts regular damage and makes contact.
+2	Inflicts regular damage and makes contact. User's critical hit rate is one level higher when using this move.	Inflicts regular damage and makes contact. User's critical hit rate is one level higher when using this move.
+3	Inflicts regular damage and makes contact. Hits 2-5 times in one turn. Averages to 3 hits per use.	Inflicts regular damage and makes contact. Hits 2-5 times in one turn. Averages to 3 hits per use.
+4	Inflicts regular damage and makes contact. Hits 2-5 times in one turn, and averages to 3 hits per use.	Inflicts regular damage and makes contact. Hits 2-5 times in one turn, and averages to 3 hits per use.
+5	Inflicts regular damage and makes contact.	Inflicts regular damage and makes contact.
+6	Inflicts regular damage. After the battle ends, the winner receives five times the user's level in extra money for each time this move was used.	Inflicts regular damage. After the battle ends, the winner receives five times the user's level in extra money for each time this move was used.
+7	Inflicts regular damage and makes contact. Has a 10% chance to burn the target.	Inflicts regular damage and makes contact. Has a 10% chance to burn the target.
+8	Inflicts regular damage and makes contact. Has a 10% chance to freeze the target.	Inflicts regular damage and makes contact. Has a 10% chance to freeze the target.
+9	Inflicts regular damage and makes contact. Has a 10% chance to paralyze the target.	Inflicts regular damage and makes contact. Has a 10% chance to paralyze the target.
+10	Inflicts regular damage and makes contact.	Inflicts regular damage and makes contact.
+11	Inflicts regular damage and makes contact.	Inflicts regular damage and makes contact.
+12	Instantly KOs the target and makes contact. This move's accuracy is 30% plus 1% for each level the user is higher than the target. If the user is a lower level than the target, this move will fail.	Instantly KOs the target and makes contact. This move's accuracy is 30% plus 1% for each level the user is higher than the target. If the user is a lower level than the target, this move will fail.
+13	Inflicts regular damage. User's critical hit rate is one level higher when using this move. User charges for one turn before attacking.	Inflicts regular damage. User's critical hit rate is one level higher when using this move. User charges for one turn before attacking.
+14	Raises the user's Attack by two stages.	Raises the user's Attack by two stages.
+15	Inflicts regular damage and makes contact.	Inflicts regular damage and makes contact.
+16	Inflicts regular damage. If the target is under the effect of Bounce or Fly, this move will hit with double power.	Inflicts regular damage. If the target is under the effect of Bounce, Fly, or Sky Drop, this move will hit with double power.
+17	Inflicts regular damage and makes contact.	Inflicts regular damage and makes contact.
+18	Decreased priority. Switches the target out for another of its trainer's Pokémon selected at random. Doesn't affect Pokémon with suction cups or under the effect of ingrain.	Decreased priority. Switches the target out for another of its trainer's Pokémon selected at random. Doesn't affect Pokémon with suction cups or under the effect of ingrain.
+19	Inflicts regular damage and makes contact. User flies high into the air for one turn, becoming immune to attack, and hits on the second turn. This move cannot be used while gravity is in effect.	Inflicts regular damage and makes contact. User flies high into the air for one turn, becoming immune to attack, and hits on the second turn. This move cannot be used while gravity is in effect.
+20	Makes contact. For the next 2-5 turns, the target cannot leave the field and is damaged for 1/16 its max HP at the end of each turn.	Makes contact. For the next 4-5 turns, the target cannot leave the field and is damaged for 1/16 its max HP at the end of each turn.
+21	Inflicts regular damage and makes contact.	Inflicts regular damage and makes contact.
+22	Inflicts regular damage and makes contact.	Inflicts regular damage and makes contact.
+23	Inflicts regular damage and makes contact. Has a 30% chance to make the target flinch. Power is doubled against Pokémon that are minimized.	Inflicts regular damage and makes contact. Has a 30% chance to make the target flinch. Power is doubled against Pokémon that are minimized.
+24	Inflicts regular damage and makes contact. Hits twice in one turn.	Inflicts regular damage and makes contact. Hits twice in one turn.
+25	Inflicts regular damage and makes contact.	Inflicts regular damage and makes contact.
+26	Inflicts regular damage and makes contact. If this move misses, the user takes half the damage it would have dealt. If the move would have no effect, the user takes damage equal to half the target's max HP.	Inflicts regular damage and makes contact. If this move misses, the user takes half its max HP in damage.
+27	Inflicts regular damage and makes contact. Has a 30% chance to make the target flinch.	Inflicts regular damage and makes contact. Has a 30% chance to make the target flinch.
+28	Lowers the target's Accuracy by one stage.	Lowers the target's Accuracy by one stage.
+29	Inflicts regular damage and makes contact. Has a 30% chance to make the target flinch.	Inflicts regular damage and makes contact. Has a 30% chance to make the target flinch.
+30	Inflicts regular damage and makes contact.	Inflicts regular damage and makes contact.
+31	Inflicts regular damage and makes contact. Hits 2-5 times in one turn, and averages to 3 hits per use.	Inflicts regular damage and makes contact. Hits 2-5 times in one turn, and averages to 3 hits per use.
+32	Instantly KOs the target and makes contact. This move's accuracy is 30% plus 1% for each level the user is higher than the target. If the user is a lower level than the target, this move will fail.	Instantly KOs the target and makes contact. This move's accuracy is 30% plus 1% for each level the user is higher than the target. If the user is a lower level than the target, this move will fail.
+33	Inflicts regular damage and makes contact.	Inflicts regular damage and makes contact.
+34	Inflicts regular damage and makes contact. Has a 30% chance to paralyze the target.	Inflicts regular damage and makes contact. Has a 30% chance to paralyze the target.
+35	Makes contact. For the next 2-5 turns, the target cannot leave the field and is damaged for 1/16 its max HP at the end of each turn.	Makes contact. For the next 4-5 turns, the target cannot leave the field and is damaged for 1/16 its max HP at the end of each turn.
+36	Inflicts regular damage and makes contact. User takes 1/4 the damage it inflicts in recoil.	Inflicts regular damage and makes contact. User takes 1/4 the damage it inflicts in recoil.
+37	Inflicts regular damage and makes contact. User is forced to attack with this move for 2-3 turns, selected at random. After the last hit, the user becomes confused.	Inflicts regular damage and makes contact. User is forced to attack with this move for 2-3 turns, selected at random. After the last hit, the user becomes confused.
+38	Inflicts regular damage and makes contact. User takes 1/3 the damage it inflicts in recoil.	Inflicts regular damage and makes contact. User takes 1/3 the damage it inflicts in recoil.
+39	Lowers the target's Defense by one stage.	Lowers the target's Defense by one stage.
+40	Inflicts regular damage. Has a 30% chance to poison the target.	Inflicts regular damage. Has a 30% chance to poison the target.
+41	Inflicts regular damage. Hits twice in the same turn. Has a 20% chance on each hit to poison the target.	Inflicts regular damage. Hits twice in the same turn. Has a 20% chance on each hit to poison the target.
+42	Inflicts regular damage. Hits 2-5 times in one turn, and averages to 3 hits per use.	Inflicts regular damage. Hits 2-5 times in one turn, and averages to 3 hits per use.
+43	Lowers the target's Defense by one stage.	Lowers the target's Defense by one stage.
+44	Inflicts regular damage and makes contact. Has a 30% chance to make the target flinch.	Inflicts regular damage and makes contact. Has a 30% chance to make the target flinch.
+45	Lowers the target's Attack by one stage.	Lowers the target's Attack by one stage.
+46	Decreased priority. Switches the target out for another of its trainer's Pokémon selected at random. Wild battles end immediately.	Decreased priority. Switches the target out for another of its trainer's Pokémon selected at random. Wild battles end immediately.
+47	Puts the target to sleep.	Puts the target to sleep.
+48	Confuses the target.	Confuses the target.
+49	Inflicts exactly 20 damage.	Inflicts exactly 20 damage.
+50	Disables the target's last used move, preventing its use for 4-7 turns, selected at random, or until the target leaves the field. Using an item counts as a turn.	Disables the target's last used move, preventing its use for 4 turns, or until the target leaves the field. Using an item counts as a turn.
+51	Inflicts regular damage. Has a 10% chance to lower the target's Special Defense by one stage.	Inflicts regular damage. Has a 10% chance to lower the target's Special Defense by one stage.
+52	Inflicts regular damage. Has a 10% chance to burn the target.	Inflicts regular damage. Has a 10% chance to burn the target.
+53	Inflicts regular damage. Has a 10% chance to burn the target.	Inflicts regular damage. Has a 10% chance to burn the target.
+54	Pokémon on the user's side of the field are immune to stat-lowering effects for five turns. Guard Swap, Heart Swap, and Power Swap may still be used.	Pokémon on the user's side of the field are immune to stat-lowering effects for five turns. Guard Swap, Heart Swap, and Power Swap may still be used.
+55	Inflicts regular damage.	Inflicts regular damage.
+56	Inflicts regular damage.	Inflicts regular damage.
+57	Inflicts regular damage. If the target is in the first turn of dive, this move will hit with double power.	Inflicts regular damage. If the target is in the first turn of dive, this move will hit with double power.
+58	Inflicts regular damage. Has a 10% chance to freeze the target.	Inflicts regular damage. Has a 10% chance to freeze the target.
+59	Inflicts regular damage. Has a 10% chance to freeze the target. During hail, this move has perfect accuracy.	Inflicts regular damage. Has a 10% chance to freeze the target. During hail, this move has perfect accuracy.
+60	Inflicts regular damage. Has a 10% chance to confuse the target.	Inflicts regular damage. Has a 10% chance to confuse the target.
+61	Inflicts regular damage. Has a 10% chance to lower the target's Speed by one stage.	Inflicts regular damage. Has a 10% chance to lower the target's Speed by one stage.
+62	Inflicts regular damage. Has a 10% chance to lower the target's Attack by one stage.	Inflicts regular damage. Has a 10% chance to lower the target's Attack by one stage.
+63	Inflicts regular damage. User loses its next turn to recharge, and cannot attack or switch out during that turn.	Inflicts regular damage. User loses its next turn to recharge, and cannot attack or switch out during that turn.
+64	Inflicts regular damage and makes contact.	Inflicts regular damage and makes contact.
+65	Inflicts regular damage and makes contact.	Inflicts regular damage and makes contact.
+66	Inflicts regular damage and makes contact. User takes 1/4 the damage it inflicts in recoil.	Inflicts regular damage and makes contact. User takes 1/4 the damage it inflicts in recoil.
+67	Inflicts regular damage and makes contact. Power increases with the target's weight in kilograms, to a maximum of 120.	Inflicts regular damage and makes contact. Power increases with the target's weight in kilograms, to a maximum of 120.
+68	Decreased priority and makes contact. Inflicts twice the damage that move did to the user. If there is no eligible target, this move will fail. Type immunity applies, but other type effects are ignored.	Decreased priority and makes contact. Inflicts twice the damage that move did to the user. If there is no eligible target, this move will fail. Type immunity applies, but other type effects are ignored.
+69	Makes contact and inflicts damage equal to the user's level. Type immunity applies, but other type effects are ignored.	Makes contact and inflicts damage equal to the user's level. Type immunity applies, but other type effects are ignored.
+70	Inflicts regular damage and makes contact.	Inflicts regular damage and makes contact.
+71	Inflicts regular damage. Drains half the damage inflicted to heal the user.	Inflicts regular damage. Drains half the damage inflicted to heal the user.
+72	Inflicts regular damage. Drains half the damage inflicted to heal the user.	Inflicts regular damage. Drains half the damage inflicted to heal the user.
+73	Plants a seed on the target that drains 1/8 of its max HP at the end of every turn. Has no effect on grass Pokémon, and Liquid Ooze will cause the user to take damage.	Plants a seed on the target that drains 1/8 of its max HP at the end of every turn. Has no effect on grass Pokémon, and Liquid Ooze will cause the user to take damage.
+74	Raises the user's Special Attack by one stage.	Raises the user's Attack and Special Attack by one stage each. During sunny day, raises both stats by two stages.
+75	Inflicts regular damage. User's critical hit rate is one level higher when using this move.	Inflicts regular damage. User's critical hit rate is one level higher when using this move.
+76	Inflicts regular damage. User charges for one turn before attacking. During sunny day, the charge turn is skipped.	Inflicts regular damage. User charges for one turn before attacking. During sunny day, the charge turn is skipped.
+77	Poisons the target.	Poisons the target.
+78	Paralyzes the target.	Paralyzes the target.
+79	Puts the target to sleep.	Puts the target to sleep.
+80	Inflicts regular damage and makes contact. User is forced to attack with this move for 2-3 turns, selected at random. After the last hit, the user becomes confused.	Inflicts regular damage and makes contact. User is forced to attack with this move for 2-3 turns, selected at random. After the last hit, the user becomes confused.
+81	Lowers the target's Speed by two stages.	Lowers the target's Speed by two stages.
+82	Inflicts exactly 40 damage.	Inflicts exactly 40 damage.
+83	For the next 2-5 turns, the target cannot leave the field and is damaged for 1/16 its max HP at the end of each turn.	For the next 4-5 turns, the target cannot leave the field and is damaged for 1/16 its max HP at the end of each turn.
+84	Inflicts regular damage. Has a 10% chance to paralyze the target.	Inflicts regular damage. Has a 10% chance to paralyze the target.
+85	Inflicts regular damage. Has a 10% chance to paralyze the target.	Inflicts regular damage. Has a 10% chance to paralyze the target.
+86	Paralyzes the target.	Paralyzes the target.
+87	Inflicts regular damage. Has a 30% chance to paralyze the target. Has perfect accuracy in the rain, but only 50% accuracy in harsh sunlight.	Inflicts regular damage. Has a 30% chance to paralyze the target. Has perfect accuracy in the rain, but only 50% accuracy in harsh sunlight.
+88	Inflicts regular damage.	Inflicts regular damage.
+89	Inflicts regular damage. If the target is in the first turn of dig, this move will hit with double power.	Inflicts regular damage. If the target is in the first turn of dig, this move will hit with double power.
+90	Instantly KOs the target. This move's accuracy is 30% plus 1% for each level the user is higher than the target. If the user is a lower level than the target, this move will fail.	Instantly KOs the target. This move's accuracy is 30% plus 1% for each level the user is higher than the target. If the user is a lower level than the target, this move will fail.
+91	Makes contact. User digs underground for one turn, becoming immune to all attacks except for earthquake and magnitude, which hit for double power. User inflicts regular damage next turn.	Makes contact. User digs underground for one turn, becoming immune to all attacks except for earthquake and magnitude, which hit for double power. User inflicts regular damage next turn.
+92	Badly poisons the target.	Badly poisons the target.
+93	Inflicts regular damage. Has a 10% chance to confuse the target.	Inflicts regular damage. Has a 10% chance to confuse the target.
+94	Inflicts regular damage. Has a 10% chance to lower the target's Special Defense by one stage.	Inflicts regular damage. Has a 10% chance to lower the target's Special Defense by one stage.
+95	Puts the target to sleep.	Puts the target to sleep.
+96	Raises the user's Attack by one stage.	Raises the user's Attack by one stage.
+97	Raises the user's Speed by two stages.	Raises the user's Speed by two stages.
+98	Increased priority. Inflicts regular damage and makes contact.	Increased priority. Inflicts regular damage and makes contact.
+99	Inflicts regular damage and makes contact. Every time the user is hit after it uses this move but before its next action, its Attack raises by one stage.	Inflicts regular damage and makes contact. Every time the user is hit after it uses this move but before its next action, its Attack raises by one stage.
+100	Does nothing. Wild battles end immediately.	Does nothing. Wild battles end immediately.
+101	Inflicts damage equal to the user's level. Type immunity applies, but other type effects are ignored.	Inflicts damage equal to the user's level. Type immunity applies, but other type effects are ignored.
+102	This move is replaced by the target's last successfully used move, and its PP changes to 5. If Chatter, Metronome, Mimic, Sketch, or Struggle is selected, this move will fail.	This move is replaced by the target's last successfully used move, with full PP. If Chatter, Metronome, Mimic, Sketch, Struggle, or Transform is selected, this move will fail.
+103	Lowers the target's Defense by two stages.	Lowers the target's Defense by two stages.
+104	Raises the user's Evasion by one stage.	Raises the user's Evasion by one stage.
+105	Heals the user for half its max HP.	Heals the user for half its max HP.
+106	Raises the user's Defense by one stage.	Raises the user's Defense by one stage.
+107	Raises the user's Evasion by one stage. Stomp has double power against Pokémon that have used this move since entering the field.	Raises the user's Evasion by two stages. Stomp and Steamroller have double power against Pokémon that have used this move since entering the field.
+108	Lowers the target's Accuracy by one stage.	Lowers the target's Accuracy by one stage.
+109	Confuses the target.	Confuses the target.
+110	Raises the user's Defense by one stage.	Raises the user's Defense by one stage.
+111	Raises user's Defense by one stage. After this move is used, the power of Ice Ball and Rollout are doubled until the user leaves the field.	Raises user's Defense by one stage. After this move is used, the power of Ice Ball and Rollout are doubled until the user leaves the field.
+112	Raises the user's Defense by two stages.	Raises the user's Defense by two stages.
+113	Erects a barrier around the user's side of the field that reduces damage from special attacks by half for five turns. Brick Break or Defog will destroy the barrier.	Erects a barrier around the user's side of the field that reduces damage from special attacks by half for five turns. Brick Break or Defog will destroy the barrier.
+114	Removes stat, Accuracy, and Evasion modifiers from every Pokémon on the field.	Removes stat, Accuracy, and Evasion modifiers from every Pokémon on the field.
+115	Erects a barrier around the user's side of the field that reduces damage from physical attacks by half for five turns. Brick Break or Defog will destroy the barrier.	Erects a barrier around the user's side of the field that reduces damage from physical attacks by half for five turns. Brick Break or Defog will destroy the barrier.
+116	User's critical hit rate is two levels higher until it leaves the field. If the user has already used focus energy since entering the field, this move will fail.	User's critical hit rate is two levels higher until it leaves the field. If the user has already used focus energy since entering the field, this move will fail.
+117	Increased priority and makes contact. User waits for two turns. On the second turn, the user inflicts twice the damage it accumulated on the last Pokémon to hit it. Damage inflicted is typeless.	Increased priority and makes contact. User waits for two turns. On the second turn, the user inflicts twice the damage it accumulated on the last Pokémon to hit it. Damage inflicted is typeless.
+118	Selects any move at random and uses it. Moves the user already knows are not eligible. Assist, meta, protection, and reflection moves are also not eligible.	Selects any move at random and uses it. Assist, meta, protection, and reflection moves are not eligible.
+119	Uses the last move targeted at the user by a Pokémon still on the field.	Uses the last move targeted at the user by a Pokémon still on the field.
+120	User faints, even if the attack fails or misses. Inflicts regular damage. Halves the target's Defense for damage calculation.	User faints, even if the attack fails or misses. Inflicts regular damage.
+121	Inflicts regular damage.	Inflicts regular damage.
+122	Inflicts regular damage and makes contact. Has a 30% chance to paralyze the target.	Inflicts regular damage and makes contact. Has a 30% chance to paralyze the target.
+123	Inflicts regular damage. Has a 40% chance to poison the target.	Inflicts regular damage. Has a 40% chance to poison the target.
+124	Inflicts regular damage. Has a 30% chance to poison the target.	Inflicts regular damage. Has a 30% chance to poison the target.
+125	Inflicts regular damage. Has a 10% chance to make the target flinch.	Inflicts regular damage. Has a 10% chance to make the target flinch.
+126	Inflicts regular damage. Has a 10% chance to burn the target.	Inflicts regular damage. Has a 10% chance to burn the target.
+127	Inflicts regular damage and makes contact. Has a 20% chance to make the target flinch.	Inflicts regular damage and makes contact. Has a 20% chance to make the target flinch.
+128	Makes contact. For the next 2-5 turns, the target cannot leave the field and is damaged for 1/16 its max HP at the end of each turn.	Makes contact. For the next 4-5 turns, the target cannot leave the field and is damaged for 1/16 its max HP at the end of each turn.
+129	Inflicts regular damage. Ignores Accuracy and Evasion modifiers.	Inflicts regular damage. Ignores Accuracy and Evasion modifiers.
+130	Inflicts regular damage and makes contact. Raises the user's Defense by one stage. User then charges for one turn before attacking.	Inflicts regular damage and makes contact. Raises the user's Defense by one stage. User then charges for one turn before attacking.
+131	Inflicts regular damage. Hits 2-5 times in one turn, and averages to 3 hits per use.	Inflicts regular damage. Hits 2-5 times in one turn, and averages to 3 hits per use.
+132	Inflicts regular damage and makes contact. Has a 10% chance to lower the target's Speed by one stage.	Inflicts regular damage and makes contact. Has a 10% chance to lower the target's Speed by one stage.
+133	Raises the user's Special Defense by two stages.	Raises the user's Special Defense by two stages.
+134	Lowers the target's Accuracy by one stage.	Lowers the target's Accuracy by one stage.
+135	Heals the user for half its max HP.	Heals the user for half its max HP.
+136	Inflicts regular damage and makes contact. If this move does not hit the target, the user takes damage equal to half of its max HP rounded down. Gravity disables this move.	Inflicts regular damage and makes contact. If this move does not hit the target, the user takes damage equal to half of its max HP rounded down. Gravity disables this move.
+137	Paralyzes the target.	Paralyzes the target.
+138	Fails if not used on a sleeping Pokémon. Inflicts regular damage. Drains half the damage inflicted to heal the user.	Fails if not used on a sleeping Pokémon. Inflicts regular damage. Drains half the damage inflicted to heal the user.
+139	Poisons the target.	Poisons the target.
+140	Inflicts regular damage. Hits 2-5 times in one turn. Averages to 3 hits per use.	Inflicts regular damage. Hits 2-5 times in one turn. Averages to 3 hits per use.
+141	Inflicts regular damage and makes contact. Drains half the damage inflicted to heal the user.	Inflicts regular damage and makes contact. Drains half the damage inflicted to heal the user.
+142	Puts the target to sleep.	Puts the target to sleep.
+143	Inflicts regular damage. User charges for one turn before attacking, and critical hit chance is one level higher than normal. Has a 30% chance to make the target flinch.	Inflicts regular damage. User charges for one turn before attacking, and critical hit chance is one level higher than normal. Has a 30% chance to make the target flinch.
+144	User copies the target's species, weight, type, ability, calculated stats (except HP), and moves. Copied moves will all have 5 PP remaining.	User copies the target's species, weight, type, ability, calculated stats (except HP), and moves. Copied moves will all have 5 PP remaining.
+145	Inflicts regular damage. Has a 10% chance to lower the target's Speed by one stage.	Inflicts regular damage. Has a 10% chance to lower the target's Speed by one stage.
+146	Inflicts regular damage and makes contact. Has a 20% chance to confuse the target.	Inflicts regular damage and makes contact. Has a 20% chance to confuse the target.
+147	Puts the target to sleep.	Puts the target to sleep.
+148	Lowers the target's Accuracy by one stage.	Lowers the target's Accuracy by one stage.
+149	Inflicts typeless damage between 50% and 150% of the user's level, selected at random in increments of 10%.	Inflicts typeless damage between 50% and 150% of the user's level, selected at random in increments of 1%.
+150	Makes the user absolutely useless for one turn.	Makes the user absolutely useless for one turn.
+151	Raises the user's Defense by two stages.	Raises the user's Defense by two stages.
+152	Inflicts regular damage and makes contact. User's critical hit rate is one level higher when using this move.	Inflicts regular damage and makes contact. User's critical hit rate is one level higher when using this move.
+153	User faints, even if the attack fails or misses. Inflicts regular damage. Halves the target's Defense for damage calculation.	User faints, even if the attack fails or misses. Inflicts regular damage.
+154	Inflicts regular damage and makes contact. Hits 2-5 times in one turn, and averages to 3 hits per use.	Inflicts regular damage and makes contact. Hits 2-5 times in one turn, and averages to 3 hits per use.
+155	Inflicts regular damage. Hits twice in one turn.	Inflicts regular damage. Hits twice in one turn.
+156	User falls to sleep and immediately regains all its HP. The user will always wake up after two turns, or one turn with early bird.	User falls to sleep and immediately regains all its HP. The user will always wake up after two turns, or one turn with early bird.
+157	Inflicts regular damage. Has a 30% chance to make the target flinch.	Inflicts regular damage. Has a 30% chance to make the target flinch.
+158	Inflicts regular damage and makes contact. Has a 10% chance to make the target flinch.	Inflicts regular damage and makes contact. Has a 10% chance to make the target flinch.
+159	Raises the user's Attack by one stage.	Raises the user's Attack by one stage.
+160	User's type changes to the type of one of its moves, selected at random. Only moves with a different type are eligible, and Curse is never eligible.	User's type changes to the type of one of its moves, selected at random. Only moves with a different type are eligible.
+161	Inflicts regular damage. Has a 20% for an effect to occur, which can then be burn, freeze, or paralysis.	Inflicts regular damage. Has a 20% for an effect to occur, which can then be burn, freeze, or paralysis.
+162	Makes contact. Inflicts typeless damage equal to half the target's remaining HP. Although typeless, this is ineffective against Wonder Guard.	Makes contact. Inflicts typeless damage equal to half the target's remaining HP. Although typeless, this is ineffective against Wonder Guard.
+163	Inflicts regular damage and makes contact. User's critical hit rate is one level higher when using this move.	Inflicts regular damage and makes contact. User's critical hit rate is one level higher when using this move.
+164	Transfers 1/4 the user's max HP into a doll that absorbs damage and causes most negative move effects to fail.	Transfers 1/4 the user's max HP into a doll that absorbs damage and causes most negative move effects to fail.
+165	Inflicts typeless regular damage and makes contact. User takes 1/4 its max HP in recoil. Ignores Accuracy and Evasion modifiers.	Inflicts typeless regular damage and makes contact. User takes 1/4 its max HP in recoil. Ignores Accuracy and Evasion modifiers.
+166	Permanently replaces itself with the target's last used move. If that move is chatter or struggle, this move will fail.	Permanently replaces itself with the target's last used move. If that move is chatter or struggle, this move will fail.
+167	Makes contact. Inflicts regular damage up to 3 times in the same turn. The second hit has 20 power, and the third hit has 30, for a total of 60. Move stops if any hits miss.	Makes contact. Inflicts regular damage up to 3 times in the same turn. The second hit has 20 power, and the third hit has 30, for a total of 60. Move stops if any hits miss.
+168	Inflicts regular damage and makes contact. If the target is holding an item and the user is not, the user will permanently take the item. Damage is still inflicted if an item cannot be taken.	Inflicts regular damage and makes contact. If the target is holding an item and the user is not, the user will permanently take the item. Damage is still inflicted if an item cannot be taken.
+169	The target cannot switch out normally. Ignores Accuracy and Evasion modifiers. This effect ends when the user leaves the field.	The target cannot switch out normally. Ignores Accuracy and Evasion modifiers. This effect ends when the user leaves the field.
+170	If the user targets the same target again before the end of the next turn, the move it uses is guaranteed to hit. This move itself also ignores Accuracy and Evasion modifiers.	If the user targets the same target again before the end of the next turn, the move it uses is guaranteed to hit. This move itself also ignores Accuracy and Evasion modifiers.
+171	Only works on sleeping Pokémon. Gives the target a nightmare, damaging it for 1/4 its max HP every turn. If the target wakes up or leaves the field, this effect ends.	Only works on sleeping Pokémon. Gives the target a nightmare, damaging it for 1/4 its max HP every turn. If the target wakes up or leaves the field, this effect ends.
+172	Inflicts regular damage and makes contact. Has a 10% chance to burn the target. Frozen Pokémon may use this move, in which case they will thaw.	Inflicts regular damage and makes contact. Has a 10% chance to burn the target. Frozen Pokémon may use this move, in which case they will thaw.
+173	Only usable if the user is sleeping. Inflicts regular damage. Has a 30% chance to make the target flinch.	Only usable if the user is sleeping. Inflicts regular damage. Has a 30% chance to make the target flinch.
+174	If the user is a ghost: user pays half its max HP to place a curse on the target, damaging it for 1/4 its max HP every turn. Otherwise, it lowers the user's Speed by one stage, and raises its Attack and Defense by one stage each.	If the user is a ghost: user pays half its max HP to place a curse on the target, damaging it for 1/4 its max HP every turn. Otherwise, it lowers the user's Speed by one stage, and raises its Attack and Defense by one stage each.
+175	Inflicts regular damage and makes contact. Power varies inversely with the user's proportional remaining HP.	Inflicts regular damage and makes contact. Power varies inversely with the user's proportional remaining HP.
+176	Changes the user's type to a type either resistant or immune to the last damaging move that hit it. The new type is selected at random and cannot be a type the user already is.	Changes the user's type to a type either resistant or immune to the last damaging move that hit it. The new type is selected at random and cannot be a type the user already is.
+177	Inflicts regular damage. User's critical hit rate is one level higher when using this move.	Inflicts regular damage. User's critical hit rate is one level higher when using this move.
+178	Lowers the target's Speed by two stages.	Lowers the target's Speed by two stages.
+179	Inflicts regular damage and makes contact. Power varies inversely with the user's proportional remaining HP.	Inflicts regular damage and makes contact. Power varies inversely with the user's proportional remaining HP.
+180	Lowers the PP of the target's last used move by 4.	Lowers the PP of the target's last used move by 4.
+181	Inflicts regular damage. Has a 10% chance to freeze the target.	Inflicts regular damage. Has a 10% chance to freeze the target.
+182	Increased priority. No moves will hit the user for the remainder of this turn. If the user is last to act this turn, this move will fail.	Increased priority. No moves will hit the user for the remainder of this turn. If the user is last to act this turn, this move will fail.
+183	Increased priority. Inflicts regular damage and makes contact.	Increased priority. Inflicts regular damage and makes contact.
+184	Lowers the target's Speed by two stages.	Lowers the target's Speed by two stages.
+185	Inflicts regular damage and makes contact. Ignores Accuracy and Evasion modifiers.	Inflicts regular damage and makes contact. Ignores Accuracy and Evasion modifiers.
+186	Confuses the target.	Confuses the target.
+187	User pays half its max HP to raise its Attack to +6 stages. If the user cannot pay the HP cost, this move will fail.	User pays half its max HP to raise its Attack to +6 stages. If the user cannot pay the HP cost, this move will fail.
+188	Inflicts regular damage. Has a 30% chance to poison the target.	Inflicts regular damage. Has a 30% chance to poison the target.
+189	Inflicts regular damage. Has a 100% chance to lower the target's Accuracy by one stage.	Inflicts regular damage. Has a 100% chance to lower the target's Accuracy by one stage.
+190	Inflicts regular damage. Has a 50% chance to lower the target's Accuracy by one stage.	Inflicts regular damage. Has a 50% chance to lower the target's Accuracy by one stage.
+191	Scatters spikes around the opposing field, which damage opposing Pokémon that enter the field for 1/8 of their max HP. Up to three layers of spikes may be laid down, adding 1/16 more damage for each layer.	Scatters spikes around the opposing field, which damage opposing Pokémon that enter the field for 1/8 of their max HP. Up to three layers of spikes may be laid down, adding 1/16 more damage for each layer.
+192	Inflicts regular damage. Has a 100% chance to paralyze the target.	Inflicts regular damage. Has a 100% chance to paralyze the target.
+193	Ignores the target's boosted Evasion stages until the target leaves the field. A ghost under this effect takes normal damage from normal and fighting moves.	Ignores the target's boosted Evasion stages until the target leaves the field. A ghost under this effect takes normal damage from normal and fighting moves.
+194	If the user faints before its next move, the Pokémon that fainted it will automatically faint. End-of-turn damage is ignored.	If the user faints before its next move, the Pokémon that fainted it will automatically faint. End-of-turn damage is ignored.
+195	Every Pokémon is given a counter that starts at 3 and decreases by 1 at the end of every turn. When a Pokémon's counter reaches zero, that Pokémon faints.	Every Pokémon is given a counter that starts at 3 and decreases by 1 at the end of every turn. When a Pokémon's counter reaches zero, that Pokémon faints.
+196	Inflicts regular damage. Has a 100% chance to lower the target's Speed by one stage.	Inflicts regular damage. Has a 100% chance to lower the target's Speed by one stage.
+197	Increased priority. No moves will hit the user for the remainder of this turn. If the user is last to act this turn, this move will fail.	Increased priority. No moves will hit the user for the remainder of this turn. If the user is last to act this turn, this move will fail.
+198	Inflicts regular damage. Hits 2-5 times in one turn. Averages to 3 hits per use.	Inflicts regular damage. Hits 2-5 times in one turn. Averages to 3 hits per use.
+199	If the user targets the same target again before the end of the next turn, the move it uses is guaranteed to hit. This move itself also ignores Accuracy and Evasion modifiers.	If the user targets the same target again before the end of the next turn, the move it uses is guaranteed to hit. This move itself also ignores Accuracy and Evasion modifiers.
+200	Inflicts regular damage and makes contact. User is forced to attack with this move for 2-3 turns, selected at random. After the last hit, the user becomes confused.	Inflicts regular damage and makes contact. User is forced to attack with this move for 2-3 turns, selected at random. After the last hit, the user becomes confused.
+201	Summons a to a sandstorm for five turns. Pokémon that are not ground, rock, or steel take 1/16 their max HP at the end of every turn. Every rock Pokémon's Special Defense is raised by 50% for the duration of this effect.	Summons a to a sandstorm for five turns. Pokémon that are not ground, rock, or steel take 1/16 their max HP at the end of every turn. Every rock Pokémon's Special Defense is raised by 50% for the duration of this effect.
+202	Inflicts regular damage. Drains half the damage inflicted to heal the user.	Inflicts regular damage. Drains half the damage inflicted to heal the user.
+203	Increased priority. The user's HP cannot be lowered below 1 by any means for the remainder of this turn.	Increased priority. The user's HP cannot be lowered below 1 by any means for the remainder of this turn.
+204	Lowers the target's Attack by two stages.	Lowers the target's Attack by two stages.
+205	Inflicts regular damage and makes contact. User is forced to use this move for five turns. Power doubles every time this move is used in succession to a maximum of 16x. If this move misses, the lock-in ends.	Inflicts regular damage and makes contact. User is forced to use this move for five turns. Power doubles every time this move is used in succession to a maximum of 16x. If this move misses, the lock-in ends.
+206	Inflicts regular damage and makes contact. Will not reduce the target's HP below 1.	Inflicts regular damage and makes contact. Will not reduce the target's HP below 1.
+207	Raises the target's Attack by two stages, then confuses it.	Raises the target's Attack by two stages, then confuses it.
+208	Heals the user for half its max HP.	Heals the user for half its max HP.
+209	Inflicts regular damage and makes contact. Has a 30% chance to paralyze the target.	Inflicts regular damage and makes contact. Has a 30% chance to paralyze the target.
+210	Inflicts regular damage and makes contact. Power doubles after every time this move is used, whether consecutively or not, maxing out at 16x. If this move misses, power resets.	Inflicts regular damage and makes contact. Power doubles after every time this move is used consecutively, maxing out at 16x. If this move misses, power resets.
+211	Inflicts regular damage and makes contact. Has a 10% chance to raise the user's Defense one stage.	Inflicts regular damage and makes contact. Has a 10% chance to raise the user's Defense one stage.
+212	The target cannot switch out normally. Ignores Accuracy and Evasion modifiers. This effect ends when the user leaves the field.	The target cannot switch out normally. Ignores Accuracy and Evasion modifiers. This effect ends when the user leaves the field.
+213	Causes the target to fall in love with the user, giving it a 50% chance to do nothing each turn. If the user and target are the same gender, or either is genderless, this move will fail.	Causes the target to fall in love with the user, giving it a 50% chance to do nothing each turn. If the user and target are the same gender, or either is genderless, this move will fail.
+214	Only usable if the user is sleeping. Randomly selects and uses one of the user's other three moves, with some exceptions. Use of the selected move costs 0 PP.	Only usable if the user is sleeping. Randomly selects and uses one of the user's other three moves, with some exceptions. Use of the selected move costs 0 PP.
+215	Removes major status effects and confusion from every Pokémon in the user's party.	Removes major status effects and confusion from every Pokémon in the user's party.
+216	Inflicts regular damage and makes contact. Power increases with happiness to a maximum of 102. Power bottoms out at 1.	Inflicts regular damage and makes contact. Power increases with happiness to a maximum of 102. Power bottoms out at 1.
+217	Has a 40% chance to deal 40 damage, 30% chance to deal 80 damage, 10% chance to deal 120 damage, and a 20% chance to heal the target for 1/4 of its max HP.	Has a 40% chance to deal 40 damage, 30% chance to deal 80 damage, 10% chance to deal 120 damage, and a 20% chance to heal the target for 1/4 of its max HP.
+218	Inflicts regular damage and makes contact. Power increases inversely with happiness, to a maximum of 102. Power bottoms out at 1.	Inflicts regular damage and makes contact. Power increases inversely with happiness, to a maximum of 102. Power bottoms out at 1.
+219	Protects Pokémon on the user's side of the field from major status effects and confusion for five turns. This effect remains even if the user leaves the field.	Protects Pokémon on the user's side of the field from major status effects and confusion for five turns. This effect remains even if the user leaves the field.
+220	Changes the user's and target's remaining HP to the average of their current remaining HP. Ignores Accuracy and Evasion modifiers.	Changes the user's and target's remaining HP to the average of their current remaining HP. Ignores Accuracy and Evasion modifiers.
+221	Inflicts regular damage. Has a 50% chance to burn the target. Frozen Pokémon may use this move, in which case they will thaw.	Inflicts regular damage. Has a 50% chance to burn the target. Frozen Pokémon may use this move, in which case they will thaw.
+222	Inflicts random damage of 10, 30, 50, 70, 90, 110, or 150 power, with an average of 71. Deals double damage to targets underground.	Inflicts random damage of 10, 30, 50, 70, 90, 110, or 150 power, with an average of 71. Deals double damage to targets underground.
+223	Inflicts regular damage and makes contact. Has a 100% chance to confuse the target.	Inflicts regular damage and makes contact. Has a 100% chance to confuse the target.
+224	Inflicts regular damage and makes contact.	Inflicts regular damage and makes contact.
+225	Inflicts regular damage. Has a 30% chance to paralyze the target.	Inflicts regular damage. Has a 30% chance to paralyze the target.
+226	User switches out, and the trainer selects a replacement Pokémon from the party. Stat changes, confusion, and persistent move effects are passed along to the replacement Pokémon.	User switches out, and the trainer selects a replacement Pokémon from the party. Stat changes, confusion, and persistent move effects are passed along to the replacement Pokémon.
+227	The next 3-7 (DP) /2-6 (Pt) /4-8 (HGSS) times the target attempts to move, it is forced to repeat its last used move.	The next 3 times the target attempts to move, it is forced to repeat its last used move.
+228	Inflicts regular damage and makes contact. If the target attempts to switch out this turn before the user acts, this move hits the target before it leaves and has double power.	Inflicts regular damage and makes contact. If the target attempts to switch out this turn before the user acts, this move hits the target before it leaves and has double power.
+229	Inflicts regular damage and makes contact. Removes the effects of leech seed, bind, clamp, fire spin, magma storm, sand tomb, whirlpool, wrap, spikes, toxic spikes, and stealth rock.	Inflicts regular damage and makes contact. Removes the effects of leech seed, bind, clamp, fire spin, magma storm, sand tomb, whirlpool, wrap, spikes, toxic spikes, and stealth rock.
+230	Lowers the target's Evasion by one stage.	Lowers the target's Evasion by one stage.
+231	Inflicts regular damage and makes contact. Has a 30% chance to lower the target's Defense by one stage.	Inflicts regular damage and makes contact. Has a 30% chance to lower the target's Defense by one stage.
+232	Inflicts regular damage and makes contact. Has a 10% chance to raise the user's Attack one stage.	Inflicts regular damage and makes contact. Has a 10% chance to raise the user's Attack one stage.
+233	Decreased priority. Inflicts regular damage and makes contact. Ignores Accuracy and Evasion modifiers.	Decreased priority. Inflicts regular damage and makes contact. Ignores Accuracy and Evasion modifiers.
+234	Heals the user for half its max HP. In sunny weather, healing is 2/3 max HP, and 1/4 max HP during hail, rain, or sandstorm.	Heals the user for half its max HP. In sunny weather, healing is 2/3 max HP, and 1/4 max HP during hail, rain, or sandstorm.
+235	Heals the user for half its max HP. In sunny weather, healing is 2/3 max HP, and 1/4 max HP during hail, rain, or sandstorm.	Heals the user for half its max HP. In sunny weather, healing is 2/3 max HP, and 1/4 max HP during hail, rain, or sandstorm.
+236	Heals the user for half its max HP. In sunny weather, healing is 2/3 max HP, and 1/4 max HP during hail, rain, or sandstorm.	Heals the user for half its max HP. In sunny weather, healing is 2/3 max HP, and 1/4 max HP during hail, rain, or sandstorm.
+237	Inflicts regular damage. Power and type are determined by the user's IVs. Power is always between 30 and 70, with an average of 49.5. Type cannot be normal.	Inflicts regular damage. Power and type are determined by the user's IVs. Power is always between 30 and 70, with an average of 49.5. Type cannot be normal.
+238	Inflicts regular damage and makes contact. User's critical hit rate is one level higher when using this move.	Inflicts regular damage and makes contact. User's critical hit rate is one level higher when using this move.
+239	Inflicts regular damage. Has a 20% chance to make each target flinch. If the target is under the effect of Bounce or Fly, this move will hit with double power.	Inflicts regular damage. Has a 20% chance to make each target flinch. If the target is under the effect of Bounce, Fly, or Sky Drop, this move will hit with double power.
+240	Changes the weather to rain for five turns, during which water moves inflict 50% extra damage, and fire moves inflict half damage.	Changes the weather to rain for five turns, during which water moves inflict 50% extra damage, and fire moves inflict half damage.
+241	Changes the weather to sunshine for five turns, during which fire moves inflict 50% extra damage, and water moves inflict half damage.	Changes the weather to sunshine for five turns, during which fire moves inflict 50% extra damage, and water moves inflict half damage.
+242	Inflicts regular damage and makes contact. Has a 20% chance to lower the target's Defense by one stage.	Inflicts regular damage and makes contact. Has a 20% chance to lower the target's Defense by one stage.
+243	Decreased priority. If the user was damaged by a special move, inflicts twice the damage the move did. Type immunity applies, but other type effects are ignored.	Decreased priority. If the user was damaged by a special move, inflicts twice the damage the move did. Type immunity applies, but other type effects are ignored.
+244	Discards the user's stat changes and copies the target's.	Discards the user's stat changes and copies the target's.
+245	Increased priority. Inflicts regular damage and makes contact.	Increased priority. Inflicts regular damage and makes contact.
+246	Inflicts regular damage. Has a 10% chance to raise all of the user's stats one stage.	Inflicts regular damage. Has a 10% chance to raise all of the user's stats one stage.
+247	Inflicts regular damage. Has a 20% chance to lower the target's Special Defense by one stage.	Inflicts regular damage. Has a 20% chance to lower the target's Special Defense by one stage.
+248	Inflicts typeless regular damage at the end of the third turn. This move cannot score a critical hit, and damage is calculated at the time this move is used.	Inflicts regular damage at the end of the third turn. Damage is calculated at the time damage is dealt.
+249	Inflicts regular damage and makes contact. Has a 50% chance to lower the target's Defense by one stage.	Inflicts regular damage and makes contact. Has a 50% chance to lower the target's Defense by one stage.
+250	For the next 2-5 turns, the target cannot leave the field and is damaged for 1/16 its max HP at the end of each turn.	For the next 4-5 turns, the target cannot leave the field and is damaged for 1/16 its max HP at the end of each turn.
+251	Inflicts typeless regular damage. Every Pokémon in the user's party, excepting those that have fainted or have a major status effect, attacks the target.	Inflicts regular damage. Every Pokémon in the user's party, excepting those that have fainted or have a major status effect, attacks the target.
+252	Increased priority. Inflicts regular damage and makes contact. Causes the target to flinch, and can only be used on the user's first turn after entering the field.	Increased priority. Inflicts regular damage and makes contact. Causes the target to flinch, and can only be used on the user's first turn after entering the field.
+253	Inflicts regular damage. User is forced to use this move for 2-5 turns, selected at random. All Pokémon on the field wake up, and none can fall to sleep until the lock-in ends.	Inflicts regular damage. User is forced to use this move for 3 turns. All Pokémon on the field wake up, and none can fall to sleep until the lock-in ends.
+254	Raises the user's Defense and Special Defense by one stage each. Stores energy for use with spit up and swallow. Up to three levels of energy can be stored, and all are lost if the user leaves the field.	Raises the user's Defense and Special Defense by one stage each. Stores energy for use with spit up and swallow. Up to three levels of energy can be stored, and all are lost if the user leaves the field.
+255	Inflicts regular damage. Power is equal to 100 times the amount of energy stored by stockpile. Stored energy is consumed, and the user's Defense and Special Defense are reset.	Inflicts regular damage. Power is equal to 100 times the amount of energy stored by stockpile. Stored energy is consumed, and the user's Defense and Special Defense are reset.
+256	Heals the user depending on the amount of energy stored by stockpile: 1/4 its max HP after one use, 1/2 its max HP after two uses, or fully after three uses. Stored energy is consumed, and the user's Defense and Special Defense are reset.	Heals the user depending on the amount of energy stored by stockpile: 1/4 its max HP after one use, 1/2 its max HP after two uses, or fully after three uses. Stored energy is consumed, and the user's Defense and Special Defense are reset.
+257	Inflicts regular damage. Has a 10% chance to burn the target.	Inflicts regular damage. Has a 10% chance to burn the target.
+258	Changes the weather to hail for five turns, during which non-ice Pokémon are damaged for 1/16 their max HP at the end of every turn.	Changes the weather to hail for five turns, during which non-ice Pokémon are damaged for 1/16 their max HP at the end of every turn.
+259	Prevents the target from attempting to use the same move twice in a row. When the target leaves the field, this effect ends.	Prevents the target from attempting to use the same move twice in a row. When the target leaves the field, this effect ends.
+260	Raises the target's Special Attack by one stage, then confuses it.	Raises the target's Special Attack by one stage, then confuses it.
+261	Burns the target.	Burns the target.
+262	Lowers the target's Attack and Special Attack by two stages. User faints.	Lowers the target's Attack and Special Attack by two stages. User faints.
+263	Inflicts regular damage and makes contact. If the user is burned, paralyzed, or poisoned, this move has double power.	Inflicts regular damage and makes contact. If the user is burned, paralyzed, or poisoned, this move has double power.
+264	Decreased priority. Inflicts regular damage and makes contact. If the user takes damage this turn before hitting, this move will fail.	Decreased priority. Inflicts regular damage and makes contact. If the user takes damage this turn before hitting, this move will fail.
+265	Inflicts regular damage and makes contact. If the target is paralyzed, this move has double power, and the target is cured of its paralysis.	Inflicts regular damage and makes contact. If the target is paralyzed, this move has double power, and the target is cured of its paralysis.
+266	Increased priority. Until the end of this turn, any moves that opposing Pokémon target solely at the user's ally will instead target the user.	Increased priority. Until the end of this turn, any moves that opposing Pokémon target solely at the user's ally will instead target the user.
+267	Move depends on the terrain. Building = Tri Attack; Cave/Mountain = Rock Slide; Water = Hydro Pump; Sand/Dirt = Earthquake; Grass = Seed Bomb; Snow = Blizzard; Ice = Ice Beam	Move depends on the terrain. Building = Tri Attack; Cave = Rock Slide; Water = Hydro Pump; Sand/Dirt/Rock = Earthquake; Grass = Seed Bomb; Snow = Blizzard; Ice = Ice Beam; Puddle = Mud Bomb
+268	Raises the user's Special Defense by one stage. If the user uses an electric move next turn, its power will be doubled.	Raises the user's Special Defense by one stage. If the user uses an electric move next turn, its power will be doubled.
+269	Target is forced to only use damaging moves for the next 3-5 turns, selected at random. Moves that select other moves not known in advance do not count as damaging.	Target is forced to only use damaging moves for the next 3 turns. Moves that select other moves not known in advance do not count as damaging.
+270	Increase priority. Boosts the power of the target's moves by 50% until the end of this turn.	Increase priority. Boosts the power of the target's moves by 50% until the end of this turn.
+271	User and target permanently swap held items. Works even if one of the Pokémon isn't holding anything.	User and target permanently swap held items. Works even if one of the Pokémon isn't holding anything.
+272	User's ability is replaced with the target's until the user leaves the field. Ignores Accuracy and Evasion modifiers.	User's ability is replaced with the target's until the user leaves the field. Ignores Accuracy and Evasion modifiers.
+273	At the end of the next turn, user will be healed for half its max HP. If the user is switched out, its replacement will be healed instead for half of the user's max HP.	At the end of the next turn, user will be healed for half its max HP. If the user is switched out, its replacement will be healed instead for half of the user's max HP.
+274	Uses a move from another Pokémon in the user's party, both selected at random. Moves from fainted Pokémon can be used.	Uses a move from another Pokémon in the user's party, both selected at random. Moves from fainted Pokémon can be used.
+275	Prevents the user from switching out. User regains 1/16 of its max HP at the end of every turn. If the user was immune to ground attacks, it will now take normal damage from them.	Prevents the user from switching out. User regains 1/16 of its max HP at the end of every turn. If the user was immune to ground attacks, it will now take normal damage from them.
+276	Inflicts regular damage and makes contact. Lowers the user's Attack and Defense by one stage each.	Inflicts regular damage and makes contact. Lowers the user's Attack and Defense by one stage each.
+277	Increased priority. The first non-damaging move targeting the user this turn that inflicts major status effects, stat changes, or trapping effects will be reflected at its user.	Increased priority. The first non-damaging move targeting the user this turn that inflicts major status effects, stat changes, or trapping effects will be reflected at its user.
+278	User recovers the last item consumed by the user or a Pokémon in its position on the field. The item must be used again before it can be recovered by this move again.	User recovers the last item it consumed. The item must be used again before it can be recovered by this move again.
+279	Decreased priority. Inflicts regular damage and makes contact. If the target damaged the user this turn and was the last to do so, this move has double power.	Decreased priority. Inflicts regular damage and makes contact. If the target damaged the user this turn and was the last to do so, this move has double power.
+280	Makes contact. Destroys any light screen or reflect on the target's side of the field, then inflicts regular damage.	Makes contact. Destroys any light screen or reflect on the target's side of the field, then inflicts regular damage.
+281	Puts the target to sleep at the end of the next turn. Ignores Accuracy and Evasion modifiers. If the target leaves the field, this effect is canceled.	Puts the target to sleep at the end of the next turn. Ignores Accuracy and Evasion modifiers. If the target leaves the field, this effect is canceled.
+282	Inflicts regular damage and makes contact. Target loses its held item.	Inflicts regular damage and makes contact. Target loses its held item.
+283	Makes contact. Inflicts exactly enough damage to lower the target's HP to equal the user's. Type immunity applies, but other type effects are ignored.	Makes contact. Inflicts exactly enough damage to lower the target's HP to equal the user's. Type immunity applies, but other type effects are ignored.
+284	Inflicts regular damage. Power increases with the user's remaining HP up to a maximum of 150 when the user has full HP.	Inflicts regular damage. Power increases with the user's remaining HP up to a maximum of 150 when the user has full HP.
+285	User and target switch abilities. Ignores Accuracy and Evasion modifiers.	User and target switch abilities. Ignores Accuracy and Evasion modifiers.
+286	Prevents any Pokémon on the opposing side of the field from using any move the user knows until the user leaves the field.	Prevents any Pokémon on the opposing side of the field from using any move the user knows until the user leaves the field.
+287	Removes a burn, paralysis, or poison from the user.	Removes a burn, paralysis, or poison from the user.
+288	If the user faints before its next turn, the move that fainted it will have its PP dropped to 0. End-of-turn damage does not trigger this effect.	If the user faints before its next turn, the move that fainted it will have its PP dropped to 0. End-of-turn damage does not trigger this effect.
+289	Increased priority. The next time a Pokémon uses a beneficial move on itself or itself and its ally this turn, the user of this move will steal the move and use it itself.	Increased priority. The next time a Pokémon uses a beneficial move on itself or itself and its ally this turn, the user of this move will steal the move and use it itself.
+290	Inflicts regular damage. Has a 30% chance to cause an effect from terrain. Building = paralysis; Desert = -ACC; Cave = flinch; Grass = sleep; Water = -ATK; Snow/Ice = freeze	Inflicts regular damage. Has a 30% chance to cause an effect from terrain. Building = paralysis; Desert = -ACC; Cave = flinch; Grass = sleep; Water = -ATK; Puddle = -SPE; Snow/Ice = freeze
+291	Inflicts regular damage and makes contact. User dives underwater for one turn, becoming immune to attack, and hits on the second turn.	Inflicts regular damage and makes contact. User dives underwater for one turn, becoming immune to attack, and hits on the second turn.
+292	Inflicts regular damage and makes contact. Hits 2-5 times in one turn, and averages to 3 hits per use.	Inflicts regular damage and makes contact. Hits 2-5 times in one turn, and averages to 3 hits per use.
+293	User's type changes according to the terrain. Building = normal; Cave = rock; Desert = ground; Grass = grass; Ocean = water; Snow = ice	User's type changes according to the terrain. Building = normal; Cave = rock; Desert = ground; Grass = grass; Ocean = water; Snow = ice
+294	Raises the user's Special Attack by two stages.	Raises the user's Special Attack by three stages.
+295	Inflicts regular damage. Has a 50% chance to lower the target's Special Defense by one stage.	Inflicts regular damage. Has a 50% chance to lower the target's Special Defense by one stage.
+296	Inflicts regular damage. Has a 50% chance to lower the target's Special Attack by one stage.	Inflicts regular damage. Has a 50% chance to lower the target's Special Attack by one stage.
+297	Lowers the target's Attack by two stages.	Lowers the target's Attack by two stages.
+298	Confuses all targets.	Confuses all targets.
+299	Inflicts regular damage and makes contact. User's critical hit rate is one level higher when using this move. Has a 10% chance to burn the target.	Inflicts regular damage and makes contact. User's critical hit rate is one level higher when using this move. Has a 10% chance to burn the target.
+300	Electric moves inflict half damage, regardless of target. If the user leaves the field, this effect ends.	Electric moves inflict one-third damage, regardless of target. If the user leaves the field, this effect ends.
+301	Inflicts regular damage and makes contact. User is forced to use this move for five turns. Power doubles every time this move is used in succession to a maximum of 16x. If this move misses, the lock-in ends.	Inflicts regular damage and makes contact. User is forced to use this move for five turns. Power doubles every time this move is used in succession to a maximum of 16x. If this move misses, the lock-in ends.
+302	Inflicts regular damage and makes contact. Has a 30% chance to make the target flinch.	Inflicts regular damage and makes contact. Has a 30% chance to make the target flinch.
+303	Heals the user for half its max HP.	Heals the user for half its max HP.
+304	Inflicts regular damage.	Inflicts regular damage.
+305	Inflicts regular damage and makes contact. Has a 30% chance to badly poison the target.	Inflicts regular damage and makes contact. Has a 30% chance to badly poison the target.
+306	Inflicts regular damage and makes contact. Has a 50% chance to lower the target's Defense by one stage.	Inflicts regular damage and makes contact. Has a 50% chance to lower the target's Defense by one stage.
+307	Inflicts regular damage. User loses its next turn to recharge, and cannot attack or switch out during that turn.	Inflicts regular damage. User loses its next turn to recharge, and cannot attack or switch out during that turn.
+308	Inflicts regular damage. User loses its next turn to recharge, and cannot attack or switch out during that turn.	Inflicts regular damage. User loses its next turn to recharge, and cannot attack or switch out during that turn.
+309	Inflicts regular damage and makes contact. Has a 20% chance to raise the user's Attack one stage.	Inflicts regular damage and makes contact. Has a 20% chance to raise the user's Attack one stage.
+310	Inflicts regular damage and makes contact. Has a 30% chance to make the target flinch.	Inflicts regular damage and makes contact. Has a 30% chance to make the target flinch.
+311	Inflicts regular damage. If a weather move is active, this move has double power, and its type becomes the weather counterpart.	Inflicts regular damage. If a weather move is active, this move has double power, and its type becomes the weather counterpart.
+312	Removes major status effects except confusion from every Pokémon in the user's party.	Removes major status effects except confusion from every Pokémon in the user's party.
+313	Lowers the target's Special Defense by two stages.	Lowers the target's Special Defense by two stages.
+314	Inflicts regular damage. User's critical hit rate is one level higher when using this move.	Inflicts regular damage. User's critical hit rate is one level higher when using this move.
+315	Inflicts regular damage, then lowers the user's Special Attack by two stages.	Inflicts regular damage, then lowers the user's Special Attack by two stages.
+316	Ignores the target's boosted Evasion stages until the target leaves the field. A ghost under this effect takes damage from normal and fighting moves.	Ignores the target's boosted Evasion stages until the target leaves the field. A ghost under this effect takes damage from normal and fighting moves.
+317	Inflicts regular damage. Has a 100% chance to lower the target's Speed by one stage.	Inflicts regular damage. Has a 100% chance to lower the target's Speed by one stage.
+318	Inflicts regular damage. Has a 10% chance to raise all of the user's stats one stage.	Inflicts regular damage. Has a 10% chance to raise all of the user's stats one stage.
+319	Lowers the target's Special Defense by two stages.	Lowers the target's Special Defense by two stages.
+320	Puts the target to sleep.	Puts the target to sleep.
+321	Lowers the target's Attack and Defense by one stage.	Lowers the target's Attack and Defense by one stage.
+322	Raises the user's Defense and Special Defense by one stage.	Raises the user's Defense and Special Defense by one stage.
+323	Inflicts regular damage. Power increases with the user's remaining HP, up to a maximum of 150 when the user has full HP.	Inflicts regular damage. Power increases with the user's remaining HP, up to a maximum of 150 when the user has full HP.
+324	Inflicts regular damage. Has a 10% chance to confuse the target.	Inflicts regular damage. Has a 10% chance to confuse the target.
+325	Inflicts regular damage and makes contact. Ignores Accuracy and Evasion modifiers.	Inflicts regular damage and makes contact. Ignores Accuracy and Evasion modifiers.
+326	Inflicts regular damage. Has a 10% chance to make the target flinch.	Inflicts regular damage. Has a 10% chance to make the target flinch.
+327	Inflicts regular damage and makes contact. This move can hit Pokémon under the effect of Bounce or Fly.	Inflicts regular damage and makes contact. This move can hit Pokémon under the effect of Bounce, Fly, or Sky Drop.
+328	For the next 4-5 turns, the target cannot leave the field and is damaged for 1/16 its max HP at the end of each turn.	For the next 4-5 turns, the target cannot leave the field and is damaged for 1/16 its max HP at the end of each turn.
+329	Instantly KOs the target. This move's accuracy is 30% plus 1% for each level the user is higher than the target.	Instantly KOs the target. This move's accuracy is 30% plus 1% for each level the user is higher than the target.
+330	Inflicts regular damage. Has a 30% chance to lower the target's Accuracy by one stage.	Inflicts regular damage. Has a 30% chance to lower the target's Accuracy by one stage.
+331	Inflicts regular damage. Hits 2-5 times in one turn, and averages to 3 hits per use.	Inflicts regular damage. Hits 2-5 times in one turn, and averages to 3 hits per use.
+332	Inflicts regular damage and makes contact. Ignores Accuracy and Evasion modifiers.	Inflicts regular damage and makes contact. Ignores Accuracy and Evasion modifiers.
+333	Inflicts regular damage. Hits 2-5 times in one turn, abd averages to 3 hits per use.	Inflicts regular damage. Hits 2-5 times in one turn, abd averages to 3 hits per use.
+334	Raises the user's Defense by two stages.	Raises the user's Defense by two stages.
+335	The target cannot switch out normally. Ignores Accuracy and Evasion modifiers. This effect ends when the user leaves the field.	The target cannot switch out normally. Ignores Accuracy and Evasion modifiers. This effect ends when the user leaves the field.
+336	Raises the user's Attack by one stage.	Raises the user's Attack by one stage.
+337	Inflicts regular damage and makes contact.	Inflicts regular damage and makes contact.
+338	Inflicts regular damage. User loses its next turn to recharge, and cannot attack or switch out during that turn.	Inflicts regular damage. User loses its next turn to recharge, and cannot attack or switch out during that turn.
+339	Raises the user's Attack and Defense by one stage each.	Raises the user's Attack and Defense by one stage each.
+340	Inflicts regular damage and makes contact. User bounces high into the air for one turn, becoming immune to attack, and hits on the second turn. Has a 30% chance to paralyze the target.	Inflicts regular damage and makes contact. User bounces high into the air for one turn, becoming immune to attack, and hits on the second turn. Has a 30% chance to paralyze the target.
+341	Inflicts regular damage. Has a 100% chance to lower the target's Speed by one stage.	Inflicts regular damage. Has a 100% chance to lower the target's Speed by one stage.
+342	Inflicts regular damage and makes contact. User's critical hit rate is one level higher when using this move. Has a 10% chance to poison the target.	Inflicts regular damage and makes contact. User's critical hit rate is one level higher when using this move. Has a 10% chance to poison the target.
+343	Inflicts regular damage and makes contact. If the target is holding an item and the user is not, the user will permanently take the item. Damage is still inflicted if an item cannot be taken.	Inflicts regular damage and makes contact. If the target is holding an item and the user is not, the user will permanently take the item. Damage is still inflicted if an item cannot be taken.
+344	Inflicts regular damage and makes contact. User takes 1/3 the damage it inflicts in recoil. Has a 10% chance to paralyze the target.	Inflicts regular damage and makes contact. User takes 1/3 the damage it inflicts in recoil. Has a 10% chance to paralyze the target.
+345	Inflicts regular damage. Ignores Accuracy and Evasion modifiers.	Inflicts regular damage. Ignores Accuracy and Evasion modifiers.
+346	Fire moves inflict half damage, regardless of target. If the user leaves the field, this effect ends.	Fire moves inflict one-third damage, regardless of target. If the user leaves the field, this effect ends.
+347	Raises the user's Special Attack and Special Defense by one stage each.	Raises the user's Special Attack and Special Defense by one stage each.
+348	Inflicts regular damage and makes contact. User's critical hit rate is one level higher when using this move.	Inflicts regular damage and makes contact. User's critical hit rate is one level higher when using this move.
+349	Raises the user's Attack and Speed by one stage each.	Raises the user's Attack and Speed by one stage each.
+350	Inflicts regular damage. Hits 2-5 times in one turn. Has a 3/8 chance each to hit 2 or 3 times, and a 1/8 chance each to hit 4 or 5 times. Averages to 3 hits per use.	Inflicts regular damage. Hits 2-5 times in one turn. Has a 3/8 chance each to hit 2 or 3 times, and a 1/8 chance each to hit 4 or 5 times. Averages to 3 hits per use.
+351	Inflicts regular damage. Ignores Accuracy and Evasion modifiers.	Inflicts regular damage. Ignores Accuracy and Evasion modifiers.
+352	Inflicts regular damage. Has a 20% chance to confuse the target.	Inflicts regular damage. Has a 20% chance to confuse the target.
+353	Inflicts typeless regular damage at the end of the third turn. This move cannot score a critical hit. Damage is calculated at the time this move is used.	Inflicts regular damage at the end of the third turn. Damage is calculated at the time damage is dealt.
+354	Inflicts regular damage, then lowers the user's Special Attack by two stages.	Inflicts regular damage, then lowers the user's Special Attack by two stages.
+355	Heals the user for half its max HP. If the user is flying, its flying type is ignored until the end of this turn.	Heals the user for half its max HP. If the user is flying, its flying type is ignored until the end of this turn.
+356	For five turns, all immunities to ground moves are disabled. For the duration of this effect, the Accuracy of every Pokémon on the field is multiplied by 5/3. Cancels the effects of Bounce and Fly.	For five turns, all immunities to ground moves are disabled. For the duration of this effect, the Accuracy of every Pokémon on the field is multiplied by 5/3. Cancels the effects of Bounce, Fly, and Sky Drop.
+357	Ignores the target's boosted Evasion stages until the target leaves the field. A dark Pokémon under this effect takes normal damage from psychic moves.	Ignores the target's boosted Evasion stages until the target leaves the field. A dark Pokémon under this effect takes normal damage from psychic moves.
+358	Inflicts regular damage and makes contact. If the target is sleeping, this move has double power, and the target wakes up.	Inflicts regular damage and makes contact. If the target is sleeping, this move has double power, and the target wakes up.
+359	Inflicts regular damage and makes contact. Lowers the user's Speed by one stage.	Inflicts regular damage and makes contact. Lowers the user's Speed by one stage.
+360	Inflicts regular damage and makes contact. Power increases with the target's current Speed compared to the user, capped at 150.	Inflicts regular damage and makes contact. Power increases with the target's current Speed compared to the user, capped at 150.
+361	User faints. Its replacement's HP is fully restored, and any major status effect is removed. If the replacement Pokémon is immediately fainted by a switch-in effect, the next replacement is healed by this move instead.	User faints. Its replacement's HP is fully restored, and any major status effect is removed. If the replacement Pokémon is immediately fainted by a switch-in effect, the next replacement is healed by this move instead.
+362	Inflicts regular damage. If the target has less than half its max HP remaining, this move has double power.	Inflicts regular damage. If the target has less than half its max HP remaining, this move has double power.
+363	Inflicts regular damage. Power and type are determined by the user's held berry. The berry is consumed. If the user is not holding a berry, this move will fail.	Inflicts regular damage. Power and type are determined by the user's held berry. The berry is consumed. If the user is not holding a berry, this move will fail.
+364	Increased priority. Inflicts regular damage. Removes the effects of Detect or Protect from the target before hitting. Fails if the target did not use Detect or Protect.	Increased priority. Inflicts regular damage. Removes the effects of Detect or Protect from the target before hitting.
+365	Inflicts regular damage and makes contact. If the target is holding a berry, the user takes the berry and uses it immediately.	Inflicts regular damage and makes contact. If the target is holding a berry, the user takes the berry and uses it immediately.
+366	For the next three turns, all Pokémon on the user's side of the field have their original Speed doubled. This effect remains if the user leaves the field.	For the next four turns, all Pokémon on the user's side of the field have their original Speed doubled. This effect remains if the user leaves the field.
+367	Raises one of the target's stats by two stages. The raised stat is chosen at random from any stats that can be raised.	Raises one of the target's stats by two stages. The raised stat is chosen at random from any stats that can be raised.
+368	Targets the last opposing Pokémon to hit the user with a damaging move this turn. Inflicts 1.5x the damage that move did to the user. Type immunity applies, but other type effects are ignored.	Targets the last opposing Pokémon to hit the user with a damaging move this turn. Inflicts 1.5x the damage that move did to the user. Type immunity applies, but other type effects are ignored.
+369	Inflicts regular damage and makes contact. User immediately switches out, and the trainer selects a replacement Pokémon from the party.	Inflicts regular damage and makes contact. User immediately switches out, and the trainer selects a replacement Pokémon from the party.
+370	Inflicts regular damage and makes contact. Lowers the user's Defense and Special Defense by one stage each.	Inflicts regular damage and makes contact. Lowers the user's Defense and Special Defense by one stage each.
+371	Inflicts regular damage and makes contact. If the target uses a move, switches out, or the trainer uses an item this turn before this move is used, this move has double power.	Inflicts regular damage and makes contact. If the target uses a move, switches out, or the trainer uses an item this turn before this move is used, this move has double power.
+372	Inflicts regular damage and makes contact. If the target takes damage this turn for any reason before this move is used, this move has double power.	Inflicts regular damage and makes contact. If the target takes damage this turn for any reason before this move is used, this move has double power.
+373	Target cannot use its held item and its trainer cannot use items from the bag on it for five turns. If the target leaves the field, this effect ends.	Target cannot use its held item and its trainer cannot use items from the bag on it for five turns. If the target leaves the field, this effect ends.
+374	Inflicts regular damage. Power is determined by the user's held item. The item is consumed. If the user is not holding an item, or its item has no set power, this move will fail.	Inflicts regular damage. Power is determined by the user's held item. The item is consumed. If the user is not holding an item, or its item has no set power, this move will fail.
+375	If the user has a major status effect and the target does not, the user's status is transferred to the target.	If the user has a major status effect and the target does not, the user's status is transferred to the target.
+376	Inflicts regular damage and makes contact. Power is determined by the PP remaining for this move, after its PP cost is deducted. Ignores Accuracy and Evasion modifiers.	Inflicts regular damage and makes contact. Power is determined by the PP remaining for this move, after its PP cost is deducted. Ignores Accuracy and Evasion modifiers.
+377	For the next five turns, the target may not use any moves that only restore HP. Moves that steal HP may still be used, but will only inflict damage and not heal the target.	For the next five turns, the target may not use any moves that only restore HP. Moves that steal HP may still be used, but will only inflict damage and not heal the target. The target will also not be healed by held items or abilities.
+378	Inflicts regular damage and makes contact. Power directly relates to the target's relative remaining HP, up to a maximum of 121.	Inflicts regular damage and makes contact. Power directly relates to the target's relative remaining HP, up to a maximum of 121.
+379	The user's original Attack and Defense are swapped.	The user's original Attack and Defense are swapped.
+380	The target's ability is disabled as long as it remains on the field.	The target's ability is disabled as long as it remains on the field.
+381	For five turns, opposing Pokémon cannot score critical hits.	For five turns, opposing Pokémon cannot score critical hits.
+382	If the target has selected a damaging move this turn, the user will copy that move and use it against the target, with a 50% increase in power.	If the target has selected a damaging move this turn, the user will copy that move and use it against the target, with a 50% increase in power.
+383	Uses the last move that was used successfully by any Pokémon, including the user.	Uses the last move that was used successfully by any Pokémon, including the user.
+384	User swaps its Attack and Special Attack stat modifiers with the target.	User swaps its Attack and Special Attack stat modifiers with the target.
+385	User swaps its Defense and Special Defense stat modifiers with the target.	User swaps its Defense and Special Defense stat modifiers with the target.
+386	Inflicts regular damage and makes contact. Power starts at 60 and is increased by 20 for every stage any of the target's stats has been raised, capping at 200. Accuracy and Evasion modifiers do not increase this move's power.	Inflicts regular damage and makes contact. Power starts at 60 and is increased by 20 for every stage any of the target's stats has been raised, capping at 200. Accuracy and Evasion modifiers do not increase this move's power.
+387	Inflicts regular damage and makes contact. This move can only be used if each of the user's other moves has been used at least once since the user entered the field. If this is the user's only move, this move will fail.	Inflicts regular damage and makes contact. This move can only be used if each of the user's other moves has been used at least once since the user entered the field. If this is the user's only move, this move will fail.
+388	Changes the target's ability to Insomnia for as long as it remains on the field.	Changes the target's ability to Insomnia for as long as it remains on the field.
+389	Increased priority. Inflicts regular damage and makes contact. If the target has not selected a damaging move this turn, or if the target has already acted this turn, this move will fail.	Increased priority. Inflicts regular damage and makes contact. If the target has not selected a damaging move this turn, or if the target has already acted this turn, this move will fail.
+390	Scatters poisoned spikes around the opposing field, which poison opposing Pokémon that enter the field. A second layer of these spikes may be laid down, in which case Pokémon will be badly poisoned instead.	Scatters poisoned spikes around the opposing field, which poison opposing Pokémon that enter the field. A second layer of these spikes may be laid down, in which case Pokémon will be badly poisoned instead.
+391	User swaps its stat modifiers with the target.	User swaps its stat modifiers with the target.
+392	Restores 1/16 of the user's max HP at the end of each turn. If the user leaves the field, this effect ends.	Restores 1/16 of the user's max HP at the end of each turn. If the user leaves the field, this effect ends.
+393	For five turns, the user is immune to ground moves.	For five turns, the user is immune to ground moves.
+394	Inflicts regular damage and makes contact. User takes 1/3 the damage it inflicts in recoil. Has a 10% chance to burn the target. Frozen Pokémon will thaw if they use this move.	Inflicts regular damage and makes contact. User takes 1/3 the damage it inflicts in recoil. Has a 10% chance to burn the target. Frozen Pokémon will thaw if they use this move.
+395	Inflicts regular damage and makes contact. Has a 30% chance to paralyze the target.	Inflicts regular damage and makes contact. Has a 30% chance to paralyze the target.
+396	Inflicts regular damage. Ignores Accuracy and Evasion modifiers.	Inflicts regular damage. Ignores Accuracy and Evasion modifiers.
+397	Raises the user's Speed by two stages.	Raises the user's Speed by two stages.
+398	Inflicts regular damage and makes contact. Has a 30% chance to poison the target.	Inflicts regular damage and makes contact. Has a 30% chance to poison the target.
+399	Inflicts regular damage. Has a 20% chance to make the target flinch.	Inflicts regular damage. Has a 20% chance to make the target flinch.
+400	Inflicts regular damage and makes contact. User's critical hit rate is one level higher when using this move.	Inflicts regular damage and makes contact. User's critical hit rate is one level higher when using this move.
+401	Inflicts regular damage and makes contact.	Inflicts regular damage and makes contact.
+402	Inflicts regular damage.	Inflicts regular damage.
+403	Inflicts regular damage. Has a 30% chance to make the target flinch.	Inflicts regular damage. Has a 30% chance to make the target flinch.
+404	Inflicts regular damage and makes contact.	Inflicts regular damage and makes contact.
+405	Inflicts regular damage. Has a 10% chance to lower the target's Special Defense by one stage.	Inflicts regular damage. Has a 10% chance to lower the target's Special Defense by one stage.
+406	Inflicts regular damage.	Inflicts regular damage.
+407	Inflicts regular damage and makes contact. Has a 20% chance to make the target flinch.	Inflicts regular damage and makes contact. Has a 20% chance to make the target flinch.
+408	Inflicts regular damage.	Inflicts regular damage.
+409	Inflicts regular damage and makes contact. Drains half the damage inflicted to heal the user.	Inflicts regular damage and makes contact. Drains half the damage inflicted to heal the user.
+410	Increased priority. Inflicts regular damage.	Increased priority. Inflicts regular damage.
+411	Inflicts regular damage. Has a 10% chance to lower the target's Special Defense by one stage.	Inflicts regular damage. Has a 10% chance to lower the target's Special Defense by one stage.
+412	Inflicts regular damage. Has a 10% chance to lower the target's Special Defense by one stage.	Inflicts regular damage. Has a 10% chance to lower the target's Special Defense by one stage.
+413	Inflicts regular damage and makes contact. User takes 1/3 the damage it inflicts in recoil.	Inflicts regular damage and makes contact. User takes 1/3 the damage it inflicts in recoil.
+414	Inflicts regular damage. Has a 10% chance to lower the target's Special Defense by one stage.	Inflicts regular damage. Has a 10% chance to lower the target's Special Defense by one stage.
+415	User and target permanently swap held items. Works even if one of the Pokémon isn't holding anything.	User and target permanently swap held items. Works even if one of the Pokémon isn't holding anything.
+416	Inflicts regular damage and makes contact. User loses its next turn to recharge, and cannot attack or switch out during that turn.	Inflicts regular damage and makes contact. User loses its next turn to recharge, and cannot attack or switch out during that turn.
+417	Raises the user's Special Attack by two stages.	Raises the user's Special Attack by two stages.
+418	Increased priority. Inflicts regular damage and makes contact.	Increased priority. Inflicts regular damage and makes contact.
+419	Decreased priority. Inflicts regular damage and makes contact. If the target damaged the user this turn, this move has double power.	Decreased priority. Inflicts regular damage and makes contact. If the target damaged the user this turn, this move has double power.
+420	Increased priority. Inflicts regular damage.	Increased priority. Inflicts regular damage.
+421	Inflicts regular damage and makes contact. User's critical hit rate is one level higher when using this move.	Inflicts regular damage and makes contact. User's critical hit rate is one level higher when using this move.
+422	Inflicts regular damage and makes contact. Has a 10% chance to paralyze the target and a separate 10% chance to make the target flinch.	Inflicts regular damage and makes contact. Has a 10% chance to paralyze the target and a separate 10% chance to make the target flinch.
+423	Inflicts regular damage and makes contact. Has a 10% chance to freeze the target and a separate 10% chance to make the target flinch.	Inflicts regular damage and makes contact. Has a 10% chance to freeze the target and a separate 10% chance to make the target flinch.
+424	Inflicts regular damage and makes contact. Has a 10% chance to burn the target and a separate 10% chance to make the target flinch.	Inflicts regular damage and makes contact. Has a 10% chance to burn the target and a separate 10% chance to make the target flinch.
+425	Increased priority. Inflicts regular damage and makes contact.	Increased priority. Inflicts regular damage and makes contact.
+426	Inflicts regular damage. Has a 30% chance to lower the target's Accuracy by one stage.	Inflicts regular damage. Has a 30% chance to lower the target's Accuracy by one stage.
+427	Inflicts regular damage. User's critical hit rate is one level higher when using this move.	Inflicts regular damage. User's critical hit rate is one level higher when using this move.
+428	Inflicts regular damage and makes contact. Has a 20% chance to make the target flinch.	Inflicts regular damage and makes contact. Has a 20% chance to make the target flinch.
+429	Inflicts regular damage. Has a 30% chance to lower the target's Accuracy by one stage.	Inflicts regular damage. Has a 30% chance to lower the target's Accuracy by one stage.
+430	Inflicts regular damage. Has a 10% chance to lower the target's Special Defense by one stage.	Inflicts regular damage. Has a 10% chance to lower the target's Special Defense by one stage.
+431	Inflicts regular damage and makes contact. Has a 20% chance to confuse the target.	Inflicts regular damage and makes contact. Has a 20% chance to confuse the target.
+432	Lowers the target's Evasion by one stage. Removes the effects of mist, light screen, reflect, safeguard, spikes, stealth rock, and toxic spikes from the target's side of the field.	Lowers the target's Evasion by one stage. Removes the effects of mist, light screen, reflect, safeguard, spikes, stealth rock, and toxic spikes from the target's side of the field.
+433	Decreased priority. For five turns, slower Pokémon will act before faster Pokémon. Move priority is not affected.	Decreased priority. For five turns, slower Pokémon will act before faster Pokémon. Move priority is not affected.
+434	Inflicts regular damage, then lowers the user's Special Attack by two stages.	Inflicts regular damage, then lowers the user's Special Attack by two stages.
+435	Inflicts regular damage. Has a 30% chance to paralyze the target.	Inflicts regular damage. Has a 30% chance to paralyze the target.
+436	Inflicts regular damage. Has a 30% chance to burn the target.	Inflicts regular damage. Has a 30% chance to burn the target.
+437	Inflicts regular damage, then lowers the user's Special Attack by two stages.	Inflicts regular damage, then lowers the user's Special Attack by two stages.
+438	Inflicts regular damage and makes contact.	Inflicts regular damage and makes contact.
+439	Inflicts regular damage. User loses its next turn to recharge, and cannot attack or switch out during that turn.	Inflicts regular damage. User loses its next turn to recharge, and cannot attack or switch out during that turn.
+440	Inflicts regular damage and makes contact. User's critical hit rate is one level higher when using this move. Has a 10% chance to poison the target.	Inflicts regular damage and makes contact. User's critical hit rate is one level higher when using this move. Has a 10% chance to poison the target.
+441	Inflicts regular damage. Has a 30% chance to poison the target.	Inflicts regular damage. Has a 30% chance to poison the target.
+442	Inflicts regular damage and makes contact. Has a 30% chance to make the target flinch.	Inflicts regular damage and makes contact. Has a 30% chance to make the target flinch.
+443	Inflicts regular damage. Ignores Accuracy and Evasion modifiers.	Inflicts regular damage. Ignores Accuracy and Evasion modifiers.
+444	Inflicts regular damage. User's critical hit rate is one level higher when using this move.	Inflicts regular damage. User's critical hit rate is one level higher when using this move.
+445	Lowers the target's Special Attack by two stages. If the user and target are the same gender, or either is genderless, this move will fail.	Lowers the target's Special Attack by two stages. If the user and target are the same gender, or either is genderless, this move will fail.
+446	Spreads sharp rocks around the opposing field, damaging any Pokémon that enters the field for 1/8 its max HP. This damage is affected by the entering Pokémon's susceptibility to rock moves.	Spreads sharp rocks around the opposing field, damaging any Pokémon that enters the field for 1/8 its max HP. This damage is affected by the entering Pokémon's susceptibility to rock moves.
+447	Inflicts regular damage and makes contact. Power increases with the target's weight in kilograms, to a maximum of 120.	Inflicts regular damage and makes contact. Power increases with the target's weight in kilograms, to a maximum of 120.
+448	Inflicts regular damage. Has either a 1%, 11%, or 31% chance to confuse the target, based on the volume of the recording made for this move.	Inflicts regular damage. Has either a 0% or 10% chance to confuse the target, based on the volume of the recording made for this move.
+449	Inflicts regular damage. If the user is holding a plate, this move's type is the type corresponding to that item.	Inflicts regular damage. If the user is holding a plate, this move's type is the type corresponding to that item.
+450	Inflicts regular damage and makes contact. If the target is holding a berry, the user takes the berry and uses it immediately.	Inflicts regular damage and makes contact. If the target is holding a berry, the user takes the berry and uses it immediately.
+451	Inflicts regular damage. Has a 70% chance to raise the user's Special Attack by one stage.	Inflicts regular damage. Has a 70% chance to raise the user's Special Attack by one stage.
+452	Inflicts regular damage and makes contact. User takes 1/3 the damage it inflicts in recoil.	Inflicts regular damage and makes contact. User takes 1/3 the damage it inflicts in recoil.
+453	Increased priority. Inflicts regular damage and makes contact.	Increased priority. Inflicts regular damage and makes contact.
+454	Inflicts regular damage. User's critical hit rate is one level higher when using this move.	Inflicts regular damage. User's critical hit rate is one level higher when using this move.
+455	Raises the user's Defense and Special Defense by one stage.	Raises the user's Defense and Special Defense by one stage.
+456	Heals the user for half its max HP.	Heals the user for half its max HP.
+457	Inflicts regular damage and makes contact. User takes 1/2 the damage it inflicts in recoil.	Inflicts regular damage and makes contact. User takes 1/2 the damage it inflicts in recoil.
+458	Inflicts regular damage and makes contact. Hits twice in one turn.	Inflicts regular damage and makes contact. Hits twice in one turn.
+459	Inflicts regular damage. User loses its next turn to recharge, and cannot attack or switch out during that turn.	Inflicts regular damage. User loses its next turn to recharge, and cannot attack or switch out during that turn.
+460	Inflicts regular damage. User's critical hit rate is one level higher when using this move.	Inflicts regular damage. User's critical hit rate is one level higher when using this move.
+461	User faints. Its replacement's HP and PP are fully restored, and any major status effect is removed.	User faints. Its replacement's HP and PP are fully restored, and any major status effect is removed.
+462	Inflicts regular damage and makes contact. Power directly relates to the target's relative remaining HP, up to a maximum of 121.	Inflicts regular damage and makes contact. Power directly relates to the target's relative remaining HP, up to a maximum of 121.
+463	Inflicts regular damage. For the next 2-5 turns, the target cannot leave the field and is damaged for 1/16 its max HP at the end of each turn.	Inflicts regular damage. For the next 4-5 turns, the target cannot leave the field and is damaged for 1/16 its max HP at the end of each turn.
+464	Puts all adjacent foes to sleep.	Puts all adjacent foes to sleep.
+465	Inflicts regular damage. Has a 40% chance to lower the target's Special Defense by two stages.	Inflicts regular damage. Has a 40% chance to lower the target's Special Defense by two stages.
+466	Inflicts regular damage. Has a 10% chance to raise all of the user's stats one stage.	Inflicts regular damage. Has a 10% chance to raise all of the user's stats one stage.
+467	Inflicts regular damage and makes contact. User vanishes for one turn, becoming immune to attack, and hits on the second turn. Hits the target through Protect and Detect, and removes their effects.	Inflicts regular damage and makes contact. User vanishes for one turn, becoming immune to attack, and hits on the second turn. Hits the target through Protect and Detect, and removes their effects.
+468		Raises the user's Attack and Accuracy by one stage.
+469		Increased priority. Moves with multiple targets will not hit friendly Pokémon for the remainder of this turn. If the user is last to act this turn, this move will fail.
+470		Averages the user's unmodified Defense with the target's unmodified Defense; the value becomes the unmodified Defense for both Pokémon. Unmodified Special Defense is averaged the same way.
+471		Averages the user's unmodified Attack with the target's unmodified Attack; the value becomes the unmodified Attack for both Pokémon. Unmodified Special Attack is averaged the same way.
+472		Decreased priority. For five turns, every Pokémon's Defense and Special Defense are swapped.
+473		Inflicts regular damage. Damage calculation always uses the target's Defense, regardless of this move's damage class.
+474		Inflicts regular damage. If the target is poisoned, this move has double power.
+475		Raises the user's Speed by two stages. If successful, reduces the user's weight by 100 kg (minimum 0.1 kg).
+476		Increased priority. Until the end of this turn, any moves that opposing Pokémon target solely at the user's ally will instead target the user.
+477		For three turns, moves used against the target have perfect accuracy, but the target is immune to ground damage. Accuracy of one-hit KO moves is exempt from this effect.
+478		Decreased priority. For five turns, passive effects of held items are ignored, and Pokémon will not use their held items.
+479		Inflicts regular damage. Removes the target's immunity to ground-type damage. This move will hit targets under the effect of Bounce, Fly, or Sky Drop.
+480		Inflicts regular damage and makes contact. Always scores a critical hit.
+481		Inflicts regular damage. If this move successfully hits the target, any Pokémon adjacent to the target are damaged for 1/16 their max HP.
+482		Inflicts regular damage and hits all adjacent Pokémon. Has 10% chance to poison each target.
+483		Raises the user's Special Attack, Special Defense, and Speed by one stage each.
+484		Inflicts regular damage and makes contact. The greater the user's weight compared to the target's, the higher power this move has, to a maximum of 120.
+485		Inflicts regular damage. Only Pokémon that share a type with the user will take damage from this move.
+486		Inflicts regular damage. The greater the user's Speed compared to the target's, the higher power this move has, to a maximum of 150.
+487		Changes the target to pure water-type until it leaves the field. If the target has multitype, this move will fail.
+488		Inflicts regular damage and makes contact. Raises the user's Speed by one stage.
+489		Raises the user's Attack, Defense, and Accuracy by one stage each.
+490		Inflicts regular damage and makes contact. Lowers the target's Speed by one stage.
+491		Inflicts regular damage. Lowers the target's Special Defense by two stages.
+492		Inflicts regular damage and makes contact. Damage is calculated using the target's attacking stat rather than the user's.
+493		Changes the target's ability to Simple. This effect ends when the target leaves battle.
+494		Changes the target's ability to match the user's. This effect ends when the target leaves battle.
+495		The target will act next this turn, regardless of Speed or move priority.
+496		Inflicts regular damage. If round has already been used this turn, this move's power is doubled.
+497		Inflicts regular damage. Power increases by 40 for each subsequent use, up to a maximum of 200 damage.
+498		Inflicts regular damage and makes contact. Damage calculation ignores the target's stat modifiers, including Evasion.
+499		Inflicts regular damage. All of the target's stat modifiers are reset to zero.
+500		Inflicts regular damage. Power increases by 20 for every stage any of the user's stats have been raised.
+501		Increased priority. Moves with priority greater than 0 will not hit friendly Pokémon for the remainder of this turn. If the user is last to act this turn, this move will fail.
+502		Increased priority. User switches position on the field with the friendly Pokémon opposite it. If the user is in the middle position in a triple battle, or there are no other friendly Pokémon, this move will fail.
+503		Inflicts regular damage. Has a 30% chance to burn the target.
+504		Raises the user's Attack, Special Attack, and Speed by two stages each. Lowers the user's Defense and Special Defense by one stage each.
+505		Heals the target for half its max HP.
+506		Inflicts regular damage. If the target has a major status ailment, this move has double power.
+507		Inflicts regular damage and makes contact. User carries the target high into the air for one turn, and on the following turn, the user drops the target to inflict damage. Ineffective on flying types.
+508		Raises the user's Attack by one stage and its Speed by two stages.
+509		Decreased priority. Inflicts regular damage and makes contact. Switches the target out for another of its trainer's Pokémon, selected at random.
+510		Inflicts regular damage. If the target is holding a berry, it's destroyed and cannot be used in response to this move.
+511		Forces the target to act last this turn, regardless of Speed or move priority. If the target has already acted this turn, this move will fail.
+512		Inflicts regular damage and makes contact. If the user has no held item, this move has double power.
+513		User's type changes to match the target's.
+514		Inflicts regular damage and makes contact. If a friendly Pokémon fainted on the previous turn, this move has double power.
+515		Inflicts damage equal to the user's remaining HP. User faints.
+516		Transfers the user's held item to the target. If the user has no held item, or the target already has a held item, this move will fail.
+517		Inflicts regular damage. Has a 100% chance to burn the target.
+518		Inflicts regular damage. If a friendly Pokémon used grass pledge earlier this turn, all opposing Pokémon have halved Speed for four turns.
+519		Inflicts regular damage. If a friendly Pokémon used water pledge earlier this turn, moves used by any friendly Pokémon have doubled effect chance for four turns.
+520		Inflicts regular damage. If a friendly Pokémon used fire pledge earlier this turn, all opposing Pokémon will take 1/8 their max HP in damage at the end of every turn for four turns.
+521		Inflicts regular damage, then the user immediately switches out, and the trainer selects a replacement Pokémon from the party.
+522		Inflicts regular damage. Has a 100% chance to lower the target's Special Attack by one stage.
+523		Inflicts regular damage. Has a 100% chance to lower the target's Speed by one stage.
+524		Inflicts regular damage. Always scores a critical hit.
+525		Decreased priority. Inflicts regular damage and makes contact. Switches the target out for another of its trainer's Pokémon, selected at random.
+526		Raises the user's Attack and Special Attack by one stage each.
+527		Inflicts regular damage. Lowers the target's Speed by one stage.
+528		Inflicts regular damage and makes contact. User takes 1/4 the damage it inflicts in recoil.
+529		Inflicts regular damage and makes contact. User's critical hit rate is one level higher when using this move.
+530		Inflicts regular damage and makes contact. Hits twice in one turn.
+531		Inflicts regular damage and makes contact. Has a 30% chance to make the target flinch.
+532		Inflicts regular damage and makes contact. Drains half the damage inflicted to heal the user.
+533		Inflicts regular damage and makes contact. Damage calculation ignores the target's stat modifiers, including Evasion.
+534		Inflicts regular damage and makes contact. Has a 50% chance to lower the target's Defense by one stage.
+535		Inflicts regular damage and makes contact. The greater the user's weight compared to the target's, the higher power this move has, to a maximum of 120.
+536		Inflicts regular damage. Has a 50% chance to lower the target's Accuracy by one stage.
+537		Inflicts regular damage and makes contact. Has a 30% chance to make the target flinch.
+538		Raises the user's Defense by three stages.
+539		Inflicts regular damage. Has a 40% chance to lower the target's Accuracy by one stage.
+540		Inflicts regular damage. Damage calculation always uses the target's Defense, regardless of this move's damage class.
+541		Inflicts regular damage and makes contact. Hits 2-5 times in one turn, and averages to 3 hits per use.
+542		Inflicts regular damage. Has a 30% chance to confuse the target. Has perfect accuracy in the rain, but only 50% accuracy in harsh sunlight.
+543		Inflicts regular damage and makes contact. User takes 1/4 the damage it inflicts in recoil.
+544		Inflicts regular damage and makes contact. Hits twice in one turn.
+545		Inflicts regular damage. Has a 30% chance to burn the target.
+546		Inflicts regular damage. If the user is holding a drive, this move's type is the type corresponding to that item.
+547		Inflicts regular damage. Has a 10% chance to put the target to sleep.
+548		Inflicts regular damage. Damage calculation uses the target's Defense.
+549		Inflicts regular damage. Lowers the target's Speed by one stage.
+550		Inflicts regular damage and makes contact. Has a 20% chance to paralyze the target.
+551		Inflicts regular damage. Has a 20% chance to burn the target.
+552		Inflicts regular damage. Has a 50% chance to raise the user's Special Attack by one stage.
+553		Inflicts regular damage. Has a 30% chance to paralyze the target. User charges for one turn before attacking.
+554		Inflicts regular damage. Has a 30% chance to burn the target. User charges for one turn before attacking.
+555		Inflicts regular damage. Has a 100% chance to lower the target's Special Attack by one stage.
+556		Inflicts regular damage. Has a 30% chance to make the target flinch.
+557		Inflicts regular damage and makes contact. Lowers the user's Defense, Special Defense, and Speed by one stage each.
+558		Inflicts regular damage. If any Pokémon used Fusion Bolt earlier this turn, this move has double power.
+559		Inflicts regular damage. If any Pokémon used Fusion Flare earlier this turn, this move has double power.

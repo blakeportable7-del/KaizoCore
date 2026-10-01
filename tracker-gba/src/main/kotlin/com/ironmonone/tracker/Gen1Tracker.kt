@@ -29,15 +29,16 @@ package com.ironmonone.tracker
  *   dex number, which is what names, sprites and the base-stat table key on.
  *
  * Gen 1 has no held items and no abilities; those lines read "-".
+ *
+ * It also answers the panel's lookups ([GbLookups]): move summaries, weight,
+ * evolution and weaknesses from the Gen 1 reference's tables and chart, and
+ * the learn levels out of the ROM.
  */
 class Gen1Tracker(
     private val memory: MemoryReader,
     private val rom: ByteArray,
     private val map: Gen1Map? = Gen1Map.forRom(rom),
-) {
-    /** GameOverScreen.LossConditions: which faint ends the run. The app sets it from its options. */
-    @Volatile var lossCondition: LossCondition = LossCondition.LEAD
-
+) : GbLookups {
     companion object {
         const val RAM = GbcTracker.RAM
         const val PARTY_STRIDE = 44
@@ -45,6 +46,10 @@ class Gen1Tracker(
         const val BASE_STRIDE = 28
         const val MOVE_STRIDE = 6
         const val ITEM_SLOTS = 20
+
+        /** The maps of POKEMON_TOWER_1F to 7F and the Silph Scope's item id: IsGhostBattle (pokered engine/battle/core.asm) says a wild battle there is a ghost without the scope. */
+        val POKEMON_TOWER = 142..148
+        const val SILPH_SCOPE = 0x48
 
         /** Gen 1 healing items: id to (amount, isPercent). Ids from pokered's item_constants.asm; amounts as the reference's table. */
         val HEALS: Map<Int, Pair<Int, Boolean>> = mapOf(
@@ -57,17 +62,33 @@ class Gen1Tracker(
             0x3D to (60 to false),   // Soda Pop
             0x3E to (80 to false),   // Lemonade
         )
+
+        /**
+         * The evolution stones, pokered's (and pokeyellow's) item_constants.asm:
+         * MOON_STONE $0A, FIRE_STONE $20, THUNDER_STONE $21, WATER_STONE $22,
+         * LEAF_STONE $2F, the ids the Gen 1 reference keys MiscData.EvolutionStones by.
+         */
+        val STONES: Map<Int, EvoText.GbStone> = mapOf(
+            0x0A to EvoText.GbStone.MOON, 0x20 to EvoText.GbStone.FIRE, 0x21 to EvoText.GbStone.THUNDER,
+            0x22 to EvoText.GbStone.WATER, 0x2F to EvoText.GbStone.LEAF,
+        )
     }
 
     private val speciesNames = HashMap<Int, String>()
     private val moveNames = HashMap<Int, String>()
-    private var enemySpeciesSeen = -1
-    private val movesSeen = LinkedHashSet<Int>()
+    private val enemyMoves = GbEnemyMoves()
+    private val lastMove = GbLastMove()
     private var lastCount = 0
+    /** The stones in the bag at the last read, for the evolution text (Program.GameData.evolutionStones). */
+    @Volatile private var bagStones: Set<EvoText.GbStone> = emptySet()
+
+    /** Item names by id (gen1/items.tsv, from pokered), for the Nuzlocke item check's warning. */
+    private val itemNames = HashMap<Int, String>()
 
     init {
         load("/gen2/species.tsv", speciesNames)   // dex numbers 1..151 are the same names
         load("/gen2/moves.tsv", moveNames)        // move ids 1..165 are Gen 1's
+        load("/gen1/items.tsv", itemNames)
     }
 
     private fun load(resource: String, into: HashMap<Int, String>) {
@@ -78,13 +99,17 @@ class Gen1Tracker(
 
     private val m: Gen1Map get() = map ?: Gen1Map.RED_BLUE
 
+    override val generation: Int get() = 1
+    private val tables by lazy { GbTables(1) }
+    private val learnCache = java.util.concurrent.ConcurrentHashMap<Int, List<Int>>()
+
     // ------------------------------------------------------------------ ROM tables
     private fun romU8(off: Int): Int = if (off in rom.indices) rom[off].toInt() and 0xFF else 0
 
     /** The dex number of an internal species id, from the ROM's own order table; 0 for a slot that is no Pokemon (MissingNo). */
     fun dexOf(internal: Int): Int = if (internal in 1..m.internalCount) romU8(m.dexOrder + internal - 1) else 0
 
-    fun baseStats(dex: Int): BaseStats? {
+    override fun baseStats(dex: Int): BaseStats? {
         if (dex !in 1..151) return null
         val b = if (dex == 151 && m.mewStats != 0) m.mewStats else m.baseStats + (dex - 1) * BASE_STRIDE
         if (b + BASE_STRIDE > rom.size) return null
@@ -150,10 +175,50 @@ class Gen1Tracker(
 
     /** The panel's card for any mon, through this ROM's tables. Public for the screenshot demo. */
     fun trackedOf(mon: PokemonDecoder.Mon): TrackedMon = tracked(mon)
-    fun speciesName(dex: Int): String = speciesNames[dex] ?: "#$dex"
+    override fun speciesName(dex: Int): String = speciesNames[dex] ?: "#$dex"
     fun moveRowOf(id: Int, pp: Int, ppMax: Int?): MoveRow = moveRow(id, pp, ppMax)
     /** The row for a move seen in an earlier battle, at its base PP. */
-    fun moveRowFor(id: Int): MoveRow? = if (id <= 0) null else moveData(id)?.let { moveRow(id, it[3], null) }
+    override fun moveRowFor(id: Int): MoveRow? = if (id <= 0) null else moveData(id)?.let { moveRow(id, it[3], null) }
+
+    // ------------------------------------------------------------------ the panel's lookups (GbLookups)
+    /** MoveData.lua `summary`, ids 1..165. */
+    override fun moveDescription(id: Int): String? = if (id in 1..165) tables.moveDescription(id) else null
+    /** PokemonData.lua `weight` (kg), dex 1..151. */
+    override fun weight(species: Int): String? = if (species in 1..151) tables.weight(species) else null
+    /** PokemonData.lua `evolution`, dex 1..151. */
+    override fun evolution(species: Int): String? = if (species in 1..151) tables.evolution(species) else null
+    /** PokemonData.getEffectiveness: the ROM's types against the Gen 1 tracker's chart (MoveData.lua TypeToEffectiveness). */
+    override fun effectivenessAgainst(species: Int): Map<Double, List<String>> =
+        baseStats(species)?.let { weaknessesOf(it.type1, it.type2, gen1 = true) } ?: emptyMap()
+
+    /** The INTERNAL id of each dex number: [dexOf] the other way round. */
+    private val internalOf: IntArray by lazy {
+        IntArray(152).also { a -> for (i in 1..m.internalCount) { val d = dexOf(i); if (d in 1..151 && a[d] == 0) a[d] = i } }
+    }
+
+    /**
+     * The levels a species learns new moves at, out of the ROM's evolution
+     * and learnset table (gen1_offsets.ini PokemonMovesetsTableOffset): a
+     * bank-local pointer per INTERNAL id to its evolutions (type 1 level and
+     * 3 trade are 3 bytes, 2 item is 4) and then its (level, move) pairs, the
+     * walk the randomizer's own Gen1RomHandler.getMovesLearnt does. Read live
+     * because the randomizer rewrites it.
+     *
+     * The Gen 1 reference types these into PokemonData.lua instead (movelvls,
+     * one list for Red/Blue and one for Yellow) and never reads the ROM for
+     * them. The ROM is the game being played: where the two disagree the
+     * table is wrong (Red/Blue Pidgey learns Sand-Attack at 5, which its list
+     * leaves out), so the ROM is read here, as the Gen 2 reference does.
+     */
+    override fun learnLevels(species: Int): List<Int> = learnCache.getOrPut(species) {
+        // No map is a Game Boy game this tracker does not know: its tables are somewhere else.
+        val internal = if (map != null && species in 1..151 && m.movesets != 0) internalOf[species] else 0
+        if (internal == 0) return@getOrPut emptyList()
+        val at = m.movesets + (internal - 1) * 2
+        if (at + 1 !in rom.indices) return@getOrPut emptyList()
+        val pointer = romU8(at) or (romU8(at + 1) shl 8)
+        gbLearnLevels(rom, gbOffset(m.movesets / 0x4000, pointer)) { type -> when (type) { 1, 3 -> 3; 2 -> 4; else -> null } }
+    }
 
     private fun tracked(mon: PokemonDecoder.Mon): TrackedMon {
         val base = baseStats(mon.species)
@@ -161,10 +226,16 @@ class Gen1Tracker(
             val basePp = moveData(mon.moves[i])?.get(3)
             moveRow(mon.moves[i], mon.pp[i], basePp?.let { it + (it / 5) * mon.ppUps[i] })
         }
+        // Utils.getMovesLearnedHeader: "Moves 3/7 (16)" from the learn levels.
+        val header = LearnedMoves.of(learnLevels(mon.species), mon.level)
         return TrackedMon(
             mon = mon, speciesName = speciesNames[mon.species] ?: "#${mon.species}",
             moveNames = rows.map { it.name }, base = base, abilityName = "-", itemName = "-",
             moveRows = rows, statusCondition = statusName(mon.status.toInt()),
+            movesLearned = header.learned, movesTotal = header.total, nextMoveLevel = header.next,
+            // "Lv.12 (16)": the Gen 1 reference's evolution, coloured as it draws it (EvoText.forOwnGb).
+            // Gen 1 has no friendship, and the reference reads it as 0 (Program.lua readNewPokemon).
+            evo = EvoText.forOwnGb(evolution(mon.species), mon.level, bagStones, friendship = 0, TrackerPrefs.determineFriendship),
         )
     }
 
@@ -190,28 +261,46 @@ class Gen1Tracker(
         val dex = dexOf(b.u8(0)); if (dex == 0) return null
         val level = b.u8(14); val curHp = be16(b, 1); val maxHp = be16(b, 15)
         if (level !in 1..100 || maxHp !in 1..999 || curHp > maxHp) return null
-        if (dex != enemySpeciesSeen) { enemySpeciesSeen = dex; movesSeen.clear() }
-        // The reference's rule: the enemy's move byte is recorded only when it is a move the opponent knows.
+        // The reference's rule (GbEnemyMoves.seeGen1): the enemy's move byte is recorded only once the
+        // opponent has moved, and only when it is one of the moves it had before that.
         val known = (0 until 4).map { b.u8(8 + it) }
-        ram(m.enemyMove, 1).let { if (it.isNotEmpty() && it.u8(0) in 1..165 && it.u8(0) in known) movesSeen.add(it.u8(0)) }
+        val turns = ram(m.aiTurns, 1).let { if (it.isEmpty()) 0 else it.u8(0) }
+        enemyMoves.seeGen1(dex, ram(m.enemyMove, 1).let { if (it.isEmpty()) 0 else it.u8(0) }, known, turns)
+        val movesSeen = enemyMoves.seen
         return EnemyInfo(
             species = dex, speciesName = speciesNames[dex] ?: "#$dex", level = level, curHp = curHp, maxHp = maxHp,
             type1 = GbcTracker.gen3Type(b.u8(5)), type2 = GbcTracker.gen3Type(b.u8(6)), base = baseStats(dex),
             movesSeen = movesSeen.map { moveNames[it] ?: "#$it" },
-            moveRows = movesSeen.map { moveRow(it, moveData(it)?.get(3) ?: 0, null) },
+            // "Count enemy PP usage" (DataHelper.lua:277-288): a shown move the opponent has now takes
+            // its live PP from the battle struct (moves at 8, PP at 25, the whole byte as
+            // Program.readNewEnemyPokemon reads it); otherwise, and with the option off, base PP.
+            moveRows = movesSeen.map { id ->
+                val live = (0 until 4).firstOrNull { TrackerPrefs.countEnemyPp && b.u8(8 + it) == id }?.let { b.u8(25 + it) }
+                moveRow(id, live ?: moveData(id)?.get(3) ?: 0, null)
+            },
             abilityGuess = "-", statusCondition = statusName(b.u8(4)),
+            // The opponent's evolution, all in the default colour (TrackerScreen.lua:765).
+            evo = EvoText.forEnemy(evolution(dex)),
         )
     }
 
-    private fun readHeals(maxHp: Int): Pair<Int, Int> {
-        if (maxHp <= 0) return 0 to 0
+    /** The bag (wNumBagItems, then wBagItems' id and quantity pairs up to the 0xFF that ends them). */
+    private fun readBag(): List<Pair<Int, Int>> {
         val n = ram(m.numItems, 1).let { if (it.isEmpty()) 0 else it.u8(0) }.coerceIn(0, ITEM_SLOTS)
         val b = ram(m.items, n * 2 + 1)
-        var total = 0; var count = 0
+        val out = ArrayList<Pair<Int, Int>>(n)
         for (i in 0 until n) {
             if (b.size < i * 2 + 2) break
-            val id = b.u8(i * 2); val qty = b.u8(i * 2 + 1)
-            if (id == 0xFF) break
+            val id = b.u8(i * 2); if (id == 0xFF) break
+            out += id to b.u8(i * 2 + 1)
+        }
+        return out
+    }
+
+    private fun readHeals(bag: List<Pair<Int, Int>>, maxHp: Int): Pair<Int, Int> {
+        if (maxHp <= 0) return 0 to 0
+        var total = 0; var count = 0
+        for ((id, qty) in bag) {
             val heal = HEALS[id] ?: continue
             if (qty !in 1..99) continue
             val each = if (heal.second) maxHp * heal.first / 100 else minOf(heal.first, maxHp)
@@ -220,38 +309,114 @@ class Gen1Tracker(
         return (total * 100 / maxHp) to count
     }
 
+    /** "Game is considered over when", set by the app from its options; the lead by default. */
+    @Volatile var lossCondition: LossCondition = LossCondition.LEAD
+
+    // ------------------------------------------------------------------ the Nuzlocke reads (2026-09-30)
+
+    private val nuzTracker by lazy { GbNuzTracker(1, m.gameKey, listOf(m.gameKey), rom, m.trainerTable) }
+
+    private fun byteAt(off: Long): Int = if (off == 0L) -1 else ram(off, 1).let { if (it.isEmpty()) -1 else it.u8(0) }
+
+    /**
+     * What the rules engine reads beyond the panel's state, Gen12Nuzlocke turns it into a snapshot: the place, how the last
+     * battle ended, the player's trainer id and the enemy's DVs (a Pokemon's id, Gen12Nuzlocke.id), the balls and the bag,
+     * the opponent's class and number, the level caps read out of the ROM, and the party's nicknames.
+     */
+    private fun nuzReads(party: List<TrackedMon>, mode: Int, battling: Boolean, enemy: EnemyInfo?, bag: List<Pair<Int, Int>>, mapId: Int?): NuzlockeReads? {
+        if (map == null || m.playerId == 0L) return null
+        val n = nuzTracker
+        val wild = mode == 1
+        n.look(battling, wild, enemy?.curHp, escapedNow = byteAt(m.escaped) > 0, capturedNow = byteAt(m.captured) > 0)
+        val place = n.place(mapId)
+        val id = ram(m.playerId, 2).let { if (it.size == 2) be16(it, 0) else -1 }
+        val dvs = if (battling && wild) ram(m.enemyDvs, 2).let { if (it.size == 2) be16(it, 0) else -1 } else -1
+        val options = byteAt(m.options)
+        // Item ids 1 to 4 are the four balls; the Silph Scope (0x48) is what lets the Pokemon Tower's ghosts be seen.
+        val balls = bag.filter { it.first in 1..4 }.sumOf { it.second }
+        val ghost = battling && wild && mapId in POKEMON_TOWER && bag.none { it.first == SILPH_SCOPE && it.second > 0 }
+        val opponent = if (battling && !wild) n.opponent(byteAt(m.trainerClass), byteAt(m.trainerNo)) else null
+        val nicks = ram(m.nicks, 66)
+        val gb = GbNuzReads(
+            generation = 1, game = m.gameKey, gameKeys = listOf(m.gameKey),
+            place = place?.place, detail = place?.detail,
+            playerId = id, enemyDvs = dvs, enemyHpLast = n.lastEnemyHp, lastWild = n.lastWild,
+            battleResult = byteAt(m.battleResult), escaped = n.escaped, captured = n.captured,
+            battleType = byteAt(m.battleType).coerceAtLeast(0), ghost = ghost,
+            surfing = byteAt(m.surfState) == 2,
+            ballCount = balls,
+            bag = bag.filter { it.first !in 1..4 && it.second > 0 }.associate { (item, qty) -> item to BagItem(itemNames[item] ?: "Item $item", qty) },
+            turn = if (battling) byteAt(m.aiTurns).coerceAtLeast(0) else -1,
+            // wOptions bit 6 set is the Set battle style (pokered BIT_BATTLE_SHIFT, main_menu.asm).
+            battleStyleSet = if (options < 0) null else (options and 0x40) != 0,
+            opponent = opponent, caps = n.caps(),
+            nicknames = party.indices.map { i -> if (nicks.size >= (i + 1) * 11) GbText.decode(nicks, i * 11) else "" },
+        )
+        return NuzlockeReads(gb = gb)
+    }
+
     fun read(): TrackerState {
         if (map == null) return TrackerState(
             partyCount = 0, party = emptyList(), inBattle = false, isWildBattle = false,
             badgeSet = "RBY", diagnostics = "Game Boy game not known to the tracker", unreadable = true,
         )
-        val party = readParty()
+        // Program.getBagItems: a stone counts while its quantity is above 0.
+        val bag = readBag()
+        bagStones = bag.filter { it.second > 0 }.mapNotNull { STONES[it.first] }.toSet()
+        var party = readParty()
         // wIsInBattle: 0 none, 1 wild, 2 trainer; 0xFF marks a lost battle in the disassembly's comment.
         val mode = ram(m.inBattle, 1).let { if (it.isEmpty()) 0 else it.u8(0) }
         val inBattle = mode == 1 || mode == 2
-        val enemy = if (inBattle) readEnemy() else run { enemySpeciesSeen = -1; movesSeen.clear(); null }
+        var enemy = if (inBattle) readEnemy() else run { enemyMoves.clear(); null }
+        val battling = inBattle && enemy != null
+        // Battle.updateStatStages (Battle.lua:735-761): the active battlers' stages, drawn only in battle,
+        // yours on slot 1 as the reference views it (Battle.getViewedPokemon).
+        if (battling && party.isNotEmpty()) {
+            party = listOf(party[0].copy(statStages = gbStatStages(ram(m.statMods, 6), GEN1_STAGES))) + party.drop(1)
+            enemy = enemy?.copy(statStages = gbStatStages(ram(m.statMods + 0x14, 6), GEN1_STAGES))
+        }
+        lastMove.read(battling, turn = ram(m.aiTurns, 1).let { if (it.isEmpty()) 0 else it.u8(0) },
+            move = ram(m.enemyMove, 1).let { if (it.isEmpty()) 0 else it.u8(0) })
         val badges = ram(m.badges, 1).let { if (it.isEmpty()) 0 else it.u8(0) }
         val lead = party.firstOrNull()
-        val heals = readHeals(lead?.mon?.maxHp ?: 0)
+        val heals = readHeals(bag, lead?.mon?.maxHp ?: 0)
+        val mapId = ram(m.curMap, 1).takeIf { m.curMap != 0L && it.isNotEmpty() }?.u8(0)
         return TrackerState(
             partyCount = party.size, party = party,
-            inBattle = inBattle && enemy != null, isWildBattle = inBattle && mode == 1, enemy = enemy,
+            inBattle = battling, isWildBattle = inBattle && mode == 1, enemy = enemy,
+            // "Team:" in a trainer battle: the one ball the reference knows (gbEnemyTeam).
+            enemyTeam = gbEnemyTeam(trainerBattle = battling && mode == 2, enemy = enemy),
             badges = badges, badgeSet = "RBY",
             healPercent = heals.first, healCount = heals.second,
-            gameOver = if (lossCondition.lost(party.map { it.mon.level to it.mon.curHp })) GameOver.LOST else null,
+            // "Last move: X" between the enemy's moves (GbLastMove); MoveData.isValid is 1..165.
+            lastAttackMove = lastMove.shown.takeIf { it in 1..165 }?.let { moveNames[it] ?: "#$it" },
+            // Program.updateMapLocation (Program.lua:1114-1129): the map is wCurMap, and any map read is
+            // a valid location (isValidMapLocation is mapId ~= nil), so the Time Machine makes its points.
+            // No name: the reference names Gen 1 maps from its RSE table (RouteData.lua:67-74, games 1
+            // and 2), so Viridian City, map 1, would read "Petalburg City"; the point says Unknown Area.
+            mapId = mapId,
+            // The player's condition, checked once the battle byte reads 0, never mid-battle (GbGameOver).
+            gameOver = if (GbGameOver.lost(mode, party, lossCondition)) GameOver.LOST else null,
             diagnostics = "${m.name}  party=%d mode=%d".format(party.size, mode),
             unreadable = party.isEmpty() && lastCount != 0,
+            nuz = runCatching { nuzReads(party, mode, battling, enemy, bag, mapId) }.getOrNull(),
         )
     }
 }
 
 /**
- * One Gen 1 game's addresses: WRAM offsets from 0x02000000 (the whole
- * Game Boy address space is mapped there, so 0xD163 is 0xD163), and the ROM
- * tables. RED_BLUE is pokered's layout, YELLOW pokeyellow's; both computed
+ * One Gen 1 game's addresses: WRAM offsets from 0x02000000, and the ROM
+ * tables. The core's SYSTEM_RAM is the Game Boy's work RAM (0xC000 up), so a
+ * pokered address 0xDxxx is offset 0x1xxx, exactly as the reference writes them
+ * (GameSettings.setWramAddresses: pstats 0x0200116B) and as GbcTracker does.
+ * These were the raw addresses (0xD16B) until 2026-09-28: every read fell
+ * outside the 8 KB work RAM and came back empty, so on a real device the Gen 1
+ * panel never saw a party (parity audit; the unit test's 64 KB fake memory
+ * could not notice). RED_BLUE is pokered's layout, YELLOW pokeyellow's; both computed
  * by tools/wram_layout.py and agreeing with the Gen 1 reference tracker's
  * table (its Red numbers, and its "Yellow is one less" rule for the D block).
- * ROM offsets are gen1_offsets.ini's [Red (U)] and [Yellow (U)] entries.
+ * ROM offsets are gen1_offsets.ini's [Red (U)] and [Yellow (U)] entries
+ * ([Blue (U)] copies Red's), [movesets] its PokemonMovesetsTableOffset.
  */
 data class Gen1Map(
     val name: String,
@@ -259,21 +424,60 @@ data class Gen1Map(
     val enemyMon: Long, val inBattle: Long, val enemyMove: Long,
     val badges: Long, val numItems: Long, val items: Long,
     val baseStats: Int, val mewStats: Int, val moves: Int, val dexOrder: Int, val internalCount: Int,
+    val movesets: Int = 0,
+    /**
+     * wAILayer2Encouragement 0xCCD5 in both games, the reference's gTurn
+     * (0x02000cd5, which its Yellow table deliberately does not shift).
+     */
+    val aiTurns: Long = 0L,
+    /**
+     * wPlayerMonStatMods 0xCD1A in both games, the enemy's 0x14 on
+     * (wEnemyMonStatMods 0xCD2E): the reference's StatChange (0x02000D1A, not
+     * shifted for Yellow either; tools/wram_layout.py gives 0xCD1A for both).
+     */
+    val statMods: Long = 0L,
+    /**
+     * wCurMap, 0xD35E in Red and Blue, 0xD35D in Yellow: the reference's
+     * gMapHeader (0x0200135E, shifted for Yellow), Program.GameData.mapId.
+     */
+    val curMap: Long = 0L,
+    // ---- The Nuzlocke reads (2026-09-30). pokered and pokeyellow WRAM, from tools/wram_layout.py, as offsets like the rest. ----
+    /** wPlayerID (big endian), wBattleResult, wEscapedFromBattle, wCapturedMonSpecies, wOptions, wTrainerClass, wTrainerNo, wBattleType, wWalkBikeSurfState. */
+    val playerId: Long = 0L, val battleResult: Long = 0L, val escaped: Long = 0L, val captured: Long = 0L, val options: Long = 0L,
+    val trainerClass: Long = 0L, val trainerNo: Long = 0L, val battleType: Long = 0L, val surfState: Long = 0L,
+    /** The enemy's DVs (wEnemyMon + 12) and the party's nicknames (wPartyMonNicks, six of 11 bytes). */
+    val enemyDvs: Long = 0L, val nicks: Long = 0L,
+    /** The randomizer's TrainerDataTableOffset ([Red (U)] and [Yellow (U)] in gen1_offsets.ini), and the game's data key. */
+    val trainerTable: Int = 0, val gameKey: String = "rb",
 ) {
     companion object {
         val RED_BLUE = Gen1Map(
             name = "Red/Blue",
-            partyCount = 0xD163L, partySpecies = 0xD164L, partyMons = 0xD16BL,
-            enemyMon = 0xCFE5L, inBattle = 0xD057L, enemyMove = 0xCFCCL,
-            badges = 0xD356L, numItems = 0xD31DL, items = 0xD31EL,
+            // pokered 0xD163, 0xD164, 0xD16B, 0xCFE5, 0xD057, 0xCFCC, 0xD356, 0xD31D, 0xD31E.
+            partyCount = 0x1163L, partySpecies = 0x1164L, partyMons = 0x116BL,
+            enemyMon = 0x0FE5L, inBattle = 0x1057L, enemyMove = 0x0FCCL,
+            badges = 0x1356L, numItems = 0x131DL, items = 0x131EL,
             baseStats = 0x383DE, mewStats = 0x425B, moves = 0x38000, dexOrder = 0x41024, internalCount = 190,
+            movesets = 0x3B05C, aiTurns = 0x0CD5L, statMods = 0x0D1AL, curMap = 0x135EL,
+            // wPlayerID D359, wBattleResult CF0B, wEscapedFromBattle D078, wCapturedMonSpecies D11C, wOptions D355,
+            // wTrainerClass D031, wTrainerNo D05D, wBattleType D05A, wWalkBikeSurfState D700, wEnemyMonDVs CFF1, wPartyMonNicks D2B5.
+            playerId = 0x1359L, battleResult = 0x0F0BL, escaped = 0x1078L, captured = 0x111CL, options = 0x1355L,
+            trainerClass = 0x1031L, trainerNo = 0x105DL, battleType = 0x105AL, surfState = 0x1700L,
+            enemyDvs = 0x0FF1L, nicks = 0x12B5L, trainerTable = 0x39D3B, gameKey = "rb",
         )
         val YELLOW = Gen1Map(
             name = "Yellow",
-            partyCount = 0xD162L, partySpecies = 0xD163L, partyMons = 0xD16AL,
-            enemyMon = 0xCFE4L, inBattle = 0xD056L, enemyMove = 0xCFCBL,
-            badges = 0xD355L, numItems = 0xD31CL, items = 0xD31DL,
+            // pokeyellow: each one less than Red's.
+            partyCount = 0x1162L, partySpecies = 0x1163L, partyMons = 0x116AL,
+            enemyMon = 0x0FE4L, inBattle = 0x1056L, enemyMove = 0x0FCBL,
+            badges = 0x1355L, numItems = 0x131CL, items = 0x131DL,
             baseStats = 0x383DE, mewStats = 0, moves = 0x38000, dexOrder = 0x410B1, internalCount = 190,
+            movesets = 0x3B1E5, aiTurns = 0x0CD5L, statMods = 0x0D1AL, curMap = 0x135DL,
+            // pokeyellow: wPlayerID D358, wBattleResult CF0B, wEscapedFromBattle D077, wCapturedMonSpecies D11B, wOptions D354,
+            // wTrainerClass D030, wTrainerNo D05C, wBattleType D059, wWalkBikeSurfState D6FF, wEnemyMonDVs CFF0, wPartyMonNicks D2B4.
+            playerId = 0x1358L, battleResult = 0x0F0BL, escaped = 0x1077L, captured = 0x111BL, options = 0x1354L,
+            trainerClass = 0x1030L, trainerNo = 0x105CL, battleType = 0x1059L, surfState = 0x16FFL,
+            enemyDvs = 0x0FF0L, nicks = 0x12B4L, trainerTable = 0x39DD1, gameKey = "y",
         )
 
         /** From the cartridge header title: "POKEMON RED", "POKEMON BLUE" (pokered's rgbfix titles) or "POKEMON YELLOW". */

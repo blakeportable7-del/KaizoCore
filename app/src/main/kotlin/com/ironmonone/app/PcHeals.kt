@@ -33,6 +33,110 @@ object PcHeals {
 
     fun count(attempt: Int): Int = counts[attempt] ?: if (TrackerOptions.pcHealsCountDownward) 10 else 0
 
+    /**
+     * The Survival rulesets' Pokemon Center limits (the official rules gist; the Survival
+     * Revival README): Survival 10 with a bonus heal at the 8th badge, Survival Revival 5 after
+     * the heal badge 1 grants, with a bonus at the 8th badge.
+     */
+    enum class Limit(val start: Int) { SURVIVAL(10), REVIVAL(5) }
+
+    /** Survival's heals for Kanto after the Johto Elite Four, in a Johto game (the rules' "10 Heal Limit"). */
+    const val KANTO_HEALS = 7
+
+    /** The limit a settings file's name asks for, the way the reference reads a profile's keywords. */
+    fun limitFor(settingsName: String?): Limit? = when {
+        settingsName == null -> null
+        settingsName.contains("Survival Revival", true) || settingsName.contains("SurvivalRevival", true) -> Limit.REVIVAL
+        settingsName.contains("Survival", true) -> Limit.SURVIVAL
+        else -> null
+    }
+
+    /**
+     * The limit of the run in play, from prep/lastrun.txt beside this counter's file: by the run's mode (RunModeName),
+     * which reads the settings file's sidecar too, not by its name alone (2026-10-01, rules check).
+     */
+    fun limitForLastRun(): Limit? {
+        val prep = file?.parentFile ?: return null
+        val lines = runCatching { File(prep, "lastrun.txt").readLines() }.getOrNull() ?: return null
+        val name = lines.getOrNull(1)?.takeIf { it.isNotBlank() } ?: return null
+        return limitFor(RunModeName.ofPrep(prep, lines.getOrNull(0), name))
+    }
+
+    private val armed = HashSet<Int>()
+    private val bonusGiven = HashSet<Int>()
+
+    /**
+     * A Survival run's first sight of its attempt switches the counter on, counting down from
+     * its limit (Blake, 2026-09-29: an official mode adds what its rules need, and the player
+     * keeps control; the gear switches it off). The heart stays the player's, as in the
+     * reference: heals before the first trainer that is not the rival are free under the rules.
+     */
+    fun arm(attempt: Int, limit: Limit?, badges: Int = 0) {
+        if (limit == null || attempt in armed) return
+        armed += attempt
+        // A run already past the 8th badge when first armed (the app updated mid-run) had its
+        // bonus by hand or not at all: it is not added again.
+        if (badges >= 8) bonusGiven += attempt
+        TrackerOptions.trackPcHeals = true
+        TrackerOptions.pcHealsCountDownward = true
+        TrackerOptions.save()
+        if (counts[attempt] == null) counts[attempt] = limit.start
+        save()
+    }
+
+    /**
+     * A new run took attempt [n]. Attempts count per game, so an earlier run of another game can
+     * have left a count, an armed mark or a bonus under the same number: they go, and the new run
+     * starts fresh. Called by PrepStore.installRun (freshAttempt), which every new-run path goes through.
+     */
+    fun forgetAttempt(n: Int) {
+        val had = counts.remove(n) != null
+        baseline.remove(n)
+        if (had or armed.remove(n) or bonusGiven.remove(n)) save()
+    }
+
+    /** [limitForLastRun], read again only when prep/lastrun.txt changes: the DS side asks on every read. */
+    private var limitCache: Pair<Long, Limit?>? = null
+    fun limitForLastRunCached(): Limit? {
+        val f = file?.let { File(it.parentFile, "lastrun.txt") } ?: return null
+        val stamp = f.lastModified()
+        limitCache?.takeIf { it.first == stamp }?.let { return it.second }
+        return limitForLastRun().also { limitCache = stamp to it }
+    }
+
+    /**
+     * A Survival run on DS (the modes audit): the DS tracker's own counter ("Show Pokecenter
+     * heals", counted by hand in the reference) shows from the run's first read at the rules'
+     * limit, and the 8th badge adds the bonus heal. Both once per run, kept with the run's DS
+     * values (StatMarks.armDsSurvival); the player keeps control: the gear switches it off and
+     * the arrows step it. Returns whether the count changed.
+     */
+    fun observeDsSurvival(marks: StatMarks, badges: Int, limit: Limit?, leagueBeaten: Boolean = false): Boolean {
+        if (limit == null) return false
+        var changed = false
+        if (marks.armDsSurvival(limit, badges, leagueBeaten)) {
+            TrackerOptions.dsPokecenterHeals = true
+            TrackerOptions.save()
+            changed = true
+        }
+        if (marks.dsSurvivalBadges(badges)) changed = true
+        // HeartGold and SoulSilver: Survival's 7 heals for Kanto, once the Johto League is beaten (Survival only).
+        if (limit == Limit.SURVIVAL && marks.dsSurvivalKanto(leagueBeaten)) changed = true
+        return changed
+    }
+
+    /**
+     * The bonus heal at the 8th badge, once per armed Survival attempt, whether the heart counts
+     * heals or the player does: the badge is a rule event the tracker sees for certain, and a
+     * Game Boy game has no heal statistic for the heart to count. The DS counter does the same
+     * (observeDsSurvival). A counter the player switched off is left alone.
+     */
+    fun observeBadges(attempt: Int, badges: Int, limit: Limit?) {
+        if (limit == null || badges < 8 || attempt !in armed || attempt in bonusGiven || !TrackerOptions.trackPcHeals) return
+        bonusGiven += attempt
+        add(attempt, if (TrackerOptions.pcHealsCountDownward) +1 else -1)
+    }
+
     fun add(attempt: Int, delta: Int) {
         counts[attempt] = (count(attempt) + delta).coerceIn(0, 99)
         save()
@@ -60,9 +164,11 @@ object PcHeals {
 
     fun load(f: File) {
         file = f
-        counts.clear()
+        counts.clear(); armed.clear(); bonusGiven.clear()
         runCatching {
             if (f.exists()) f.forEachLine { line ->
+                if (line.startsWith("armed:")) { line.substringAfter(':').trim().toIntOrNull()?.let { armed += it }; return@forEachLine }
+                if (line.startsWith("bonus:")) { line.substringAfter(':').trim().toIntOrNull()?.let { bonusGiven += it }; return@forEachLine }
                 val parts = line.split('=')
                 if (parts.size == 2) {
                     val a = parts[0].trim().toIntOrNull(); val n = parts[1].trim().toIntOrNull()
@@ -74,7 +180,11 @@ object PcHeals {
 
     private fun save() {
         val f = file ?: return
-        runCatching { f.parentFile?.mkdirs(); f.writeText(counts.entries.joinToString("") { "${it.key}=${it.value}\n" }) }
+        runCatching {
+            f.parentFile?.mkdirs()
+            SafeWrite.text(f, counts.entries.joinToString("") { "${it.key}=${it.value}\n" } +
+                armed.joinToString("") { "armed:$it\n" } + bonusGiven.joinToString("") { "bonus:$it\n" })
+        }
     }
 }
 

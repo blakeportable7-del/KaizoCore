@@ -62,13 +62,15 @@ object Feedback {
         appendLine("What happened:")
         appendLine(words.trim().ifBlank { "(no description)" })
         appendLine()
+        // The report and the log are scrubbed here, on the way into the text, so the "never a file
+        // name" promise holds on the email and share paths as it does on the crash endpoint (2026-09-29).
         if (!crash.isNullOrBlank()) {
             appendLine("Last crash:")
-            appendLine(crash.trim().lines().take(60).joinToString(System.lineSeparator()))
+            appendLine(CrashReport.scrub(crash.trim().lines().take(60).joinToString(System.lineSeparator())))
             appendLine()
         }
         appendLine("Log tail:")
-        append(log.trim().ifBlank { "(none)" })
+        append(CrashReport.scrub(log.trim().ifBlank { "(none)" }))
         appendLine()
     }
 

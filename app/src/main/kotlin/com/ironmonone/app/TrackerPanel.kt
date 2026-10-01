@@ -76,6 +76,7 @@ private fun PartyCard(
     spriteFor: (Int) -> androidx.compose.ui.graphics.ImageBitmap?,
     healPercent: Int = -1,
     healCount: Int = 0,
+    onHealsTap: (() -> Unit)? = null,
     onMoveInfo: ((PcMove) -> Unit)? = null,
     onAbilityInfo: ((String) -> Unit)? = null,
     onNameInfo: (() -> Unit)? = null,
@@ -87,9 +88,15 @@ private fun PartyCard(
      * summary: icon, name and level only, as the reference's default Pokemon.
      */
     hidden: Boolean = false,
+    /** Battle.inActiveBattle, for the Acc/Eva row (TrackerScreen.lua:1437). */
+    inBattle: Boolean = false,
+    /** How this game numbers species, for the Walking Pals icon (WalkingPals.trackerDex). */
+    iconDex: WalkingPals.Dex = WalkingPals.Dex.GEN3,
 ) {
     val m = p.mon
     val dash = "---"
+    // DataHelper.lua:140-151: hidden, the reference draws a stand-in whose stages are all neutral.
+    val stages = if (hidden) emptyMap<String, Int>() else p.statStages
     PcCard {
         PcHeadBlock(
             // "Show nicknames": the nickname in place of the species when it has one
@@ -98,7 +105,9 @@ private fun PartyCard(
                 else p.speciesName) + (if (m.shiny) " *" else ""),
             status = if (m.curHp <= 0) "FNT" else p.statusCondition,
             level = m.level, curHp = m.curHp, maxHp = m.maxHp,
-            typeChips = if (hidden) emptyList() else listOfNotNull(
+            // DataHelper.lua:145-148: hidden, the stand-in keeps the species, so its types, BST,
+            // evolution and moves header still show (:168, :169, :205, :253).
+            typeChips = listOfNotNull(
                 p.base?.type1?.let { Gen3Types.name(it) to pcTypeColor(it) },
                 p.base?.type2?.takeIf { it != p.base?.type1 }
                     ?.let { Gen3Types.name(it) to pcTypeColor(it) },
@@ -111,7 +120,8 @@ private fun PartyCard(
             onNameTap = onNameInfo,
             sprite = spriteFor(m.species),
             iconSpecies = m.species,
-            evo = p.evo.takeIf { !hidden },
+            iconDex = iconDex,
+            evo = p.evo,
             gender = if (TrackerOptions.displayGender) com.ironmonone.tracker.Gender3.of(p.base?.genderRatio ?: 255, m.pid) else null,
             expFraction = if (TrackerOptions.showExpBar && p.expTotal > 0) p.expNow.toFloat() / p.expTotal else null,
             // Only the lead carries the Heals strip: the number is a share of
@@ -119,29 +129,32 @@ private fun PartyCard(
             // print the same percentage against six different Pokemon.
             belowHead = if (healPercent >= 0) {
                 { PcHealsBlock(healPercent, healCount, wholeHp = healPercent * p.mon.maxHp / 100,
-                    pcHealsAttempt = attempt.takeIf { TrackerOptions.trackPcHeals }) }
+                    pcHealsAttempt = attempt.takeIf { TrackerOptions.trackPcHeals }, onTap = onHealsTap) }
             } else null,
         ) {
-            PcStatRow("HP", if (hidden) dash else "${m.maxHp}", p.statStages["HP"], nature = m.nature.takeIf { !hidden }, rightJustify = TrackerOptions.rightJustifiedNumbers, colorNumber = TrackerOptions.colorStatNumbers)
-            PcStatRow("ATK", if (hidden) dash else "${m.atk}", p.statStages["ATK"], nature = m.nature.takeIf { !hidden }, rightJustify = TrackerOptions.rightJustifiedNumbers, colorNumber = TrackerOptions.colorStatNumbers)
-            PcStatRow("DEF", if (hidden) dash else "${m.def}", p.statStages["DEF"], nature = m.nature.takeIf { !hidden }, rightJustify = TrackerOptions.rightJustifiedNumbers, colorNumber = TrackerOptions.colorStatNumbers)
+            PcStatRow("HP", if (hidden) dash else "${m.maxHp}", stages["HP"], nature = m.nature.takeIf { !hidden }, rightJustify = TrackerOptions.rightJustifiedNumbers, colorNumber = TrackerOptions.colorStatNumbers)
+            PcStatRow("ATK", if (hidden) dash else "${m.atk}", stages["ATK"], nature = m.nature.takeIf { !hidden }, rightJustify = TrackerOptions.rightJustifiedNumbers, colorNumber = TrackerOptions.colorStatNumbers)
+            PcStatRow("DEF", if (hidden) dash else "${m.def}", stages["DEF"], nature = m.nature.takeIf { !hidden }, rightJustify = TrackerOptions.rightJustifiedNumbers, colorNumber = TrackerOptions.colorStatNumbers)
             if (p.base?.singleSpecial == true) {
                 // Gen 1: one Special stat. The Gen 1 reference tracker lists it as SPA, once.
-                PcStatRow("SPA", if (hidden) dash else "${m.spAtk}", p.statStages["SPA"], nature = m.nature.takeIf { !hidden }, rightJustify = TrackerOptions.rightJustifiedNumbers, colorNumber = TrackerOptions.colorStatNumbers)
+                PcStatRow("SPA", if (hidden) dash else "${m.spAtk}", stages["SPA"], nature = m.nature.takeIf { !hidden }, rightJustify = TrackerOptions.rightJustifiedNumbers, colorNumber = TrackerOptions.colorStatNumbers)
             } else {
-                PcStatRow("SPA", if (hidden) dash else "${m.spAtk}", p.statStages["SPA"], nature = m.nature.takeIf { !hidden }, rightJustify = TrackerOptions.rightJustifiedNumbers, colorNumber = TrackerOptions.colorStatNumbers)
-                PcStatRow("SPD", if (hidden) dash else "${m.spDef}", p.statStages["SPD"], nature = m.nature.takeIf { !hidden }, rightJustify = TrackerOptions.rightJustifiedNumbers, colorNumber = TrackerOptions.colorStatNumbers)
+                PcStatRow("SPA", if (hidden) dash else "${m.spAtk}", stages["SPA"], nature = m.nature.takeIf { !hidden }, rightJustify = TrackerOptions.rightJustifiedNumbers, colorNumber = TrackerOptions.colorStatNumbers)
+                PcStatRow("SPD", if (hidden) dash else "${m.spDef}", stages["SPD"], nature = m.nature.takeIf { !hidden }, rightJustify = TrackerOptions.rightJustifiedNumbers, colorNumber = TrackerOptions.colorStatNumbers)
             }
-            PcStatRow("SPE", if (hidden) dash else "${m.spe}", p.statStages["SPE"], nature = m.nature.takeIf { !hidden }, rightJustify = TrackerOptions.rightJustifiedNumbers, colorNumber = TrackerOptions.colorStatNumbers)
-            PcStatRow("BST", if (hidden) dash else p.base?.bst?.toString() ?: "?", rightJustify = TrackerOptions.rightJustifiedNumbers)
+            PcStatRow("SPE", if (hidden) dash else "${m.spe}", stages["SPE"], nature = m.nature.takeIf { !hidden }, rightJustify = TrackerOptions.rightJustifiedNumbers, colorNumber = TrackerOptions.colorStatNumbers)
+            // TrackerScreen.lua:1435-1448: in battle, a moved accuracy or evasion takes BST's place.
+            val acc = stages["ACC"] ?: 6; val eva = stages["EVA"] ?: 6
+            if (StageChevrons.accEvaReplacesBst(inBattle, acc, eva)) PcAccEvaRow(acc, eva)
+            else PcStatRow("BST", p.base?.bst?.toString() ?: "?", rightJustify = TrackerOptions.rightJustifiedNumbers)
         }
         // "Moves 3/11 (17)" - learned so far / total this species learns, and
         // the level the next one arrives at, exactly as the PC tracker shows it.
         PcMovesSection(
             if (hidden) emptyList() else p.moveRows.map { it.toPcMove(moveCtx) },
             referenceColumns = true, rightJustify = TrackerOptions.rightJustifiedNumbers,
-            header = if (p.movesTotal > 0 && !hidden) "Moves ${p.movesLearned}/${p.movesTotal}" else "Moves",
-            nextLevel = p.nextMoveLevel.takeIf { p.movesTotal > 0 && !hidden },
+            header = if (p.movesTotal > 0) "Moves ${p.movesLearned}/${p.movesTotal}" else "Moves",
+            nextLevel = p.nextMoveLevel.takeIf { p.movesTotal > 0 },
             nextHot = p.nextMoveLevel?.let { m.level + 1 >= it } == true,
             onMoveTap = onMoveInfo,
             onHeaderTap = onMoveHistory?.let { cb -> { cb(m.species, p.speciesName, m.level) } },
@@ -165,7 +178,15 @@ private fun EnemyCard(
     isWild: Boolean = false,
     encounters: Int = 0,
     routeName: String? = null,
+    /** FireRed and LeafGreen (2026-09-29): the map mark for this place, drawn after its name in a wild battle (FrlgMapMark); null for none. */
+    mapMark: (@Composable () -> Unit)? = null,
+    /** TrackerScreen.Buttons.RouteDetails: a wild battle's encounter box opens the route info. */
+    onRouteDetails: (() -> Unit)? = null,
+    /** TrackerScreen.Buttons.PokemonIcon: the viewed Pokemon, the enemy included, opens its info. */
+    onPokemonInfo: (() -> Unit)? = null,
     team: List<Boolean> = emptyList(),
+    /** The Game Boy references write "Team:" before the balls (TrackerScreen.lua:827); Gen 3 dropped the word. */
+    teamLabel: String? = null,
     onMoveInfo: ((PcMove) -> Unit)? = null,
     /** TrackerScreen.lua AbilityUpper (1) and AbilityLower (2): the ability that line shows, or the notepad. */
     onAbilityLine: ((Int) -> Unit)? = null,
@@ -176,19 +197,22 @@ private fun EnemyCard(
     rand: com.ironmonone.tracker.RandomizedFlags? = null,
     catchText: String? = null,
     onCatchTap: (() -> Unit)? = null,
+    /** "Hide stats until summary shown" (SummaryChecks.hides): the reference's stand-in (EnemyView). */
+    hidden: Boolean = false,
+    /** How this game numbers species, for the Walking Pals icon (WalkingPals.trackerDex). */
+    iconDex: WalkingPals.Dex = WalkingPals.Dex.GEN3,
 ) {
     PcCard {
         PcHeadBlock(
             name = e.speciesName,
-            status = if (e.curHp <= 0) "FNT" else e.statusCondition,
+            status = EnemyView.status(e, hidden),
             level = e.level, curHp = e.curHp, maxHp = e.maxHp,
             encounterLine =
                 if (lastSeenLevel != null) "Last seen Lv.$lastSeenLevel"
                 else "New encounter",
             onTypesTap = onTypeDefenses?.let { cb -> { cb(e.speciesName, e.type1, e.type2) } },
-            typeChips = listOf(Gen3Types.name(e.type1) to pcTypeColor(e.type1))
-                + (if (e.type2 != e.type1)
-                    listOf(Gen3Types.name(e.type2) to pcTypeColor(e.type2)) else emptyList()),
+            // TrackerScreen.lua:1135: "Reveal info if randomized" off hides randomized types as "?".
+            typeChips = InfoRules.typeIcons(GhostCard.types(e), InfoRules.hidesRandomizedTypes(rand)).map { (name, id) -> name to pcTypeColor(id) },
             // DataHelper.lua:234 puts the two possible abilities on the two
             // lines, the first suffixed " /" - it does not join them with a
             // slash onto one line, which is what made this overflow.
@@ -209,19 +233,41 @@ private fun EnemyCard(
             },
             onItemTap = onAbilityLine?.let { cb -> { cb(1) } },
             onAbilityTap = onAbilityLine?.let { cb -> { cb(2) } },
-            sprite = spriteFor(e.species),
-            iconSpecies = e.species,
+            // A ghost's stand-in id is not a species, so its name opens no info screen.
+            onNameTap = if (e.isGhost) null else onPokemonInfo,
+            // The ghost stand-in's id is not a species: draw the pack's ghost (GhostCard.SPRITE).
+            sprite = if (e.isGhost) PcAssets.gbaSprite(androidx.compose.ui.platform.LocalContext.current, GhostCard.SPRITE)
+                else spriteFor(e.species),
+            // The ghost stand-in has no Walking Pals sheet either: its still sprite, never a species found by its id.
+            iconSpecies = if (e.isGhost) 0 else e.species,
+            iconDex = iconDex,
             evo = e.evo,
             gender = if (TrackerOptions.displayGender) com.ironmonone.tracker.Gender3.of(e.base?.genderRatio ?: 255, e.pid) else null,
             // The box under the card: how often this has been seen, and for a
             // trainer the row of pokeballs showing how many they have left.
             belowHead = {
-                Column(Modifier.fillMaxWidth().padding(horizontal = 2.rp, vertical = 1.rp)) {
+                // The map mark (FireRed and LeafGreen, a place with pictures) follows the place's name, at the
+                // height of the text, so the card keeps the PC tracker's shape (FrlgMapMark compact, 2026-09-29).
+                val wildMark = mapMark.takeIf { isWild }
+                Column(
+                    Modifier.fillMaxWidth()
+                        .then(if (isWild && onRouteDetails != null) Modifier.clickable { onRouteDetails() } else Modifier)
+                        .padding(horizontal = 2.rp, vertical = 1.rp)
+                ) {
                     PixText(
                         (if (isWild) "Seen (Wild): " else "Seen (Trainer): ") + encounters,
                         PcRef.FONT, Pc.Text,
                     )
-                    if (isWild) PixText(routeName ?: "", PcRef.FONT, Pc.Text)
+                    if (isWild && wildMark != null) Row(verticalAlignment = Alignment.CenterVertically) {
+                        // A long name ("Seafoam Islands B4F") wraps rather than run under the mark.
+                        PixText(routeName ?: "", PcRef.FONT, Pc.Text, Modifier.weight(1f, fill = false), wrap = true)
+                        wildMark()
+                    }
+                    else if (isWild) PixText(routeName ?: "", PcRef.FONT, Pc.Text)
+                    // The label at x + 11 and the balls at x + 40 there, 29 apart.
+                    else if (teamLabel != null) Row(verticalAlignment = Alignment.CenterVertically) {
+                        PixText(teamLabel, PcRef.FONT, Pc.Text, Modifier.width(29.rp)); PcTrainerTeam(team)
+                    }
                     else PcTrainerTeam(team)
                 }
             },
@@ -238,11 +284,13 @@ private fun EnemyCard(
                 if (!b.singleSpecial) PcStatRow("SPD", "${b.spDef}", rightJustify = rj, valueColor = Pc.Gold)
                 PcStatRow("SPE", "${b.spe}", rightJustify = rj, valueColor = Pc.Gold)
             } else PcMarkColumn(marks, onCycleMark, singleSpecial = e.base?.singleSpecial == true)
-            PcStatRow("BST", e.base?.bst?.toString() ?: "?", rightJustify = TrackerOptions.rightJustifiedNumbers)
+            // TrackerScreen.lua:1435-1448: a moved accuracy or evasion takes BST's place; hidden, the stand-in's are neutral.
+            val acc = if (hidden) 6 else e.statStages["ACC"] ?: 6
+            val eva = if (hidden) 6 else e.statStages["EVA"] ?: 6
+            if (StageChevrons.accEvaReplacesBst(true, acc, eva)) PcAccEvaRow(acc, eva)
+            else PcStatRow("BST", GhostCard.bst(e), rightJustify = TrackerOptions.rightJustifiedNumbers)
             // Live stage chevrons for the enemy, when any stat has moved.
-            e.statStages.filterKeys { it != "ACC" && it != "EVA" }
-                .filterValues { it != 6 }
-                .forEach { (n, st) -> PcStatRow(n, "", st) }
+            EnemyView.stageRows(e, hidden).forEach { (n, st) -> PcStatRow(n, "", st) }
         }
         // The enemy gets the SAME moves table as the player, which is what
         // the reference does - it fills the ordinary moves area from tracked
@@ -253,17 +301,13 @@ private fun EnemyCard(
         // first. A move used in an earlier battle is drawn from the ROM's table at
         // its base PP; this battle's rows win where they overlap. Before 2026-09-06
         // this only ever drew the current battle, so every encounter started blind.
-        val thisBattle = e.moveRows.distinctBy { it.id }
-        val seen = (movesSeenRunWide.mapNotNull { sm -> thisBattle.firstOrNull { it.id == sm.id } ?: moveRowFor(sm.id) } +
-            thisBattle).distinctBy { it.id }
         val learned = com.ironmonone.tracker.LearnedMoves.of(moveLevels, e.level)
         // Utils.calculateMoveStars: a tracked move it may have forgotten since.
         // DataHelper.lua:258: an unrandomized learnset (or Open Book) shows its
         // actual moves at their live PP; otherwise the tracked ones, with stars.
         val actual = InfoRules.canShowMoves(rand)
         val starred = if (actual) emptySet() else com.ironmonone.tracker.MoveStars.of(movesSeenRunWide.map { it.id to it.lastLv }, e.level, moveLevels)
-        val shownRows = if (actual) e.moves.mapIndexedNotNull { i, id -> if (id == 0) null else moveRowFor(id)?.copy(pp = e.movePps.getOrElse(i) { 0 }) }
-            else seen.take(4)
+        val (shownRows, seenCount) = EnemyView.moveRows(e, movesSeenRunWide, moveRowFor, actual, hidden)
         PcMovesSection(
             rows = shownRows.map { r -> r.toPcMove(moveCtx).let { if (r.id in starred) it.copy(name = it.name + "*") else it } },
             referenceColumns = true, rightJustify = TrackerOptions.rightJustifiedNumbers,
@@ -273,12 +317,69 @@ private fun EnemyCard(
             // Utils.getMovesLearnedHeader counts for the opponent too, at ITS
             // level: "Moves* 1/5 (9)", the asterisk (no space) once more than
             // four of its moves have been seen. This read "Moves *" with no count.
-            header = "Moves" + (if (!actual && seen.size > 4) "*" else "") +
+            header = "Moves" + (if (!actual && seenCount > 4) "*" else "") +
                 (if (learned.total > 0) " ${learned.learned}/${learned.total}" else ""),
             onHeaderTap = onMoveHistory?.let { cb -> { cb(e.species, e.speciesName, e.level) } },
             onMoveTap = onMoveInfo,
         )
     }
+}
+
+/**
+ * The opponent's card while "Hide stats until summary shown" hides it (DataHelper.lua:140-151):
+ * the reference draws a blank stand-in with only the opponent's id and level, so the card keeps
+ * its icon, name, level, types, abilities, marks and tracked moves, but has no status, no stat
+ * stages and no moves of its own. Otherwise these are the card's usual parts.
+ */
+internal object EnemyView {
+    fun status(e: EnemyInfo, hidden: Boolean): String = when {
+        hidden -> ""
+        e.curHp <= 0 -> "FNT"
+        else -> e.statusCondition
+    }
+
+    /** The stats that have moved from neutral, drawn as rows under BST. */
+    fun stageRows(e: EnemyInfo, hidden: Boolean): Map<String, Int> =
+        if (hidden) emptyMap() else e.statStages.filterKeys { it != "ACC" && it != "EVA" }.filterValues { it != 6 }
+
+    /**
+     * The move rows, and how many moves it has been seen to use. [actual] (canShowMoves): its own
+     * four at their live PP, blank while [hidden]. Otherwise the run's tracked moves
+     * (Tracker.getMoves), this battle's rows winning where they overlap, except while [hidden]:
+     * DataHelper.lua:325-331 takes a tracked move's PP from the stand-in, which has none, so it
+     * stays at its base PP.
+     */
+    fun moveRows(e: EnemyInfo, seenRunWide: List<StatMarks.SeenMove>, moveRowFor: (Int) -> MoveRow?, actual: Boolean, hidden: Boolean): Pair<List<MoveRow>, Int> {
+        val thisBattle = e.moveRows.distinctBy { it.id }.map { r -> if (hidden) moveRowFor(r.id) ?: r else r }
+        val seen = (seenRunWide.mapNotNull { sm -> thisBattle.firstOrNull { it.id == sm.id } ?: moveRowFor(sm.id) } + thisBattle).distinctBy { it.id }
+        val rows = when {
+            actual && hidden -> emptyList()
+            actual -> e.moves.mapIndexedNotNull { i, id -> if (id == 0) null else moveRowFor(id)?.copy(pp = e.movePps.getOrElse(i) { 0 }) }
+            else -> seen.take(4)
+        }
+        return rows to seen.size
+    }
+}
+
+/**
+ * Battle.updateViewSlots (Battle.lua:300-316): an opposing battler's party slot, left or (in a
+ * double battle) right, now holds a different Pokemon from the one it held, which with "Auto swap
+ * to enemy" on turns the view to the opponent (Battle.changeOpposingPokemonView, :945-952). A
+ * slot not known before is the battle's start, which the battle's own swap covers.
+ */
+internal fun opponentSentOut(before: List<Int>, now: List<Int>): Boolean =
+    now.indices.any { i -> before.getOrNull(i).let { it != null && it != now[i] } }
+
+/**
+ * InfoScreen.showNextPokemon: the species [delta] ids on from [from], wrapping at [total],
+ * over Gen 3's empty 252-276 slots (only a Gen 3 game has them; Gold/Silver/Crystal end at 251).
+ */
+internal fun stepSpeciesId(from: Int, delta: Int, total: Int): Int {
+    var n = from + delta
+    if (n < 1) n = total
+    else if (n > total) n = 1
+    if (total > 276 && n in 252..276) n = if (delta > 0) 277 else 251
+    return n
 }
 
 @Composable
@@ -298,7 +399,7 @@ fun TrackerPanel(
     onFlee: () -> Unit,
     modifier: Modifier = Modifier,
     ballCall: String? = null,
-    favoriteLine: String? = null,
+    favoriteLine: FavoritesShown? = null,
     spriteFor: (Int) -> androidx.compose.ui.graphics.ImageBitmap? = { null },
     unsupportedNote: String? = null,
     /** Opens the tracker's gear (the reference's SettingsGear). */
@@ -333,18 +434,44 @@ fun TrackerPanel(
     onMoveDescription: ((Int) -> String?)? = null,
     onAbilityDescription: ((String) -> String?)? = null,
     onWeight: ((Int) -> String?)? = null,
-    onEvolution: ((Int) -> String?)? = null,
+    /** The info screen's evolution lines (PanelLookups.evolutionDetails). */
+    onEvolution: ((Int) -> List<String>)? = null,
     onEffectiveness: ((Int) -> Map<Double, List<String>>)? = null,
     onMoveLevels: ((Int) -> List<Int>)? = null,
     onSpeciesNote: ((Int) -> String)? = null,
-    onRouteAreas: (() -> Map<String, List<Int>>)? = null,
-    onRouteSeenSet: (() -> Set<Int>)? = null,
+    /** The route info screen's data for a map id (the current one when null). */
+    onRouteSource: ((Int?) -> RouteInfoSource?)? = null,
+    /** RouteData.AvailableRoutes, for the route lookup. */
+    onRouteLookup: (() -> List<Pair<Int, String>>)? = null,
+    /** The carousel's route area: the battle's encounter area where RouteData has it, else Walking. */
+    routeArea: String? = null,
+    /** Base stats of any species, for the info screen a route icon opens. */
+    onSpeciesBase: ((Int) -> com.ironmonone.tracker.BaseStats?)? = null,
+    /** How many species ids this game has (411 in Gen 3; the Nat. Dex expansion goes further). */
+    speciesTotal: Int = 411,
+    /** Opens the note editor for any species (InfoScreen's NotepadTracking). */
+    onEditNoteFor: ((Int) -> Unit)? = null,
+    /** A Survival run's Pokemon Center limit (PcHeals.limitForLastRun), or null. */
+    pcHealsLimit: PcHeals.Limit? = null,
+    /** Calc Atk, opened from the last attack line (CalcAtkScreen). */
+    onCalcAtk: (() -> Unit)? = null,
+    /** Heals in Bag (TrackerScreen.Buttons.HealsInBag), Trainers on Route and Battle Details, from their taps. */
+    onHealsInBag: (() -> Unit)? = null,
+    onTrainersOnRoute: (() -> Unit)? = null,
+    onBattleDetails: (() -> Unit)? = null,
     onSpeciesName: ((Int) -> String)? = null,
     attempt: Int = 0,
     coverage: Map<Double, List<Int>> = emptyMap(),
     /** Tapping a wild battle's catch rate opens Catch Rates, as the reference's header button does. */
     onCatchRates: (() -> Unit)? = null,
+    /**
+     * The game's generation (1 Red/Blue/Yellow, 2 Gold/Silver/Crystal, 3 GBA):
+     * which reference's move table and type chart the move rows follow.
+     */
+    generation: Int = 3,
 ) {
+    // The tracker's own game-over card is a Kaizo IronMON run's only (PlayRules, 2026-09-30).
+    val ironmonOver = ironmonGameOverCard(state?.gameOver != null)
     // What the info screen is currently explaining, if anything.
     var info by remember {
         mutableStateOf<Triple<String, String?, String?>?>(null)
@@ -354,27 +481,74 @@ fun TrackerPanel(
     // The move info screen (InfoScreen.lua:861), plus Blake's matchup line.
     var moveInfo by remember { mutableStateOf<MoveDetail?>(null) }
     var routeInfoOpen by remember { mutableStateOf(false) }
+    // InfoScreen ROUTE_INFO: species info for an icon tapped on it.
+    var speciesInfo by remember { mutableStateOf<Int?>(null) }
     if (routeInfoOpen) {
-        PcRouteInfo(
-            routeName = routeName ?: "Here",
-            trainers = routeTrainers,
-            bosses = routeBosses,
-            areas = onRouteAreas?.invoke() ?: emptyMap(),
-            seen = onRouteSeenSet?.invoke() ?: emptySet(),
-            nameOf = { id -> onSpeciesName?.invoke(id) ?: "#$id" },
+        val src = onRouteSource?.invoke(null)
+        if (src == null) routeInfoOpen = false
+        else PcRouteInfoScreen(
+            start = src,
+            startArea = state?.encounterArea,
+            gameDataRandomized = state?.randomized?.gameData ?: true,
+            spriteFor = spriteFor,
+            lookupRoutes = { onRouteLookup?.invoke() ?: emptyList() },
+            sourceFor = { id -> onRouteSource?.invoke(id) },
+            onPokemon = if (onSpeciesBase != null) { sp -> speciesInfo = sp } else null,
+            // FireRed and LeafGreen: the map mark after whichever place the screen shows (FrlgPictures, 2026-09-29).
+            picturesFor = FrlgPictures.lookupFor(state?.badgeSet),
         ) { routeInfoOpen = false }
+    }
+    fun stepSpecies(from: Int, delta: Int): Int = stepSpeciesId(from, delta, speciesTotal)
+    // DataHelper.lua:432: the info screen's types, or "?" where InfoRules.infoScreenHidesTypes says so.
+    fun infoTypes(base: com.ironmonone.tracker.BaseStats?, species: Int) = InfoRules.typeIcons(
+        listOfNotNull(
+            base?.type1?.let { Gen3Types.name(it) to it },
+            base?.type2?.takeIf { it != base.type1 }?.let { Gen3Types.name(it) to it },
+        ),
+        InfoRules.infoScreenHidesTypes(state?.randomized, ownLead = species == state?.party?.firstOrNull()?.mon?.species),
+    ).map { (name, id) -> name to pcTypeColor(id) }
+    // Built each time a lookup opens. A remembered list was computed while the tracker was
+    // still attaching, so every name read "#id", and PlayScreen's name lambda never changes
+    // identity, so it was never rebuilt: the lookup showed no names at all.
+    val lookupNames: () -> List<Pair<Int, String>> = {
+        (1..speciesTotal).filter { it !in 252..276 }
+            .map { it to (onSpeciesName?.invoke(it) ?: "#$it") }
+            .filter { !it.second.startsWith("#") && it.second.isNotBlank() && it.second != "?" }
+            .sortedBy { it.second.lowercase() }
+    }
+    speciesInfo?.let { sp ->
+        val base = onSpeciesBase?.invoke(sp)
+        PcPokemonInfo(
+            onPrevious = { speciesInfo = stepSpecies(sp, -1) },
+            onNext = { speciesInfo = stepSpecies(sp, 1) },
+            lookup = lookupNames, onLookup = { speciesInfo = it },
+            onHistory = onMoveHistory?.let { cb -> { cb(sp, onSpeciesName?.invoke(sp) ?: "#$sp", 0) } },
+            onResistances = if (base != null && onTypeDefenses != null) { { onTypeDefenses(onSpeciesName?.invoke(sp) ?: "#$sp", base.type1, base.type2) } } else null,
+            onEditNote = onEditNoteFor?.let { cb -> { cb(sp) } },
+            name = onSpeciesName?.invoke(sp) ?: "#$sp",
+            types = infoTypes(base, sp),
+            bst = base?.bst?.toString() ?: "?",
+            weight = onWeight?.invoke(sp),
+            evolution = onEvolution?.invoke(sp) ?: emptyList(),
+            effectiveness = onEffectiveness?.invoke(sp) ?: emptyMap(),
+            moveLevels = onMoveLevels?.invoke(sp) ?: emptyList(),
+            level = 0,
+            note = onSpeciesNote?.invoke(sp) ?: "",
+        ) { speciesInfo = null }
     }
     monInfo?.let { p ->
         PcPokemonInfo(
+            onPrevious = { monInfo = null; speciesInfo = stepSpecies(p.mon.species, -1) },
+            onNext = { monInfo = null; speciesInfo = stepSpecies(p.mon.species, 1) },
+            lookup = lookupNames, onLookup = { monInfo = null; speciesInfo = it },
+            onHistory = onMoveHistory?.let { cb -> { cb(p.mon.species, p.speciesName, p.mon.level) } },
+            onResistances = p.base?.let { b -> onTypeDefenses?.let { cb -> { cb(p.speciesName, b.type1, b.type2) } } },
+            onEditNote = onEditNoteFor?.let { cb -> { cb(p.mon.species) } },
             name = p.speciesName,
-            types = listOfNotNull(
-                p.base?.type1?.let { Gen3Types.name(it) to pcTypeColor(it) },
-                p.base?.type2?.takeIf { it != p.base?.type1 }
-                    ?.let { Gen3Types.name(it) to pcTypeColor(it) },
-            ),
+            types = infoTypes(p.base, p.mon.species),
             bst = p.base?.bst?.toString() ?: "?",
             weight = onWeight?.invoke(p.mon.species),
-            evolution = onEvolution?.invoke(p.mon.species),
+            evolution = onEvolution?.invoke(p.mon.species) ?: emptyList(),
             effectiveness = onEffectiveness?.invoke(p.mon.species) ?: emptyMap(),
             moveLevels = onMoveLevels?.invoke(p.mon.species) ?: emptyList(),
             level = p.mon.level,
@@ -395,13 +569,10 @@ fun TrackerPanel(
         val base = state?.starterBase
         PcPokemonInfo(
             name = onSpeciesName?.invoke(starter) ?: "#$starter",
-            types = listOfNotNull(
-                base?.type1?.let { Gen3Types.name(it) to pcTypeColor(it) },
-                base?.type2?.takeIf { it != base.type1 }?.let { Gen3Types.name(it) to pcTypeColor(it) },
-            ),
+            types = infoTypes(base, starter),
             bst = base?.bst?.toString() ?: "?",
             weight = onWeight?.invoke(starter),
-            evolution = onEvolution?.invoke(starter),
+            evolution = onEvolution?.invoke(starter) ?: emptyList(),
             effectiveness = onEffectiveness?.invoke(starter) ?: emptyMap(),
             moveLevels = onMoveLevels?.invoke(starter) ?: emptyList(),
             level = 5,
@@ -417,13 +588,14 @@ fun TrackerPanel(
     // PC tracker rather than a layout that reflows to whatever width the pane
     // happens to be. Reflowing is what wrapped "Golisopod-M" onto three lines.
     PcCanvas(modifier.fillMaxWidth()) {
-      Column(Modifier.fillMaxWidth().background(Pc.Page).padding(PcRef.MARGIN.rp)) {
+      // The Main background colour, and the player's image over it (TrackerBackdrop.kt).
+      Column(Modifier.fillMaxWidth().then(trackerBackdrop()).padding(PcRef.MARGIN.rp)) {
           // The reference's gear sits at the top of the tracker screen; SETUP is its NavigationMenu.ButtonSetup.
           onGear?.let { g ->
               Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
                   // Program.ActiveRepel:shouldDisplay - only while one is running, never in
-                  // battle or off the map, and the reference puts it in the top right.
-                  if (TrackerOptions.showRepel && state != null && !state.inBattle && state.mapId != null && state.repelSteps > 0) {
+                  // battle, off the map or in the Hall of Fame, and the reference puts it in the top right.
+                  if (TrackerOptions.showRepel && state != null && state.repelVisible) {
                       PcRepelBar(state.repelSteps, state.repelDuration)
                       Spacer(Modifier.width(6.dp))
                   }
@@ -438,9 +610,12 @@ fun TrackerPanel(
                   onMon = { monInfo = it },
                   onTypes = onTypeDefenses?.let { cb -> { p -> p.base?.let { b -> cb(p.speciesName, b.type1, b.type2) } } },
                   onAbility = { p -> info = Triple(p.abilityName, "Ability", onAbilityDescription?.invoke(p.abilityName)) },
+                  // PokemonData.Values.EggId, 412; past Gen 3's 411 species (Nat. Dex) the bundled pack's egg is 1284.
+                  eggSpecies = if (speciesTotal > 411) 1284 else 412,
               )
               Spacer(Modifier.height(3.dp))
           }
+          NuzlockePanel(state) // the Nuzlocke run's area, cap and graveyard, when this game has one (2026-09-29)
         when {
             unsupportedNote != null -> PcCard {
                 PixText(unsupportedNote, 8, Pc.Negative, Modifier.padding(6.dp))
@@ -472,13 +647,18 @@ fun TrackerPanel(
 
             state.partyCount == 0 -> PcCard {
                 Column(Modifier.padding(6.dp)) {
-                    favoriteLine?.let {
-                        PixText(it, 9, Pc.Negative); Spacer(Modifier.height(3.dp))
+                    favoriteLine?.list?.let {
+                        // Wrapped: a Nat. Dex run may name nine (FavoriteRules).
+                        PixText(it, 9, Pc.Negative, wrap = true); Spacer(Modifier.height(3.dp))
+                    }
+                    // In the lab, a ball holding a favorite the mode lets you take (FavoriteBall), and never the others.
+                    if (state.inLab) favoriteLine?.balls?.forEach {
+                        PixText(it, 9, Pc.Positive, wrap = true); Spacer(Modifier.height(3.dp))
                     }
                     // Lab only, the way canShowBallPicker() gates it: in the
                     // lab, with no Pokemon. It used to show anywhere the party
                     // was empty.
-                    ballCall?.takeIf { state.inLab && TrackerOptions.showBallPicker }?.let {
+                    ballCall?.takeIf { state.inLab && TrackerOptions.ballPickerShows() }?.let {
                         PcBallPicker(
                             when (it) { "LEFT" -> 0; "MIDDLE" -> 1; else -> 2 },
                             onReroll = onRerollBall)
@@ -486,15 +666,15 @@ fun TrackerPanel(
                     }
                     // This used to print the player's map position ("pos 0,0"),
                     // a debug readout, as the only line a new player saw here.
-                    if (!(state.inLab && TrackerOptions.showBallPicker && ballCall != null)) {
-                        PixText("No Pokemon yet. The tracker fills in when you get your first one.", 8, Pc.Dim)
+                    if (!(state.inLab && TrackerOptions.ballPickerShows() && ballCall != null)) {
+                        PixText("No Pokemon yet. The tracker fills in when you get your first one.", 8, Pc.Dim, wrap = true)
                     }
                 }
             }
 
             // A finished run is the headline: it goes above the team, not
             // under it, so you are not scrolling to find out you lost.
-            state.gameOver != null -> {
+            state.gameOver != null && ironmonOver -> {
                 PcGameOver(
                     won = state.gameOver == com.ironmonone.tracker.GameOver.WON,
                     attempt = attempt,
@@ -519,12 +699,21 @@ fun TrackerPanel(
                 androidx.compose.runtime.SideEffect {
                     SpriteMotion.inBattle = state.inBattle
                     // "Track PC Heals" auto-tracking watches the game's heal statistics.
+                    PcHeals.arm(attempt, pcHealsLimit, Integer.bitCount(state.badges))
                     PcHeals.observe(attempt, state.centerHealsStat)
+                    PcHeals.observeBadges(attempt, Integer.bitCount(state.badges), pcHealsLimit)
                     // Program.lua:552: opening a summary in the game reveals the card for this attempt.
                     if (state.summaryOpen) SummaryChecks.mark(attempt)
                 }
                 var viewingOwn by remember(state.inBattle) {
-                    mutableStateOf(!(state.inBattle && TrackerOptions.autoSwapToEnemy))
+                    mutableStateOf(!(state.inBattle && TrackerOptions.autoSwapToEnemy(gameBoy = generation < 3)))
+                }
+                // Battle.lua:309-316: each Pokemon the opponent sends out turns the view to it
+                // again, not only the first; it used to swap at the start of the battle alone.
+                var enemySlots by remember(state.inBattle) { mutableStateOf(state.enemyOnField) }
+                androidx.compose.runtime.LaunchedEffect(state.enemyOnField) {
+                    if (TrackerOptions.autoSwapToEnemy(gameBoy = generation < 3) && opponentSentOut(enemySlots, state.enemyOnField)) viewingOwn = false
+                    enemySlots = state.enemyOnField
                 }
                 if (state.inBattle) {
                     // Fleeing is a WILD-battle action only; a trainer battle
@@ -556,8 +745,9 @@ fun TrackerPanel(
                     PartyCard(onMoveHistory = onMoveHistory, onTypeDefenses = onTypeDefenses, p, spriteFor,
                         healPercent = state.healPercent,
                         healCount = state.healCount,
+                        onHealsTap = onHealsInBag,
                         onMoveInfo = { mv ->
-                            moveInfo = detailOf(mv, onMoveDescription?.invoke(mv.id), noRomData = moveRowFor(mv.id)?.let { it.pp == 0 && (it.power ?: 0) == 0 } == true)
+                            moveInfo = detailOf(mv, onMoveDescription?.invoke(mv.id), noRomData = moveRowFor(mv.id)?.let { it.pp == 0 && (it.power ?: 0) == 0 } == true, gen1 = generation == 1)
                                 // Your own Hidden Power: the info screen gets the type arrows.
                                 .copy(hiddenPowerPid = p.mon.pid.takeIf { mv.id == com.ironmonone.tracker.MoveRules.HIDDEN_POWER })
                         },
@@ -566,9 +756,11 @@ fun TrackerPanel(
                         },
                         onNameInfo = { monInfo = p },
                         moveCtx = ownMoveContext(p, state.enemy?.takeIf { state.inBattle }, state.weather, onWeight)
-                            .copy(hideEffectiveness = InfoRules.hideOwnEffectiveness(state.randomized)),
+                            .copy(hideEffectiveness = InfoRules.hideEffectiveness(state.randomized, state.isGhostBattle, own = true), generation = generation),
                         attempt = attempt,
-                        hidden = TrackerOptions.hideStatsUntilSummary && state.gameDataRandomized && !SummaryChecks.checked(attempt))
+                        hidden = SummaryChecks.hides(attempt, state.gameDataRandomized, generation),
+                        iconDex = WalkingPals.trackerDex(generation, speciesTotal),
+                        inBattle = state.inBattle)
                 }
                 if (enemy != null) {
                     EnemyCard(onMoveHistory = onMoveHistory, onTypeDefenses = onTypeDefenses, enemy, revealedEnemyAbility, revealedEnemyAbility2, spriteFor,
@@ -577,13 +769,25 @@ fun TrackerPanel(
                         isWild = state.isWildBattle,
                         encounters = enemyEncounters,
                         routeName = routeName,
+                        // Only FireRed and LeafGreen, and only where the place has pictures: placeFor answers null otherwise (2026-09-29).
+                        mapMark = FrlgPictures.placeFor(state.badgeSet, state.mapId)?.let { place ->
+                            val mark: @Composable () -> Unit = { FrlgMapMark(place, compact = true) }
+                            mark
+                        },
+                        onRouteDetails = if (state.encounterArea != null && routeArea == state.encounterArea) { { routeInfoOpen = true } } else null,
+                        onPokemonInfo = if (onSpeciesBase != null) { { speciesInfo = enemy.species } } else null,
                         team = state.enemyTeam,
+                        teamLabel = "Team:".takeIf { generation < 3 },
                         moveLevels = onMoveLevels?.invoke(enemy.species) ?: emptyList(),
                         moveCtx = enemyMoveContext(enemy, state.party.firstOrNull(), state.weather, onWeight)
-                            .copy(hide = InfoRules.hiddenMoveInfo(state.randomized)),
+                            .copy(hide = InfoRules.hiddenMoveInfo(state.randomized), hideEffectiveness = InfoRules.hideEffectiveness(state.randomized, state.isGhostBattle, own = false), generation = generation),
                         rand = state.randomized,
-                        catchText = state.catchPercent?.takeIf { state.isWildBattle && TrackerOptions.showCatchRate }?.let { "~ $it%  to catch" },
+                        catchText = state.catchPercent?.takeIf { state.isWildBattle && TrackerOptions.showCatchRate }?.let { pct ->
+                            // DataHelper.lua:402-406 works it from the viewed Pokemon, the blank stand-in while hidden.
+                            "~ ${if (SummaryChecks.hides(attempt, state.gameDataRandomized, generation)) 0 else pct}%  to catch" },
                         onCatchTap = onCatchRates,
+                        // DataHelper.lua:144: the viewed Pokemon is hidden, the opponent included.
+                        hidden = SummaryChecks.hides(attempt, state.gameDataRandomized, generation),
                         onAbilityLine = { line ->
                             // canShowUnknownAbilities: the species' two possible abilities;
                             // otherwise the tracked ones. Nothing there opens the notepad.
@@ -594,8 +798,9 @@ fun TrackerPanel(
                             else info = Triple(name, "Ability", onAbilityDescription?.invoke(name))
                         },
                         onMoveInfo = { mv ->
-                            moveInfo = detailOf(mv, onMoveDescription?.invoke(mv.id), noRomData = moveRowFor(mv.id)?.let { it.pp == 0 && (it.power ?: 0) == 0 } == true)
-                        })
+                            moveInfo = detailOf(mv, onMoveDescription?.invoke(mv.id), noRomData = moveRowFor(mv.id)?.let { it.pp == 0 && (it.power ?: 0) == 0 } == true, gen1 = generation == 1)
+                        },
+                        iconDex = WalkingPals.trackerDex(generation, speciesTotal))
                 }
                 // The PC tracker's fourth area: one rotating strip, not a stack
                 // of permanent rows.
@@ -610,19 +815,23 @@ fun TrackerPanel(
                     note = enemyNote,
                     onEditNote = onEditNote,
                     lastAttack = state.lastAttackMove?.takeIf { TrackerOptions.showLastDamage }?.let { mv ->
-                        (if (state.lastAttackTeams) "Total received" else mv) + ": ${state.lastAttackDamage} damage"
+                        com.ironmonone.tracker.LastAttack.text(mv, state.lastAttackDamage, state.lastAttackTeams)
                     },
-                    lastAttackLethal = state.party.firstOrNull()?.mon?.let { state.lastAttackDamage >= it.curHp } == true,
-                    weather = state.weather,
-                    encounters = enemyEncounters,
+                    lastAttackLethal = com.ironmonone.tracker.LastAttack.lethal(state.lastAttackDamage, state.party.firstOrNull()?.mon?.curHp),
+                    battleDetailsSummary = BattleSummary.line(state.battleSummaries, viewingOwn = !state.inBattle || viewingOwn),
                     routeName = routeName,
                     routeSeen = routeSeen,
                     routeTotal = routeTotal,
+                    routeArea = routeArea,
                     routeTrainers = routeTrainers,
                     routeBosses = routeBosses,
                     steps = steps,
                     pedometerAllowed = state.mapId != null && state.gameOver == null,
                     onRouteTap = { routeInfoOpen = true },
+                    onTrainersTap = onTrainersOnRoute,
+                    onBattleDetailsTap = onBattleDetails,
+                    // Calc Atk is the Gen 3 tracker's extension and uses the Gen 3 formula: not on a Game Boy game.
+                    onLastAttackTap = onCalcAtk?.takeIf { generation >= 3 && state.inBattle && (state.isWildBattle || !TrackerOptions.calcAtkWildOnly) },
                 )
             }
         }
@@ -637,13 +846,17 @@ fun TrackerPanel(
  * are general facts about a damaging move's type - never about the opponent,
  * which is the player's to work out (Blake, 2026-09-05).
  */
-private fun detailOf(mv: PcMove, summary: String?, noRomData: Boolean = false): MoveDetail =
+internal fun detailOf(mv: PcMove, summary: String?, noRomData: Boolean = false, gen1: Boolean = false): MoveDetail =
     MoveDetail(
         name = mv.name, typeId = mv.type.takeUnless { noRomData }, typeName = mv.typeName.takeUnless { noRomData },
         category = mv.category.takeUnless { noRomData }, contact = mv.contact,
         noRomData = noRomData,
         pp = mv.pp, ppMax = mv.ppMax, power = mv.power, acc = mv.acc,
         priority = mv.priority, summary = summary,
-        typeChart = if ((mv.power ?: 0) > 0) MoveMatchup.general(mv.type) else null,
+        // Red, Blue and Yellow: the Gen 1 tracker's chart, as its move rows use.
+        // Only with "Type matchups in move info" on (TrackerOptions.showTypeMatchups, off by default).
+        typeChart = if (TrackerOptions.showTypeMatchups && (mv.power ?: 0) > 0) MoveMatchup.general(mv.type, gen1) else null,
         powerText = mv.powerText,
+        // What the row hides stays hidden on the card (MoveInfoText).
+        ppText = mv.ppText, accText = mv.accText,
     )

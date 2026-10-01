@@ -1,0 +1,44 @@
+# Static battles for Generation 1 (2026-09-29): wild battles a map object or a script starts, not the area's first encounter.
+#
+# A wild battle at `place` at exactly `level` counts as a static (a set battle). The place is a place string of
+# areas-gen1.tsv; the species is the vanilla one and only a note for people (a randomized game changes the species and
+# keeps the place and level). game: rb = Red and Blue, y = Yellow.
+#
+# Source: the map object files of pokered and pokeyellow (data/maps/objects/*.asm: an object whose last two fields are a
+# species and a level is a Pokemon standing on the map) and the fight-start scripts (scripts/Route12.asm, Route16.asm,
+# PokemonTower6F.asm). The ROM dumps hold the same objects and script bytes, and the randomizer's gen1_offsets.ini names
+# the same species and level offsets; `python tools/nuzlocke/gen1_statics.py --check` reads them all back.
+#
+# Not rows, on purpose:
+# - Gifts, fossils, the Magikarp salesman, Game Corner prizes and in-game trades are not battles.
+# - The Viridian City old man's tutorial catch (Weedle in Red and Blue, Rattata in Yellow) and Yellow's opening Pikachu
+#   (Pallet Town) are level 5 scripted battles. Level 5 is also the Old Rod's Magikarp, which any town with water has, so
+#   a (place, level) row would swallow real encounters. The battle type flags them instead: wBattleType 1 is the old man,
+#   4 (Yellow only) is the Pikachu battle.
+# - Rows with a sixth column carry the national dex number the wild Pokemon must be, because an ordinary wild slot of the
+#   same place has that level too and a row of place and level alone would swallow that real encounter:
+#   rb, Snorlax at Route 12, level 30 (ordinary slot there: Red: Gloom; Blue: Weepinbell)
+#   rb, Marowak at Pokemon Tower, level 30 (ordinary slot there: Red: Haunter; Blue: Haunter)
+#   The species check means a randomized game, which changes the species, does not see these rows as statics. The other
+#   ghost battles are told by the game's own flags (a wild battle on Pokemon Tower maps 142 to 148 without the Silph
+#   Scope is the ghost: IsGhostBattle, engine/battle/core.asm).
+#
+# game	place	level	species	note	dex (optional)
+rb	Route 12	30	Snorlax	Snorlax asleep in the road; the Poke Flute wakes it and the script starts the battle	143
+rb	Route 16	30	Snorlax	Snorlax asleep in the road; the Poke Flute wakes it and the script starts the battle
+rb	Pokemon Tower	30	Marowak	the ghost Marowak on 6F; it cannot be caught even with the Silph Scope	105
+rb	Power Plant	40	Voltorb	a Voltorb disguised as an item ball (six of them); each touch is a battle
+rb	Power Plant	43	Electrode	an Electrode disguised as an item ball (two of them)
+rb	Power Plant	50	Zapdos	legendary bird, one battle
+rb	Seafoam Islands	50	Articuno	legendary bird, one battle
+rb	Victory Road	50	Moltres	legendary bird, one battle
+rb	Cerulean Cave	70	Mewtwo	legendary, one battle
+y	Route 12	30	Snorlax	Snorlax asleep in the road; the Poke Flute wakes it and the script starts the battle
+y	Route 16	30	Snorlax	Snorlax asleep in the road; the Poke Flute wakes it and the script starts the battle
+y	Pokemon Tower	30	Marowak	the ghost Marowak on 6F; it cannot be caught even with the Silph Scope
+y	Power Plant	40	Voltorb	a Voltorb disguised as an item ball (six of them); each touch is a battle
+y	Power Plant	43	Electrode	an Electrode disguised as an item ball (two of them)
+y	Power Plant	50	Zapdos	legendary bird, one battle
+y	Seafoam Islands	50	Articuno	legendary bird, one battle
+y	Victory Road	50	Moltres	legendary bird, one battle
+y	Cerulean Cave	70	Mewtwo	legendary, one battle

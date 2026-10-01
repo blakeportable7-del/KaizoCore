@@ -1,0 +1,48 @@
+TEXT:
+File
+▲
+◀
+▶
+▼
+A
+B
+L
+R
+SELECT
+START
+SETUP
+WILD BATTLE
+SEE MINE
+RUN
+GEODUDE
+Lv.20
+ (
+25
+)
+New encounter
+---
+---
+Seen (Wild): 1
+Route 111
+SPE
+BST
+300
+~ 33%  to catch
+Home
+Play
+Library
+More
+
+CONTENT DESCRIPTIONS:
+Up
+Left
+Right
+Down
+A button
+B button
+L shoulder
+R shoulder
+Select
+Start
+Rock
+Ground

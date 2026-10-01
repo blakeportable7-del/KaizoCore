@@ -315,7 +315,7 @@ data class RomKind(
 
         // ---- Ruleset patches, 2026-09-08. CRCs: the BPS target CRC carried by the
         // patch itself (Gen 1 and 2), or measured by applying the IPS / xdelta to
-        // the pinned dump (Gen 3, HeartGold). FireRed 1.1 and Platinum wait on dumps.
+        // the pinned dump (Gen 3, HeartGold, Platinum). FireRed 1.1's Smart AI waits on a dump.
         private fun patched(base: RomKind, id: String, name: String, crc: Long, tag: String) =
             base.copy(id = id, displayName = name, expectedCrc = crc, natDexCapable = false, patchTag = tag, baseId = base.id)
         val RED_PF = patched(RED_U, "red-u-pf", "Pokémon Red + Pseudo-fluctuating", 0x9ECDA39DL, "pseudofluct")
@@ -329,6 +329,15 @@ data class RomKind(
         val EMERALD_SMARTAI = patched(EMERALD_U, EMERALD_U.id + "-smartai", "Pokémon Emerald + Smart AI (Super Kaizo)", 0xB5E0EDE9L, "smartai")
         val HEARTGOLD_SUPERKAIZO = patched(HEARTGOLD_U, HEARTGOLD_U.id + "-superkaizo", "Pokémon HeartGold + Super Kaizo 0.0.3", 0x4A585DD8L, "superkaizo")
         /**
+         * Platinum Super Kaizo 1.0 (SentorG), the Super Kaizo README's Platinum
+         * patch: every trainer's AI flags set, the Great Marsh binoculars, intro
+         * and dialogue cuts. Made for Platinum 1.0 only, which the pinned dump is
+         * (header CPUE, version 0). Measured by applying the release's plain
+         * xdelta (not FLX, not Snowy) to it, every window's Adler-32 passing
+         * (2026-09-29): 104,427,924 bytes, header unchanged.
+         */
+        val PLATINUM_SUPERKAIZO = patched(PLATINUM_U, PLATINUM_U.id + "-superkaizo", "Pok\u00e9mon Platinum + Super Kaizo 1.0", 0x53A3422FL, "superkaizo")
+        /**
          * Faster FireRed 1.3.2 (DrMaple), the IronMON quality-of-life patch for
          * FireRed Rev 1: marked hidden items, instant PC, shortened errands.
          * The patch is the player's own file, never bundled; this pins what the
@@ -339,7 +348,28 @@ data class RomKind(
          * tracks on the base game's addresses.
          */
         val FIRERED_V11_FASTER = patched(FIRERED_U_V11, FIRERED_U_V11.id + "-faster", "Pokémon FireRed 1.1 + Faster FireRed 1.3.2", 0x33A9FB54L, "faster")
-        val allPatched = listOf(RED_PF, BLUE_PF, YELLOW_PF, GOLD_PF, SILVER_PF, CRYSTAL_PF, FIRERED_V10_SMARTAI, LEAFGREEN_SMARTAI, EMERALD_SMARTAI, HEARTGOLD_SUPERKAIZO, FIRERED_V11_FASTER)
+        /**
+         * Faster Emerald (DrMaple), the same kind of IronMON quality-of-life
+         * patch for Emerald (2026-09-28, Blake). Two versions, as its README
+         * says: 1.3.2 carries the 6% trainer level increase Kaizo, Survival and
+         * Super Kaizo require; 1.2.1 without it is the one for Standard and
+         * Ultimate. 1.3.2's CRC is the target CRC the UPS itself carries; 1.2.1
+         * measured by applying its IPS to the pinned dump.
+         */
+        val EMERALD_FASTER = patched(EMERALD_U, EMERALD_U.id + "-faster", "Pokémon Emerald + Faster Emerald 1.3.2", 0xA08FB367L, "faster")
+        val EMERALD_FASTER121 = patched(EMERALD_U, EMERALD_U.id + "-faster121", "Pokémon Emerald + Faster Emerald 1.2.1", 0xCA99B3FAL, "faster121")
+        /**
+         * Faster Black 2 / White 2 v1.0 (SilverstarStream): cutscenes removed,
+         * made for the ZX randomizer. "fasterpwt" is its skipPWT build, which
+         * also skips the Driftveil tournament and its three battles. Measured
+         * by applying each xdelta to the pinned dump (2026-09-28).
+         */
+        val BLACK2_FASTER = patched(BLACK2_U, BLACK2_U.id + "-faster", "Pokémon Black 2 + Faster B2W2", 0xDC4A0ACDL, "faster")
+        val BLACK2_FASTERPWT = patched(BLACK2_U, BLACK2_U.id + "-fasterpwt", "Pokémon Black 2 + Faster B2W2, no PWT", 0xF6A61854L, "fasterpwt")
+        val WHITE2_FASTER = patched(WHITE2_U, WHITE2_U.id + "-faster", "Pokémon White 2 + Faster B2W2", 0xA1B0683EL, "faster")
+        val WHITE2_FASTERPWT = patched(WHITE2_U, WHITE2_U.id + "-fasterpwt", "Pokémon White 2 + Faster B2W2, no PWT", 0xA358C309L, "fasterpwt")
+        val allPatched = listOf(RED_PF, BLUE_PF, YELLOW_PF, GOLD_PF, SILVER_PF, CRYSTAL_PF, FIRERED_V10_SMARTAI, LEAFGREEN_SMARTAI, EMERALD_SMARTAI, HEARTGOLD_SUPERKAIZO, FIRERED_V11_FASTER,
+            EMERALD_FASTER, EMERALD_FASTER121, BLACK2_FASTER, BLACK2_FASTERPWT, WHITE2_FASTER, WHITE2_FASTERPWT, PLATINUM_SUPERKAIZO)
     }
 }
 

@@ -77,6 +77,34 @@ class LogRoutesTest {
     }
 
     @Test
+    fun `Ruby's wild sets and trainers land on one route with its name`() {
+        // A minimal Ruby log: Victory Road 1F's first trainer (RouteData.Info[163 + offset]) and its
+        // grass set, #61, which RouteSetNumToIdMap puts on 163 + offset: the game's raw 164. The
+        // tracker keys trainers by its own ids (163), so a raw set id split the route in two, the
+        // wild half filed under the tracker's 164, Shoal Cave Lo-1.
+        val log = RandomizerLog.parse(listOf(
+            "Randomizer Version: 4.6.1", "Random Seed: 1", "Settings String: x",
+            "--Pokemon Base Stats & Types--",
+            "NUM|NAME|TYPE|HP|ATK|DEF|SATK|SDEF|SPD|ABILITY1|ABILITY2|ITEM",
+            "  1|GOLBAT|POISON/FLYING|75|80|70|65|75|90|INNER FOCUS|INNER FOCUS|",
+            "  2|HARIYAMA|FIGHTING|144|120|60|40|60|50|THICK FAT|GUTS|",
+            "--Trainers Pokemon--",
+            "#80 (COOLTRAINER EDGAR) - HARIYAMA Lv44",
+            "--Wild Pokemon--",
+            "Set #61 - VICTORY ROAD 1F Grass/Cave (rate=10)",
+            "GOLBAT Lv38",
+            "--End--",
+        ).joinToString("\n"))
+        val t = tracker(GameMap.RUBY_U)
+        val routes = LogRoutes.build(log, LogTrainerRules(t, frlg = false), t)
+        val vr = routes.single { it.name == "Victory Road 1F" }
+        assertEquals(163, vr.mapId)
+        assertEquals(listOf(80), vr.trainers.map { it.number })
+        assertEquals(listOf("GOLBAT"), vr.areas.getValue(LogEncType.GRASS).map { it.name })
+        assertEquals(1, routes.size, routes.joinToString { "${it.mapId} ${it.name}" })
+    }
+
+    @Test
     fun `FireRed maps its sets through its own table`() {
         val log = log("firered.gba.log") ?: return
         val t = tracker(GameMap.FIRERED_U_V10)

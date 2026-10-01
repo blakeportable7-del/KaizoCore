@@ -12,7 +12,8 @@ import java.util.Locale
  * has always used and nothing existing moves.
  *
  * Slot 0 is the AUTO-SAVE: written when the game is left (tab switch, app
- * pause, exit), load-only, so a session can be picked up where it stopped.
+ * pause, exit) and while it is played (AutoSave), load-only, so a session
+ * can be picked up where it stopped, or near it after a crash.
  * A slot can be LOCKED (a marker file beside it): SAVE refuses it until it
  * is unlocked, so a favourite checkpoint cannot be overwritten by a thumb.
  * Every overwrite keeps the previous state as a BACKUP (`.bak`) that can
@@ -32,7 +33,10 @@ object StateSlots {
         val tmp = File(f.parentFile, f.name + ".tmp")
         return try {
             f.parentFile?.mkdirs()
-            tmp.writeBytes(bytes)
+            // Flushed to the disk before the rename, not only handed to the
+            // page cache: after a dead battery the slot holds the old state
+            // or the new one, never a torn one.
+            java.io.FileOutputStream(tmp).use { out -> out.write(bytes); out.fd.sync() }
             if (!tmp.renameTo(f)) { f.delete(); tmp.renameTo(f) }
             null
         } catch (e: java.io.IOException) {
@@ -56,6 +60,11 @@ object StateSlots {
         val backup: File get() = File(file.parentFile, file.nameWithoutExtension + ".bak")
         val backupThumb: File get() = File(file.parentFile, file.nameWithoutExtension + ".bak.png")
         val hasBackup: Boolean get() = backup.exists() && backup.length() > 0
+        /**
+         * Beside the auto slot only: there while the state in it is the moment the game was left or paused
+         * (AutoSave writes it with that snapshot and removes it with any later one). CrashResume reads it.
+         */
+        val leftMark: File get() = File(file.parentFile, file.nameWithoutExtension + ".left")
         fun savedLabel(): String = if (!exists) "empty"
             else SimpleDateFormat("d MMM HH:mm", Locale.getDefault()).format(Date(savedAt))
         fun title(): String = if (isAuto) "Auto-save" else "Slot $n"

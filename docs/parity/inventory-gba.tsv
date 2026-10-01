@@ -1,0 +1,1116 @@
+# id	tracker	area	key	text	kind  (tools/parity/extract_inventory.py)
+gba-0001	gba	AllScreens	Back	Back	ui
+gba-0002	gba	AllScreens	Cancel	Cancel	ui
+gba-0003	gba	AllScreens	Clear	Clear	ui
+gba-0004	gba	AllScreens	Close	Close	ui
+gba-0005	gba	AllScreens	Export	Export	ui
+gba-0006	gba	AllScreens	Import	Import	ui
+gba-0007	gba	AllScreens	Lookup	Look up	ui
+gba-0008	gba	AllScreens	No	No	ui
+gba-0009	gba	AllScreens	OK	OK	ui
+gba-0010	gba	AllScreens	Page	Page	ui
+gba-0011	gba	AllScreens	Pokemon	Pokémon	ui
+gba-0012	gba	AllScreens	Preview	Preview	ui
+gba-0013	gba	AllScreens	Save	Save	ui
+gba-0014	gba	AllScreens	Yes	Yes	ui
+gba-0015	gba	BattleDetailsScreen	EffectAirborne	Airborne	ui
+gba-0016	gba	BattleDetailsScreen	EffectCannotAct	Recharging	ui
+gba-0017	gba	BattleDetailsScreen	EffectCannotEscape	Can't Escape	ui
+gba-0018	gba	BattleDetailsScreen	EffectConfused	Confused	ui
+gba-0019	gba	BattleDetailsScreen	EffectDrowsy	Drowsy	ui
+gba-0020	gba	BattleDetailsScreen	EffectFutureSight	Future	ui
+gba-0021	gba	BattleDetailsScreen	EffectMustAttack	Must Attack	ui
+gba-0022	gba	BattleDetailsScreen	EffectPerishCount	Perish Count	ui
+gba-0023	gba	BattleDetailsScreen	EffectProtectUses	Protection Uses	ui
+gba-0024	gba	BattleDetailsScreen	EffectTrapped	Trapped	ui
+gba-0025	gba	BattleDetailsScreen	EffectTruant	Loafing	ui
+gba-0026	gba	BattleDetailsScreen	EffectUnderground	Underground	ui
+gba-0027	gba	BattleDetailsScreen	EffectUnderwater	Underwater	ui
+gba-0028	gba	BattleDetailsScreen	TerrainCave	Cave	ui
+gba-0029	gba	BattleDetailsScreen	TerrainDefault	Building	ui
+gba-0030	gba	BattleDetailsScreen	TerrainGrass	Grass	ui
+gba-0031	gba	BattleDetailsScreen	TerrainLongGrass	Long Grass	ui
+gba-0032	gba	BattleDetailsScreen	TerrainMountain	Mountain	ui
+gba-0033	gba	BattleDetailsScreen	TerrainPond	Pond	ui
+gba-0034	gba	BattleDetailsScreen	TerrainSand	Sand	ui
+gba-0035	gba	BattleDetailsScreen	TerrainUnderwater	Underwater	ui
+gba-0036	gba	BattleDetailsScreen	TerrainWater	Water	ui
+gba-0037	gba	BattleDetailsScreen	TextAllied	Allied	ui
+gba-0038	gba	BattleDetailsScreen	TextEnemy	Enemy	ui
+gba-0039	gba	BattleDetailsScreen	TextField	Field Effects	ui
+gba-0040	gba	BattleDetailsScreen	TextLastMove	Last Move	ui
+gba-0041	gba	BattleDetailsScreen	TextNotAvailable	N/A	ui
+gba-0042	gba	BattleDetailsScreen	TextTeam	Team	ui
+gba-0043	gba	BattleDetailsScreen	TextTerrain	Terrain	ui
+gba-0044	gba	BattleDetailsScreen	TextTurn	Turn	ui
+gba-0045	gba	BattleDetailsScreen	TextTurnsRemaining	Left	ui
+gba-0046	gba	BattleDetailsScreen	TextWeather	Weather	ui
+gba-0047	gba	BattleDetailsScreen	TextWeatherTurns	Weather turns	ui
+gba-0048	gba	BattleDetailsScreen	Title	Battle Details	ui
+gba-0049	gba	BattleDetailsScreen	WeatherDefault	None	ui
+gba-0050	gba	BattleDetailsScreen	WeatherHail	Hail	ui
+gba-0051	gba	BattleDetailsScreen	WeatherRain	Rain	ui
+gba-0052	gba	BattleDetailsScreen	WeatherSandstorm	Sandstorm	ui
+gba-0053	gba	BattleDetailsScreen	WeatherSunlight	Sunlight	ui
+gba-0054	gba	CatchRatesScreen	HeaderBag	Bag	ui
+gba-0055	gba	CatchRatesScreen	HeaderBall	Ball	ui
+gba-0056	gba	CatchRatesScreen	HeaderRate	Rate	ui
+gba-0057	gba	CatchRatesScreen	PokemonsHPPercent	Estimated HP	ui
+gba-0058	gba	CatchRatesScreen	PokemonsStatus	Status	ui
+gba-0059	gba	CatchRatesScreen	Title	Ball Catch Rates	ui
+gba-0060	gba	CoverageCalcScreen	ButtonAddType	Add Type	ui
+gba-0061	gba	CoverageCalcScreen	ButtonClearTypes	Clear All	ui
+gba-0062	gba	CoverageCalcScreen	ButtonPokemonMatchups	Pokémon Matchups	ui
+gba-0063	gba	CoverageCalcScreen	LabelTotal	Total	ui
+gba-0064	gba	CoverageCalcScreen	OptionFullyEvolvedOnly	Fully evolved Pokémon only	ui
+gba-0065	gba	CoverageCalcScreen	Title	Coverage Calculator	ui
+gba-0066	gba	CoverageCalcScreen	TitleAddMoveType	Add a Move Type	ui
+gba-0067	gba	CrashRecoveryScreen	ButtonDismiss	Dismiss	ui
+gba-0068	gba	CrashRecoveryScreen	ButtonRecoverSave	Recover Save	ui
+gba-0069	gba	CrashRecoveryScreen	ButtonUndoRecovery	Undo Recovery	ui
+gba-0070	gba	CrashRecoveryScreen	LastPlayedGame	Last played game	ui
+gba-0071	gba	CrashRecoveryScreen	NotAvailable	(Not available)	ui
+gba-0072	gba	CrashRecoveryScreen	OptionEnableCrashRecovery	Enable crash recovery	ui
+gba-0073	gba	CrashRecoveryScreen	SameGameAsLast	Same game version as last	ui
+gba-0074	gba	CrashRecoveryScreen	SameRomAsLast	Same exact ROM as last	ui
+gba-0075	gba	CrashRecoveryScreen	StatusMessageCrash	Crash Detected	ui
+gba-0076	gba	CrashRecoveryScreen	StatusMessageNoCrash	No Crash Detected	ui
+gba-0077	gba	CrashRecoveryScreen	Title	Crash Recovery	ui
+gba-0078	gba	CustomCode	ExtensionsLoaded	Extensions Loaded	ui
+gba-0079	gba	CustomCode	ExtensionsMissing	Extensions Missing	ui
+gba-0080	gba	CustomExtensionsScreen	ButtonFindMoreExtensions	Find more extensions	ui
+gba-0081	gba	CustomExtensionsScreen	ButtonInstallNewExtension	Install a new extension	ui
+gba-0082	gba	CustomExtensionsScreen	ButtonUpdateAllExtensions	Update all extensions	ui
+gba-0083	gba	CustomExtensionsScreen	LabelExtensionsEnabled	Extensions enabled	ui
+gba-0084	gba	CustomExtensionsScreen	LabelTotalInstalled	Total installed	ui
+gba-0085	gba	CustomExtensionsScreen	OptionAllowCustomCode	Allow custom code to run	ui
+gba-0086	gba	CustomExtensionsScreen	TabExtensions	Extensions	ui
+gba-0087	gba	CustomExtensionsScreen	TabGeneral	General	ui
+gba-0088	gba	CustomExtensionsScreen	TabOptions	Options	ui
+gba-0089	gba	CustomExtensionsScreen	Title	Tracker Extensions	ui
+gba-0090	gba	ExtrasScreen	ButtonCoverageCalculator	Coverage Calculator	ui
+gba-0091	gba	ExtrasScreen	ButtonCrashRecovery	Crash Recovery	ui
+gba-0092	gba	ExtrasScreen	ButtonEditTime	Edit	ui
+gba-0093	gba	ExtrasScreen	ButtonEstimatePokemonIVs	Estimate Pokémon IV Potential	ui
+gba-0094	gba	ExtrasScreen	ButtonGachaMonCollection	GachaMon Collection	ui
+gba-0095	gba	ExtrasScreen	ButtonRelocateTime	Relocate	ui
+gba-0096	gba	ExtrasScreen	ButtonTimeMachine	Time Machine	ui
+gba-0097	gba	ExtrasScreen	ButtonViewLogs	Logs	ui
+gba-0098	gba	ExtrasScreen	EstimateResultAboveAverage	Above average!	ui
+gba-0099	gba	ExtrasScreen	EstimateResultDecent	Decent.	ui
+gba-0100	gba	ExtrasScreen	EstimateResultOutstanding	Outstanding!!!	ui
+gba-0101	gba	ExtrasScreen	EstimateResultQuiteImpressive	Quite impressive!!	ui
+gba-0102	gba	ExtrasScreen	EstimateResultUnavailable	Estimate is unavailable.	ui
+gba-0103	gba	ExtrasScreen	LabelTimer	Timer options	ui
+gba-0104	gba	ExtrasScreen	OptionAnimatedPokemonPopout	Animated Pokémon popout	ui
+gba-0105	gba	ExtrasScreen	OptionDisplayGender	Display Pokémon's gender	ui
+gba-0106	gba	ExtrasScreen	OptionDisplayPedometer	Display step pedometer	ui
+gba-0107	gba	ExtrasScreen	OptionDisplayPlayTime	Display play time	ui
+gba-0108	gba	ExtrasScreen	OptionDisplayRepelUsage	Display repel usage	ui
+gba-0109	gba	ExtrasScreen	TabOptions	Options	ui
+gba-0110	gba	ExtrasScreen	TabTools	Tools	ui
+gba-0111	gba	ExtrasScreen	TimerPauseTip	(Click on the timer to pause)	ui
+gba-0112	gba	ExtrasScreen	Title	Tracker Extras	ui
+gba-0113	gba	GachaMonAnimations	LabelPressBUTTONtoOpen	Press (%s) or click to open	ui
+gba-0114	gba	GachaMonAnimations	LabelPrizeCardFromTrainer	Prize Card from Trainer	ui
+gba-0115	gba	GachaMonAnimations	LabelTabNEW	NEW	ui
+gba-0116	gba	GachaMonOverlay	BattlePowerAbbreviation	BP	ui
+gba-0117	gba	GachaMonOverlay	ButtonAddToCollection	Add to Collection	ui
+gba-0118	gba	GachaMonOverlay	ButtonBattle	Battle	ui
+gba-0119	gba	GachaMonOverlay	ButtonCleanupCollection	Cleanup Collection	ui
+gba-0120	gba	GachaMonOverlay	ButtonFavorite	Favorite	ui
+gba-0121	gba	GachaMonOverlay	ButtonHelpWiki	Help	ui
+gba-0122	gba	GachaMonOverlay	ButtonInCollection	In Collection	ui
+gba-0123	gba	GachaMonOverlay	GachaMonGameDescription	Play IronMON,  collect GachaMon cards!	ui
+gba-0124	gba	GachaMonOverlay	GachaMonGameHeader	GachaMon  Collectable  Card  Game	ui
+gba-0125	gba	GachaMonOverlay	LabelAcquireGachaMonCards	Acquire GachaMon cards	ui
+gba-0126	gba	GachaMonOverlay	LabelBattle	Battle!  (coming soon)	ui
+gba-0127	gba	GachaMonOverlay	LabelBattlePower	Battle Power	ui
+gba-0128	gba	GachaMonOverlay	LabelBattlePowerAndStrength	Battle Power:  Its strength for doing card battles	ui
+gba-0129	gba	GachaMonOverlay	LabelCatchPokemon	Catch Pokémon	ui
+gba-0130	gba	GachaMonOverlay	LabelCollAbbreviation	Coll.	ui
+gba-0131	gba	GachaMonOverlay	LabelCollectedOn	Collected on	ui
+gba-0132	gba	GachaMonOverlay	LabelCollectionSize	GachaMons in collection	ui
+gba-0133	gba	GachaMonOverlay	LabelKeepCardsInCollection	Keep cards in your Collection	ui
+gba-0134	gba	GachaMonOverlay	LabelOnCaptureHeader	When a new GachaMon is captured, add to collection if	ui
+gba-0135	gba	GachaMonOverlay	LabelRating	Rating	ui
+gba-0136	gba	GachaMonOverlay	LabelRulesetForRatings	Ruleset used for ratings	ui
+gba-0137	gba	GachaMonOverlay	LabelSeed	Seed	ui
+gba-0138	gba	GachaMonOverlay	LabelSeen	Seen	ui
+gba-0139	gba	GachaMonOverlay	LabelSort	Sort	ui
+gba-0140	gba	GachaMonOverlay	LabelStarsAndRating	Stars:  The Pokémon's rating (1- 5)	ui
+gba-0141	gba	GachaMonOverlay	LabelStats	Stats	ui
+gba-0142	gba	GachaMonOverlay	LabelTagAuto	Auto	ui
+gba-0143	gba	GachaMonOverlay	MessageCheckConsole	Check the Lua Console for a link to the Tracker's GachaMon Help Wiki.	ui
+gba-0144	gba	GachaMonOverlay	OptionAnimateGachaMonPackOpening	Animate card pack opening	ui
+gba-0145	gba	GachaMonOverlay	OptionAutoAddFromTrainerVictory	Occasionally receive prize cards from Trainers	ui
+gba-0146	gba	GachaMonOverlay	OptionAutoAddIfNew	It's a new Pokémon species	ui
+gba-0147	gba	GachaMonOverlay	OptionAutoAddWhenDefeatTrainers	It defeats at least 2 trainers	ui
+gba-0148	gba	GachaMonOverlay	OptionShowCardPackOnScreen	Show card pack opening before Pokémon stats	ui
+gba-0149	gba	GachaMonOverlay	OptionShowGachaMonStarsOnTracker	Display stars next to heals	ui
+gba-0150	gba	GachaMonOverlay	RecentCapturesHelpText1	Here are GachaMons you've captured this game.	ui
+gba-0151	gba	GachaMonOverlay	RecentCapturesHelpText2	Click [Add to Collection] to keep them forever.	ui
+gba-0152	gba	GachaMonOverlay	SectionHowItWorks	How it works	ui
+gba-0153	gba	GachaMonOverlay	SectionWhatsOnCard	What's on a Card	ui
+gba-0154	gba	GachaMonOverlay	TabAbout	?	ui
+gba-0155	gba	GachaMonOverlay	TabBattle	Battle	ui
+gba-0156	gba	GachaMonOverlay	TabCollection	Collection	ui
+gba-0157	gba	GachaMonOverlay	TabGachaDex	GachaDex	ui
+gba-0158	gba	GachaMonOverlay	TabOptions	Options	ui
+gba-0159	gba	GachaMonOverlay	TabRecent	Captures	ui
+gba-0160	gba	GachaMonOverlay	TabView	View	ui
+gba-0161	gba	GachaMonOverlay	WordPoints	points	ui
+gba-0162	gba	GachaMonOverlay	WordStars	stars	ui
+gba-0163	gba	GameOptionsScreen	ButtonGameStats	Game Stats	ui
+gba-0164	gba	GameOptionsScreen	LabelExtraTimeWarning	May add extra load time	ui
+gba-0165	gba	GameOptionsScreen	LabelGameOverCondition	Game is considered over when	ui
+gba-0166	gba	GameOptionsScreen	OptionAutoSwapEnemy	Auto swap to enemy	ui
+gba-0167	gba	GameOptionsScreen	OptionCalculateVariableDamage	Calculate variable damage	ui
+gba-0168	gba	GameOptionsScreen	OptionCanClickTrainers	Can click trainers on screen	ui
+gba-0169	gba	GameOptionsScreen	OptionCountEnemyPP	Count enemy PP usage	ui
+gba-0170	gba	GameOptionsScreen	OptionDetermineFriendship	Determine friendship readiness	ui
+gba-0171	gba	GameOptionsScreen	OptionEntirePartyFaints	Entire party faints	ui
+gba-0172	gba	GameOptionsScreen	OptionHideStatsUntilSummary	Hide info until summary shown	ui
+gba-0173	gba	GameOptionsScreen	OptionHighestLevelFaints	Highest level faints	ui
+gba-0174	gba	GameOptionsScreen	OptionLeadPokemonFaints	Lead Pokémon faints	ui
+gba-0175	gba	GameOptionsScreen	OptionOpenBookPlayMode	Open Book play mode	ui
+gba-0176	gba	GameOptionsScreen	OptionRevealRandomizedInfo	Show random move/type data	ui
+gba-0177	gba	GameOptionsScreen	OptionShowBallCatchRate	Show Poké Ball catch rate	ui
+gba-0178	gba	GameOptionsScreen	OptionShowExpBar	Show experience points bar	ui
+gba-0179	gba	GameOptionsScreen	OptionShowHealsAsValue	Show heals as whole number	ui
+gba-0180	gba	GameOptionsScreen	OptionShowLastDamage	Show last damage calcs	ui
+gba-0181	gba	GameOptionsScreen	OptionShowMoveEffectiveness	Show move effectiveness	ui
+gba-0182	gba	GameOptionsScreen	OptionShowNicknames	Show nicknames	ui
+gba-0183	gba	GameOptionsScreen	OptionShowPhysicalSpecial	Show physical special icons	ui
+gba-0184	gba	GameOptionsScreen	OptionShowStarterBallInfo	Show starter ball info	ui
+gba-0185	gba	GameOptionsScreen	OptionShowVanillaGameData	Show data for vanilla game	ui
+gba-0186	gba	GameOptionsScreen	TabBattle	Battle	ui
+gba-0187	gba	GameOptionsScreen	TabGameOver	Game Over	ui
+gba-0188	gba	GameOptionsScreen	TabOther	Other	ui
+gba-0189	gba	GameOptionsScreen	Title	Gameplay Options	ui
+gba-0190	gba	GameOverScreen	ButtonContinuePlaying	Continue playing	ui
+gba-0191	gba	GameOverScreen	ButtonGradeMyNotes	Grade my notes	ui
+gba-0192	gba	GameOverScreen	ButtonInspectLogFile	Inspect the log	ui
+gba-0193	gba	GameOverScreen	ButtonOpenLogFile	Open a log file	ui
+gba-0194	gba	GameOverScreen	ButtonPrizeCard	Prize card	ui
+gba-0195	gba	GameOverScreen	ButtonRetryBattle	Retry the battle	ui
+gba-0196	gba	GameOverScreen	ButtonRetryBattleConfirm	Are you sure?	ui
+gba-0197	gba	GameOverScreen	ButtonSaveAttempt	Save this attempt	ui
+gba-0198	gba	GameOverScreen	ButtonSaveFailed	Unable to save	ui
+gba-0199	gba	GameOverScreen	ButtonSaveSuccessful	Saved in Tracker folder	ui
+gba-0200	gba	GameOverScreen	ButtonViewGrade	View	ui
+gba-0201	gba	GameOverScreen	ButtonViewLogSmall	View log	ui
+gba-0202	gba	GameOverScreen	LabelAttempt	Attempt	ui
+gba-0203	gba	GameOverScreen	LabelPlayTime	Play Time	ui
+gba-0204	gba	GameOverScreen	QuoteCongratulations	CONGRATULATIONS!!	ui
+gba-0205	gba	GameOverScreen	Title	G a m e O v e r	ui
+gba-0206	gba	GameOverScreenQuotes	(list)	21 announcer quotes	ui
+gba-0207	gba	HealsInBagScreen	TabAll	All	ui
+gba-0208	gba	HealsInBagScreen	TabBattle	Battle	ui
+gba-0209	gba	HealsInBagScreen	TabHP	HP	ui
+gba-0210	gba	HealsInBagScreen	TabPP	PP	ui
+gba-0211	gba	HealsInBagScreen	TabStatus	Status	ui
+gba-0212	gba	InfoScreen	ButtonHistory	History	ui
+gba-0213	gba	InfoScreen	ButtonResistances	Show resistances	ui
+gba-0214	gba	InfoScreen	ButtonViewEvos	View ...	ui
+gba-0215	gba	InfoScreen	CheckboxLevels	Levels	ui
+gba-0216	gba	InfoScreen	CheckboxPercentages	Percentages	ui
+gba-0217	gba	InfoScreen	ExpYield	EXP	ui
+gba-0218	gba	InfoScreen	KilogramAbbreviation	kg	ui
+gba-0219	gba	InfoScreen	LabelAccuracy	Accuracy	ui
+gba-0220	gba	InfoScreen	LabelCategory	Category	ui
+gba-0221	gba	InfoScreen	LabelContact	Contact	ui
+gba-0222	gba	InfoScreen	LabelEmeraldAbility	In Emerald	ui
+gba-0223	gba	InfoScreen	LabelEvolution	Evolution	ui
+gba-0224	gba	InfoScreen	LabelLearnMove	Learns a move at level	ui
+gba-0225	gba	InfoScreen	LabelMoveSummary	Move Summary	ui
+gba-0226	gba	InfoScreen	LabelNoMoves	Does not learn any moves	ui
+gba-0227	gba	InfoScreen	LabelNoWeaknesses	Has no weaknesses	ui
+gba-0228	gba	InfoScreen	LabelOrderAppearance	In order of appearance	ui
+gba-0229	gba	InfoScreen	LabelPP	PP	ui
+gba-0230	gba	InfoScreen	LabelPower	Power	ui
+gba-0231	gba	InfoScreen	LabelPriority	Priority	ui
+gba-0232	gba	InfoScreen	LabelSeenBy	Pokémon seen by	ui
+gba-0233	gba	InfoScreen	LabelSeenEncounters	Pokémon encounters	ui
+gba-0234	gba	InfoScreen	LabelWeakTo	Weak to	ui
+gba-0235	gba	InfoScreen	LabelWeight	Weight	ui
+gba-0236	gba	InfoScreen	PromptLookupAbility	Choose an Ability to look up	ui
+gba-0237	gba	InfoScreen	PromptLookupMove	Choose a Move to look up	ui
+gba-0238	gba	InfoScreen	PromptLookupPokemon	Choose a Pokémon to look up	ui
+gba-0239	gba	InfoScreen	PromptLookupRoute	Choose a Route to look up	ui
+gba-0240	gba	InfoScreen	SetHiddenPowerType	Set type	ui
+gba-0241	gba	LanguageScreen	AutodetectSetting	Autodetect game language	ui
+gba-0242	gba	LanguageScreen	ButtonHelpContribute	Help Contribute	ui
+gba-0243	gba	LanguageScreen	DisplayLanguage	Display Language	ui
+gba-0244	gba	LanguageScreen	Title	Language Settings	ui
+gba-0245	gba	LogOverlay	ButtonLevelupMoves	Levelup Moves	ui
+gba-0246	gba	LogOverlay	ButtonShareSeed	Share Seed	ui
+gba-0247	gba	LogOverlay	ButtonTMMoves	TM Moves	ui
+gba-0248	gba	LogOverlay	CheckboxCustomTrainerNames	Custom Trainer Names	ui
+gba-0249	gba	LogOverlay	CheckboxShowPreEvolutions	Show Pre Evolutions	ui
+gba-0250	gba	LogOverlay	CheckboxShowUnlearnableGymTMs	Show unlearnable Gym TMs	ui
+gba-0251	gba	LogOverlay	FilterAll	All	ui
+gba-0252	gba	LogOverlay	FilterBoss	Boss	ui
+gba-0253	gba	LogOverlay	FilterElite4	Elite 4	ui
+gba-0254	gba	LogOverlay	FilterGym	Gym	ui
+gba-0255	gba	LogOverlay	FilterGymTMs	Gym TMs	ui
+gba-0256	gba	LogOverlay	FilterOther	Other	ui
+gba-0257	gba	LogOverlay	FilterRival	Rival	ui
+gba-0258	gba	LogOverlay	FilterTMNumber	TM #	ui
+gba-0259	gba	LogOverlay	HeaderTabMisc	Misc.	ui
+gba-0260	gba	LogOverlay	HeaderTabPokemon	Pokémon	ui
+gba-0261	gba	LogOverlay	HeaderTabRoutes	Routes	ui
+gba-0262	gba	LogOverlay	HeaderTabTMs	TMs	ui
+gba-0263	gba	LogOverlay	HeaderTabTrainers	Trainers	ui
+gba-0264	gba	LogOverlay	LabelBSTTotal	Total	ui
+gba-0265	gba	LogOverlay	LabelBaseStats	Base Stats	ui
+gba-0266	gba	LogOverlay	LabelEncounters	Encounters	ui
+gba-0267	gba	LogOverlay	LabelFilterBy	Filter by	ui
+gba-0268	gba	LogOverlay	LabelGymTMs	Gym TMs	ui
+gba-0269	gba	LogOverlay	LabelLocation	Location	ui
+gba-0270	gba	LogOverlay	LabelOtherTMs	Other TMs	ui
+gba-0271	gba	LogOverlay	LabelPokemonGame	Pokémon Game	ui
+gba-0272	gba	LogOverlay	LabelRandomSeed	Random Seed	ui
+gba-0273	gba	LogOverlay	LabelRandomizerVersion	Randomizer Version	ui
+gba-0274	gba	LogOverlay	LabelSettingsString	Settings String	ui
+gba-0275	gba	LogOverlay	LabelShowBST	Show BST	ui
+gba-0276	gba	LogOverlay	LabelShowEVs	Show EVs	ui
+gba-0277	gba	LogOverlay	LabelShowIVs	Show IVs	ui
+gba-0278	gba	LogOverlay	LabelYourEVs	Your EVs	ui
+gba-0279	gba	LogOverlay	LabelYourIVs	Your IVs	ui
+gba-0280	gba	LogOverlay	PromptShareSeedDesc	Copy/paste everything below to share. Load it through Randomizer --> Premade Seed.	ui
+gba-0281	gba	LogOverlay	PromptShareSeedTitle	Share Randomizer Seed	ui
+gba-0282	gba	LogOverlay	TabGoodRod	Good Rod	ui
+gba-0283	gba	LogOverlay	TabGrassCave	Grass / Cave	ui
+gba-0284	gba	LogOverlay	TabOldRod	Old Rod	ui
+gba-0285	gba	LogOverlay	TabRockSmash	Rock Smash	ui
+gba-0286	gba	LogOverlay	TabSuperRod	Super Rod	ui
+gba-0287	gba	LogOverlay	TabSurfing	Surfing	ui
+gba-0288	gba	LogOverlay	TabTrainers	Trainers	ui
+gba-0289	gba	LogSearchScreen	FilterAbility	Ability	ui
+gba-0290	gba	LogSearchScreen	FilterMove	Levelup Move	ui
+gba-0291	gba	LogSearchScreen	FilterName	Pokémon Name	ui
+gba-0292	gba	LogSearchScreen	FilterRouteName	Route Name	ui
+gba-0293	gba	LogSearchScreen	FilterTrainerName	Trainer Name	ui
+gba-0294	gba	LogSearchScreen	LabelNoResults	No results	ui
+gba-0295	gba	LogSearchScreen	LabelSearch	Search	ui
+gba-0296	gba	LogSearchScreen	LabelSortBy	Sort by	ui
+gba-0297	gba	LogSearchScreen	SortATK	Attack	ui
+gba-0298	gba	LogSearchScreen	SortAlphabetical	Alphabetical	ui
+gba-0299	gba	LogSearchScreen	SortBST	BST	ui
+gba-0300	gba	LogSearchScreen	SortDEF	Defense	ui
+gba-0301	gba	LogSearchScreen	SortHP	HP	ui
+gba-0302	gba	LogSearchScreen	SortPokedexNum	Pokédex Number	ui
+gba-0303	gba	LogSearchScreen	SortSPA	Sp. Atk	ui
+gba-0304	gba	LogSearchScreen	SortSPD	Sp. Def	ui
+gba-0305	gba	LogSearchScreen	SortSPE	Speed	ui
+gba-0306	gba	LogSearchScreen	SortTrainerLevel	Trainer Level	ui
+gba-0307	gba	LogSearchScreen	SortWildPokemonLv	Wild Pokémon Lv.	ui
+gba-0308	gba	LogSearchScreen	Title	Search the Log	ui
+gba-0309	gba	MGBA	AnimatedPopoutRequired	The Animated Pokemon popout add-on must be installed separately.  Refer to the Tracker Wiki for more details on setting this up.	ui
+gba-0310	gba	MGBA	ButtonInputRequired	Button input required; available buttons: A, B, L, R, Start, Select	ui
+gba-0311	gba	MGBA	GbaFileRequired	A '.gba' file is required; please enter the full file path to your GBA ROM file.	ui
+gba-0312	gba	MGBA	JarFileRequired	A '.jar' file is required; please enter the full file path to your Randomizer JAR file.	ui
+gba-0313	gba	MGBA	MenuAbility	Ability	ui
+gba-0314	gba	MGBA	MenuAdvancedCommands	Advanced Commands	ui
+gba-0315	gba	MGBA	MenuBasicCommands	Basic Commands	ui
+gba-0316	gba	MGBA	MenuBattleTracker	Battle Tracker	ui
+gba-0317	gba	MGBA	MenuCheckForUpdates	Check for Updates	ui
+gba-0318	gba	MGBA	MenuCommands	Commands	ui
+gba-0319	gba	MGBA	MenuExtensions	Extensions	ui
+gba-0320	gba	MGBA	MenuGameStats	Game Stats	ui
+gba-0321	gba	MGBA	MenuGameplayOptions	Gameplay Options	ui
+gba-0322	gba	MGBA	MenuGeneralSetup	General Setup	ui
+gba-0323	gba	MGBA	MenuInfoLookup	Info Lookup	ui
+gba-0324	gba	MGBA	MenuLanguage	Language	ui
+gba-0325	gba	MGBA	MenuMove	Move	ui
+gba-0326	gba	MGBA	MenuNewUpdateVailable	New Update Available	ui
+gba-0327	gba	MGBA	MenuOriginalRoute	Original Route Info	ui
+gba-0328	gba	MGBA	MenuOtherCommands	Other Commands	ui
+gba-0329	gba	MGBA	MenuPokemon	Pokémon	ui
+gba-0330	gba	MGBA	MenuQuickloadSetup	New Runs Setup	ui
+gba-0331	gba	MGBA	MenuRoute	Route	ui
+gba-0332	gba	MGBA	MenuTracker	Tracker	ui
+gba-0333	gba	MGBA	MenuTrackerSettings	Tracker Settings	ui
+gba-0334	gba	MGBA	OptionAllowCustomCode	Allow custom code to run	ui
+gba-0335	gba	MGBA	OptionAnimatedPokemonGIF	Animated Pokemon GIF	ui
+gba-0336	gba	MGBA	OptionAutodetectGameLanguage	Autodetect game language	ui
+gba-0337	gba	MGBA	OptionAutosaveTrackedData	Autosave tracked game data	ui
+gba-0338	gba	MGBA	OptionAutoswapEnemy	Auto swap to enemy	ui
+gba-0339	gba	MGBA	OptionCalculateVariableDamage	Calculate variable damage	ui
+gba-0340	gba	MGBA	OptionCountEnemyPP	Count enemy PP usage	ui
+gba-0341	gba	MGBA	OptionCycleThroughStats	Cycle through stats	ui
+gba-0342	gba	MGBA	OptionDevBranchUpdates	Beta test branch updates	ui
+gba-0343	gba	MGBA	OptionDisplayGender	Display Pokémon's gender	ui
+gba-0344	gba	MGBA	OptionDisplayPedometer	Display step pedometer	ui
+gba-0345	gba	MGBA	OptionDisplayRepel	Display repel usage	ui
+gba-0346	gba	MGBA	OptionFileError	File not found	ui
+gba-0347	gba	MGBA	OptionGenerateRom	Generate a ROM each time	ui
+gba-0348	gba	MGBA	OptionKeyError	Option key doesn't exist	ui
+gba-0349	gba	MGBA	OptionMarkStat	Mark a stat [+/-]	ui
+gba-0350	gba	MGBA	OptionOverrideButtonModeLR	Override Button Mode to LR	ui
+gba-0351	gba	MGBA	OptionPCHealsCountDownward	PC heals count downward	ui
+gba-0352	gba	MGBA	OptionPhysicalSpecialIcons	Physical/Special icons	ui
+gba-0353	gba	MGBA	OptionPremadeRoms	Use premade ROMs	ui
+gba-0354	gba	MGBA	OptionQuickload	Load New Run	ui
+gba-0355	gba	MGBA	OptionRandomizerJar	Randomizer JAR	ui
+gba-0356	gba	MGBA	OptionRevealRandomizedInfo	Show random move/type data	ui
+gba-0357	gba	MGBA	OptionRightJustifiedNumbers	Right justified numbers	ui
+gba-0358	gba	MGBA	OptionRomsFolder	ROMs Folder	ui
+gba-0359	gba	MGBA	OptionSettingsFile	Settings File	ui
+gba-0360	gba	MGBA	OptionShowBallCatchRate	Show Poke Ball catch rate	ui
+gba-0361	gba	MGBA	OptionShowHealsAsValue	Show heals as whole number	ui
+gba-0362	gba	MGBA	OptionShowLastDamage	Show last damage calcs	ui
+gba-0363	gba	MGBA	OptionShowMoveEffectiveness	Show move effectiveness	ui
+gba-0364	gba	MGBA	OptionShowMoveTypes	Show move types	ui
+gba-0365	gba	MGBA	OptionShowNicknames	Show nicknames	ui
+gba-0366	gba	MGBA	OptionShowStarterBallInfo	Show starter ball info	ui
+gba-0367	gba	MGBA	OptionSourceRom	Source ROM	ui
+gba-0368	gba	MGBA	OptionSwapViewedPokemon	Swap viewed Pokemon	ui
+gba-0369	gba	MGBA	OptionTrackPCHeals	Track PokéCenter heals	ui
+gba-0370	gba	MGBA	OptionViewSummaryForStats	View summary to see stats	ui
+gba-0371	gba	MGBA	RnqsFileRequired	An '.rnqs' file is required; please enter the full file path to your Randomizer Settings file.	ui
+gba-0372	gba	MGBA/StartupInstructions	1	- Click on the menus on the left sidebar to see different information screens.	ui
+gba-0373	gba	MGBA/StartupInstructions	2	- To use commands, type the command into the box below.	ui
+gba-0374	gba	MGBA/StartupInstructions	3	Surround the command options with 'quotation marks'. For example:	ui
+gba-0375	gba	MGBA/StartupInstructions	4	POKEMON 'Pikachu'	ui
+gba-0376	gba	MGBA/StartupInstructions	5		ui
+gba-0377	gba	MGBA/StartupInstructions	6	- If you're unsure of what a command does, you can use: HELP 'command'	ui
+gba-0378	gba	MGBA/StartupInstructions	7	- More information can be found on the Tracker's wiki by typing: HELPWIKI()	ui
+gba-0379	gba	MGBACommands	AbilityDesc	Looks up useful information about a Pokémon ability, shown on the left sidebar.	ui
+gba-0380	gba	MGBACommands	AbilityError1	Where 'name' is a valid Pokémon's Ability name.	ui
+gba-0381	gba	MGBACommands	AbilityError2	Unable to find Ability	ui
+gba-0382	gba	MGBACommands	AllCommandsDesc	Lists every available command. Use HELP 'command' to learn more about any command.	ui
+gba-0383	gba	MGBACommands	AttemptsDesc	Allows you to manually change the Attempts counter to a different number, shown on the Stats sidebar.	ui
+gba-0384	gba	MGBACommands	AttemptsError1	Where # is a positive number.	ui
+gba-0385	gba	MGBACommands	AttemptsSuccess	Updating Attempts counter	ui
+gba-0386	gba	MGBACommands	CheckUpdateDesc	Checks online to see if a new version of the Tracker is available, shown on the left sidebar.	ui
+gba-0387	gba	MGBACommands	CheckUpdateFound	Update found! Check the sidebar menu to view it.	ui
+gba-0388	gba	MGBACommands	CheckUpdateNotFound	No new updates available. Latest version available	ui
+gba-0389	gba	MGBACommands	ClearDataDesc	Clears out all current tracked data for the current game.  Can help fix situations where wrong data keeps showing up.	ui
+gba-0390	gba	MGBACommands	ClearDataSuccess	All tracked data for this game has been cleared.	ui
+gba-0391	gba	MGBACommands	CreditsContributors	Contributors	ui
+gba-0392	gba	MGBACommands	CreditsCreated	Created by	ui
+gba-0393	gba	MGBACommands	CreditsDesc	Displays a list of team members who helped contribute to creating the Ironmon Tracker.	ui
+gba-0394	gba	MGBACommands	HelpDesc	Used to explain the function of other commands and how to use them.	ui
+gba-0395	gba	MGBACommands	HelpError1	Where 'command' is the name of a command.	ui
+gba-0396	gba	MGBACommands	HelpError2	command not found. Check list of commands on the left sidebar.	ui
+gba-0397	gba	MGBACommands	HelpExample	Example	ui
+gba-0398	gba	MGBACommands	HelpUsage	Usage	ui
+gba-0399	gba	MGBACommands	HelpWikiDesc	Opens a browser window showing helpful wiki pages that explain various features of the Tracker.	ui
+gba-0400	gba	MGBACommands	HiddenPowerDesc	Sets the type of Hidden Power for your active Pokémon.  This helps show move effectiveness calculations while in battle.	ui
+gba-0401	gba	MGBACommands	HiddenPowerError1	Where 'type' is a valid Pokémon type	ui
+gba-0402	gba	MGBACommands	HiddenPowerError2	You don't have a Pokémon yet.	ui
+gba-0403	gba	MGBACommands	HiddenPowerError3	Your Pokémon doesn't have the move	ui
+gba-0404	gba	MGBACommands	HiddenPowerError4	Unable to find type	ui
+gba-0405	gba	MGBACommands	HiddenPowerSuccess1	type set to	ui
+gba-0406	gba	MGBACommands	HiddenPowerSuccess2	move effectiveness is visible on the Tracker while in battle	ui
+gba-0407	gba	MGBACommands	HiddenPowerSuccess3	Enable the 'Show move effectiveness' option to see this type while in battle.	ui
+gba-0408	gba	MGBACommands	InfoLookupSuccess	found! Check the sidebar menu to view it.	ui
+gba-0409	gba	MGBACommands	InstallExtDesc	Installs new Extension files from the Tracker's extensions folder.	ui
+gba-0410	gba	MGBACommands	InstallExtSuccess1	New extensions have been installed!	ui
+gba-0411	gba	MGBACommands	InstallExtSuccess2	No new extension files found in the Tracker's extensions folder.	ui
+gba-0412	gba	MGBACommands	LanguageDesc	Change the display language of the Tracker.	ui
+gba-0413	gba	MGBACommands	LanguageError1	Where 'language' is the name or # of a language. Check the Language sidebar menu.	ui
+gba-0414	gba	MGBACommands	LanguageError2	Unable to find language	ui
+gba-0415	gba	MGBACommands	LanguageSuccess	The Tracker's display language has been updated.	ui
+gba-0416	gba	MGBACommands	LoadDataDesc	Loads tracked data from a past game playthrough.  Loads from a TDAT file found in your main Tracker folder.	ui
+gba-0417	gba	MGBACommands	LoadDataError1	Where 'filename' is the name of a file that exists in your Tracker folder.	ui
+gba-0418	gba	MGBACommands	LoadDataError2	Tracked data from this file does not match this game. Resetting tracked data instead.	ui
+gba-0419	gba	MGBACommands	LoadDataError3	Unable to load Tracked data from the specific file. Make sure it's in your Tracker folder.	ui
+gba-0420	gba	MGBACommands	MoveDesc	Looks up useful information about a Pokémon move, shown on the left sidebar.	ui
+gba-0421	gba	MGBACommands	MoveError1	Where 'name' is a valid Pokémon Move name.	ui
+gba-0422	gba	MGBACommands	MoveError2	Unable to find Move	ui
+gba-0423	gba	MGBACommands	NoteDesc	Sets the tracked note for the opposing Pokémon currently being viewed.	ui
+gba-0424	gba	MGBACommands	NoteError1	Where 'text' is the note to leave for the enemy Pokémon being viewed.	ui
+gba-0425	gba	MGBACommands	NoteError2	Unable to leave a note; no Pokémon is currently being viewed.	ui
+gba-0426	gba	MGBACommands	NoteError3	You can only leave notes for enemy Pokémon you are currently viewing.	ui
+gba-0427	gba	MGBACommands	NoteSuccess	Note added for	ui
+gba-0428	gba	MGBACommands	OptionDesc	Toggles an option ON or OFF.  For some options, you'll need to provide additional text to change it.	ui
+gba-0429	gba	MGBACommands	OptionError1	Where # is a valid option number, followed by any optional text.	ui
+gba-0430	gba	MGBACommands	OptionError2	option doesn't exist. Please try another option number.	ui
+gba-0431	gba	MGBACommands	OptionOff	OFF	ui
+gba-0432	gba	MGBACommands	OptionOn	ON	ui
+gba-0433	gba	MGBACommands	OptionSuccess	Updating option	ui
+gba-0434	gba	MGBACommands	PCHealsDesc	Allows you to manually change the tracked Pokécenter usage counter to a different number.	ui
+gba-0435	gba	MGBACommands	PCHealsError1	Where # is a positive number between 0 and 99.	ui
+gba-0436	gba	MGBACommands	PCHealsSuccess	Updating PC Heal count to	ui
+gba-0437	gba	MGBACommands	PokemonDesc	Looks up useful Pokédex info about a Pokémon, shown on the left sidebar.	ui
+gba-0438	gba	MGBACommands	PokemonError1	Where 'name' is a valid Pokémon name.	ui
+gba-0439	gba	MGBACommands	PokemonError2	Unable to find Pokémon	ui
+gba-0440	gba	MGBACommands	QuickloadDesc	Forces the Tracker to automatically load a new game ROM.	ui
+gba-0441	gba	MGBACommands	RandomBallDesc	Chooses a random Pokémon starter Poké Ball from among: Left, Middle, or Right.	ui
+gba-0442	gba	MGBACommands	RandomBallSuccess	Randomly chosen starter Poké Ball	ui
+gba-0443	gba	MGBACommands	ReleaseNotesDesc	Opens a browser window with details about the current version's release notes.	ui
+gba-0444	gba	MGBACommands	RouteDesc	Looks up useful information about a route, shown on the left sidebar.  Tip: Try adding a floor number after a route name, e.g. Mt. Moon 1F	ui
+gba-0445	gba	MGBACommands	RouteError1	Where 'name' is a valid Route number or Route name.	ui
+gba-0446	gba	MGBACommands	RouteError2	Unable to find Route	ui
+gba-0447	gba	MGBACommands	SaveDataDesc	Saves all tracked data for your current game.  The TDAT save file can be found in your main Tracker folder.	ui
+gba-0448	gba	MGBACommands	SaveDataError1	Where 'filename' is a valid name for a computer file.	ui
+gba-0449	gba	MGBACommands	SaveDataSuccess	Tracked data saved for this game in the Tracker folder as	ui
+gba-0450	gba	MGBACommands	UpdateNowDesc	Automatically updates the Tracker by downloading and installing the latest release.	ui
+gba-0451	gba	MGBACommands	UpdateNowSteps0	Follow these steps to restart the Tracker to apply the update	ui
+gba-0452	gba	MGBACommands	UpdateNowSteps1	Complete any ongoing battles first	ui
+gba-0453	gba	MGBACommands	UpdateNowSteps2	On the mGBA scripting window: Click File -> Reset	ui
+gba-0454	gba	MGBACommands	UpdateNowSteps3	Click File -> Load script (or Load recent script)	ui
+gba-0455	gba	MGBACommands	UpdateNowSuccess	Update in progress, please wait...	ui
+gba-0456	gba	MGBACommands	UsageError	[Command Error] Usage syntax	ui
+gba-0457	gba	MGBAScreens	CommandsDesc	To use, type into below textbox. Example command	ui
+gba-0458	gba	MGBAScreens	CommandsExampleUsage	Example Usage	ui
+gba-0459	gba	MGBAScreens	CommandsUsageSyntax	Usage Syntax	ui
+gba-0460	gba	MGBAScreens	ExtensionsEnableDisable	Enable/disable with	ui
+gba-0461	gba	MGBAScreens	ExtensionsInstallNewWith	Install new extensions with	ui
+gba-0462	gba	MGBAScreens	ExtensionsInstalledExtensions	Installed Extensions	ui
+gba-0463	gba	MGBAScreens	GameplayOptionsManualSave	Manually save/load tracked data	ui
+gba-0464	gba	MGBAScreens	GeneralSetupButtons	button(s)	ui
+gba-0465	gba	MGBAScreens	GeneralSetupChange	Change with	ui
+gba-0466	gba	MGBAScreens	GeneralSetupControls	Controls	ui
+gba-0467	gba	MGBAScreens	GeneralSetupGBAButtons	GBA Buttons	ui
+gba-0468	gba	MGBAScreens	LabelEnabled	Enabled	ui
+gba-0469	gba	MGBAScreens	LabelImmunities	Immunities	ui
+gba-0470	gba	MGBAScreens	LabelOption	Option	ui
+gba-0471	gba	MGBAScreens	LabelPhysical	Physical	ui
+gba-0472	gba	MGBAScreens	LabelResistances	Resistances	ui
+gba-0473	gba	MGBAScreens	LabelSpecial	Special	ui
+gba-0474	gba	MGBAScreens	LabelStatus	Status	ui
+gba-0475	gba	MGBAScreens	LabelToggleOption	Toggle option with	ui
+gba-0476	gba	MGBAScreens	LabelWeaknesses	Weaknesses	ui
+gba-0477	gba	MGBAScreens	LanguageChangeWith	Change your language with	ui
+gba-0478	gba	MGBAScreens	LanguageCurrent	Current Language	ui
+gba-0479	gba	MGBAScreens	LanguageHeaderLang	Language	ui
+gba-0480	gba	MGBAScreens	LanguageHeaderTag	Tag	ui
+gba-0481	gba	MGBAScreens	MoveInfoAccuracy	Accuracy	ui
+gba-0482	gba	MGBAScreens	MoveInfoCategory	Category	ui
+gba-0483	gba	MGBAScreens	MoveInfoContact	Contact	ui
+gba-0484	gba	MGBAScreens	MoveInfoEmeraldBonus	Emerald Bonus	ui
+gba-0485	gba	MGBAScreens	MoveInfoNormalPriority	Normal	ui
+gba-0486	gba	MGBAScreens	MoveInfoPP	PP	ui
+gba-0487	gba	MGBAScreens	MoveInfoPower	Power	ui
+gba-0488	gba	MGBAScreens	MoveInfoPriority	Priority	ui
+gba-0489	gba	MGBAScreens	MoveInfoSummary	Move Summary	ui
+gba-0490	gba	MGBAScreens	PokemonInfoBST	BST	ui
+gba-0491	gba	MGBAScreens	PokemonInfoEXP	EXP	ui
+gba-0492	gba	MGBAScreens	PokemonInfoEvolution	Evolution	ui
+gba-0493	gba	MGBAScreens	PokemonInfoKg	kg	ui
+gba-0494	gba	MGBAScreens	PokemonInfoLeaveNote	(Leave a note)	ui
+gba-0495	gba	MGBAScreens	PokemonInfoLevelupMoves	Level-up moves	ui
+gba-0496	gba	MGBAScreens	PokemonInfoNone	None	ui
+gba-0497	gba	MGBAScreens	PokemonInfoNote	Note	ui
+gba-0498	gba	MGBAScreens	PokemonInfoWeight	Weight	ui
+gba-0499	gba	MGBAScreens	QuickloadButtonCombo	Button Combo	ui
+gba-0500	gba	MGBAScreens	QuickloadChooseMode	Choose a mode with	ui
+gba-0501	gba	MGBAScreens	QuickloadDesc	To use a Load New Run option, put the required files in the [quickload] folder found in your main Tracker folder.	ui
+gba-0502	gba	MGBAScreens	QuickloadGbaFile	GBA ROM file to randomize	ui
+gba-0503	gba	MGBAScreens	QuickloadJarFile	JAR file from your Randomizer	ui
+gba-0504	gba	MGBAScreens	QuickloadMode	Mode	ui
+gba-0505	gba	MGBAScreens	QuickloadMultipleRoms	Multiple GBA ROM files with #'s	ui
+gba-0506	gba	MGBAScreens	QuickloadRequiredFiles	Required Files	ui
+gba-0507	gba	MGBAScreens	QuickloadRequiredFilesOneEach	Required Files (only 1 of each)	ui
+gba-0508	gba	MGBAScreens	QuickloadRnqsFile	RNQS Randomizer settings file	ui
+gba-0509	gba	MGBAScreens	QuickloadSelected	Selected	ui
+gba-0510	gba	MGBAScreens	QuickloadTextCommand	Text Command	ui
+gba-0511	gba	MGBAScreens	RouteInfoOriginal	Original	ui
+gba-0512	gba	MGBAScreens	RouteInfoSeen	seen	ui
+gba-0513	gba	MGBAScreens	RouteInfoTracked	Tracked	ui
+gba-0514	gba	MGBAScreens	RouteInfoUnknownArea	UNKNOWN AREA	ui
+gba-0515	gba	MGBAScreens	SymbolEffectivenessImmune	X	ui
+gba-0516	gba	MGBAScreens	SymbolEffectivenessResist	-	ui
+gba-0517	gba	MGBAScreens	SymbolEffectivenessResistDouble	--	ui
+gba-0518	gba	MGBAScreens	SymbolEffectivenessWeak	+	ui
+gba-0519	gba	MGBAScreens	SymbolEffectivenessWeakDouble	++	ui
+gba-0520	gba	MGBAScreens	SymbolPhysical	P	ui
+gba-0521	gba	MGBAScreens	SymbolSpecial	S	ui
+gba-0522	gba	MGBAScreens	SymbolStatus		ui
+gba-0523	gba	MGBAScreens	TrackerAttack	ATK	ui
+gba-0524	gba	MGBAScreens	TrackerBST	BST	ui
+gba-0525	gba	MGBAScreens	TrackerBadges	Badges	ui
+gba-0526	gba	MGBAScreens	TrackerCatchRate	Catch rate	ui
+gba-0527	gba	MGBAScreens	TrackerDefense	DEF	ui
+gba-0528	gba	MGBAScreens	TrackerHP	HP	ui
+gba-0529	gba	MGBAScreens	TrackerHeaderAcc	Acc	ui
+gba-0530	gba	MGBAScreens	TrackerHeaderPP	PP	ui
+gba-0531	gba	MGBAScreens	TrackerHeaderPow	Pow	ui
+gba-0532	gba	MGBAScreens	TrackerHeaderType	Type	ui
+gba-0533	gba	MGBAScreens	TrackerHeals	Heals	ui
+gba-0534	gba	MGBAScreens	TrackerLastSeen	Last seen	ui
+gba-0535	gba	MGBAScreens	TrackerLevel	Lv	ui
+gba-0536	gba	MGBAScreens	TrackerNewEncounter	New encounter!	ui
+gba-0537	gba	MGBAScreens	TrackerRepel	Repel	ui
+gba-0538	gba	MGBAScreens	TrackerSeenTrainers	Seen on trainers	ui
+gba-0539	gba	MGBAScreens	TrackerSeenWild	Seen in the wild	ui
+gba-0540	gba	MGBAScreens	TrackerSpAttack	SPA	ui
+gba-0541	gba	MGBAScreens	TrackerSpDefense	SPD	ui
+gba-0542	gba	MGBAScreens	TrackerSpeed	SPE	ui
+gba-0543	gba	MGBAScreens	TrackerSurvivalPCs	Survival PCs	ui
+gba-0544	gba	MGBAScreens	TrackerTrainerTeam	Trainer team	ui
+gba-0545	gba	MGBAScreens	UpdateAvailable	Update available!	ui
+gba-0546	gba	MGBAScreens	UpdateCurrentVersion	Current version	ui
+gba-0547	gba	MGBAScreens	UpdateDownloadInstall	Download & install automatically	ui
+gba-0548	gba	MGBAScreens	UpdateLastCheckedVersion	Last checked version	ui
+gba-0549	gba	MGBAScreens	UpdateManualCheck	Manually check for new updates	ui
+gba-0550	gba	MGBAScreens	UpdateNewVersionAvailable	New version available	ui
+gba-0551	gba	MGBAScreens	UpdateViewReleaseNotes	View release notes	ui
+gba-0552	gba	MoveHistoryScreen	HeaderMax	Max	ui
+gba-0553	gba	MoveHistoryScreen	HeaderMin	Min	ui
+gba-0554	gba	MoveHistoryScreen	HeaderMoves	Move seen at level	ui
+gba-0555	gba	MoveHistoryScreen	NoMovesLearned	Does not learn any moves	ui
+gba-0556	gba	MoveHistoryScreen	NoTrackedMoves	(No tracked move data yet)	ui
+gba-0557	gba	MoveHistoryScreen	PromptPokemonDesc	Choose a Pokémon to look up	ui
+gba-0558	gba	MoveHistoryScreen	PromptPokemonTitle	Pokédex Look up	ui
+gba-0559	gba	NavigationMenu	ButtonCredits	Credits	ui
+gba-0560	gba	NavigationMenu	ButtonExtensions	Extensions	ui
+gba-0561	gba	NavigationMenu	ButtonExtras	Extras	ui
+gba-0562	gba	NavigationMenu	ButtonGameplay	Gameplay	ui
+gba-0563	gba	NavigationMenu	ButtonHelp	Help	ui
+gba-0564	gba	NavigationMenu	ButtonLanguage	Language	ui
+gba-0565	gba	NavigationMenu	ButtonNotebook	Notebook	ui
+gba-0566	gba	NavigationMenu	ButtonQuickload	New Runs	ui
+gba-0567	gba	NavigationMenu	ButtonSetup	Setup	ui
+gba-0568	gba	NavigationMenu	ButtonStreaming	Streaming	ui
+gba-0569	gba	NavigationMenu	ButtonTheme	Theme	ui
+gba-0570	gba	NavigationMenu	ButtonUpdate	Update	ui
+gba-0571	gba	NavigationMenu	CreditsContributors	Contributors	ui
+gba-0572	gba	NavigationMenu	CreditsCreatedBy	Created by	ui
+gba-0573	gba	NavigationMenu	MessageCheckConsole	Check the Lua Console for a link to the Tracker's Help Wiki.	ui
+gba-0574	gba	NavigationMenu	Title	Tracker Settings	ui
+gba-0575	gba	NotebookIndexScreen	LabelPokemonSeen	Pokémon Seen	ui
+gba-0576	gba	NotebookIndexScreen	LabelReviewDescription	Review notes about the game	ui
+gba-0577	gba	NotebookIndexScreen	LabelTrainersFought	Trainers Fought	ui
+gba-0578	gba	NotebookIndexScreen	Title	Tracker Notebook	ui
+gba-0579	gba	NotebookPokemonNoteView	HeaderMoveHistory	Move History	ui
+gba-0580	gba	NotebookPokemonSeen	LabelAll	All	ui
+gba-0581	gba	NotebookPokemonSeen	LabelSeen	Seen	ui
+gba-0582	gba	NotebookPokemonSeen	Title	All Pokémon Seen	ui
+gba-0583	gba	NotebookTrainersByArea	CheckboxSevii	Sevii	ui
+gba-0584	gba	NotebookTrainersByArea	CheckboxShowCompleted	Show completed	ui
+gba-0585	gba	NotebookTrainersByArea	Title	All Trainers by Area	ui
+gba-0586	gba	PokemonEvolutionDetails/EEVEE_STONES	abbreviation	STONE	ui
+gba-0587	gba	PokemonEvolutionDetails/EEVEE_STONES	detailed	5 Diff. Stones	ui
+gba-0588	gba	PokemonEvolutionDetails/FIRE	abbreviation	FIRE	ui
+gba-0589	gba	PokemonEvolutionDetails/FIRE	detailed	Fire Stone	ui
+gba-0590	gba	PokemonEvolutionDetails/FIRE	short	Fire	ui
+gba-0591	gba	PokemonEvolutionDetails/FRIEND	abbreviation	FRIEND	ui
+gba-0592	gba	PokemonEvolutionDetails/FRIEND	detailed	Friendship	ui
+gba-0593	gba	PokemonEvolutionDetails/FRIEND	short	Friend	ui
+gba-0594	gba	PokemonEvolutionDetails/FRIEND_READY	abbreviation	READY	ui
+gba-0595	gba	PokemonEvolutionDetails/LEAF	abbreviation	LEAF	ui
+gba-0596	gba	PokemonEvolutionDetails/LEAF	detailed	Leaf Stone	ui
+gba-0597	gba	PokemonEvolutionDetails/LEAF	short	Leaf	ui
+gba-0598	gba	PokemonEvolutionDetails/LEAF_SUN	abbreviation	LF/SN	ui
+gba-0599	gba	PokemonEvolutionDetails/LEVEL	detailed	Level	ui
+gba-0600	gba	PokemonEvolutionDetails/LEVEL	short	Lv.	ui
+gba-0601	gba	PokemonEvolutionDetails/MOON	abbreviation	MOON	ui
+gba-0602	gba	PokemonEvolutionDetails/MOON	detailed	Moon Stone	ui
+gba-0603	gba	PokemonEvolutionDetails/MOON	short	Moon	ui
+gba-0604	gba	PokemonEvolutionDetails/SUN	abbreviation	SUN	ui
+gba-0605	gba	PokemonEvolutionDetails/SUN	detailed	Sun Stone	ui
+gba-0606	gba	PokemonEvolutionDetails/SUN	short	Sun	ui
+gba-0607	gba	PokemonEvolutionDetails/THUNDER	abbreviation	THUNDER	ui
+gba-0608	gba	PokemonEvolutionDetails/THUNDER	detailed	Thunderstone	ui
+gba-0609	gba	PokemonEvolutionDetails/THUNDER	short	Thunder	ui
+gba-0610	gba	PokemonEvolutionDetails/WATER	abbreviation	WATER	ui
+gba-0611	gba	PokemonEvolutionDetails/WATER	detailed	Water Stone	ui
+gba-0612	gba	PokemonEvolutionDetails/WATER	short	Water	ui
+gba-0613	gba	PokemonEvolutionDetails/WATER30	abbreviation	30/WTR	ui
+gba-0614	gba	PokemonEvolutionDetails/WATER37	abbreviation	37/WTR	ui
+gba-0615	gba	PokemonEvolutionDetails/WATER37_REV	abbreviation	WTR/37	ui
+gba-0616	gba	QuickloadScreen	ButtonAddNew	Add new	ui
+gba-0617	gba	QuickloadScreen	ButtonCreateNewGame	Create new game	ui
+gba-0618	gba	QuickloadScreen	ButtonDeleteProfile	Delete	ui
+gba-0619	gba	QuickloadScreen	ButtonEditProfile	Edit	ui
+gba-0620	gba	QuickloadScreen	ButtonGoNextSeed	Go next seed	ui
+gba-0621	gba	QuickloadScreen	ButtonLoadLastGame	Load last played game	ui
+gba-0622	gba	QuickloadScreen	ButtonSelectProfile	Select	ui
+gba-0623	gba	QuickloadScreen	LabelActiveProfile	Active Profile	ui
+gba-0624	gba	QuickloadScreen	LabelClickToAdd	click to add one	ui
+gba-0625	gba	QuickloadScreen	LabelNoActiveProfile	No active profile	ui
+gba-0626	gba	QuickloadScreen	LabelProfileAttempts	Attempts	ui
+gba-0627	gba	QuickloadScreen	LabelProfileLastPlayed	Last played	ui
+gba-0628	gba	QuickloadScreen	NewRunsDescGenerate	The Tracker will create a NEW, randomized game ROM file when the button combo is pressed	ui
+gba-0629	gba	QuickloadScreen	NewRunsDescPremade	The Tracker will load the next numerical game ROM file when the button combo is pressed	ui
+gba-0630	gba	QuickloadScreen	OptionRefocusEmulator	Onload: Refocus Bizhawk	ui
+gba-0631	gba	QuickloadScreen	TabGeneral	General	ui
+gba-0632	gba	QuickloadScreen	TabOptions	Options	ui
+gba-0633	gba	QuickloadScreen	TabProfiles	Profiles	ui
+gba-0634	gba	QuickloadScreen	Title	New Runs Setup	ui
+gba-0635	gba	RandomEvosScreen	LabelEvoShort	Evo	ui
+gba-0636	gba	RandomEvosScreen	LabelRandomEvos	Random Evos	ui
+gba-0637	gba	SetupScreen	ButtonEditAll	Edit All	ui
+gba-0638	gba	SetupScreen	ButtonManageData	Manage Data	ui
+gba-0639	gba	SetupScreen	CarouselBadges	Gym badges	ui
+gba-0640	gba	SetupScreen	CarouselBattleDetails	Additional battle details	ui
+gba-0641	gba	SetupScreen	CarouselGachaMon	GachaMons captured	ui
+gba-0642	gba	SetupScreen	CarouselLastAttack	Last attack damage	ui
+gba-0643	gba	SetupScreen	CarouselNotes	Notes on Pokémon	ui
+gba-0644	gba	SetupScreen	CarouselPedometer	Step pedometer	ui
+gba-0645	gba	SetupScreen	CarouselRouteInfo	Wild encounters in area	ui
+gba-0646	gba	SetupScreen	CarouselTrainers	Trainers defeated in area	ui
+gba-0647	gba	SetupScreen	LabelButtonsAllowed	Buttons allowed	ui
+gba-0648	gba	SetupScreen	LabelCurrentControllerBinding	Current controller binding	ui
+gba-0649	gba	SetupScreen	LabelInfoToShow	Info to show	ui
+gba-0650	gba	SetupScreen	LabelNewControllerBinding	New controller binding	ui
+gba-0651	gba	SetupScreen	LabelPressControllerButtons	Press controller button(s) to bind.	ui
+gba-0652	gba	SetupScreen	LabelSpeedSetting	Speed	ui
+gba-0653	gba	SetupScreen	LabelWaiting	Waiting	ui
+gba-0654	gba	SetupScreen	OptionAllowCarouselRotation	Allow bottom box rotation	ui
+gba-0655	gba	SetupScreen	OptionAllowSpritesToWalk	Walk	ui
+gba-0656	gba	SetupScreen	OptionOverrideButtonModeLR	Override Button Mode to LR	ui
+gba-0657	gba	SetupScreen	OptionPCHealsCountDown	PC heals count downward	ui
+gba-0658	gba	SetupScreen	OptionRightJustifiedNumbers	Right justified numbers	ui
+gba-0659	gba	SetupScreen	OptionShowRandomBallPicker	Show random ball picker	ui
+gba-0660	gba	SetupScreen	OptionShowTeamView	Show Team View	ui
+gba-0661	gba	SetupScreen	OptionTrackPCHeals	Track PokéCenter heals	ui
+gba-0662	gba	SetupScreen	PokemonIconSetAuthor	Added by	ui
+gba-0663	gba	SetupScreen	PokemonIconSetLabel	Pokémon icon set	ui
+gba-0664	gba	SetupScreen	PromptEditControllerCycleStats	Cycle through stats	ui
+gba-0665	gba	SetupScreen	PromptEditControllerDesc	Edit GBA buttons for the Tracker. Available buttons: A, B, L, R, Start, Select	ui
+gba-0666	gba	SetupScreen	PromptEditControllerInfoShortcut	Trainers / Pivots	ui
+gba-0667	gba	SetupScreen	PromptEditControllerLoadNext	Load new seed	ui
+gba-0668	gba	SetupScreen	PromptEditControllerMarkStat	Mark stat	ui
+gba-0669	gba	SetupScreen	PromptEditControllerNextPage	Next page	ui
+gba-0670	gba	SetupScreen	PromptEditControllerPreviousPage	Previous page	ui
+gba-0671	gba	SetupScreen	PromptEditControllerResetDefault	Reset to Default	ui
+gba-0672	gba	SetupScreen	PromptEditControllerTitle	Controller Inputs	ui
+gba-0673	gba	SetupScreen	PromptEditControllerToggleView	Toggle View	ui
+gba-0674	gba	SetupScreen	TabCarousel	Carousel	ui
+gba-0675	gba	SetupScreen	TabControls	Controls	ui
+gba-0676	gba	SetupScreen	TabGeneral	General	ui
+gba-0677	gba	SetupScreen	Title	Tracker Setup	ui
+gba-0678	gba	SingleExtensionScreen	ButtonCheckForUpdates	Check for Updates	ui
+gba-0679	gba	SingleExtensionScreen	ButtonNoUpdateFound	No Update Found	ui
+gba-0680	gba	SingleExtensionScreen	ButtonOptions	Options	ui
+gba-0681	gba	SingleExtensionScreen	ButtonUpdateAvailable	Update Available	ui
+gba-0682	gba	SingleExtensionScreen	ButtonViewOnline	View Online	ui
+gba-0683	gba	SingleExtensionScreen	EnabledOff	OFF	ui
+gba-0684	gba	SingleExtensionScreen	EnabledOn	ON	ui
+gba-0685	gba	SingleExtensionScreen	LabelAuthorBy	By	ui
+gba-0686	gba	SingleExtensionScreen	LabelEnabled	Enabled	ui
+gba-0687	gba	SingleExtensionScreen	LabelVersion	Version	ui
+gba-0688	gba	StartupScreen	Attempts	Attempts	ui
+gba-0689	gba	StartupScreen	ControlsEraseGameSave	Erase game save data	ui
+gba-0690	gba	StartupScreen	ControlsQuickload	Load New Run	ui
+gba-0691	gba	StartupScreen	ControlsSwapView	Swap viewed Pokémon	ui
+gba-0692	gba	StartupScreen	Game	Game	ui
+gba-0693	gba	StartupScreen	HeaderControls	GBA Controls	ui
+gba-0694	gba	StartupScreen	HeaderFavorites	Favorite Pokémon	ui
+gba-0695	gba	StartupScreen	PromptChooseAPokemonByAttempt	Based on attempt #	ui
+gba-0696	gba	StartupScreen	PromptChooseAPokemonByRandom	Random each time	ui
+gba-0697	gba	StartupScreen	PromptChooseAPokemonDesc	Choose a Pokémon to show during startup	ui
+gba-0698	gba	StartupScreen	PromptChooseAPokemonNone	None	ui
+gba-0699	gba	StartupScreen	PromptChooseAPokemonTitle	Choose a Pokémon	ui
+gba-0700	gba	StartupScreen	Title	Ironmon Tracker	ui
+gba-0701	gba	StartupScreen	TrackedDataMsgAutoDisabled	Auto saving / loading is OFF.	ui
+gba-0702	gba	StartupScreen	TrackedDataMsgError	Error loading file.	ui
+gba-0703	gba	StartupScreen	TrackedDataMsgLabel	Tracker Notes	ui
+gba-0704	gba	StartupScreen	TrackedDataMsgLoadSuccess	Loaded from last play session.	ui
+gba-0705	gba	StartupScreen	TrackedDataMsgNewGame	New game started.	ui
+gba-0706	gba	StartupScreen	TrackedDataMsgRomMismatch	Incorrect ROM file loaded.	ui
+gba-0707	gba	StartupScreen	Version	Version	ui
+gba-0708	gba	StatMarkingScoreSheet	LabelGreatMarks	Great marks	ui
+gba-0709	gba	StatMarkingScoreSheet	LabelPercentage	Percentage	ui
+gba-0710	gba	StatMarkingScoreSheet	LabelPoorMarks	Poor marks	ui
+gba-0711	gba	StatMarkingScoreSheet	LabelTotal	Total	ui
+gba-0712	gba	StatMarkingScoreSheet	MessageTakeNotesByMarking	Take notes while playing by marking stats on opposing Pokémon. (The Speed stat is excluded from grading.)	ui
+gba-0713	gba	StatMarkingScoreSheet	Title	Stat Marking Score Sheet	ui
+gba-0714	gba	StatsScreen	StatGameSaves	Game saves	ui
+gba-0715	gba	StatsScreen	StatPCsUsed	Pokécenters used	ui
+gba-0716	gba	StatsScreen	StatPlayTime	Play time	ui
+gba-0717	gba	StatsScreen	StatPokemonCaught	Pokémon caught	ui
+gba-0718	gba	StatsScreen	StatShopPurchases	Bulk shop purchases	ui
+gba-0719	gba	StatsScreen	StatStrugglesUsed	Struggles used	ui
+gba-0720	gba	StatsScreen	StatTotalAttempts	Total attempts	ui
+gba-0721	gba	StatsScreen	StatTotalSteps	Total steps	ui
+gba-0722	gba	StatsScreen	StatTrainerBattles	Trainer battles	ui
+gba-0723	gba	StatsScreen	StatWildEncounters	Wild encounters	ui
+gba-0724	gba	StatsScreen	Title	Game Stats	ui
+gba-0725	gba	StreamConnect	ButtonAdd	Add	ui
+gba-0726	gba	StreamConnect	ButtonChange	Change	ui
+gba-0727	gba	StreamConnect	ButtonConnect	Connect	ui
+gba-0728	gba	StreamConnect	ButtonDisconnect	Disconnect	ui
+gba-0729	gba	StreamConnect	ButtonGetStreamerbotCode	Get Streamerbot Code	ui
+gba-0730	gba	StreamConnect	ButtonHelp	Help	ui
+gba-0731	gba	StreamConnect	ButtonOptions	Options	ui
+gba-0732	gba	StreamConnect	ButtonQueueAreYouSure	Are you sure?	ui
+gba-0733	gba	StreamConnect	ButtonQueueClearAll	Clear All	ui
+gba-0734	gba	StreamConnect	ButtonQueueConfirm	Confirm?	ui
+gba-0735	gba	StreamConnect	ButtonRename	Rename	ui
+gba-0736	gba	StreamConnect	ButtonRolePermissions	Role Permissions	ui
+gba-0737	gba	StreamConnect	ButtonSet	Set	ui
+gba-0738	gba	StreamConnect	CMD_Ability_Help	name > Displays game info for a Pokémon's ability.	ui
+gba-0739	gba	StreamConnect	CMD_Ability_Name	Ability Info	ui
+gba-0740	gba	StreamConnect	CMD_About_Help	> Displays info about the Ironmon Tracker and game being played.	ui
+gba-0741	gba	StreamConnect	CMD_About_Name	About the Tracker	ui
+gba-0742	gba	StreamConnect	CMD_BST_Help	name > Displays the base stat total (BST) for a Pokémon.	ui
+gba-0743	gba	StreamConnect	CMD_BST_Name	Pokémon BST	ui
+gba-0744	gba	StreamConnect	CMD_BallQueue_Help	> Displays the size of the ball queue and the current pick, if any.	ui
+gba-0745	gba	StreamConnect	CMD_BallQueue_Name	Ball Queue	ui
+gba-0746	gba	StreamConnect	CMD_Coverage_Help	types [fully evolved] > For a list of move types, checks all Pokémon matchups (or only [fully evolved]) for effectiveness.	ui
+gba-0747	gba	StreamConnect	CMD_Coverage_Name	Move Coverage Effectiveness	ui
+gba-0748	gba	StreamConnect	CMD_Dungeon_Help	name > Displays info about which trainers have been defeated for an area.	ui
+gba-0749	gba	StreamConnect	CMD_Dungeon_Name	Dungeon Info	ui
+gba-0750	gba	StreamConnect	CMD_Favorites_Help	> Displays the list of favorites used for picking a starter.	ui
+gba-0751	gba	StreamConnect	CMD_Favorites_Name	Favorite Starters	ui
+gba-0752	gba	StreamConnect	CMD_GachaDex_Help	> Displays GachaDex collection stats and info.	ui
+gba-0753	gba	StreamConnect	CMD_GachaDex_Name	GachaDex Info	ui
+gba-0754	gba	StreamConnect	CMD_GachaMon_Help	[current name] > Displays GachaMon card info for the current viewed Pokémon or a named Pokémon.	ui
+gba-0755	gba	StreamConnect	CMD_GachaMon_Name	GachaMon Info	ui
+gba-0756	gba	StreamConnect	CMD_GameStats_Help	> Displays fun stats for the current game.	ui
+gba-0757	gba	StreamConnect	CMD_GameStats_Name	Game Stats	ui
+gba-0758	gba	StreamConnect	CMD_Heals_Help	[hp pp status berries] > Displays all healing items in the bag, or only those for a specified [category].	ui
+gba-0759	gba	StreamConnect	CMD_Heals_Name	Heals in Bag	ui
+gba-0760	gba	StreamConnect	CMD_Help_Help	[command] > Displays a list of all commands, or help info for a specified [command].	ui
+gba-0761	gba	StreamConnect	CMD_Help_Name	Command Help	ui
+gba-0762	gba	StreamConnect	CMD_Log_Help	> If the log has been opened, displays shareable randomizer settings from the log for current game.	ui
+gba-0763	gba	StreamConnect	CMD_Log_Name	Log Randomizer Settings	ui
+gba-0764	gba	StreamConnect	CMD_Move_Help	name > Displays game info for a move.	ui
+gba-0765	gba	StreamConnect	CMD_Move_Name	Move Info	ui
+gba-0766	gba	StreamConnect	CMD_Pivots_Help	[safari] > Displays known early game wild encounters for an area. (Add param 'safari' for high-level encounters from Safari Zone).	ui
+gba-0767	gba	StreamConnect	CMD_Pivots_Name	Pivots Seen	ui
+gba-0768	gba	StreamConnect	CMD_Pokemon_Help	name > Displays useful game info for a Pokémon.	ui
+gba-0769	gba	StreamConnect	CMD_Pokemon_Name	Pokémon Info	ui
+gba-0770	gba	StreamConnect	CMD_Progress_Help	> Displays fun progress percentages for the current game.	ui
+gba-0771	gba	StreamConnect	CMD_Progress_Name	Game Progress	ui
+gba-0772	gba	StreamConnect	CMD_Revo_Help	name [target-evo] > Displays randomized evolution possibilities for a Pokémon, and it's [target-evo] if more than one available.	ui
+gba-0773	gba	StreamConnect	CMD_Revo_Name	Pokémon Random Evolutions	ui
+gba-0774	gba	StreamConnect	CMD_Route_Help	name > Displays trainer and wild encounter info for a route or area.	ui
+gba-0775	gba	StreamConnect	CMD_Route_Name	Route Info	ui
+gba-0776	gba	StreamConnect	CMD_SearchNotes_Help	notes > Displays a list of Pokémon with any matching notes.	ui
+gba-0777	gba	StreamConnect	CMD_SearchNotes_Name	Search Notes on Pokémon	ui
+gba-0778	gba	StreamConnect	CMD_Search_Help	searchterms > Search tracked info for a Pokémon, move, or ability.	ui
+gba-0779	gba	StreamConnect	CMD_Search_Name	Search Tracked Info	ui
+gba-0780	gba	StreamConnect	CMD_TMs_Help	[gym hm #] > Displays all TMs in the bag, or only those for a specified [category] or TM #.	ui
+gba-0781	gba	StreamConnect	CMD_TMs_Name	TM Lookup	ui
+gba-0782	gba	StreamConnect	CMD_Theme_Help	name > Displays the name and code string for a Tracker theme.	ui
+gba-0783	gba	StreamConnect	CMD_Theme_Name	Theme Export	ui
+gba-0784	gba	StreamConnect	CMD_Trainer_Help	[name id] > Displays info about the most recent trainer fought, or for a specific trainer name or id.	ui
+gba-0785	gba	StreamConnect	CMD_Trainer_Name	Trainer Info	ui
+gba-0786	gba	StreamConnect	CMD_Unfought_Help	[dungeon] [no doubles] [sevii] > Lists areas ordered by lowest-level, undefeated trainers. (Add param 'dungeon' for partially completed dungeons and/or 'nodoubles' to exclude double battles.)	ui
+gba-0787	gba	StreamConnect	CMD_Unfought_Name	Unfought Trainers	ui
+gba-0788	gba	StreamConnect	CMD_Weak_Help	name > Displays the weaknesses for a Pokémon.	ui
+gba-0789	gba	StreamConnect	CMD_Weak_Name	Pokémon Weaknesses	ui
+gba-0790	gba	StreamConnect	CR_ChangeFavoriteOne_Name	Change Starter Favorite: #1	ui
+gba-0791	gba	StreamConnect	CR_ChangeFavoriteThree_Name	Change Starter Favorite: #3	ui
+gba-0792	gba	StreamConnect	CR_ChangeFavoriteTwo_Name	Change Starter Favorite: #2	ui
+gba-0793	gba	StreamConnect	CR_ChangeFavorite_Name	Change Starter Favorite: # NAME	ui
+gba-0794	gba	StreamConnect	CR_ChangeLanguage_Name	Change Tracker Language	ui
+gba-0795	gba	StreamConnect	CR_ChangeTheme_Name	Change Tracker Theme	ui
+gba-0796	gba	StreamConnect	CR_PickBallOnce_Name	Pick Starter Ball (One Try)	ui
+gba-0797	gba	StreamConnect	CR_PickBallUntilOut_Name	Pick Starter Ball (Until Out)	ui
+gba-0798	gba	StreamConnect	GE_GachaMonCapture_Name	When a GachaMon is captured...	ui
+gba-0799	gba	StreamConnect	GE_GachaMonCapture_TriggerEffect	Send its base64 share code	ui
+gba-0800	gba	StreamConnect	GE_GameOver_Name	When the game is over...	ui
+gba-0801	gba	StreamConnect	GE_GameOver_TriggerEffect	Send win/loss status and Pokémon ID	ui
+gba-0802	gba	StreamConnect	LabelConnectionFolder	Connection Folder	ui
+gba-0803	gba	StreamConnect	LabelConnectionMode	Connection Mode	ui
+gba-0804	gba	StreamConnect	LabelConnectionStatus	Connection Status	ui
+gba-0805	gba	StreamConnect	LabelHowToAddGameEvents	You can add new Game event triggers through custom Tracker extensions.	ui
+gba-0806	gba	StreamConnect	LabelHttpGet	GET	ui
+gba-0807	gba	StreamConnect	LabelHttpPost	POST	ui
+gba-0808	gba	StreamConnect	LabelImportCode	Import Code	ui
+gba-0809	gba	StreamConnect	LabelNoGameEvents	No Game event triggers have been added.	ui
+gba-0810	gba	StreamConnect	LabelNoRewardsInQueue	No Rewards have been queued up.	ui
+gba-0811	gba	StreamConnect	LabelOffline	Offline.	ui
+gba-0812	gba	StreamConnect	LabelOnlineEstablished	Online: Connection established.	ui
+gba-0813	gba	StreamConnect	LabelOnlineWaiting	Online: Waiting for connection...	ui
+gba-0814	gba	StreamConnect	LabelServerIP	Server IP	ui
+gba-0815	gba	StreamConnect	LabelServerPort	Port	ui
+gba-0816	gba	StreamConnect	LabelSettings	Settings	ui
+gba-0817	gba	StreamConnect	LabelWaitingForConnection	(Waiting for connection...)	ui
+gba-0818	gba	StreamConnect	O_AutoComplete	Auto-complete the redeem	ui
+gba-0819	gba	StreamConnect	O_RequireChosenMon	Your pick direction must match	ui
+gba-0820	gba	StreamConnect	O_SendMessage	Send chat message if successful	ui
+gba-0821	gba	StreamConnect	O_ShowBallQueueOnStartup	Show Ball Queue info on startup	ui
+gba-0822	gba	StreamConnect	O_WordForLeft	Word for Left	ui
+gba-0823	gba	StreamConnect	O_WordForMiddle	Word for Middle	ui
+gba-0824	gba	StreamConnect	O_WordForRandom	Word for Random	ui
+gba-0825	gba	StreamConnect	O_WordForRight	Word for Right	ui
+gba-0826	gba	StreamConnect	OptionAutoConnectStartup	Auto-connect on startup	ui
+gba-0827	gba	StreamConnect	PromptDefault	Default	ui
+gba-0828	gba	StreamConnect	PromptNetworkShowMe	Show Me	ui
+gba-0829	gba	StreamConnect	PromptNetworkTurnOff	Turn Off Stream Connect	ui
+gba-0830	gba	StreamConnect	PromptUpdateDesc1	Streamerbot Tracker Integration code requires an update.	ui
+gba-0831	gba	StreamConnect	PromptUpdateDesc2	You must re-import the code to continue using Stream Connect.	ui
+gba-0832	gba	StreamConnect	PromptUpdateTitle	Streamerbot Update Required	ui
+gba-0833	gba	StreamConnect	StatusConnTypeHttp	Http	ui
+gba-0834	gba	StreamConnect	StatusConnTypeText	Text	ui
+gba-0835	gba	StreamConnect	StatusConnTypeWebSockets	WebSockets	ui
+gba-0836	gba	StreamConnect	TabCommands	Commands	ui
+gba-0837	gba	StreamConnect	TabGame	Game	ui
+gba-0838	gba	StreamConnect	TabQueue	Queue	ui
+gba-0839	gba	StreamConnect	TabRewards	Rewards	ui
+gba-0840	gba	StreamConnect	TabStatus	Status	ui
+gba-0841	gba	StreamConnect	WarningNotSupported	This mode not yet supported by Bizhawk.	ui
+gba-0842	gba	StreamConnect	WarningSetupImport	Setup: Import code then set connection folder.	ui
+gba-0843	gba	StreamerScreen	ButtonEdit	Edit	ui
+gba-0844	gba	StreamerScreen	ButtonStreamConnect	Stream Connect	ui
+gba-0845	gba	StreamerScreen	LabelAttemptsCount	Attempts Count	ui
+gba-0846	gba	StreamerScreen	LabelFavorites	Favorite Pokémon	ui
+gba-0847	gba	StreamerScreen	LabelWelcomeMessage	Welcome Message	ui
+gba-0848	gba	StreamerScreen	OptionDisplayFavorites	Show on new game screen	ui
+gba-0849	gba	StreamerScreen	PromptChooseFavoriteDesc	Favorite Pokémon are shown as a new game begins	ui
+gba-0850	gba	StreamerScreen	PromptChooseFavoriteTitle	Choose a Favorite	ui
+gba-0851	gba	StreamerScreen	PromptEditAttemptsDesc	Enter the number of attempts	ui
+gba-0852	gba	StreamerScreen	PromptEditAttemptsTitle	Edit Attempts Counter	ui
+gba-0853	gba	StreamerScreen	PromptEditWelcomeDesc	Edit the welcome message box on the Tracker, shown each time a new game begins.	ui
+gba-0854	gba	StreamerScreen	PromptEditWelcomeTitle	Edit Welcome Message	ui
+gba-0855	gba	StreamerScreen	Title	Streamer Tools	ui
+gba-0856	gba	TeamViewArea	EggNickname	EGG	ui
+gba-0857	gba	ThemeScreen	ButtonApplyTheme	Apply theme	ui
+gba-0858	gba	ThemeScreen	ButtonEditColors	Edit Theme Colors	ui
+gba-0859	gba	ThemeScreen	ButtonExport	Export theme	ui
+gba-0860	gba	ThemeScreen	ButtonImport	Import theme	ui
+gba-0861	gba	ThemeScreen	ButtonRemove	Remove	ui
+gba-0862	gba	ThemeScreen	ButtonRemoveConfirm	Are you sure?	ui
+gba-0863	gba	ThemeScreen	ButtonSaveAsNew	Save as new	ui
+gba-0864	gba	ThemeScreen	ColorDefaultText	Upper box text	ui
+gba-0865	gba	ThemeScreen	ColorHeaderText	Header text	ui
+gba-0866	gba	ThemeScreen	ColorIntermediateText	Intermediate text	ui
+gba-0867	gba	ThemeScreen	ColorLowerBoxBackground	Lower box background	ui
+gba-0868	gba	ThemeScreen	ColorLowerBoxBorder	Lower box border	ui
+gba-0869	gba	ThemeScreen	ColorLowerBoxText	Lower box text	ui
+gba-0870	gba	ThemeScreen	ColorMainBackground	Main background	ui
+gba-0871	gba	ThemeScreen	ColorNegativeText	Negative text	ui
+gba-0872	gba	ThemeScreen	ColorPositiveText	Positive text	ui
+gba-0873	gba	ThemeScreen	ColorUpperBoxBackground	Upper box background	ui
+gba-0874	gba	ThemeScreen	ColorUpperBoxBorder	Upper box border	ui
+gba-0875	gba	ThemeScreen	HeaderActiveThemeOptions	Active Theme Options	ui
+gba-0876	gba	ThemeScreen	LabelActiveCustomTheme	Active Theme (Custom)	ui
+gba-0877	gba	ThemeScreen	LabelDefaultTheme	Default Theme	ui
+gba-0878	gba	ThemeScreen	OptionColorBar	Show color bar for move types	ui
+gba-0879	gba	ThemeScreen	OptionColorStatNumber	Color stat numbers by nature	ui
+gba-0880	gba	ThemeScreen	OptionTextShadows	Text shadows	ui
+gba-0881	gba	ThemeScreen	PromptCantUseConsecutiveChars	Name cannot have 6 consecutive hexcode characters (0-9A-F)	ui
+gba-0882	gba	ThemeScreen	PromptCantUseReserved	Cannot use a reserved Theme name.	ui
+gba-0883	gba	ThemeScreen	PromptColorPickerHexColor	Hex Color	ui
+gba-0884	gba	ThemeScreen	PromptColorPickerTitle	Color Picker	ui
+gba-0885	gba	ThemeScreen	PromptCopyThemeCode	Copy the theme code below (Ctrl+C)	ui
+gba-0886	gba	ThemeScreen	PromptEnterNameForTheme	Enter a name for this Theme	ui
+gba-0887	gba	ThemeScreen	PromptEnterThemeCode	Enter a theme code string to import (Ctrl+V to paste)	ui
+gba-0888	gba	ThemeScreen	PromptImportError	Error importing: Invalid theme code.	ui
+gba-0889	gba	ThemeScreen	PromptNameAlreadyInUse	A Theme with that name already exists. Overwrite?	ui
+gba-0890	gba	ThemeScreen	PromptSaveAsTitle	Save Theme As	ui
+gba-0891	gba	ThemeScreen	PromptSelectPreset	Select a Theme preset to preview	ui
+gba-0892	gba	ThemeScreen	PromptThemeFor	Theme for	ui
+gba-0893	gba	ThemeScreen	Title	Theme Library	ui
+gba-0894	gba	ThemeScreen	TitleEditingActiveTheme	Editing Active Theme	ui
+gba-0895	gba	TimeMachineScreen	ButtonCreate	Create	ui
+gba-0896	gba	TimeMachineScreen	ConfirmationRestore	Confirm restore?	ui
+gba-0897	gba	TimeMachineScreen	DescInstructions	Select a restore point below to go back to that point in time.	ui
+gba-0898	gba	TimeMachineScreen	DescNoRestorePoints	No restore points are available; one is created every 5 minutes.	ui
+gba-0899	gba	TimeMachineScreen	LocationUnknownArea	Unknown Area	ui
+gba-0900	gba	TimeMachineScreen	OptionEnableRestorePoints	Enable restore points	ui
+gba-0901	gba	TimeMachineScreen	RestorePointAgePlural	created %s minutes ago	ui
+gba-0902	gba	TimeMachineScreen	RestorePointAgeSingular	created 1 minute ago	ui
+gba-0903	gba	TimeMachineScreen	Title	Time Machine	ui
+gba-0904	gba	TimeMachineScreen	UndoAndReturnBack	Return back to the future	ui
+gba-0905	gba	TrackedDataScreen	ButtonClearConfirm	Are you sure?	ui
+gba-0906	gba	TrackedDataScreen	ButtonClearData	Clear Data	ui
+gba-0907	gba	TrackedDataScreen	ButtonClearSuccess	Data Cleared!	ui
+gba-0908	gba	TrackedDataScreen	ButtonLoadData	Load Data	ui
+gba-0909	gba	TrackedDataScreen	ButtonSaveData	Save Data	ui
+gba-0910	gba	TrackedDataScreen	DescAutoSave	All of the data that is tracked while you play is auto saved after each battle, stored as a .TDAT file	ui
+gba-0911	gba	TrackedDataScreen	DescManualSave	Old auto saved data will be lost if you start a new game on the same Pokémon version. If you want to keep it, use Save Data	ui
+gba-0912	gba	TrackedDataScreen	OptionAutoSaveData	Auto save tracked game data	ui
+gba-0913	gba	TrackedDataScreen	PromptEnterFilename	Enter a filename to save Tracker data to	ui
+gba-0914	gba	TrackedDataScreen	PromptHeaderSave	Save Tracker Data	ui
+gba-0915	gba	TrackedDataScreen	Title	Manage Tracked Data	ui
+gba-0916	gba	TrackerScreen	BattleLastSeen	Last seen	ui
+gba-0917	gba	TrackerScreen	BattleNewEncounter	New encounter	ui
+gba-0918	gba	TrackerScreen	BattleSeenInTheWild	Seen (Wild)	ui
+gba-0919	gba	TrackerScreen	BattleSeenOnTrainers	Seen (Trainer)	ui
+gba-0920	gba	TrackerScreen	BattleTeam	Team	ui
+gba-0921	gba	TrackerScreen	DamageTaken	damage	ui
+gba-0922	gba	TrackerScreen	DamageTakenInTeams	Total received	ui
+gba-0923	gba	TrackerScreen	EncounterGoodRod	Good Rod	ui
+gba-0924	gba	TrackerScreen	EncounterOldRod	Old Rod	ui
+gba-0925	gba	TrackerScreen	EncounterRockSmash	RockSmash	ui
+gba-0926	gba	TrackerScreen	EncounterSeenPokemon	Seen Pokémon	ui
+gba-0927	gba	TrackerScreen	EncounterStatic	Static	ui
+gba-0928	gba	TrackerScreen	EncounterSuperRod	Super Rod	ui
+gba-0929	gba	TrackerScreen	EncounterSurfing	Surfing	ui
+gba-0930	gba	TrackerScreen	EncounterUnderwater	Underwater	ui
+gba-0931	gba	TrackerScreen	EncounterWalking	Walking	ui
+gba-0932	gba	TrackerScreen	GachaMonCaptured	GachaMon captured!	ui
+gba-0933	gba	TrackerScreen	HPAbbreviation	HP	ui
+gba-0934	gba	TrackerScreen	HeaderAcc	Acc	ui
+gba-0935	gba	TrackerScreen	HeaderMoves	Moves	ui
+gba-0936	gba	TrackerScreen	HeaderPP	PP	ui
+gba-0937	gba	TrackerScreen	HeaderPow	Pow	ui
+gba-0938	gba	TrackerScreen	HealsInBag	Heals	ui
+gba-0939	gba	TrackerScreen	LeaveANote	Leave a note	ui
+gba-0940	gba	TrackerScreen	LevelAbbreviation	Lv	ui
+gba-0941	gba	TrackerScreen	PedometerGoal	Goal	ui
+gba-0942	gba	TrackerScreen	PedometerReset	Reset	ui
+gba-0943	gba	TrackerScreen	PedometerSteps	Steps	ui
+gba-0944	gba	TrackerScreen	PedometerTotal	Total	ui
+gba-0945	gba	TrackerScreen	PromptNoteAbilityDesc	Set one or both abilities for	ui
+gba-0946	gba	TrackerScreen	PromptNoteClearAbilities	Clear Abilities	ui
+gba-0947	gba	TrackerScreen	PromptNoteDesc	Enter a short note for	ui
+gba-0948	gba	TrackerScreen	PromptStepsDesc1	Pedometer will change color when your goal is reached.	ui
+gba-0949	gba	TrackerScreen	PromptStepsDesc2	Set to 0 to turn off	ui
+gba-0950	gba	TrackerScreen	PromptStepsEnterGoal	How many steps to reach your goal?	ui
+gba-0951	gba	TrackerScreen	PromptStepsTitle	Choose a Step Goal	ui
+gba-0952	gba	TrackerScreen	RandomBallChosen	Randomly chosen ball	ui
+gba-0953	gba	TrackerScreen	RandomBallLeft	Left	ui
+gba-0954	gba	TrackerScreen	RandomBallMiddle	Middle	ui
+gba-0955	gba	TrackerScreen	RandomBallRandom	Random	ui
+gba-0956	gba	TrackerScreen	RandomBallRight	Right	ui
+gba-0957	gba	TrackerScreen	RandomBallUserChosen	Chosen ball	ui
+gba-0958	gba	TrackerScreen	RandomBallUserPicks	picks	ui
+gba-0959	gba	TrackerScreen	StatATK	ATK	ui
+gba-0960	gba	TrackerScreen	StatAccuracy	Acc	ui
+gba-0961	gba	TrackerScreen	StatBST	BST	ui
+gba-0962	gba	TrackerScreen	StatDEF	DEF	ui
+gba-0963	gba	TrackerScreen	StatEvasion	Eva	ui
+gba-0964	gba	TrackerScreen	StatHP	HP	ui
+gba-0965	gba	TrackerScreen	StatSPA	SPA	ui
+gba-0966	gba	TrackerScreen	StatSPD	SPD	ui
+gba-0967	gba	TrackerScreen	StatSPE	SPE	ui
+gba-0968	gba	TrackerScreen	ToCatch	to catch	ui
+gba-0969	gba	TrackerScreen	TrainersDefeated	Trainers defeated	ui
+gba-0970	gba	TrackerScreen	TrainersNoneInArea	No Trainers in this area.	ui
+gba-0971	gba	TrackerScreen	UnidentifiedGhost	Ghost	ui
+gba-0972	gba	TrainerInfoScreen	LabelAIScript	A I Script	ui
+gba-0973	gba	TrainerInfoScreen	LabelAvgIvs	Avg. IVs	ui
+gba-0974	gba	TrainerInfoScreen	LabelBattle	Battle!	ui
+gba-0975	gba	TrainerInfoScreen	LabelDouble	Double	ui
+gba-0976	gba	TrainerInfoScreen	LabelUsableItems	Usable Items	ui
+gba-0977	gba	TypeDefensesScreen	Immunities	Immunities	ui
+gba-0978	gba	TypeDefensesScreen	Resistances	Resistances	ui
+gba-0979	gba	TypeDefensesScreen	Weaknesses	Weaknesses	ui
+gba-0980	gba	UpdateScreen	ButtonBeginInstall	Begin install	ui
+gba-0981	gba	UpdateScreen	ButtonCheckForUpdates	Check for updates	ui
+gba-0982	gba	UpdateScreen	ButtonHide	Hide	ui
+gba-0983	gba	UpdateScreen	ButtonIgnoreUpdate	Ignore update	ui
+gba-0984	gba	UpdateScreen	ButtonInstallFromDev	Install from beta branch	ui
+gba-0985	gba	UpdateScreen	ButtonInstallNow	Install now	ui
+gba-0986	gba	UpdateScreen	ButtonNoUpdates	No update available	ui
+gba-0987	gba	UpdateScreen	ButtonOpenDownload	Open download	ui
+gba-0988	gba	UpdateScreen	ButtonShow	Show	ui
+gba-0989	gba	UpdateScreen	ButtonViewOnline	View Online	ui
+gba-0990	gba	UpdateScreen	CheckboxDevBranch	Beta test branch updates	ui
+gba-0991	gba	UpdateScreen	LabelRelease	Release notes	ui
+gba-0992	gba	UpdateScreen	MessageCheckConsole	Check the Lua Console for a link to the Tracker's Release Notes	ui
+gba-0993	gba	UpdateScreen	MessageError	Error during the update. To fix this, first restart your emulator then load the script	ui
+gba-0994	gba	UpdateScreen	MessageInProgress	Update in progress, please wait. Check command prompt window for status.	ui
+gba-0995	gba	UpdateScreen	MessageRequireRestart	In order to install the update, please close and reopen your emulator.	ui
+gba-0996	gba	UpdateScreen	Title	Tracker Updater	ui
+gba-0997	gba	UpdateScreen	VersionCurrent	Current version	ui
+gba-0998	gba	UpdateScreen	VersionLatest	Latest version	ui
+gba-0999	gba	UpdateScreen	VersionNew	New!	ui
+gba-1000	gba	ViewLogWarningScreen	ButtonViewCurrentLog	View Log	ui
+gba-1001	gba	ViewLogWarningScreen	ButtonViewPreviousLog	Previous Log	ui
+gba-1002	gba	ViewLogWarningScreen	Title	Warning -- View the Log ?	ui
+gba-1003	gba	ViewLogWarningScreen	WarningAreYouSure	Are you sure you want to view the log file?	ui
+gba-1004	gba	ViewLogWarningScreen	WarningIfUnsure	If you are unsure, simply do not view the log file.	ui
+gba-1005	gba	ViewLogWarningScreen	WarningSpiritOfIronmon	In Ironmon, it's against the spirit of the challenge to view log info about the game before it's over.	ui
+gba-1006	gba	Options.lua	Language	default Resources and Resources.Default.Language.Key or "ENGLISH"	option
+gba-1007	gba	Options.lua	Autodetect language from game	default true	option
+gba-1008	gba	Options.lua	Allow carousel rotation	default true	option
+gba-1009	gba	Options.lua	CarouselItems	default "Badges	option
+gba-1010	gba	Options.lua	CarouselSpeed	default "1"	option
+gba-1011	gba	Options.lua	Auto swap to enemy	default true	option
+gba-1012	gba	Options.lua	Show random ball picker	default true	option
+gba-1013	gba	Options.lua	Show heals as whole number	default false	option
+gba-1014	gba	Options.lua	Show Poke Ball catch rate	default true	option
+gba-1015	gba	Options.lua	Can click trainers on screen	default true	option
+gba-1016	gba	Options.lua	Show starter ball info	default false	option
+gba-1017	gba	Options.lua	Hide stats until summary shown	default false	option
+gba-1018	gba	Options.lua	Right justified numbers	default false	option
+gba-1019	gba	Options.lua	Show physical special icons	default true	option
+gba-1020	gba	Options.lua	Show move effectiveness	default true	option
+gba-1021	gba	Options.lua	Calculate variable damage	default true	option
+gba-1022	gba	Options.lua	Determine friendship readiness	default true	option
+gba-1023	gba	Options.lua	Show data for vanilla game	default true	option
+gba-1024	gba	Options.lua	Count enemy PP usage	default true	option
+gba-1025	gba	Options.lua	Show nicknames	default false	option
+gba-1026	gba	Options.lua	Track PC Heals	default false	option
+gba-1027	gba	Options.lua	PC heals count downward	default true	option
+gba-1028	gba	Options.lua	Auto save tracked game data	default true	option
+gba-1029	gba	Options.lua	Pokemon icon set	default "1"	option
+gba-1030	gba	Options.lua	Override Button Mode to LR	default true	option
+gba-1031	gba	Options.lua	Show last damage calcs	default true	option
+gba-1032	gba	Options.lua	Reveal info if randomized	default true	option
+gba-1033	gba	Options.lua	Game Over condition	default "LeadPokemonFaints"	option
+gba-1034	gba	Options.lua	Show experience points bar	default false	option
+gba-1035	gba	Options.lua	Animated Pokemon popout	default false	option
+gba-1036	gba	Options.lua	Refocus emulator after load	default true	option
+gba-1037	gba	Options.lua	Warn of ROM mismatch	default true	option
+gba-1038	gba	Options.lua	Use premade ROMs	default false	option
+gba-1039	gba	Options.lua	Generate ROM each time	default false	option
+gba-1040	gba	Options.lua	Display repel usage	default false	option
+gba-1041	gba	Options.lua	Display pedometer	default false	option
+gba-1042	gba	Options.lua	Display play time	default false	option
+gba-1043	gba	Options.lua	Display gender	default false	option
+gba-1044	gba	Options.lua	Game timer location	default "LowerRight"	option
+gba-1045	gba	Options.lua	Color stat numbers by nature	default false	option
+gba-1046	gba	Options.lua	Dev branch updates	default false	option
+gba-1047	gba	Options.lua	Welcome message	default ""	option
+gba-1048	gba	Options.lua	Startup favorites	default "1	option
+gba-1049	gba	Options.lua	Show on new game screen	default false	option
+gba-1050	gba	Options.lua	Enable restore points	default true	option
+gba-1051	gba	Options.lua	Enable crash recovery	default true	option
+gba-1052	gba	Options.lua	Enable custom extensions	default true	option
+gba-1053	gba	Options.lua	Show Team View	default false	option
+gba-1054	gba	Options.lua	Show unlearnable Gym TMs	default true	option
+gba-1055	gba	Options.lua	Show Pre Evolutions	default false	option
+gba-1056	gba	Options.lua	Use Custom Trainer Names	default false	option
+gba-1057	gba	Options.lua	Open Book Play Mode	default false	option
+gba-1058	gba	Options.lua	Allow sprites to walk	default true	option
+gba-1059	gba	Options.lua	Active Profile	default ""	option
+gba-1060	gba	Options.lua	GachaMon Ratings Ruleset	default "AutoDetect"	option
+gba-1061	gba	Options.lua	Add GachaMon to collection if its new	default false	option
+gba-1062	gba	Options.lua	Add GachaMon to collection after defeating a trainer	default true	option
+gba-1063	gba	Options.lua	Add to collection if prize from trainer victory	default true	option
+gba-1064	gba	Options.lua	Show GachaMon stars on main Tracker Screen	default true	option
+gba-1065	gba	Options.lua	Show card pack on screen after capturing a GachaMon	default false	option
+gba-1066	gba	Options.lua	Animate GachaMon pack opening	default true	option
+gba-1067	gba	Options.lua	Has checked carousel battle details	default false	option
+gba-1068	gba	Options.lua	Has checked carousel GachaMon	default false	option
+gba-1069	gba	Options.lua	AlertNewOptionLR	default true	option
+gba-1070	gba	screens	BattleDetailsScreen	screen file BattleDetailsScreen.lua	screen
+gba-1071	gba	screens	CatchRatesScreen	screen file CatchRatesScreen.lua	screen
+gba-1072	gba	screens	CoverageCalcScreen	screen file CoverageCalcScreen.lua	screen
+gba-1073	gba	screens	CrashRecoveryScreen	screen file CrashRecoveryScreen.lua	screen
+gba-1074	gba	screens	CustomExtensionsScreen	screen file CustomExtensionsScreen.lua	screen
+gba-1075	gba	screens	ExtrasScreen	screen file ExtrasScreen.lua	screen
+gba-1076	gba	screens	GachaMonOverlay	screen file GachaMonOverlay.lua	screen
+gba-1077	gba	screens	GameOptionsScreen	screen file GameOptionsScreen.lua	screen
+gba-1078	gba	screens	GameOverScreen	screen file GameOverScreen.lua	screen
+gba-1079	gba	screens	HealsInBagScreen	screen file HealsInBagScreen.lua	screen
+gba-1080	gba	screens	InfoScreen	screen file InfoScreen.lua	screen
+gba-1081	gba	screens	LanguageScreen	screen file LanguageScreen.lua	screen
+gba-1082	gba	screens	LogOverlay	screen file LogOverlay.lua	screen
+gba-1083	gba	screens	LogSearchScreen	screen file LogSearchScreen.lua	screen
+gba-1084	gba	screens	LogTabMisc	screen file LogTabMisc.lua	screen
+gba-1085	gba	screens	LogTabPokemon	screen file LogTabPokemon.lua	screen
+gba-1086	gba	screens	LogTabPokemonDetails	screen file LogTabPokemonDetails.lua	screen
+gba-1087	gba	screens	LogTabRouteDetails	screen file LogTabRouteDetails.lua	screen
+gba-1088	gba	screens	LogTabRoutes	screen file LogTabRoutes.lua	screen
+gba-1089	gba	screens	LogTabTMs	screen file LogTabTMs.lua	screen
+gba-1090	gba	screens	LogTabTrainerDetails	screen file LogTabTrainerDetails.lua	screen
+gba-1091	gba	screens	LogTabTrainers	screen file LogTabTrainers.lua	screen
+gba-1092	gba	screens	MoveHistoryScreen	screen file MoveHistoryScreen.lua	screen
+gba-1093	gba	screens	NavigationMenu	screen file NavigationMenu.lua	screen
+gba-1094	gba	screens	NotebookIndexScreen	screen file NotebookIndexScreen.lua	screen
+gba-1095	gba	screens	NotebookPokemonNoteView	screen file NotebookPokemonNoteView.lua	screen
+gba-1096	gba	screens	NotebookPokemonSeen	screen file NotebookPokemonSeen.lua	screen
+gba-1097	gba	screens	NotebookTrainersByArea	screen file NotebookTrainersByArea.lua	screen
+gba-1098	gba	screens	QuickloadScreen	screen file QuickloadScreen.lua	screen
+gba-1099	gba	screens	RandomEvosScreen	screen file RandomEvosScreen.lua	screen
+gba-1100	gba	screens	SetupScreen	screen file SetupScreen.lua	screen
+gba-1101	gba	screens	SingleExtensionScreen	screen file SingleExtensionScreen.lua	screen
+gba-1102	gba	screens	StartupScreen	screen file StartupScreen.lua	screen
+gba-1103	gba	screens	StatMarkingScoreSheet	screen file StatMarkingScoreSheet.lua	screen
+gba-1104	gba	screens	StatsScreen	screen file StatsScreen.lua	screen
+gba-1105	gba	screens	StreamConnectOverlay	screen file StreamConnectOverlay.lua	screen
+gba-1106	gba	screens	StreamerScreen	screen file StreamerScreen.lua	screen
+gba-1107	gba	screens	TeamViewArea	screen file TeamViewArea.lua	screen
+gba-1108	gba	screens	TimeMachineScreen	screen file TimeMachineScreen.lua	screen
+gba-1109	gba	screens	TrackedDataScreen	screen file TrackedDataScreen.lua	screen
+gba-1110	gba	screens	TrackerScreen	screen file TrackerScreen.lua	screen
+gba-1111	gba	screens	TrainerInfoScreen	screen file TrainerInfoScreen.lua	screen
+gba-1112	gba	screens	TrainersOnRouteScreen	screen file TrainersOnRouteScreen.lua	screen
+gba-1113	gba	screens	TypeDefensesScreen	screen file TypeDefensesScreen.lua	screen
+gba-1114	gba	screens	UpdateScreen	screen file UpdateScreen.lua	screen
+gba-1115	gba	screens	ViewLogWarningScreen	screen file ViewLogWarningScreen.lua	screen

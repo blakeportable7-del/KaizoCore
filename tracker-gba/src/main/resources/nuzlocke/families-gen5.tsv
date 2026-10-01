@@ -1,0 +1,244 @@
+# Evolution lines for the dupes clause, Generation 5 games (2026-09-29): one line per line, baby forms included.
+# Species are National Dex numbers (1 to 649) followed by a # comment with the names, the way the DS files of
+# the Nuzlocke mode write them. A species on no line is its own line and has no row.
+#
+# These are the VANILLA lines, 225 of them holding 545 species. Source: the first two columns of
+# tracker-nds/src/main/resources/gen5/evos.tsv (base species, evolved species: one row per evolution, 320 rows,
+# babies and Shedinja included), which agree edge for edge with the evolution archive (a/0/1/9) of clean
+# Black 2 and White 2 ROMs. The baby table of the ROM (a/0/2/0) names, for every species, the form an egg of it
+# hatches as; that is the first member of each line here for all 649 species, so the lines are also complete
+# against it (Pichu, Cleffa, Igglybuff, Tyrogue, Smoochum, Elekid, Magby, Azurill, Wynaut, Bonsly, Mime Jr.,
+# Happiny, Munchlax, Riolu, Mantyke, Budew, Chingling all sit with their evolutions).
+# A branching line is one line: Eevee's eight, Wurmple's five, Poliwag's four, Ralts's four, Snorunt's three,
+# Tyrogue's four, Burmy's three, Deerling's two. Members are in stage order (baby first), then by number.
+# A randomizer that shuffles evolutions changes who belongs together and this file cannot know: the dupes clause
+# is then a suggestion the player corrects by hand.
+#
+# Regenerate: python tools/nuzlocke/gen5_families.py    Check: python tools/nuzlocke/gen5_families.py --check
+#
+# species numbers<TAB># names
+1,2,3	# Bulbasaur, Ivysaur, Venusaur
+4,5,6	# Charmander, Charmeleon, Charizard
+7,8,9	# Squirtle, Wartortle, Blastoise
+10,11,12	# Caterpie, Metapod, Butterfree
+13,14,15	# Weedle, Kakuna, Beedrill
+16,17,18	# Pidgey, Pidgeotto, Pidgeot
+19,20	# Rattata, Raticate
+21,22	# Spearow, Fearow
+23,24	# Ekans, Arbok
+172,25,26	# Pichu, Pikachu, Raichu
+27,28	# Sandshrew, Sandslash
+29,30,31	# Nidoran F, Nidorina, Nidoqueen
+32,33,34	# Nidoran M, Nidorino, Nidoking
+173,35,36	# Cleffa, Clefairy, Clefable
+37,38	# Vulpix, Ninetales
+174,39,40	# Igglybuff, Jigglypuff, Wigglytuff
+41,42,169	# Zubat, Golbat, Crobat
+43,44,45,182	# Oddish, Gloom, Vileplume, Bellossom
+46,47	# Paras, Parasect
+48,49	# Venonat, Venomoth
+50,51	# Diglett, Dugtrio
+52,53	# Meowth, Persian
+54,55	# Psyduck, Golduck
+56,57	# Mankey, Primeape
+58,59	# Growlithe, Arcanine
+60,61,62,186	# Poliwag, Poliwhirl, Poliwrath, Politoed
+63,64,65	# Abra, Kadabra, Alakazam
+66,67,68	# Machop, Machoke, Machamp
+69,70,71	# Bellsprout, Weepinbell, Victreebel
+72,73	# Tentacool, Tentacruel
+74,75,76	# Geodude, Graveler, Golem
+77,78	# Ponyta, Rapidash
+79,80,199	# Slowpoke, Slowbro, Slowking
+81,82,462	# Magnemite, Magneton, Magnezone
+84,85	# Doduo, Dodrio
+86,87	# Seel, Dewgong
+88,89	# Grimer, Muk
+90,91	# Shellder, Cloyster
+92,93,94	# Gastly, Haunter, Gengar
+95,208	# Onix, Steelix
+96,97	# Drowzee, Hypno
+98,99	# Krabby, Kingler
+100,101	# Voltorb, Electrode
+102,103	# Exeggcute, Exeggutor
+104,105	# Cubone, Marowak
+236,106,107,237	# Tyrogue, Hitmonlee, Hitmonchan, Hitmontop
+108,463	# Lickitung, Lickilicky
+109,110	# Koffing, Weezing
+111,112,464	# Rhyhorn, Rhydon, Rhyperior
+440,113,242	# Happiny, Chansey, Blissey
+114,465	# Tangela, Tangrowth
+116,117,230	# Horsea, Seadra, Kingdra
+118,119	# Goldeen, Seaking
+120,121	# Staryu, Starmie
+439,122	# Mime Jr., Mr. Mime
+123,212	# Scyther, Scizor
+238,124	# Smoochum, Jynx
+239,125,466	# Elekid, Electabuzz, Electivire
+240,126,467	# Magby, Magmar, Magmortar
+129,130	# Magikarp, Gyarados
+133,134,135,136,196,197,470,471	# Eevee, Vaporeon, Jolteon, Flareon, Espeon, Umbreon, Leafeon, Glaceon
+137,233,474	# Porygon, Porygon2, Porygon-Z
+138,139	# Omanyte, Omastar
+140,141	# Kabuto, Kabutops
+446,143	# Munchlax, Snorlax
+147,148,149	# Dratini, Dragonair, Dragonite
+152,153,154	# Chikorita, Bayleef, Meganium
+155,156,157	# Cyndaquil, Quilava, Typhlosion
+158,159,160	# Totodile, Croconaw, Feraligatr
+161,162	# Sentret, Furret
+163,164	# Hoothoot, Noctowl
+165,166	# Ledyba, Ledian
+167,168	# Spinarak, Ariados
+170,171	# Chinchou, Lanturn
+175,176,468	# Togepi, Togetic, Togekiss
+177,178	# Natu, Xatu
+179,180,181	# Mareep, Flaaffy, Ampharos
+298,183,184	# Azurill, Marill, Azumarill
+438,185	# Bonsly, Sudowoodo
+187,188,189	# Hoppip, Skiploom, Jumpluff
+190,424	# Aipom, Ambipom
+191,192	# Sunkern, Sunflora
+193,469	# Yanma, Yanmega
+194,195	# Wooper, Quagsire
+198,430	# Murkrow, Honchkrow
+200,429	# Misdreavus, Mismagius
+360,202	# Wynaut, Wobbuffet
+204,205	# Pineco, Forretress
+207,472	# Gligar, Gliscor
+209,210	# Snubbull, Granbull
+215,461	# Sneasel, Weavile
+216,217	# Teddiursa, Ursaring
+218,219	# Slugma, Magcargo
+220,221,473	# Swinub, Piloswine, Mamoswine
+223,224	# Remoraid, Octillery
+458,226	# Mantyke, Mantine
+228,229	# Houndour, Houndoom
+231,232	# Phanpy, Donphan
+246,247,248	# Larvitar, Pupitar, Tyranitar
+252,253,254	# Treecko, Grovyle, Sceptile
+255,256,257	# Torchic, Combusken, Blaziken
+258,259,260	# Mudkip, Marshtomp, Swampert
+261,262	# Poochyena, Mightyena
+263,264	# Zigzagoon, Linoone
+265,266,268,267,269	# Wurmple, Silcoon, Cascoon, Beautifly, Dustox
+270,271,272	# Lotad, Lombre, Ludicolo
+273,274,275	# Seedot, Nuzleaf, Shiftry
+276,277	# Taillow, Swellow
+278,279	# Wingull, Pelipper
+280,281,282,475	# Ralts, Kirlia, Gardevoir, Gallade
+283,284	# Surskit, Masquerain
+285,286	# Shroomish, Breloom
+287,288,289	# Slakoth, Vigoroth, Slaking
+290,291,292	# Nincada, Ninjask, Shedinja
+293,294,295	# Whismur, Loudred, Exploud
+296,297	# Makuhita, Hariyama
+299,476	# Nosepass, Probopass
+300,301	# Skitty, Delcatty
+304,305,306	# Aron, Lairon, Aggron
+307,308	# Meditite, Medicham
+309,310	# Electrike, Manectric
+406,315,407	# Budew, Roselia, Roserade
+316,317	# Gulpin, Swalot
+318,319	# Carvanha, Sharpedo
+320,321	# Wailmer, Wailord
+322,323	# Numel, Camerupt
+325,326	# Spoink, Grumpig
+328,329,330	# Trapinch, Vibrava, Flygon
+331,332	# Cacnea, Cacturne
+333,334	# Swablu, Altaria
+339,340	# Barboach, Whiscash
+341,342	# Corphish, Crawdaunt
+343,344	# Baltoy, Claydol
+345,346	# Lileep, Cradily
+347,348	# Anorith, Armaldo
+349,350	# Feebas, Milotic
+353,354	# Shuppet, Banette
+355,356,477	# Duskull, Dusclops, Dusknoir
+433,358	# Chingling, Chimecho
+361,362,478	# Snorunt, Glalie, Froslass
+363,364,365	# Spheal, Sealeo, Walrein
+366,367,368	# Clamperl, Huntail, Gorebyss
+371,372,373	# Bagon, Shelgon, Salamence
+374,375,376	# Beldum, Metang, Metagross
+387,388,389	# Turtwig, Grotle, Torterra
+390,391,392	# Chimchar, Monferno, Infernape
+393,394,395	# Piplup, Prinplup, Empoleon
+396,397,398	# Starly, Staravia, Staraptor
+399,400	# Bidoof, Bibarel
+401,402	# Kricketot, Kricketune
+403,404,405	# Shinx, Luxio, Luxray
+408,409	# Cranidos, Rampardos
+410,411	# Shieldon, Bastiodon
+412,413,414	# Burmy, Wormadam, Mothim
+415,416	# Combee, Vespiquen
+418,419	# Buizel, Floatzel
+420,421	# Cherubi, Cherrim
+422,423	# Shellos, Gastrodon
+425,426	# Drifloon, Drifblim
+427,428	# Buneary, Lopunny
+431,432	# Glameow, Purugly
+434,435	# Stunky, Skuntank
+436,437	# Bronzor, Bronzong
+443,444,445	# Gible, Gabite, Garchomp
+447,448	# Riolu, Lucario
+449,450	# Hippopotas, Hippowdon
+451,452	# Skorupi, Drapion
+453,454	# Croagunk, Toxicroak
+456,457	# Finneon, Lumineon
+459,460	# Snover, Abomasnow
+495,496,497	# Snivy, Servine, Serperior
+498,499,500	# Tepig, Pignite, Emboar
+501,502,503	# Oshawott, Dewott, Samurott
+504,505	# Patrat, Watchog
+506,507,508	# Lillipup, Herdier, Stoutland
+509,510	# Purrloin, Liepard
+511,512	# Pansage, Simisage
+513,514	# Pansear, Simisear
+515,516	# Panpour, Simipour
+517,518	# Munna, Musharna
+519,520,521	# Pidove, Tranquill, Unfezant
+522,523	# Blitzle, Zebstrika
+524,525,526	# Roggenrola, Boldore, Gigalith
+527,528	# Woobat, Swoobat
+529,530	# Drilbur, Excadrill
+532,533,534	# Timburr, Gurdurr, Conkeldurr
+535,536,537	# Tympole, Palpitoad, Seismitoad
+540,541,542	# Sewaddle, Swadloon, Leavanny
+543,544,545	# Venipede, Whirlipede, Scolipede
+546,547	# Cottonee, Whimsicott
+548,549	# Petilil, Lilligant
+551,552,553	# Sandile, Krokorok, Krookodile
+554,555	# Darumaka, Darmanitan
+557,558	# Dwebble, Crustle
+559,560	# Scraggy, Scrafty
+562,563	# Yamask, Cofagrigus
+564,565	# Tirtouga, Carracosta
+566,567	# Archen, Archeops
+568,569	# Trubbish, Garbodor
+570,571	# Zorua, Zoroark
+572,573	# Minccino, Cinccino
+574,575,576	# Gothita, Gothorita, Gothitelle
+577,578,579	# Solosis, Duosion, Reuniclus
+580,581	# Ducklett, Swanna
+582,583,584	# Vanillite, Vanillish, Vanilluxe
+585,586	# Deerling, Sawsbuck
+588,589	# Karrablast, Escavalier
+590,591	# Foongus, Amoonguss
+592,593	# Frillish, Jellicent
+595,596	# Joltik, Galvantula
+597,598	# Ferroseed, Ferrothorn
+599,600,601	# Klink, Klang, Klinklang
+602,603,604	# Tynamo, Eelektrik, Eelektross
+605,606	# Elgyem, Beheeyem
+607,608,609	# Litwick, Lampent, Chandelure
+610,611,612	# Axew, Fraxure, Haxorus
+613,614	# Cubchoo, Beartic
+616,617	# Shelmet, Accelgor
+619,620	# Mienfoo, Mienshao
+622,623	# Golett, Golurk
+624,625	# Pawniard, Bisharp
+627,628	# Rufflet, Braviary
+629,630	# Vullaby, Mandibuzz
+633,634,635	# Deino, Zweilous, Hydreigon
+636,637	# Larvesta, Volcarona

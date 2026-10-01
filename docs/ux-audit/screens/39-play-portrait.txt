@@ -1,0 +1,32 @@
+TEXT:
+File
+▲
+◀
+▶
+▼
+A
+B
+L
+R
+SELECT
+START
+SETUP
+NUZLOCKE  Standard
+1 alive  1 dead  1 !
+No Pokemon yet. The tracker fills in when you get your first one.
+Home
+Play
+Library
+More
+
+CONTENT DESCRIPTIONS:
+Up
+Left
+Right
+Down
+A button
+B button
+L shoulder
+R shoulder
+Select
+Start

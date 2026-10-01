@@ -1,0 +1,168 @@
+# map id	reference key	name	trainers  (RouteData.Info[key].name and .trainers via tools/trainer-data/convert_route_info.py)
+1	1	Petalburg City	
+2	2	Slateport City	
+3	3	Mauville City	656
+4	4	Rustboro City	
+5	5	Fortree City	
+6	6	Lilycove City	661,662,663,664,665,666
+7	7	Mossdeep City	
+8	8	Sootopolis City	
+9	9	Ever Grande City	
+10	10	Littleroot Town	
+11	11	Oldale Town	
+12	12	Dewford Town	
+13	13	Lavaridge Town	
+14	14	Fallarbor Town	
+15	15	Verdanturf City	
+16	16	Pacifidlog Town	
+17	17	Route 101	
+18	18	Route 102	318,615,333,603
+19	19	Route 103	520,523,526,529,532,535,36,481,293,336,703,702,736,735
+20	20	Route 104	319,696,114,136,604,483,337
+21	21	Route 105	442,152,46,441,737,738,151
+22	22	Route 106	340,339,153,443
+23	23	Route 107	444,155,692,154,445,739
+24	24	Route 108	447,157,446,741,740,156
+25	25	Route 109	490,491,697,64,57,698,58,59,158,448,345,742,680
+26	26	Route 110	302,699,334,512,700,232,701,521,524,527,530,533,536,243,358,352,353,359,351
+27	27	Route 111	704,705,706,707,51,476,218,292,299,606,312,78,94,189,469,212,211,470,44,743,744,745
+28	28	Route 112	213,471,627,626,746,747
+29	29	Route 113	326,710,420,711,434,677,419,327,708,709
+30	30	Route 114	342,714,713,338,472,679,214,143,206,629,712,628
+31	31	Route 115	183,513,752,427,749,307,748,182,751,750
+32	32	Route 116	617,322,280,631,754,753,695,694,273,605
+33	33	Route 117	364,287,538,369,227,756,755,757,545
+34	34	Route 118	37,715,344,196,52,343,408,398
+35	35	Route 119	620,224,619,225,618,223,693,559,552,761,400,416,760,399,759,415,651,522,525,528,531,534,537
+36	36	Route 120	435,53,406,405,762,436,653,763,95,560,553,226,652,45
+37	37	Route 121	764,107,127,286,766,765,254,300,767
+38	38	Route 122	
+39	39	Route 123	39,484,106,92,75,195,249,238
+40	40	Route 124	450,687,159,449,174,160
+41	41	Route 125	492,161,452,451,403,162,678
+42	42	Route 126	383,164,453,163,459,377,454
+43	43	Route 127	674,667,669,668,374,672,384
+44	44	Route 128	671,670,673,376,386,464
+45	45	Route 129	675,378,387,676
+46	46	Route 130	165,455,168
+47	47	Route 131	171,385,166,457,167,456,686
+48	48	Route 132	169,458,350,181
+49	49	Route 133	461,414,88,460,170
+50	50	Route 134	463,172,180,397,413
+51	51	Route 126 Water	
+52	52	Route 127 Water	
+53	53	Route 128 Water	
+54	54	Brendan's House 1F	
+55	55	Brendan's House 2F	
+56	56	May's House 1F	
+57	57	May's House 2F	
+58	58	Prof. Birch's Lab	
+61	61	Pokémon Center	
+62	62	Pokémon Center 2F	
+63	63	PokéMart	
+65	65	Dewford Gym	426,179,425,266
+69	69	Lavaridge Gym 1F	202,204,201,648,203,205,650,268
+70	70	Lavaridge Gym B1F	202,204,205,501
+71	71	Lavaridge Town PC	
+79	79	Petalburg Gym	71,89,72,90,73,91,74,269
+86	86	Oceanic Museum 1F	
+87	87	Oceanic Museum 2F	20,21
+89	89	Mauville Gym	649,191,323,802,194,267
+94	94	Rustboro Gym	320,321,265
+100	100	Fortree Gym	402,401,655,654,404,803,270
+108	108	Mossdeep Gym	233,246,245,235,234,244,271
+109	109	Sootopolis Gym 1F	128,613,115,131,614,301,130,118,129,272
+110	110	Sootopolis Gym B1F	128,613,115,502,131,614,301,130,118,129
+111	111	Sidney's Room	261
+112	112	Phoebe's Room	262
+113	113	Glacia's Room	263
+114	114	Drake's Room	264
+115	115	Champion's Room	335
+125	126	Meteor Falls 1F 1R	
+126	127	Meteor Falls 1F 2R	681,392
+127	128	Meteor Falls B1F 1R	
+128	129	Meteor Falls B1F 2R	
+129	130	Rusturf Tunnel	16,635
+132	133	Granite Cave 1F	
+133	134	Granite Cave B1F	
+134	135	Granite Cave B2F	
+135	136	Petalburg Woods	616,10,621
+136	137	Mt. Chimney	14,31,35,126,125,313,124
+137	138	Mt. Pyre 1F	
+138	139	Mt. Pyre 2F	145,640
+139	140	Mt. Pyre 3F	247,236
+140	141	Mt. Pyre 4F	109
+141	142	Mt. Pyre 5F	190
+142	143	Mt. Pyre 6F	108
+143	144	Aqua Hideout 1F	2
+144	145	Aqua Hideout B1F	3,4
+145	146	Aqua Hideout B2F	5,28,30,193
+146	147	Seafloor Cavern U.	
+147	148	Seafloor Cavern	6,7,8,33,34
+148	149	Seafloor Cavern 1	
+149	150	Seafloor Cavern 2	
+150	151	Seafloor Cavern 3	
+151	152	Seafloor Cavern 4	
+152	153	Seafloor Cavern 5	
+153	154	Seafloor Cavern 6	
+154	155	Seafloor Cavern 7	
+155	156	Seafloor Cavern 8	
+156	157	Seafloor Cavern 9	
+157	158	Cave of Origin	
+158	159	Cave of Origin 1F	
+159	160	Cave of Origin B1F	
+160	161	Cave of Origin B2F	
+161	162	Cave of Origin B3F	
+162	163	Cave of Origin B4F	
+163	164	Victory Road 1F	80,96,97,81,100,83,99,82,98,79,519
+164	165	Shoal Cave Lo-1	
+165	166	Shoal Cave Lo-2	
+166	167	Shoal Cave Lo-3	
+167	168	Shoal Cave Lo-4	
+168	169	Shoal Cave Hi-1	
+169	170	Shoal Cave Hi-2	
+184	185	New Mauville Entrance	
+185	186	New Mauville Inner	
+186	187	Abandoned Ship Deck	
+187	188	Abandoned Ship 1F	
+188	189	Abandoned Ship 1F	66,642
+189	190	Abandoned Ship B1F	
+190	191	Abandoned Ship B1F	496
+191	192	Abandoned Ship B1F	
+192	193	Abandoned Ship Uw1	
+193	194	Abandoned Ship B1F	
+194	195	Abandoned Ship 1F	
+195	196	Abandoned Ship Cpt	
+196	197	Abandoned Ship Uw2	
+238	239	Safari Zone NW.	
+239	240	Safari Zone NE.	
+240	241	Safari Zone SW.	
+241	242	Safari Zone SE.	
+243	244	Seashore House	65,647,493
+247	248	Trick House 1	611,612,332
+248	249	Trick House 2	274,275,281
+249	250	Trick House 3	215,473,630
+250	251	Trick House 4	188,428,429
+251	252	Trick House 5	
+252	253	Trick House 6	561,554,407
+253	254	Trick House 7	237,105,248,848,850,849
+254	255	Trick House 8	93,76,77
+270	271	Pokémon League PC	
+271	272	Weather Institute 1F	26,17
+272	273	Weather Institute 2F	18,19,32
+274	274	Route 124 Water	
+277	278	S.S. Tidal Hall	
+278	279	S.S. Tidal Deck	494,495
+279	280	S.S. Tidal Rooms	641,138,255,294,119,256
+285	286	Victory Road B1F	
+286	287	Victory Road B2F	
+288	289	Granite Cave Steven	
+291	292	Southern Island	
+292	293	Jagged Pass	632,474,216
+293	294	Fiery Path	
+302	303	Mt. Pyre Ext.	23,24,25
+303	304	Mt. Pyre Summit	
+322	323	Sky Pillar 1F	
+324	325	Sky Pillar 3F	
+330	331	Sky Pillar 5F	
+331	332	Sky Pillar 6F	

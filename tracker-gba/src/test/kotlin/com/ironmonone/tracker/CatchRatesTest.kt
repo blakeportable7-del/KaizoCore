@@ -46,4 +46,25 @@ class CatchRatesTest {
         assertEquals(1, d.rows[1].ballId); assertEquals(100, d.rows[1].rate)
         assertEquals(12, d.rows.size)
     }
+
+    @Test
+    fun `Toxic adds nothing on Ruby, Sapphire and Emerald, half again on FireRed and LeafGreen`() {
+        // PokemonData.lua:672-676: statusBonus is 1 when GameSettings.game is 1 or 2, else Toxic's 1.5.
+        // Catch rate 45 at full HP in a Poke Ball is raw 15 (5%); 1.5x makes it 22 (9%).
+        fun toxic(map: GameMap) = GbaTracker(MemoryReader { _, n -> ByteArray(n) }, map)
+            .calcCatchRate(45, 20, 20, 5, 0x80, 4, false, 0, false, 0)
+        assertEquals(5, toxic(GameMap.RUBY_U)); assertEquals(5, toxic(GameMap.SAPPHIRE_U))
+        assertEquals(5, toxic(GameMap.EMERALD_U))
+        assertEquals(9, toxic(GameMap.FIRERED_U_V10)); assertEquals(9, toxic(GameMap.LEAFGREEN_U))
+        // The Nat. Dex builds count as their base game (IRONMON_ROMS; skipped without the dumps).
+        for ((file, want) in listOf("emerald-natdex-121.gba" to 5, "firered-natdex-121.gba" to 9)) {
+            val f = System.getenv("IRONMON_ROMS")?.let { java.io.File(it, file) }?.takeIf { it.isFile } ?: continue
+            val rom = f.readBytes()
+            val mem = MemoryReader { a, n ->
+                val o = a - 0x08000000L
+                ByteArray(n) { i -> if (o >= 0 && o + i < rom.size) rom[(o + i).toInt()] else 0 }
+            }
+            assertEquals(want, GbaTracker(mem, GameMap.resolve(mem)).calcCatchRate(45, 20, 20, 5, 0x80, 4, false, 0, false, 0), file)
+        }
+    }
 }

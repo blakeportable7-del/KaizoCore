@@ -1,0 +1,136 @@
+# Hardcore Nuzlocke level caps for the vanilla Generation 4 DS games (2026-09-29).
+#
+# A cap is the level of the highest-level Pokemon on the boss's team in the first-run fight (the highest over every
+# starter variant of a rival fight). Rematches are left out. Every number below is COMPUTED by
+# tools/nuzlocke/gen4_levelcaps.py from the games' own trainer data, none is typed:
+#   dp   Diamond and Pearl: pret pokediamond trdata.json (entry = trainer id), checked party for party against a
+#        clean Diamond (US rev 5) dump. Pearl has no dump here; pret builds it from the same trdata.json.
+#   pt   Platinum: pret pokeplatinum trainer data, checked party for party against a clean Platinum (US rev 0)
+#        dump whose SHA1 is the one pret's platinum.us/rom_rev0.sha1 lists.
+#   hgss HeartGold and SoulSilver: pret pokeheartgold trainers.json (entry = trainer id). No HG/SS dump here.
+# pret commits: pokediamond 5bc4b1a, pokeplatinum c248fb3, pokeheartgold 9d8b759.
+# The research doc's numbers (docs/research/nuzlocke-gen4-5.md sections 2.1, 2.2, 3.1) agree with every value here.
+#
+# These are the FALLBACK. When the tracker can read the trainer data out of the loaded ROM it uses the boss's real
+# party levels instead, which is what a randomized game needs.
+#
+# game: dp = Diamond and Pearl, pt = Platinum, hgss = HeartGold and SoulSilver.
+# seq: the order the fights normally come in (the research doc's story order), restarting at 1 for each game.
+# key: gymN is the Nth gym in FIGHT order (Platinum: Fantina is gym3), e4-N, champion, otherwise a short key.
+# kind: gym, e4, champion, post (a fight after the Champion in HGSS: the Kanto gyms, Blue, Red), rival and boss
+#   (extra cap points: Barry, Silver, Team Galactic commanders and Cyrus, Team Rocket executives; they are cap
+#   points only when the player turns rivals and team leaders into bosses; they carry no badge).
+# cap: the highest level on the team. ace: the top Pokemon, text only; a note in brackets says the cap of a rival
+#   variant that is lower (Silver in Goldenrod Tunnel is 34 with Meganium or Quilava and 32 with Feraligatr).
+# ids: the trainer ids the DS tracker reports as the opponent (the trainer table index). A rival fight lists all
+#   three starter variants. Platinum's Elite Four and Cynthia are the FIRST-RUN teams (FLAG_ARRESTED_CHARON_STARK_
+#   MOUNTAIN unset, ids 261-264 and 267); the higher post-Stark-Mountain teams are ids 866-870 and are not listed.
+#   The ids of HGSS silver1 are pret's TRAINER_PASSERBY_BOY entries, which the Cherrygrove script uses for Silver's
+#   first battle (pret's TRAINER_RIVAL_SILVER_2, _3 and _6 carry the same team but no script starts them).
+# badge: the 0-based bit of the badge this gym fight earns in the badge word the tracker reads (readBadges). How each
+#   game's bits were derived, all from the disassembly (checked again by --check):
+#   dp:   badge byte at PlayerProfile+0x1A (tracker 0x292). pokediamond include/constants/badge.h: Coal 0, Forest 1,
+#         Cobble 2, Fen 3, Relic 4, Mine 5, Icicle 6, Beacon 7. Roark, Gardenia, Maylene, Wake, Fantina, Byron,
+#         Candice and Volkner hand over Coal, Forest, Cobble, Fen, Relic, Mine, Icicle and Beacon (gym N = bit N-1).
+#   pt:   badge byte TrainerInfo.badgeMask at +0x1A (tracker 0x96). pokeplatinum generated/badges.txt has the same
+#         order as Diamond: Coal 0, Forest 1, Cobble 2, Fen 3, Relic 4, Mine 5, Icicle 6, Beacon 7. Each leader's gym
+#         script calls GiveBadge with that constant (src/journal.c lists the same pairs), so in FIGHT order Roark 0,
+#         Gardenia 1, Fantina 4 (third gym, bit 4), Maylene 2, Wake 3, Byron 5, Candice 6, Volkner 7.
+#   hgss: Johto byte PlayerProfile.johtoBadges at +0x1A (tracker 0x8E) and Kanto byte kantoBadges at +0x1F (tracker
+#         0x93), combined as Johto bits 0-7 and Kanto bits 8-15 like readBadges. pokeheartgold include/constants/
+#         badge.h: Zephyr 0, Hive 1, Plain 2, Fog 3, Storm 4, Mineral 5, Glacier 6, Rising 7 (Falkner ... Clair, gym
+#         N = bit N-1) and Boulder 8, Cascade 9, Thunder 10, Rainbow 11, Soul 12, Marsh 13, Volcano 14, Earth 15
+#         (Brock 8, Misty 9, Lt. Surge 10, Erika 11, Janine 12, Sabrina 13, Blaine 14, Blue 15). Clair's Rising Badge
+#         is handed over in the Dragon's Den after her gym battle, so bit 7 is set later than the fight.
+#   The tracker's own badge numbers in nds/trainer-groups.tsv (1-based) agree with these bits.
+# group: HGSS post rows that share a non-empty group can be fought in any order (Kanto gyms); Blue stands alone
+#   because he must be last; Red is on Mt. Silver. The Elite Four order is fixed in all three games.
+#
+# game	seq	key	kind	label	cap	ace	ids	badge	group
+dp	1	barry1	rival	Barry (Route 203)	9	Turtwig, Chimchar or Piplup	247,248,249		
+dp	2	gym1	gym	Roark	14	Cranidos	246	0	
+dp	3	mars1	boss	Mars (Valley Windworks)	16	Purugly	295		
+dp	4	gym2	gym	Gardenia	22	Roserade	315	1	
+dp	5	jupiter1	boss	Jupiter (Galactic Eterna Building)	20	Skuntank	406		
+dp	6	barry2	rival	Barry (Hearthome City)	21	Grotle, Monferno or Prinplup	470,471,472		
+dp	7	gym3	gym	Maylene	30	Lucario	317	2	
+dp	8	gym4	gym	Crasher Wake	30	Floatzel	316	3	
+dp	9	barry3	rival	Barry (Pastoria City)	28	Grotle, Monferno or Prinplup	473,474,475		
+dp	10	gym5	gym	Fantina	36	Mismagius	318	4	
+dp	11	barry4	rival	Barry (Canalave City)	35	Grotle, Monferno or Prinplup	476,477,478		
+dp	12	gym6	gym	Byron	39	Bastiodon	250	5	
+dp	13	saturn1	boss	Saturn (Lake Valor)	37	Toxicroak	408		
+dp	14	mars2	boss	Mars (Lake Verity)	39	Purugly	405		
+dp	15	gym7	gym	Candice	42	Abomasnow	319	6	
+dp	16	saturn2	boss	Saturn (Galactic HQ)	40	Toxicroak	409		
+dp	17	cyrus1	boss	Cyrus (Galactic HQ)	43	Sneasel	403		
+dp	18	cyrus2	boss	Cyrus (Spear Pillar)	48	Weavile	404		
+dp	19	gym8	gym	Volkner	49	Luxray	320	7	
+dp	20	barry5	rival	Barry (Pokemon League)	53	Torterra, Infernape or Empoleon	479,480,481		
+dp	21	e4-1	e4	Aaron	57	Drapion	261		
+dp	22	e4-2	e4	Bertha	59	Hippowdon	262		
+dp	23	e4-3	e4	Flint	61	Infernape	263		
+dp	24	e4-4	e4	Lucian	63	Bronzong	264		
+dp	25	champion	champion	Cynthia	66	Garchomp	267		
+pt	1	barry1	rival	Barry (Route 201)	5	Turtwig, Chimchar or Piplup	850,851,852		
+pt	2	barry2	rival	Barry (Route 203)	9	Turtwig, Chimchar or Piplup	247,248,249		
+pt	3	gym1	gym	Roark	14	Cranidos	246	0	
+pt	4	mars1	boss	Mars (Valley Windworks)	17	Purugly	295		
+pt	5	gym2	gym	Gardenia	22	Roserade	315	1	
+pt	6	jupiter1	boss	Jupiter (Galactic Eterna Building)	23	Skuntank	406		
+pt	7	gym3	gym	Fantina	26	Mismagius	318	4	
+pt	8	barry3	rival	Barry (Route 209)	27	Grotle, Monferno or Prinplup	470,471,472		
+pt	9	gym4	gym	Maylene	32	Lucario	317	2	
+pt	10	barry4	rival	Barry (Pastoria City)	36	Grotle, Monferno or Prinplup	473,474,475		
+pt	11	gym5	gym	Crasher Wake	37	Floatzel	316	3	
+pt	12	cyrus1	boss	Cyrus (Celestic Town)	36	Murkrow	913		
+pt	13	barry5	rival	Barry (Canalave City)	38	Torterra, Infernape or Empoleon	476,477,478		
+pt	14	gym6	gym	Byron	41	Bastiodon	250	5	
+pt	15	saturn1	boss	Saturn (Valor Cavern)	40	Toxicroak	408		
+pt	16	mars2	boss	Mars (Lake Verity)	40	Purugly	405		
+pt	17	gym7	gym	Candice	44	Froslass	319	6	
+pt	18	saturn2	boss	Saturn (Galactic HQ)	44	Toxicroak	409		
+pt	19	cyrus2	boss	Cyrus (Galactic HQ)	46	Honchkrow	403		
+pt	20	cyrus3	boss	Cyrus (Distortion World)	48	Weavile	404		
+pt	21	gym8	gym	Volkner	50	Electivire	320	7	
+pt	22	barry6	rival	Barry (Pokemon League)	51	Torterra, Infernape or Empoleon	479,480,481		
+pt	23	e4-1	e4	Aaron	53	Drapion	261		
+pt	24	e4-2	e4	Bertha	55	Rhyperior	262		
+pt	25	e4-3	e4	Flint	57	Magmortar	263		
+pt	26	e4-4	e4	Lucian	59	Gallade	264		
+pt	27	champion	champion	Cynthia	62	Garchomp	267		
+hgss	1	silver1	rival	Silver (Cherrygrove City)	5	Chikorita, Cyndaquil or Totodile	495,496,497		
+hgss	2	gym1	gym	Falkner	13	Pidgeotto	20	0	
+hgss	3	proton1	boss	Proton (Slowpoke Well)	12	Koffing	486		
+hgss	4	silver2	rival	Silver (Azalea Town)	18	Bayleef, Quilava or Croconaw	1,266,269		
+hgss	5	gym2	gym	Bugsy	17	Scyther	21	1	
+hgss	6	gym3	gym	Whitney	19	Miltank	30	2	
+hgss	7	silver3	rival	Silver (Burned Tower)	22	Bayleef, Quilava or Croconaw	263,267,270		
+hgss	8	gym4	gym	Morty	25	Gengar	31	3	
+hgss	9	gym5	gym	Chuck	31	Poliwrath	34	4	
+hgss	10	gym6	gym	Jasmine	35	Steelix	33	5	
+hgss	11	petrel1	boss	Petrel (Team Rocket HQ)	24	Raticate	488		
+hgss	12	ariana1	boss	Ariana (Team Rocket HQ)	27	Murkrow	479		
+hgss	13	gym7	gym	Pryce	34	Piloswine	32	6	
+hgss	14	proton2	boss	Proton (Radio Tower)	33	Weezing	706		
+hgss	15	petrel2	boss	Petrel (Radio Tower)	32	Weezing	487		
+hgss	16	ariana2	boss	Ariana (Radio Tower)	32	Arbok, Vileplume or Murkrow	478		
+hgss	17	archer	boss	Archer (Radio Tower)	38	Houndoom	485		
+hgss	18	silver4	rival	Silver (Goldenrod Tunnel)	34	Sneasel, Meganium or Quilava (32 with Feraligatr)	271,288,289		
+hgss	19	gym8	gym	Clair	41	Kingdra	35	7	
+hgss	20	silver5	rival	Silver (Victory Road)	40	Meganium, Typhlosion or Feraligatr	264,268,272		
+hgss	21	e4-1	e4	Will	42	Xatu	245		
+hgss	22	e4-2	e4	Koga	44	Crobat	247		
+hgss	23	e4-3	e4	Bruno	46	Machamp	418		
+hgss	24	e4-4	e4	Karen	47	Houndoom	246		
+hgss	25	champion	champion	Lance	50	Dragonite	244		
+hgss	26	silver6	rival	Silver (Mt. Moon)	50	Meganium, Typhlosion or Feraligatr	285,286,287		
+hgss	27	surge	post	Lt. Surge	53	Electabuzz	255	10	Kanto gyms
+hgss	28	sabrina	post	Sabrina	55	Alakazam	258	13	Kanto gyms
+hgss	29	misty	post	Misty	54	Starmie	254	9	Kanto gyms
+hgss	30	erika	post	Erika	56	Victreebel or Bellossom	256	11	Kanto gyms
+hgss	31	janine	post	Janine	50	Venomoth	257	12	Kanto gyms
+hgss	32	brock	post	Brock	54	Onix	253	8	Kanto gyms
+hgss	33	blaine	post	Blaine	59	Rapidash	259	14	Kanto gyms
+hgss	34	blue	post	Blue	60	Pidgeot	261	15	Blue
+hgss	35	red	post	Red	88	Pikachu	260		Mt. Silver

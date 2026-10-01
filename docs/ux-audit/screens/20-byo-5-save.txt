@@ -1,0 +1,25 @@
+TEXT:
+Kaizo IronMON
+Build your own
+Save and play
+Step 5 of 5
+Pokémon Emerald (U)
+Name it, then save it or play it. A saved game shows in the settings list on the Kaizo IronMON screen.
+Name
+my build
+File: RSE (my build)
+WHAT IT DOES
+Starts from the game as it is. Whatever you did not change stays as the game has it.
+Starters: Treecko, Torchic, Mudkip
+The Kaizo IronMON screen has a switch for this game's official 60% levels. It stays off for your own settings until you switch it on.
+Start this game
+Back
+Save
+All settings
+Home
+Play
+Library
+More
+
+CONTENT DESCRIPTIONS:
+Back to Home

@@ -1,0 +1,670 @@
+# id	tracker	area	key	text	kind  (tools/parity/extract_inventory.py)
+gen2-0001	gen2	Options.lua	ROMs Folder	default ""	option
+gen2-0002	gen2	Options.lua	Randomizer JAR	default ""	option
+gen2-0003	gen2	Options.lua	Source ROM	default ""	option
+gen2-0004	gen2	Options.lua	Settings File	default ""	option
+gen2-0005	gen2	Options.lua	Disable mainscreen carousel	default false	option
+gen2-0006	gen2	Options.lua	Auto swap to enemy	default false	option
+gen2-0007	gen2	Options.lua	Show random ball picker	default true	option
+gen2-0008	gen2	Options.lua	Hide stats until summary shown	default false	option
+gen2-0009	gen2	Options.lua	Right justified numbers	default false	option
+gen2-0010	gen2	Options.lua	Show physical special icons	default true	option
+gen2-0011	gen2	Options.lua	Show move effectiveness	default true	option
+gen2-0012	gen2	Options.lua	Calculate variable damage	default true	option
+gen2-0013	gen2	Options.lua	Determine friendship readiness	default true	option
+gen2-0014	gen2	Options.lua	Count enemy PP usage	default true	option
+gen2-0015	gen2	Options.lua	Track PC Heals	default false	option
+gen2-0016	gen2	Options.lua	PC heals count downward	default true	option
+gen2-0017	gen2	Options.lua	Auto save tracked game data	default true	option
+gen2-0018	gen2	Options.lua	Pokemon icon set	default "1"	option
+gen2-0019	gen2	Options.lua	Show last damage calcs	default true	option
+gen2-0020	gen2	Options.lua	Reveal info if randomized	default true	option
+gen2-0021	gen2	Options.lua	Show experience points bar	default false	option
+gen2-0022	gen2	Options.lua	Animated Pokemon popout	default false	option
+gen2-0023	gen2	Options.lua	Use premade ROMs	default false	option
+gen2-0024	gen2	Options.lua	Generate ROM each time	default false	option
+gen2-0025	gen2	Options.lua	Display repel usage	default false	option
+gen2-0026	gen2	Options.lua	Display pedometer	default false	option
+gen2-0027	gen2	Options.lua	Dev branch updates	default false	option
+gen2-0028	gen2	Options.lua	Welcome message	default ""	option
+gen2-0029	gen2	Options.lua	Startup favorites	default "1	option
+gen2-0030	gen2	Options.lua	Show on new game screen	default false	option
+gen2-0031	gen2	Options.lua	Enable restore points	default true	option
+gen2-0032	gen2	Options.lua	Enable custom extensions	default false	option
+gen2-0033	gen2	Options.lua	Show Team View	default false	option
+gen2-0034	gen2	Options.lua	Load next seed	default "A	option
+gen2-0035	gen2	Options.lua	Toggle view	default "Start"	option
+gen2-0036	gen2	Options.lua	Cycle through stats	default "L"	option
+gen2-0037	gen2	Options.lua	Mark stat	default "R"	option
+gen2-0038	gen2	Options.lua	1	default {	option
+gen2-0039	gen2	Options.lua	2	default {	option
+gen2-0040	gen2	Options.lua	3	default {	option
+gen2-0041	gen2	Options.lua	4	default {	option
+gen2-0042	gen2	Options.lua	5	default {	option
+gen2-0043	gen2	Options.lua	Startup Pokemon displayed	default Options.StartupIcon.attempts	option
+gen2-0044	gen2	screens	CustomExtensionsScreen	screen file CustomExtensionsScreen.lua	screen
+gen2-0045	gen2	screens/CustomExtensionsScreen.lua		Custom Extensions	ui
+gen2-0046	gen2	screens/CustomExtensionsScreen.lua		You currently don't have any custom extensions installed.	ui
+gen2-0047	gen2	screens/CustomExtensionsScreen.lua		Lower box text	ui
+gen2-0048	gen2	screens/CustomExtensionsScreen.lua		Lower box border	ui
+gen2-0049	gen2	screens/CustomExtensionsScreen.lua		Lower box background	ui
+gen2-0050	gen2	screens/CustomExtensionsScreen.lua		Page	ui
+gen2-0051	gen2	screens/CustomExtensionsScreen.lua		(Get more)	ui
+gen2-0052	gen2	screens/CustomExtensionsScreen.lua		Allow custom code to run	ui
+gen2-0053	gen2	screens/CustomExtensionsScreen.lua		Positive text	ui
+gen2-0054	gen2	screens/CustomExtensionsScreen.lua		Enable custom extensions	ui
+gen2-0055	gen2	screens/CustomExtensionsScreen.lua		Get Extensions	ui
+gen2-0056	gen2	screens/CustomExtensionsScreen.lua		Refresh	ui
+gen2-0057	gen2	screens/CustomExtensionsScreen.lua		Back	ui
+gen2-0058	gen2	screens/CustomExtensionsScreen.lua		Negative text	ui
+gen2-0059	gen2	screens/CustomExtensionsScreen.lua		Main background	ui
+gen2-0060	gen2	screens/CustomExtensionsScreen.lua		Header text	ui
+gen2-0061	gen2	screens/CustomExtensionsScreen.lua		Intermediate text	ui
+gen2-0062	gen2	screens	ExtrasScreen	screen file ExtrasScreen.lua	screen
+gen2-0063	gen2	screens/ExtrasScreen.lua		Tracker Extras	ui
+gen2-0064	gen2	screens/ExtrasScreen.lua		Time Machine	ui
+gen2-0065	gen2	screens/ExtrasScreen.lua		Estimate	ui
+gen2-0066	gen2	screens/ExtrasScreen.lua		IV Potential	ui
+gen2-0067	gen2	screens/ExtrasScreen.lua		Outstanding!!!	ui
+gen2-0068	gen2	screens/ExtrasScreen.lua		Quite impressive!!	ui
+gen2-0069	gen2	screens/ExtrasScreen.lua		Above average!	ui
+gen2-0070	gen2	screens/ExtrasScreen.lua		Decent.	ui
+gen2-0071	gen2	screens/ExtrasScreen.lua		Estimate is unavailable.	ui
+gen2-0072	gen2	screens/ExtrasScreen.lua		View the log	ui
+gen2-0073	gen2	screens/ExtrasScreen.lua		Lower box text	ui
+gen2-0074	gen2	screens/ExtrasScreen.lua		Lower box border	ui
+gen2-0075	gen2	screens/ExtrasScreen.lua		Lower box background	ui
+gen2-0076	gen2	screens/ExtrasScreen.lua		Show random ball picker	ui
+gen2-0077	gen2	screens/ExtrasScreen.lua		Display repel usage	ui
+gen2-0078	gen2	screens/ExtrasScreen.lua		Display pedometer	ui
+gen2-0079	gen2	screens/ExtrasScreen.lua		Animated Pokemon popout	ui
+gen2-0080	gen2	screens/ExtrasScreen.lua		Back	ui
+gen2-0081	gen2	screens/ExtrasScreen.lua		Positive text	ui
+gen2-0082	gen2	screens/ExtrasScreen.lua		Main background	ui
+gen2-0083	gen2	screens/ExtrasScreen.lua		Header text	ui
+gen2-0084	gen2	screens	GameOptionsScreen	screen file GameOptionsScreen.lua	screen
+gen2-0085	gen2	screens/GameOptionsScreen.lua		Gameplay Options	ui
+gen2-0086	gen2	screens/GameOptionsScreen.lua		Lower box text	ui
+gen2-0087	gen2	screens/GameOptionsScreen.lua		Lower box border	ui
+gen2-0088	gen2	screens/GameOptionsScreen.lua		Lower box background	ui
+gen2-0089	gen2	screens/GameOptionsScreen.lua		Auto swap to enemy	ui
+gen2-0090	gen2	screens/GameOptionsScreen.lua		Hide stats until summary shown	ui
+gen2-0091	gen2	screens/GameOptionsScreen.lua		Show experience points bar	ui
+gen2-0092	gen2	screens/GameOptionsScreen.lua		Show physical special icons	ui
+gen2-0093	gen2	screens/GameOptionsScreen.lua		Show move effectiveness	ui
+gen2-0094	gen2	screens/GameOptionsScreen.lua		Calculate variable damage	ui
+gen2-0095	gen2	screens/GameOptionsScreen.lua		Determine friendship readiness	ui
+gen2-0096	gen2	screens/GameOptionsScreen.lua		Count enemy PP usage	ui
+gen2-0097	gen2	screens/GameOptionsScreen.lua		Show last damage calcs	ui
+gen2-0098	gen2	screens/GameOptionsScreen.lua		Reveal info if randomized	ui
+gen2-0099	gen2	screens/GameOptionsScreen.lua		Back	ui
+gen2-0100	gen2	screens/GameOptionsScreen.lua		Positive text	ui
+gen2-0101	gen2	screens/GameOptionsScreen.lua		Main background	ui
+gen2-0102	gen2	screens/GameOptionsScreen.lua		Header text	ui
+gen2-0103	gen2	screens	GameOverScreen	screen file GameOverScreen.lua	screen
+gen2-0104	gen2	screens/GameOverScreen.lua		G a m e O v e r	ui
+gen2-0105	gen2	screens/GameOverScreen.lua		Announcer:	ui
+gen2-0106	gen2	screens/GameOverScreen.lua		Attempt	ui
+gen2-0107	gen2	screens/GameOverScreen.lua		Trainers defeated:	ui
+gen2-0108	gen2	screens/GameOverScreen.lua		Continue playing	ui
+gen2-0109	gen2	screens/GameOverScreen.lua		Retry the battle	ui
+gen2-0110	gen2	screens/GameOverScreen.lua		Are you sure?	ui
+gen2-0111	gen2	screens/GameOverScreen.lua		Save this attempt	ui
+gen2-0112	gen2	screens/GameOverScreen.lua		Saved in: saved- games	ui
+gen2-0113	gen2	screens/GameOverScreen.lua		Unable to save	ui
+gen2-0114	gen2	screens/GameOverScreen.lua		Inspect the log	ui
+gen2-0115	gen2	screens/GameOverScreen.lua		Open a log file	ui
+gen2-0116	gen2	screens/GameOverScreen.lua		CONGRATULATIONS!!	ui
+gen2-0117	gen2	screens/GameOverScreen.lua		What's the matter trainer?	ui
+gen2-0118	gen2	screens/GameOverScreen.lua		What will the trainer do now?	ui
+gen2-0119	gen2	screens/GameOverScreen.lua		Oh! Another failure!	ui
+gen2-0120	gen2	screens/GameOverScreen.lua		Boom!	ui
+gen2-0121	gen2	screens/GameOverScreen.lua		Devastating!	ui
+gen2-0122	gen2	screens/GameOverScreen.lua		Gone! It didn't stand a chance!	ui
+gen2-0123	gen2	screens/GameOverScreen.lua		Can strategy overcome the level disadvantage?	ui
+gen2-0124	gen2	screens/GameOverScreen.lua		It's in no condition to fight!	ui
+gen2-0125	gen2	screens/GameOverScreen.lua		This is a battle between obviously mismatched	ui
+gen2-0126	gen2	screens/GameOverScreen.lua		The	ui
+gen2-0127	gen2	screens/GameOverScreen.lua		returns to its	ui
+gen2-0128	gen2	screens/GameOverScreen.lua		Ball.	ui
+gen2-0129	gen2	screens/GameOverScreen.lua		Down! That didn't take much!	ui
+gen2-0130	gen2	screens/GameOverScreen.lua		That one hurt!	ui
+gen2-0131	gen2	screens/GameOverScreen.lua		And there goes the battle!	ui
+gen2-0132	gen2	screens/GameOverScreen.lua		What a wild turn of events!	ui
+gen2-0133	gen2	screens/GameOverScreen.lua		Taken down on the word go!	ui
+gen2-0134	gen2	screens/GameOverScreen.lua		Woah! That was overpowering!	ui
+gen2-0135	gen2	screens/GameOverScreen.lua		It's finally taken down!	ui
+gen2-0136	gen2	screens/GameOverScreen.lua		Harsh blow!	ui
+gen2-0137	gen2	screens/GameOverScreen.lua		That was brutal!	ui
+gen2-0138	gen2	screens/GameOverScreen.lua		Nailed the weak spot!	ui
+gen2-0139	gen2	screens/GameOverScreen.lua		Hey! What's it doing? Down it goes!	ui
+gen2-0140	gen2	screens/GameOverScreen.lua		Pokemon icon set	ui
+gen2-0141	gen2	screens/GameOverScreen.lua		Lower box text	ui
+gen2-0142	gen2	screens/GameOverScreen.lua		Negative text	ui
+gen2-0143	gen2	screens/GameOverScreen.lua		Use premade ROMs	ui
+gen2-0144	gen2	screens/GameOverScreen.lua		Generate ROM each time	ui
+gen2-0145	gen2	screens/GameOverScreen.lua		Positive text	ui
+gen2-0146	gen2	screens/GameOverScreen.lua		Lower box border	ui
+gen2-0147	gen2	screens/GameOverScreen.lua		Lower box background	ui
+gen2-0148	gen2	screens/GameOverScreen.lua		ROMs Folder	ui
+gen2-0149	gen2	screens/GameOverScreen.lua		> ERROR: Unable to find the game ROM currently loaded.	ui
+gen2-0150	gen2	screens/GameOverScreen.lua		> ERROR: Unable to save a copy of your game's ROM file.	ui
+gen2-0151	gen2	screens/GameOverScreen.lua		Unknown ROM	ui
+gen2-0152	gen2	screens/GameOverScreen.lua		> ERROR: Unable to save a copy of your game's log file.	ui
+gen2-0153	gen2	screens/GameOverScreen.lua		Unknown LOG	ui
+gen2-0154	gen2	screens/GameOverScreen.lua		Auto save tracked game data	ui
+gen2-0155	gen2	screens/GameOverScreen.lua		> ERROR: Unable to save a copy of your game's tracked data file.	ui
+gen2-0156	gen2	screens/GameOverScreen.lua		Unknown TDAT	ui
+gen2-0157	gen2	screens/GameOverScreen.lua		Randomizer Log (*.log)|*.log|All files (*.*)|*.*	ui
+gen2-0158	gen2	screens/GameOverScreen.lua		Default text	ui
+gen2-0159	gen2	screens/GameOverScreen.lua		Upper box border	ui
+gen2-0160	gen2	screens/GameOverScreen.lua		Upper box background	ui
+gen2-0161	gen2	screens/GameOverScreen.lua		Intermediate text	ui
+gen2-0162	gen2	screens	InfoScreen	screen file InfoScreen.lua	screen
+gen2-0163	gen2	screens/InfoScreen.lua		Default text	ui
+gen2-0164	gen2	screens/InfoScreen.lua		Upper box border	ui
+gen2-0165	gen2	screens/InfoScreen.lua		Upper box background	ui
+gen2-0166	gen2	screens/InfoScreen.lua		History	ui
+gen2-0167	gen2	screens/InfoScreen.lua		Lower box text	ui
+gen2-0168	gen2	screens/InfoScreen.lua		Lower box border	ui
+gen2-0169	gen2	screens/InfoScreen.lua		Lower box background	ui
+gen2-0170	gen2	screens/InfoScreen.lua		Show resistances	ui
+gen2-0171	gen2	screens/InfoScreen.lua		Show original route data	ui
+gen2-0172	gen2	screens/InfoScreen.lua		Positive text	ui
+gen2-0173	gen2	screens/InfoScreen.lua		Header text	ui
+gen2-0174	gen2	screens/InfoScreen.lua		Back	ui
+gen2-0175	gen2	screens/InfoScreen.lua		(Leave a note)	ui
+gen2-0176	gen2	screens/InfoScreen.lua		Move Look up	ui
+gen2-0177	gen2	screens/InfoScreen.lua		Choose a Pokemon Move to look up:	ui
+gen2-0178	gen2	screens/InfoScreen.lua		Init	ui
+gen2-0179	gen2	screens/InfoScreen.lua		Loading Move Data	ui
+gen2-0180	gen2	screens/InfoScreen.lua		AutoCompleteSource	ui
+gen2-0181	gen2	screens/InfoScreen.lua		ListItems	ui
+gen2-0182	gen2	screens/InfoScreen.lua		AutoCompleteMode	ui
+gen2-0183	gen2	screens/InfoScreen.lua		Append	ui
+gen2-0184	gen2	screens/InfoScreen.lua		Look up	ui
+gen2-0185	gen2	screens/InfoScreen.lua		Ability Look up	ui
+gen2-0186	gen2	screens/InfoScreen.lua		Choose a Pokemon Ability to look up:	ui
+gen2-0187	gen2	screens/InfoScreen.lua		Loading Ability Data	ui
+gen2-0188	gen2	screens/InfoScreen.lua		Pokedex Look up	ui
+gen2-0189	gen2	screens/InfoScreen.lua		Choose a Pokemon to look up:	ui
+gen2-0190	gen2	screens/InfoScreen.lua		Loading Pokedex	ui
+gen2-0191	gen2	screens/InfoScreen.lua		Route Look up	ui
+gen2-0192	gen2	screens/InfoScreen.lua		Choose a Route to look up:	ui
+gen2-0193	gen2	screens/InfoScreen.lua		Loading Route Data	ui
+gen2-0194	gen2	screens/InfoScreen.lua		Pokemon icon set	ui
+gen2-0195	gen2	screens/InfoScreen.lua		BST:	ui
+gen2-0196	gen2	screens/InfoScreen.lua		Weight:	ui
+gen2-0197	gen2	screens/InfoScreen.lua		Evolution:	ui
+gen2-0198	gen2	screens/InfoScreen.lua		Explorers	ui
+gen2-0199	gen2	screens/InfoScreen.lua		This was all a trick. I deceived you.	ui
+gen2-0200	gen2	screens/InfoScreen.lua		Learns a move at level:	ui
+gen2-0201	gen2	screens/InfoScreen.lua		Does not learn any moves	ui
+gen2-0202	gen2	screens/InfoScreen.lua		Negative text	ui
+gen2-0203	gen2	screens/InfoScreen.lua		Weak to:	ui
+gen2-0204	gen2	screens/InfoScreen.lua		Has no weaknesses	ui
+gen2-0205	gen2	screens/InfoScreen.lua		Main background	ui
+gen2-0206	gen2	screens/InfoScreen.lua		Set type	ui
+gen2-0207	gen2	screens/InfoScreen.lua		Category:	ui
+gen2-0208	gen2	screens/InfoScreen.lua		Yes	ui
+gen2-0209	gen2	screens/InfoScreen.lua		No	ui
+gen2-0210	gen2	screens/InfoScreen.lua		Contact:	ui
+gen2-0211	gen2	screens/InfoScreen.lua		PP:	ui
+gen2-0212	gen2	screens/InfoScreen.lua		Power:	ui
+gen2-0213	gen2	screens/InfoScreen.lua		Accuracy:	ui
+gen2-0214	gen2	screens/InfoScreen.lua		Priority:	ui
+gen2-0215	gen2	screens/InfoScreen.lua		Summary:	ui
+gen2-0216	gen2	screens/InfoScreen.lua		Emerald:	ui
+gen2-0217	gen2	screens/InfoScreen.lua		seen by	ui
+gen2-0218	gen2	screens/InfoScreen.lua		In order of appearance:	ui
+gen2-0219	gen2	screens	LogOverlay	screen file LogOverlay.lua	screen
+gen2-0220	gen2	screens/LogOverlay.lua		Log Viewer	ui
+gen2-0221	gen2	screens/LogOverlay.lua		Base Stats	ui
+gen2-0222	gen2	screens/LogOverlay.lua		Total: %s	ui
+gen2-0223	gen2	screens/LogOverlay.lua		Gym TMs	ui
+gen2-0224	gen2	screens/LogOverlay.lua		Other TMs	ui
+gen2-0225	gen2	screens/LogOverlay.lua		Lv.%s	ui
+gen2-0226	gen2	screens/LogOverlay.lua		Filter by:	ui
+gen2-0227	gen2	screens/LogOverlay.lua		See more	ui
+gen2-0228	gen2	screens/LogOverlay.lua		Zoom	ui
+gen2-0229	gen2	screens/LogOverlay.lua		Levelup Moves	ui
+gen2-0230	gen2	screens/LogOverlay.lua		TM Moves	ui
+gen2-0231	gen2	screens/LogOverlay.lua		Trainers	ui
+gen2-0232	gen2	screens/LogOverlay.lua		Trainer Zoom	ui
+gen2-0233	gen2	screens/LogOverlay.lua		TMs	ui
+gen2-0234	gen2	screens/LogOverlay.lua		Misc.	ui
+gen2-0235	gen2	screens/LogOverlay.lua		Back	ui
+gen2-0236	gen2	screens/LogOverlay.lua		Page	ui
+gen2-0237	gen2	screens/LogOverlay.lua		Header text	ui
+gen2-0238	gen2	screens/LogOverlay.lua		Default text	ui
+gen2-0239	gen2	screens/LogOverlay.lua		Lower box text	ui
+gen2-0240	gen2	screens/LogOverlay.lua		Share Seed	ui
+gen2-0241	gen2	screens/LogOverlay.lua		Upper box border	ui
+gen2-0242	gen2	screens/LogOverlay.lua		Upper box background	ui
+gen2-0243	gen2	screens/LogOverlay.lua		TM #	ui
+gen2-0244	gen2	screens/LogOverlay.lua		Main background	ui
+gen2-0245	gen2	screens/LogOverlay.lua		Pokemon icon set	ui
+gen2-0246	gen2	screens/LogOverlay.lua		Intermediate text	ui
+gen2-0247	gen2	screens/LogOverlay.lua		Unknown	ui
+gen2-0248	gen2	screens/LogOverlay.lua		None	ui
+gen2-0249	gen2	screens/LogOverlay.lua		TM%02d  %s	ui
+gen2-0250	gen2	screens/LogOverlay.lua		Lower box border	ui
+gen2-0251	gen2	screens/LogOverlay.lua		Lower box background	ui
+gen2-0252	gen2	screens/LogOverlay.lua		Positive text	ui
+gen2-0253	gen2	screens/LogOverlay.lua		Show physical special icons	ui
+gen2-0254	gen2	screens/LogOverlay.lua		_badge	ui
+gen2-0255	gen2	screens/LogOverlay.lua		Gym %s	ui
+gen2-0256	gen2	screens/LogOverlay.lua		Share Randomizer Seed	ui
+gen2-0257	gen2	screens/LogOverlay.lua		Game:	ui
+gen2-0258	gen2	screens/LogOverlay.lua		Randomizer Version:	ui
+gen2-0259	gen2	screens/LogOverlay.lua		Random Seed:	ui
+gen2-0260	gen2	screens/LogOverlay.lua		Settings String:	ui
+gen2-0261	gen2	screens/LogOverlay.lua		Vertical	ui
+gen2-0262	gen2	screens/LogOverlay.lua		Close	ui
+gen2-0263	gen2	screens/LogOverlay.lua		Negative text	ui
+gen2-0264	gen2	screens	MoveHistoryScreen	screen file MoveHistoryScreen.lua	screen
+gen2-0265	gen2	screens/MoveHistoryScreen.lua		Move seen at level:	ui
+gen2-0266	gen2	screens/MoveHistoryScreen.lua		Min	ui
+gen2-0267	gen2	screens/MoveHistoryScreen.lua		Max	ui
+gen2-0268	gen2	screens/MoveHistoryScreen.lua		(No tracked move data yet)	ui
+gen2-0269	gen2	screens/MoveHistoryScreen.lua		Lower box text	ui
+gen2-0270	gen2	screens/MoveHistoryScreen.lua		Intermediate text	ui
+gen2-0271	gen2	screens/MoveHistoryScreen.lua		Lower box border	ui
+gen2-0272	gen2	screens/MoveHistoryScreen.lua		Lower box background	ui
+gen2-0273	gen2	screens/MoveHistoryScreen.lua		Page	ui
+gen2-0274	gen2	screens/MoveHistoryScreen.lua		Back	ui
+gen2-0275	gen2	screens/MoveHistoryScreen.lua		Pokedex Look up	ui
+gen2-0276	gen2	screens/MoveHistoryScreen.lua		Choose a Pokemon to look up:	ui
+gen2-0277	gen2	screens/MoveHistoryScreen.lua		Init	ui
+gen2-0278	gen2	screens/MoveHistoryScreen.lua		Loading Pokedex	ui
+gen2-0279	gen2	screens/MoveHistoryScreen.lua		AutoCompleteSource	ui
+gen2-0280	gen2	screens/MoveHistoryScreen.lua		ListItems	ui
+gen2-0281	gen2	screens/MoveHistoryScreen.lua		AutoCompleteMode	ui
+gen2-0282	gen2	screens/MoveHistoryScreen.lua		Append	ui
+gen2-0283	gen2	screens/MoveHistoryScreen.lua		Look up	ui
+gen2-0284	gen2	screens/MoveHistoryScreen.lua		Does not learn any moves	ui
+gen2-0285	gen2	screens/MoveHistoryScreen.lua		Negative text	ui
+gen2-0286	gen2	screens/MoveHistoryScreen.lua		Positive text	ui
+gen2-0287	gen2	screens	NavigationMenu	screen file NavigationMenu.lua	screen
+gen2-0288	gen2	screens/NavigationMenu.lua		Tracker Settings	ui
+gen2-0289	gen2	screens/NavigationMenu.lua		Default text	ui
+gen2-0290	gen2	screens/NavigationMenu.lua		Upper box border	ui
+gen2-0291	gen2	screens/NavigationMenu.lua		Upper box background	ui
+gen2-0292	gen2	screens/NavigationMenu.lua		Check the Lua Console for a link to the Tracker's Help Wiki.	ui
+gen2-0293	gen2	screens/NavigationMenu.lua		Setup	ui
+gen2-0294	gen2	screens/NavigationMenu.lua		Extras	ui
+gen2-0295	gen2	screens/NavigationMenu.lua		Gameplay	ui
+gen2-0296	gen2	screens/NavigationMenu.lua		Quickload	ui
+gen2-0297	gen2	screens/NavigationMenu.lua		Intermediate text	ui
+gen2-0298	gen2	screens/NavigationMenu.lua		Theme	ui
+gen2-0299	gen2	screens/NavigationMenu.lua		Data	ui
+gen2-0300	gen2	screens/NavigationMenu.lua		Update	ui
+gen2-0301	gen2	screens/NavigationMenu.lua		Positive text	ui
+gen2-0302	gen2	screens/NavigationMenu.lua		Stats	ui
+gen2-0303	gen2	screens/NavigationMenu.lua		Streaming	ui
+gen2-0304	gen2	screens/NavigationMenu.lua		Extensions	ui
+gen2-0305	gen2	screens/NavigationMenu.lua		It's a secret...	ui
+gen2-0306	gen2	screens/NavigationMenu.lua		Credits	ui
+gen2-0307	gen2	screens/NavigationMenu.lua		Help	ui
+gen2-0308	gen2	screens/NavigationMenu.lua		Back	ui
+gen2-0309	gen2	screens/NavigationMenu.lua		Header text	ui
+gen2-0310	gen2	screens/NavigationMenu.lua		Reveal Mew by Truck	ui
+gen2-0311	gen2	screens/NavigationMenu.lua		Mirage Island Portal	ui
+gen2-0312	gen2	screens/NavigationMenu.lua		Main background	ui
+gen2-0313	gen2	screens/NavigationMenu.lua		Ironmon Tracker	ui
+gen2-0314	gen2	screens/NavigationMenu.lua		Created by:	ui
+gen2-0315	gen2	screens/NavigationMenu.lua		Contributors:	ui
+gen2-0316	gen2	screens	QuickloadScreen	screen file QuickloadScreen.lua	screen
+gen2-0317	gen2	screens/QuickloadScreen.lua		Quickload Setup	ui
+gen2-0318	gen2	screens/QuickloadScreen.lua		Lower box text	ui
+gen2-0319	gen2	screens/QuickloadScreen.lua		Lower box border	ui
+gen2-0320	gen2	screens/QuickloadScreen.lua		Lower box background	ui
+gen2-0321	gen2	screens/QuickloadScreen.lua		Use premade ROMs	ui
+gen2-0322	gen2	screens/QuickloadScreen.lua		Generate ROM each time	ui
+gen2-0323	gen2	screens/QuickloadScreen.lua		ROMs Folder	ui
+gen2-0324	gen2	screens/QuickloadScreen.lua		Randomizer JAR	ui
+gen2-0325	gen2	screens/QuickloadScreen.lua		Source ROM	ui
+gen2-0326	gen2	screens/QuickloadScreen.lua		Settings File	ui
+gen2-0327	gen2	screens/QuickloadScreen.lua		Buttons:	ui
+gen2-0328	gen2	screens/QuickloadScreen.lua		Load next seed	ui
+gen2-0329	gen2	screens/QuickloadScreen.lua		Positive text	ui
+gen2-0330	gen2	screens/QuickloadScreen.lua		Back	ui
+gen2-0331	gen2	screens/QuickloadScreen.lua		Clear	ui
+gen2-0332	gen2	screens/QuickloadScreen.lua		ROM File (*.GBC)|*.gbc|All files (*.*)|*.*	ui
+gen2-0333	gen2	screens/QuickloadScreen.lua		SELECT A ROM	ui
+gen2-0334	gen2	screens/QuickloadScreen.lua		JAR File (*.JAR)|*.jar|All files (*.*)|*.*	ui
+gen2-0335	gen2	screens/QuickloadScreen.lua		SELECT JAR	ui
+gen2-0336	gen2	screens/QuickloadScreen.lua		GBA File (*.GBC)|*.gbc|All files (*.*)|*.*	ui
+gen2-0337	gen2	screens/QuickloadScreen.lua		RNQS File (*.RNQS)|*.rnqs|All files (*.*)|*.*	ui
+gen2-0338	gen2	screens/QuickloadScreen.lua		SELECT RNQS	ui
+gen2-0339	gen2	screens/QuickloadScreen.lua		Main background	ui
+gen2-0340	gen2	screens/QuickloadScreen.lua		Header text	ui
+gen2-0341	gen2	screens/QuickloadScreen.lua		Choose a quickload option:	ui
+gen2-0342	gen2	screens/QuickloadScreen.lua		Folder:	ui
+gen2-0343	gen2	screens/QuickloadScreen.lua		Settings:	ui
+gen2-0344	gen2	screens/QuickloadScreen.lua		Negative text	ui
+gen2-0345	gen2	screens	SetupScreen	screen file SetupScreen.lua	screen
+gen2-0346	gen2	screens/SetupScreen.lua		Tracker Setup	ui
+gen2-0347	gen2	screens/SetupScreen.lua		Lower box text	ui
+gen2-0348	gen2	screens/SetupScreen.lua		Lower box border	ui
+gen2-0349	gen2	screens/SetupScreen.lua		Lower box background	ui
+gen2-0350	gen2	screens/SetupScreen.lua		Show Team View	ui
+gen2-0351	gen2	screens/SetupScreen.lua		Right justified numbers	ui
+gen2-0352	gen2	screens/SetupScreen.lua		Disable mainscreen carousel	ui
+gen2-0353	gen2	screens/SetupScreen.lua		Track PC Heals	ui
+gen2-0354	gen2	screens/SetupScreen.lua		PC heals count downward	ui
+gen2-0355	gen2	screens/SetupScreen.lua		icon set:	ui
+gen2-0356	gen2	screens/SetupScreen.lua		Pokemon icon set	ui
+gen2-0357	gen2	screens/SetupScreen.lua		Added by:	ui
+gen2-0358	gen2	screens/SetupScreen.lua		Edit Controls	ui
+gen2-0359	gen2	screens/SetupScreen.lua		Back	ui
+gen2-0360	gen2	screens/SetupScreen.lua		Positive text	ui
+gen2-0361	gen2	screens/SetupScreen.lua		Animated Pokemon popout	ui
+gen2-0362	gen2	screens/SetupScreen.lua		Controller Inputs	ui
+gen2-0363	gen2	screens/SetupScreen.lua		Edit GBA buttons for the Tracker, available buttons: A, B, L, R, Start, Select	ui
+gen2-0364	gen2	screens/SetupScreen.lua		Save && Close	ui
+gen2-0365	gen2	screens/SetupScreen.lua		Cancel	ui
+gen2-0366	gen2	screens/SetupScreen.lua		Main background	ui
+gen2-0367	gen2	screens/SetupScreen.lua		Header text	ui
+gen2-0368	gen2	screens	SingleExtensionScreen	screen file SingleExtensionScreen.lua	screen
+gen2-0369	gen2	screens/SingleExtensionScreen.lua		By:	ui
+gen2-0370	gen2	screens/SingleExtensionScreen.lua		Version:	ui
+gen2-0371	gen2	screens/SingleExtensionScreen.lua		Enabled:	ui
+gen2-0372	gen2	screens/SingleExtensionScreen.lua		View Online	ui
+gen2-0373	gen2	screens/SingleExtensionScreen.lua		Options	ui
+gen2-0374	gen2	screens/SingleExtensionScreen.lua		Check for Updates	ui
+gen2-0375	gen2	screens/SingleExtensionScreen.lua		Update Available	ui
+gen2-0376	gen2	screens/SingleExtensionScreen.lua		No Update Found	ui
+gen2-0377	gen2	screens/SingleExtensionScreen.lua		Lower box text	ui
+gen2-0378	gen2	screens/SingleExtensionScreen.lua		Lower box border	ui
+gen2-0379	gen2	screens/SingleExtensionScreen.lua		Lower box background	ui
+gen2-0380	gen2	screens/SingleExtensionScreen.lua		Positive text	ui
+gen2-0381	gen2	screens/SingleExtensionScreen.lua		Negative text	ui
+gen2-0382	gen2	screens/SingleExtensionScreen.lua		Back	ui
+gen2-0383	gen2	screens/SingleExtensionScreen.lua		Unknown Extension	ui
+gen2-0384	gen2	screens/SingleExtensionScreen.lua		(Description not available)	ui
+gen2-0385	gen2	screens/SingleExtensionScreen.lua		Intermediate text	ui
+gen2-0386	gen2	screens	StartupScreen	screen file StartupScreen.lua	screen
+gen2-0387	gen2	screens/StartupScreen.lua		Ironmon Tracker	ui
+gen2-0388	gen2	screens/StartupScreen.lua		Version:	ui
+gen2-0389	gen2	screens/StartupScreen.lua		Game:	ui
+gen2-0390	gen2	screens/StartupScreen.lua		Attempts:	ui
+gen2-0391	gen2	screens/StartupScreen.lua		GBA Controls:	ui
+gen2-0392	gen2	screens/StartupScreen.lua		Swap viewed	ui
+gen2-0393	gen2	screens/StartupScreen.lua		Quickload next ROM:	ui
+gen2-0394	gen2	screens/StartupScreen.lua		Erase game save data:	ui
+gen2-0395	gen2	screens/StartupScreen.lua		Pokemon icon set	ui
+gen2-0396	gen2	screens/StartupScreen.lua		Positive text	ui
+gen2-0397	gen2	screens/StartupScreen.lua		Lower box text	ui
+gen2-0398	gen2	screens/StartupScreen.lua		Lower box border	ui
+gen2-0399	gen2	screens/StartupScreen.lua		Lower box background	ui
+gen2-0400	gen2	screens/StartupScreen.lua		Show on new game screen	ui
+gen2-0401	gen2	screens/StartupScreen.lua		Welcome message	ui
+gen2-0402	gen2	screens/StartupScreen.lua		< Press	ui
+gen2-0403	gen2	screens/StartupScreen.lua		Startup Pokemon displayed	ui
+gen2-0404	gen2	screens/StartupScreen.lua		Default text	ui
+gen2-0405	gen2	screens/StartupScreen.lua		Upper box border	ui
+gen2-0406	gen2	screens/StartupScreen.lua		Upper box background	ui
+gen2-0407	gen2	screens/StartupScreen.lua		> %s	ui
+gen2-0408	gen2	screens/StartupScreen.lua		Choose a Pokemon	ui
+gen2-0409	gen2	screens/StartupScreen.lua		Choose a Pokemon to show during startup:	ui
+gen2-0410	gen2	screens/StartupScreen.lua		Init	ui
+gen2-0411	gen2	screens/StartupScreen.lua		Loading Pokedex	ui
+gen2-0412	gen2	screens/StartupScreen.lua		AutoCompleteSource	ui
+gen2-0413	gen2	screens/StartupScreen.lua		ListItems	ui
+gen2-0414	gen2	screens/StartupScreen.lua		AutoCompleteMode	ui
+gen2-0415	gen2	screens/StartupScreen.lua		Append	ui
+gen2-0416	gen2	screens/StartupScreen.lua		Save	ui
+gen2-0417	gen2	screens/StartupScreen.lua		Cancel	ui
+gen2-0418	gen2	screens/StartupScreen.lua		Edit Attempts Counter	ui
+gen2-0419	gen2	screens/StartupScreen.lua		Enter the number of attempts:	ui
+gen2-0420	gen2	screens/StartupScreen.lua		Intermediate text	ui
+gen2-0421	gen2	screens/StartupScreen.lua		Main background	ui
+gen2-0422	gen2	screens/StartupScreen.lua		Header text	ui
+gen2-0423	gen2	screens/StartupScreen.lua		Toggle view	ui
+gen2-0424	gen2	screens/StartupScreen.lua		Load next seed	ui
+gen2-0425	gen2	screens/StartupScreen.lua		UP + B + SELECT	ui
+gen2-0426	gen2	screens	StatsScreen	screen file StatsScreen.lua	screen
+gen2-0427	gen2	screens/StatsScreen.lua		Game Stats	ui
+gen2-0428	gen2	screens/StatsScreen.lua		Lower box text	ui
+gen2-0429	gen2	screens/StatsScreen.lua		Lower box border	ui
+gen2-0430	gen2	screens/StatsScreen.lua		Lower box background	ui
+gen2-0431	gen2	screens/StatsScreen.lua		Total attempts	ui
+gen2-0432	gen2	screens/StatsScreen.lua		centers used	ui
+gen2-0433	gen2	screens/StatsScreen.lua		Trainer battles	ui
+gen2-0434	gen2	screens/StatsScreen.lua		Wild encounters	ui
+gen2-0435	gen2	screens/StatsScreen.lua		Bulk shop purchases	ui
+gen2-0436	gen2	screens/StatsScreen.lua		Game saves	ui
+gen2-0437	gen2	screens/StatsScreen.lua		Total steps	ui
+gen2-0438	gen2	screens/StatsScreen.lua		Struggles used	ui
+gen2-0439	gen2	screens/StatsScreen.lua		Back	ui
+gen2-0440	gen2	screens/StatsScreen.lua		Main background	ui
+gen2-0441	gen2	screens/StatsScreen.lua		Header text	ui
+gen2-0442	gen2	screens	StreamerScreen	screen file StreamerScreen.lua	screen
+gen2-0443	gen2	screens/StreamerScreen.lua		Streamer Tools	ui
+gen2-0444	gen2	screens/StreamerScreen.lua		Attempts Count:	ui
+gen2-0445	gen2	screens/StreamerScreen.lua		Welcome Message:	ui
+gen2-0446	gen2	screens/StreamerScreen.lua		Edit	ui
+gen2-0447	gen2	screens/StreamerScreen.lua		Favorite	ui
+gen2-0448	gen2	screens/StreamerScreen.lua		Default text	ui
+gen2-0449	gen2	screens/StreamerScreen.lua		Upper box border	ui
+gen2-0450	gen2	screens/StreamerScreen.lua		Upper box background	ui
+gen2-0451	gen2	screens/StreamerScreen.lua		Lower box text	ui
+gen2-0452	gen2	screens/StreamerScreen.lua		Lower box border	ui
+gen2-0453	gen2	screens/StreamerScreen.lua		Lower box background	ui
+gen2-0454	gen2	screens/StreamerScreen.lua		Show on new game screen	ui
+gen2-0455	gen2	screens/StreamerScreen.lua		Positive text	ui
+gen2-0456	gen2	screens/StreamerScreen.lua		Pokemon icon set	ui
+gen2-0457	gen2	screens/StreamerScreen.lua		Back	ui
+gen2-0458	gen2	screens/StreamerScreen.lua		Edit Welcome Message	ui
+gen2-0459	gen2	screens/StreamerScreen.lua		Welcome message	ui
+gen2-0460	gen2	screens/StreamerScreen.lua		Edit the welcome message box on the Tracker, shown each time a new game begins.	ui
+gen2-0461	gen2	screens/StreamerScreen.lua		Vertical	ui
+gen2-0462	gen2	screens/StreamerScreen.lua		Save	ui
+gen2-0463	gen2	screens/StreamerScreen.lua		Clear	ui
+gen2-0464	gen2	screens/StreamerScreen.lua		Cancel	ui
+gen2-0465	gen2	screens/StreamerScreen.lua		Choose a Favorite	ui
+gen2-0466	gen2	screens/StreamerScreen.lua		Favorite Pokemon are shown as a new game begins.	ui
+gen2-0467	gen2	screens/StreamerScreen.lua		Init	ui
+gen2-0468	gen2	screens/StreamerScreen.lua		Loading Pokedex	ui
+gen2-0469	gen2	screens/StreamerScreen.lua		AutoCompleteSource	ui
+gen2-0470	gen2	screens/StreamerScreen.lua		ListItems	ui
+gen2-0471	gen2	screens/StreamerScreen.lua		AutoCompleteMode	ui
+gen2-0472	gen2	screens/StreamerScreen.lua		Append	ui
+gen2-0473	gen2	screens/StreamerScreen.lua		Startup favorites	ui
+gen2-0474	gen2	screens/StreamerScreen.lua		(%d+)%s*,%s*(%d+)%s*,%s*(%d+)	ui
+gen2-0475	gen2	screens/StreamerScreen.lua		Main background	ui
+gen2-0476	gen2	screens/StreamerScreen.lua		Header text	ui
+gen2-0477	gen2	screens	TeamViewArea	screen file TeamViewArea.lua	screen
+gen2-0478	gen2	screens/TeamViewArea.lua		Lower box text	ui
+gen2-0479	gen2	screens/TeamViewArea.lua		Lower box border	ui
+gen2-0480	gen2	screens/TeamViewArea.lua		Lower box background	ui
+gen2-0481	gen2	screens/TeamViewArea.lua		Main background	ui
+gen2-0482	gen2	screens/TeamViewArea.lua		Show Team View	ui
+gen2-0483	gen2	screens/TeamViewArea.lua		Default text	ui
+gen2-0484	gen2	screens/TeamViewArea.lua		Upper box border	ui
+gen2-0485	gen2	screens/TeamViewArea.lua		Upper box background	ui
+gen2-0486	gen2	screens/TeamViewArea.lua		Pokemon icon set	ui
+gen2-0487	gen2	screens/TeamViewArea.lua		Lv.%s	ui
+gen2-0488	gen2	screens/TeamViewArea.lua		Positive text	ui
+gen2-0489	gen2	screens/TeamViewArea.lua		Intermediate text	ui
+gen2-0490	gen2	screens/TeamViewArea.lua		Negative text	ui
+gen2-0491	gen2	screens	TimeMachineScreen	screen file TimeMachineScreen.lua	screen
+gen2-0492	gen2	screens/TimeMachineScreen.lua		Time Machine	ui
+gen2-0493	gen2	screens/TimeMachineScreen.lua		Select a restore point below to go back to that point in time.	ui
+gen2-0494	gen2	screens/TimeMachineScreen.lua		No restore points are available; one is created every 5 minutes.	ui
+gen2-0495	gen2	screens/TimeMachineScreen.lua		created %s minute%s ago	ui
+gen2-0496	gen2	screens/TimeMachineScreen.lua		>>  Return back to the future	ui
+gen2-0497	gen2	screens/TimeMachineScreen.lua		Confirm restore?	ui
+gen2-0498	gen2	screens/TimeMachineScreen.lua		Default text	ui
+gen2-0499	gen2	screens/TimeMachineScreen.lua		Upper box border	ui
+gen2-0500	gen2	screens/TimeMachineScreen.lua		Upper box background	ui
+gen2-0501	gen2	screens/TimeMachineScreen.lua		Page	ui
+gen2-0502	gen2	screens/TimeMachineScreen.lua		Enable restore points	ui
+gen2-0503	gen2	screens/TimeMachineScreen.lua		Positive text	ui
+gen2-0504	gen2	screens/TimeMachineScreen.lua		Create	ui
+gen2-0505	gen2	screens/TimeMachineScreen.lua		Back	ui
+gen2-0506	gen2	screens/TimeMachineScreen.lua		Unknown Area	ui
+gen2-0507	gen2	screens/TimeMachineScreen.lua		# %s - %s	ui
+gen2-0508	gen2	screens/TimeMachineScreen.lua		Negative text	ui
+gen2-0509	gen2	screens/TimeMachineScreen.lua		Main background	ui
+gen2-0510	gen2	screens/TimeMachineScreen.lua		Header text	ui
+gen2-0511	gen2	screens	TrackedDataScreen	screen file TrackedDataScreen.lua	screen
+gen2-0512	gen2	screens/TrackedDataScreen.lua		Manage Tracked Data	ui
+gen2-0513	gen2	screens/TrackedDataScreen.lua		Lower box text	ui
+gen2-0514	gen2	screens/TrackedDataScreen.lua		Lower box border	ui
+gen2-0515	gen2	screens/TrackedDataScreen.lua		Lower box background	ui
+gen2-0516	gen2	screens/TrackedDataScreen.lua		All of the data that is tracked while you play is auto saved after each battle, stored as a .TDAT file	ui
+gen2-0517	gen2	screens/TrackedDataScreen.lua		Old auto saved data will be lost if you start a new game on the same	ui
+gen2-0518	gen2	screens/TrackedDataScreen.lua		version. If you want to keep it, use Save Data	ui
+gen2-0519	gen2	screens/TrackedDataScreen.lua		Auto save tracked game data	ui
+gen2-0520	gen2	screens/TrackedDataScreen.lua		Save Data	ui
+gen2-0521	gen2	screens/TrackedDataScreen.lua		Load Data	ui
+gen2-0522	gen2	screens/TrackedDataScreen.lua		* Clear Data *	ui
+gen2-0523	gen2	screens/TrackedDataScreen.lua		Back	ui
+gen2-0524	gen2	screens/TrackedDataScreen.lua		Positive text	ui
+gen2-0525	gen2	screens/TrackedDataScreen.lua		Save Tracker Data	ui
+gen2-0526	gen2	screens/TrackedDataScreen.lua		Enter a filename to save Tracker data to:	ui
+gen2-0527	gen2	screens/TrackedDataScreen.lua		.TDAT	ui
+gen2-0528	gen2	screens/TrackedDataScreen.lua		Cancel	ui
+gen2-0529	gen2	screens/TrackedDataScreen.lua		Tracker Data (*.TDAT)|*.tdat|All files (*.*)|*.*	ui
+gen2-0530	gen2	screens/TrackedDataScreen.lua		Data Cleared!	ui
+gen2-0531	gen2	screens/TrackedDataScreen.lua		Are you sure?	ui
+gen2-0532	gen2	screens/TrackedDataScreen.lua		Negative text	ui
+gen2-0533	gen2	screens/TrackedDataScreen.lua		Main background	ui
+gen2-0534	gen2	screens/TrackedDataScreen.lua		Header text	ui
+gen2-0535	gen2	screens	TrackerScreen	screen file TrackerScreen.lua	screen
+gen2-0536	gen2	screens/TrackerScreen.lua		Pokemon icon set	ui
+gen2-0537	gen2	screens/TrackerScreen.lua		Default text	ui
+gen2-0538	gen2	screens/TrackerScreen.lua		Upper box border	ui
+gen2-0539	gen2	screens/TrackerScreen.lua		Upper box background	ui
+gen2-0540	gen2	screens/TrackerScreen.lua		Positive text	ui
+gen2-0541	gen2	screens/TrackerScreen.lua		Track PC Heals	ui
+gen2-0542	gen2	screens/TrackerScreen.lua		Negative text	ui
+gen2-0543	gen2	screens/TrackerScreen.lua		Intermediate text	ui
+gen2-0544	gen2	screens/TrackerScreen.lua		Header text	ui
+gen2-0545	gen2	screens/TrackerScreen.lua		Main background	ui
+gen2-0546	gen2	screens/TrackerScreen.lua		(Leave a note)	ui
+gen2-0547	gen2	screens/TrackerScreen.lua		Lower box text	ui
+gen2-0548	gen2	screens/TrackerScreen.lua		Steps: ##,###	ui
+gen2-0549	gen2	screens/TrackerScreen.lua		Steps: %s	ui
+gen2-0550	gen2	screens/TrackerScreen.lua		Goal	ui
+gen2-0551	gen2	screens/TrackerScreen.lua		Lower box border	ui
+gen2-0552	gen2	screens/TrackerScreen.lua		Lower box background	ui
+gen2-0553	gen2	screens/TrackerScreen.lua		Reset	ui
+gen2-0554	gen2	screens/TrackerScreen.lua		Total	ui
+gen2-0555	gen2	screens/TrackerScreen.lua		Left	ui
+gen2-0556	gen2	screens/TrackerScreen.lua		Middle	ui
+gen2-0557	gen2	screens/TrackerScreen.lua		Right	ui
+gen2-0558	gen2	screens/TrackerScreen.lua		_badge	ui
+gen2-0559	gen2	screens/TrackerScreen.lua		Disable mainscreen carousel	ui
+gen2-0560	gen2	screens/TrackerScreen.lua		Show last damage calcs	ui
+gen2-0561	gen2	screens/TrackerScreen.lua		Last move:	ui
+gen2-0562	gen2	screens/TrackerScreen.lua		Waiting for a new move...	ui
+gen2-0563	gen2	screens/TrackerScreen.lua		Rock Smash:	ui
+gen2-0564	gen2	screens/TrackerScreen.lua		: Seen	ui
+gen2-0565	gen2	screens/TrackerScreen.lua		Leave a Note	ui
+gen2-0566	gen2	screens/TrackerScreen.lua		Enter a note for	ui
+gen2-0567	gen2	screens/TrackerScreen.lua		(70 char. max):	ui
+gen2-0568	gen2	screens/TrackerScreen.lua		Save && Close	ui
+gen2-0569	gen2	screens/TrackerScreen.lua		Clear Abilities	ui
+gen2-0570	gen2	screens/TrackerScreen.lua		Cancel	ui
+gen2-0571	gen2	screens/TrackerScreen.lua		Choose a Step Goal	ui
+gen2-0572	gen2	screens/TrackerScreen.lua		Pedometer will change color when goal is reached.	ui
+gen2-0573	gen2	screens/TrackerScreen.lua		(Set to 0 to turn-off)	ui
+gen2-0574	gen2	screens/TrackerScreen.lua		Enter a step goal:	ui
+gen2-0575	gen2	screens/TrackerScreen.lua		Save	ui
+gen2-0576	gen2	screens/TrackerScreen.lua		Show random ball picker	ui
+gen2-0577	gen2	screens/TrackerScreen.lua		Reveal info if randomized	ui
+gen2-0578	gen2	screens/TrackerScreen.lua		Last seen Lv.%s	ui
+gen2-0579	gen2	screens/TrackerScreen.lua		New encounter!	ui
+gen2-0580	gen2	screens/TrackerScreen.lua		Lv.%s	ui
+gen2-0581	gen2	screens/TrackerScreen.lua		Lv.%s (	ui
+gen2-0582	gen2	screens/TrackerScreen.lua		Show experience points bar	ui
+gen2-0583	gen2	screens/TrackerScreen.lua		HP:	ui
+gen2-0584	gen2	screens/TrackerScreen.lua		Determine friendship readiness	ui
+gen2-0585	gen2	screens/TrackerScreen.lua		Heals in Bag:	ui
+gen2-0586	gen2	screens/TrackerScreen.lua		HP (	ui
+gen2-0587	gen2	screens/TrackerScreen.lua		PC Heals:	ui
+gen2-0588	gen2	screens/TrackerScreen.lua		Seen in the wild:	ui
+gen2-0589	gen2	screens/TrackerScreen.lua		Seen on trainers:	ui
+gen2-0590	gen2	screens/TrackerScreen.lua		Team:	ui
+gen2-0591	gen2	screens/TrackerScreen.lua		Acc	ui
+gen2-0592	gen2	screens/TrackerScreen.lua		Eva	ui
+gen2-0593	gen2	screens/TrackerScreen.lua		Pow	ui
+gen2-0594	gen2	screens/TrackerScreen.lua		Show physical special icons	ui
+gen2-0595	gen2	screens/TrackerScreen.lua		Calculate variable damage	ui
+gen2-0596	gen2	screens/TrackerScreen.lua		Randomly chosen ball:	ui
+gen2-0597	gen2	screens	TypeDefensesScreen	screen file TypeDefensesScreen.lua	screen
+gen2-0598	gen2	screens/TypeDefensesScreen.lua		Immunities	ui
+gen2-0599	gen2	screens/TypeDefensesScreen.lua		Resistances	ui
+gen2-0600	gen2	screens/TypeDefensesScreen.lua		Weaknesses	ui
+gen2-0601	gen2	screens/TypeDefensesScreen.lua		Lower box text	ui
+gen2-0602	gen2	screens/TypeDefensesScreen.lua		Intermediate text	ui
+gen2-0603	gen2	screens/TypeDefensesScreen.lua		Lower box border	ui
+gen2-0604	gen2	screens/TypeDefensesScreen.lua		Lower box background	ui
+gen2-0605	gen2	screens/TypeDefensesScreen.lua		Back	ui
+gen2-0606	gen2	screens/TypeDefensesScreen.lua		Page	ui
+gen2-0607	gen2	screens/TypeDefensesScreen.lua		0x	ui
+gen2-0608	gen2	screens/TypeDefensesScreen.lua		2x	ui
+gen2-0609	gen2	screens/TypeDefensesScreen.lua		4x	ui
+gen2-0610	gen2	screens	UpdateScreen	screen file UpdateScreen.lua	screen
+gen2-0611	gen2	screens/UpdateScreen.lua		Tracker Update Available	ui
+gen2-0612	gen2	screens/UpdateScreen.lua		Tracker Update Check	ui
+gen2-0613	gen2	screens/UpdateScreen.lua		Current version:	ui
+gen2-0614	gen2	screens/UpdateScreen.lua		New version available:	ui
+gen2-0615	gen2	screens/UpdateScreen.lua		What would you like to do?	ui
+gen2-0616	gen2	screens/UpdateScreen.lua		Prepare for update	ui
+gen2-0617	gen2	screens/UpdateScreen.lua		Update now	ui
+gen2-0618	gen2	screens/UpdateScreen.lua		Open download link	ui
+gen2-0619	gen2	screens/UpdateScreen.lua		Remind me tomorrow	ui
+gen2-0620	gen2	screens/UpdateScreen.lua		( Skip this update )	ui
+gen2-0621	gen2	screens/UpdateScreen.lua		View release notes	ui
+gen2-0622	gen2	screens/UpdateScreen.lua		Restart Tracker	ui
+gen2-0623	gen2	screens/UpdateScreen.lua		Manual Download	ui
+gen2-0624	gen2	screens/UpdateScreen.lua		Check external Window for status.	ui
+gen2-0625	gen2	screens/UpdateScreen.lua		Please close and reopen Bizhawk	ui
+gen2-0626	gen2	screens/UpdateScreen.lua		You can safely reload the Tracker:	ui
+gen2-0627	gen2	screens/UpdateScreen.lua		Then load:  %s	ui
+gen2-0628	gen2	screens/UpdateScreen.lua		Check the Lua Console for a link to the Tracker's Release Notes.	ui
+gen2-0629	gen2	screens/UpdateScreen.lua		Already on the latest version.	ui
+gen2-0630	gen2	screens/UpdateScreen.lua		Update not yet started.	ui
+gen2-0631	gen2	screens/UpdateScreen.lua		Update is ready when you restart.	ui
+gen2-0632	gen2	screens/UpdateScreen.lua		Update in progress,  please wait...	ui
+gen2-0633	gen2	screens/UpdateScreen.lua		The auto-update was successful.	ui
+gen2-0634	gen2	screens/UpdateScreen.lua		ERROR: Please restart Bizhawk...	ui
+gen2-0635	gen2	screens/UpdateScreen.lua		Dev branch updates	ui
+gen2-0636	gen2	screens/UpdateScreen.lua		Default text	ui
+gen2-0637	gen2	screens/UpdateScreen.lua		Upper box border	ui
+gen2-0638	gen2	screens/UpdateScreen.lua		Upper box background	ui
+gen2-0639	gen2	screens/UpdateScreen.lua		Positive text	ui
+gen2-0640	gen2	screens/UpdateScreen.lua		Check for Updates	ui
+gen2-0641	gen2	screens/UpdateScreen.lua		No Updates Available	ui
+gen2-0642	gen2	screens/UpdateScreen.lua		Windows	ui
+gen2-0643	gen2	screens/UpdateScreen.lua		Back	ui
+gen2-0644	gen2	screens/UpdateScreen.lua		Lower box text	ui
+gen2-0645	gen2	screens/UpdateScreen.lua		Lower box border	ui
+gen2-0646	gen2	screens/UpdateScreen.lua		Lower box background	ui
+gen2-0647	gen2	screens/UpdateScreen.lua		Auto save tracked game data	ui
+gen2-0648	gen2	screens/UpdateScreen.lua		Intermediate text	ui
+gen2-0649	gen2	screens/UpdateScreen.lua		Main background	ui
+gen2-0650	gen2	screens/UpdateScreen.lua		Manually check for updates below:	ui
+gen2-0651	gen2	screens/UpdateScreen.lua		Update Status:	ui
+gen2-0652	gen2	screens/UpdateScreen.lua		Header text	ui
+gen2-0653	gen2	screens/UpdateScreen.lua		Negative text	ui
+gen2-0654	gen2	screens	ViewLogWarningScreen	screen file ViewLogWarningScreen.lua	screen
+gen2-0655	gen2	screens/ViewLogWarningScreen.lua		Are you sure you want to view the	ui
+gen2-0656	gen2	screens/ViewLogWarningScreen.lua		Intermediate text	ui
+gen2-0657	gen2	screens/ViewLogWarningScreen.lua		log file?	ui
+gen2-0658	gen2	screens/ViewLogWarningScreen.lua		In Ironmon, it's against the spirit	ui
+gen2-0659	gen2	screens/ViewLogWarningScreen.lua		of the challenge to view log info	ui
+gen2-0660	gen2	screens/ViewLogWarningScreen.lua		about the game before it's over.	ui
+gen2-0661	gen2	screens/ViewLogWarningScreen.lua		If you are unsure, simply do not	ui
+gen2-0662	gen2	screens/ViewLogWarningScreen.lua		view the log file.	ui
+gen2-0663	gen2	screens/ViewLogWarningScreen.lua		! ! W A R N I N G ! !	ui
+gen2-0664	gen2	screens/ViewLogWarningScreen.lua		Yes, I'm sure	ui
+gen2-0665	gen2	screens/ViewLogWarningScreen.lua		Lower box text	ui
+gen2-0666	gen2	screens/ViewLogWarningScreen.lua		Lower box border	ui
+gen2-0667	gen2	screens/ViewLogWarningScreen.lua		Lower box background	ui
+gen2-0668	gen2	screens/ViewLogWarningScreen.lua		Back	ui
+gen2-0669	gen2	screens/ViewLogWarningScreen.lua		Main background	ui

@@ -1,0 +1,21 @@
+TEXT:
+Hidden, game full screen
+Game is considered over when
+Lead Pokemon faints
+Highest level faints
+Entire party faints
+Either of your first two faints
+Notebook
+Open notebook
+MAGNETON
+SPE+
+TREECKO
+fast grass
+New runs
+Get the next run ready in the background
+Manage data
+Clear tracked data
+Close
+
+CONTENT DESCRIPTIONS:
+

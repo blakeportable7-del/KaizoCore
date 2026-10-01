@@ -1,0 +1,30 @@
+TEXT:
+Kaizo IronMON
+Build your own
+The Pokémon
+Step 4 of 5
+Pokémon Emerald (U)
+Evolutions
+What each Pokémon evolves into.
+Unchanged
+Random
+Random, every level
+Pokémon evolve into what they always did.
+Moves Pokémon learn
+The moves each Pokémon picks up as it levels.
+Unchanged
+Random, own types first
+Random
+Metronome only
+Each Pokémon learns its own moves.
+The moves themselves
+How hard, how accurate and how many uses.
+Back
+Next
+Home
+Play
+Library
+More
+
+CONTENT DESCRIPTIONS:
+Back to Home

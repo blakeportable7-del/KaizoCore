@@ -1,0 +1,46 @@
+TEXT:
+File
+States, slot 1
+Save
+Load
+Speed 1x
+Mute
+Restart
+Rules
+Cam
+Stream
+Clean view
+Edit layout
+Settings
+Achievements
+Cheats off
+▲
+◀
+▶
+▼
+A
+B
+L
+R
+SELECT
+START
+SETUP
+NUZLOCKE  Standard
+1 alive  1 dead  1 !
+No Pokemon yet. The tracker fills in when you get your first one.
+Home
+Play
+Library
+More
+
+CONTENT DESCRIPTIONS:
+Up
+Left
+Right
+Down
+A button
+B button
+L shoulder
+R shoulder
+Select
+Start

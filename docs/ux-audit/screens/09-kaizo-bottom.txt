@@ -1,0 +1,33 @@
+TEXT:
+Kaizo IronMON
+GBA
+Pokémon Emerald (U)
+Original game
+MODE
+Standard
+Kaizo
+Super Kaizo
+Ultimate
+Survival
+Kaizo Doubles
+Chaos Kaizo
+IronMON Journey
+Official 60% levels
+Emerald Kaizo, Survival and Super Kaizo: trainer and wild levels +6% first, then the mode's +50%, as the official settings do. This settings file is custom or edited, so it runs exactly as saved unless you switch this on.
+Build your own
+Pick your starters and what the randomizer changes, in plain words.
+Startup favorites (optional)
+If one is offered as a starter, the rules let you take it.
+Randomizer settings (advanced)
+Start new run
+Home
+Play
+Library
+More
+
+CONTENT DESCRIPTIONS:
+Back to Home
+Selected
+Open
+Open
+Open

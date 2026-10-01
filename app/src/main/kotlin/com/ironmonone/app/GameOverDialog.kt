@@ -35,9 +35,13 @@ import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.launch
 
 /** One member of the team the run ended with, whichever tracker produced it. */
 data class GameOverMon(val species: Int, val name: String, val level: Int, val fainted: Boolean, val shiny: Boolean = false)
@@ -65,7 +69,7 @@ data class GameOverMon(val species: Int, val name: String, val level: Int, val f
 enum class GameOverFamily { GEN12, GEN3, DS }
 
 /** What happened when the player asked to keep this attempt: the reference's clickedStatus. */
-enum class SaveAttemptStatus { NOT_CLICKED, SUCCESS, FAILED }
+enum class SaveAttemptStatus { NOT_CLICKED, SAVING, SUCCESS, FAILED }
 
 /** The loss colour: the header band, the frame and the title. */
 private val LossRed = Color(0xFFE0483C)
@@ -97,28 +101,37 @@ fun GameOverDialog(
     onContinue: () -> Unit,
     onRetry: () -> Unit,
     /** Returns whether the attempt was saved; the button reports it in place, as the reference does. */
-    onSaveAttempt: () -> Boolean,
+    onSaveAttempt: suspend () -> Boolean,
     onNewGame: () -> Unit,
     /** GameOverScreen.NotesGrade: the Stat Marking Score Sheet. Null hides it (no marks to grade). */
     onGrade: (() -> Unit)? = null,
     /** Where the game picture is on screen. The popup covers it; null centres the card on the window. */
     gameFrame: androidx.compose.ui.geometry.Rect? = null,
+    /** The run's lines under the quote (RunHistoryHook): what ended it, badges, time, the best. Null hides them. */
+    card: DeathCard? = null,
+    /** Sends the run's line to another app. Null hides the button. */
+    onShare: (() -> Unit)? = null,
 ) {
     var teamIndex by remember { mutableIntStateOf(0) }
-    val quotes = when (family) {
+    // The built-in lines for how the run ended, and the player's own on top of them (DeathQuotes): one line
+    // per run, drawn at random with none twice until all have been shown, the same one on the tracker's card.
+    val builtIn = when (family) {
         GameOverFamily.DS -> ndsRunOverLines(dsCause ?: com.ironmonone.tracker.nds.NdsRunOver.STANDARD)
         else -> PcGameOverQuotes
     }
-    var quoteIndex by remember { mutableIntStateOf(((attempt % quotes.size) + quotes.size) % quotes.size) }
+    val quoteSource = if (family == GameOverFamily.DS) DeathQuotes.dsSource(dsCause ?: com.ironmonone.tracker.nds.NdsRunOver.STANDARD) else DeathQuotes.PC_SOURCE
+    var quote by remember(quoteSource, attempt, won) { mutableStateOf(DeathQuotes.shown(quoteSource, attempt, builtIn, forLoss = !won)) }
     var retryConfirm by remember { mutableStateOf(false) }
     var saveStatus by remember { mutableStateOf(SaveAttemptStatus.NOT_CLICKED) }
+    // The copy is a whole ROM, up to 512 MB for a DS game: off the main thread (review, 2026-09-29).
+    val saveScope = androidx.compose.runtime.rememberCoroutineScope()
     val accent = if (won) Pc.Gold else LossRed
     // nextTeamPokemon + randomizeAnnouncerQuote: a tap on the team shows the next
-    // Pokemon (or that one) and re-rolls the quote.
+    // Pokemon (or that one) and draws another line.
     fun pick(i: Int) {
         if (team.isEmpty()) return
         teamIndex = i % team.size
-        quoteIndex = (quoteIndex + 7) % quotes.size
+        quote = DeathQuotes.reroll(quoteSource, attempt, builtIn, forLoss = !won)
     }
     val actions = buildList {
         add(TileSpec(Glyph.ARROW, "Continue playing", Tone.PRIMARY, onContinue))
@@ -131,15 +144,21 @@ fun GameOverDialog(
                 Glyph.INSTALL,
                 when (saveStatus) {
                     SaveAttemptStatus.NOT_CLICKED -> "Save this attempt"
+                    SaveAttemptStatus.SAVING -> "Saving..."
                     SaveAttemptStatus.SUCCESS -> "Saved to the attempts folder"
                     SaveAttemptStatus.FAILED -> "Unable to save"
                 },
                 when (saveStatus) {
-                    SaveAttemptStatus.NOT_CLICKED -> Tone.PLAIN
+                    SaveAttemptStatus.NOT_CLICKED, SaveAttemptStatus.SAVING -> Tone.PLAIN
                     SaveAttemptStatus.SUCCESS -> Tone.GOOD
                     SaveAttemptStatus.FAILED -> Tone.DANGER
                 },
-            ) { if (saveStatus == SaveAttemptStatus.NOT_CLICKED) saveStatus = if (onSaveAttempt()) SaveAttemptStatus.SUCCESS else SaveAttemptStatus.FAILED },
+            ) {
+                if (saveStatus == SaveAttemptStatus.NOT_CLICKED) {
+                    saveStatus = SaveAttemptStatus.SAVING
+                    saveScope.launch { saveStatus = if (onSaveAttempt()) SaveAttemptStatus.SUCCESS else SaveAttemptStatus.FAILED }
+                }
+            },
         )
         if (onGrade != null) add(TileSpec(Glyph.STAR, "Grade my notes", Tone.PLAIN, onGrade))
         if (onInspectLog != null) add(TileSpec(Glyph.MAGNIFIER, if (family == GameOverFamily.DS) "Open the log" else "Inspect the log", Tone.PLAIN, onInspectLog))
@@ -212,11 +231,12 @@ fun GameOverDialog(
                 }
                 // The announcer's line, or the DS tracker's run-over message.
                 PixText(
-                    if (won && family != GameOverFamily.DS) "CONGRATULATIONS!!" else quotes[quoteIndex],
+                    if (won && family != GameOverFamily.DS) "CONGRATULATIONS!!" else quote,
                     13, if (won) Pc.Positive else Pc.Text,
                     Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
                     align = TextAlign.Center, wrap = true,
                 )
+                if (card != null) RunLines(card, onShare)
                 Box(Modifier.fillMaxWidth().height(1.dp).background(Pc.Border.copy(alpha = 0.45f)))
                 // The actions, two to a row; an odd last one takes the whole row.
                 Column(Modifier.fillMaxWidth().padding(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -231,6 +251,45 @@ fun GameOverDialog(
     }
 }
 
+/**
+ * The death card's lines (roadmap item 6): what ended the run, then badges and time with the best
+ * other run on the same settings, or NEW BEST. KaizoCore's addition: no reference tracker keeps a
+ * history across runs. The Share button sits beside them so the popup grows by the lines only.
+ */
+@Composable
+private fun RunLines(card: DeathCard, onShare: (() -> Unit)?) {
+    Row(
+        Modifier.fillMaxWidth().padding(start = 12.dp, end = 8.dp, bottom = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            card.headline()?.let { (label, text) ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    PixText(label, 10, Pc.Dim)
+                    Spacer(Modifier.width(6.dp))
+                    PixText(text, 12, Pc.Text, Modifier.weight(1f), wrap = true)
+                }
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (card.newBest) {
+                    PixText("NEW BEST", 11, Pc.Gold)
+                    Spacer(Modifier.width(8.dp))
+                }
+                PixText(card.statsText() + (card.bestText()?.let { ". $it" } ?: ""), 11, Pc.Dim, Modifier.weight(1f), wrap = true)
+            }
+        }
+        if (onShare != null) {
+            Spacer(Modifier.width(8.dp))
+            Box(
+                Modifier.size(36.dp).border(1.dp, Pc.Border)
+                    .clickable(onClickLabel = "Share this run", role = Role.Button) { onShare() }
+                    .semantics { contentDescription = "Share this run" },
+                contentAlignment = Alignment.Center,
+            ) { GlyphIcon(Glyph.SHARE, Pc.Text, Modifier.size(16.dp)) }
+        }
+    }
+}
+
 /** A team member's picture, drawn crisp; a fainted one in grey and faded, as a fallen member reads. */
 @Composable
 private fun MonImage(bmp: ImageBitmap, name: String, fainted: Boolean, modifier: Modifier) {
@@ -241,7 +300,7 @@ private fun MonImage(bmp: ImageBitmap, name: String, fainted: Boolean, modifier:
     )
 }
 
-private enum class Glyph { ARROW, SWORD, INSTALL, MAGNIFIER, PLUS, STAR }
+private enum class Glyph { ARROW, SWORD, INSTALL, MAGNIFIER, PLUS, STAR, SHARE }
 
 private enum class Tone { PRIMARY, PLAIN, GOLD, GOOD, DANGER }
 
@@ -298,6 +357,11 @@ private fun GlyphIcon(glyph: Glyph, color: Color, modifier: Modifier) {
             Glyph.PLUS -> {
                 drawLine(color, Offset(w / 2, 0f), Offset(w / 2, h), s)
                 drawLine(color, Offset(0f, h / 2), Offset(w, h / 2), s)
+            }
+            Glyph.SHARE -> {
+                val a = Offset(w * 0.78f, h * 0.18f); val b = Offset(w * 0.22f, h * 0.5f); val c = Offset(w * 0.78f, h * 0.82f)
+                drawLine(color, a, b, s * 0.8f); drawLine(color, b, c, s * 0.8f)
+                listOf(a, b, c).forEach { drawCircle(color, radius = w * 0.14f, center = it) }
             }
             Glyph.STAR -> {
                 val pts = (0 until 10).map { k ->

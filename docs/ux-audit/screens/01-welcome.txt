@@ -1,0 +1,10 @@
+TEXT:
+Welcome to KaizoCore
+KaizoCore is an emulator for Game Boy, Game Boy Advance and DS games, built for Pokemon.
+Play any game, run Kaizo IronMON with a tracker, try Nuzlocke rules, or make a ROM hack.
+KaizoCore contains no games. You add your own dumps, and they stay on this phone.
+Add your games
+Look around
+
+CONTENT DESCRIPTIONS:
+

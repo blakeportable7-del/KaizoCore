@@ -1,0 +1,23 @@
+TEXT:
+Controls
+Backup and info
+Runs started, wins, your best run in each game and mode, and the time you have played, across every game.
+Open your stats
+Last session ended unexpectedly
+KaizoCore closed unexpectedly on Sep 29, 2026.
+Tap Send report and it goes to Blake. It says where the app failed, which is what makes a crash fixable rather than guessed at.
+Send report
+Share instead
+Dismiss
+Crash reports
+Send crash reports automatically
+If KaizoCore closes unexpectedly, a report of where it failed goes to Blake at willowcreek.group: your phone model, the Android and app versions, the game family and the lines that name the failure. Never a ROM, a save or a file name. Off, the app asks you first.
+Report a bug
+Something in your way? Say what happened and where, then tap Email Blake. The report carries your device, Android and app versions, the game family, the last crash if there was one, and the app's own log lines. Never a ROM, a save or a file name.
+Home
+Play
+Library
+More
+
+CONTENT DESCRIPTIONS:
+

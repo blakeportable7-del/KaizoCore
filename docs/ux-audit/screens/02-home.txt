@@ -1,0 +1,32 @@
+TEXT:
+Welcome to KaizoCore
+WHERE YOU LEFT OFF
+emerald-u
+Nuzlocke, Standard
+Continue
+PICK A MODE
+Play any game
+Any game in your library, no rules, no randomizer
+Kaizo IronMON
+Randomized runs with the IronMON tracker
+Nuzlocke
+Catch the first Pokemon on each route. Faint and it's gone.
+ROM Hacks
+Hacks for games you own
+Library
+More
+Your stats
+Home
+Play
+Library
+More
+
+CONTENT DESCRIPTIONS:
+Continue emerald-u
+Play any game. Any game in your library, no rules, no randomizer
+Kaizo IronMON. Randomized runs with the IronMON tracker
+Nuzlocke. Catch the first Pokemon on each route. Faint and it's gone.
+ROM Hacks. Hacks for games you own
+Open the library
+Open more: controls, backup and info
+Open your stats: runs started, wins and your best runs

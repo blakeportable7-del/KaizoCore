@@ -32,8 +32,12 @@ import androidx.compose.ui.window.Dialog
  * reference does, so a wrong jump can be undone. DS states run tens of
  * megabytes, so the set is also capped by size, which the reference has no
  * need for.
+ *
+ * [waitMs] is the reference's wait: four minutes in the Gen 3 tracker
+ * (TimeMachineScreen.lua:10), five in both Game Boy trackers (:19, "one is
+ * created every 5 minutes" at :5), [GB_WAIT_MS].
  */
-class TimeMachine {
+class TimeMachine(val waitMs: Long = WAIT_MS) {
     class RestorePoint(val id: Int, val label: String, val timestamp: Long, val bytes: ByteArray)
 
     val points = mutableStateListOf<RestorePoint>()
@@ -47,6 +51,7 @@ class TimeMachine {
     companion object {
         const val MAX = 10
         const val WAIT_MS = 4 * 60 * 1000L
+        const val GB_WAIT_MS = 5 * 60 * 1000L
         const val MAX_BYTES = 96L * 1024 * 1024
         const val RETURN_LABEL = ">>  Return back to the future"
     }
@@ -54,7 +59,7 @@ class TimeMachine {
     /** TimeMachineScreen.checkCreatingRestorePoint, called on a slow tick. */
     fun tick(now: Long, enabled: Boolean, inBattle: Boolean, mapKnown: Boolean, mapName: String?, snapshot: () -> ByteArray?) {
         if (!enabled || !mapKnown || inBattle) return
-        if (now - lastCreated >= WAIT_MS) create(null, mapName, now, snapshot)
+        if (now - lastCreated >= waitMs) create(null, mapName, now, snapshot)
     }
 
     fun create(label: String?, mapName: String?, now: Long, snapshot: () -> ByteArray?): RestorePoint? {
@@ -102,7 +107,7 @@ fun TimeMachineDialog(tm: TimeMachine, enabled: Boolean, onEnable: (Boolean) -> 
             Spacer(Modifier.height(4.dp))
             PixText("Select a restore point below to go back to that point in time.", 8, Pc.Text, wrap = true)
             Spacer(Modifier.height(6.dp))
-            if (tm.points.isEmpty()) PixText("No restore points are available; one is created every 4 minutes.", 8, Pc.Dim, wrap = true)
+            if (tm.points.isEmpty()) PixText("No restore points are available; one is created every ${tm.waitMs / 60_000} minutes.", 8, Pc.Dim, wrap = true)
             tm.points.sortedByDescending { it.timestamp }.forEach { rp ->
                 val confirming = confirmId == rp.id
                 val minutes = Math.ceil((now - rp.timestamp) / 60000.0).toInt()

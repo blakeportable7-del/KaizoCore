@@ -1,0 +1,457 @@
+# id	status	ours	note
+gba-0067	PARTIAL	MainActivity.kt:316	Launch crash dialog closes with 'Not now'; it offers a crash report, not a save to recover
+gba-0068	PARTIAL	SaveStatesDialog.kt:78; PlayScreen.kt:1158; PlayScreen.kt:1357	RESUME loads the auto-save made on pause/exit; a crash skips that save, where the reference backs up every 3 min
+gba-0069	MISSING	SideScreens.kt:321	Resume asks first but has no undo afterwards (an undo toast exists only for a controller quick load)
+gba-0070	MISSING	-	The crash dialog does not name the last game played
+gba-0071	MISSING	-	Fallback text of the missing last-played-game line
+gba-0072	PARTIAL	PlayScreen.kt:2600; MainActivity.kt:295	Auto-save on pause and crash detection are always on; no switch
+gba-0073	PARTIAL	PlayScreen.kt:1192	Not shown; enforced instead: each game session has its own auto-save
+gba-0074	PARTIAL	PlayScreen.kt:1192	Not shown; enforced instead: a state stamped for another randomization is refused
+gba-0075	DONE	MainActivity.kt:295; CrashLog.kt:58	Android exit reasons (crash, native crash, ANR) raise 'KaizoCore closed unexpectedly' at launch
+gba-0076	MISSING	-	No crash-recovery screen to open by hand, so no 'no crash' state
+gba-0077	PARTIAL	MainActivity.kt:295; SaveStatesDialog.kt:78	No Crash Recovery screen; launch crash dialog (report only) plus auto-save RESUME stand in
+gba-0078	NA	-	Extension loader message in the Lua console; Auto Pokemon Themes is built in instead
+gba-0079	NA	-	Extraction noise: commented out in the reference (CustomCode.lua:106), never shown
+gba-0080	NA	-	Extension loader (Lua extensions); the app runs no custom code
+gba-0081	NA	-	Extension loader (Lua extensions); the app runs no custom code
+gba-0082	NA	-	Extension loader (Lua extensions); the app runs no custom code
+gba-0083	NA	-	Extension loader (Lua extensions); the app runs no custom code
+gba-0084	NA	-	Extension loader (Lua extensions); the app runs no custom code
+gba-0085	NA	-	Extension loader (Lua extensions); the app runs no custom code
+gba-0086	NA	-	Extension loader (Lua extensions); the app runs no custom code
+gba-0087	NA	-	Extension loader (Lua extensions); the app runs no custom code
+gba-0088	NA	-	Extension loader (Lua extensions); the app runs no custom code
+gba-0089	NA	TrackerGearDialog.kt:91	Extension loader; the one extension ported (Auto Pokemon Themes) is a native gear toggle
+gba-0090	DONE	TrackerGearDialog.kt:77; CoverageCalc.kt:60	Gear > COVERAGE CALC
+gba-0091	PARTIAL	MainActivity.kt:295; SaveStatesDialog.kt:78	No Crash Recovery button; launch crash dialog and File > States > RESUME instead
+gba-0092	MISSING	-	No play timer on the Gen 3 tracker, so nothing to edit
+gba-0093	MISSING	-	No IV potential estimate (the stats judge) for the lead
+gba-0094	MISSING	-	GachaMon not built
+gba-0095	MISSING	-	No Gen 3 play timer to move
+gba-0096	DONE	TrackerGearDialog.kt:83; TimeMachine.kt:91	Gear > TIME MACHINE
+gba-0097	PARTIAL	GameOverDialog.kt:145	The log opens only from the game-over screen (Blake, 2026-09-10); no mid-run Logs button
+gba-0098	MISSING	-	Result line of the missing IV estimate
+gba-0099	MISSING	-	Result line of the missing IV estimate
+gba-0100	MISSING	-	Result line of the missing IV estimate
+gba-0101	MISSING	-	Result line of the missing IV estimate
+gba-0102	MISSING	-	Result line of the missing IV estimate
+gba-0103	MISSING	DsExtras.kt:39	No timer options on Gen 3; only the DS panel has a run timer
+gba-0104	NA	PcTracker.kt:559	Desktop popout window with an animated GIF; the app animates the icon in the panel instead
+gba-0105	DONE	TrackerGearDialog.kt:114; TrackerPanel.kt:116	Off by default as in the reference; symbol after the name
+gba-0106	DONE	TrackerGearDialog.kt:105; PcTracker.kt:1170	Off by default; gates the carousel pedometer
+gba-0107	MISSING	PlayScreen.kt:2541	Gen 3 has no play timer; the 'Show timer' switch exists only on DS
+gba-0108	DONE	TrackerGearDialog.kt:104; TrackerPanel.kt:502	Off by default; repel steps shown outside battle
+gba-0109	DONE	TrackerGearDialog.kt:97	Extras options sit in the gear dialog's one Options list (no tabs)
+gba-0110	DONE	TrackerGearDialog.kt:77	Tools are the gear dialog's buttons (no tabs)
+gba-0111	MISSING	-	No Gen 3 timer to pause
+gba-0112	PARTIAL	TrackerGearDialog.kt:74	Folded into the gear dialog; IV estimate, play timer, GachaMon, mid-run log, crash recovery absent
+gba-0163	DONE	TrackerGearDialog.kt:78; SideScreens.kt:181	Gear > STATS
+gba-0164	MISSING	-	No load-time note under Open Book Play Mode
+gba-0165	DONE	TrackerGearDialog.kt:159	Same heading over the three conditions
+gba-0166	DONE	TrackerPanel.kt	swaps to each Pokemon the opponent sends out (fdb3c10)
+gba-0167	DONE	TrackerGearDialog.kt:108; MoveDecor.kt:81	On by default; Return, Low Kick, Weather Ball and the rest as numbers
+gba-0168	MISSING	-	Tapping a trainer on the game screen does nothing (no option, no feature)
+gba-0169	DONE	TrackerGearDialog.kt:109; GbaTracker.kt:3515	On by default; enemy PP read from the battle struct
+gba-0170	DONE	TrackerGearDialog.kt:106; MoveDecor.kt:82; GbaTracker.kt:1763	On by default; >FR/<FR power and the friendship evo mark
+gba-0171	DONE	LossCondition.kt:13; GbaTracker.kt:2964	Radio in the gear's game-over section
+gba-0172	DONE	SummaryChecks; TrackerPanel.kt	both cards; the stand-in keeps types, BST, evo, moves header (70410af, d8b8712)
+gba-0173	DONE	LossCondition.kt:12; GbaTracker.kt:2964	Radio in the gear's game-over section
+gba-0174	DONE	LossCondition.kt:11; GbaTracker.kt:2964	Default, as in the reference; per settings file by keyword
+gba-0175	PARTIAL	TrackerGearDialog.kt:122; InfoRules.kt:16; RouteInfoScreen.kt:81	Opponent card and route levels follow it; Move History, Notebook and mid-run log pages do not
+gba-0176	DONE	TrackerPanel.kt; Notebook.kt	randomized types read '?' with reveal off (17a32e6)
+gba-0177	DONE	TrackerGearDialog.kt:110; TrackerPanel.kt:665	On by default; '~ N% to catch' in wild battles
+gba-0178	DONE	TrackerGearDialog.kt:115; TrackerPanel.kt:117	Off by default; bar under your Pokemon's level
+gba-0179	DONE	TrackerGearDialog.kt:102; PcTracker.kt:1528	Off by default; 'N HP (count)' instead of percent
+gba-0180	DONE	TrackerGearDialog.kt:111; TrackerPanel.kt:692	On by default; the carousel's last-attack line
+gba-0181	DONE	TrackerGearDialog.kt:107; MoveDecor.kt:112	On by default; chevrons and X beside power in battle
+gba-0182	DONE	TrackerGearDialog.kt:113; TrackerPanel.kt:98	Off by default
+gba-0183	DONE	TrackerGearDialog.kt:101; PcTracker.kt:989	On by default
+gba-0184	DONE	TrackerGearDialog.kt:100; TrackerPanel.kt:467	Off by default; starter's info while its ball is confirmed
+gba-0185	PARTIAL	Notebook.kt	Notebook part fixed (513702c); Move History part open
+gba-0186	DONE	TrackerGearDialog.kt:97	Battle options are in the gear's Options list (no tabs)
+gba-0187	DONE	TrackerGearDialog.kt:159	The gear's game-over section
+gba-0188	DONE	TrackerGearDialog.kt:97	Other-tab options are in the same list (no tabs)
+gba-0189	PARTIAL	TrackerGearDialog.kt:74	In the gear dialog; trainer tapping missing; auto swap, hide stats and the info rules partial
+gba-0241	NA	-	Language packs: switches tracker text to the ROM's language; the app is English only
+gba-0242	NA	-	Language packs: link to translate the tracker
+gba-0243	NA	-	Language packs; the app is English only
+gba-0244	NA	-	Language packs; the app is English only
+gba-0245	DONE	LogPokemon.kt:161	Pokemon detail page's level-up list
+gba-0246	DONE	LogMisc.kt:59	Misc tab; copies the share text to the clipboard
+gba-0247	DONE	LogPokemon.kt:162	Pokemon detail page's TM list
+gba-0248	DONE	LogMisc.kt:55; LogViewer.kt:151	Off by default; switches trainer names in the viewer
+gba-0249	DONE	LogMisc.kt:52; LogPokemon.kt:108	Off by default
+gba-0250	DONE	LogMisc.kt:49; LogPokemon.kt:169	On by default
+gba-0251	DONE	LogTrainers.kt:38	Trainers filter
+gba-0252	DONE	LogTrainers.kt:38	Trainers filter
+gba-0253	DONE	LogTrainers.kt:38	Trainers filter
+gba-0254	DONE	LogTrainers.kt:38	Trainers filter
+gba-0255	DONE	LogTms.kt:30	TMs filter, the tab opens on it as the reference does
+gba-0256	NA	-	Extraction noise: the Other filter is commented out in the reference (LogOverlay.lua:239)
+gba-0257	DONE	LogTrainers.kt:38	Trainers filter
+gba-0258	DONE	LogTms.kt:30	TMs filter
+gba-0259	DONE	LogViewer.kt:268	One of the five log tabs
+gba-0260	DONE	LogViewer.kt:268	One of the five log tabs
+gba-0261	DONE	LogViewer.kt:268	One of the five log tabs
+gba-0262	DONE	LogViewer.kt:268	One of the five log tabs
+gba-0263	DONE	LogViewer.kt:268	One of the five log tabs
+gba-0264	DONE	LogPokemon.kt:141	Base stats total on the detail page
+gba-0265	DONE	LogPokemon.kt:135	Stat graph heading
+gba-0266	DONE	LogRoutes.kt:225	Route detail's encounter tabs
+gba-0267	DONE	LogTrainers.kt:214; LogTms.kt:71	Trainers and TMs tabs
+gba-0268	DONE	LogSearch.kt:148	Heading in a Pokemon's TM list
+gba-0269	DONE	LogRoutes.kt:165	Routes tab header
+gba-0270	DONE	LogSearch.kt:149	Heading in a Pokemon's TM list
+gba-0271	DONE	LogMisc.kt:62	Misc tab
+gba-0272	DONE	LogMisc.kt:64	Misc tab
+gba-0273	DONE	LogMisc.kt:63	Misc tab
+gba-0274	DONE	LogMisc.kt:65	Misc tab, in 39-character pieces
+gba-0275	DONE	LogPokemon.kt:137	Stat view switch on a team member's page
+gba-0276	DONE	LogPokemon.kt:137	Stat view switch on a team member's page
+gba-0277	DONE	LogPokemon.kt:137	Stat view switch on a team member's page
+gba-0278	DONE	LogPokemon.kt:135	From the run's party
+gba-0279	DONE	LogPokemon.kt:135	From the run's party
+gba-0280	DONE	LogMisc.kt:111	Same text
+gba-0281	DONE	LogMisc.kt:109	Same title
+gba-0282	DONE	LogRoutes.kt:41	Route detail tab
+gba-0283	DONE	LogRoutes.kt:38	Route detail tab
+gba-0284	DONE	LogRoutes.kt:40	Route detail tab
+gba-0285	DONE	LogRoutes.kt:43	Route detail tab
+gba-0286	DONE	LogRoutes.kt:42	Route detail tab
+gba-0287	DONE	LogRoutes.kt:39	Route detail tab
+gba-0288	DONE	LogRoutes.kt:37	Route detail tab
+gba-0289	DONE	LogSearch.kt:38	Filter for Pokemon, Trainers and Routes, as the reference's contexts
+gba-0290	DONE	LogSearch.kt:38	Filter for Pokemon, Trainers and Routes
+gba-0291	DONE	LogSearch.kt:38	Filter for Pokemon, Trainers and Routes
+gba-0292	DONE	LogSearch.kt:38	Routes tab filter
+gba-0293	DONE	LogSearch.kt:38	Trainers and Routes filter
+gba-0294	DONE	LogPokemon.kt:48	Same text on Pokemon, Routes and Trainers
+gba-0295	DONE	LogSearch.kt:172	Search bar in the viewer
+gba-0296	DONE	LogSearch.kt:175	Search bar in the viewer
+gba-0297	DONE	LogSearch.kt:32	Sort, in the reference's tab contexts
+gba-0298	DONE	LogSearch.kt:31	Sort, in the reference's tab contexts
+gba-0299	DONE	LogSearch.kt:31	Sort, in the reference's tab contexts
+gba-0300	DONE	LogSearch.kt:32	Sort, in the reference's tab contexts
+gba-0301	DONE	LogSearch.kt:32	Sort, in the reference's tab contexts
+gba-0302	DONE	LogSearch.kt:31	Sort, in the reference's tab contexts
+gba-0303	DONE	LogSearch.kt:32	Sort, in the reference's tab contexts
+gba-0304	DONE	LogSearch.kt:32	Sort, in the reference's tab contexts
+gba-0305	DONE	LogSearch.kt:32	Sort, in the reference's tab contexts
+gba-0306	DONE	LogSearch.kt:33	Sort, in the reference's tab contexts
+gba-0307	DONE	LogSearch.kt:33	Sort, in the reference's tab contexts
+gba-0308	DONE	LogSearch.kt:160	A search bar inside the viewer rather than a separate titled screen
+gba-0559	DONE	AboutScreen.kt:441	MORE > INFO carries the credits
+gba-0560	NA	TrackerGearDialog.kt:91	Extension loader; the one extension ported (Auto Pokemon Themes) is a gear toggle
+gba-0561	PARTIAL	TrackerGearDialog.kt:74	Extras folded into the gear dialog; IV estimate, play timer, GachaMon, mid-run log absent
+gba-0562	PARTIAL	TrackerGearDialog.kt:74	Gameplay options folded into the gear dialog; 'Can click trainers on screen' absent
+gba-0563	MISSING	-	No help/wiki link anywhere in the app
+gba-0564	NA	-	Language packs; the app is English only
+gba-0565	DONE	TrackerGearDialog.kt:172; Notebook.kt:45	Gear > OPEN NOTEBOOK
+gba-0566	PARTIAL	RunScreen.kt:68	The Run tab: generate mode only, no profiles, no premade ROMs
+gba-0567	PARTIAL	TrackerGearDialog.kt:74	Setup options folded into the gear dialog; no Controls tab, one alternative icon set
+gba-0568	PARTIAL	PlayScreen.kt:1494	STREAM (OBS server) and CAM sit in the File menu; no Streamer Tools screen
+gba-0569	PARTIAL	TrackerGearDialog.kt:89; Theme.kt:110	Colour editor only; no theme library or presets
+gba-0570	NA	AboutScreen.kt:198	Auto-updater; Android installs the APK. INFO links the latest build
+gba-0571	PARTIAL	AboutScreen.kt:467	Says 'besteon and contributors' but lists no contributor names
+gba-0572	DONE	AboutScreen.kt:467	Credits the IronMON Tracker by besteon
+gba-0573	NA	-	Points to the Lua console; no console on a phone
+gba-0574	DONE	TrackerGearDialog.kt:74	The gear opens 'TRACKER SETUP', the reference's settings menu
+gba-0616	PARTIAL	RunScreen.kt:243	No named profiles; a game is added on Library and paired with a settings file on Run
+gba-0617	DONE	RunScreen.kt:483; PlayScreen.kt:993	Run tab 'Randomize'/'Start new run' and Play's NEW RUN roll a new ROM
+gba-0618	PARTIAL	RomLibraryScreen.kt:162	No profiles to delete; a game can be deleted from the Library
+gba-0619	PARTIAL	RunScreen.kt:376	No profile to edit; EDIT opens the chosen settings file
+gba-0620	MISSING	-	No premade-ROMs mode (load the next numbered ROM)
+gba-0621	DONE	GameSession.kt:49	The Play tab reopens the current run; File > States > RESUME for the auto-save
+gba-0622	PARTIAL	RunScreen.kt:243	Pick a game card and a mode/settings file; no saved profiles
+gba-0623	PARTIAL	RunScreen.kt:243	The selected game card; no profile name, box art or date
+gba-0624	DONE	RunScreen.kt:247	Same prompt with no game set up
+gba-0625	DONE	RunScreen.kt:247	Same state
+gba-0626	DONE	RunScreen.kt:218	Attempts per game on the Run tab
+gba-0627	MISSING	-	No last-played date
+gba-0628	PARTIAL	AppShell.kt:56	A+B+Start held rolls a new ROM, but no screen tells the player the combo
+gba-0629	MISSING	-	No premade-ROMs mode
+gba-0630	NA	-	Desktop window focus after a load; no emulator window on a phone
+gba-0631	DONE	RunScreen.kt:68	The Run tab is the General page
+gba-0632	NA	-	Holds only 'Warn of ROM mismatch' and 'Refocus emulator', both not applicable here
+gba-0633	PARTIAL	RunScreen.kt:243	A list of prepared games, not profiles
+gba-0634	PARTIAL	RunScreen.kt:68	Run tab: generate-each-time only; no profiles, premade mode or last-played
+gba-0637	NA	-	touch, not buttons (Blake, 2026-09-29): no button bindings to edit
+gba-0638	PARTIAL	TrackerGearDialog.kt:191	Manage data holds Clear only; no save/load of tracked data, no auto-save switch
+gba-0639	DONE	TrackerGearDialog.kt:136; PcTracker.kt:1173	Carousel item toggle, shown under the reference's conditions
+gba-0640	DONE	BattleSummary; PcTracker.kt	the carousel's battle line is the first active effect (91d0426)
+gba-0641	MISSING	-	GachaMon not built; no carousel item or toggle
+gba-0642	DONE	TrackerGearDialog.kt:137; PcTracker.kt:1177	Carousel item toggle, shown under the reference's conditions
+gba-0643	DONE	TrackerGearDialog.kt:136; PcTracker.kt:1180	Carousel item toggle, shown under the reference's conditions
+gba-0644	DONE	TrackerGearDialog.kt:138; PcTracker.kt:1183	Carousel item toggle, shown under the reference's conditions
+gba-0645	DONE	TrackerGearDialog.kt:136; PcTracker.kt:1178	Carousel item toggle, shown under the reference's conditions
+gba-0646	DONE	TrackerGearDialog.kt:137; PcTracker.kt:1175	Carousel item toggle, shown under the reference's conditions
+gba-0647	NA	-	touch, not buttons (Blake, 2026-09-29): the tap does this action
+gba-0648	NA	-	touch, not buttons (Blake, 2026-09-29): the tap does this action
+gba-0649	DONE	TrackerGearDialog.kt:134	Carousel item list
+gba-0650	NA	-	touch, not buttons (Blake, 2026-09-29): the tap does this action
+gba-0651	NA	-	touch, not buttons (Blake, 2026-09-29): the tap does this action
+gba-0652	DONE	TrackerGearDialog.kt:127; PcTracker.kt:1192	1/2x to 4x
+gba-0653	NA	-	touch, not buttons (Blake, 2026-09-29): the tap does this action
+gba-0654	DONE	TrackerGearDialog.kt:125; PcTracker.kt:1196	On by default
+gba-0655	DONE	TrackerGearDialog.kt:142; WalkingPals.kt:177	On by default; shown for the animated set as in the reference
+gba-0656	NA	-	touch, not buttons (Blake, 2026-09-29): no L/R bindings, so the game's Button Mode is left alone
+gba-0657	PARTIAL	TrackerGearDialog.kt:140; PcHeals.kt:34	Default on; toggling does not invert the running count (reference sets 10 - n)
+gba-0658	DONE	TrackerGearDialog.kt:117; TrackerPanel.kt:126	Off by default
+gba-0659	DONE	TrackerGearDialog.kt:99; TrackerPanel.kt:557	On by default; lab with no Pokemon
+gba-0660	DONE	TrackerGearDialog.kt:103; TrackerPanel.kt:511	Off by default; six-box party strip
+gba-0661	DONE	TrackerGearDialog.kt:118; PcHeals.kt:51	Off by default; heart, +/-, auto count from game stats
+gba-0662	PARTIAL	AboutScreen.kt:476	Walking Pals credited on INFO; no per-set 'Added by' line
+gba-0663	PARTIAL	TrackerGearDialog.kt:141	On/off for Walking Pals, else the ROM's own sprites; no 6-set picker
+gba-0664	MISSING	-	No GBA-button shortcut for this tracker action; touch only
+gba-0665	NA	-	touch, not buttons (Blake, 2026-09-29): no button bindings to edit
+gba-0666	MISSING	-	No GBA-button shortcut for this tracker action; touch only
+gba-0667	PARTIAL	AppShell.kt:56	A+B+Start held, fixed; cannot be rebound
+gba-0668	MISSING	-	No GBA-button shortcut for this tracker action; touch only
+gba-0669	MISSING	-	No GBA-button shortcut for this tracker action; touch only
+gba-0670	MISSING	-	No GBA-button shortcut for this tracker action; touch only
+gba-0671	NA	-	touch, not buttons (Blake, 2026-09-29): no button bindings to edit
+gba-0672	NA	-	touch, not buttons (Blake, 2026-09-29): no button bindings to edit
+gba-0673	MISSING	-	No GBA-button shortcut for this tracker action; touch only
+gba-0674	DONE	TrackerGearDialog.kt:124	Carousel section of the gear dialog
+gba-0675	NA	-	touch, not buttons (Blake, 2026-09-29): no Controls section to show
+gba-0676	DONE	TrackerGearDialog.kt:97	General options sit in the gear's Options list
+gba-0677	PARTIAL	TrackerGearDialog.kt:74	Merged into 'TRACKER SETUP'; Controls tab and icon-set picker absent
+gba-0678	NA	-	Extension loader (per-extension page)
+gba-0679	NA	-	Extension loader (per-extension page)
+gba-0680	NA	-	Extension loader (per-extension page)
+gba-0681	NA	-	Extension loader (per-extension page)
+gba-0682	NA	-	Extension loader (per-extension page)
+gba-0683	NA	-	Extension loader (per-extension page)
+gba-0684	NA	-	Extension loader (per-extension page)
+gba-0685	NA	-	Extension loader (per-extension page)
+gba-0686	NA	-	Extension loader (per-extension page)
+gba-0687	NA	-	Extension loader (per-extension page)
+gba-0688	DONE	PlayScreen.kt:1631	'ATTEMPT N' always sits above the tracker
+gba-0689	MISSING	-	No controls help; the game's own erase combo is not mentioned
+gba-0690	PARTIAL	AppShell.kt:56	A+B+Start held works, but is never shown to the player
+gba-0691	PARTIAL	TrackerPanel.kt:613	Swap by tapping the battle banner; no Start-button shortcut
+gba-0692	PARTIAL	RunScreen.kt:243	The Run tab shows the game; the tracker's start card does not
+gba-0693	NA	-	touch, not buttons (Blake, 2026-09-29): no button bindings to list on the start card
+gba-0694	PARTIAL	Favorites.kt:91; TrackerPanel.kt:549	A 'FAVORITES:' text line on the no-party card; no icons
+gba-0695	MISSING	-	No startup Pokemon icon (by attempt, random, chosen or none)
+gba-0696	MISSING	-	No startup Pokemon icon (by attempt, random, chosen or none)
+gba-0697	MISSING	-	No startup Pokemon icon (by attempt, random, chosen or none)
+gba-0698	MISSING	-	No startup Pokemon icon (by attempt, random, chosen or none)
+gba-0699	MISSING	-	No startup Pokemon icon (by attempt, random, chosen or none)
+gba-0700	PARTIAL	TrackerPanel.kt:549	No startup screen; the no-party card (favorites, ball picker) stands in
+gba-0701	NA	-	Tracked-data auto-save cannot be turned off here, so this state never occurs
+gba-0702	MISSING	-	A failed notes load is silent
+gba-0703	MISSING	-	No tracker-notes load status shown
+gba-0704	MISSING	-	Notes load silently; no 'loaded from last session' note
+gba-0705	NA	-	Console-only on BizHawk: StartupScreen skips NEW_GAME (StartupScreen.lua:236)
+gba-0706	NA	PrepStore.kt:50	Notes are per game session and cleared each run, so no ROM can load another's notes
+gba-0707	PARTIAL	AboutScreen.kt:434	App version on MORE > INFO, not on the tracker's start card
+gba-0714	DONE	MoveHistoryStats.kt:125	Same game statistic index as Constants.GAME_STATS
+gba-0715	DONE	MoveHistoryStats.kt:120	Same game statistic index as Constants.GAME_STATS
+gba-0716	MISSING	MoveHistoryStats.kt:118	Row reads 'not kept': no Gen 3 play timer
+gba-0717	DONE	MoveHistoryStats.kt:123	Same game statistic index as Constants.GAME_STATS
+gba-0718	DONE	MoveHistoryStats.kt:124	Same game statistic index as Constants.GAME_STATS
+gba-0719	DONE	MoveHistoryStats.kt:127	Same game statistic index as Constants.GAME_STATS
+gba-0720	DONE	MoveHistoryStats.kt:119	Same game statistic index as Constants.GAME_STATS
+gba-0721	DONE	MoveHistoryStats.kt:126	Same game statistic index as Constants.GAME_STATS
+gba-0722	DONE	MoveHistoryStats.kt:121	Same game statistic index as Constants.GAME_STATS
+gba-0723	DONE	MoveHistoryStats.kt:122	Same game statistic index as Constants.GAME_STATS
+gba-0724	DONE	MoveHistoryStats.kt:91	Gear > STATS
+gba-0843	MISSING	-	Nothing to edit: attempts and welcome message cannot be edited
+gba-0844	MISSING	StreamServer.kt:34	No Streamer.bot connection or chat commands; the app's stream server is an OBS page
+gba-0845	PARTIAL	PlayScreen.kt:1631; StreamServer.kt:83	Shown and served to OBS at /attempts, but cannot be edited
+gba-0846	DONE	RunScreen.kt:293	Per game on the Run tab
+gba-0847	MISSING	-	No welcome message
+gba-0848	PARTIAL	TrackerPanel.kt:551	No switch: favorites show on the no-party card whenever set
+gba-0849	DONE	RunScreen.kt:349	Same meaning
+gba-0850	DONE	RunScreen.kt:324	Name fields with suggestions as you type
+gba-0851	MISSING	-	Attempts cannot be edited
+gba-0852	MISSING	-	Attempts cannot be edited
+gba-0853	MISSING	-	No welcome message
+gba-0854	MISSING	-	No welcome message
+gba-0855	PARTIAL	PlayScreen.kt:1494; RunScreen.kt:293	OBS stream server and camera in File; favorites on Run; no welcome, attempts edit or Stream Connect
+gba-0857	MISSING	-	No theme library or presets to apply
+gba-0858	DONE	TrackerGearDialog.kt:89; Theme.kt:110	Gear > EDIT COLOR THEME
+gba-0859	PARTIAL	Theme.kt:197	Exports 8 colours in the app's own format, not the PC's 11-colour theme code
+gba-0860	PARTIAL	Theme.kt:211	Imports only the app's 8-colour string; PC theme codes are refused
+gba-0861	MISSING	-	No saved themes to remove
+gba-0862	MISSING	-	No saved themes to remove
+gba-0863	MISSING	-	Cannot save a theme under a name
+gba-0864	DONE	Theme.kt:73	Editable
+gba-0865	PARTIAL	AutoTheme.kt:76	Drawn only when an auto theme sets it; not editable
+gba-0866	DONE	Theme.kt:76	Editable
+gba-0867	PARTIAL	AutoTheme.kt:80	Drawn only when an auto theme sets it; not editable
+gba-0868	PARTIAL	AutoTheme.kt:79	Drawn only when an auto theme sets it; not editable
+gba-0869	PARTIAL	Theme.kt:77	Editable 'Bottom box text' sets the dim lines; the lower box's own text follows top text
+gba-0870	DONE	Theme.kt:70	Editable
+gba-0871	DONE	Theme.kt:75	Editable
+gba-0872	DONE	Theme.kt:74	Editable
+gba-0873	DONE	Theme.kt:71	Editable
+gba-0874	DONE	Theme.kt:72	Editable
+gba-0875	NA	-	Extraction noise: its only use is commented out (Theme.lua:785)
+gba-0876	MISSING	-	No theme library
+gba-0877	PARTIAL	Theme.kt:93	'Reset colours' restores the default; no library entry for it
+gba-0878	PARTIAL	AutoTheme.kt:82	Colour bar drawn only when an auto theme's flag asks; no switch
+gba-0879	DONE	TrackerGearDialog.kt:116; TrackerPanel.kt:126	Off by default; in the gear's Options list
+gba-0880	MISSING	-	The app draws no text shadows
+gba-0881	MISSING	-	No theme naming
+gba-0882	MISSING	-	No theme naming
+gba-0883	DONE	Theme.kt:138	A hex field per colour
+gba-0884	PARTIAL	Theme.kt:138	Hex entry only; no visual colour picker
+gba-0885	DONE	Theme.kt:206	Selectable text and a Copy button
+gba-0886	MISSING	-	No theme naming
+gba-0887	DONE	Theme.kt:218	Theme string field with Paste
+gba-0888	DONE	Theme.kt:235	Same meaning
+gba-0889	MISSING	-	No theme naming
+gba-0890	MISSING	-	Cannot save a theme under a name
+gba-0891	MISSING	-	No presets
+gba-0892	MISSING	-	Export has no theme name to show
+gba-0893	MISSING	Theme.kt:110	No preset library; only the colour editor exists
+gba-0894	DONE	Theme.kt:132	The colour editor edits the active theme
+gba-0905	DONE	TrackerGearDialog.kt:196	Two-step clear
+gba-0906	DONE	TrackerGearDialog.kt:194; StatMarks.kt:432	Clears marks, notes, routes, moves and abilities
+gba-0907	MISSING	-	Nothing confirms the clear afterwards
+gba-0908	PARTIAL	Backup.kt:42	Only by restoring a whole-app backup zip; no per-run notes file to load
+gba-0909	PARTIAL	PrepStore.kt:527; Backup.kt:25	Notes copied by game-over 'Save this attempt' or the whole-app backup; no mid-run save
+gba-0910	PARTIAL	StatMarks.kt:125	Saved on every change as .txt (not .TDAT); the description is not shown
+gba-0911	PARTIAL	SideScreens.kt:294	NEW RUN warns notes are cleared; no mid-run way to keep them
+gba-0912	PARTIAL	StatMarks.kt:125	Always on; no switch
+gba-0913	MISSING	-	No named save of tracked data
+gba-0914	MISSING	-	No named save of tracked data
+gba-0915	PARTIAL	TrackerGearDialog.kt:191	Gear 'Manage data' offers Clear only
+gba-0980	NA	-	Extraction noise: ButtonBeginInstall is never used in the reference
+gba-0981	NA	-	Auto-updater; Android installs app updates
+gba-0982	NA	-	Auto-updater; Android installs app updates
+gba-0983	NA	-	Auto-updater; Android installs app updates
+gba-0984	NA	-	Auto-updater; Android installs app updates
+gba-0985	NA	-	Auto-updater; Android installs app updates
+gba-0986	NA	-	Auto-updater; Android installs app updates
+gba-0987	DONE	AboutScreen.kt:198	INFO > 'Latest build' opens the releases page
+gba-0988	NA	-	Auto-updater; Android installs app updates
+gba-0989	DONE	AboutScreen.kt:198	INFO > 'Latest build' opens the releases page with notes
+gba-0990	NA	-	Auto-updater; Android installs app updates
+gba-0991	NA	-	Auto-updater; Android installs app updates
+gba-0992	NA	-	Points to the Lua console; no console on a phone
+gba-0993	NA	-	Auto-updater; Android installs app updates
+gba-0994	NA	-	Auto-updater; Android installs app updates
+gba-0995	NA	-	Auto-updater; Android installs app updates
+gba-0996	NA	-	Auto-updater; Android installs app updates
+gba-0997	DONE	AboutScreen.kt:434	Installed version on MORE > INFO
+gba-0998	NA	-	Auto-updater; Android installs app updates
+gba-0999	NA	-	Auto-updater; Android installs app updates
+gba-1000	PARTIAL	GameOverDialog.kt:145	Only from the game-over screen; no mid-run viewing
+gba-1001	MISSING	PrepStore.kt:564	The previous run's log is kept on disk but nothing opens it
+gba-1002	PARTIAL	LogViewer.kt:54	No warning screen: the log is locked until a loss, a stricter guard
+gba-1003	PARTIAL	LogViewer.kt:54	No warning shown; mid-run viewing is not offered at all
+gba-1004	PARTIAL	LogViewer.kt:54	No warning shown; mid-run viewing is not offered at all
+gba-1005	PARTIAL	LogViewer.kt:54	No warning shown; mid-run viewing is not offered at all
+gba-1006	NA	-	Language packs; the app is English only
+gba-1007	NA	-	Language packs; the app is English only
+gba-1008	DONE	TrackerOptions.kt:126; PcTracker.kt:1196	Default true, as the reference
+gba-1009	DONE	TrackerOptions.kt:124; PcTracker.kt:1173	Same default list and order; its GachaMon key does nothing (GachaMon not built)
+gba-1010	DONE	TrackerOptions.kt:130; PcTracker.kt:1192	Default "1"; 1/2 to 4
+gba-1011	DONE	TrackerPanel.kt	swaps to each Pokemon the opponent sends out (fdb3c10)
+gba-1012	DONE	TrackerOptions.kt:22; TrackerPanel.kt:557	Default true
+gba-1013	DONE	TrackerOptions.kt:24; PcTracker.kt:1528	Default false
+gba-1014	DONE	TrackerOptions.kt:85; TrackerPanel.kt:665	Default true
+gba-1015	MISSING	-	Default true in the reference; no trainer tapping on the game screen at all
+gba-1016	DONE	TrackerOptions.kt:122; TrackerPanel.kt:467	Default false
+gba-1017	DONE	SummaryChecks; TrackerPanel.kt	both cards; turning it on hides again (70410af, d8b8712)
+gba-1018	DONE	TrackerOptions.kt:107; TrackerPanel.kt:126	Default false
+gba-1019	DONE	TrackerOptions.kt:23; PcTracker.kt:989	Default true
+gba-1020	DONE	TrackerOptions.kt:83; MoveDecor.kt:112	Default true
+gba-1021	DONE	TrackerOptions.kt:87; MoveDecor.kt:81	Default true
+gba-1022	DONE	TrackerOptions.kt:71; GbaTracker.kt:1763	Default true; mirrored to the tracker
+gba-1023	PARTIAL	Notebook.kt	Notebook part fixed (513702c); Move History part open
+gba-1024	DONE	TrackerOptions.kt:88; GbaTracker.kt:3515	Default true; mirrored to the tracker
+gba-1025	DONE	TrackerOptions.kt:99; TrackerPanel.kt:98	Default false
+gba-1026	DONE	TrackerOptions.kt:109; PcHeals.kt:51	Default false
+gba-1027	PARTIAL	TrackerOptions.kt:111; PcHeals.kt:34	Default true; toggling does not invert the running count as SetupScreen does
+gba-1028	PARTIAL	StatMarks.kt:125	Tracked data always auto-saves (per session .txt files); no switch
+gba-1029	PARTIAL	TrackerOptions.kt:68; PcTracker.kt:559	Walking Pals (default, Blake 2026-09-15) or ROM sprites; 4 other sets absent
+gba-1030	NA	-	touch, not buttons (Blake, 2026-09-29): no L/R bindings, so the game's Button Mode is left alone
+gba-1031	DONE	TrackerOptions.kt:94; TrackerPanel.kt:692	Default true
+gba-1032	DONE	TrackerPanel.kt; Notebook.kt	randomized types read '?' with reveal off (17a32e6)
+gba-1033	DONE	TrackerOptions.kt:45; GbaTracker.kt:2964	Default LeadPokemonFaints; per settings file by keyword, as QuickloadScreen
+gba-1034	DONE	TrackerOptions.kt:103; TrackerPanel.kt:117	Default false
+gba-1035	NA	-	Desktop popout window with the animated GIF
+gba-1036	NA	-	Desktop window focus after a load
+gba-1037	NA	PrepStore.kt:50	Notes are per game session and cleared each run; no foreign ROM can pick them up
+gba-1038	MISSING	-	No premade-ROMs mode (a folder of numbered ROMs)
+gba-1039	DONE	PlayScreen.kt:993	Always on: generating a new ROM is the app's only new-run mode
+gba-1040	DONE	TrackerOptions.kt:66; TrackerPanel.kt:502	Default false
+gba-1041	DONE	TrackerOptions.kt:80; PcTracker.kt:1170	Default false
+gba-1042	MISSING	PlayScreen.kt:2541	No Gen 3 play timer; the timer switch is DS only
+gba-1043	DONE	TrackerOptions.kt:101; TrackerPanel.kt:116	Default false
+gba-1044	MISSING	-	No Gen 3 play timer to place
+gba-1045	DONE	TrackerOptions.kt:105; TrackerPanel.kt:126	Default false
+gba-1046	NA	-	Auto-updater
+gba-1047	MISSING	-	No welcome message
+gba-1048	PARTIAL	Favorites.kt:84; RunScreen.kt:293	Per game, typed on the Run tab, blank by default (reference: 1,4,7)
+gba-1049	PARTIAL	TrackerPanel.kt:551	No switch; favorites show whenever set (blank by default, so off in effect)
+gba-1050	DONE	TrackerOptions.kt:30; PlayScreen.kt:664	Default true; every 4 minutes on a map, out of battle
+gba-1051	PARTIAL	PlayScreen.kt:2600; MainActivity.kt:295	Auto-save on pause and crash detection always on; no periodic backup, no switch
+gba-1052	NA	-	Extension loader
+gba-1053	DONE	TrackerOptions.kt:26; TrackerPanel.kt:511	Default false
+gba-1054	DONE	TrackerOptions.kt:42; LogPokemon.kt:169	Default true
+gba-1055	DONE	TrackerOptions.kt:44; LogPokemon.kt:108	Default false
+gba-1056	DONE	TrackerOptions.kt:40; LogViewer.kt:151	Default false
+gba-1057	PARTIAL	TrackerOptions.kt:118; InfoRules.kt:16	Default false; card and route levels only; Move History, Notebook, log pages do not follow
+gba-1058	DONE	TrackerOptions.kt:70; WalkingPals.kt:177	Default true
+gba-1059	PARTIAL	PrepStore.kt:432	No named profiles; the last game and settings file act as the implicit profile
+gba-1060	MISSING	-	GachaMon not built
+gba-1061	MISSING	-	GachaMon not built
+gba-1062	MISSING	-	GachaMon not built
+gba-1063	MISSING	-	GachaMon not built
+gba-1064	MISSING	-	GachaMon not built
+gba-1065	MISSING	-	GachaMon not built
+gba-1066	MISSING	-	GachaMon not built
+gba-1067	NA	-	Internal one-time settings migration flag, not user-facing
+gba-1068	NA	-	Internal one-time settings migration flag, not user-facing
+gba-1069	NA	-	Internal flag for a one-time notice about the LR option
+gba-1070	DONE	BattleDetails.kt:30	Every group listed at once instead of behind the team-ball picker
+gba-1071	DONE	CatchRates.kt:40	Gear > CATCH RATES
+gba-1072	DONE	CoverageCalc.kt:60	Gear > COVERAGE CALC
+gba-1073	PARTIAL	MainActivity.kt:295; SaveStatesDialog.kt:78	Launch crash dialog (report) and auto-save RESUME; no periodic backup or recovery screen
+gba-1074	NA	-	Extension loader
+gba-1075	PARTIAL	TrackerGearDialog.kt:74	Merged into the gear; IV estimate, play timer, GachaMon, mid-run log, crash recovery absent
+gba-1076	MISSING	-	GachaMon not built (collection, cards, ratings, pack opening)
+gba-1077	PARTIAL	TrackerGearDialog.kt:74	Merged into the gear; trainer tapping missing; auto swap, hide stats and the info rules partial
+gba-1078	PARTIAL	GameOverDialog.kt:85	Continue, retry, save attempt, grade notes, log; no GachaMon prize card
+gba-1079	DONE	HealsInBag.kt:33	Gear > HEALS IN BAG and the heals text
+gba-1080	DONE	PcTracker.kt:1288; RouteInfoScreen.kt:66	Pokemon, move, ability and route info with lookups
+gba-1081	NA	-	Language packs
+gba-1082	DONE	LogViewer.kt:59	Full Gen 3 port; reachable only from the game-over screen
+gba-1083	DONE	LogSearch.kt:160	Search, filter and sort per tab
+gba-1084	DONE	LogMisc.kt:44	Plus starters and statics below a rule
+gba-1085	DONE	LogPokemon.kt:42	Grid of species with search and sorts
+gba-1086	DONE	LogPokemon.kt:80	Stats (IV/EV views for the team), abilities, evolutions, level-up and TM moves
+gba-1087	DONE	LogRoutes.kt:202	Trainers and each encounter kind with rates and levels
+gba-1088	DONE	LogRoutes.kt:160	Routes by map with trainer and wild summaries
+gba-1089	DONE	LogTms.kt:58	Gym TMs with leaders, or every TM by number
+gba-1090	DONE	LogTrainers.kt:273	Party with moves at level and held items
+gba-1091	DONE	LogTrainers.kt:201	Rival, Gym, Elite 4, Boss filters
+gba-1092	PARTIAL	MoveHistoryStats.kt:35	Moves seen with level range; never the full learnset that vanilla data or Open Book show
+gba-1093	PARTIAL	TrackerGearDialog.kt:74	One gear dialog; theme, streaming, new runs thinner; help, controls absent
+gba-1094	DONE	Notebook.kt:45	Notebook's four screens in one dialog
+gba-1095	DONE	Notebook.kt	tracked abilities only; the ROM pair under Open Book or unrandomized with vanilla data on (513702c)
+gba-1096	DONE	Notebook.kt:45	In the Notebook dialog
+gba-1097	DONE	Notebook.kt:45	In the Notebook dialog
+gba-1098	PARTIAL	RunScreen.kt:68	Run tab: generate mode only; no profiles or premade ROMs
+gba-1099	DONE	RandomEvos.kt:36	From the reference's revo tables
+gba-1100	PARTIAL	TrackerGearDialog.kt:74	Options and carousel in the gear; no controls tab, one alternative icon set
+gba-1101	NA	-	Extension loader
+gba-1102	PARTIAL	TrackerPanel.kt:549	No-party card with favorites; no version, game, controls, welcome or startup icon
+gba-1103	DONE	ScoreSheet.kt:92	From the game-over screen's Grade my notes
+gba-1104	PARTIAL	MoveHistoryStats.kt:91	Nine of ten rows; play time 'not kept'
+gba-1105	MISSING	-	No Streamer.bot integration (chat commands, rewards)
+gba-1106	PARTIAL	PlayScreen.kt:1494; RunScreen.kt:293	Favorites and an OBS server exist; no welcome message, attempts edit, Stream Connect
+gba-1107	DONE	TeamView.kt:31	Heads the panel instead of sitting under the game
+gba-1108	DONE	TimeMachine.kt:91	Restore points every 4 minutes, up to ten, with the return point
+gba-1109	PARTIAL	TrackerGearDialog.kt:191	Clear only; no save/load of tracked data, no auto-save switch
+gba-1110	PARTIAL	TrackerPanel.kt:296	Main panel ported; no GachaMon stars, shiny sparkle, log quick access (by decision)
+gba-1111	DONE	TrainerScreens.kt:63	Opened from Trainers on Route and the battle banner
+gba-1112	DONE	TrainerScreens.kt:29	Gear > TRAINERS ON ROUTE and the carousel line
+gba-1113	DONE	PcTracker.kt:1635	Opened from the type icons
+gba-1114	NA	AboutScreen.kt:198	Auto-updater; INFO links the latest build
+gba-1115	PARTIAL	LogViewer.kt:54	No warning screen; the log is locked until a loss instead

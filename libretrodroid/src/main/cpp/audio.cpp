@@ -34,6 +34,27 @@ Audio::Audio(int32_t sampleRate, double refreshRate, bool preferLowLatencyAudio)
     initializeStream();
 }
 
+Audio::~Audio() {
+    // LOCAL MODIFICATION (KaizoCore): stop and close the stream before any
+    // member is destroyed.
+    //
+    // Members go in reverse order of declaration, and latencyTuner is declared
+    // after stream, so it was freed while the stream's callback thread could
+    // still be inside onAudioReady. The null check there cannot close that
+    // window: the member is checked, then freed on this thread, then tune()
+    // runs on null. Seen twice on the emulator on 2026-09-29 tearing a DS core
+    // down, once on NEW RUN and once leaving the Play tab:
+    //   signal 11 (SIGSEGV), fault addr 0x8, AudioTrack thread
+    //   oboe::LatencyTuner::tune()+9
+    //   libretrodroid::Audio::onAudioReady(...)+437
+    // stop() waits for the stream to stop and close() for its callback thread
+    // to end, so nothing the callback reads is gone while it can still run.
+    if (stream != nullptr) {
+        stream->stop();
+        stream->close();
+    }
+}
+
 bool Audio::initializeStream() {
     LOGI("Using low latency stream: %d", audioLatencySettings->useLowLatencyStream);
 

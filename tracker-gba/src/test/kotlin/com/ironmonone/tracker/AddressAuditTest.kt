@@ -37,6 +37,7 @@ class AddressAuditTest {
         "gEnemyParty" to { m: GameMap -> m.enemyParty },
         "gBattleTypeFlags" to { m: GameMap -> m.battleTypeFlags },
         "gBattleMons" to { m: GameMap -> m.battleMons },
+        "gBattlerPartyIndexes" to { m: GameMap -> m.battlerPartyIndexes },
         "gBattlersCount" to { m: GameMap -> m.battlersCount },
         "gBattleOutcome" to { m: GameMap -> m.battleOutcome },
         "gBattleMainFunc" to { m: GameMap -> m.battleMainFunc },
@@ -66,6 +67,7 @@ class AddressAuditTest {
         "gameVarsOffset" to { m: GameMap -> m.gameVarsOffset },
         "gTasks" to { m: GameMap -> m.gTasks },
         "Task_HandleConfirmStarterInput" to { m: GameMap -> m.confirmStarterTask },
+        "sSpecialFlags" to { m: GameMap -> m.specialFlags },
     )
 
     @Test

@@ -1,0 +1,32 @@
+TEXT:
+Nuzlocke
+A line whose Pokémon all died is open again. Off: a caught line stays a dupe for the whole run.
+✓
+Shiny clause
+A shiny is a free extra. It does not use up the area.
+Gifts count
+A gift Pokémon uses up the area where you got it. Off: gifts are free. Your starter never counts.
+Static Pokémon count
+A set battle (Snorlax, a legendary, a roamer) uses up its area. Off: they are free.
+✓
+Cave floors are one area
+Every floor of a cave or tower shares one encounter. Off: each floor is its own area.
+Water is its own area
+Surfing and fishing get an encounter of their own, apart from the grass.
+Escape clause
+If the wild Pokémon flees, the area stays open.
+✓
+Nickname reminder
+A warning when a caught Pokémon in your party still has its species name.
+HARDCORE
+Level caps
+No Pokémon above the highest level on the next boss's team. Checked when a boss battle starts; passing it inside the battle is allowed.
+Rivals and team leaders are bosses
+Start Nuzlocke
+Home
+Play
+Library
+More
+
+CONTENT DESCRIPTIONS:
+Back to Home

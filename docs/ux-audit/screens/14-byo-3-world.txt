@@ -1,0 +1,31 @@
+TEXT:
+Kaizo IronMON
+Build your own
+The world
+Step 3 of 5
+Pokémon Emerald (U)
+What you meet, what trainers send out, and what lies on the ground.
+Wild Pokémon
+What you meet in grass, caves and water.
+Unchanged
+Random
+Random, similar strength
+The game's own wild Pokémon.
+Wild levels
+Raise every wild Pokémon's level by a percent. The randomizer stops at 50%.
+0%
++10%
++20%
++30%
++40%
++50%
+Levels stay as the game has them.
+Back
+Next
+Home
+Play
+Library
+More
+
+CONTENT DESCRIPTIONS:
+Back to Home

@@ -820,6 +820,11 @@ per RomKind under prep/favorites/ (the old single file seeds a game
 without one), the RUN tab's boxes and list following the picked game, and
 the no-party card on both panels showing that game's favorites.
 
+Brought back on 2026-10-01 at Blake's request ("As long as it fits in the rules, I would say do it for the
+modes that allow favorites"), as FavoriteBall: in a Kaizo IronMON run's lab on a Gen 3 game, the ball holding
+a favorite the mode lets you take, never the others. The ball is read from the ROM now: the old line took
+FireRed's starter table in stored order, which named Charmander the middle ball and Squirtle the right one.
+
 ### 2.6 Ruby, Sapphire, LeafGreen - **DONE 2026-09-07 (v1.0 dumps)**
 
 Blake sent v1.0 dumps of all three; "all of them" was the call. The

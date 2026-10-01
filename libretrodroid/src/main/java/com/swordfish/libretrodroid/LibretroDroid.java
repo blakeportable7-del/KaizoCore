@@ -106,6 +106,8 @@ public class LibretroDroid {
     public static native void destroy();
 
     public static native void step(GLRetroView retroView);
+    /** KaizoCore patch: exactly `frames` frames with no pacing, then one draw. The debug build's test bot only. */
+    public static native void stepBot(int frames);
 
     public static native void reset();
 
@@ -126,6 +128,27 @@ public class LibretroDroid {
     public static native void setSensorValues(float ax, float ay, float az, float gx, float gy, float gz, float lux);
     public static native int getSensorMask();
     public static native void setAudioEnabled(boolean enabled);
+
+    // KaizoCore patch (2026-09-29): the stream kit's taps (cpp/streamtap.h). While
+    // capture is off, playing does nothing extra; the stream server turns it on
+    // for as long as a viewer is connected.
+    public static native void setStreamCapture(boolean on);
+
+    /**
+     * Newest frame as tightly packed RGB (width * height * 3 bytes) into [dst], a
+     * DIRECT buffer. Returns the frame's counter (> 0; [size] gets width and height),
+     * 0 when nothing is newer than [afterCounter], -1 when [dst] is too small ([size]
+     * says what is needed), -2 when [dst] is not direct.
+     */
+    public static native long streamFrame(java.nio.ByteBuffer dst, long afterCounter, int[] size);
+
+    /**
+     * Buffered sound as interleaved stereo 16-bit little-endian PCM into [dst], a
+     * DIRECT buffer. Returns the number of bytes written (whole stereo frames, so a
+     * multiple of 4); [info] gets the sample rate in Hz at index 0. -1 when [dst] is
+     * not direct.
+     */
+    public static native int streamAudio(java.nio.ByteBuffer dst, int[] info);
     public static native void setShaderConfig(GLRetroShader shader);
     public static native void setViewport(float x, float y, float width, float height);
 

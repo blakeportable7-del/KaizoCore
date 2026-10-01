@@ -1,0 +1,48 @@
+TEXT:
+File
+States, slot 1 (empty)
+Save
+Load
+Speed 1x
+Mute
+Restart
+Top screen only
+Rules
+Cam
+Stream
+Clean view
+Edit layout
+Settings
+▲
+◀
+▶
+▼
+A
+B
+L
+R
+SELECT
+START
+X
+Y
+SETUP
+No Pokemon yet. The tracker fills in when you get your first one.
+Random ball: Right
+Home
+Play
+Library
+More
+
+CONTENT DESCRIPTIONS:
+Up
+Left
+Right
+Down
+A button
+B button
+L shoulder
+R shoulder
+Select
+Start
+X button
+Y button

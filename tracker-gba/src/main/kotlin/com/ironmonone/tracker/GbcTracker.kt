@@ -17,7 +17,9 @@ package com.ironmonone.tracker
  * Nothing about a species is a table: types, base stats, move power and type
  * come out of the RANDOMIZED ROM (BaseData at 0x51424, Moves at 0x41AFB -
  * the reference's gBaseStats and gBattleMoves with the 0x08 domain prefix
- * dropped). Only names are bundled.
+ * dropped). Only names are bundled, and for the panel's lookups ([GbLookups])
+ * the reference's move summaries, weights and evolutions; the learn levels
+ * are the ROM's own, as the reference reads them.
  */
 class GbcTracker(
     private val memory: MemoryReader,
@@ -25,10 +27,7 @@ class GbcTracker(
     private val rom: ByteArray,
     /** Which Gen 2 game's addresses to use; null when the header names none of them. */
     private val map: Gen2Map? = Gen2Map.forRom(rom),
-) {
-    /** GameOverScreen.LossConditions: which faint ends the run. The app sets it from its options. */
-    @Volatile var lossCondition: LossCondition = LossCondition.LEAD
-
+) : GbLookups {
     companion object {
         const val RAM = 0x02000000L
 
@@ -39,10 +38,16 @@ class GbcTracker(
         const val PARTY_COUNT = 0x1CD7L
         const val PARTY_SPECIES = 0x1CD8L          // wPartySpecies, 6 + terminator
         const val PARTY_MONS = 0x1CDFL             // wPartyMon1 (reference pstats)
+        /** An egg in the party species list (wPartySpecies). */
+        const val EGG = 0xFD
         const val PARTY_STRIDE = 48                // party_struct; the reference steps 44, Gen 1's size
         const val ENEMY_MON = 0x1206L              // wEnemyMon (reference estats)
         const val BATTLE_MODE = 0x122DL            // wBattleMode: 0 none, 1 wild, 2 trainer (reference gBattleTypeFlags)
         const val ENEMY_LAST_MOVE = 0x0608L        // wEnemyMoveStruct 0xC608 (reference eMove): its first byte is the move id. wCurEnemyMove is 0xC6E4
+        const val ENEMY_TURNS = 0x06DCL            // wEnemyTurnsTaken 0xC6DC (reference oppTurn): counts the turns the opponent's move ran
+        const val PLAYER_TURNS = 0x06DDL           // wPlayerTurnsTaken 0xC6DD (reference gTurn)
+        const val CUR_LANDMARK = 0x02D9L           // wCurLandmark 0xC2D9 (reference gMapHeader)
+        const val STAT_LEVELS = 0x06CCL            // wPlayerStatLevels 0xC6CC, the enemy's 8 on (reference StatChange)
         const val JOHTO_BADGES = 0x1857L           // wJohtoBadges (reference badgeOffset)
         const val KANTO_BADGES = 0x1858L           // wKantoBadges
         const val NUM_ITEMS = 0x1892L              // wNumItems
@@ -54,6 +59,8 @@ class GbcTracker(
         const val BASE_STRIDE = 32
         const val MOVES = 0x41AFB                  // Moves, 7 bytes per move, index move-1
         const val MOVE_STRIDE = 7
+        /** EvosAttacksPointers: the reference's gEvo_move / offset (0x080425B1), a bank-local pointer per species. */
+        const val EVOS_ATTACKS = 0x425B1
 
         /**
          * Gen 2 type ids to the Gen 3 ids the panel's chips and chart use.
@@ -67,6 +74,18 @@ class GbcTracker(
             20 -> 10; 21 -> 11; 22 -> 12; 23 -> 13; 24 -> 14; 25 -> 15; 26 -> 16; 27 -> 17
             else -> 0
         }
+
+        /**
+         * wJohtoBadges in the order the badge art is numbered. The game keeps
+         * Jasmine's Mineral Badge in bit 4 and Chuck's Storm Badge in bit 5
+         * (pokecrystal constants/engine_flags.asm, MINERALBADGE before
+         * STORMBADGE) while GSC_badge5 is the Storm Badge and GSC_badge6 the
+         * Mineral: the Gen 2 reference draws badge 5 from bit 5 and badge 6
+         * from bit 4 (Program.lua:1103-1108). Swapped here, so badge N is
+         * bit N-1 as in every other set, and Jasmine no longer lights Chuck's.
+         */
+        fun johtoInArtOrder(bits: Int): Int =
+            (bits and 0x30.inv()) or ((bits shr 1) and 0x10) or ((bits shl 1) and 0x20)
 
         /** The reference's Gen 2 HealingItems: id to (amount, isPercent). */
         val HEALS: Map<Int, Pair<Int, Boolean>> = mapOf(
@@ -86,17 +105,39 @@ class GbcTracker(
             173 to (10 to false),   // Berry
             174 to (30 to false),   // Gold Berry
         )
+
+        /**
+         * The evolution stones, pokecrystal's and pokegold's item_constants.asm:
+         * MOON_STONE $08, FIRE_STONE $16, THUNDERSTONE $17, WATER_STONE $18,
+         * LEAF_STONE $22. The Gen 2 reference keys its MiscData.EvolutionStones by
+         * Gen 1's ids (10, 32, 33, 34, 47: MiscData.lua:486-517), which in Gold,
+         * Silver and Crystal are Burn Heal, Rare Candy, X Accuracy, Leaf Stone and
+         * Soda Pop; the game's own ids are read here.
+         */
+        val STONES: Map<Int, EvoText.GbStone> = mapOf(
+            0x08 to EvoText.GbStone.MOON, 0x16 to EvoText.GbStone.FIRE, 0x17 to EvoText.GbStone.THUNDER,
+            0x18 to EvoText.GbStone.WATER, 0x22 to EvoText.GbStone.LEAF,
+        )
     }
 
     private val speciesNames = HashMap<Int, String>()
     private val moveNames = HashMap<Int, String>()
     private val seenForSpecies = -1
-    private var enemySpeciesSeen = -1
-    private val movesSeen = LinkedHashSet<Int>()
+    private val enemyMoves = GbEnemyMoves()
+    private val lastMove = GbLastMove()
+    /** The stones in the bag at the last read, for the evolution text (Program.GameData.evolutionStones). */
+    @Volatile private var bagStones: Set<EvoText.GbStone> = emptySet()
+
+    /** The Gen 2 reference's MiscData.Items by item id (tools/extract_gen2_data.py). */
+    private val itemNames = HashMap<Int, String>()
+    /** The Gen 2 reference's RouteData.setupRouteInfoAsGSC by Crystal landmark id (tools/extract_gen2_data.py). */
+    private val landmarkNames = HashMap<Int, String>()
 
     init {
         load("/gen2/species.tsv", speciesNames)
         load("/gen2/moves.tsv", moveNames)
+        load("/gen2/items.tsv", itemNames)
+        load("/gen2/landmarks.tsv", landmarkNames)
     }
 
     private fun load(resource: String, into: HashMap<Int, String>) {
@@ -108,14 +149,18 @@ class GbcTracker(
         }
     }
 
-    fun speciesName(id: Int): String = speciesNames[id] ?: "#$id"
+    override fun speciesName(id: Int): String = speciesNames[id] ?: "#$id"
     fun moveName(id: Int): String = moveNames[id] ?: "#$id"
+
+    override val generation: Int get() = 2
+    private val tables by lazy { GbTables(2) }
+    private val learnCache = java.util.concurrent.ConcurrentHashMap<Int, List<Int>>()
 
     // ------------------------------------------------------------------ ROM tables
 
     private fun romU8(off: Int): Int = if (off in rom.indices) rom[off].toInt() and 0xFF else 0
 
-    fun baseStats(species: Int): BaseStats? {
+    override fun baseStats(species: Int): BaseStats? {
         if (species !in 1..251) return null
         val b = m.baseStats + (species - 1) * BASE_STRIDE
         if (b + BASE_STRIDE > rom.size) return null
@@ -124,6 +169,8 @@ class GbcTracker(
             spe = romU8(b + 4), spAtk = romU8(b + 5), spDef = romU8(b + 6),
             type1 = gen3Type(romU8(b + 7)), type2 = gen3Type(romU8(b + 8)),
             ability1 = 0, ability2 = 0,
+            // BaseData +13, BASE_GENDER: the ratio byte the Nuzlocke rules read a Pokemon's gender against (Gen12Nuzlocke.gender).
+            genderRatio = romU8(b + 13),
         )
     }
 
@@ -183,7 +230,50 @@ class GbcTracker(
     fun trackedOf(m: PokemonDecoder.Mon): TrackedMon = tracked(m)
     fun moveRowOf(id: Int, pp: Int, ppMax: Int?): MoveRow = moveRow(id, pp, ppMax)
     /** The row for a move seen in an earlier battle, at its base PP. */
-    fun moveRowFor(id: Int): MoveRow? = if (id <= 0) null else moveData(id)?.let { moveRow(id, it[3], null) }
+    override fun moveRowFor(id: Int): MoveRow? = if (id <= 0) null else moveData(id)?.let { moveRow(id, it[3], null) }
+
+    // ------------------------------------------------------------------ the panel's lookups (GbLookups)
+    /** MoveData.lua `summary`, ids 1..251. */
+    override fun moveDescription(id: Int): String? = if (id in 1..251) tables.moveDescription(id) else null
+    /** PokemonData.lua `weight` (kg). */
+    override fun weight(species: Int): String? = if (species in 1..251) tables.weight(species) else null
+    /** PokemonData.lua `evolution`. */
+    override fun evolution(species: Int): String? = if (species in 1..251) tables.evolution(species) else null
+    /**
+     * Tracker Extras' "Estimate Pokemon IV Potential" for your [lead]
+     * (Battle.getViewedPokemon(true), slot 1): "Cyndaquil is: Decent.", with the
+     * BST the reference reads from the ROM (PokemonData.UpdateBST, gBaseStats)
+     * and the reference's own name for the species (IvEstimate).
+     */
+    fun ivPotential(lead: TrackedMon?): String {
+        val mon = lead?.mon ?: return IvEstimate.UNAVAILABLE
+        if (mon.species !in 1..251) return IvEstimate.UNAVAILABLE
+        val bst = baseStats(mon.species)?.bst ?: return IvEstimate.UNAVAILABLE
+        val f = IvEstimate.fraction(mon.maxHp, mon.atk, mon.def, mon.spAtk, mon.spDef, mon.spe, mon.level, bst)
+        return "${tables.name(mon.species) ?: speciesName(mon.species)} is: ${IvEstimate.verdict(f)}"
+    }
+
+    /** PokemonData.getEffectiveness: the ROM's types against the Gen 2 reference's chart, which is Gen 3's. */
+    override fun effectivenessAgainst(species: Int): Map<Double, List<String>> =
+        baseStats(species)?.let { weaknessesOf(it.type1, it.type2, gen1 = false) } ?: emptyMap()
+
+    /**
+     * PokemonData.updatemoves (Gen 2 reference PokemonData.lua:269-298): the
+     * species' pointer in EvosAttacksPointers, its evolutions skipped
+     * (EVOLVE_STAT is 4 bytes, the rest 3), then its (level, move) pairs, the
+     * Lv.1 ones left out. The reference turns the pointer into a ROM offset
+     * against the first entry's (pointer - first + 0x427A7); the bank
+     * arithmetic here gives the same offsets on Crystal and does not depend
+     * on Bulbasaur's entry staying where it was.
+     */
+    override fun learnLevels(species: Int): List<Int> = learnCache.getOrPut(species) {
+        val table = m.evosAttacks
+        if (map == null || species !in 1..251 || table == 0) return@getOrPut emptyList()
+        val at = table + (species - 1) * 2
+        if (at + 1 !in rom.indices) return@getOrPut emptyList()
+        val pointer = romU8(at) or (romU8(at + 1) shl 8)
+        gbLearnLevels(rom, gbOffset(table / 0x4000, pointer)) { type -> when (type) { 1, 2, 3, 4 -> 3; 5 -> 4; else -> null } }
+    }
 
     private fun tracked(m: PokemonDecoder.Mon): TrackedMon {
         val base = baseStats(m.species)
@@ -192,16 +282,26 @@ class GbcTracker(
             val basePp = d?.get(3)
             moveRow(m.moves[i], m.pp[i], basePp?.let { it + (it / 5) * m.ppUps[i] })
         }
+        // Utils.getMovesLearnedHeader: "Moves 3/7 (16)" from the learn levels.
+        val header = LearnedMoves.of(learnLevels(m.species), m.level)
         return TrackedMon(
             mon = m, speciesName = speciesName(m.species),
             moveNames = rows.map { it.name }, base = base,
-            abilityName = "-", itemName = if (m.heldItem == 0) "-" else "#${m.heldItem}",
+            // The held item by name, MiscData.Items[id + 1] (DataHelper.lua:173-174); it read "#18".
+            abilityName = "-", itemName = if (m.heldItem == 0) "-" else itemNames[m.heldItem] ?: "#${m.heldItem}",
             moveRows = rows, statusCondition = statusName(m.status.toInt()),
+            movesLearned = header.learned, movesTotal = header.total, nextMoveLevel = header.next,
+            // "Lv.12 (14)": the Gen 2 reference's evolution, coloured as it draws it (EvoText.forOwnGb),
+            // against the Pokemon's own friendship (party_struct +27).
+            evo = EvoText.forOwnGb(evolution(m.species), m.level, bagStones, m.friendship, TrackerPrefs.determineFriendship),
         )
     }
 
     /** The raw count byte of the last read: 0 before a game has a party, 1..6 with one, anything else garbage. */
     private var lastCount = 0
+
+    /** The party slot each Pokemon of the last [readParty] came from: an egg holds a slot and is not read, so the two can differ. */
+    private var partySlots: List<Int> = emptyList()
 
     private fun readParty(): List<TrackedMon> {
         val raw = ram(m.partyCount, 1).let { if (it.isEmpty()) 0 else it.u8(0) }
@@ -209,16 +309,23 @@ class GbcTracker(
         val count = raw.coerceIn(0, 6)
         val species = ram(m.partySpecies, 7)
         val out = ArrayList<TrackedMon>(6)
+        val slots = ArrayList<Int>(6)
         for (i in 0 until 6) {
             val sp = if (species.size > i) species.u8(i) else 0
             // 0xFF terminates the list; 0 is empty. Read structs past the count
             // byte only while the list agrees, so a wrong count cannot invent.
             if (sp == 0xFF || sp == 0) break
             if (i >= count && count > 0) break
+            // An egg is 0xFD in the species list. It stopped the read, so every Pokemon after
+            // it was missing, and an "entire party" run ended while they stood (review,
+            // 2026-09-29). An egg does not battle and is not tracked: the read goes on past it.
+            if (sp == EGG) continue
             if (sp !in 1..251) break
             val mon = partyMon(ram(m.partyMons + i * PARTY_STRIDE.toLong(), PARTY_STRIDE), sp) ?: break
             out += tracked(mon)
+            slots += i
         }
+        partySlots = slots
         return out
     }
 
@@ -230,9 +337,13 @@ class GbcTracker(
         if (species !in 1..251) return null
         val level = b.u8(13); val curHp = be16(b, 16); val maxHp = be16(b, 18)
         if (level !in 1..100 || maxHp !in 1..999 || curHp > maxHp) return null
-        if (species != enemySpeciesSeen) { enemySpeciesSeen = species; movesSeen.clear() }
-        // The move the opponent last used: seen once it is used, never before.
-        ram(m.enemyMove, 1).let { if (it.isNotEmpty() && it.u8(0) in 1..251) movesSeen.add(it.u8(0)) }
+        // Battle.updateTrackedInfoGen2 (Gen 2 reference Battle.lua:429-455, GbEnemyMoves): the move
+        // byte counts only when it is one of the opponent's four, once per enemy turn. Any byte in range
+        // used to count, so the move the AI last weighed, or last battle's, went on the card unused.
+        val turns = ram(m.enemyTurns, 1).let { if (it.isEmpty()) 0 else it.u8(0) }
+        val known = (0 until 4).map { b.u8(2 + it) }
+        enemyMoves.see(species, ram(m.enemyMove, 1).let { if (it.isEmpty()) 0 else it.u8(0) }, known, 1..251, turns)
+        val movesSeen = enemyMoves.seen
         val base = baseStats(species)
         return EnemyInfo(
             species = species, speciesName = speciesName(species), level = level,
@@ -240,21 +351,37 @@ class GbcTracker(
             type1 = gen3Type(b.u8(30)), type2 = gen3Type(b.u8(31)),
             base = base,
             movesSeen = movesSeen.map { moveName(it) },
-            moveRows = movesSeen.map { moveRow(it, moveData(it)?.get(3) ?: 0, null) },
+            // "Count enemy PP usage" (DataHelper.lua:275-286): a shown move the opponent has now takes
+            // its live PP from the battle struct (moves at 2, PP at 8, the whole byte as
+            // Program.readNewEnemyPokemonGen2 reads it); otherwise, and with the option off, base PP.
+            moveRows = movesSeen.map { id ->
+                val live = (0 until 4).firstOrNull { TrackerPrefs.countEnemyPp && b.u8(2 + it) == id }?.let { b.u8(8 + it) }
+                moveRow(id, live ?: moveData(id)?.get(3) ?: 0, null)
+            },
             abilityGuess = "-",
             statusCondition = statusName(b.u8(14)),
+            // The opponent's evolution, all in the default colour (TrackerScreen.lua:734).
+            evo = EvoText.forEnemy(evolution(species)),
         )
     }
 
-    private fun readHeals(maxHp: Int): Pair<Int, Int> {
-        if (maxHp <= 0) return 0 to 0
+    /** The items pocket (wNumItems, then wItems' id and quantity pairs up to the 0xFF that ends them). */
+    private fun readBag(): List<Pair<Int, Int>> {
         val n = ram(m.numItems, 1).let { if (it.isEmpty()) 0 else it.u8(0) }.coerceIn(0, ITEM_SLOTS)
         val b = ram(m.items, n * 2 + 1)
-        var total = 0; var count = 0
+        val out = ArrayList<Pair<Int, Int>>(n)
         for (i in 0 until n) {
             if (b.size < i * 2 + 2) break
-            val id = b.u8(i * 2); val qty = b.u8(i * 2 + 1)
-            if (id == 0xFF) break
+            val id = b.u8(i * 2); if (id == 0xFF) break
+            out += id to b.u8(i * 2 + 1)
+        }
+        return out
+    }
+
+    private fun readHeals(bag: List<Pair<Int, Int>>, maxHp: Int): Pair<Int, Int> {
+        if (maxHp <= 0) return 0 to 0
+        var total = 0; var count = 0
+        for ((id, qty) in bag) {
             val heal = HEALS[id] ?: continue
             if (qty !in 1..99) continue
             val each = if (heal.second) maxHp * heal.first / 100 else minOf(heal.first, maxHp)
@@ -263,31 +390,125 @@ class GbcTracker(
         return (total * 100 / maxHp) to count
     }
 
+    /** "Game is considered over when", set by the app from its options; the lead by default. */
+    @Volatile var lossCondition: LossCondition = LossCondition.LEAD
+
+    // ------------------------------------------------------------------ the Nuzlocke reads (2026-09-30)
+
+    /** Crystal is `c`; Gold and Silver are told apart by the header title, their data rows are `g` or `s` first and `gs` for both. */
+    private val nuzTracker by lazy {
+        val title = if (rom.size >= 0x140) String(rom, 0x134, 11, Charsets.US_ASCII) else ""
+        val keys = when {
+            m === Gen2Map.CRYSTAL -> listOf("c")
+            title == "POKEMON_SLV" -> listOf("s", "gs")
+            else -> listOf("g", "gs")
+        }
+        GbNuzTracker(2, keys.first(), keys, rom, m.trainerTable)
+    }
+
+    private fun byteAt(off: Long): Int = if (off == 0L) -1 else ram(off, 1).let { if (it.isEmpty()) -1 else it.u8(0) }
+
+    /** The ball pocket's quantities added up; -1 when it cannot be read. */
+    private fun ballCount(): Int {
+        if (m.numBalls == 0L) return -1
+        val n = byteAt(m.numBalls).coerceIn(0, 12)
+        val b = ram(m.balls, n * 2 + 1)
+        if (b.size < n * 2) return -1
+        return (0 until n).sumOf { b.u8(it * 2 + 1) }
+    }
+
+    /**
+     * What the rules engine reads beyond the panel's state; Gen12Nuzlocke turns it into a snapshot: the place, how the last
+     * battle ended and what kind it was, the player's trainer id and the enemy's DVs (a Pokemon's id, Gen12Nuzlocke.id), the
+     * balls and the items, the opponent's class and number, the level caps read out of the ROM, and the party's nicknames.
+     */
+    private fun nuzReads(party: List<TrackedMon>, mode: Int, battling: Boolean, enemy: EnemyInfo?, bag: List<Pair<Int, Int>>, mapId: Int?): NuzlockeReads? {
+        if (map == null || m.playerId == 0L) return null
+        val n = nuzTracker
+        val wild = mode == 1
+        // Gen 2 has no flag for "someone ran": every escape ends as a draw. A catch does: wWildMon holds the species from the
+        // throw that catches until the battle is over, so it is latched while the battle is on.
+        n.look(battling, wild, enemy?.curHp, escapedNow = false, capturedNow = byteAt(m.wildMon) > 0)
+        val place = n.place(mapId)
+        val id = ram(m.playerId, 2).let { if (it.size == 2) be16(it, 0) else -1 }
+        val dvs = if (battling && wild) ram(m.enemyDvs, 2).let { if (it.size == 2) be16(it, 0) else -1 } else -1
+        val options = byteAt(m.options)
+        val opponent = if (battling && !wild) n.opponent(byteAt(m.trainerClass), byteAt(m.trainerNo)) else null
+        val nicks = ram(m.nicks, 66)
+        val state = byteAt(m.playerState)
+        val gb = GbNuzReads(
+            generation = 2, game = n.game, gameKeys = n.keys,
+            place = place?.place, detail = place?.detail,
+            playerId = id, enemyDvs = dvs, enemyHpLast = n.lastEnemyHp, lastWild = n.lastWild,
+            battleResult = byteAt(m.battleResult), captured = n.captured,
+            battleType = byteAt(m.battleType).coerceAtLeast(0),
+            // PLAYER_SURF is 4 and PLAYER_SURF_PIKA 8 (pokecrystal constants/ram_constants.asm).
+            surfing = state == 4 || state == 8,
+            ballCount = ballCount(),
+            bag = bag.filter { it.second > 0 }.associate { (item, qty) -> item to BagItem(itemNames[item] ?: "Item $item", qty) },
+            turn = if (battling) ram(m.playerTurns, 1).let { if (it.isEmpty()) 0 else it.u8(0) } else -1,
+            // wOptions bit 6 set is the Set battle style (pokecrystal BATTLE_SHIFT, options_menu.asm).
+            battleStyleSet = if (options < 0) null else (options and 0x40) != 0,
+            opponent = opponent, caps = n.caps(),
+            nicknames = partySlots.map { slot -> if (nicks.size >= (slot + 1) * 11) GbText.decode(nicks, slot * 11) else "" },
+        )
+        return NuzlockeReads(gb = gb)
+    }
+
     fun read(): TrackerState {
         if (map == null) return TrackerState(
             partyCount = 0, party = emptyList(), inBattle = false, isWildBattle = false,
             badgeSet = "GSC", diagnostics = "Game Boy game not known to the tracker", unreadable = true,
         )
-        val party = readParty()
+        // Program.getBagItems: a stone counts while its quantity is above 0.
+        val bag = readBag()
+        bagStones = bag.filter { it.second > 0 }.mapNotNull { STONES[it.first] }.toSet()
+        var party = readParty()
         val mode = ram(m.battleMode, 1).let { if (it.isEmpty()) 0 else it.u8(0) }
         val inBattle = mode == 1 || mode == 2
-        val enemy = if (inBattle) readEnemy() else run { enemySpeciesSeen = -1; movesSeen.clear(); null }
+        var enemy = if (inBattle) readEnemy() else run { enemyMoves.clear(); null }
+        val battling = inBattle && enemy != null
+        // Battle.updateStatStagesGen2 (Gen 2 reference Battle.lua:699-722): the active battlers' stages,
+        // drawn only in battle, yours on slot 1 as the reference views it (Battle.getViewedPokemon).
+        if (battling && party.isNotEmpty()) {
+            party = listOf(party[0].copy(statStages = gbStatStages(ram(m.statLevels, 7), GEN2_STAGES))) + party.drop(1)
+            enemy = enemy?.copy(statStages = gbStatStages(ram(m.statLevels + 8, 7), GEN2_STAGES))
+        }
+        lastMove.read(battling, turn = ram(m.playerTurns, 1).let { if (it.isEmpty()) 0 else it.u8(0) },
+            move = ram(m.enemyMove, 1).let { if (it.isEmpty()) 0 else it.u8(0) })
         val johto = ram(m.johtoBadges, 1).let { if (it.isEmpty()) 0 else it.u8(0) }
         val kanto = ram(m.kantoBadges, 1).let { if (it.isEmpty()) 0 else it.u8(0) }
+        // Crystal's landmark; on Gold and Silver, which keep none, the map group and number.
+        val mapId: Int? = when {
+            m.curLandmark != 0L -> ram(m.curLandmark, 1).takeIf { it.isNotEmpty() }?.u8(0)
+            m.mapGroup != 0L -> ram(m.mapGroup, 2).takeIf { it.size == 2 }?.let { (it.u8(0) shl 8) or it.u8(1) }
+            else -> null
+        }
         val lead = party.firstOrNull()
-        val heals = readHeals(lead?.mon?.maxHp ?: 0)
+        val heals = readHeals(bag, lead?.mon?.maxHp ?: 0)
         return TrackerState(
             partyCount = party.size,
             party = party,
-            inBattle = inBattle && enemy != null,
+            inBattle = battling,
             isWildBattle = inBattle && mode == 1,
             enemy = enemy,
-            badges = johto or (kanto shl 8),
+            // "Team:" in a trainer battle: the one ball the reference knows (gbEnemyTeam).
+            enemyTeam = gbEnemyTeam(trainerBattle = battling && mode == 2, enemy = enemy),
+            // Johto's eight in the art's order, Kanto's eight above them (the badge row draws all sixteen).
+            badges = johtoInArtOrder(johto) or (kanto shl 8),
             badgeSet = "GSC",
             healPercent = heals.first,
             healCount = heals.second,
-            gameOver = if (lossCondition.lost(party.map { it.mon.level to it.mon.curHp })) GameOver.LOST else null,
+            // "Last move: X" between the enemy's moves (GbLastMove); MoveData.isValid is 1..251.
+            lastAttackMove = lastMove.shown.takeIf { it in 1..251 }?.let { moveName(it) },
+            // Program.updateMapLocation (Program.lua:1121-1134): the map is wCurLandmark, named from
+            // RouteData.Info (setupRouteInfoAsGSC), and any map read is a valid location
+            // (isValidMapLocation is mapId ~= nil), so the Time Machine makes its points.
+            mapId = mapId, routeName = if (m.curLandmark != 0L) mapId?.let { landmarkNames[it] } else null,
+            // The player's condition, checked once the battle byte reads 0, never mid-battle (GbGameOver).
+            gameOver = if (GbGameOver.lost(mode, party, lossCondition)) GameOver.LOST else null,
             diagnostics = "${m.name}  party=%d mode=%d".format(party.size, mode),
+            nuz = runCatching { nuzReads(party, mode, battling, enemy, bag, mapId) }.getOrNull(),
             // A count of 0 is a game with no party yet (the title screen, the
             // intro): the panel says so. A count of 1..6 with no decodable mon,
             // or a count no party can have, is a map that does not fit this ROM.
@@ -308,7 +529,8 @@ class GbcTracker(
  * pokegold output was believed. Gold and Silver share one WRAM layout (the
  * `-D_GOLD` / `-D_SILVER` builds differ only in constants), and the tool
  * gives the same numbers for both. The ROM tables are the randomizer's own
- * gen2_offsets.ini entries for Gold (U), which Silver (U) copies.
+ * gen2_offsets.ini entries for Gold (U), which Silver (U) copies
+ * ([evosAttacks] is its PokemonMovesetsTableOffset).
  */
 data class Gen2Map(
     val name: String,
@@ -316,25 +538,66 @@ data class Gen2Map(
     val enemyMon: Long, val battleMode: Long, val enemyMove: Long,
     val johtoBadges: Long, val kantoBadges: Long, val numItems: Long, val items: Long,
     val baseStats: Int, val moves: Int,
+    val evosAttacks: Int = 0,
+    /** wEnemyTurnsTaken, for the once-per-enemy-turn rule on [enemyMove]. */
+    val enemyTurns: Long = 0L,
+    /** wPlayerTurnsTaken, the reference's gTurn, for the last-move line (GbLastMove). */
+    val playerTurns: Long = 0L,
+    /** wPlayerStatLevels, seven stage bytes, wEnemyStatLevels 8 on: the reference's StatChange. */
+    val statLevels: Long = 0L,
+    /**
+     * wCurLandmark, the reference's gMapHeader (0x020002D9): the landmark of the
+     * map, set on entering it (engine/events/map_name_sign.asm), 0xFF in a gate.
+     * Crystal only; Gold and Silver have no such variable.
+     */
+    val curLandmark: Long = 0L,
+    /** wMapGroup, then wMapNumber: the map on Gold and Silver, which no reference reads. */
+    val mapGroup: Long = 0L,
+    // ---- The Nuzlocke reads (2026-09-30). pokecrystal and pokegold WRAM, from tools/wram_layout.py, as offsets like the rest. ----
+    /** wPlayerID (big endian), wBattleResult, wBattleType, wOtherTrainerClass, wOtherTrainerID, wOptions, wPlayerState. */
+    val playerId: Long = 0L, val battleResult: Long = 0L, val battleType: Long = 0L, val trainerClass: Long = 0L,
+    val trainerNo: Long = 0L, val options: Long = 0L, val playerState: Long = 0L,
+    /** wNumBalls and wBalls (the ball pocket), the party's nicknames (six of 11 bytes) and the enemy's DVs (wEnemyMon + 6). */
+    val numBalls: Long = 0L, val balls: Long = 0L, val nicks: Long = 0L, val enemyDvs: Long = 0L,
+    /** wWildMon: zeroed at every throw and set to the species only when a throw catches, until the battle is over. */
+    val wildMon: Long = 0L,
+    /** The randomizer's TrainerDataTableOffset ([Crystal (U)] and [Gold (U)] in gen2_offsets.ini). */
+    val trainerTable: Int = 0,
 ) {
     companion object {
         val CRYSTAL = Gen2Map(
             name = "Crystal",
             partyCount = GbcTracker.PARTY_COUNT, partySpecies = GbcTracker.PARTY_SPECIES, partyMons = GbcTracker.PARTY_MONS,
             enemyMon = GbcTracker.ENEMY_MON, battleMode = GbcTracker.BATTLE_MODE, enemyMove = GbcTracker.ENEMY_LAST_MOVE,
+            enemyTurns = GbcTracker.ENEMY_TURNS, playerTurns = GbcTracker.PLAYER_TURNS, statLevels = GbcTracker.STAT_LEVELS,
+            curLandmark = GbcTracker.CUR_LANDMARK,
             johtoBadges = GbcTracker.JOHTO_BADGES, kantoBadges = GbcTracker.KANTO_BADGES,
             numItems = GbcTracker.NUM_ITEMS, items = GbcTracker.ITEMS,
-            baseStats = GbcTracker.BASE_STATS, moves = GbcTracker.MOVES,
+            baseStats = GbcTracker.BASE_STATS, moves = GbcTracker.MOVES, evosAttacks = GbcTracker.EVOS_ATTACKS,
+            // wPlayerID D47B, wBattleResult D0EE, wBattleType D230, wOtherTrainerClass D22F, wOtherTrainerID D231, wOptions CFCC,
+            // wPlayerState D95D, wNumBalls D8D7, wBalls D8D8, wPartyMonNicknames DE41, wEnemyMonDVs D20C.
+            playerId = 0x147BL, battleResult = 0x10EEL, battleType = 0x1230L, trainerClass = 0x122FL, trainerNo = 0x1231L,
+            options = 0x0FCCL, playerState = 0x195DL, numBalls = 0x18D7L, balls = 0x18D8L, nicks = 0x1E41L, enemyDvs = 0x120CL,
+            wildMon = 0x064EL,      // wWildMon C64E
+            trainerTable = 0x39999,
         )
 
         /** pokegold: wPartyCount DA22, wPartySpecies DA23, wPartyMons DA2A, wEnemyMon D0EF, wBattleMode D116,
-         *  wEnemyMoveStruct CAE8, wJohtoBadges D57C, wKantoBadges D57D, wNumItems D5B7, wItems D5B8. */
+         *  wEnemyMoveStruct CAE8, wJohtoBadges D57C, wKantoBadges D57D, wNumItems D5B7, wItems D5B8,
+         *  wEnemyTurnsTaken CBBA, wPlayerTurnsTaken CBBB, wPlayerStatLevels CBAA, wMapGroup DA00. */
         val GS = Gen2Map(
             name = "Gold/Silver",
             partyCount = 0x1A22L, partySpecies = 0x1A23L, partyMons = 0x1A2AL,
-            enemyMon = 0x10EFL, battleMode = 0x1116L, enemyMove = 0x0AE8L,
+            enemyMon = 0x10EFL, battleMode = 0x1116L, enemyMove = 0x0AE8L, enemyTurns = 0x0BBAL,
+            playerTurns = 0x0BBBL, statLevels = 0x0BAAL, mapGroup = 0x1A00L,
             johtoBadges = 0x157CL, kantoBadges = 0x157DL, numItems = 0x15B7L, items = 0x15B8L,
-            baseStats = 0x51B0B, moves = 0x41AFE,
+            baseStats = 0x51B0B, moves = 0x41AFE, evosAttacks = 0x427BD,
+            // pokegold: wPlayerID D1A1, wBattleResult CFE9, wBattleType D119, wOtherTrainerClass D118, wOtherTrainerID D11B,
+            // wOptions D199, wPlayerState D682, wNumBalls D5FC, wBalls D5FD, wPartyMonNicknames DB8C, wEnemyMonDVs D0F5.
+            playerId = 0x11A1L, battleResult = 0x0FE9L, battleType = 0x1119L, trainerClass = 0x1118L, trainerNo = 0x111BL,
+            options = 0x1199L, playerState = 0x1682L, numBalls = 0x15FCL, balls = 0x15FDL, nicks = 0x1B8CL, enemyDvs = 0x10F5L,
+            wildMon = 0x114FL,      // wWildMon D14F
+            trainerTable = 0x3993E,
         )
 
         /**

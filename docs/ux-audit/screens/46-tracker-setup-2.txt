@@ -1,0 +1,18 @@
+TEXT:
+Edit color theme
+Game over lines
+Auto Pokémon Themes
+Play as your Pokemon
+Your character becomes a Pokemon while you walk around. It changes the picture only: not the game, not your save.
+Play as your Pokemon
+Options
+Show random ball picker
+Show starter ball info
+Show physical special icons
+Show heals as whole number
+Show team view
+Display repel usage
+Display pedometer
+
+CONTENT DESCRIPTIONS:
+

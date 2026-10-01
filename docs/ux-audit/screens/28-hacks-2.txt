@@ -1,0 +1,30 @@
+TEXT:
+ROM Hacks
+heartgold-u
+Pokémon HeartGold (U) · verified
+emerald-u
+Pokémon Emerald (U) · verified
+smartai-emerald
+Pokémon Emerald + Smart AI (Super Kaizo) · verified
+Find a hack for FireRed
+4 hacks. Each opens its creator's page.
+2
+PICK THE PATCH
+Add a patch
+Pick your game in step 1 first. Then the patches made for it light up here.
+smartai-emerald
+Made for Pokémon Emerald (U)
+3
+PATCH IT
+Patch it
+Waiting for step 1.
+YOUR ROM HACKS
+Every game you have patched, plus any finished hack you added. A finished hack file (already patched) goes in with Add a game and shows up here.
+Home
+Play
+Library
+More
+
+CONTENT DESCRIPTIONS:
+Back to Home
+Open

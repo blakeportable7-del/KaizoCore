@@ -25,7 +25,7 @@ class PresetNamesTest {
             when {
                 i.gameTag == null -> "${f.name}: no game tag"
                 i.gameTag !in knownTags -> "${f.name}: unknown tag ${i.gameTag}"
-                i.secondPass -> null                       // the Gen 1 PART 2 file: applied, never picked, so no ruleset by design
+                i.appliedByApp -> null                     // Gen 1's PART 2 and the 60% pre-pass: applied, never picked, so no ruleset by design
                 i.ruleset == null -> "${f.name}: no ruleset"
                 RnqsInfo.rulesetLabel(i.ruleset) == i.ruleset -> "${f.name}: ruleset ${i.ruleset} has no label"
                 else -> null

@@ -1,0 +1,40 @@
+TEXT:
+Off
+GBA
+GBC
+Auto
+GBA reproduces the original screen's washed colours.
+Frame blending
+Off  ›
+Blends frames like the real LCD; fixes flicker some games rely on.
+Performance
+Frameskip
+Off
+Auto
+Auto (threshold)
+Fixed interval
+Frameskip interval
+−
+0
++
+Idle loop removal (restart)
+Remove known
+Detect and remove
+Don't remove
+Audio
+Audio low-pass filter
+Off
+On
+Low-pass range (%)
+−
+60
++
+System
+
+CONTENT DESCRIPTIONS:
+Less
+Value, from 0 to 10
+More
+Less
+Value, from 5 to 95
+More

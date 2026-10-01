@@ -3,6 +3,7 @@ package com.ironmonone.app
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 /**
  * The popup's type-chart lines are general facts about the move's type.
@@ -24,6 +25,16 @@ class MoveMatchupTest {
         assertEquals(listOf("Ghost"), MoveMatchup.general(1)!!.noEffectOn)     // Fighting
         assertEquals(listOf("Ground"), MoveMatchup.general(13)!!.noEffectOn)   // Electric
         assertEquals(listOf("Dark"), MoveMatchup.general(14)!!.noEffectOn)     // Psychic
+    }
+
+    /** The Gen 1 tracker's chart, for Red, Blue and Yellow's move info. */
+    @Test
+    fun `in Gen 1's chart Ghost does nothing to Psychic, and Poison and Bug hit each other hard`() {
+        assertEquals(listOf("Normal", "Psychic"), MoveMatchup.general(7, gen1 = true)!!.noEffectOn)
+        assertTrue("Psychic" in MoveMatchup.general(7)!!.strongAgainst)
+        assertTrue("Bug" in MoveMatchup.general(3, gen1 = true)!!.strongAgainst)
+        assertTrue("Poison" in MoveMatchup.general(6, gen1 = true)!!.strongAgainst)
+        assertTrue("Poison" in MoveMatchup.general(6)!!.resistedBy)
     }
 
     @Test

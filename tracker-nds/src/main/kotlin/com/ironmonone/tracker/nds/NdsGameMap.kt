@@ -13,9 +13,11 @@ package com.ironmonone.tracker.nds
  *
  * Gen 4 offsets are relative to the resolved VERSION pointer (`u32[u32[0xBA8]
  * & 0xFFFFFF] + 0x20`), except [battleStatus], which is absolute in main RAM
- * (the reference's GLOBAL block). Gen 5 games have no pointer chain at all:
- * every address is in the GLOBAL block, relative to main RAM, and [absolute]
- * says so.
+ * (the reference's GLOBAL block). Gen 5 games have no such chain: every address
+ * is relative to main RAM, and [absolute] says so. Black and White keep them as
+ * fixed addresses. Black 2 and White 2 do too in this class, as the addresses of
+ * one known ROM, but the reference (6.3.11) reads them through one pointer in
+ * main RAM, and [pointerOffsets] and [atPointerBase] carry that.
  */
 data class NdsGameMap(
     val name: String,
@@ -23,11 +25,15 @@ data class NdsGameMap(
     val gameCodes: Set<Long>,
     val generation: Int,
     val badgePrefix: String,
-    /** True when every offset is relative to main RAM with no pointer chain (Gen 5). */
+    /** True when every address is relative to main RAM with no Gen 4 version-pointer chain (Gen 5; Black 2 and White 2 add [pointerOffsets]). */
     val absolute: Boolean,
     /** Resource folder for names and move data: gen4 or gen5. */
     val dataDir: String,
-    /** Move-level table; Gen 5 has one per version group. */
+    /**
+     * Move-level table, one per version group: Program.lua:327 keeps
+     * movelvls[gameInfo.VERSION_GROUP] (1 D/P, 2 Pt, 3 HGSS, 4 BW, 5 B2W2).
+     * Every Gen 4 map used to load Platinum's (parity audit, 2026-09-28).
+     */
     val moveLevelsResource: String,
     val playerBase: Long,
     val enemyBase: Long,
@@ -60,19 +66,40 @@ data class NdsGameMap(
     /** MemoryAddresses repelSteps: the steps the active repel has left (0 for none). */
     val repelSteps: Long = 0,
     /**
+     * HGSS only (MemoryAddresses dayOfWeek, a version-pointer offset): the weekday the
+     * Bug Catching Contest runs on, read in the two contest gatehouses. 0 elsewhere.
+     */
+    val dayOfWeek: Long = 0,
+    /**
+     * HGSS only (MemoryAddresses leagueBeaten, a version-pointer offset): the League
+     * event byte; 3 or more means the Champion has been beaten. 0 elsewhere.
+     */
+    val leagueBeaten: Long = 0,
+    /**
      * Main-RAM offset of the global pointer that starts the Gen 4 chain
      * (MemoryAddresses[game].GLOBAL_POINTER). Platinum and HGSS use 0xBA8;
      * Diamond and Pearl use 0xB70. Unused on an absolute (Gen 5) map.
      */
     val globalPointer: Long = GLOBAL_POINTER,
+    /**
+     * MemoryAddresses playerBattleBase: the battle's own copy of your party, six
+     * entries. Its first PID must equal the party lead's for a battle fetch to be
+     * trusted, and the run-over checks read it (BattleHandlerBase._getPlayerParty).
+     * A version-pointer offset on Gen 4, a main-RAM address on Gen 5.
+     */
+    val playerBattleBase: Long = 0,
     // ---- Gen 5 only (BattleHandlerGen5): 0 on Gen 4 maps -------------------
     /** Table of 0x1C-byte battler records; each starts with a pointer to its battle data. */
     val mainBattleDataPtr: Long = 0,
     val doubleTripleFlag: Long = 0,
     val abilityTriggerStart: Long = 0,
     val totalMonsParty: Long = 0,
-    /** First battle-side PID; must equal the party lead's for a fetch to be trusted. */
-    val playerBattleBase: Long = 0,
+    /**
+     * Black 2 and White 2 only: the pointer and the offsets from it that the reference now reads them
+     * through (see [NdsPointerOffsets]). The fixed addresses above are then where the pointer led on one
+     * known ROM, and what the tracker reads before a pointer can be used. Null everywhere else.
+     */
+    val pointerOffsets: NdsPointerOffsets? = null,
 ) {
     /** Encrypted party entry: GameInfo.ENCRYPTED_POKEMON_SIZE (236 Gen 4, 220 Gen 5). */
     val entrySize: Int get() = if (generation == 5) 220 else 236
@@ -95,12 +122,45 @@ data class NdsGameMap(
             itemStartNoBattle = mv(itemStartNoBattle), itemStartBattle = mv(itemStartBattle),
             berryBagStart = mv(berryBagStart), berryBagStartBattle = mv(berryBagStartBattle),
             badgeOffsets = badgeOffsets.map { mv(it) }, battleStatus = mv(battleStatus), repelSteps = mv(repelSteps),
+            dayOfWeek = mv(dayOfWeek), leagueBeaten = mv(leagueBeaten),
             mainBattleDataPtr = mv(mainBattleDataPtr), doubleTripleFlag = mv(doubleTripleFlag),
             abilityTriggerStart = mv(abilityTriggerStart), totalMonsParty = mv(totalMonsParty),
             playerBattleBase = mv(playerBattleBase),
             childMapHeader = mv(childMapHeader), parentMapHeader = mv(parentMapHeader),
         )
     }
+    /**
+     * The same map with every address the pointer table covers put at [base] plus its offset
+     * (GameConfigurator.readPointerOffsetsIntoConfig). What the table leaves out stays where it
+     * is: [battleStatus] above all, which the reference keeps in GLOBAL, so a battle is seen at
+     * the same address whatever the heap is doing. A map with no table is returned as it is.
+     */
+    fun atPointerBase(base: Long): NdsGameMap {
+        val p = pointerOffsets ?: return this
+        fun at(name: String, current: Long): Long = p.offsets[name]?.let { base + it } ?: current
+        return copy(
+            playerBase = at("playerBase", playerBase),
+            enemyBase = at("enemyBase", enemyBase),
+            enemyTrainerId = at("enemyTrainerID", enemyTrainerId),
+            playerBattleMonPid = at("playerBattleMonPID", playerBattleMonPid),
+            enemyBattleMonPid = at("enemyBattleMonPID", enemyBattleMonPid),
+            statStagesPlayer = at("statStagesStart", statStagesPlayer),
+            itemStartNoBattle = at("itemStartNoBattle", itemStartNoBattle),
+            itemStartBattle = at("itemStartBattle", itemStartBattle),
+            berryBagStart = at("berryBagStart", berryBagStart),
+            berryBagStartBattle = at("berryBagStartBattle", berryBagStartBattle),
+            badgeOffsets = p.offsets["badges"]?.let { listOf(base + it) } ?: badgeOffsets,
+            repelSteps = at("repelSteps", repelSteps),
+            mainBattleDataPtr = at("mainBattleDataPtr", mainBattleDataPtr),
+            doubleTripleFlag = at("doubleTripleFlag", doubleTripleFlag),
+            abilityTriggerStart = at("abilityTriggerStart", abilityTriggerStart),
+            totalMonsParty = at("totalMonsParty", totalMonsParty),
+            playerBattleBase = at("playerBattleBase", playerBattleBase),
+            childMapHeader = at("childMapHeader", childMapHeader),
+            parentMapHeader = at("parentMapHeader", parentMapHeader),
+        )
+    }
+
     val maxSpecies: Int get() = if (generation == 5) 649 else 493
 
     companion object {
@@ -133,8 +193,9 @@ data class NdsGameMap(
             childMapHeader = 0x144C, parentMapHeader = 0x144C, locationsResource = "/gen4/locations-pt.tsv",
             gameCodes = setOf(CODE_DIAMOND, CODE_PEARL),
             generation = 4, badgePrefix = "DPPT", absolute = false,
-            dataDir = "gen4", moveLevelsResource = "/gen4/movelevels.tsv",
+            dataDir = "gen4", moveLevelsResource = "/gen4/movelevels-dp.tsv",
             playerBase = 0x2AC, enemyBase = 0x4CD88, enemyTrainerId = 0x42A8E,
+            playerBattleBase = 0x4C7D8,
             playerBattleMonPid = 0x485E8, enemyBattleMonPid = 0x486A8,
             statStagesPlayer = 0x48598, statStagesEnemy = 0x48658,
             battleSubscriptMsgs = 0x458F0,
@@ -153,8 +214,9 @@ data class NdsGameMap(
             childMapHeader = 0x239B0, parentMapHeader = 0x239B0, locationsResource = "/gen4/locations-pt.tsv",
             gameCodes = setOf(CODE_PLATINUM),
             generation = 4, badgePrefix = "DPPT", absolute = false,
-            dataDir = "gen4", moveLevelsResource = "/gen4/movelevels.tsv",
+            dataDir = "gen4", moveLevelsResource = "/gen4/movelevels-pt.tsv",
             playerBase = 0xB4, enemyBase = 0x4BE5C, enemyTrainerId = 0x4189E,
+            playerBattleBase = 0x4B8AC,
             playerBattleMonPid = 0x47620, enemyBattleMonPid = 0x476E0,
             statStagesPlayer = 0x475D0, statStagesEnemy = 0x47690,
             battleSubscriptMsgs = 0x44928,
@@ -175,8 +237,9 @@ data class NdsGameMap(
             childMapHeader = 0x25FE4, parentMapHeader = 0x25FE4, locationsResource = "/gen4/locations-hgss.tsv",
             gameCodes = setOf(CODE_HEART_GOLD, CODE_SOUL_SILVER),
             generation = 4, badgePrefix = "HGSS", absolute = false,
-            dataDir = "gen4", moveLevelsResource = "/gen4/movelevels.tsv",
+            dataDir = "gen4", moveLevelsResource = "/gen4/movelevels-hgss.tsv",
             playerBase = 0xA8, enemyBase = 0x4F068, enemyTrainerId = 0x440AA,
+            playerBattleBase = 0x4EA98,
             playerBattleMonPid = 0x49E7C, enemyBattleMonPid = 0x49F3C,
             statStagesPlayer = 0x49E2C, statStagesEnemy = 0x49EEC,
             battleSubscriptMsgs = 0x47184,
@@ -185,6 +248,8 @@ data class NdsGameMap(
             badgeOffsets = listOf(0x8E, 0x93),     // johtoBadges, kantoBadges
             battleStatus = 0x246F48,
             repelSteps = 0x6919,
+            dayOfWeek = 0xDF4,
+            leagueBeaten = 0x1000,
         )
 
         /**
@@ -219,30 +284,85 @@ data class NdsGameMap(
         /** MemoryAddresses[WHITE].GLOBAL: Black `+ 0x20` throughout. */
         val WHITE = BW.shifted(0x20, "Pokemon White", setOf(CODE_WHITE))
 
-        /** MemoryAddresses[BLACK2].GLOBAL; VERSION_GROUP 5 with White 2, whose block is every address `+ 0x80` ([WHITE2]). No statStagesEnemy there. */
+        /**
+         * MemoryAddresses[BLACK2].MAIN_POINTER and POINTER_OFFSETS, NDS-Ironmon-Tracker 6.3.11 (commit 4a45e1aa,
+         * 2026-09-26), in the reference's own order and names, every value copied from its source. White 2's
+         * table is the same one. The tracker reads only the names [NdsGameMap.atPointerBase] maps; the rest
+         * (HPBattlePlayer, curHPBattlePlayer, curBattleLevel, curBattleStats, facingDirection, mapNPCIDStart,
+         * someBattleUIPtr) are kept so the table can be compared with the reference whole.
+         */
+        val B2W2_POINTER = NdsPointerOffsets(
+            pointer = 0x24,
+            offsets = linkedMapOf(
+                "parentMapHeader" to 0x41B44L,
+                "childMapHeader" to 0x41B5CL,
+                "enemyTrainerID" to 0x5262EL,
+                "playerBase" to 0x19728L,
+                "playerBattleBase" to 0x53610L,
+                "enemyBase" to 0x53B70L,
+                "playerBattleMonPID" to 0x91BD0L,
+                "enemyBattleMonPID" to 0x91C2CL,
+                "itemStartNoBattle" to 0x194F8L,
+                "itemStartBattle" to 0x194F8L,
+                "statStagesStart" to 0x5661CL,
+                "HPBattlePlayer" to 0x5652EL,
+                "curHPBattlePlayer" to 0x56530L,
+                "curBattleLevel" to 0x56538L,
+                "curBattleStats" to 0x5660EL,
+                "totalMonsParty" to 0x19724L,
+                "berryBagStart" to 0x195B8L,
+                "berryBagStartBattle" to 0x195B8L,
+                "badges" to 0x21A24L,
+                "repelSteps" to 0x2224DL,
+                "facingDirection" to 0x38CF8L,
+                "mapNPCIDStart" to 0x38CE8L,
+                "abilityTriggerStart" to 0x90104L,
+                "mainBattleDataPtr" to 0x526A8L,
+                "doubleTripleFlag" to 0x900A0L,
+                "someBattleUIPtr" to 0x90088L,
+            ),
+        )
+
+        /**
+         * Where the pointer led on the Black 2 that this app's fixed addresses (the reference's GLOBAL block up
+         * to 6.3.10) describe: playerBase 0x21E42C less its offset 0x19728. It is not where every Black 2 is:
+         * both of Blake's Black 2 dumps (NdsDumpReplayTest) hold 0x02204CC4 in the pointer, 0x40 lower, and the
+         * measured shifts on randomized ROMs were 0x40 and 0x54. These fixed addresses are what the tracker
+         * reads when no pointer can be used, and what a scan's shift is measured from.
+         */
+        private const val B2W2_FIXED_BASE = 0x204D04L
+
+        /**
+         * Black 2, VERSION_GROUP 5 with White 2 ([WHITE2]). No statStagesEnemy there. The fixed addresses are the
+         * table's offsets put at [B2W2_FIXED_BASE], so the numbers are typed once, from the reference; only
+         * battleStatus, which the reference keeps in GLOBAL and which no pointer moves, is written out.
+         */
         val B2W2 = NdsGameMap(
             name = "Pokemon Black 2",
             labTrainerIds = setOf(161, 162, 163), finalTrainerId = 341,
-            childMapHeader = 0x246860, parentMapHeader = 0x246848, locationsResource = "/gen5/locations-b2w2.tsv",
+            locationsResource = "/gen5/locations-b2w2.tsv",
             gameCodes = setOf(CODE_BLACK2),
             generation = 5, badgePrefix = "BW2", absolute = true,
             dataDir = "gen5", moveLevelsResource = "/gen5/movelevels-b2w2.tsv",
-            playerBase = 0x21E42C, enemyBase = 0x258874, enemyTrainerId = 0x257332,
-            playerBattleMonPid = 0x2968D4, enemyBattleMonPid = 0x296930,
-            statStagesPlayer = 0x25B320, statStagesEnemy = 0,
+            // Every heap address below is set by atPointerBase; zero is only what the constructor needs first.
+            playerBase = 0, enemyBase = 0, enemyTrainerId = 0,
+            playerBattleMonPid = 0, enemyBattleMonPid = 0,
+            statStagesPlayer = 0, statStagesEnemy = 0,
             battleSubscriptMsgs = 0,
-            itemStartNoBattle = 0x21E1FC, itemStartBattle = 0x21E1FC,
-            berryBagStart = 0x21E2BC, berryBagStartBattle = 0x21E2BC,
-            badgeOffsets = listOf(0x226728),
+            itemStartNoBattle = 0, itemStartBattle = 0,
+            berryBagStart = 0, berryBagStartBattle = 0,
+            badgeOffsets = listOf(0),
             battleStatus = 0x1B5138,
-            repelSteps = 0x226F51,
-            mainBattleDataPtr = 0x2573AC, doubleTripleFlag = 0x294DA4,
-            abilityTriggerStart = 0x294E08, totalMonsParty = 0x21E428,
-            playerBattleBase = 0x258314,
-        )
+            pointerOffsets = B2W2_POINTER,
+        ).atPointerBase(B2W2_FIXED_BASE)
 
-        /** MemoryAddresses[WHITE2].GLOBAL: Black 2 `+ 0x80` throughout. */
-        val WHITE2 = B2W2.shifted(0x80, "Pokemon White 2", setOf(CODE_WHITE2))
+        /**
+         * MemoryAddresses[WHITE2]: the same pointer table as Black 2, and GLOBAL's battleStatus of 0x1B5178
+         * (Black 2 + 0x40, not + 0x80: shifting it with the rest read 0x1B51B8, so White 2 never saw a battle,
+         * parity audit 2026-09-28). The fixed addresses are Black 2's `+ 0x80`, as the reference wrote them up
+         * to 6.3.10.
+         */
+        val WHITE2 = B2W2.shifted(0x80, "Pokemon White 2", setOf(CODE_WHITE2)).copy(battleStatus = 0x1B5178)
 
         val ALL = listOf(DP, PLATINUM, HGSS, BW, WHITE, B2W2, WHITE2)
 
@@ -253,12 +373,47 @@ data class NdsGameMap(
          * Null for a game this tracker has no map for - which is a refusal,
          * not a Platinum default: a wrong map reads confident garbage.
          */
-        fun detect(memory: NdsMemoryReader): NdsGameMap? {
+        fun detect(memory: NdsMemoryReader): NdsGameMap? = gameCode(memory)?.let(::forCode)
+
+        /** The cartridge header's game code (u32 at header + 0x0C), or null when it cannot be read. */
+        fun gameCode(memory: NdsMemoryReader): Long? {
             val b = memory.read(CARTRIDGE_HEADER + 0x0C, 4)
             if (b.size < 4) return null
-            val code = (b[0].toLong() and 0xFF) or ((b[1].toLong() and 0xFF) shl 8) or
+            return (b[0].toLong() and 0xFF) or ((b[1].toLong() and 0xFF) shl 8) or
                 ((b[2].toLong() and 0xFF) shl 16) or ((b[3].toLong() and 0xFF) shl 24)
-            return forCode(code)
         }
+    }
+}
+
+/**
+ * How Black 2 and White 2 are read (NDS-Ironmon-Tracker 6.3.11, commit 4a45e1aa of 2026-09-26, "change
+ * black/white2 to use pointer offsets to have less of a hassle with patches"; its release note says the
+ * addresses now "work with the base game and any new patches"). GameConfigurator.readPointerOffsetsIntoConfig:
+ * read the u32 at [pointer], mask it with 0xFFFFFF, and every address is that base plus its offset.
+ * [offsets] is MemoryAddresses' POINTER_OFFSETS under its own names. What that table leaves out stays a fixed
+ * address: battleStatus is in GLOBAL and is never rebased ([NdsGameMap.atPointerBase]).
+ */
+class NdsPointerOffsets(
+    /** MAIN_POINTER: the main-RAM offset of the u32 that holds the base. */
+    val pointer: Long,
+    val offsets: Map<String, Long>,
+) {
+    /** The largest offset, which decides how far past the base the tracker reads. */
+    private val reach: Long = offsets.values.maxOrNull() ?: 0L
+
+    /**
+     * The base a raw pointer word names, or null when the word is not a pointer into main RAM that the
+     * table can sit in: zero before the game has set it, any word whose top byte is not 0x02, or a base
+     * that would put the far end of the table past the 4 MB. The mask is the reference's (bit.band(x, 0xFFFFFF)).
+     */
+    fun baseOf(raw: Long): Long? {
+        if (raw ushr 24 != 0x02L) return null
+        val base = raw and 0xFFFFFFL
+        return base.takeIf { it > 0 && it + reach + 4 <= MAIN_RAM_SIZE }
+    }
+
+    companion object {
+        /** The DS's main RAM, which every offset here lies in. */
+        const val MAIN_RAM_SIZE = 0x400000L
     }
 }

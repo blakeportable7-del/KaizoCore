@@ -112,6 +112,25 @@ object NdsLogData {
     fun abilityDescription(abilityId: Int, gen: Int): String =
         abilityDesc[abilityId]?.getOrNull(if (gen >= 5) 3 else 2)?.trim().orEmpty()
 
+    private val moveDesc: Map<Int, List<String>> by lazy {
+        table("move-desc.tsv").filter { it.size >= 2 }.associate { (it[0].toIntOrNull() ?: -1) to it }
+    }
+
+    /**
+     * MoveData's description for [moveId], Gen 4 or Gen 5 wording (move-desc.tsv,
+     * GameConfigurator.initMoveData), which MainScreen shows over a move row
+     * (readMovesIntoUI, MainScreen.lua:518-520). Empty for none, as for move 0.
+     */
+    fun moveDescription(moveId: Int, gen: Int): String =
+        moveDesc[moveId]?.getOrNull(if (gen >= 5) 2 else 1)?.trim().orEmpty()
+
+    private val weights: Map<Int, Double> by lazy {
+        table("weights.tsv").filter { it.size >= 2 }.associate { (it[0].toIntOrNull() ?: -1) to (it[1].toDoubleOrNull() ?: 0.0) }
+    }
+
+    /** PokemonData's weight in kg for a species (weights.tsv), which Low Kick and the rest read; 0 when unknown. */
+    fun weight(species: Int): Double = weights[species] ?: 0.0
+
     private val itemDesc: Map<Int, List<String>> by lazy {
         table("item-desc.tsv").filter { it.size >= 2 }.associate { (it[0].toIntOrNull() ?: -1) to it }
     }

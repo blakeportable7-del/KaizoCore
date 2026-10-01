@@ -1,0 +1,24 @@
+TEXT:
+Controls
+Backup and info
+If KaizoCore closes unexpectedly, a report of where it failed goes to Blake at willowcreek.group: your phone model, the Android and app versions, the game family and the lines that name the failure. Never a ROM, a save or a file name. Off, the app asks you first.
+Report a bug
+Something in your way? Say what happened and where, then tap Email Blake. The report carries your device, Android and app versions, the game family, the last crash if there was one, and the app's own log lines. Never a ROM, a save or a file name.
+What happened
+Email Blake
+Share instead
+Bug form
+Latest build
+Support the project
+Updates
+This is KaizoCore 1.0.0-rc31.
+✓
+Check for a new build once a day
+It asks willowcreek.group for one small file that names the newest build, and sends nothing else: no account, no phone details, nothing about your games.
+Home
+Play
+Library
+More
+
+CONTENT DESCRIPTIONS:
+

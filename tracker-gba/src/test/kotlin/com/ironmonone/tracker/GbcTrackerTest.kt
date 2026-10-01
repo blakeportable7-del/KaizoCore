@@ -81,6 +81,20 @@ class GbcTrackerTest {
     }
 
     @Test
+    fun `an egg in the party does not hide the Pokemon after it`() {
+        val w = overworld()
+        w.put(GbcTracker.PARTY_COUNT, 3)
+        party(w, 0, 155, 12, 0, 40, listOf(52, 33, 0, 0))                 // the lead has fainted
+        party(w, 1, 175, 5, 20, 20, listOf(33, 0, 0, 0))
+        w.put(GbcTracker.PARTY_SPECIES + 1, 0xFD)                         // an egg, as the list shows one
+        party(w, 2, 161, 5, 18, 18, listOf(33, 0, 0, 0))
+        w.put(GbcTracker.PARTY_SPECIES + 3, 0xFF)
+        val s = GbcTracker(w, rom()).read()
+        assertEquals(listOf(155, 161), s.party.map { it.mon.species }, "the egg is skipped, the Pokemon after it is read")
+        assertTrue(!LossCondition.ENTIRE_PARTY.lost(s.party.map { it.mon.level to it.mon.curHp }), "the Sentret still stands")
+    }
+
+    @Test
     fun `the party is read from WRAM and typed from the ROM`() {
         val s = GbcTracker(overworld(), rom()).read()
         assertEquals(2, s.partyCount)
@@ -112,7 +126,7 @@ class GbcTrackerTest {
         val foe = assertNotNull(s.enemy)
         assertEquals("SENTRET", foe.speciesName); assertEquals(4, foe.level); assertEquals(12, foe.curHp)
         assertEquals(emptyList(), foe.movesSeen, "no move used yet, none shown")
-        w.put(GbcTracker.ENEMY_LAST_MOVE, 33)
+        w.put(GbcTracker.ENEMY_LAST_MOVE, 33); w.put(GbcTracker.ENEMY_TURNS, 1)
         s = t.read()
         assertEquals(listOf("tackle"), s.enemy!!.movesSeen.map { it.lowercase() })
         // Battle ends: the opponent leaves and the seen list resets.
@@ -121,16 +135,246 @@ class GbcTrackerTest {
         assertTrue(!s.inBattle); assertNull(s.enemy)
     }
 
+    /**
+     * Jasmine's Mineral Badge is wJohtoBadges bit 4 and Chuck's Storm Badge
+     * bit 5, but the art has Storm as badge 5: the Gen 2 reference reads
+     * badge 5 from bit 5 and badge 6 from bit 4 (Program.lua:1103-1108).
+     * Kanto's eight ride above Johto's for the badge row's second line.
+     */
     @Test
-    fun `a trainer battle is not wild, and a dead lead is a loss`() {
+    fun `Johto badges come out in the art's order, Chuck's and Jasmine's swapped, Kanto above`() {
+        fun badges(johto: Int, kanto: Int): Int {
+            val w = overworld(); w.put(GbcTracker.JOHTO_BADGES, johto); w.put(GbcTracker.KANTO_BADGES, kanto)
+            return GbcTracker(w, rom()).read().badges
+        }
+        assertEquals(1 shl 5, badges(1 shl 4, 0), "Mineral (bit 4) lights badge 6, Jasmine's art")
+        assertEquals(1 shl 4, badges(1 shl 5, 0), "Storm (bit 5) lights badge 5, Chuck's art")
+        assertEquals(0b1100_1111, badges(0b1100_1111, 0), "the other six stay where they are")
+        assertEquals(0xFF or (0b101 shl 8), badges(0xFF, 0b101), "Boulder and Thunder: Kanto badges 1 and 3")
+    }
+
+    /**
+     * Battle.updateTrackedInfoGen2 (Gen 2 reference Battle.lua:429-455): the
+     * move byte in wEnemyMoveStruct is recorded only when it is one of the
+     * opponent's four, and once per enemy turn (wEnemyTurnsTaken). The byte
+     * keeps the last battle's move, and the AI loads every move it weighs
+     * into it, so recording any byte put moves on the card that were never used.
+     */
+    @Test
+    fun `an opponent's move is recorded only when it knows it, once per turn it takes`() {
+        val w = overworld()
+        w.put(GbcTracker.BATTLE_MODE, 1)
+        val e = GbcTracker.ENEMY_MON
+        w.put(e, 161); w.put(e + 2, 33); w.put(e + 3, 45); w.put(e + 13, 4); w.be16(e + 16, 12); w.be16(e + 18, 18)
+        val t = GbcTracker(w, rom())
+        fun seen() = t.read().enemy!!.movesSeen.map { it.lowercase() }
+        val turns = 0x06DCL   // the reference's oppTurn, 0x020006dc: wEnemyTurnsTaken 0xC6DC
+        w.put(GbcTracker.ENEMY_LAST_MOVE, 33); w.put(turns, 0)
+        assertEquals(emptyList(), seen(), "the byte left over from the last battle, before the opponent has moved")
+        w.put(GbcTracker.ENEMY_LAST_MOVE, 52); w.put(turns, 1)
+        assertEquals(emptyList(), seen(), "Ember: not one of Sentret's moves")
+        w.put(GbcTracker.ENEMY_LAST_MOVE, 33)
+        assertEquals(listOf("tackle"), seen(), "Tackle, on its first turn")
+        w.put(GbcTracker.ENEMY_LAST_MOVE, 45)
+        assertEquals(listOf("tackle"), seen(), "Growl weighed by the AI on the same turn: not used, not recorded")
+        w.put(turns, 2)
+        assertEquals(listOf("tackle", "growl"), seen(), "Growl, used on its second turn")
+        // A new opponent: its counter starts over at 0, and so does the rule.
+        w.put(e, 155); w.put(e + 2, 52); w.put(e + 3, 0); w.put(turns, 0)
+        assertEquals(emptyList(), seen())
+        w.put(GbcTracker.ENEMY_LAST_MOVE, 52); w.put(turns, 1)
+        assertEquals(listOf("ember"), seen())
+    }
+
+    /**
+     * Battle.updateBattleStatusGen2 (Gen 2 reference Battle.lua:132-162): party
+     * slot 1 at 0 HP is a loss once wBattleMode reads 0, never mid-battle, and
+     * no other slot counts. It used to fire the moment the lead fainted.
+     */
+    @Test
+    fun `a trainer battle is not wild, and a dead lead is a loss only once the battle is over`() {
         val w = overworld()
         w.put(GbcTracker.BATTLE_MODE, 2)
         val e = GbcTracker.ENEMY_MON
         w.put(e, 155); w.put(e + 13, 10); w.be16(e + 16, 5); w.be16(e + 18, 30)
-        val s = GbcTracker(w, rom()).read()
+        val t = GbcTracker(w, rom())
+        val s = t.read()
         assertTrue(s.inBattle && !s.isWildBattle)
-        w.be16(GbcTracker.PARTY_MONS + 34, 0)
-        assertEquals(GameOver.LOST, GbcTracker(w, rom()).read().gameOver)
+        w.be16(GbcTracker.PARTY_MONS + 34, 0)                 // the lead faints
+        assertNull(t.read().gameOver, "mid-battle: the reference waits for wBattleMode 0")
+        w.put(GbcTracker.BATTLE_MODE, 0)
+        assertEquals(GameOver.LOST, t.read().gameOver)
+        w.be16(GbcTracker.PARTY_MONS + 34, 30)                // healed lead, second slot fainted
+        w.be16(GbcTracker.PARTY_MONS + GbcTracker.PARTY_STRIDE + 34, 0)
+        assertNull(t.read().gameOver, "only slot 1 counts")
+    }
+
+    /**
+     * The evolution text on the cards (Gen 2 reference TrackerScreen.lua:691-734):
+     * a stone evolution is ready while that stone is in the bag by Crystal's own
+     * item id, not the Gen 1 id the reference keys it by (0x21 is X Accuracy
+     * here), and friendship (party_struct +27) reads READY at 220.
+     */
+    @Test
+    fun `the cards carry the evolution text, with Crystal's own stone ids and friendship`() {
+        val w = overworld()
+        party(w, 2, 25, 10, 20, 30, listOf(33, 0, 0, 0))              // Pikachu: THUNDER
+        party(w, 3, 172, 5, 15, 15, listOf(33, 0, 0, 0))             // Pichu: FRIEND
+        w.put(GbcTracker.PARTY_COUNT, 4); w.put(GbcTracker.PARTY_SPECIES + 4, 0xFF)
+        val pichuFriendship = GbcTracker.PARTY_MONS + 3 * GbcTracker.PARTY_STRIDE + 27
+        w.put(pichuFriendship, 219)
+        val t = GbcTracker(w, rom())
+        var s = t.read()
+        assertEquals(EvoText.Label("14", EvoText.Tone.WAITING), s.party[0].evo, "Cyndaquil Lv.12")
+        assertEquals(EvoText.Label("THUNDER", EvoText.Tone.WAITING), s.party[2].evo)
+        assertEquals(EvoText.Label("FRIEND", EvoText.Tone.WAITING), s.party[3].evo)
+        w.put(GbcTracker.NUM_ITEMS, 3); w.put(GbcTracker.ITEMS + 4, 0x21); w.put(GbcTracker.ITEMS + 5, 1); w.put(GbcTracker.ITEMS + 6, 0xFF)
+        assertEquals(EvoText.Tone.WAITING, t.read().party[2].evo?.tone, "0x21: X Accuracy in Crystal")
+        w.put(GbcTracker.ITEMS + 4, 0x17)                            // THUNDERSTONE
+        w.put(pichuFriendship, 220)
+        s = t.read()
+        assertEquals(EvoText.Label("THUNDER", EvoText.Tone.READY), s.party[2].evo)
+        assertEquals(EvoText.Label("READY", EvoText.Tone.READY), s.party[3].evo)
+        w.put(GbcTracker.BATTLE_MODE, 1)
+        val e = GbcTracker.ENEMY_MON
+        w.put(e, 161); w.put(e + 13, 4); w.be16(e + 16, 12); w.be16(e + 18, 18)
+        assertEquals(EvoText.Label("15", EvoText.Tone.PLAIN), t.read().enemy?.evo)
+    }
+
+    /**
+     * In a battle (Gen 2 reference Battle.lua:379-408 and 699-722,
+     * DataHelper.lua:275-286): the seven stage bytes at wPlayerStatLevels and 8
+     * on, the enemy's live PP, and "Last move: X" once wPlayerTurnsTaken moves
+     * while the move byte is 0.
+     */
+    @Test
+    fun `a battle shows the stat stages, the enemy's live PP and the last move line`() {
+        val w = overworld()
+        w.put(GbcTracker.BATTLE_MODE, 2)
+        val e = GbcTracker.ENEMY_MON
+        w.put(e, 161); w.put(e + 2, 33); w.put(e + 8, 35); w.put(e + 13, 4); w.be16(e + 16, 12); w.be16(e + 18, 18)
+        for (i in 0 until 7) { w.put(GbcTracker.STAT_LEVELS + i, 7); w.put(GbcTracker.STAT_LEVELS + 8 + i, 7) }
+        w.put(GbcTracker.STAT_LEVELS + 4, 5)                  // your Sp. Def -2
+        w.put(GbcTracker.STAT_LEVELS + 8 + 5, 8)              // its accuracy +1
+        val t = GbcTracker(w, rom())
+        var s = t.read()
+        assertEquals(4, s.party[0].statStages["SPD"]); assertEquals(6, s.party[0].statStages["SPA"])
+        assertEquals(7, s.enemy!!.statStages["ACC"])
+        w.put(GbcTracker.ENEMY_LAST_MOVE, 33); w.put(GbcTracker.ENEMY_TURNS, 1); w.put(GbcTracker.PLAYER_TURNS, 1); w.put(e + 8, 34)
+        s = t.read()
+        assertEquals(34, s.enemy!!.moveRows.single().pp, "Tackle at its live PP")
+        assertNull(s.lastAttackMove)
+        TrackerPrefs.countEnemyPp = false
+        try { assertEquals(35, t.read().enemy!!.moveRows.single().pp, "base PP with the option off") } finally { TrackerPrefs.countEnemyPp = true }
+        w.put(GbcTracker.ENEMY_LAST_MOVE, 0); w.put(GbcTracker.PLAYER_TURNS, 2)
+        assertEquals("tackle", t.read().lastAttackMove?.lowercase())
+        w.put(GbcTracker.BATTLE_MODE, 0)
+        s = t.read()
+        assertTrue(s.party[0].statStages.isEmpty()); assertNull(s.lastAttackMove)
+    }
+
+    /**
+     * Tracker Extras' "Estimate Pokemon IV Potential" on the lead, with the ROM's
+     * BST (PokemonData.UpdateBST) and the reference's name for the species.
+     */
+    @Test
+    fun `the IV estimate judges the lead with the ROM's BST`() {
+        val w = overworld()
+        // Cyndaquil at Lv.50, stats summing to 461 against this ROM's BST of 309: 129.8, "Quite impressive!!".
+        val b = GbcTracker.PARTY_MONS
+        w.put(b + 31, 50); w.be16(b + 34, 80); w.be16(b + 36, 80)
+        w.be16(b + 38, 76); w.be16(b + 40, 75); w.be16(b + 42, 75); w.be16(b + 44, 77); w.be16(b + 46, 78)
+        val t = GbcTracker(w, rom())
+        assertEquals(309, t.baseStats(155)!!.bst)
+        assertEquals("Cyndaquil is: Quite impressive!!", t.ivPotential(t.read().party.first()))
+        assertEquals(IvEstimate.UNAVAILABLE, t.ivPotential(null), "no Pokemon yet")
+    }
+
+    /** "Team:" (TrackerScreen.lua:794-797): the one ball the reference knows, in a trainer battle only. */
+    @Test
+    fun `a trainer battle's team row is the opponent on the field`() {
+        val w = overworld()
+        val e = GbcTracker.ENEMY_MON
+        w.put(e, 161); w.put(e + 13, 4); w.be16(e + 16, 12); w.be16(e + 18, 18)
+        val t = GbcTracker(w, rom())
+        w.put(GbcTracker.BATTLE_MODE, 2)
+        assertEquals(listOf(true), t.read().enemyTeam)
+        w.be16(e + 16, 0)
+        assertEquals(listOf(false), t.read().enemyTeam, "fainted: the grey ball")
+        w.be16(e + 16, 12); w.put(GbcTracker.BATTLE_MODE, 1)
+        assertEquals(emptyList(), t.read().enemyTeam, "a wild battle")
+    }
+
+    /**
+     * A held item by its name (Gen 2 reference DataHelper.lua:173-174:
+     * MiscData.Items[id + 1]), on the card and in the team view, which both
+     * read TrackedMon.itemName; it read "#146". Each Pokemon's own item.
+     */
+    @Test
+    fun `held items read by their names, each Pokemon its own`() {
+        val w = overworld()
+        w.put(GbcTracker.PARTY_MONS + 1, 146)                              // LEFTOVERS $92
+        w.put(GbcTracker.PARTY_MONS + GbcTracker.PARTY_STRIDE + 1, 109)    // MIRACLEBERRY $6D
+        val s = GbcTracker(w, rom()).read()
+        assertEquals("LEFTOVERS", s.party[0].itemName)
+        assertEquals("MIRACLEBERRY", s.party[1].itemName)
+        w.put(GbcTracker.PARTY_MONS + 1, 0)
+        assertEquals("-", GbcTracker(w, rom()).read().party[0].itemName, "no item")
+    }
+
+    /** The names table and the heals table are the same reference's ids: an off-by-one between them would show here. */
+    @Test
+    fun `every healing item id names the item the heals table means`() {
+        val names = javaClass.getResourceAsStream("/gen2/items.tsv")!!.bufferedReader(Charsets.UTF_8).readLines()
+            .associate { it.substringBefore('\t').toInt() to it.substringAfter('\t') }
+        assertEquals(255, names.size)
+        val expected = mapOf(18 to "POTION", 17 to "SUPER POTION", 16 to "HYPER POTION", 15 to "MAX POTION", 14 to "FULL RESTORE",
+            46 to "FRESH WATER", 47 to "SODA POP", 48 to "LEMONADE", 72 to "MOOMOO MILK", 114 to "RAGE CANDY BAR",
+            121 to "ENERGY POWDER", 122 to "ENERGY ROOT", 139 to "BERRY JUICE", 173 to "BERRY", 174 to "GOLD BERRY")
+        assertEquals(GbcTracker.HEALS.keys, expected.keys)
+        expected.forEach { (id, name) -> assertEquals(name, names[id], "item $id") }
+        assertEquals(mapOf(8 to "MOON STONE", 22 to "FIRE STONE", 23 to "THUNDER STONE", 24 to "WATER STONE", 34 to "LEAF STONE"),
+            GbcTracker.STONES.keys.associateWith { names[it] })
+    }
+
+    /**
+     * Program.updateMapLocation (Gen 2 reference Program.lua:1121-1134): the map
+     * is wCurLandmark (0xC2D9), named from RouteData.setupRouteInfoAsGSC; a gate
+     * (0xFF) has no name. The names are Crystal's landmark constants.
+     */
+    @Test
+    fun `the map is Crystal's landmark, named as the reference names it`() {
+        val w = overworld()
+        w.put(0x02D9L, 2)
+        val t = GbcTracker(w, rom())
+        var s = t.read()
+        assertEquals(2, s.mapId); assertEquals("Route 29", s.routeName)
+        w.put(0x02D9L, 0xFF)
+        s = t.read()
+        assertEquals(0xFF, s.mapId); assertNull(s.routeName, "a gate")
+        val names = javaClass.getResourceAsStream("/gen2/landmarks.tsv")!!.bufferedReader(Charsets.UTF_8).readLines()
+            .associate { it.substringBefore('\t').toInt() to it.substringAfter('\t') }
+        // pokecrystal constants/landmark_constants.asm: NEW_BARK_TOWN 01, BATTLE_TOWER 1d, PALLET_TOWN 2f, FAST_SHIP 5f.
+        assertEquals(listOf("New Bark Town", "Battle Tower", "Pallet Town", "S.S. Aqua"), listOf(1, 0x1D, 0x2F, 0x5F).map { names[it] })
+        assertEquals((1..95).toList(), names.keys.sorted())
+    }
+
+    /**
+     * The Crystal reads added for the battle and the map are the Gen 2
+     * reference's own (GameSettings.setGen2Addresses: StatChange 0x020006cc,
+     * gTurn 0x020006dd, gMapHeader 0x020002d9), and every Gen 2 read lies in
+     * the 8 KB work RAM, the enemy's stage bytes included.
+     */
+    @Test
+    fun `the battle and map reads are the reference's, inside work RAM`() {
+        val c = Gen2Map.CRYSTAL
+        assertEquals(0x06CCL, c.statLevels); assertEquals(0x06DDL, c.playerTurns); assertEquals(0x02D9L, c.curLandmark)
+        for (m in listOf(Gen2Map.CRYSTAL, Gen2Map.GS)) {
+            val reads = listOf(m.partyCount, m.partyMons, m.enemyMon, m.battleMode, m.enemyMove, m.enemyTurns, m.playerTurns,
+                m.statLevels, m.statLevels + 8 + 6, m.johtoBadges, m.numItems, m.items) +
+                listOf(m.curLandmark, m.mapGroup + 1).filter { it > 1L }
+            reads.forEach { assertTrue(it in 1L until 0x2000L, "${m.name}: 0x%X".format(it)) }
+        }
     }
 
     // ------------------------------------------------------------ Gold / Silver
@@ -182,14 +426,22 @@ class GbcTrackerTest {
         val w = goldWram()
         w.put(gs.battleMode, 1)
         val e = gs.enemyMon
-        w.put(e, 155); w.put(e + 13, 7); w.be16(e + 16, 9); w.be16(e + 18, 20); w.put(e + 30, 20); w.put(e + 31, 20)
+        w.put(e, 155); w.put(e + 2, 52); w.put(e + 13, 7); w.be16(e + 16, 9); w.be16(e + 18, 20); w.put(e + 30, 20); w.put(e + 31, 20)
         val t = GbcTracker(w, goldRom())
         var s = t.read()
         assertTrue(s.inBattle && s.isWildBattle)
         assertEquals("CYNDAQUIL", s.enemy!!.speciesName); assertEquals(emptyList(), s.enemy!!.movesSeen)
-        w.put(gs.enemyMove, 52)
+        w.put(gs.enemyMove, 52); w.put(0x0BBAL, 1)     // pokegold wEnemyTurnsTaken 0xCBBA (tools/wram_layout.py)
         s = t.read()
         assertEquals(listOf("ember"), s.enemy!!.movesSeen.map { it.lowercase() })
+    }
+
+    /** Gold and Silver keep no wCurLandmark (Crystal's map name sign sets it): the map is wMapGroup and wMapNumber, unnamed. */
+    @Test
+    fun `Gold keeps no landmark, so its map is the group and number, with no name`() {
+        val w = goldWram(); w.put(0x1A00L, 24); w.put(0x1A01L, 4)     // pokegold wMapGroup 0xDA00, wMapNumber 0xDA01
+        val s = GbcTracker(w, goldRom()).read()
+        assertEquals((24 shl 8) or 4, s.mapId); assertNull(s.routeName)
     }
 
     @Test

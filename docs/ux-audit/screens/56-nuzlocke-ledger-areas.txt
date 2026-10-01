@@ -1,0 +1,20 @@
+TEXT:
+NUZLOCKE  STANDARD
+X
+AREAS
+TEAM
+GRAVE
+LOG
+RULES
+You are in
+Route 102
+Wurmple fainted
+Route 102
+fainted
+Wurmple Lv 3
+Route 101
+caught
+Zigzagoon Lv 3
+
+CONTENT DESCRIPTIONS:
+

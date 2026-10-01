@@ -75,6 +75,8 @@ add_library(libretrodroid SHARED
         rumblestate.cpp
         cheevos.h
         cheevos.cpp
+        streamtap.h
+        streamtap.cpp
         ${RCHEEVOS_SOURCES}
         utils/javautils.h
         utils/javautils.cpp
@@ -112,3 +114,6 @@ target_link_libraries(libretrodroid
                       oboe
                       GLESv3
 )
+
+# KaizoCore: Play as your Pokemon (Sprite Is Me). sprite_core.h is header-only.
+target_sources(libretrodroid PRIVATE sprite_overlay.h sprite_overlay.cpp)

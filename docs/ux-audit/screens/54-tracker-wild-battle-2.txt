@@ -1,0 +1,59 @@
+TEXT:
+File
+▲
+◀
+▶
+▼
+A
+B
+L
+R
+SELECT
+START
+---
+---
+Seen (Wild): 1
+Route 111
+SPE
+BST
+300
+Moves 3/9
+ (
+21
+)
+~ 33%  to catch
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+RockSmash:
+0/1 Seen Pokémon
+Home
+Play
+Library
+More
+
+CONTENT DESCRIPTIONS:
+Up
+Left
+Right
+Down
+A button
+B button
+L shoulder
+R shoulder
+Select
+Start
+Ground

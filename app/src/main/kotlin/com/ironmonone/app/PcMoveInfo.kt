@@ -46,7 +46,29 @@ data class MoveDetail(
     val noRomData: Boolean = false,
     /** Your own Pokemon's Hidden Power: its personality value, for InfoScreen's type arrows. */
     val hiddenPowerPid: Long? = null,
+    /** The row's PP and accuracy as the card draws them: "?" where "Reveal info if randomized" hides them (PcMove). */
+    val ppText: String? = null,
+    val accText: String? = null,
 )
+
+/**
+ * The figures the move info card prints, from what the row prints. DataHelper.buildMoveInfoDisplay (DataHelper.lua:499-523)
+ * hides a randomized type, PP, power and accuracy there too, for any move your viewed Pokemon does not know, while
+ * "Reveal info if randomized" is off; the card used the ROM's numbers and gave them away (2026-09-30, IronMON rules check).
+ */
+internal object MoveInfoText {
+    fun pp(d: MoveDetail): String = d.ppText ?: d.ppMax?.let { "${d.pp}/$it" } ?: "${d.pp}"
+
+    fun power(d: MoveDetail): String = d.powerText?.let { if (it == "0") "-" else it } ?: d.power?.takeIf { it > 0 }?.toString() ?: "-"
+
+    fun accuracy(d: MoveDetail): String = d.accText?.let { t ->
+        when {
+            t == "0" -> "-"
+            t.isNotEmpty() && t.all { it.isDigit() } -> "$t%"
+            else -> t
+        }
+    } ?: d.acc?.takeIf { it > 0 }?.let { "$it%" } ?: "-"
+}
 
 /**
  * The move info screen: InfoScreen.drawMoveInfoScreen (InfoScreen.lua:861)'s
@@ -102,9 +124,9 @@ fun PcMoveInfoContent(d: MoveDetail, onDismiss: () -> Unit) {
             return@InfoCard
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            InfoStat("PP", d.ppMax?.let { "${d.pp}/$it" } ?: "${d.pp}")
-            InfoStat("POWER", d.powerText?.let { if (it == "0") "-" else it } ?: d.power?.takeIf { it > 0 }?.toString() ?: "-")
-            InfoStat("ACCURACY", d.acc?.takeIf { it > 0 }?.let { "$it%" } ?: "-")
+            InfoStat("PP", MoveInfoText.pp(d))
+            InfoStat("POWER", MoveInfoText.power(d))
+            InfoStat("ACCURACY", MoveInfoText.accuracy(d))
             InfoStat("CONTACT", when (d.contact) { true -> "Yes"; false -> "No"; null -> "-" })
             // PRIORITY: only takes a place when it is helpful (exists and non-zero).
             d.priority?.takeIf { it != 0 }?.let { InfoStat("PRIORITY", if (it > 0) "+$it" else "$it", Pc.Gold) }

@@ -1,43 +1,55 @@
-written RBY Standard.rnqs
-written RBY Ultimate.rnqs
-written RBY Kaizo.rnqs
-written RBY Survival.rnqs
-written RBY PART 2.rnqs
-written GSC Standard.rnqs
-written GSC Ultimate.rnqs
-written GSC Kaizo.rnqs
-written GSC Survival.rnqs
-written FRLG Standard.rnqs
-written FRLG Ultimate.rnqs
+kept    RBY Standard.rnqs  (matches the page)
+kept    RBY Ultimate.rnqs  (matches the page)
+kept    RBY Kaizo.rnqs  (matches the page)
+kept    RBY Survival.rnqs  (matches the page)
+kept    RBY PART 2.rnqs  (matches the page)
+kept    GSC PRE-PASS.rnqs  (matches the page)
+kept    GSC Standard.rnqs  (matches the page)
+kept    GSC Ultimate.rnqs  (matches the page)
+kept    GSC Kaizo.rnqs  (matches the page)
+kept    GSC Survival.rnqs  (matches the page)
+kept    FRLG Standard.rnqs  (matches the page)
+kept    FRLG Ultimate.rnqs  (matches the page)
 kept    FRLG Kaizo.rnqs  (matches the page)
-written FRLG Super Kaizo.rnqs
-written FRLG Survival.rnqs
-written FRLG Kaizo Doubles.rnqs
-written RSE Standard.rnqs
-written RSE Ultimate.rnqs
+kept    FRLG Super Kaizo.rnqs  (matches the page)
+kept    FRLG Survival.rnqs  (matches the page)
+kept    FRLG Kaizo Doubles.rnqs  (matches the page)
+kept    RSE PRE-PASS.rnqs  (matches the page)
+kept    RSE Standard.rnqs  (matches the page)
+kept    RSE Ultimate.rnqs  (matches the page)
 kept    RSE Kaizo.rnqs  (matches the page)
-written RSE Super Kaizo.rnqs
-written RSE Survival.rnqs
-written RSE Kaizo Doubles.rnqs
-written HGSS Standard.rnqs
-written HGSS Ultimate.rnqs
-written HGSS Kaizo.rnqs
-written HGSS Super Kaizo.rnqs
-written HGSS Survival.rnqs
-written HGSS Kaizo Doubles.rnqs
-written DPPt Standard.rnqs
-written DPPt Ultimate.rnqs
-kept    DPPt Kaizo.rnqs  DIFFERS from the page in 2: [Randomize starters held items, Ban bad random starter held items]
-written DPPt Super Kaizo.rnqs
-written DPPt Survival.rnqs
-written DPPt Kaizo Doubles.rnqs
-written BW Standard.rnqs
-written BW Ultimate.rnqs
-written BW Kaizo.rnqs
-written BW Survival.rnqs
-written B2W2 Standard.rnqs
-written B2W2 Ultimate.rnqs
-written B2W2 Kaizo.rnqs
-written B2W2 Survival.rnqs
-written B2W2 Kaizo Doubles.rnqs
-39 written
+kept    RSE Super Kaizo.rnqs  (matches the page)
+kept    RSE Survival.rnqs  (matches the page)
+kept    RSE Kaizo Doubles.rnqs  (matches the page)
+kept    HGSS Standard.rnqs  (matches the page)
+kept    HGSS Ultimate.rnqs  (matches the page)
+kept    HGSS Kaizo.rnqs  (matches the page)
+kept    HGSS Super Kaizo.rnqs  (matches the page)
+kept    HGSS Survival.rnqs  (matches the page)
+kept    HGSS Kaizo Doubles.rnqs  (matches the page)
+kept    DPPt Standard.rnqs  (matches the page)
+kept    DPPt Ultimate.rnqs  (matches the page)
+kept    DPPt Kaizo.rnqs  (matches the page)
+kept    DPPt Super Kaizo.rnqs  (matches the page)
+kept    DPPt Survival.rnqs  (matches the page)
+kept    DPPt Kaizo Doubles.rnqs  (matches the page)
+kept    BW Standard.rnqs  (matches the page)
+kept    BW Ultimate.rnqs  (matches the page)
+kept    BW Kaizo.rnqs  (matches the page)
+kept    BW Survival.rnqs  (matches the page)
+kept    B2W2 Standard.rnqs  (matches the page)
+kept    B2W2 Ultimate.rnqs  (matches the page)
+kept    B2W2 Kaizo.rnqs  (matches the page)
+kept    B2W2 Survival.rnqs  (matches the page)
+kept    B2W2 Kaizo Doubles.rnqs  (matches the page)
+written FRLG Ironmon Journey.rnqs
+written RSE Ironmon Journey.rnqs
+written HGSS Ironmon Journey.rnqs
+written DPPt Ironmon Journey.rnqs
+written BW Ironmon Journey.rnqs
+written B2W2 Ironmon Journey.rnqs
+written FRLG Chaos Kaizo.rnqs
+written RSE Chaos Kaizo.rnqs
+written FRLG Evo Kaizo.rnqs
+written FRLG Survival Revival.rnqs
+10 written

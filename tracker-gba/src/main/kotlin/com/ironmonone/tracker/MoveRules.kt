@@ -49,6 +49,24 @@ object MoveRules {
         323 to ">HP", 329 to "0",
     )
 
+    /**
+     * The Game Boy trackers' labels: the same, except Low Kick, which was not
+     * weight-based until Gen 3 and shows a power there.
+     * - Gen 2: its MoveData gives Low Kick 50 power and 90 accuracy
+     *   (Ironmon-gen-2-tracker MoveData.lua:938-943).
+     * - Gen 1: its MoveData says "WT", but that never reaches the screen.
+     *   MoveData.checkIfDataIsRandomized (MoveData.lua:164-180) checks move
+     *   59 for 70% accuracy, Blizzard's from Gen 2 on; Gen 1's is 90%, so
+     *   every Gen 1 ROM reads as randomized and MoveData.initialize takes each
+     *   power from the ROM, keeping a label only where the ROM holds 1
+     *   (MoveData.lua:100-120). Every other labelled Gen 1 move holds 0 or 1;
+     *   Low Kick holds 50.
+     */
+    private val GB_VARIABLE_POWER: Map<Int, String> = VARIABLE_POWER - LOW_KICK
+
+    /** The variable-power labels of [generation]'s reference (1, 2 or 3). */
+    fun variablePower(generation: Int): Map<Int, String> = if (generation == 1 || generation == 2) GB_VARIABLE_POWER else VARIABLE_POWER
+
     /** MoveData.IsTypelessMove: Future Sight, Beat Up, Doom Desire. */
     private val TYPELESS = setOf(248, 251, 353)
 
@@ -73,7 +91,8 @@ object MoveRules {
         if (id == HIDDEN_POWER) hiddenPowerType else romType
 
     /** The power column before any adjustment: the variable-power label, else the ROM number. "0" = none. */
-    fun basePower(id: Int, romPower: Int?): String = VARIABLE_POWER[id] ?: (romPower ?: 0).toString()
+    fun basePower(id: Int, romPower: Int?, generation: Int = 3): String =
+        variablePower(generation)[id] ?: (romPower ?: 0).toString()
 
     /** Utils.isSTAB. [category] is "PHY", "SPE" or "STA". */
     fun isStab(id: Int, type: Int?, category: String?, power: String, attackerTypes: List<Int>): Boolean {
@@ -83,15 +102,21 @@ object MoveRules {
         return type in attackerTypes
     }
 
-    /** Utils.netEffectiveness: 1.0 wherever the check does not apply. */
-    fun effectiveness(id: Int, type: Int?, category: String?, targetTypes: List<Int>): Double {
+    /**
+     * Utils.netEffectiveness: 1.0 wherever the check does not apply. [gen1]
+     * is the Gen 1 tracker's chart, which its Utils.netEffectiveness reads
+     * (MoveData.lua TypeToEffectiveness: Poison and Bug 2x on each other,
+     * Ghost 0x on Psychic); it drew the move rows with it, not just Type
+     * Defenses.
+     */
+    fun effectiveness(id: Int, type: Int?, category: String?, targetTypes: List<Int>, gen1: Boolean = false): Double {
         if (type == null || targetTypes.isEmpty() || id in TYPELESS) return 1.0
         if (category == "STA") {
             val immune = STATUS_WILL_FAIL[id] ?: return 1.0
             return if (targetTypes.any { it in immune }) 0.0 else 1.0
         }
-        var total = Gen3Types.effect(type, targetTypes[0])
-        if (targetTypes.size > 1 && targetTypes[1] != targetTypes[0]) total *= Gen3Types.effect(type, targetTypes[1])
+        var total = Gen3Types.effect(type, targetTypes[0], gen1)
+        if (targetTypes.size > 1 && targetTypes[1] != targetTypes[0]) total *= Gen3Types.effect(type, targetTypes[1], gen1)
         return total
     }
 

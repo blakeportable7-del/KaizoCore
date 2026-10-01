@@ -21,8 +21,9 @@ Every ruleset builds on the ones before it, so they are all here in order, then 
     - Note: During the lab fight(s) only, you may hold banned items.
 - Stolen Items: You may not intentionally steal items from wild pokemon with moves like Thief, Covet, etc. Stealing them from a trainer battle is fine.
     - Note: If you steal from a wild pokemon that you do not end up catching in that battle, throw the item away.
-- Accidental Kills/Catches: - If you accidentally kill a Pokémon while trying to catch it, you will no longer be able to capture or kill a Pokémon from that Route.
- - If you catch a pokemon (accidental or otherwise) that you don't mean to add to your team you can immediately deposit it in the PC without viewing any information about its stats or moves. And then continue as if it never happened.
+- Accidental Kills/Catches:
+    - If you accidentally kill a Pokémon while trying to catch it, you will no longer be able to capture or kill a Pokémon from that Route.
+    - If you catch a pokemon (accidental or otherwise) that you don't mean to add to your team you can immediately deposit it in the PC without viewing any information about its stats or moves. And then continue as if it never happened.
     - Note: You may throw pokéballs at a pokemon for reasons like being unable to run or if you are trying to scout its moves without risking killing it.
 - No Redos: You may not re-fight trainers at any point using the VS Seeker or other means. You may not abuse respawning items by picking them up more than once
 - Shiny Clause: If you encounter a shiny, you are allowed to kill it for EXP as a bonus kill in addition to your allotted 1 catch/kill for that route.
@@ -40,9 +41,10 @@ Additional rules for the Ultimate Gamers
 - No Way Out Gyms: Once You Enter a Gym or Dojo, You cannot leave until you defeat ALL TRAINERS. Beat it or Die.
 - One Shot Dungeons: You can only enter a dungeon once unless the story requires a revisit
     - Note: A Dungeon refers to:
- - Any Hideout
- - Any Cave
- - Any Building with TrainersForests are not dungeons.
+    - Any Hideout
+    - Any Cave
+    - Any Building with Trainers
+    Forests are not dungeons.
 - 6 Pokémon Total: You may only obtain 6 Pokémon for the Entire Run
 - HM Friends: If and only if 5 out of your 6 pokemon are lost, you may catch additional pokemon to use as HM Friends solely for out of battle HM use. You may not gain other any advantages from an HM Friend.
     - Note: If an HM friend is put into the battle by a move like Roar or Whirlwind, immediately swap off of it. You do not need to get rid of your HM friend if they faint.
@@ -67,40 +69,41 @@ non-negotiable. If you wish to adjust rules just play Standard Ironmon and Ultim
     - Note: A legendary may be one of your 3 Pokémon for the Favorites Clause, but they must be under 600 BST.
 - Stay in your weight class: You may only catch a Pokémon that is up to 4 levels higher than your Pokémon team's highest level.
 - Banned Moves: The following moves are banned:
- - Healing Moves of any kind (Recover, Milk Drink etc, Drainpunch etc, Leech Seed. Refresh/Aroma etc)
- - Spore
- - Assist
- - You are allowed to use a banned move either through metronome or after temporarily copying it using Mimic.
-    - Note: If your starter pokemon has a banned move, you may use it in the lab fight only. Healing moves are not acceptable to be used even if full health.</br>Banned Moves Reference List (https://gist.github.com/psydetrack/884443c4c4054decce2804bb513d8d45#kaizo-ironmon-ruleset)
+    - Healing Moves of any kind (Recover, Milk Drink etc, Drainpunch etc, Leech Seed. Refresh/Aroma etc)
+    - Spore
+    - Assist
+    - You are allowed to use a banned move either through metronome or after temporarily copying it using Mimic.
+    - Note: If your starter pokemon has a banned move, you may use it in the lab fight only. Healing moves are not acceptable to be used even if full health. Banned Moves Reference List (https://gist.github.com/psydetrack/884443c4c4054decce2804bb513d8d45#kaizo-ironmon-ruleset)
 - Banned Abilities: Using any physical move is banned while having Huge Power or Pure Power (special moves are okay). Banned abilities don't apply to:
- - Pokémon with BST 399 or lower
- - Pokémon with BST 400-410 (inclusive) that will eventually evolve
+    - Pokémon with BST 399 or lower
+    - Pokémon with BST 400-410 (inclusive) that will eventually evolve
     - Note: You may use banned abilities in the lab fight. If you can't avoid using a banned ability you must swap to a new pokemon.
 - No Killing Wild Pokémon: The Catch or Kill rule is now Catch Only. No fighting any wild Pokémon.
     - Note: If something explodes etc, that is fine, but avoid defeating wild Pokémon at all costs
-- Nemesis Clause: You may pick ONE Pokémon to be your nemesis. 
- - One time per run you may kill it if you see it in the wild.
- - You may never catch your nemesis.
- - If your nemesis appears in the Lab, you MUST take the Pokémon that would fight it (as long as that choice is not otherwise banned) unless a favorite clause Pokemon is available instead.
-    - Note: Using a Pokémon that ends up evolving into your nemesis is fine.</br></br>If both of the other starter choices are banned by other rules you must take your nemesis.
+- Nemesis Clause: You may pick ONE Pokémon to be your nemesis.
+    - One time per run you may kill it if you see it in the wild.
+    - You may never catch your nemesis.
+    - If your nemesis appears in the Lab, you MUST take the Pokémon that would fight it (as long as that choice is not otherwise banned) unless a favorite clause Pokemon is available instead.
+    - Note: Using a Pokémon that ends up evolving into your nemesis is fine. If both of the other starter choices are banned by other rules you must take your nemesis.
 - Accidental Kills in Kaizo: If you accidentally kill a Pokémon while trying to scout a pivot, you DO NOT have to reset the run, but you must pivot to one of the mons in that route before leaving.
     - Note: That means you cannot go and heal UNTIL another new mon is caught as a pivot
 - No Healing Items outside of Battle: No HP Healing Items while outside of battle
     - Note: This includes status heals and PP Restore items. PP UP/PP Max can be used outside of battle
 - Held Items Restriction: The only Held Items allowed are:
- - Items that are consumed on use like berries or a white herb, with the exception of Focus Sash which is banned.
- - Evolution items
- - a Smoke Ball (for running away from wild battles)
-    - Note: - Evolution items can only be held to evolve a Pokémon.
- - During the lab fight(s) only, you may hold banned items.
+    - Items that are consumed on use like berries or a white herb, with the exception of Focus Sash which is banned.
+    - Evolution items
+    - a Smoke Ball (for running away from wild battles)
+    - Note:
+    - Evolution items can only be held to evolve a Pokémon.
+    - During the lab fight(s) only, you may hold banned items.
 - No Healing Stations in Dungeons: No Pokecenter-like healing in Dungeons (Example - Rocket Hideout NPC, SS Anne Bed, etc)
     - Note: Forced heals from the story are fine but you cannot go back for more
 - Kaizo Banned Items: No use of any flute items for status healing
-- Kaizo Randomizer Settings: A few specific settings for Kaizo: 
- - Static Pokémon MUST NOT have level increase
- - No "Make Evolutions Easier"
- - Forced Fully Evolved at Level 30
- - Add 3 Additional Pokémon to Boss Trainers
+- Kaizo Randomizer Settings: A few specific settings for Kaizo:
+    - Static Pokémon MUST NOT have level increase
+    - No "Make Evolutions Easier"
+    - Forced Fully Evolved at Level 30
+    - Add 3 Additional Pokémon to Boss Trainers
     - Note: Certain settings may not be available for all Generations
 - No Relearner Abuse: You cannot use the Move Relearner NPC to teach Sketch to a Pokemon that has already sketched a move.
 
@@ -136,12 +139,12 @@ getting past the first gym or two, while tapering off late game. This run should
 - Cut a move, Hold any Item: You are allowed to hold any previously banned held item (except for Lucky Egg and Everstone) if you teach Cut to your pokemon. You may use Cut in Combat. You may still use the consumable items allowed in the Kaizo ruleset without making this trade.
     - Note: You can swap or remove the item but may never get rid of Cut. You may not abuse wild pokemon for Leftovers/Shell Bell healing.
 - Certain Healing Moves Allowed: Moves that damage the enemy to heal yourself and moves that only cure status effects are now allowed to be used in trainer battles only. Leech Seed/Giga Drain/Aromatherapy etc. Moves that heal HP without hurting the opponent like Softboiled/Morning Sun/Wish are still banned.
-    - Note: Pain Split is an exception and not legal. You may not use HP healing moves or Status-only healing moves in wild pokemon battles.</br>Banned Moves Reference List (https://gist.github.com/psydetrack/884443c4c4054decce2804bb513d8d45#survival-ironmon-ruleset)
+    - Note: Pain Split is an exception and not legal. You may not use HP healing moves or Status-only healing moves in wild pokemon battles. Banned Moves Reference List (https://gist.github.com/psydetrack/884443c4c4054decce2804bb513d8d45#survival-ironmon-ruleset)
 
 ### FireRed/LeafGreen Specific Rules
-- Weak Pokemon may Challenge the Islands: If your pokemon has BST of 499 or less: The Sevii Islands are now LEGAL, but you can only choose to go there or not immediately after exiting Blaine's gym when Bill invites you. 
- - You may not use a Pokemon Center (or equivalent NPC) before leaving Cinnabar or while on the Sevii islands.
- - You may not return to the islands after completing them.
+- Weak Pokemon may Challenge the Islands: If your pokemon has BST of 499 or less: The Sevii Islands are now LEGAL, but you can only choose to go there or not immediately after exiting Blaine's gym when Bill invites you.
+    - You may not use a Pokemon Center (or equivalent NPC) before leaving Cinnabar or while on the Sevii islands.
+    - You may not return to the islands after completing them.
     - Note: The move relearner is allowed.
 - Rival Fights: You no longer have to fight the rival in the SS Anne or Pokemon Tower immediately.
     - Note: This means that you must do all of Pokémon Tower in one go after getting the Silph Scope.
@@ -158,34 +161,35 @@ getting past the first gym or two, while tapering off late game. This run should
 
 ### Rules updates to Ultimate & up
 
-1. For story progression and simplicity, these areas are *not* considered dungeons and you may re-enter any time:
-- Rusturf Tunnel
-- Fiery Path
+1. For story progression and simplicity, these areas are not considered dungeons and you may re-enter any time:
+    - Rusturf Tunnel
+    - Fiery Path
 2. For additional clarity, these areas are dungeons and cannot be entered more than once:
-- All caves (Granite Cave, Shoal Cave, etc.)
-- All buildings with Trainers in them (SodaPop Shack, Trick House, etc.)
-- Mt. Chimney (Only a dungeon while Team Magma is present; afterwards you may re-enter)
-- Abandoned ship
-- Meteor Falls (except to return to fight Steven at the end)
+    - All caves (Granite Cave, Shoal Cave, etc.)
+    - All buildings with Trainers in them (SodaPop Shack, Trick House, etc.)
+    - Mt. Chimney (Only a dungeon while Team Magma is present; afterwards you may re-enter)
+    - Abandoned ship
+    - Meteor Falls (except to return to fight Steven at the end)
 
 ### Rules updates to Kaizo/Survival
 
 1. Berry trees are off limits. You cannot get berries from trees.
 2. You cannot travel to Slateport until after you get your 2nd badge
 3. You may only bring 1 HM friend into Gym 7 against Tate & Liza.
-- If it somehow dies before the gym leader fight, you can revive it by depositing the HM friend in your PC then withdrawing it.
+    - If it somehow dies before the gym leader fight, you can revive it by depositing the HM friend in your PC then withdrawing it.
 4. You cannot use the extra TM that Wattson gives you as part of the quest. You may only use the 8 TMs that are handed to your directly after beating a Gym Leader.
-5. Kaizo/Survival Emerald should use a **60% level boost** to Foe and Wild Pokemon instead of 50%. The Randomizer program has a hard limit of 50%, thus a workaround is required to reach 60%:
-1. First load the vanilla Emerald ROM (or patched ROM) and apply this settings string:
-321AAgEAQT8AP8AAgEEAAEeRAABFAAAFABABAABAAAAAAAAAAAAuAS4AQAICTIGBAAyAAIAC0VtZXJhbGQgKFUpunJmsePDOIo=
-2. Click "Randomize (Save)". This is your new "Source ROM"
-3. Now you have a ROM ready to use the IronMon setting strings below
-4. Load the "Source ROM" from step 2 into the randomizer, then load the Kaizo or Survival string below
-5. Randomize (Save). You're ready to play.
+5. Kaizo/Survival Emerald should use a 60% level boost to Foe and Wild Pokemon instead of 50%. The Randomizer program has a hard limit of 50%, thus a workaround is required to reach 60%:
+    1. First load the vanilla Emerald ROM (or patched ROM) and apply this settings string:
+    321AAgEAQT8AP8AAgEEAAEeRAABFAAAFABABAABAAAAAAAAAAAAuAS4AQAICTIGBAAyAAIAC0VtZXJhbGQgKFUpunJmsePDOIo=
+    2. Click "Randomize (Save)". This is your new "Source ROM"
+    3. Now you have a ROM ready to use the IronMon setting strings below
+    4. Load the "Source ROM" from step 2 into the randomizer, then load the Kaizo or Survival string below
+    5. Randomize (Save). You're ready to play.
+In KaizoCore, the "Official 60% levels" switch on RUN runs this first pass for you. It is on by default for the official settings of Kaizo and every mode built on it, and yours to switch.
 
 ## Sources
 
-- IronMON rules gist by valiant-code: https://gist.github.com/valiant-code/adb18d248fa0fae7da6b639e2ee8f9c1 (gist updated 2026-08-31)
-- game-specific rules gist by UTDZac: https://gist.github.com/UTDZac/a147c497424dfbd537d8c4b0c22b5621 (saved 2026-09-05)
+- IronMON rules gist by valiant-code: https://gist.github.com/valiant-code/adb18d248fa0fae7da6b639e2ee8f9c1 (rules last changed 2025-02-23)
+- game-specific rules and settings gist by UTDZac: https://gist.github.com/UTDZac/a147c497424dfbd537d8c4b0c22b5621 (last changed 2026-07-05)
 
-Generated 2026-09-06 by tools/rules/build_rules.py. Rulesets get revised; if this reads behind the gist, regenerate.
+Generated 2026-10-01 by tools/rules/build_rules.py. Rulesets get revised; if this reads behind a source, regenerate.

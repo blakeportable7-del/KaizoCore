@@ -1,0 +1,299 @@
+# id	status	ours	note
+gba-0001	NA	-	key unused by reference code; every Back is the arrow icon (Drawing.createUIElementBackButton)
+gba-0002	DONE	Pedometer.kt:117	Cancel on the step-goal and note editors
+gba-0003	MISSING	-	only used in the Streamer welcome-message and Stream Connect reward forms; neither exists here
+gba-0004	DONE	PcTracker.kt:1408	CLOSE / X on the info and side screens
+gba-0005	NA	-	key unused by reference code (theme export uses ThemeScreen.ButtonExport)
+gba-0006	PARTIAL	Theme.kt:211	imports an 8-colour comma list only; the Gen 3 tracker's 11-colour theme codes are rejected
+gba-0007	PARTIAL	RouteInfoScreen.kt:175	route and Pokemon look-ups exist; no move, ability or Move History look-up
+gba-0008	DONE	PcMoveInfo.kt:108	Contact: Yes/No on move info
+gba-0009	NA	-	only in BizHawk notice popups (L/R button-mode notice, missing extensions)
+gba-0010	NA	-	fixed 150px canvas pager; the phone lists scroll instead of paging
+gba-0011	DONE	BattleDetails.kt:53	'Allied/Enemy Pokemon' headings
+gba-0012	MISSING	-	no theme preset list to preview (Theme.kt edits/imports/exports one theme)
+gba-0013	DONE	Pedometer.kt:115	Save on the step-goal and note editors
+gba-0014	DONE	PcMoveInfo.kt:108	Contact: Yes/No on move info
+gba-0015	DONE	GbaTracker.kt:2325	readStatus3 bit 6
+gba-0016	DONE	GbaTracker.kt:2305	status2 bit 22
+gba-0017	DONE	GbaTracker.kt:2309	status2 bit 26
+gba-0018	DONE	GbaTracker.kt:2288	same text as the reference
+gba-0019	DONE	GbaTracker.kt:2329	Yawn bits
+gba-0020	DONE	GbaTracker.kt:2369	Future: N Turns Left (source)
+gba-0021	DONE	GbaTracker.kt:2294	status2 bit 12, ignored under Bide
+gba-0022	DONE	GbaTracker.kt:2353	disable struct 0x0F + 1
+gba-0023	DONE	GbaTracker.kt:2351	disable struct 0x08
+gba-0024	DONE	GbaTracker.kt:2297	with the trapping Pokemon's name
+gba-0025	DONE	BattleDetails	Loafing only once Truant is tracked (3766e57)
+gba-0026	DONE	GbaTracker.kt:2325	readStatus3 bit 7
+gba-0027	DONE	GbaTracker.kt:2325	readStatus3 bit 18
+gba-0028	DONE	GbaTracker.kt:2264	gBattleTerrain 7
+gba-0029	DONE	GbaTracker.kt:2264	default terrain
+gba-0030	DONE	GbaTracker.kt:2263	gBattleTerrain 0
+gba-0031	DONE	GbaTracker.kt:2263	shows Long Grass; the reference maps terrain 1 to a missing key and prints ---
+gba-0032	DONE	GbaTracker.kt:2264	gBattleTerrain 6
+gba-0033	DONE	GbaTracker.kt:2264	gBattleTerrain 5
+gba-0034	DONE	GbaTracker.kt:2263	gBattleTerrain 2
+gba-0035	DONE	GbaTracker.kt:2263	gBattleTerrain 3
+gba-0036	DONE	GbaTracker.kt:2263	gBattleTerrain 4
+gba-0037	DONE	BattleDetails.kt:53	Allied Pokemon / Allied Team groups
+gba-0038	DONE	BattleDetails.kt:54	Enemy Pokemon / Enemy Team groups
+gba-0039	DONE	BattleDetails.kt:58	all groups listed at once instead of the team-ball picker
+gba-0040	NA	-	never drawn by the reference (readOther is commented out: last move not recorded)
+gba-0041	NA	-	key unused by reference code
+gba-0042	DONE	BattleDetails.kt:56	side effects (Reflect, Spikes...) per team
+gba-0043	DONE	BattleDetails.kt:43	Terrain: X
+gba-0044	DONE	BattleDetails.kt:45	Turn: N, and 'N Turns' in effect lines
+gba-0045	DONE	GbaTracker.kt:2341	'N Turns Left' on timed effects
+gba-0046	DONE	BattleDetails.kt:44	Weather: X
+gba-0047	DONE	GbaTracker.kt:2274	temporary weather's turns left
+gba-0048	PARTIAL	BattleDetails.kt:34	lines can't be tapped to open move/Pokemon info; carousel shows weather+seen count, not the 1st effect
+gba-0049	DONE	GbaTracker.kt:2266	no weather
+gba-0050	DONE	GbaTracker.kt:2271	bit 7
+gba-0051	DONE	GbaTracker.kt:2271	bits 0-2
+gba-0052	DONE	GbaTracker.kt:2271	bits 3-4
+gba-0053	DONE	GbaTracker.kt:2271	bits 5-6
+gba-0054	DONE	CatchRates.kt:73	BALL / BAG / RATE columns
+gba-0055	DONE	CatchRates.kt:73	all 12 balls, bag first then best rate
+gba-0056	DONE	CatchRates.kt:73	rate %, green at 100
+gba-0057	DONE	CatchRates.kt:64	labelled 'Pokemon's HP'; same rounded estimate with the +/- 10% adjusters
+gba-0058	DONE	CatchRates.kt:70	status code
+gba-0059	DONE	CatchRates.kt:44	opened from the '~ N% to catch' header and the gear
+gba-0060	DONE	CoverageCalc.kt:102	up to six types
+gba-0061	DONE	CoverageCalc.kt:103	clears the types
+gba-0062	DONE	CoverageCalc	BST order, highest first (f1c79ef)
+gba-0063	DONE	CoverageCalc.kt:136	each bucket tab carries its total
+gba-0064	DONE	CoverageCalc.kt:109	skips anything that still evolves
+gba-0065	DONE	CoverageCalc.kt:83	opened from the gear
+gba-0066	DONE	CoverageCalc.kt:115	inline type picker instead of a titled screen
+gba-0113	MISSING	-	GachaMon card-pack opening animation not implemented
+gba-0114	MISSING	-	GachaMon trainer prize cards not implemented
+gba-0115	MISSING	-	GachaMon 'NEW' marker not implemented
+gba-0116	MISSING	-	GachaMon cards (battle power) not implemented
+gba-0117	MISSING	-	GachaMon collection not implemented
+gba-0118	MISSING	-	GachaMon card battles not implemented
+gba-0119	MISSING	-	GachaMon collection cleanup not implemented
+gba-0120	MISSING	-	GachaMon favourite cards not implemented
+gba-0121	MISSING	-	GachaMon help link not implemented
+gba-0122	MISSING	-	GachaMon collection not implemented
+gba-0123	MISSING	-	GachaMon about tab not implemented
+gba-0124	MISSING	-	GachaMon about tab not implemented
+gba-0125	MISSING	-	GachaMon about tab not implemented
+gba-0126	MISSING	-	GachaMon about tab not implemented
+gba-0127	MISSING	-	GachaMon card view not implemented
+gba-0128	MISSING	-	GachaMon about tab not implemented
+gba-0129	MISSING	-	GachaMon about tab not implemented
+gba-0130	MISSING	-	GachaDex not implemented
+gba-0131	MISSING	-	GachaMon card view not implemented
+gba-0132	MISSING	-	GachaMon options not implemented
+gba-0133	MISSING	-	GachaMon about tab not implemented
+gba-0134	MISSING	-	GachaMon auto-add rules not implemented
+gba-0135	MISSING	-	GachaMon card rating not implemented
+gba-0136	MISSING	-	GachaMon rating rulesets not implemented
+gba-0137	MISSING	-	GachaMon card view not implemented
+gba-0138	MISSING	-	GachaDex not implemented
+gba-0139	MISSING	-	GachaMon collection sort not implemented
+gba-0140	MISSING	-	GachaMon about tab not implemented
+gba-0141	MISSING	-	GachaMon card view not implemented
+gba-0142	MISSING	-	GachaMon rating rulesets not implemented
+gba-0143	NA	-	BizHawk Lua-console fallback for the help link (GachaMon itself is missing)
+gba-0144	MISSING	-	GachaMon option; no GachaMon
+gba-0145	MISSING	-	GachaMon option; no GachaMon
+gba-0146	MISSING	-	GachaMon option; no GachaMon
+gba-0147	MISSING	-	GachaMon option; no GachaMon
+gba-0148	MISSING	-	GachaMon option; no GachaMon
+gba-0149	MISSING	-	no GachaMon stars next to heals
+gba-0150	MISSING	-	GachaMon captures tab not implemented
+gba-0151	MISSING	-	GachaMon captures tab not implemented
+gba-0152	MISSING	-	GachaMon about tab not implemented
+gba-0153	MISSING	-	GachaMon about tab not implemented
+gba-0154	MISSING	-	GachaMon overlay tabs not implemented
+gba-0155	MISSING	-	GachaMon overlay tabs not implemented
+gba-0156	MISSING	-	GachaMon overlay tabs not implemented
+gba-0157	MISSING	-	GachaMon overlay tabs not implemented
+gba-0158	MISSING	-	GachaMon overlay tabs not implemented
+gba-0159	MISSING	-	GachaMon overlay tabs not implemented
+gba-0160	MISSING	-	GachaMon overlay tabs not implemented
+gba-0161	MISSING	-	GachaMon card rating not implemented
+gba-0162	MISSING	-	GachaMon card rating not implemented
+gba-0190	DONE	GameOverDialog.kt:124	closes the popup, run continues
+gba-0191	DONE	GameOverDialog.kt:144	opens the score sheet
+gba-0192	DONE	GameOverDialog.kt:145	opens the run's randomizer log
+gba-0193	MISSING	-	no way to open an outside log file; only the app's own run log (GameOverHost.kt)
+gba-0194	MISSING	-	GachaMon prize card not implemented
+gba-0195	DONE	GameOverDialog.kt:126	restores the battle-start state
+gba-0196	DONE	GameOverDialog.kt:126	two-tap confirm
+gba-0197	DONE	GameOverDialog.kt:133	copies ROM, log, state and notes
+gba-0198	DONE	GameOverDialog.kt:135	reported in place
+gba-0199	DONE	GameOverDialog.kt:134	'Saved to the attempts folder'
+gba-0200	NA	-	key unused by reference code
+gba-0201	DONE	GameOverDialog.kt:145	same action; the small 'View log' only exists beside the GachaMon prize card
+gba-0202	DONE	GameOverDialog.kt:188	attempt number
+gba-0203	MISSING	-	no play timer on Gen 3 (Stats row says 'not kept'); the reference shows Play Time
+gba-0204	DONE	GameOverDialog.kt:215	on a win
+gba-0205	DONE	GameOverDialog.kt:182	'GAME OVER' / 'YOU WON'
+gba-0206	DONE	PcTracker.kt:785	all 21 quotes; a tap on the team re-rolls
+gba-0207	DONE	HealsInBag	opens on All, tabs in the reference order and sort (f1c79ef)
+gba-0208	DONE	HealsInBag.kt:35	Battle items tab
+gba-0209	DONE	HealsInBag.kt:35	HP tab
+gba-0210	DONE	HealsInBag.kt:35	PP tab
+gba-0211	DONE	HealsInBag.kt:35	Status tab
+gba-0212	DONE	PcTracker.kt:1359	HISTORY on Pokemon info opens Move History (uncommitted working tree)
+gba-0213	DONE	PcTracker.kt:1360	RESISTANCES opens Type Defenses; resist rows also inline (uncommitted working tree)
+gba-0214	PARTIAL	PcTracker.kt:1358	only on your own party Pokemon's info; enemy, route or looked-up species info has none
+gba-0215	DONE	RouteInfoScreen.kt:124	clears Percentages, starts on when not randomized
+gba-0216	DONE	RouteInfoScreen.kt:122	vanilla rates
+gba-0217	MISSING	-	the Pokemon info screen shows no EXP yield
+gba-0218	DONE	PcTracker.kt:1346	N kg
+gba-0219	DONE	PcMoveInfo.kt:107	move info
+gba-0220	DONE	PcMoveInfo.kt:75	PHYSICAL/SPECIAL/STATUS tag
+gba-0221	DONE	PcMoveInfo.kt:108	move info
+gba-0222	DONE	GbaTracker.kt:2913	'In Emerald:' label on every Gen 3 game, as InfoScreen (0114ee2)
+gba-0223	DONE	PcTracker.kt:1348	label 'Evolves'; its method text is raw (see the evolution rows)
+gba-0224	DONE	PcTracker.kt:1386	passed levels plain, coming ones bracketed
+gba-0225	DONE	PcMoveInfo.kt:121	the reference's own summaries
+gba-0226	DONE	PcTracker.kt	'Does not learn any moves' (a14c910)
+gba-0227	DONE	PcTracker.kt	'Has no weaknesses' (a14c910)
+gba-0228	DONE	RouteInfoScreen.kt:139	hidden when a checkbox or Open Book orders them
+gba-0229	DONE	PcMoveInfo.kt:105	cur/max PP
+gba-0230	DONE	PcMoveInfo.kt:106	move info
+gba-0231	DONE	PcMoveInfo.kt:110	only when not 0, as the reference
+gba-0232	DONE	RouteInfoScreen.kt:132	'Pokemon seen by <area>' between area arrows
+gba-0233	DONE	RouteInfoScreen.kt:132	'Static Pokemon encounters'
+gba-0234	DONE	PcTracker.kt:1370	4x/2x rows, then resists and immunities
+gba-0235	DONE	PcTracker.kt:1346	Weight row
+gba-0236	MISSING	-	ability info has no look-up to open another ability
+gba-0237	MISSING	-	move info has no look-up to open another move
+gba-0238	DONE	PcTracker.kt:1322	SEARCH on Pokemon info, filterable name list, plus < > arrows (uncommitted working tree)
+gba-0239	DONE	RouteInfoScreen.kt:175	any route with encounters
+gba-0240	DONE	HiddenPower.kt:86	type arrows on your Hidden Power's info; no 'Set type' caption
+gba-0552	DONE	MoveHistoryStats.kt:53	highest level seen
+gba-0553	DONE	MoveHistoryStats.kt:52	lowest level seen, sorted by it
+gba-0554	DONE	MoveHistoryStats.kt:51	'Moves  Min  Max' table; its rows don't open move info as the reference's do
+gba-0555	DONE	MoveHistoryStats.kt:68	learn-level boxes, red passed, green to come
+gba-0556	DONE	MoveHistoryStats.kt:56	'No tracked moves'
+gba-0557	MISSING	-	Move History has no Pokedex look-up to switch species
+gba-0558	MISSING	-	Move History has no Pokedex look-up to switch species
+gba-0575	PARTIAL	Notebook.kt:84	N / total, but species only met (no mark, move, note) come from session memory and drop after a restart
+gba-0576	DONE	Notebook.kt:80	index screen
+gba-0577	DONE	Notebook.kt:89	defeated / total
+gba-0578	DONE	Notebook.kt:72	opened from the gear (OPEN NOTEBOOK)
+gba-0579	PARTIAL	Notebook.kt:164	'Moves seen' with levels; no (seen/total) count and it doesn't open Move History
+gba-0580	DONE	Notebook.kt:93	'Include unseen' toggle
+gba-0581	PARTIAL	Notebook.kt:121	one total, no 3(T) + 2(W) split; counts live in session memory
+gba-0582	PARTIAL	Notebook.kt:72	alphabetical with a filter; species only met, never marked or seen moving, vanish after a restart
+gba-0583	DONE	Notebook.kt:127	FRLG only
+gba-0584	DONE	Notebook.kt:126	hides finished areas by default
+gba-0585	PARTIAL	Notebook.kt:72	one row per map, not per combined area, in map-id order; rows don't open Trainers on Route
+gba-0586	DONE	EvoText.kt:44	level line abbreviation
+gba-0587	DONE	EvoText.detailed/short	the reference's evolution wording on the info screen and short labels in the log (774bcf8)
+gba-0588	DONE	EvoText.kt:41	level line abbreviation
+gba-0589	DONE	EvoText.detailed/short	the reference's evolution wording on the info screen and short labels in the log (774bcf8)
+gba-0590	DONE	EvoText.detailed/short	the reference's evolution wording on the info screen and short labels in the log (774bcf8)
+gba-0591	DONE	EvoText.kt:40	fills green with friendship
+gba-0592	DONE	EvoText.detailed/short	the reference's evolution wording on the info screen and short labels in the log (774bcf8)
+gba-0593	DONE	EvoText.detailed/short	the reference's evolution wording on the info screen and short labels in the log (774bcf8)
+gba-0594	DONE	EvoText.kt:40	READY in green at the requirement
+gba-0595	DONE	EvoText.kt:42	level line abbreviation
+gba-0596	DONE	EvoText.detailed/short	the reference's evolution wording on the info screen and short labels in the log (774bcf8)
+gba-0597	DONE	EvoText.detailed/short	the reference's evolution wording on the info screen and short labels in the log (774bcf8)
+gba-0598	DONE	EvoText.kt:42	level line abbreviation
+gba-0599	DONE	EvoText.detailed	'Level N' (774bcf8)
+gba-0600	DONE	EvoText.detailed/short	the reference's evolution wording on the info screen and short labels in the log (774bcf8)
+gba-0601	DONE	EvoText.kt:41	level line abbreviation
+gba-0602	DONE	EvoText.detailed/short	the reference's evolution wording on the info screen and short labels in the log (774bcf8)
+gba-0603	DONE	EvoText.detailed/short	the reference's evolution wording on the info screen and short labels in the log (774bcf8)
+gba-0604	DONE	EvoText.kt:42	level line abbreviation
+gba-0605	DONE	EvoText.detailed/short	the reference's evolution wording on the info screen and short labels in the log (774bcf8)
+gba-0606	DONE	EvoText.detailed/short	the reference's evolution wording on the info screen and short labels in the log (774bcf8)
+gba-0607	DONE	EvoText.kt:41	level line abbreviation
+gba-0608	DONE	EvoText.detailed/short	the reference's evolution wording on the info screen and short labels in the log (774bcf8)
+gba-0609	DONE	EvoText.detailed/short	the reference's evolution wording on the info screen and short labels in the log (774bcf8)
+gba-0610	DONE	EvoText.kt:41	level line abbreviation
+gba-0611	DONE	EvoText.detailed/short	the reference's evolution wording on the info screen and short labels in the log (774bcf8)
+gba-0612	DONE	EvoText.detailed/short	the reference's evolution wording on the info screen and short labels in the log (774bcf8)
+gba-0613	DONE	EvoText.kt:43	level line abbreviation
+gba-0614	DONE	EvoText.kt:43	level line abbreviation
+gba-0615	DONE	EvoText.kt:43	level line abbreviation
+gba-0635	DONE	RandomEvos.kt:45	'Evo N: NAME' with arrows
+gba-0636	DONE	RandomEvos.kt:47	'Random Evos (NAME)'; a tapped evo opens its own table, not its info screen
+gba-0708	DONE	ScoreSheet.kt:106	25-point margin, ability exceptions
+gba-0709	DONE	ScoreSheet.kt:109	letter grade beside it
+gba-0710	DONE	ScoreSheet.kt:107	a wrong mark costs ten
+gba-0711	DONE	ScoreSheet.kt:108	marks graded
+gba-0712	DONE	ScoreSheet.kt:101	shown when nothing was marked
+gba-0713	DONE	ScoreSheet.kt:96	from Grade my notes
+gba-0856	DONE	TeamView.kt	eggs as EGG with the egg icon (a14c910)
+gba-0895	DONE	TimeMachine.kt:116	makes a restore point now
+gba-0896	DONE	TimeMachine.kt:110	second tap restores
+gba-0897	DONE	TimeMachine.kt:103	same text
+gba-0898	DONE	TimeMachine.kt:105	says 4 minutes, the reference's actual interval
+gba-0899	DONE	TimeMachine.kt:64	label '# N - Unknown Area'
+gba-0900	DONE	TimeMachine.kt:101	on by default
+gba-0901	DONE	TimeMachine.kt:112	age of each point
+gba-0902	DONE	TimeMachine.kt:112	singular form
+gba-0903	DONE	TimeMachine.kt:97	opened from the gear
+gba-0904	DONE	TimeMachine.kt:51	saved before each restore
+gba-0916	DONE	TrackerPanel.kt:191; StatMarks.kt:163	Last seen = level when the last battle with it ended (recordLastLevelsSeen), saved with the run
+gba-0917	DONE	TrackerPanel.kt:192; StatMarks.kt:173	New encounter only before any battle with the species ended; saved, survives restarts
+gba-0918	DONE	TrackerPanel.kt:232; EncounterBook.kt:51	wild count, once per enemy party slot per battle (seenAlready), saved with the run
+gba-0919	DONE	TrackerPanel.kt:232; EncounterBook.kt:51	trainer count kept apart from wild, once per party slot per battle, saved
+gba-0920	NA	-	the reference removed this word from the screen (commented out in drawPokemonInfoArea)
+gba-0921	DONE	TrackerPanel.kt:691	'Move: N damage', sword red when lethal
+gba-0922	DONE	TrackerPanel.kt:691	doubles
+gba-0923	DONE	GbaTracker.kt:1044	rod read from the used item
+gba-0924	DONE	GbaTracker.kt:1044	rod read from the used item
+gba-0925	DONE	GbaTracker.kt:1044	Rock Smash stat
+gba-0926	DONE	PcTracker.kt:1211	'Walking: 3/10 Seen Pokemon' carousel line
+gba-0927	DONE	GbaTracker.kt:1044	battle flags
+gba-0928	DONE	GbaTracker.kt:1044	rod read from the used item
+gba-0929	DONE	GbaTracker.kt:1044	terrain 4/5
+gba-0930	DONE	GbaTracker.kt:1044	terrain 3
+gba-0931	DONE	GbaTracker.kt:1044	default area
+gba-0932	MISSING	-	GachaMon carousel item not implemented
+gba-0933	DONE	PcTracker.kt:604	HP: cur/max coloured at 50%/20%
+gba-0934	DONE	PcTracker.kt:713	moves header
+gba-0935	DONE	PcTracker.kt:669	'Moves 3/11 (17)', opens Move History
+gba-0936	DONE	PcTracker.kt:711	moves header
+gba-0937	DONE	PcTracker.kt:712	moves header
+gba-0938	DONE	PcTracker.kt:1527	'Heals: N% HP (count)'
+gba-0939	DONE	PcTracker.kt:1538	notes carousel item: note or 'tap to add a note', opens the editor
+gba-0940	DONE	PcTracker.kt:543	Lv.N (evo)
+gba-0941	DONE	Pedometer.kt:77	gold once a goal is set
+gba-0942	DONE	Pedometer.kt:39	Reset / Total toggle
+gba-0943	DONE	Pedometer.kt:76	green at the goal, capped 999,999
+gba-0944	DONE	Pedometer.kt:39	Reset / Total toggle
+gba-0945	MISSING	-	note editor has no ability pickers; tracked abilities can't be set by hand
+gba-0946	MISSING	-	no manual ability tracking, so nothing to clear
+gba-0947	PARTIAL	PlayScreen.kt:2569	editor is titled NOTE and doesn't name the Pokemon ('Enter a short note for X:')
+gba-0948	DONE	Pedometer.kt:100	same text
+gba-0949	DONE	Pedometer.kt:101	same text
+gba-0950	DONE	Pedometer.kt:102	same text
+gba-0951	DONE	Pedometer.kt:97	same text
+gba-0952	DONE	PcTracker.kt:921	'Pick this ball:' over three balls, dice rerolls
+gba-0953	DONE	PcTracker.kt:931	chosen ball lit, others grey
+gba-0954	DONE	PcTracker.kt:931	chosen ball lit, others grey
+gba-0955	MISSING	-	Stream Connect ball redeem (a viewer picks the ball) not implemented
+gba-0956	DONE	PcTracker.kt:931	chosen ball lit, others grey
+gba-0957	MISSING	-	Stream Connect ball redeem not implemented
+gba-0958	MISSING	-	Stream Connect ball redeem not implemented
+gba-0959	DONE	TrackerPanel.kt:127	nature +/- colouring
+gba-0960	DONE	StageChevrons; TrackerPanel.kt	Acc and Eva take the BST row once moved (2d38183)
+gba-0961	DONE	TrackerPanel.kt:137	own and enemy
+gba-0962	DONE	TrackerPanel.kt:128	nature +/- colouring
+gba-0963	DONE	StageChevrons; TrackerPanel.kt	Acc and Eva chevrons (2d38183)
+gba-0964	DONE	TrackerPanel.kt:126	stat column
+gba-0965	DONE	TrackerPanel.kt:131	stat column
+gba-0966	DONE	TrackerPanel.kt:134	stat column
+gba-0967	DONE	TrackerPanel.kt:136	stat column
+gba-0968	DONE	TrackerPanel.kt:663	wild battles; tap opens Catch Rates
+gba-0969	PARTIAL	PcTracker.kt:1205	counts this map only; the reference sums combined areas (Mt. Moon, S.S. Anne) and drops unused rivals
+gba-0970	NA	-	unreachable in the reference: the item only shows when the route has trainers (same here)
+gba-0971	DONE	GbaTracker.kt:3478; GhostCard.kt	Pokemon Tower ghost without the Silph Scope shows the Ghost stand-in (4d4f587)
+gba-0972	DONE	TrainerScreens.kt:86	Smart / Semi-Smart / Normal / Dumb / Complex
+gba-0973	DONE	TrainerScreens.kt:85	(screen also lists party species/items/moves before defeat; ref hides them)
+gba-0974	DONE	TrainerScreens.kt:86	', doubles' on the AI row
+gba-0975	DONE	TrainerScreens.kt:86	', doubles' on the AI row
+gba-0976	DONE	TrainerScreens.kt	balls with levels until beaten, species after, no moves; usable items (44198da)
+gba-0977	DONE	PcTracker.kt:1637	tap a card's type icons
+gba-0978	DONE	PcTracker.kt:1637	1/4x and 1/2x rows
+gba-0979	DONE	PcTracker.kt:1637	2x and 4x rows

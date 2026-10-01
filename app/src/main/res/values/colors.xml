@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background">#40A058</color>
+    <!-- White (Blake, 2026-10-01: "You choose the backplate color"). A transparent one shows black: Android
+         fills the icon's shape. -->
+    <color name="ic_launcher_background">#FFFFFF</color>
 </resources>

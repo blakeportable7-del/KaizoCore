@@ -1,7 +1,9 @@
 package com.ironmonone.app
 
+import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 /** Program.ActiveRepel's rules: the duration a count implies, and the bar's colours. */
 class RepelTest {
@@ -35,6 +37,13 @@ class RepelTest {
         assertEquals(Pc.Gold, Repel.barColor(26, 100))
         assertEquals(Pc.Negative, Repel.barColor(25, 100))
         assertEquals(Pc.Negative, Repel.barColor(1, 100))
+    }
+
+    /** Program.ActiveRepel.shouldDisplay lives on TrackerState (RepelHallOfFameTest); the panel must use it. */
+    @Test
+    fun `the GBA panel draws the bar by the reference's display rule`() {
+        val panel = File("src/main/kotlin/com/ironmonone/app/TrackerPanel.kt").readText()
+        assertTrue("TrackerOptions.showRepel && state != null && state.repelVisible" in panel)
     }
 
     @Test

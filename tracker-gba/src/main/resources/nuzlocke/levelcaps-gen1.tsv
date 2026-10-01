@@ -1,0 +1,57 @@
+# Hardcore Nuzlocke level caps for the vanilla Generation 1 games (2026-09-29).
+#
+# A cap is the level of the highest-level Pokemon on the boss's team in the first-run fight. That is the definition
+# Bulbapedia gives for the Hardcore Level Cap rule and the one Nuzlocke University uses.
+#
+# Source: the pret disassemblies pokered and pokeyellow, data/trainers/parties.asm. Every number was computed from
+# that file and read back out of the clean ROM dumps (red-u, blue-u, yellow-u) with tools/nuzlocke/gen1_trainer_rom.py
+# (`python tools/nuzlocke/gen1_levelcaps.py --check` does both and compares docs/research/nuzlocke-gen1-3.md
+# sections 2.1 and 3.1). Red and Blue share every party, so one set (rb) covers both; Yellow (y) has its own.
+#
+# These are the FALLBACK. When the tracker can read the trainer data out of the loaded ROM it uses the boss's real
+# party levels instead (that is what a randomized or level-scaled game needs).
+#
+# game: rb = Red and Blue, y = Yellow.
+# key: gymN is the Nth badge in the order of the game's badge byte, which is also the usual order of the fights (gyms 3
+# to 7 can be fought in almost any order; Koga and Sabrina both cap at 43 in Red and Blue and at 50 in Yellow, Blaine
+# is 47 and 54); e4-N is the Nth Elite Four member; champion is the rival's fight in the Champion's room.
+# ids: class:no, the trainer class (what wTrainerClass holds) and the party number within the class (wTrainerNo),
+# both in decimal. Giovanni's Viridian Gym fight is party 3 of class 29 (parties 1 and 2 are his Rocket Hideout and
+# Silph Co. fights). The Champion is class 43, one party per rival starter: Red and Blue 1 Blastoise, 2 Venusaur,
+# 3 Charizard (the rival takes the starter that beats yours); Yellow 1 Jolteon (you won at Oak's Lab and on Route 22),
+# 2 Flareon (you won at the lab and lost or skipped Route 22), 3 Vaporeon (you lost at the lab). Every team of a game
+# tops out at the same level, so the cap does not depend on the starter.
+# badge: the 0-based bit of the badge byte (wObtainedBadges) that the leader's script sets when you win: Boulder 0
+# (Brock), Cascade 1 (Misty), Thunder 2 (Lt. Surge), Rainbow 3 (Erika), Soul 4 (Koga), Marsh 5 (Sabrina), Volcano 6
+# (Blaine), Earth 7 (Giovanni), read from `set BIT_xBADGE` in scripts/<Gym>.asm. That is bit N-1 for gym N. The badge
+# byte's address is 0xD356 in Red and Blue and 0xD355 in Yellow. The Earth Badge is always last: Viridian Gym stays
+# shut until the other seven badges are held.
+# group: empty for every Generation 1 row.
+#
+# game	seq	key	kind	label	cap	ace	ids	badge	group
+rb	1	gym1	gym	Brock	14	Onix	34:1	0	
+rb	2	gym2	gym	Misty	21	Starmie	35:1	1	
+rb	3	gym3	gym	Lt. Surge	24	Raichu	36:1	2	
+rb	4	gym4	gym	Erika	29	Victreebel or Vileplume	37:1	3	
+rb	5	gym5	gym	Koga	43	Weezing	38:1	4	
+rb	6	gym6	gym	Sabrina	43	Alakazam	40:1	5	
+rb	7	gym7	gym	Blaine	47	Arcanine	39:1	6	
+rb	8	gym8	gym	Giovanni	50	Rhydon	29:3	7	
+rb	9	e4-1	e4	Lorelei	56	Jynx or Lapras	44:1		
+rb	10	e4-2	e4	Bruno	58	Machamp	33:1		
+rb	11	e4-3	e4	Agatha	60	Gengar	46:1		
+rb	12	e4-4	e4	Lance	62	Dragonite	47:1		
+rb	13	champion	champion	Blue	65	his starter's last stage	43:1,43:2,43:3		
+y	1	gym1	gym	Brock	12	Onix	34:1	0	
+y	2	gym2	gym	Misty	21	Starmie	35:1	1	
+y	3	gym3	gym	Lt. Surge	28	Raichu	36:1	2	
+y	4	gym4	gym	Erika	32	Weepinbell or Gloom	37:1	3	
+y	5	gym5	gym	Koga	50	Venomoth	38:1	4	
+y	6	gym6	gym	Sabrina	50	Abra or Kadabra or Alakazam	40:1	5	
+y	7	gym7	gym	Blaine	54	Arcanine	39:1	6	
+y	8	gym8	gym	Giovanni	55	Nidoking or Rhydon	29:3	7	
+y	9	e4-1	e4	Lorelei	56	Jynx or Lapras	44:1		
+y	10	e4-2	e4	Bruno	58	Machamp	33:1		
+y	11	e4-3	e4	Agatha	60	Gengar	46:1		
+y	12	e4-4	e4	Lance	62	Dragonite	47:1		
+y	13	champion	champion	Blue	65	his Eevee's last stage	43:1,43:2,43:3		

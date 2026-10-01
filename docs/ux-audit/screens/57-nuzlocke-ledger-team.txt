@@ -1,0 +1,19 @@
+TEXT:
+NUZLOCKE  STANDARD
+X
+AREAS
+TEAM
+GRAVE
+LOG
+RULES
+IN THE PARTY
+Zigzagoon
+Lv 3
+Zigzagoon  M  caught, Route 101
+IN A BOX
+Nobody. The tracker cannot see inside a box, so a Pokemon that is not in the party is listed here.
+ADD A POKEMON
+For one the tracker never saw in the party.
+
+CONTENT DESCRIPTIONS:
+

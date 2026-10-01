@@ -1,0 +1,113 @@
+# Hardcore Nuzlocke level caps for the vanilla Generation 5 games (2026-09-29).
+#
+# A cap is the level of the highest-level Pokemon on the boss's team in the first-run fight (Bulbapedia's
+# definition of the Hardcore "Level Cap" rule). Rematches are left out.
+#
+# Games: bw = Black and White (30 rows), b2w2 = Black 2 and White 2 in NORMAL mode (22 rows).
+#
+# Sources. docs/research/nuzlocke-gen4-5.md sections 4.1 and 5.1 (Bulbapedia and Serebii agree on every number),
+# recomputed from the games' own trainer data: for b2w2 from clean Black 2 and White 2 (US) ROMs (the two games hold
+# the same trainer table and the same levels), for bw from a clean White (US) ROM (Black has no dump on this machine;
+# Bulbapedia and Serebii give Black the same numbers apart from the two records named below). Every id was matched
+# to its trainer's name in the ROM's own text, and to the ids of nds/trainer-groups.tsv and of the Universal Pokemon
+# Randomizer ZX's trainer tags (Gen5Constants tagTrainersBW and tagTrainersBW2, gen5_offsets.ini EliteFourIndices).
+# gen5_levelcaps.py --check re-reads all of them.
+#
+# ids: the trainer's index in the game's trainer archive, which is the number the DS tracker reads as
+# enemyTrainerId (the Black 2 RAM dump reads 163 in the first Hugh fight, the ROM's record of that fight; the same kind
+# of number as NdsGameMap labTrainerIds and finalTrainerId, which agree with these rows: bw lab 64 = n1 and final
+# 232 = Ghetsis, b2w2 lab 161 to 163 = hugh1 and final 341 = Iris). A row with several ids is one fight with
+# several versions: one per starter (the rivals), or one per game or leader (see below).
+#
+# Black versus White. The two games use the same trainer records and differ only in which of two the story fights
+# (the White ROM holds both of each pair; Black has no dump, and the randomizer's tags and EliteFourIndices say the
+# same of Black):
+#   gym8: Drayden is 133 (Black), Iris is 132 (White), both with the same team of top level 43.
+#   n (N's Castle): 587 is the Zekrom team (Black), 586 the Reshiram team (White). Same levels.
+#   gym1: Chili 11, Cilan 12, Cress 13, chosen by your starter; all three top out at 14.
+# Both ids are listed on those rows. trainer-groups.tsv lists 587 for White's N's Castle in its N group but 586 in
+# its Elite 4 group; 586 is right (it is the Reshiram team in the White ROM, and the randomizer's EliteFourIndices
+# for White ends in 586).
+#
+# Black 2 and White 2 difficulty. Only Normal Mode is in this file: Easy Mode and Challenge Mode cannot be read from
+# memory. Challenge Mode fights the gym leaders, the Elite Four and Iris with their own trainer records (764 to 771
+# and 772 to 776); their levels in the ROM equal Normal's and the game adds 1 to 5 levels as the battle loads
+# (Bulbapedia: Challenge caps 14 19 26 32 36 42 52 55, Elite Four 62, Iris 63; Easy Mode is 1 to 4 lower). Those
+# ids are on the same rows so the fight is still recognized as that boss; the tracker should take the level of the
+# team in the battle, as it does for every cap when it can. Note NdsGameMap.finalTrainerId (341) is the Normal Mode
+# Iris only; the Challenge Mode Iris is 776.
+#
+# Badges. badge is the bit of the badge byte the DS tracker reads (NdsTracker.readBadges: one byte, badge N in bit
+# N-1). Bit order, from the games' own badge award messages (the game lists them in badge index order) and from the
+# reference tracker (its BW_badge1..8 and BW2_badge1..8 icons are drawn in bit order; trainer-groups.tsv gives each
+# gym leader the badge number they award):
+#   bw:   0 Trio (Striaton), 1 Basic (Nacrene), 2 Insect (Castelia), 3 Bolt (Nimbasa), 4 Quake (Driftveil),
+#         5 Jet (Mistralton), 6 Freeze (Icirrus), 7 Legend (Opelucid).
+#   b2w2: 0 Basic (Aspertia), 1 Toxic (Virbank), 2 Insect (Castelia), 3 Bolt (Nimbasa), 4 Quake (Driftveil),
+#         5 Jet (Mistralton), 6 Legend (Opelucid), 7 Wave (Humilau).
+# In both games the Nth gym in the fight order is bit N-1. rival and boss rows carry no badge.
+#
+# Extras (kind rival and boss) are cap points only when the rules ask for them; they are in the order the fights
+# come in (research doc story positions), and seq counts every row, so a gym's number is in its key (gym3), not in
+# seq. Left out: the partner fights where Cheren or Hugh fights beside you (Wellspring Cave, Route 5; Castelia
+# Sewers, Plasma Frigate 368 to 370, Lacunosa Town; trainer-groups.tsv lists the Plasma Frigate one as Hugh's third),
+# the Shadow Triad fights of Black 2 and White 2 (48 and 51, both under the next cap), N's post-game fights, and
+# every rematch. Story positions of two rows are uncertain: N's second fight (n2, Nacrene City) is at the Gym 2
+# door in Bulbapedia's walkthrough and after Lenora in Serebii's (13 either way); Hugh's Undella Town fight (hugh4)
+# is placed after Gym 6 as in the walkthrough. Both keep their levels, only the order could move.
+#
+# Regenerate: python tools/nuzlocke/gen5_levelcaps.py    Check: python tools/nuzlocke/gen5_levelcaps.py --check
+#
+# game	seq	key	kind	label	cap	ace	ids	badge	group
+bw	1	cheren1	rival	Cheren	5	Tepig, Oshawott or Snivy	53,54,55		
+bw	2	bianca1	rival	Bianca	5	Oshawott, Snivy or Tepig	59,60,61		
+bw	3	n1	rival	N	7	Purrloin	64		
+bw	4	bianca2	rival	Bianca	7	Oshawott, Snivy or Tepig	498,499,500		
+bw	5	cheren2	rival	Cheren	8	Tepig, Oshawott or Snivy	287,288,289		
+bw	6	gym1	gym	Cilan, Chili or Cress	14	Pansage, Pansear or Panpour	12,11,13	0	
+bw	7	cheren3	rival	Cheren	14	Tepig, Oshawott or Snivy	56,57,58		
+bw	8	n2	rival	N	13	Pidove	65		
+bw	9	gym2	gym	Lenora	20	Watchog	21	1	
+bw	10	gym3	gym	Burgh	23	Leavanny	22	2	
+bw	11	bianca3	rival	Bianca	20	Dewott, Servine or Pignite	507,508,509		
+bw	12	cheren4	rival	Cheren	22	Pignite, Dewott or Servine	403,404,405		
+bw	13	n3	rival	N	22	Sandile	89		
+bw	14	gym4	gym	Elesa	27	Zebstrika	23	3	
+bw	15	cheren5	rival	Cheren	26	Pignite, Dewott or Servine	90,91,92		
+bw	16	gym5	gym	Clay	31	Excadrill	24	4	
+bw	17	bianca4	rival	Bianca	28	Dewott, Servine or Pignite	491,492,493		
+bw	18	n4	rival	N	28	Boldore	218		
+bw	19	gym6	gym	Skyla	35	Swanna	25	5	
+bw	20	cheren6	rival	Cheren	35	Pignite, Dewott or Servine	539,540,541		
+bw	21	gym7	gym	Brycen	39	Beartic	131	6	
+bw	22	bianca5	rival	Bianca	40	Samurott, Serperior or Emboar	494,495,496		
+bw	23	gym8	gym	Drayden or Iris	43	Haxorus	133,132	7	
+bw	24	cheren7	rival	Cheren	45	Emboar, Samurott or Serperior	588,589,590		
+bw	25	e4-1	e4	Shauntal	50	Chandelure	228		Elite Four, any order
+bw	26	e4-2	e4	Marshal	50	Mienshao	229		Elite Four, any order
+bw	27	e4-3	e4	Grimsley	50	Bisharp	230		Elite Four, any order
+bw	28	e4-4	e4	Caitlin	50	Gothitelle	231		Elite Four, any order
+bw	29	n	post	N	52	Zekrom or Reshiram	587,586		N's Castle
+bw	30	champion	champion	Ghetsis	54	Hydreigon	232		
+b2w2	1	hugh1	rival	Hugh	5	Tepig, Oshawott or Snivy	161,162,163		
+b2w2	2	hugh2	rival	Hugh	8	Tepig, Oshawott or Snivy	166,167,168		
+b2w2	3	gym1	gym	Cheren	13	Lillipup	156,764	0	
+b2w2	4	gym2	gym	Roxie	18	Whirlipede	157,765	1	
+b2w2	5	gym3	gym	Burgh	24	Leavanny	154,766	2	
+b2w2	6	colress1	boss	Colress	23	Klink	358		
+b2w2	7	gym4	gym	Elesa	30	Zebstrika	153,767	3	
+b2w2	8	rood	boss	Rood	27	Herdier	346		
+b2w2	9	gym5	gym	Clay	33	Excadrill	158,768	4	
+b2w2	10	gym6	gym	Skyla	39	Swanna	155,769	5	
+b2w2	11	hugh4	rival	Hugh	41	Emboar, Samurott or Serperior	378,379,380		
+b2w2	12	gym7	gym	Drayden	48	Haxorus	159,770	6	
+b2w2	13	zinzolin2	boss	Zinzolin	48	Weavile	584		
+b2w2	14	gym8	gym	Marlon	51	Jellicent	160,771	7	
+b2w2	15	colress3	boss	Colress	52	Klinklang	344		
+b2w2	16	ghetsis	boss	Ghetsis	52	Hydreigon	345		
+b2w2	17	hugh5	rival	Hugh	57	Emboar, Samurott or Serperior	684,685,686		
+b2w2	18	e4-1	e4	Shauntal	58	Chandelure	38,772		Elite Four, any order
+b2w2	19	e4-2	e4	Marshal	58	Conkeldurr	39,774		Elite Four, any order
+b2w2	20	e4-3	e4	Grimsley	58	Bisharp	40,773		Elite Four, any order
+b2w2	21	e4-4	e4	Caitlin	58	Gothitelle	41,775		Elite Four, any order
+b2w2	22	champion	champion	Iris	59	Haxorus	341,776		

@@ -21,8 +21,9 @@ Every ruleset builds on the ones before it, so they are all here in order, then 
     - Note: During the lab fight(s) only, you may hold banned items.
 - Stolen Items: You may not intentionally steal items from wild pokemon with moves like Thief, Covet, etc. Stealing them from a trainer battle is fine.
     - Note: If you steal from a wild pokemon that you do not end up catching in that battle, throw the item away.
-- Accidental Kills/Catches: - If you accidentally kill a Pokémon while trying to catch it, you will no longer be able to capture or kill a Pokémon from that Route.
- - If you catch a pokemon (accidental or otherwise) that you don't mean to add to your team you can immediately deposit it in the PC without viewing any information about its stats or moves. And then continue as if it never happened.
+- Accidental Kills/Catches:
+    - If you accidentally kill a Pokémon while trying to catch it, you will no longer be able to capture or kill a Pokémon from that Route.
+    - If you catch a pokemon (accidental or otherwise) that you don't mean to add to your team you can immediately deposit it in the PC without viewing any information about its stats or moves. And then continue as if it never happened.
     - Note: You may throw pokéballs at a pokemon for reasons like being unable to run or if you are trying to scout its moves without risking killing it.
 - No Redos: You may not re-fight trainers at any point using the VS Seeker or other means. You may not abuse respawning items by picking them up more than once
 - Shiny Clause: If you encounter a shiny, you are allowed to kill it for EXP as a bonus kill in addition to your allotted 1 catch/kill for that route.
@@ -40,9 +41,10 @@ Additional rules for the Ultimate Gamers
 - No Way Out Gyms: Once You Enter a Gym or Dojo, You cannot leave until you defeat ALL TRAINERS. Beat it or Die.
 - One Shot Dungeons: You can only enter a dungeon once unless the story requires a revisit
     - Note: A Dungeon refers to:
- - Any Hideout
- - Any Cave
- - Any Building with TrainersForests are not dungeons.
+    - Any Hideout
+    - Any Cave
+    - Any Building with Trainers
+    Forests are not dungeons.
 - 6 Pokémon Total: You may only obtain 6 Pokémon for the Entire Run
 - HM Friends: If and only if 5 out of your 6 pokemon are lost, you may catch additional pokemon to use as HM Friends solely for out of battle HM use. You may not gain other any advantages from an HM Friend.
     - Note: If an HM friend is put into the battle by a move like Roar or Whirlwind, immediately swap off of it. You do not need to get rid of your HM friend if they faint.
@@ -55,7 +57,7 @@ Additional rules for the Ultimate Gamers
 
 ## Sources
 
-- IronMON rules gist by valiant-code: https://gist.github.com/valiant-code/adb18d248fa0fae7da6b639e2ee8f9c1 (gist updated 2026-08-31)
-- game-specific rules gist by UTDZac: https://gist.github.com/UTDZac/a147c497424dfbd537d8c4b0c22b5621 (saved 2026-09-05)
+- IronMON rules gist by valiant-code: https://gist.github.com/valiant-code/adb18d248fa0fae7da6b639e2ee8f9c1 (rules last changed 2025-02-23)
+- game-specific rules and settings gist by UTDZac: https://gist.github.com/UTDZac/a147c497424dfbd537d8c4b0c22b5621 (last changed 2026-07-05)
 
-Generated 2026-09-06 by tools/rules/build_rules.py. Rulesets get revised; if this reads behind the gist, regenerate.
+Generated 2026-10-01 by tools/rules/build_rules.py. Rulesets get revised; if this reads behind a source, regenerate.

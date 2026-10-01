@@ -1,0 +1,877 @@
+# The Nat. Dex Extension's species ids 412-1283 (tracker-gba/src/main/resources/natdex/species.tsv) to a
+# Walking Pals sheet. set walkingpals-nat: key is <national>[-<form>] in this folder; set walkingpals: key is
+# the Gen 3 internal id in walkingpals/. Blank set and key: no sheet, and the note says why.
+# Ids 1-411 are Gen 3's own internal ids and walkingpals/ already covers them.
+# natdex	name	national	form	set	key	note
+412	Turtwig	387		walkingpals-nat	387	
+413	Grotle	388		walkingpals-nat	388	
+414	Torterra	389		walkingpals-nat	389	
+415	Chimchar	390		walkingpals-nat	390	
+416	Monferno	391		walkingpals-nat	391	
+417	Infernape	392		walkingpals-nat	392	
+418	Piplup	393		walkingpals-nat	393	
+419	Prinplup	394		walkingpals-nat	394	
+420	Empoleon	395		walkingpals-nat	395	
+421	Starly	396		walkingpals-nat	396	
+422	Staravia	397		walkingpals-nat	397	
+423	Staraptor	398		walkingpals-nat	398	
+424	Bidoof	399		walkingpals-nat	399	
+425	Bibarel	400		walkingpals-nat	400	
+426	Kricketot	401		walkingpals-nat	401	
+427	Kricketune	402		walkingpals-nat	402	
+428	Shinx	403		walkingpals-nat	403	
+429	Luxio	404		walkingpals-nat	404	
+430	Luxray	405		walkingpals-nat	405	
+431	Budew	406		walkingpals-nat	406	
+432	Roserade	407		walkingpals-nat	407	
+433	Cranidos	408		walkingpals-nat	408	
+434	Rampardos	409		walkingpals-nat	409	
+435	Shieldon	410		walkingpals-nat	410	
+436	Bastiodon	411		walkingpals-nat	411	
+437	Burmy	412		walkingpals-nat	412	
+438	Wormadam	413		walkingpals-nat	413	
+439	Mothim	414		walkingpals-nat	414	
+440	Combee	415		walkingpals-nat	415	
+441	Vespiquen	416		walkingpals-nat	416	
+442	Pachirisu	417		walkingpals-nat	417	
+443	Buizel	418		walkingpals-nat	418	
+444	Floatzel	419		walkingpals-nat	419	
+445	Cherubi	420		walkingpals-nat	420	
+446	Cherrim	421		walkingpals-nat	421	
+447	Shellos	422		walkingpals-nat	422	
+448	Gastrodon	423		walkingpals-nat	423	
+449	Ambipom	424		walkingpals-nat	424	
+450	Drifloon	425		walkingpals-nat	425	
+451	Drifblim	426		walkingpals-nat	426	
+452	Buneary	427		walkingpals-nat	427	
+453	Lopunny	428		walkingpals-nat	428	
+454	Mismagius	429		walkingpals-nat	429	
+455	Honchkrow	430		walkingpals-nat	430	
+456	Glameow	431		walkingpals-nat	431	
+457	Purugly	432		walkingpals-nat	432	
+458	Chingling	433		walkingpals-nat	433	
+459	Stunky	434		walkingpals-nat	434	
+460	Skuntank	435		walkingpals-nat	435	
+461	Bronzor	436		walkingpals-nat	436	
+462	Bronzong	437		walkingpals-nat	437	
+463	Bonsly	438		walkingpals-nat	438	
+464	Mime Jr.	439		walkingpals-nat	439	
+465	Happiny	440		walkingpals-nat	440	
+466	Chatot	441		walkingpals-nat	441	
+467	Spiritomb	442		walkingpals-nat	442	
+468	Gible	443		walkingpals-nat	443	
+469	Gabite	444		walkingpals-nat	444	
+470	Garchomp	445		walkingpals-nat	445	
+471	Munchlax	446		walkingpals-nat	446	
+472	Riolu	447		walkingpals-nat	447	
+473	Lucario	448		walkingpals-nat	448	
+474	Hippopotas	449		walkingpals-nat	449	
+475	Hippowdon	450		walkingpals-nat	450	
+476	Skorupi	451		walkingpals-nat	451	
+477	Drapion	452		walkingpals-nat	452	
+478	Croagunk	453		walkingpals-nat	453	
+479	Toxicroak	454		walkingpals-nat	454	
+480	Carnivine	455		walkingpals-nat	455	
+481	Finneon	456		walkingpals-nat	456	
+482	Lumineon	457		walkingpals-nat	457	
+483	Mantyke	458		walkingpals-nat	458	
+484	Snover	459		walkingpals-nat	459	
+485	Abomasnow	460		walkingpals-nat	460	
+486	Weavile	461		walkingpals-nat	461	
+487	Magnezone	462		walkingpals-nat	462	
+488	Lickilicky	463		walkingpals-nat	463	
+489	Rhyperior	464		walkingpals-nat	464	
+490	Tangrowth	465		walkingpals-nat	465	
+491	Electivire	466		walkingpals-nat	466	
+492	Magmortar	467		walkingpals-nat	467	
+493	Togekiss	468		walkingpals-nat	468	
+494	Yanmega	469		walkingpals-nat	469	
+495	Leafeon	470		walkingpals-nat	470	
+496	Glaceon	471		walkingpals-nat	471	
+497	Gliscor	472		walkingpals-nat	472	
+498	Mamoswine	473		walkingpals-nat	473	
+499	Porygon-Z	474		walkingpals-nat	474	
+500	Gallade	475		walkingpals-nat	475	
+501	Probopass	476		walkingpals-nat	476	
+502	Dusknoir	477		walkingpals-nat	477	
+503	Froslass	478		walkingpals-nat	478	
+504	Rotom	479		walkingpals-nat	479	
+505	Uxie	480		walkingpals-nat	480	
+506	Mesprit	481		walkingpals-nat	481	
+507	Azelf	482		walkingpals-nat	482	
+508	Dialga	483		walkingpals-nat	483	
+509	Palkia	484		walkingpals-nat	484	
+510	Heatran	485		walkingpals-nat	485	
+511	Regigigas	486		walkingpals-nat	486	
+512	Giratina	487		walkingpals-nat	487	
+513	Cresselia	488		walkingpals-nat	488	
+514	Phione	489		walkingpals-nat	489	
+515	Manaphy	490		walkingpals-nat	490	
+516	Darkrai	491		walkingpals-nat	491	
+517	Shaymin	492		walkingpals-nat	492	
+518	Arceus	493		walkingpals-nat	493	
+519	Victini	494		walkingpals-nat	494	
+520	Snivy	495		walkingpals-nat	495	
+521	Servine	496		walkingpals-nat	496	
+522	Serperior	497		walkingpals-nat	497	
+523	Tepig	498		walkingpals-nat	498	
+524	Pignite	499		walkingpals-nat	499	
+525	Emboar	500		walkingpals-nat	500	
+526	Oshawott	501		walkingpals-nat	501	
+527	Dewott	502		walkingpals-nat	502	
+528	Samurott	503		walkingpals-nat	503	
+529	Patrat	504		walkingpals-nat	504	
+530	Watchog	505		walkingpals-nat	505	
+531	Lillipup	506		walkingpals-nat	506	
+532	Herdier	507		walkingpals-nat	507	
+533	Stoutland	508		walkingpals-nat	508	
+534	Purrloin	509		walkingpals-nat	509	
+535	Liepard	510		walkingpals-nat	510	
+536	Pansage	511		walkingpals-nat	511	
+537	Simisage	512		walkingpals-nat	512	
+538	Pansear	513		walkingpals-nat	513	
+539	Simisear	514				no sheet: SpriteCollab has no Simisear sprite yet
+540	Panpour	515		walkingpals-nat	515	
+541	Simipour	516				no sheet: SpriteCollab has no Simipour sprite yet
+542	Munna	517		walkingpals-nat	517	
+543	Musharna	518		walkingpals-nat	518	
+544	Pidove	519		walkingpals-nat	519	
+545	Tranquill	520				no sheet: SpriteCollab has no Tranquill sprite yet
+546	Unfezant	521		walkingpals-nat	521	
+547	Blitzle	522				no sheet: SpriteCollab has no Blitzle sprite yet
+548	Zebstrika	523				no sheet: SpriteCollab has no Zebstrika sprite yet
+549	Roggenrola	524		walkingpals-nat	524	
+550	Boldore	525		walkingpals-nat	525	
+551	Gigalith	526		walkingpals-nat	526	
+552	Woobat	527		walkingpals-nat	527	
+553	Swoobat	528		walkingpals-nat	528	
+554	Drilbur	529		walkingpals-nat	529	
+555	Excadrill	530		walkingpals-nat	530	
+556	Audino	531		walkingpals-nat	531	
+557	Timburr	532		walkingpals-nat	532	
+558	Gurdurr	533		walkingpals-nat	533	
+559	Conkeldurr	534		walkingpals-nat	534	
+560	Tympole	535		walkingpals-nat	535	
+561	Palpitoad	536		walkingpals-nat	536	
+562	Seismitoad	537		walkingpals-nat	537	
+563	Throh	538				no sheet: SpriteCollab has no Throh sprite yet
+564	Sawk	539		walkingpals-nat	539	
+565	Sewaddle	540		walkingpals-nat	540	
+566	Swadloon	541		walkingpals-nat	541	
+567	Leavanny	542		walkingpals-nat	542	
+568	Venipede	543		walkingpals-nat	543	
+569	Whirlipede	544		walkingpals-nat	544	
+570	Scolipede	545		walkingpals-nat	545	
+571	Cottonee	546		walkingpals-nat	546	
+572	Whimsicott	547		walkingpals-nat	547	
+573	Petilil	548		walkingpals-nat	548	
+574	Lilligant	549		walkingpals-nat	549	
+575	Basculin	550		walkingpals-nat	550	
+576	Sandile	551		walkingpals-nat	551	
+577	Krokorok	552		walkingpals-nat	552	
+578	Krookodile	553		walkingpals-nat	553	
+579	Darumaka	554		walkingpals-nat	554	
+580	Darmanitan	555		walkingpals-nat	555	
+581	Maractus	556		walkingpals-nat	556	
+582	Dwebble	557		walkingpals-nat	557	
+583	Crustle	558				no sheet: SpriteCollab has no Crustle sprite yet
+584	Scraggy	559		walkingpals-nat	559	
+585	Scrafty	560		walkingpals-nat	560	
+586	Sigilyph	561		walkingpals-nat	561	
+587	Yamask	562		walkingpals-nat	562	
+588	Cofagrigus	563		walkingpals-nat	563	
+589	Tirtouga	564				no sheet: SpriteCollab has no Tirtouga sprite yet
+590	Carracosta	565				no sheet: SpriteCollab has no Carracosta sprite yet
+591	Archen	566		walkingpals-nat	566	
+592	Archeops	567		walkingpals-nat	567	
+593	Trubbish	568		walkingpals-nat	568	
+594	Garbodor	569		walkingpals-nat	569	
+595	Zorua	570		walkingpals-nat	570	
+596	Zoroark	571		walkingpals-nat	571	
+597	Minccino	572		walkingpals-nat	572	
+598	Cinccino	573		walkingpals-nat	573	
+599	Gothita	574		walkingpals-nat	574	
+600	Gothorita	575		walkingpals-nat	575	
+601	Gothitelle	576		walkingpals-nat	576	
+602	Solosis	577		walkingpals-nat	577	
+603	Duosion	578		walkingpals-nat	578	
+604	Reuniclus	579		walkingpals-nat	579	
+605	Ducklett	580		walkingpals-nat	580	
+606	Swanna	581		walkingpals-nat	581	
+607	Vanillite	582		walkingpals-nat	582	
+608	Vanillish	583		walkingpals-nat	583	
+609	Vanilluxe	584		walkingpals-nat	584	
+610	Deerling	585		walkingpals-nat	585	
+611	Sawsbuck	586		walkingpals-nat	586	
+612	Emolga	587		walkingpals-nat	587	
+613	Karrablast	588		walkingpals-nat	588	
+614	Escavalier	589		walkingpals-nat	589	
+615	Foongus	590		walkingpals-nat	590	
+616	Amoonguss	591				no sheet: SpriteCollab has no Amoonguss sprite yet
+617	Frillish	592				no sheet: SpriteCollab has no Frillish sprite yet
+618	Jellicent	593		walkingpals-nat	593	
+619	Alomomola	594		walkingpals-nat	594	
+620	Joltik	595		walkingpals-nat	595	
+621	Galvantula	596		walkingpals-nat	596	
+622	Ferroseed	597		walkingpals-nat	597	
+623	Ferrothorn	598		walkingpals-nat	598	
+624	Klink	599		walkingpals-nat	599	
+625	Klang	600		walkingpals-nat	600	
+626	Klinklang	601		walkingpals-nat	601	
+627	Tynamo	602		walkingpals-nat	602	
+628	Eelektrik	603		walkingpals-nat	603	
+629	Eelektross	604		walkingpals-nat	604	
+630	Elgyem	605		walkingpals-nat	605	
+631	Beheeyem	606		walkingpals-nat	606	
+632	Litwick	607		walkingpals-nat	607	
+633	Lampent	608		walkingpals-nat	608	
+634	Chandelure	609		walkingpals-nat	609	
+635	Axew	610		walkingpals-nat	610	
+636	Fraxure	611		walkingpals-nat	611	
+637	Haxorus	612		walkingpals-nat	612	
+638	Cubchoo	613		walkingpals-nat	613	
+639	Beartic	614		walkingpals-nat	614	
+640	Cryogonal	615		walkingpals-nat	615	
+641	Shelmet	616				no sheet: SpriteCollab has no Shelmet sprite yet
+642	Accelgor	617		walkingpals-nat	617	
+643	Stunfisk	618		walkingpals-nat	618	
+644	Mienfoo	619		walkingpals-nat	619	
+645	Mienshao	620		walkingpals-nat	620	
+646	Druddigon	621		walkingpals-nat	621	
+647	Golett	622		walkingpals-nat	622	
+648	Golurk	623		walkingpals-nat	623	
+649	Pawniard	624		walkingpals-nat	624	
+650	Bisharp	625		walkingpals-nat	625	
+651	Bouffalant	626				no sheet: SpriteCollab has no Bouffalant sprite yet
+652	Rufflet	627		walkingpals-nat	627	
+653	Braviary	628		walkingpals-nat	628	
+654	Vullaby	629		walkingpals-nat	629	
+655	Mandibuzz	630		walkingpals-nat	630	
+656	Heatmor	631		walkingpals-nat	631	
+657	Durant	632		walkingpals-nat	632	
+658	Deino	633		walkingpals-nat	633	
+659	Zweilous	634		walkingpals-nat	634	
+660	Hydreigon	635		walkingpals-nat	635	
+661	Larvesta	636		walkingpals-nat	636	
+662	Volcarona	637		walkingpals-nat	637	
+663	Cobalion	638		walkingpals-nat	638	
+664	Terrakion	639		walkingpals-nat	639	
+665	Virizion	640		walkingpals-nat	640	
+666	Tornadus	641		walkingpals-nat	641	
+667	Thundurus	642		walkingpals-nat	642	
+668	Reshiram	643		walkingpals-nat	643	
+669	Zekrom	644		walkingpals-nat	644	
+670	Landorus	645		walkingpals-nat	645	
+671	Kyurem	646		walkingpals-nat	646	
+672	Keldeo	647		walkingpals-nat	647	
+673	Meloetta	648		walkingpals-nat	648	
+674	Genesect	649		walkingpals-nat	649	
+675	Chespin	650		walkingpals-nat	650	
+676	Quilladin	651		walkingpals-nat	651	
+677	Chesnaught	652		walkingpals-nat	652	
+678	Fennekin	653		walkingpals-nat	653	
+679	Braixen	654		walkingpals-nat	654	
+680	Delphox	655		walkingpals-nat	655	
+681	Froakie	656		walkingpals-nat	656	
+682	Frogadier	657		walkingpals-nat	657	
+683	Greninja	658		walkingpals-nat	658	
+684	Bunnelby	659		walkingpals-nat	659	
+685	Diggersby	660		walkingpals-nat	660	
+686	Fletchling	661		walkingpals-nat	661	
+687	Fletchinder	662		walkingpals-nat	662	
+688	Talonflame	663		walkingpals-nat	663	
+689	Scatterbug	664		walkingpals-nat	664	
+690	Spewpa	665		walkingpals-nat	665	
+691	Vivillon	666		walkingpals-nat	666	
+692	Litleo	667		walkingpals-nat	667	
+693	Pyroar	668	female	walkingpals-nat	668-female	no male Pyroar sheet in SpriteCollab; the female one stands in
+694	Flabébé	669		walkingpals-nat	669	
+695	Floette	670		walkingpals-nat	670	
+696	Florges	671		walkingpals-nat	671	
+697	Skiddo	672		walkingpals-nat	672	
+698	Gogoat	673		walkingpals-nat	673	
+699	Pancham	674		walkingpals-nat	674	
+700	Pangoro	675		walkingpals-nat	675	
+701	Furfrou	676		walkingpals-nat	676	
+702	Espurr	677		walkingpals-nat	677	
+703	Meowstic	678		walkingpals-nat	678	
+704	Honedge	679		walkingpals-nat	679	
+705	Doublade	680		walkingpals-nat	680	
+706	Aegislash	681		walkingpals-nat	681	
+707	Spritzee	682		walkingpals-nat	682	
+708	Aromatisse	683		walkingpals-nat	683	
+709	Swirlix	684		walkingpals-nat	684	
+710	Slurpuff	685		walkingpals-nat	685	
+711	Inkay	686		walkingpals-nat	686	
+712	Malamar	687		walkingpals-nat	687	
+713	Binacle	688		walkingpals-nat	688	
+714	Barbaracle	689		walkingpals-nat	689	
+715	Skrelp	690		walkingpals-nat	690	
+716	Dragalge	691		walkingpals-nat	691	
+717	Clauncher	692		walkingpals-nat	692	
+718	Clawitzer	693		walkingpals-nat	693	
+719	Helioptile	694		walkingpals-nat	694	
+720	Heliolisk	695		walkingpals-nat	695	
+721	Tyrunt	696		walkingpals-nat	696	
+722	Tyrantrum	697		walkingpals-nat	697	
+723	Amaura	698		walkingpals-nat	698	
+724	Aurorus	699		walkingpals-nat	699	
+725	Sylveon	700		walkingpals-nat	700	
+726	Hawlucha	701		walkingpals-nat	701	
+727	Dedenne	702		walkingpals-nat	702	
+728	Carbink	703		walkingpals-nat	703	
+729	Goomy	704		walkingpals-nat	704	
+730	Sliggoo	705		walkingpals-nat	705	
+731	Goodra	706		walkingpals-nat	706	
+732	Klefki	707		walkingpals-nat	707	
+733	Phantump	708		walkingpals-nat	708	
+734	Trevenant	709		walkingpals-nat	709	
+735	Pumpkaboo	710		walkingpals-nat	710	
+736	Gourgeist	711		walkingpals-nat	711	
+737	Bergmite	712		walkingpals-nat	712	
+738	Avalugg	713		walkingpals-nat	713	
+739	Noibat	714		walkingpals-nat	714	
+740	Noivern	715		walkingpals-nat	715	
+741	Xerneas	716		walkingpals-nat	716	
+742	Yveltal	717		walkingpals-nat	717	
+743	Zygarde	718		walkingpals-nat	718	
+744	Diancie	719		walkingpals-nat	719	
+745	Hoopa	720		walkingpals-nat	720	
+746	Volcanion	721		walkingpals-nat	721	
+747	Rowlet	722		walkingpals-nat	722	
+748	Dartrix	723		walkingpals-nat	723	
+749	Decidueye	724		walkingpals-nat	724	
+750	Litten	725		walkingpals-nat	725	
+751	Torracat	726		walkingpals-nat	726	
+752	Incineroar	727		walkingpals-nat	727	
+753	Popplio	728		walkingpals-nat	728	
+754	Brionne	729		walkingpals-nat	729	
+755	Primarina	730		walkingpals-nat	730	
+756	Pikipek	731		walkingpals-nat	731	
+757	Trumbeak	732				no sheet: SpriteCollab has no Trumbeak sprite yet
+758	Toucannon	733		walkingpals-nat	733	
+759	Yungoos	734		walkingpals-nat	734	
+760	Gumshoos	735				no sheet: SpriteCollab has no Gumshoos sprite yet
+761	Grubbin	736		walkingpals-nat	736	
+762	Charjabug	737		walkingpals-nat	737	
+763	Vikavolt	738		walkingpals-nat	738	
+764	Crabrawler	739		walkingpals-nat	739	
+765	Crabominable	740		walkingpals-nat	740	
+766	Oricorio	741		walkingpals-nat	741	
+767	Cutiefly	742		walkingpals-nat	742	
+768	Ribombee	743		walkingpals-nat	743	
+769	Rockruff	744		walkingpals-nat	744	
+770	Lycanroc	745		walkingpals-nat	745	
+771	Wishiwashi	746		walkingpals-nat	746	
+772	Mareanie	747		walkingpals-nat	747	
+773	Toxapex	748		walkingpals-nat	748	
+774	Mudbray	749		walkingpals-nat	749	
+775	Mudsdale	750		walkingpals-nat	750	
+776	Dewpider	751		walkingpals-nat	751	
+777	Araquanid	752		walkingpals-nat	752	
+778	Fomantis	753		walkingpals-nat	753	
+779	Lurantis	754		walkingpals-nat	754	
+780	Morelull	755		walkingpals-nat	755	
+781	Shiinotic	756				no sheet: SpriteCollab has no Shiinotic sprite yet
+782	Salandit	757		walkingpals-nat	757	
+783	Salazzle	758		walkingpals-nat	758	
+784	Stufful	759		walkingpals-nat	759	
+785	Bewear	760		walkingpals-nat	760	
+786	Bounsweet	761		walkingpals-nat	761	
+787	Steenee	762		walkingpals-nat	762	
+788	Tsareena	763		walkingpals-nat	763	
+789	Comfey	764		walkingpals-nat	764	
+790	Oranguru	765				no sheet: SpriteCollab has no Oranguru sprite yet
+791	Passimian	766		walkingpals-nat	766	
+792	Wimpod	767		walkingpals-nat	767	
+793	Golisopod	768		walkingpals-nat	768	
+794	Sandygast	769		walkingpals-nat	769	
+795	Palossand	770		walkingpals-nat	770	
+796	Pyukumuku	771		walkingpals-nat	771	
+797	Type: Null	772		walkingpals-nat	772	
+798	Silvally	773		walkingpals-nat	773	
+799	Minior	774		walkingpals-nat	774	
+800	Komala	775		walkingpals-nat	775	
+801	Turtonator	776		walkingpals-nat	776	
+802	Togedemaru	777		walkingpals-nat	777	
+803	Mimikyu	778		walkingpals-nat	778	
+804	Bruxish	779		walkingpals-nat	779	
+805	Drampa	780		walkingpals-nat	780	
+806	Dhelmise	781		walkingpals-nat	781	
+807	Jangmo-o	782		walkingpals-nat	782	
+808	Hakamo-o	783		walkingpals-nat	783	
+809	Kommo-o	784		walkingpals-nat	784	
+810	Tapu Koko	785		walkingpals-nat	785	
+811	Tapu Lele	786		walkingpals-nat	786	
+812	Tapu Bulu	787		walkingpals-nat	787	
+813	Tapu Fini	788		walkingpals-nat	788	
+814	Cosmog	789		walkingpals-nat	789	
+815	Cosmoem	790		walkingpals-nat	790	
+816	Solgaleo	791		walkingpals-nat	791	
+817	Lunala	792		walkingpals-nat	792	
+818	Nihilego	793		walkingpals-nat	793	
+819	Buzzwole	794		walkingpals-nat	794	
+820	Pheromosa	795		walkingpals-nat	795	
+821	Xurkitree	796		walkingpals-nat	796	
+822	Celesteela	797		walkingpals-nat	797	
+823	Kartana	798		walkingpals-nat	798	
+824	Guzzlord	799		walkingpals-nat	799	
+825	Necrozma	800		walkingpals-nat	800	
+826	Magearna	801		walkingpals-nat	801	
+827	Marshadow	802		walkingpals-nat	802	
+828	Poipole	803		walkingpals-nat	803	
+829	Naganadel	804		walkingpals-nat	804	
+830	Stakataka	805		walkingpals-nat	805	
+831	Blacephalon	806		walkingpals-nat	806	
+832	Zeraora	807		walkingpals-nat	807	
+833	Meltan	808		walkingpals-nat	808	
+834	Melmetal	809		walkingpals-nat	809	
+835	Grookey	810		walkingpals-nat	810	
+836	Thwackey	811		walkingpals-nat	811	
+837	Rillaboom	812		walkingpals-nat	812	
+838	Scorbunny	813		walkingpals-nat	813	
+839	Raboot	814		walkingpals-nat	814	
+840	Cinderace	815		walkingpals-nat	815	
+841	Sobble	816		walkingpals-nat	816	
+842	Drizzile	817		walkingpals-nat	817	
+843	Inteleon	818		walkingpals-nat	818	
+844	Skwovet	819		walkingpals-nat	819	
+845	Greedent	820		walkingpals-nat	820	
+846	Rookidee	821		walkingpals-nat	821	
+847	Corvisquire	822		walkingpals-nat	822	
+848	Corviknight	823		walkingpals-nat	823	
+849	Blipbug	824		walkingpals-nat	824	
+850	Dottler	825		walkingpals-nat	825	
+851	Orbeetle	826		walkingpals-nat	826	
+852	Nickit	827		walkingpals-nat	827	
+853	Thievul	828		walkingpals-nat	828	
+854	Gossifleur	829		walkingpals-nat	829	
+855	Eldegoss	830		walkingpals-nat	830	
+856	Wooloo	831		walkingpals-nat	831	
+857	Dubwool	832		walkingpals-nat	832	
+858	Chewtle	833		walkingpals-nat	833	
+859	Drednaw	834		walkingpals-nat	834	
+860	Yamper	835		walkingpals-nat	835	
+861	Boltund	836		walkingpals-nat	836	
+862	Rolycoly	837				no sheet: SpriteCollab has no Rolycoly sprite yet
+863	Carkol	838				no sheet: SpriteCollab has no Carkol sprite yet
+864	Coalossal	839				no sheet: SpriteCollab has no Coalossal sprite yet
+865	Applin	840		walkingpals-nat	840	
+866	Flapple	841		walkingpals-nat	841	
+867	Appletun	842		walkingpals-nat	842	
+868	Silicobra	843		walkingpals-nat	843	
+869	Sandaconda	844		walkingpals-nat	844	
+870	Cramorant	845		walkingpals-nat	845	
+871	Arrokuda	846		walkingpals-nat	846	
+872	Barraskewda	847		walkingpals-nat	847	
+873	Toxel	848		walkingpals-nat	848	
+874	Toxtricity	849		walkingpals-nat	849	
+875	Sizzlipede	850		walkingpals-nat	850	
+876	Centiskorch	851		walkingpals-nat	851	
+877	Clobbopus	852		walkingpals-nat	852	
+878	Grapploct	853		walkingpals-nat	853	
+879	Sinistea	854		walkingpals-nat	854	
+880	Polteageist	855		walkingpals-nat	855	
+881	Hatenna	856		walkingpals-nat	856	
+882	Hattrem	857		walkingpals-nat	857	
+883	Hatterene	858		walkingpals-nat	858	
+884	Impidimp	859		walkingpals-nat	859	
+885	Morgrem	860		walkingpals-nat	860	
+886	Grimmsnarl	861		walkingpals-nat	861	
+887	Obstagoon	862		walkingpals-nat	862	
+888	Perrserker	863		walkingpals-nat	863	
+889	Cursola	864		walkingpals-nat	864	
+890	Sirfetch'd	865		walkingpals-nat	865	
+891	Mr. Rime	866				no sheet: SpriteCollab has no Mr. Rime sprite yet
+892	Runerigus	867		walkingpals-nat	867	
+893	Milcery	868		walkingpals-nat	868	
+894	Alcremie	869		walkingpals-nat	869	
+895	Falinks	870				no sheet: SpriteCollab has no Falinks sprite yet
+896	Pincurchin	871		walkingpals-nat	871	
+897	Snom	872		walkingpals-nat	872	
+898	Frosmoth	873		walkingpals-nat	873	
+899	Stonjourner	874		walkingpals-nat	874	
+900	Eiscue	875		walkingpals-nat	875	
+901	Indeedee	876		walkingpals-nat	876	
+902	Morpeko	877		walkingpals-nat	877	
+903	Cufant	878				no sheet: SpriteCollab has no Cufant sprite yet
+904	Copperajah	879		walkingpals-nat	879	
+905	Dracozolt	880		walkingpals-nat	880	
+906	Arctozolt	881		walkingpals-nat	881	
+907	Dracovish	882		walkingpals-nat	882	
+908	Arctovish	883		walkingpals-nat	883	
+909	Duraludon	884		walkingpals-nat	884	
+910	Dreepy	885		walkingpals-nat	885	
+911	Drakloak	886		walkingpals-nat	886	
+912	Dragapult	887		walkingpals-nat	887	
+913	Zacian	888		walkingpals-nat	888	
+914	Zamazenta	889		walkingpals-nat	889	
+915	Eternatus	890		walkingpals-nat	890	
+916	Kubfu	891		walkingpals-nat	891	
+917	Urshifu	892		walkingpals-nat	892	
+918	Zarude	893				no sheet: SpriteCollab has no Zarude sprite yet
+919	Regieleki	894		walkingpals-nat	894	
+920	Regidrago	895		walkingpals-nat	895	
+921	Glastrier	896		walkingpals-nat	896	
+922	Spectrier	897		walkingpals-nat	897	
+923	Calyrex	898		walkingpals-nat	898	
+924	Wyrdeer	899		walkingpals-nat	899	
+925	Kleavor	900		walkingpals-nat	900	
+926	Ursaluna	901		walkingpals-nat	901	
+927	Basculegion	902		walkingpals-nat	902	
+928	Sneasler	903		walkingpals-nat	903	
+929	Overqwil	904		walkingpals-nat	904	
+930	Enamorus	905		walkingpals-nat	905	
+931	Sprigatito	906		walkingpals-nat	906	
+932	Floragato	907		walkingpals-nat	907	
+933	Meowscarada	908		walkingpals-nat	908	
+934	Fuecoco	909		walkingpals-nat	909	
+935	Crocalor	910		walkingpals-nat	910	
+936	Skeledirge	911		walkingpals-nat	911	
+937	Quaxly	912		walkingpals-nat	912	
+938	Quaxwell	913		walkingpals-nat	913	
+939	Quaquaval	914		walkingpals-nat	914	
+940	Lechonk	915		walkingpals-nat	915	
+941	Oinkologne	916		walkingpals-nat	916	
+942	Tarountula	917		walkingpals-nat	917	
+943	Spidops	918		walkingpals-nat	918	
+944	Nymble	919		walkingpals-nat	919	
+945	Lokix	920		walkingpals-nat	920	
+946	Pawmi	921		walkingpals-nat	921	
+947	Pawmo	922		walkingpals-nat	922	
+948	Pawmot	923		walkingpals-nat	923	
+949	Tandemaus	924		walkingpals-nat	924	
+950	Maushold	925		walkingpals-nat	925	
+951	Fidough	926		walkingpals-nat	926	
+952	Dachsbun	927		walkingpals-nat	927	
+953	Smoliv	928		walkingpals-nat	928	
+954	Dolliv	929		walkingpals-nat	929	
+955	Arboliva	930		walkingpals-nat	930	
+956	Squawkabilly	931				no sheet: SpriteCollab has no Squawkabilly sprite yet
+957	Nacli	932		walkingpals-nat	932	
+958	Naclstack	933		walkingpals-nat	933	
+959	Garganacl	934		walkingpals-nat	934	
+960	Charcadet	935		walkingpals-nat	935	
+961	Armarouge	936		walkingpals-nat	936	
+962	Ceruledge	937		walkingpals-nat	937	
+963	Tadbulb	938		walkingpals-nat	938	
+964	Bellibolt	939		walkingpals-nat	939	
+965	Wattrel	940		walkingpals-nat	940	
+966	Kilowattrel	941		walkingpals-nat	941	
+967	Maschiff	942				no sheet: SpriteCollab has no Maschiff sprite yet
+968	Mabosstiff	943				no sheet: SpriteCollab has no Mabosstiff sprite yet
+969	Shroodle	944				no sheet: SpriteCollab has no Shroodle sprite yet
+970	Grafaiai	945		walkingpals-nat	945	
+971	Bramblin	946		walkingpals-nat	946	
+972	Brambleghast	947				no sheet: SpriteCollab has no Brambleghast sprite yet
+973	Toedscool	948		walkingpals-nat	948	
+974	Toedscruel	949				no sheet: SpriteCollab has no Toedscruel sprite yet
+975	Klawf	950				no sheet: SpriteCollab has no Klawf sprite yet
+976	Capsakid	951		walkingpals-nat	951	
+977	Scovillain	952		walkingpals-nat	952	
+978	Rellor	953		walkingpals-nat	953	
+979	Rabsca	954				no sheet: SpriteCollab has no Rabsca sprite yet
+980	Flittle	955		walkingpals-nat	955	
+981	Espathra	956				no sheet: SpriteCollab has no Espathra sprite yet
+982	Tinkatink	957		walkingpals-nat	957	
+983	Tinkatuff	958		walkingpals-nat	958	
+984	Tinkaton	959		walkingpals-nat	959	
+985	Wiglett	960		walkingpals-nat	960	
+986	Wugtrio	961		walkingpals-nat	961	
+987	Bombirdier	962				no sheet: SpriteCollab has no Bombirdier sprite yet
+988	Finizen	963		walkingpals-nat	963	
+989	Palafin	964		walkingpals-nat	964	
+990	Varoom	965		walkingpals-nat	965	
+991	Revavroom	966		walkingpals-nat	966	
+992	Cyclizar	967		walkingpals-nat	967	
+993	Orthworm	968		walkingpals-nat	968	
+994	Glimmet	969		walkingpals-nat	969	
+995	Glimmora	970		walkingpals-nat	970	
+996	Greavard	971		walkingpals-nat	971	
+997	Houndstone	972		walkingpals-nat	972	
+998	Flamigo	973				no sheet: SpriteCollab has no Flamigo sprite yet
+999	Cetoddle	974		walkingpals-nat	974	
+1000	Cetitan	975		walkingpals-nat	975	
+1001	Veluza	976		walkingpals-nat	976	
+1002	Dondozo	977		walkingpals-nat	977	
+1003	Tatsugiri	978		walkingpals-nat	978	
+1004	Annihilape	979		walkingpals-nat	979	
+1005	Clodsire	980		walkingpals-nat	980	
+1006	Farigiraf	981		walkingpals-nat	981	
+1007	Dudunsparce	982		walkingpals-nat	982	
+1008	Kingambit	983		walkingpals-nat	983	
+1009	Great Tusk	984		walkingpals-nat	984	
+1010	Scream Tail	985		walkingpals-nat	985	
+1011	Brute Bonnet	986				no sheet: SpriteCollab has no Brute Bonnet sprite yet
+1012	Flutter Mane	987		walkingpals-nat	987	
+1013	Slither Wing	988		walkingpals-nat	988	
+1014	Sandy Shocks	989		walkingpals-nat	989	
+1015	Iron Treads	990		walkingpals-nat	990	
+1016	Iron Bundle	991		walkingpals-nat	991	
+1017	Iron Hands	992		walkingpals-nat	992	
+1018	Iron Jugulis	993				no sheet: SpriteCollab has no Iron Jugulis sprite yet
+1019	Iron Moth	994		walkingpals-nat	994	
+1020	Iron Thorns	995		walkingpals-nat	995	
+1021	Frigibax	996		walkingpals-nat	996	
+1022	Arctibax	997		walkingpals-nat	997	
+1023	Baxcalibur	998		walkingpals-nat	998	
+1024	Gimmighoul	999				no sheet: SpriteCollab has no Gimmighoul sprite yet
+1025	Gholdengo	1000		walkingpals-nat	1000	
+1026	Wo-Chien	1001				no sheet: SpriteCollab has no Wo-Chien sprite yet
+1027	Chien-Pao	1002				no sheet: SpriteCollab has no Chien-Pao sprite yet
+1028	Ting-Lu	1003		walkingpals-nat	1003	
+1029	Chi-Yu	1004		walkingpals-nat	1004	
+1030	Roaring Moon	1005		walkingpals-nat	1005	
+1031	Iron Valiant	1006		walkingpals-nat	1006	
+1032	Koraidon	1007		walkingpals-nat	1007	
+1033	Miraidon	1008				no sheet: SpriteCollab has no Miraidon sprite yet
+1034	Walking Wake	1009		walkingpals-nat	1009	
+1035	Iron Leaves	1010		walkingpals-nat	1010	
+1036	Dipplin	1011		walkingpals-nat	1011	
+1037	Poltchageist	1012		walkingpals-nat	1012	
+1038	Sinistcha	1013		walkingpals-nat	1013	
+1039	Okidogi	1014				no sheet: SpriteCollab has no Okidogi sprite yet
+1040	Munkidori	1015		walkingpals-nat	1015	
+1041	Fezandipiti	1016		walkingpals-nat	1016	
+1042	Ogerpon	1017		walkingpals-nat	1017	
+1043	Archaludon	1018		walkingpals-nat	1018	
+1044	Hydrapple	1019		walkingpals-nat	1019	
+1045	Gouging Fire	1020		walkingpals-nat	1020	
+1046	Raging Bolt	1021		walkingpals-nat	1021	
+1047	Iron Boulder	1022				no sheet: SpriteCollab has no Iron Boulder sprite yet
+1048	Iron Crown	1023				no sheet: SpriteCollab has no Iron Crown sprite yet
+1049	Terapagos	1024		walkingpals-nat	1024	
+1050	Pecharunt	1025		walkingpals-nat	1025	
+1051	Venusaur-M	3	mega			no sheet: SpriteCollab's Venusaur Mega slot is empty
+1052	Charizard-X	6	mega-x	walkingpals-nat	6-mega-x	
+1053	Charizard-Y	6	mega-y			no sheet: SpriteCollab's Charizard Mega Y slot is empty
+1054	Blastoise-M	9	mega			no sheet: SpriteCollab's Blastoise Mega slot is empty
+1055	Beedrill-M	15	mega			no sheet: SpriteCollab's Beedrill Mega slot is empty
+1056	Pidgeot-M	18	mega			no sheet: SpriteCollab's Pidgeot Mega slot is empty
+1057	Alakazam-M	65	mega	walkingpals-nat	65-mega	
+1058	Slowbro-M	80	mega	walkingpals-nat	80-mega	
+1059	Gengar-M	94	mega	walkingpals-nat	94-mega	
+1060	Kangaskhan-M	115	mega	walkingpals-nat	115-mega	
+1061	Pinsir-M	127	mega			no sheet: SpriteCollab's Pinsir Mega slot is empty
+1062	Gyarados-M	130	mega			no sheet: SpriteCollab's Gyarados Mega slot is empty
+1063	Aerodactyl-M	142	mega	walkingpals-nat	142-mega	
+1064	Mewtwo-X	150	mega-x			no sheet: SpriteCollab's Mewtwo Mega X slot is empty
+1065	Mewtwo-Y	150	mega-y	walkingpals-nat	150-mega-y	
+1066	Ampharos-M	181	mega			no sheet: SpriteCollab's Ampharos Mega slot is empty
+1067	Steelix-M	208	mega	walkingpals-nat	208-mega	
+1068	Scizor-M	212	mega			no sheet: SpriteCollab's Scizor Mega slot is empty
+1069	Heracross-M	214	mega			no sheet: SpriteCollab's Heracross Mega slot is empty
+1070	Houndoom-M	229	mega	walkingpals-nat	229-mega	
+1071	Tyranitar-M	248	mega	walkingpals-nat	248-mega	
+1072	Sceptile-M	254	mega	walkingpals-nat	254-mega	
+1073	Blaziken-M	257	mega			no sheet: SpriteCollab's Blaziken Mega slot is empty
+1074	Swampert-M	260	mega			no sheet: SpriteCollab's Swampert Mega slot is empty
+1075	Gardevoir-M	282	mega	walkingpals-nat	282-mega	
+1076	Sableye-M	302	mega	walkingpals-nat	302-mega	
+1077	Mawile-M	303	mega	walkingpals-nat	303-mega	
+1078	Aggron-M	306	mega			no sheet: SpriteCollab's Aggron Mega slot is empty
+1079	Medicham-M	308	mega	walkingpals-nat	308-mega	
+1080	Manectric-M	310	mega	walkingpals-nat	310-mega	
+1081	Sharpedo-M	319	mega	walkingpals-nat	319-mega	
+1082	Camerupt-M	323	mega	walkingpals-nat	323-mega	
+1083	Altaria-M	334	mega	walkingpals-nat	334-mega	
+1084	Banette-M	354	mega	walkingpals-nat	354-mega	
+1085	Absol-M	359	mega	walkingpals-nat	359-mega	
+1086	Glalie-M	362	mega	walkingpals-nat	362-mega	
+1087	Salamence-M	373	mega			no sheet: SpriteCollab's Salamence Mega slot is empty
+1088	Metagross-M	376	mega			no sheet: SpriteCollab's Metagross Mega slot is empty
+1089	Latias-M	380	mega	walkingpals-nat	380-mega	
+1090	Latios-M	381	mega	walkingpals-nat	381-mega	
+1091	Lopunny-M	428	mega	walkingpals-nat	428-mega	
+1092	Garchomp-M	445	mega			no sheet: SpriteCollab's Garchomp Mega slot is empty
+1093	Lucario-M	448	mega	walkingpals-nat	448-mega	
+1094	Abomasnow-M	460	mega			no sheet: SpriteCollab's Abomasnow Mega slot is empty
+1095	Gallade-M	475	mega	walkingpals-nat	475-mega	
+1096	Audino-M	531	mega			no sheet: SpriteCollab's Audino Mega slot is empty
+1097	Diancie-M	719	mega	walkingpals-nat	719-mega	
+1098	Rayquaza-M	384	mega	walkingpals-nat	384-mega	
+1099	Kyogre-P	382	primal	walkingpals-nat	382-primal	
+1100	Groudon-P	383	primal	walkingpals-nat	383-primal	
+1101	Rattata-A	19	alola	walkingpals-nat	19-alola	
+1102	Raticate-A	20	alola	walkingpals-nat	20-alola	
+1103	Raichu-A	26	alola	walkingpals-nat	26-alola	
+1104	Sandshrew-A	27	alola	walkingpals-nat	27-alola	
+1105	Sandslash-A	28	alola	walkingpals-nat	28-alola	
+1106	Vulpix-A	37	alola	walkingpals-nat	37-alola	
+1107	Ninetales-A	38	alola	walkingpals-nat	38-alola	
+1108	Diglett-A	50	alola	walkingpals-nat	50-alola	
+1109	Dugtrio-A	51	alola	walkingpals-nat	51-alola	
+1110	Meowth-A	52	alola	walkingpals-nat	52-alola	
+1111	Persian-A	53	alola	walkingpals-nat	53-alola	
+1112	Geodude-A	74	alola	walkingpals-nat	74-alola	
+1113	Graveler-A	75	alola	walkingpals-nat	75-alola	
+1114	Golem-A	76	alola	walkingpals-nat	76-alola	
+1115	Grimer-A	88	alola	walkingpals-nat	88-alola	
+1116	Muk-A	89	alola	walkingpals-nat	89-alola	
+1117	Exeggutor-A	103	alola	walkingpals-nat	103-alola	
+1118	Marowak-A	105	alola	walkingpals-nat	105-alola	
+1119	Meowth-G	52	galar	walkingpals-nat	52-galar	
+1120	Ponyta-G	77	galar	walkingpals-nat	77-galar	
+1121	Rapidash-G	78	galar	walkingpals-nat	78-galar	
+1122	Slowpoke-G	79	galar	walkingpals-nat	79-galar	
+1123	Slowbro-G	80	galar	walkingpals-nat	80-galar	
+1124	Farfetch'd-G	83	galar	walkingpals-nat	83-galar	
+1125	Weezing-G	110	galar	walkingpals-nat	110-galar	
+1126	Mr. Mime-G	122	galar	walkingpals-nat	122-galar	
+1127	Articuno-G	144	galar	walkingpals-nat	144-galar	
+1128	Zapdos-G	145	galar	walkingpals-nat	145-galar	
+1129	Moltres-G	146	galar	walkingpals-nat	146-galar	
+1130	Slowking-G	199	galar	walkingpals-nat	199-galar	
+1131	Corsola-G	222	galar	walkingpals-nat	222-galar	
+1132	Zigzagoon-G	263	galar	walkingpals-nat	263-galar	
+1133	Linoone-G	264	galar	walkingpals-nat	264-galar	
+1134	Darumaka-G	554	galar	walkingpals-nat	554-galar	
+1135	Darmanitan-G	555	galar	walkingpals-nat	555-galar	
+1136	Yamask-G	562	galar	walkingpals-nat	562-galar	
+1137	Stunfisk-G	618	galar			no sheet: SpriteCollab's Stunfisk Galar slot is empty
+1138	Growlithe-H	58	hisui	walkingpals-nat	58-hisui	
+1139	Arcanine-H	59	hisui	walkingpals-nat	59-hisui	
+1140	Voltorb-H	100	hisui	walkingpals-nat	100-hisui	
+1141	Electrode-H	101	hisui	walkingpals-nat	101-hisui	
+1142	Typhlosion-H	157	hisui	walkingpals-nat	157-hisui	
+1143	Qwilfish-H	211	hisui	walkingpals-nat	211-hisui	
+1144	Sneasel-H	215	hisui	walkingpals-nat	215-hisui	
+1145	Samurott-H	503	hisui	walkingpals-nat	503-hisui	
+1146	Lilligant-H	549	hisui	walkingpals-nat	549-hisui	
+1147	Zorua-H	570	hisui	walkingpals-nat	570-hisui	
+1148	Zoroark-H	571	hisui	walkingpals-nat	571-hisui	
+1149	Braviary-H	628	hisui	walkingpals-nat	628-hisui	
+1150	Sliggoo-H	705	hisui	walkingpals-nat	705-hisui	
+1151	Goodra-H	706	hisui	walkingpals-nat	706-hisui	
+1152	Avalugg-H	713	hisui	walkingpals-nat	713-hisui	
+1153	Decidueye-H	724	hisui	walkingpals-nat	724-hisui	
+1154	Tauros-P	128	paldea	walkingpals-nat	128-paldea	
+1155	Wooper-P	194	paldea	walkingpals-nat	194-paldea	
+1156	Pikachu-C	25	cosplay	walkingpals-nat	25-cosplay	
+1157	Pikachu-P	25		walkingpals	25	Partner Pikachu looks like Pikachu
+1158	Tauros-PF	128	paldea-blaze	walkingpals-nat	128-paldea-blaze	
+1159	Tauros-PW	128	paldea-aqua	walkingpals-nat	128-paldea-aqua	
+1160	Eevee-P	133		walkingpals	133	Partner Eevee looks like Eevee
+1161	Pichu-S	172	spiky	walkingpals-nat	172-spiky	
+1162	Castform-F	351	sunny	walkingpals-nat	351-sunny	
+1163	Castform-W	351	rainy	walkingpals-nat	351-rainy	
+1164	Castform-I	351	snowy	walkingpals-nat	351-snowy	
+1165	Deoxys-A	386	attack	walkingpals-nat	386-attack	
+1166	Deoxys-D	386	defense	walkingpals-nat	386-defense	
+1167	Deoxys-S	386	speed	walkingpals-nat	386-speed	
+1168	Burmy-S	412	sand	walkingpals-nat	412-sand	
+1169	Burmy-T	412	trash	walkingpals-nat	412-trash	
+1170	Wormadam-S	413	sand	walkingpals-nat	413-sand	
+1171	Wormadam-T	413	trash	walkingpals-nat	413-trash	
+1172	Cherrim-S	421	sunshine	walkingpals-nat	421-sunshine	
+1173	Rotom-Heat	479	heat	walkingpals-nat	479-heat	
+1174	Rotom-Wash	479	wash	walkingpals-nat	479-wash	
+1175	Rotom-Frost	479	frost	walkingpals-nat	479-frost	
+1176	Rotom-Fan	479	fan	walkingpals-nat	479-fan	
+1177	Rotom-Mow	479	mow	walkingpals-nat	479-mow	
+1178	Dialga-O	483	origin	walkingpals-nat	483-origin	
+1179	Palkia-O	484	origin	walkingpals-nat	484-origin	
+1180	Giratina-O	487	origin	walkingpals-nat	487-origin	
+1181	Shaymin-S	492	sky	walkingpals-nat	492-sky	
+1182	Basculin-B	550	blue	walkingpals-nat	550-blue	
+1183	Basculin-W	550	white	walkingpals-nat	550-white	
+1184	Darmanitan-Z	555	zen	walkingpals-nat	555-zen	
+1185	Darmanitan-GZ	555	galar-zen			no sheet: SpriteCollab's Darmanitan Galar Zen slot is empty
+1186	Tornadus-T	641	therian			no sheet: SpriteCollab's Tornadus Therian slot is empty
+1187	Thundurus-T	642	therian			no sheet: SpriteCollab's Thundurus Therian slot is empty
+1188	Landorus-T	645	therian	walkingpals-nat	645-therian	
+1189	Kyurem-W	646	white	walkingpals-nat	646-white	
+1190	Kyurem-B	646	black	walkingpals-nat	646-black	
+1191	Meloetta-P	648	pirouette	walkingpals-nat	648-pirouette	
+1192	Greninja-A	658	ash			no sheet: SpriteCollab's Greninja Ash slot is empty
+1193	Floette-E	670	eternal	walkingpals-nat	670-eternal	
+1194	Meowstic-F	678	female	walkingpals-nat	678-female	
+1195	Aegislash-B	681	blade	walkingpals-nat	681-blade	
+1196	Pumpkaboo-S	710	small	walkingpals-nat	710-small	
+1197	Pumpkaboo-L	710	large	walkingpals-nat	710-large	
+1198	Pumpkaboo-J	710	super	walkingpals-nat	710-super	
+1199	Gourgeist-S	711	small			no sheet: SpriteCollab's Gourgeist Small slot is empty
+1200	Gourgeist-L	711	large			no sheet: SpriteCollab's Gourgeist Large slot is empty
+1201	Gourgeist-J	711	super	walkingpals-nat	711-super	
+1202	Zygarde-10	718	10	walkingpals-nat	718-10	
+1203	Zygarde-C	718	complete	walkingpals-nat	718-complete	
+1204	Hoopa-U	720	unbound	walkingpals-nat	720-unbound	
+1205	Oricorio-E	741	pom-pom	walkingpals-nat	741-pom-pom	
+1206	Oricorio-P	741	pa-u	walkingpals-nat	741-pa-u	
+1207	Oricorio-G	741	sensu			no sheet: SpriteCollab's Oricorio Sensu slot is empty
+1208	Lycanroc-M	745	midnight	walkingpals-nat	745-midnight	
+1209	Lycanroc-D	745	dusk	walkingpals-nat	745-dusk	
+1210	Wishiwashi-S	746	school	walkingpals-nat	746-school	
+1211	Minior-C	774	red	walkingpals-nat	774-red	the Red Core stands in for every core colour
+1212	Necrozma-DM	800	dusk-mane			no sheet: SpriteCollab's Necrozma Dusk Mane slot is empty
+1213	Necrozma-DW	800	dawn-wings			no sheet: SpriteCollab's Necrozma Dawn Wings slot is empty
+1214	Necrozma-U	800	ultra	walkingpals-nat	800-ultra	
+1215	Toxtricity-L	849	lowkey	walkingpals-nat	849-lowkey	
+1216	Eiscue-N	875	noice	walkingpals-nat	875-noice	
+1217	Indeedee-F	876	female	walkingpals-nat	876-female	
+1218	Morpeko-H	877	hangry	walkingpals-nat	877-hangry	
+1219	Zacian-C	888	crowned-sword	walkingpals-nat	888-crowned-sword	
+1220	Zamazenta-C	889	crowned-shield	walkingpals-nat	889-crowned-shield	
+1221	Eternatus-E	890	eternamax	walkingpals-nat	890-eternamax	
+1222	Urshifu-R	892	rapid-strike	walkingpals-nat	892-rapid-strike	
+1223	Calyrex-I	898	ice-rider			no sheet: SpriteCollab's Calyrex Ice Rider slot is empty
+1224	Calyrex-S	898	shadow-rider			no sheet: SpriteCollab's Calyrex Shadow Rider slot is empty
+1225	Ursaluna-B	901	bloodmoon	walkingpals-nat	901-bloodmoon	
+1226	Basculegion-F	902	female	walkingpals-nat	902-female	
+1227	Enamorus-T	905	therian	walkingpals-nat	905-therian	
+1228	Oinkologne-F	916	female			no sheet: SpriteCollab's Oinkologne female slot is empty
+1229	Palafin-H	964	hero	walkingpals-nat	964-hero	
+1230	Gimmighoul-R	999	roaming	walkingpals-nat	999-roaming	
+1231	Ogerpon-W	1017	wellspring	walkingpals-nat	1017-wellspring	
+1232	Ogerpon-F	1017	hearthflame	walkingpals-nat	1017-hearthflame	
+1233	Ogerpon-R	1017	cornerstone	walkingpals-nat	1017-cornerstone	
+1234	Terapagos-T	1024	terastal	walkingpals-nat	1024-terastal	
+1235	Terapagos-S	1024	stellar			no sheet: SpriteCollab's Terapagos Stellar slot is empty
+1236	Greninja-B	658		walkingpals-nat	658	Battle Bond Greninja looks like Greninja until it transforms
+1237	Squawkabilly-W	931	white			no sheet: SpriteCollab's Squawkabilly White slot is empty
+1238	Clefable-M	36	mega			no sheet: SpriteCollab's Clefable Mega slot is empty
+1239	Victreebel-M	71	mega			no sheet: SpriteCollab's Victreebel Mega slot is empty
+1240	Starmie-M	121	mega			no sheet: SpriteCollab's Starmie Mega slot is empty
+1241	Dragonite-M	149	mega			no sheet: SpriteCollab's Dragonite Mega slot is empty
+1242	Meganium-M	154	mega			no sheet: SpriteCollab's Meganium Mega slot is empty
+1243	Feraligatr-M	160	mega			no sheet: SpriteCollab's Feraligatr Mega slot is empty
+1244	Skarmory-M	227	mega	walkingpals-nat	227-mega	
+1245	Froslass-M	478	mega			no sheet: SpriteCollab's Froslass Mega slot is empty
+1246	Emboar-M	500	mega			no sheet: SpriteCollab's Emboar Mega slot is empty
+1247	Excadrill-M	530	mega	walkingpals-nat	530-mega	
+1248	Scolipede-M	545	mega			no sheet: SpriteCollab's Scolipede Mega slot is empty
+1249	Scrafty-M	560	mega	walkingpals-nat	560-mega	
+1250	Eelektross-M	604	mega	walkingpals-nat	604-mega	
+1251	Chandelure-M	609	mega			no sheet: SpriteCollab's Chandelure Mega slot is empty
+1252	Chesnaught-M	652	mega			no sheet: SpriteCollab's Chesnaught Mega slot is empty
+1253	Delphox-M	655	mega			no sheet: SpriteCollab's Delphox Mega slot is empty
+1254	Greninja-M	658	mega			no sheet: SpriteCollab's Greninja Mega slot is empty
+1255	Pyroar-M	668	mega			no sheet: SpriteCollab's Pyroar Mega slot is empty
+1256	Floette-M	670	mega	walkingpals-nat	670-mega	
+1257	Malamar-M	687	mega			no sheet: SpriteCollab's Malamar Mega slot is empty
+1258	Barbaracle-M	689	mega			no sheet: SpriteCollab's Barbaracle Mega slot is empty
+1259	Dragalge-M	691	mega	walkingpals-nat	691-mega	
+1260	Hawlucha-M	701	mega	walkingpals-nat	701-mega	
+1261	Zygarde-M	718	mega	walkingpals-nat	718-mega	
+1262	Drampa-M	780	mega	walkingpals-nat	780-mega	
+1263	Falinks-M	870	mega			no sheet: SpriteCollab's Falinks Mega slot is empty
+1264	Raichu-X	26	mega-x			no sheet: SpriteCollab's Raichu Mega X slot is empty
+1265	Raichu-Y	26	mega-y			no sheet: SpriteCollab's Raichu Mega Y slot is empty
+1266	Chimecho-M	358	mega	walkingpals-nat	358-mega	
+1267	Absol-Z	359	mega-z			no sheet: SpriteCollab's Absol Mega Z slot is empty
+1268	Staraptor-M	398	mega			no sheet: SpriteCollab's Staraptor Mega slot is empty
+1269	Garchomp-Z	445	mega-z			no sheet: SpriteCollab's Garchomp Mega Z slot is empty
+1270	Lucario-Z	448	mega-z			no sheet: SpriteCollab's Lucario Mega Z slot is empty
+1271	Heatran-M	485	mega			no sheet: SpriteCollab's Heatran Mega slot is empty
+1272	Darkrai-M	491	mega	walkingpals-nat	491-mega	
+1273	Golurk-M	623	mega			no sheet: SpriteCollab's Golurk Mega slot is empty
+1274	Meowstic-M	678	mega			no sheet: SpriteCollab's Meowstic Mega slot is empty
+1275	Crabominable-M	740	mega			no sheet: SpriteCollab's Crabominable Mega slot is empty
+1276	Golisopod-M	768	mega			no sheet: SpriteCollab's Golisopod Mega slot is empty
+1277	Magearna-M	801	mega			no sheet: SpriteCollab's Magearna Mega slot is empty
+1278	Zeraora-M	807	mega	walkingpals-nat	807-mega	
+1279	Scovillain-M	952	mega			no sheet: SpriteCollab's Scovillain Mega slot is empty
+1280	Glimmora-M	970	mega			no sheet: SpriteCollab's Glimmora Mega slot is empty
+1281	Tatsugiri-M	978	mega	walkingpals-nat	978-mega	
+1282	Baxcalibur-M	998	mega			no sheet: SpriteCollab's Baxcalibur Mega slot is empty
+1283	Meowstic-F-M	678	mega			no sheet: SpriteCollab's Meowstic Mega slot is empty

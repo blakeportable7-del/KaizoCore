@@ -1,0 +1,69 @@
+package com.ironmonone.app
+
+import com.ironmonone.core.RomKind
+import java.io.File
+import java.nio.file.Files
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
+
+/**
+ * The run's events, loads, restores, retries and resumes (RunEvents): kept
+ * in order, readable after a crash cut a line short, and gone with the run's
+ * other notes on a new run but kept with them in a saved attempt.
+ */
+class RunEventsTest {
+    private val filesDir = Files.createTempDirectory("record").toFile()
+    private val store = PrepStore(filesDir)
+    private val run = GameSession.forRun(File(filesDir, "prep/runs/current.gba"), RomKind.EMERALD_U)
+
+    @Test
+    fun `every event comes back in order with its time, slot and detail`() {
+        val r = store.runEvents(run)!!
+        r.add(RunEvents.Kind.LOAD, "3", "state from 1000", at = 5_000)
+        r.add(RunEvents.Kind.UNDO, "3", at = 6_000)
+        r.add(RunEvents.Kind.RESTORE, "# 2 - Route 101", "made 4000", at = 7_000)
+        r.add(RunEvents.Kind.RETRY, "battle start", at = 8_000)
+        r.add(RunEvents.Kind.RESUME, "auto", "saved 7500, the app crashed", at = 9_000)
+        assertEquals(
+            listOf(
+                RunEvents.Entry(5_000, RunEvents.Kind.LOAD, "3", "state from 1000"),
+                RunEvents.Entry(6_000, RunEvents.Kind.UNDO, "3", ""),
+                RunEvents.Entry(7_000, RunEvents.Kind.RESTORE, "# 2 - Route 101", "made 4000"),
+                RunEvents.Entry(8_000, RunEvents.Kind.RETRY, "battle start", ""),
+                RunEvents.Entry(9_000, RunEvents.Kind.RESUME, "auto", "saved 7500, the app crashed"),
+            ),
+            r.entries(),
+        )
+        assertEquals(null, store.runEvents(GameSession(File("x.gba"), com.ironmonone.core.Platform.GBA, null, "x", "lib-1", false)),
+            "a library game is not a run and keeps no events")
+    }
+
+    @Test
+    fun `a line cut off by a crash is skipped, and the next event is not run into it`() {
+        val r = store.runEvents(run)!!
+        r.add(RunEvents.Kind.LOAD, "1", at = 1_000)
+        r.file.appendText("2000\tlo")   // the kill landed mid-append
+        r.add(RunEvents.Kind.RESUME, "auto", "after a crash", at = 3_000)
+        assertEquals(listOf(1_000L, 3_000L), r.entries().map { it.at })
+        // A tab or a line break inside a label cannot split a record either.
+        r.add(RunEvents.Kind.RESTORE, "a\tb\nc", "d\re", at = 4_000)
+        assertEquals(RunEvents.Entry(4_000, RunEvents.Kind.RESTORE, "a b c", "d e"), r.entries().last())
+    }
+
+    @Test
+    fun `a new run clears the events with the other notes, and a saved attempt keeps them`() {
+        val r = store.runEvents(run)!!
+        r.add(RunEvents.Kind.LOAD, "2", at = 1_000)
+        File(filesDir, "prep/marks.txt").writeText("25:1,0,0,0,0,0")
+        val rom = store.currentRunFor(RomKind.EMERALD_U).apply { parentFile.mkdirs(); writeBytes(ByteArray(8)) }
+        assertTrue(store.saveAttempt(RomKind.EMERALD_U, 4, "00000000000000aa", null))
+        val saved = File(filesDir, "attempts").listFiles()!!.single()
+        assertEquals(r.file.readText(), File(saved, r.file.name).readText(), "the attempt carries its events")
+        store.clearRunNotes()
+        assertFalse(r.file.exists(), "the next run starts with no events")
+        assertTrue(r.entries().isEmpty())
+        assertTrue(rom.exists())
+    }
+}

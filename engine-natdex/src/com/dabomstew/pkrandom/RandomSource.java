@@ -31,16 +31,34 @@ import java.util.Random;
 
 public class RandomSource {
 
-    private static Random source = new Random();
-    private static Random cosmeticSource = new Random();
+    // LOCAL MODIFICATION (KaizoCore): a randomize on an interrupted thread
+    // stops at its next draw. The app makes the next run ahead on a
+    // background thread (NextRunJob) and has to stop it when the player
+    // starts a different run; nothing else can stop the engine midway. The
+    // numbers are java.util.Random's own for the same seed, so a seed still
+    // makes the same ROM.
+    private static final class Stoppable extends Random {
+        private static final long serialVersionUID = 1L;
+
+        @Override
+        protected int next(int bits) {
+            if (Thread.currentThread().isInterrupted()) {
+                throw new java.util.concurrent.CancellationException("randomize stopped");
+            }
+            return super.next(bits);
+        }
+    }
+
+    private static Random source = new Stoppable();
+    private static Random cosmeticSource = new Stoppable();
     private static int calls = 0;
     private static int cosmeticCalls = 0;
     private static Random instance = new RandomSourceInstance();
     private static Random cosmeticInstance = new CosmeticRandomSourceInstance();
 
     public static void reset() {
-        source = new Random();
-        cosmeticSource = new Random();
+        source = new Stoppable();
+        cosmeticSource = new Stoppable();
         calls = 0;
         cosmeticCalls = 0;
     }
