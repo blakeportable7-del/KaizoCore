@@ -65,7 +65,7 @@ internal class LibraryImport(
     }
 
     private fun isXdelta(f: java.io.File): Boolean =
-        runCatching { f.inputStream().use { com.ironmonone.patch.Patcher.detect(it.readNBytes(64)) } == com.ironmonone.core.PatchFormat.XDELTA }
+        runCatching { com.ironmonone.patch.Patcher.detect(com.ironmonone.patch.Patcher.head(f, 64)) == com.ironmonone.core.PatchFormat.XDELTA }
             .getOrDefault(false)
 
     // What this pick has come to so far, for the line that counts it. A file inside a zip counts on its own.

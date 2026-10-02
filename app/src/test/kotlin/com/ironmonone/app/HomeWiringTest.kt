@@ -112,7 +112,8 @@ class HomeWiringTest {
         assertEquals(4, count(main, "onPlay = { nav = nav.play() }"))
         assertEquals(1, count(main, "onContinue = { nav = nav.play() }"))
         // Play sits inside the provider of its empty screen's navigation (PlayNothing, 2026-09-30).
-        assertTrue("Tab.PLAY -> androidx.compose.runtime.CompositionLocalProvider(" in main && "{ PlayScreen(" in main)
+        // A run being made holds Play in its wait first (rc33 audit P0-5, PlayWaitsForNewRunTest).
+        assertTrue("Tab.PLAY -> if (RunJob.installing) PlayRunBeingMade(Modifier.fillMaxSize()) else androidx.compose.runtime.CompositionLocalProvider(" in main && "{ PlayScreen(" in main)
         // The Library's page is AppNav's, so Play any game and Add your games can set it.
         // Library opens on My games, with Patched versions second (2026-09-30, UX audit P0-10); the page that makes a patched game can send the player to My games.
         assertTrue("TabPages(listOf(\"My games\", \"Patched versions\"), nav.libraryPage, { nav = nav.withLibraryPage(it) })" in main)

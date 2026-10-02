@@ -23,6 +23,57 @@ class CloudSyncTest {
         CloudSync.save(dir, null); assertNull(CloudSync.load(dir))
     }
 
+    /**
+     * rc33 audit P0-9: "Use my file from another phone" saved the link before the restore was confirmed, and the
+     * confirm lived only in the screen's memory. If Android ended the app first, the next sync wrote this nearly
+     * empty phone over the old phone's backup. The link now carries the restore as pending, on disk, in one write;
+     * sync writes nothing while it is set, and only a restore that went through clears it.
+     */
+    @Test
+    fun `a file linked to restore from is never written until the restore went through`() {
+        val dir = Files.createTempDirectory("cs").toFile()
+        val pending = CloudSync.Link("content://x/doc", "Google Drive", 0L, "", restorePending = true)
+        assertEquals(pending, CloudSync.parse(CloudSync.format(pending)))
+        CloudSync.save(dir, pending)
+        kotlin.test.assertTrue(CloudSync.load(dir)!!.restorePending, "the mark survives the app being ended")
+        // A link file written before rc33 (four lines) reads as not pending.
+        assertFalse(CloudSync.parse("content://x\nDrive\n0\nfp\n")!!.restorePending)
+        CloudSync.restoreDone(dir)
+        assertFalse(CloudSync.load(dir)!!.restorePending)
+        assertEquals(pending.copy(restorePending = false), CloudSync.load(dir))
+
+        val sync = File("src/main/kotlin/com/ironmonone/app/CloudSync.kt").readText().replace("\r\n", "\n")
+        val body = sync.substring(sync.indexOf("fun sync(context: Context"))
+        val load = body.indexOf("val link = load(context.filesDir) ?: return Result.NotLinked")
+        val refuse = body.indexOf("if (link.restorePending) return Result.RestorePending")
+        val write = body.indexOf("openOutputStream")
+        kotlin.test.assertTrue(load in 0 until refuse && refuse < write, "sync refuses before it opens the file")
+        kotlin.test.assertTrue("fun linkForRestore(context: Context, uri: Uri): Link = link(context, uri, restorePending = true)" in sync)
+
+        val about = File("src/main/kotlin/com/ironmonone/app/AboutScreen.kt").readText().replace("\r\n", "\n")
+        kotlin.test.assertTrue("cloudLink = CloudSync.linkForRestore(context, uri)" in about)
+        kotlin.test.assertTrue("CloudSync.restoreDone(context.filesDir); needsRestart = true" in about)
+        // Cancel and a failed restore read the mark on disk, not only this visit's memory.
+        kotlin.test.assertTrue("fun restoreOnlyLink() = linkedToRestore || CloudSync.load(context.filesDir)?.restorePending == true" in about)
+        assertFalse('\u2014' in CloudSyncCopy.RESTORE_FIRST)
+    }
+
+    /**
+     * rc33 audit P1: sync built the zip straight into the only cloud copy, so a failure part way left it cut short,
+     * Sync now and a background sync could interleave on it, and a failed background sync was never shown.
+     */
+    @Test
+    fun `the cloud copy is replaced only by a whole zip, one sync at a time, and a failure is said`() {
+        val c = File("src/main/kotlin/com/ironmonone/app/CloudSync.kt").readText().replace("\r\n", "\n")
+        val sync = c.substring(c.indexOf("fun sync(context: Context"))
+        val local = sync.indexOf("tmp.outputStream().buffered(1 shl 20).use { Backup.write(context.filesDir, it) }")
+        val remote = sync.indexOf("openOutputStream(uri, \"wt\")")
+        kotlin.test.assertTrue(local in 0 until remote, "the zip is whole before the synced file is truncated")
+        kotlin.test.assertTrue("synchronized(writeLock) {" in sync)
+        kotlin.test.assertTrue("} finally { tmp.delete() }" in sync)
+        kotlin.test.assertTrue("if (r is Result.Failed) SaveTrouble.report(SaveTrouble.CLOUD, r.reason)" in c)
+    }
+
     @Test
     fun `the fingerprint moves only when a backed-up file changes`() {
         val dir = Files.createTempDirectory("fp").toFile()

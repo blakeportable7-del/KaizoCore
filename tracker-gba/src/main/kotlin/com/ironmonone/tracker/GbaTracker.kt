@@ -340,6 +340,14 @@ data class GameMap(
     val introOpponentSendsOut: Long = 0,
     val handleTurnAction: Long = 0,
     val returnToOverworld: Long = 0,
+    /**
+     * gBattleCommunication, one byte per battler: where HandleTurnActionSelectionState is with it. [actionMenuState] is
+     * the byte while the battle waits on the action menu (STATE_WAIT_ACTION_CHOSEN): 2 on Emerald, whose enum starts
+     * with STATE_TURN_START_RECORD, 1 on FireRed, LeafGreen, Ruby and Sapphire (pret's decomps). In the Bag, the party
+     * screen and the move menu it is one more, while gBattleMainFunc stays the same. 0 = unknown.
+     */
+    val battleCommunication: Long = 0,
+    val actionMenuState: Int = 1,
     /** gTrainerBattleOpponent_A: which trainer the last battle was against. */
     val trainerOpponent: Long = 0,
     /**
@@ -443,6 +451,8 @@ data class GameMap(
             introDrawPartySummary = 0x0803AF81,
             introOpponentSendsOut = 0x0803B315,
             handleTurnAction = 0x0803BE75,
+            battleCommunication = 0x02024332,
+            actionMenuState = 2,
             returnToOverworld = 0x0803DF71,
             trainerOpponent = 0x02038BCA,
             gTrainers = 0x08310030, gTrainerClassNames = 0x0830FCD4, gameFlagsOffset = 0x1270,
@@ -519,6 +529,7 @@ data class GameMap(
             introDrawPartySummary = 0x0801333D,
             introOpponentSendsOut = 0x0801359D,
             handleTurnAction = 0x08014041,
+            battleCommunication = 0x02023E82,
             returnToOverworld = 0x08015B59,
             trainerOpponent = 0x020386AE,
             gTrainers = 0x0823EAC8, gTrainerClassNames = 0x0823E558, gameFlagsOffset = 0xEE0,
@@ -596,6 +607,7 @@ data class GameMap(
             introDrawPartySummary = 0x08011601,
             introOpponentSendsOut = 0x080118C5,
             handleTurnAction = 0x08012325,
+            battleCommunication = 0x02024D1E,
             returnToOverworld = 0x08013EB1,
             trainerOpponent = 0x0202FF5E,
             gTrainers = 0x081F04FC, gTrainerClassNames = 0x081F0208, gameFlagsOffset = 0x1220,
@@ -1054,6 +1066,9 @@ data class GameMap(
                 introDrawPartySummary = ptr(0x080002EC),
                 introOpponentSendsOut = ptr(0x080002F0),
                 handleTurnAction = ptr(0x080002F4),
+                // GS.gBattleCommunication (NatDexExtension.lua:17682); Emerald's numbering on an Emerald build.
+                battleCommunication = ewramPtr(ptr(0x0800025C)),
+                actionMenuState = if (em) 2 else 1,
                 returnToOverworld = ptr(0x080002F8),
                 trainerOpponent = ewramPtr(ptr(0x08000294)),
                 // GS.gTrainers / GS.gTrainerClassNames = Memory.read32(0x08000314 / 0x08000310)
@@ -1550,7 +1565,16 @@ data class TrackerState(
     val diagnostics: String = "",
     /** What the Nuzlocke rules engine reads beyond the rest of this state (NuzlockeReads); null on a Game Boy game or when the reads failed. */
     val nuz: NuzlockeReads? = null,
+    /**
+     * In a battle, the index in [party] of the player's Pokemon on the field (gBattlerPartyIndexes[0] on Gen 3,
+     * wPlayerMonNumber on Gen 1, wCurBattleMon on Gen 2); 0 otherwise. Slot 1 is not it after a switch, or when the
+     * lead was fainted at the start (rc33 audit P1). The reference views this one (Battle.getViewedPokemon).
+     */
+    val ownOnField: Int = 0,
 ) : RunView {
+    /** The player's Pokemon on the field in a battle, the lead otherwise: the own card, Calc Atk and the matchups use it. */
+    val onField: TrackedMon? get() = party.getOrNull(ownOnField) ?: party.firstOrNull()
+
     /**
      * Program.ActiveRepel.shouldDisplay (Program.lua:249): a repel is running,
      * the player is on a map, not in a battle and not in the Hall of Fame.
@@ -1575,7 +1599,7 @@ enum class GameOver { LOST, WON }
 class GbaTracker(
     private val memory: MemoryReader,
     internal val map: GameMap = GameMap.EMERALD_U,
-) {
+) : ActionMenuGate {
     companion object {
         /** PokemonData.Values.GhostId. */
         const val GHOST_ID = 413
@@ -1840,6 +1864,7 @@ class GbaTracker(
 
         var unreadable = false
         val party = ArrayList<TrackedMon>(count)
+        val slots = ArrayList<Int>(count)   // the party slot of each entry of [party]
         var bagIds: Set<Int>? = null
         val evoBag = { bagIds ?: readBag().keys.also { bagIds = it } }
         if (count > 0) {
@@ -1884,6 +1909,7 @@ class GbaTracker(
                             TrackerPrefs.determineFriendship,
                         ),
                     )
+                    slots += i
                 }
             }
         }
@@ -1909,9 +1935,11 @@ class GbaTracker(
         // Ruby and Sapphire: ids above the empty Lilycove layout (108) come down one onto the rse table.
         val mapId = stableMapId?.let { if (map.rsMapShift && it > 108) it - 1 else it }
 
-        val heals = readHeals(party.firstOrNull()?.mon?.maxHp ?: 0)
-
         val inBattle = updateBattleStatus()
+        // The player's Pokemon on the field (Battle.lua:276, Combatants.LeftOwn): its heals, its stat stages, and the
+        // card, Calc Atk and the matchups through TrackerState.onField. Slot 1 is not it after a switch (rc33 audit P1).
+        val ownOnField = if (inBattle) readOwnOnField()?.let { s -> slots.indexOf(s).takeIf { it >= 0 } } ?: 0 else 0
+        val heals = readHeals(party.getOrNull(ownOnField)?.mon?.maxHp ?: 0)
         if (inBattle && !lastInBattle) damageWatch.reset()
         lastInBattle = inBattle
         if (inBattle && map.takenDmg != 0L && map.battleResults != 0L && map.battlerAttacker != 0L) {
@@ -1920,7 +1948,7 @@ class GbaTracker(
         // In battle, battler 0's stage block belongs to the player's active
         // mon; the panel shows chevrons on both sides like the reference.
         if (inBattle && party.isNotEmpty()) {
-            party[0] = party[0].copy(statStages = readStatStages(0))
+            party[ownOnField] = party[ownOnField].copy(statStages = readStatStages(0))
         }
         val trainer = !isWildEncounter
         // Battle.updateTrackedInfo reads it fresh on every update while data is ready (Battle.lua:371).
@@ -1942,6 +1970,7 @@ class GbaTracker(
         return TrackerState(
             partyCount = count,
             party = party,
+            ownOnField = ownOnField,
             inBattle = inBattle,
             isWildBattle = inBattle && !trainer,
             // data.x.catchrate: PokemonData.calcCatchRate with its default ball, the Poke Ball.
@@ -3465,7 +3494,7 @@ class GbaTracker(
      * the reference's own definition of "choosing an action", and it is false
      * the instant the battle leaves that state, so nothing can leak.
      */
-    fun isChoosingActionInWild(): Boolean {
+    override fun isChoosingActionInWild(): Boolean {
         if (!inBattleScreen || !isWildEncounter) return false
         if (map.battleMainFunc == 0L || map.handleTurnAction == 0L) return false
         val f = memory.read(map.battleMainFunc, 4)
@@ -3474,7 +3503,12 @@ class GbaTracker(
             val o = memory.read(map.battleOutcome, 1)
             if (o.isNotEmpty() && o.u8(0) != 0) return false
         }
-        return true
+        // The action menu itself (2026-10-01): gBattleMainFunc is the same inside the Bag, the party screen and the
+        // move menu opened from it. B-to-Run fired in the Bag, and its A picked an item again after every B, so the Bag
+        // could not be closed; after a B out of the move menu it ran. The player is battler 0 in a wild battle.
+        if (map.battleCommunication == 0L) return false
+        val c = memory.read(map.battleCommunication, 1)
+        return c.isNotEmpty() && c.u8(0) == map.actionMenuState
     }
 
     /** A species id that this game could actually have. */
@@ -3594,6 +3628,13 @@ class GbaTracker(
             out += EnemyPartyMon(i, mon.species, mon.level, mon.curHp > 0, mon.pid, mon.shiny)
         }
         return out
+    }
+
+    /** Battle.lua:276: the player's battler 0, its party slot; null where gBattlerPartyIndexes is unknown. */
+    private fun readOwnOnField(): Int? {
+        if (map.battlerPartyIndexes == 0L) return null
+        val idx = memory.read(map.battlerPartyIndexes, 2)
+        return if (idx.size == 2) idx.u16(0).takeIf { it in 0..5 } else null
     }
 
     /** Battle.lua:277 and :290: the opposing battlers' party slots, battler 1 and, in doubles, 3. */

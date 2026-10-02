@@ -8,5 +8,10 @@
             android:name=".bot.BotPortStarter"
             android:authorities="${applicationId}.botport"
             android:exported="false" />
+        <!-- The log viewer on its own, for looking at its design (LogViewerPreviewActivity). -->
+        <activity
+            android:name=".LogViewerPreviewActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.Black.NoTitleBar" />
     </application>
 </manifest>

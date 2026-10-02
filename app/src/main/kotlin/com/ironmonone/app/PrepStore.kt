@@ -130,25 +130,19 @@ class PrepStore(private val filesDir: File) {
      * so an imported copy of a KNOWN release wins over the bundled one; a release this app has never seen still needs an app update, because prepared ROMs are identified by CRC.
      */
     fun patchFileOrBundled(context: Context, kind: RomKind): File? {
-        patchFileFor(kind)?.let { return it }
         val name = patchNameFor(kind) ?: return null
         val dest = File(patches, name)
-        return runCatching {
-            context.assets.open("patches/$name").use { input ->
-                dest.outputStream().use { input.copyTo(it) }
-            }
-            dest
-        }.getOrNull()
+        // Used when known whole: copied whole out of the APK (marked), or a BPS whose own checksum holds, checked
+        // once and then marked; an imported copy counts too. A copy cut short is copied again (rc33 audit P1).
+        if (dest.isFile && (BundledCopy.whole(dest) || BundledCopy.bpsIntact(dest))) return dest
+        return BundledCopy.extract(context, "patches/$name", dest)
     }
 
-    /** A ruleset patch shipped in the APK (assets/patches/<name>), materialised on first use. */
+    /** A ruleset patch shipped in the APK (assets/patches/<name>), materialised on first use and whole. */
     fun bundledPatch(context: Context, name: String): File? {
         val dest = File(patches, name)
-        if (dest.exists() && dest.length() > 0) return dest
-        return runCatching {
-            context.assets.open("patches/$name").use { input -> dest.outputStream().use { input.copyTo(it) } }
-            dest
-        }.getOrNull()
+        if (BundledCopy.whole(dest)) return dest
+        return BundledCopy.extract(context, "patches/$name", dest)
     }
 
     /** Returns the stored location, or a plain-English refusal. */
@@ -738,6 +732,9 @@ class PrepStore(private val filesDir: File) {
         // saved, the old seed would vouch for an old state on the new ROM.
         // With no seed on disk no state matches until the new one is written.
         lastSeedFile.delete()
+        // A DS run's save is one per game: another DS game's is parked and this game's comes back (RunSaves.dsSwap,
+        // rc33 audit P1). Before lastrun.txt names the new run, so a save from before rc33 is filed under its own game.
+        RunSaves.dsSwap(filesDir, kind, RomKind.byId(loadLastRun()?.first))
         // The in-game save stays, in every game, and a copy rc32's first builds set aside comes back when there is
         // none (RunSaves, Blake 2026-09-30). Before the ROM moves: the name is the old run's.
         RunSaves.onNewSeed(RunSaves.file(filesDir, kind, currentRunFor(kind)), kind)

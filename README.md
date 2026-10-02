@@ -65,13 +65,13 @@ Red, Blue and Yellow; Gold, Silver and Crystal; Ruby, Sapphire, Emerald, FireRed
 
 To update, install the new APK over the old one. Uninstalling deletes your games, saves, notes and attempt count.
 
-**You need your own game dumps.** KaizoCore contains no ROMs and downloads none, and this repository never will. Android 8 or newer; a DS game wants a phone with at least 3 GB of RAM.
+**You need your own game dumps.** KaizoCore contains no ROMs and downloads none, and this repository never will. A 64-bit phone with Android 8 or newer (a 32-bit phone cannot install it); a DS game wants at least 3 GB of RAM.
 
 Found a bug? In the app go to **More**, **Backup and info**, **Report a bug**, or [open an issue](https://github.com/blakeportable7-del/KaizoCore/issues). Never attach a ROM or a save.
 
 ## Credits
 
-Built on [LibretroDroid](https://github.com/Swordfish90/LibretroDroid) with the mGBA, melonDS and Gambatte cores; [Universal Pokémon Randomizer ZX](https://github.com/Ajarmar/universal-pokemon-randomizer-zx) and the Nat. Dex fork; rcheevos for [RetroAchievements](https://retroachievements.org). The tracker follows the [Ironmon-Tracker](https://github.com/besteon/Ironmon-Tracker) by Besteon and the [NDS-Ironmon-Tracker](https://github.com/Brian0255/NDS-Ironmon-Tracker). Nat. Dex Extension by CyanSMP64, used with permission. The IronMON rulesets are iateyourpie's and the community's; [NOTICE](NOTICE) lists every ruleset, settings file and patch the app bundles, with its author and source. Press Start 2P by CodeMan38, under the SIL Open Font License.
+Built on [LibretroDroid](https://github.com/Swordfish90/LibretroDroid) with the mGBA, melonDS and Gambatte cores; [Universal Pokémon Randomizer ZX](https://github.com/Ajarmar/universal-pokemon-randomizer-zx) and the Nat. Dex fork; rcheevos for [RetroAchievements](https://retroachievements.org). The tracker follows the [Ironmon-Tracker](https://github.com/besteon/Ironmon-Tracker) by Besteon and the [NDS-Ironmon-Tracker](https://github.com/Brian0255/NDS-Ironmon-Tracker). [Nat. Dex Extension](https://github.com/CyanSMP64/NatDexExtension) by CyanSixFour (CyanSMP64), used with permission. [Faster FireRed](https://github.com/DrMaple/Faster-FireRed) and [Faster Emerald](https://github.com/DrMaple/Faster-Emerald) by DrMaple, and [Faster Black 2 / White 2](https://github.com/SilverstarStream/faster_black2_white2) by SilverstarStream. The IronMON rulesets are iateyourpie's and the community's; [NOTICE](NOTICE) lists every ruleset, settings file and patch the app bundles, with its author and source. Press Start 2P by CodeMan38, under the SIL Open Font License.
 
 KaizoCore is free software under the [GPL-3.0](LICENSE). It is not affiliated with Nintendo, Game Freak, The Pokémon Company, IronMON or RetroAchievements. Screenshots show the player's own copy of each game running in the app.
 

@@ -256,6 +256,10 @@ fun PlayScreen(
     /** Guards against overlapping flee sequences while B is held. */
     var fleeing by remember { mutableStateOf(false) }
 
+    /** The live action-menu read (ActionMenuGate) of Gen 3 or the Game Boy tracker; null where the tracker has none. */
+    fun actionMenuUp(): Boolean? =
+        trackerRef?.isChoosingActionInWild() ?: (gbRef as? com.ironmonone.tracker.ActionMenuGate)?.isChoosingActionInWild()
+
     fun flee() {
         // Already running: holding B used to start a fresh sequence on every
         // repeat, so several overlapping RIGHT/DOWN/A bursts queued up and
@@ -280,8 +284,7 @@ fun PlayScreen(
                 // The GBA tracker has a LIVE action-menu gate; where there is
                 // no live gate (DS) the last polled view is the best available.
                 fun stillWild(): Boolean =
-                    trackerRef?.isChoosingActionInWild()
-                        ?: (view?.let { it.inBattle && it.isWildBattle } ?: false)
+                    actionMenuUp() ?: (view?.let { it.inBattle && it.isWildBattle } ?: false)
 
                 suspend fun tap(key: Int): Boolean {
                     if (!stillWild()) return false
@@ -329,7 +332,9 @@ fun PlayScreen(
         raList = runCatching { RetroAchievements.parseAchievements(com.swordfish.libretrodroid.LibretroDroid.cheevosAchievements()) }.getOrDefault(emptyList())
     }
     val cheatsAllowed = CheatStore.allowed(session) && !raHardcore
-    var cheats by remember(session.id) { mutableStateOf(if (cheatsAllowed) store.cheats.load(session.id) else emptyList()) }
+    // The game's cheats are always read; only applying them waits on cheatsAllowed. Read only when allowed, a stale
+    // Nuzlocke flag hid them, and adding one then saved the short list over them (rc33 audit P1).
+    var cheats by remember(session.id) { mutableStateOf(store.cheats.load(session.id)) }
     var cheatsDialog by remember { mutableStateOf(false) }
     // LAYOUT EDITOR. One layout per orientation and console; the pad renders
     // from it (FreePad) and the editor changes it in place, saved on DONE.
@@ -431,6 +436,12 @@ fun PlayScreen(
             }
         }
     }
+    // Again whenever they become allowed or not: hardcore switched on mid-game re-applied them with the allowance of
+    // the moment before, so cheats ran on under hardcore while the button said CHEATS OFF (rc33 audit P1).
+    // Only once the core is up (its first frame): the core-up block below makes the first application itself.
+    LaunchedEffect(cheatsAllowed) { if (retro != null && ui.coreUp === retro) applyCheats() }
+    // A game the core refuses says so, instead of a black screen (CoreLoadErrors, rc33 audit P1).
+    CoreLoadErrors(retro) { status = it }
     var saveSlot by remember { mutableStateOf(1) }
     var slotsVersion by remember { mutableStateOf(0) }
     var statesDialog by remember { mutableStateOf(false) }
@@ -580,10 +591,10 @@ fun PlayScreen(
             session.title, platform.name, store.attempt(), session.tracked,
             if (session.isRun) store.lastSeed() else null, session.isRun, session.kind?.generation?.number ?: 3)
         val gba = trackerState; val nds = ndsState; val ref = trackerRef
-        val json = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
-            com.ironmonone.app.stream.Json.write(
-                com.ironmonone.app.stream.StreamSnapshot.build(run, gba, nds, notes, ref))
-        }
+        // Built here, on the main thread, where StatMarks is written: built off it, it read the move lists while a
+        // battle changed them, a rare crash (rc33 audit P0-10). Only the JSON is written off it.
+        val snap = com.ironmonone.app.stream.StreamSnapshot.build(run, gba, nds, notes, ref)
+        val json = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) { com.ironmonone.app.stream.Json.write(snap) }
         com.ironmonone.app.stream.StreamHub.publish(json, run.attempt)
     }
     // The post-game browser's data: every species as randomized. Once per
@@ -1011,17 +1022,18 @@ fun PlayScreen(
             // Never clobber a good save with an empty buffer from a core that
             // is mid-teardown or not yet running.
             if (bytes.isEmpty()) return
-            val f = sramFile()
-            val tmp = File(f.parentFile, f.name + ".tmp")
-            f.parentFile?.mkdirs()
-            tmp.writeBytes(bytes)
-            if (!tmp.renameTo(f)) { f.delete(); tmp.renameTo(f) }
+            // The slot writer: flushed, an atomic replace that never deletes the save first, the .tmp gone on a
+            // failure, and the failure said (rc33 audit P0-8: a full phone lost every in-game save in silence).
+            StateSlots.writeAtomic(sramFile(), bytes)?.let { SaveTrouble.report(SaveTrouble.BATTERY, it) }
         }
     }
 
     fun newRun() {
         // A randomized Nuzlocke's next game keeps its rules in a ledger of its own (2026-09-30, UX audit P0-8).
         val nuzlocke = if (session.isRun) NuzlockeTracking.current(context.applicationContext.filesDir)?.ledger else null
+        // One at a time: a second confirm while one is being made is refused, not run (rc33 audit P0-4, NewRunGuard).
+        // Claimed right before the launch, whose completion gives it back however the job ends.
+        if (!NewRunGuard.claim()) { status = NewRunGuard.BUSY; return }
         scope.launch {
             status = "Rolling a new seed…"
             // Stop the core BEFORE the randomizer overwrites current.gba/.nds:
@@ -1088,7 +1100,7 @@ fun PlayScreen(
                 // rather than leaving a dead screen.
                 gameActive = true
             }
-        }
+        }.invokeOnCompletion { NewRunGuard.release() }   // done, failed, or cancelled before it started
     }
 
     // Three save slots. One slot meant every checkpoint overwrote the last,
@@ -1424,7 +1436,9 @@ fun PlayScreen(
     // B does nothing special in a trainer battle or in the overworld.
     androidx.compose.runtime.DisposableEffect(wildBattleNow) {
         FleeOnB.onFlee = if (wildBattleNow) ({ flee() }) else null
-        onDispose { FleeOnB.onFlee = null }
+        // Gen 1, 2 and 3 read the battle menu live (ActionMenuGate). DS cannot: B there is only B, and RUN stays.
+        FleeOnB.menuUp = { actionMenuUp() ?: false }
+        onDispose { FleeOnB.onFlee = null; FleeOnB.menuUp = null }
     }
 
     androidx.compose.runtime.DisposableEffect(menuOpen, fullscreen) {
@@ -2671,6 +2685,7 @@ fun PlayScreen(
 
     DisposableEffect(Unit) {
         onDispose {
+            PlayLoading.clear()
             persistSram()
             autoSave()
             // Closed the normal way: nothing to resume at the next launch (CrashResume).
@@ -2817,11 +2832,12 @@ internal fun PadButton(
                     haptics.performHapticFeedback(
                         androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress,
                     )
+                    if (keyCode == KeyEvent.KEYCODE_BUTTON_B) FleeOnB.pressed()
                     corePress(keyCode)
                 },
                 { pressed = false
                   coreRelease(keyCode)
-                  if (keyCode == KeyEvent.KEYCODE_BUTTON_B) currentOnB() },
+                  if (keyCode == KeyEvent.KEYCODE_BUTTON_B) FleeOnB.released(currentOnB) },
             )
             .padding(horizontal = hitX, vertical = hitY),
     ) {

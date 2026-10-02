@@ -40,6 +40,12 @@ private const val GEN2_TRACKER_URL = "https://github.com/seadogstingray/Ironmon-
 /** IronMon Emu, where the FireRed and LeafGreen pictures come from (NOTICE). */
 private const val IRONMON_EMU_URL = "https://github.com/billgreenwald/ironmon_emu"
 
+/** Cloud sync's words for a file linked to restore from (rc33 audit P0-9). */
+internal object CloudSyncCopy {
+    const val RESTORE_FIRST = "Linked to your file from another phone. Press Restore from cloud to bring your saves over. " +
+        "Nothing is written to that file until you do."
+}
+
 /**
  * Credits and disclaimer.
  *
@@ -260,7 +266,9 @@ fun AboutScreen(modifier: Modifier = Modifier, onStats: () -> Unit = {}) {
                                     n < 0 -> "That is not a KaizoCore backup. Nothing was changed."
                                     else -> "Restored $n files. Restart KaizoCore to finish."
                                 }
-                                if (n != null && n >= 0) needsRestart = true
+                                // Restarted at once: the app's copies in memory of what was just restored were written back over
+                                // it before a restart, and the prompt went when the page was left (rc33 audit P1).
+                                if (n != null && n >= 0) { needsRestart = true; restartApp(context) }
                             }
                         }
                         com.ironmonone.app.gen3.Gen3Button("Cancel") { restoreFrom = null }
@@ -324,6 +332,7 @@ fun AboutScreen(modifier: Modifier = Modifier, onStats: () -> Unit = {}) {
         fun describe(r: CloudSync.Result): String = when (r) {
             CloudSync.Result.NotLinked -> "Not linked."
             CloudSync.Result.Unchanged -> "Nothing changed since the last sync."
+            CloudSync.Result.RestorePending -> CloudSyncCopy.RESTORE_FIRST
             is CloudSync.Result.Written -> "Synced ${r.files} files."
             is CloudSync.Result.Failed -> r.reason
         }
@@ -344,7 +353,7 @@ fun AboutScreen(modifier: Modifier = Modifier, onStats: () -> Unit = {}) {
             androidx.activity.result.contract.ActivityResultContracts.OpenDocument()
         ) { uri ->
             if (uri == null) return@rememberLauncherForActivityResult
-            cloudLink = CloudSync.link(context, uri)
+            cloudLink = CloudSync.linkForRestore(context, uri)
             linkedToRestore = true
             confirmCloudRestore = true
         }
@@ -366,7 +375,8 @@ fun AboutScreen(modifier: Modifier = Modifier, onStats: () -> Unit = {}) {
                         }
                     }
                 } else {
-                    Text("Linked to ${l.provider}. Last synced: ${CloudSync.whenLabel(l.lastSync)}. Syncs when you leave a game; your library games never go up.",
+                    Text(if (l.restorePending) CloudSyncCopy.RESTORE_FIRST
+                        else "Linked to ${l.provider}. Last synced: ${CloudSync.whenLabel(l.lastSync)}. Syncs when you leave a game; your library games never go up.",
                         style = MaterialTheme.typography.bodyMedium, color = Shell.inkOnPaper)
                     Spacer(Modifier.height(10.dp))
                     androidx.compose.foundation.layout.FlowRow(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp), verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
@@ -391,9 +401,11 @@ fun AboutScreen(modifier: Modifier = Modifier, onStats: () -> Unit = {}) {
                 cloudStatus?.let { Spacer(Modifier.height(8.dp)); Text(it, style = MaterialTheme.typography.bodySmall, color = if (cloudError) Shell.dangerOnPaper else Shell.goodOnPaper) }
             }
         }
+        // Linked only to restore from, by this visit or one Android ended before the restore (the mark is on disk).
+        fun restoreOnlyLink() = linkedToRestore || CloudSync.load(context.filesDir)?.restorePending == true
         fun cancelCloudRestore() {
             confirmCloudRestore = false
-            if (linkedToRestore) {
+            if (restoreOnlyLink()) {
                 CloudSync.unlink(context); cloudLink = null; linkedToRestore = false
                 cloudStatus = "Not linked. Nothing was changed."; cloudError = false
             }
@@ -415,8 +427,8 @@ fun AboutScreen(modifier: Modifier = Modifier, onStats: () -> Unit = {}) {
                                 cloudBusy = false
                                 cloudError = n == null || n < 0
                                 cloudStatus = when { n == null -> "Could not read the synced file."; n < 0 -> "The synced file is not a KaizoCore backup."; else -> "Restored $n files from the cloud. Restart KaizoCore to finish." }
-                                if (n != null && n >= 0) { needsRestart = true; linkedToRestore = false }
-                                else if (linkedToRestore) { CloudSync.unlink(context); cloudLink = null; linkedToRestore = false }
+                                if (n != null && n >= 0) { CloudSync.restoreDone(context.filesDir); needsRestart = true; linkedToRestore = false; restartApp(context) }
+                                else if (restoreOnlyLink()) { CloudSync.unlink(context); cloudLink = null; linkedToRestore = false }
                             }
                         }
                         com.ironmonone.app.gen3.Gen3Button("Cancel") { cancelCloudRestore() }

@@ -17,8 +17,11 @@ import java.io.File
  * the run's events (RunEvents).
  *
  * A resume that itself kills the app must not do it again on every launch:
- * the marker says "resuming" while the load runs, and a launch that finds
- * that leaves the slot in File > States for the player to try.
+ * the marker says "resuming" while the load runs and for [SETTLE_MS] after
+ * it, and a launch that finds that leaves the slot in File > States for the
+ * player to try. The time after counts too: melonDS took a state it could not
+ * run without a word and died on the next frame, after the marker already
+ * said "playing", so every launch loaded it again and died again (rc33).
  */
 object CrashResume {
 
@@ -26,6 +29,9 @@ object CrashResume {
 
     /** What the status line says when a game left the normal way opens where it was left. */
     const val RETURNED = "Back where you left off. File, Restart starts from the title screen."
+
+    /** How long a core runs with a resumed state before the resume counts as having worked. */
+    const val SETTLE_MS = 3_000L
 
     /** What the marker said: the session that was open, and whether a resume of it was under way. */
     data class Left(val sessionId: String, val resuming: Boolean)
@@ -68,6 +74,19 @@ object CrashResume {
         runCatching { marker.parentFile?.mkdirs(); marker.writeText(text) }
     }
 
+    /**
+     * After a state went in, "resuming" stays until the core has run with it for a moment ([settle]); a death in that
+     * time leaves it, and the next launch does not load the slot again. Left in the meantime (the screen closed and
+     * cleared the marker, another game took it), the marker is left as it is now.
+     */
+    private suspend fun settled(marker: File, sessionId: String, settle: suspend () -> Unit) {
+        try {
+            settle()
+        } finally {
+            if (parse(marker) == Left(sessionId, resuming = true)) playing(marker, sessionId)
+        }
+    }
+
     /** The auto slot holds a state of the run in play: it is there, and stamped with [stamp], a known identity. */
     fun usable(slot: StateSlots.Slot, stamp: String): Boolean =
         slot.exists && PrepStore.stampKnown(stamp) && runCatching { slot.stamp.readText().trim() }.getOrNull() == stamp
@@ -90,6 +109,7 @@ object CrashResume {
     suspend fun atCoreUp(
         marker: File, session: GameSession, slot: StateSlots.Slot, stamp: String, loadsAllowed: Boolean,
         events: RunEvents?, why: () -> String, load: suspend (ByteArray) -> Boolean,
+        settle: suspend () -> Unit = { kotlinx.coroutines.delay(SETTLE_MS) },
     ): String? {
         // A close in this same process queued its auto-save moments ago: read the slot after it.
         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { AutoSave.drain() }
@@ -105,10 +125,10 @@ object CrashResume {
                 resuming(marker, session.id)
                 val bytes = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { StateSlots.readOrNull(slot.file) }
                 val ok = bytes != null && bytes.isNotEmpty() && load(bytes)
-                playing(marker, session.id)
                 // Opened there once: the mark goes, so a later open with no new leaving snapshot (an empty serialize,
                 // an unknown stamp) offers the slot instead of dropping the player into an older moment (R14).
                 if (ok) runCatching { slot.leftMark.delete() }
+                if (ok) settled(marker, session.id, settle) else playing(marker, session.id)
                 return if (ok) RETURNED else "Could not load the auto-save. It is still in File > States."
             }
             playing(marker, session.id)
@@ -121,7 +141,7 @@ object CrashResume {
         resuming(marker, session.id)
         val bytes = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { StateSlots.readOrNull(slot.file) }
         val ok = bytes != null && bytes.isNotEmpty() && load(bytes)
-        playing(marker, session.id)
+        if (ok) settled(marker, session.id, settle) else playing(marker, session.id)
         if (!ok) return "Could not load the auto-save. It is still in File > States."
         events?.add(RunEvents.Kind.RESUME, "auto", "saved ${slot.savedAt}, ${why()}")
         return "Back where you were: the auto-save from ${slot.savedLabel()}."

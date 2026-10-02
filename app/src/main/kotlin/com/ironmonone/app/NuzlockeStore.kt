@@ -209,7 +209,11 @@ object NuzlockeTracking {
 
     /** Writes [text] to [file], or deletes it when [text] is null. With [wait] the answer is the write's own. */
     fun write(file: File, text: String?, wait: Boolean): Boolean {
-        val job = writer.submit<Boolean> { if (text == null) file.delete() else SafeWrite.text(file, text) }
+        // A failed write is said, waited for or not: the ledger's save was ignored on a full phone (rc33 audit P0-8).
+        val job = writer.submit<Boolean> {
+            if (text == null) file.delete()
+            else SafeWrite.text(file, text).also { if (!it) SaveTrouble.report(SaveTrouble.LEDGER, SaveTrouble.LEDGER_FAILED) }
+        }
         return if (wait) runCatching { job.get() }.getOrDefault(false) else true
     }
 

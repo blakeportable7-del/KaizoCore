@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -162,29 +163,29 @@ internal fun LogRoutesTab(routes: List<LogRoute>, query: String, onRoute: (LogRo
     val rows = if (q.isEmpty()) routes else routes.filter { it.name.contains(q, ignoreCase = true) }
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 2.dp)) {
-            PixText("LOCATION", 7, Pc.Gold, Modifier.weight(1f))
-            PixText("WILD", 7, Pc.Gold, Modifier.width(34.dp), TextAlign.Center)
-            PixText("LV.", 7, Pc.Gold, Modifier.width(56.dp), TextAlign.Center)
-            PixText("TRAINERS", 7, Pc.Gold, Modifier.width(52.dp), TextAlign.Center)
-            PixText("LV.", 7, Pc.Gold, Modifier.width(56.dp), TextAlign.Center)
+            DialogText("LOCATION", 12, Pc.Gold, Modifier.weight(1f))
+            DialogText("WILD", 12, Pc.Gold, Modifier.width(44.dp), TextAlign.Center)
+            DialogText("LV.", 12, Pc.Gold, Modifier.width(68.dp), TextAlign.Center)
+            DialogText("TRAINERS", 12, Pc.Gold, Modifier.width(76.dp), TextAlign.Center)
+            DialogText("LV.", 12, Pc.Gold, Modifier.width(68.dp), TextAlign.Center)
         }
         if (rows.isEmpty()) {
-            PixText("(No results)", 8, Pc.Dim)
+            DialogText("(No results)", 13, Pc.Dim)
             return@Column
         }
         LazyColumn(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             items(rows, key = { it.mapId }) { r ->
                 Row(
-                    Modifier.fillMaxWidth().background(Pc.Page).border(1.dp, Pc.Border).clickable { onRoute(r) }.padding(6.dp),
+                    Modifier.fillMaxWidth().background(Pc.Page).border(1.dp, Pc.Border).heightIn(min = PcMin.DIALOG_TOUCH_DP.dp).clickable { onRoute(r) }.padding(horizontal = 8.dp, vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    PixText(r.name, 8, Pc.Text, Modifier.weight(1f))
+                    DialogText(r.name, 13, Pc.Text, Modifier.weight(1f))
                     val wild = r.numWilds > 0
                     val trn = r.numTrainers > 0
-                    PixText(if (wild) "${r.numWilds}" else "", 7, Pc.Text, Modifier.width(34.dp), TextAlign.Center)
-                    PixText(if (wild) "${r.minWildLv} -- ${r.maxWildLv}" else "", 7, Pc.Text, Modifier.width(56.dp), TextAlign.Center)
-                    PixText(if (trn) "${r.numTrainers}" else "", 7, Pc.Text, Modifier.width(52.dp), TextAlign.Center)
-                    PixText(if (trn) "${r.minTrainerLv} -- ${r.maxTrainerLv}" else "", 7, Pc.Text, Modifier.width(56.dp), TextAlign.Center)
+                    DialogText(if (wild) "${r.numWilds}" else "", 12, Pc.Text, Modifier.width(44.dp), TextAlign.Center)
+                    DialogText(if (wild) "${r.minWildLv}-${r.maxWildLv}" else "", 12, Pc.Text, Modifier.width(68.dp), TextAlign.Center)
+                    DialogText(if (trn) "${r.numTrainers}" else "", 12, Pc.Text, Modifier.width(76.dp), TextAlign.Center)
+                    DialogText(if (trn) "${r.minTrainerLv}-${r.maxTrainerLv}" else "", 12, Pc.Text, Modifier.width(68.dp), TextAlign.Center)
                 }
             }
         }
@@ -218,13 +219,13 @@ internal fun LogRouteDetail(
     var tab by remember(route.mapId) { mutableStateOf(first) }
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().background(Pc.Page).border(1.dp, Pc.Border).padding(6.dp), verticalAlignment = Alignment.CenterVertically) {
-            PcTap("< BACK", 7, Pc.Dim, "Back", Modifier.padding(end = 4.dp)) { onBack() }
-            PixText(route.name.uppercase(), 8, Pc.Gold, Modifier.weight(1f))
+            LogBack(onBack)
+            DialogText(route.name.uppercase(), 13, Pc.Gold, Modifier.weight(1f))
         }
         Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            PixText("Encounters:", 7, Pc.Dim)
+            DialogText("Encounters:", 12, Pc.Dim)
             tabs.forEach { t ->
-                PixText("${t.label} ${count(t)}", 7, if (t == tab) Pc.Gold else Pc.Text, Modifier.clickable { tab = t }.padding(vertical = 4.dp))
+                DialogText("${t.label} ${count(t)}", 12, if (t == tab) Pc.Gold else Pc.Text, Modifier.clickable { tab = t }.padding(vertical = 4.dp))
             }
         }
         LazyVerticalGrid(
@@ -244,12 +245,12 @@ internal fun LogRouteDetail(
                         Modifier.background(Pc.Page).border(1.dp, Pc.Border).clickable(enabled = w.pokemon != null) { w.pokemon?.let(onPokemon) }.padding(6.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
-                        PixText(logTitle(w.name), 7, Pc.Text, Modifier.fillMaxWidth(), TextAlign.Center)
+                        DialogText(logTitle(w.name), 12, Pc.Text, Modifier.fillMaxWidth(), TextAlign.Center)
                         val art = w.pokemon?.let { spriteOf?.invoke(it) }
                         if (art != null) Image(art, w.name, Modifier.size(36.dp), filterQuality = FilterQuality.None)
                         else Spacer(Modifier.size(36.dp))
-                        PixText(if (w.levelMin == w.levelMax) "Lv ${w.levelMin}" else "Lv ${w.levelMin} -- ${w.levelMax}", 7, Pc.Text, Modifier.fillMaxWidth(), TextAlign.Center)
-                        PixText("(${floor(w.rate * 100).toInt()}%)", 7, Pc.Dim, Modifier.fillMaxWidth(), TextAlign.Center)
+                        DialogText(if (w.levelMin == w.levelMax) "Lv ${w.levelMin}" else "Lv ${w.levelMin} -- ${w.levelMax}", 12, Pc.Text, Modifier.fillMaxWidth(), TextAlign.Center)
+                        DialogText("(${floor(w.rate * 100).toInt()}%)", 12, Pc.Dim, Modifier.fillMaxWidth(), TextAlign.Center)
                     }
                 }
             }

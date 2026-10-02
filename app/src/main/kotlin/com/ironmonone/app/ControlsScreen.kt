@@ -50,7 +50,7 @@ import java.io.File
 @Composable
 fun ControlsScreen(modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    val bindings = remember { KeyBindings(File(context.filesDir, "prep/keys.txt")) }
+    val bindings = remember { KeyBindings(File(context.filesDir, KeyBindings.FILE)) }
     var version by remember { mutableIntStateOf(0) }
     var listening by remember { mutableStateOf<KeyBindings.Button?>(null) }
     var listeningAction by remember { mutableStateOf<KeyBindings.Action?>(null) }

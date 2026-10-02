@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -26,6 +28,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -119,25 +123,32 @@ fun LogViewer(
         }
     }
     Dialog(onDismissRequest = { back() }, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-        Column(Modifier.fillMaxSize().background(Pc.Ground).padding(6.dp)) {
-            // Header: tabs, then CLOSE at the end.
-            Row(Modifier.fillMaxWidth().horizontalScrollIfNeeded(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(Modifier.fillMaxSize().background(Pc.Ground).padding(horizontal = 8.dp, vertical = 6.dp)) {
+            // The title, and the X in the top right, which takes the log away: the game-over popup is where you land.
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                DialogText("Randomizer log", 16, Pc.Gold, Modifier.weight(1f), heading = true)
+                Box(
+                    Modifier.size(PcMin.DIALOG_TOUCH_DP.dp).background(Pc.Page).border(1.dp, Pc.Border).clickable { onClose() }
+                        .semantics { contentDescription = "Close the log" },
+                    contentAlignment = Alignment.Center,
+                ) { DialogText("X", 15, Pc.Text) }
+            }
+            Spacer(Modifier.height(6.dp))
+            // The tabs share the width, each a full touch target, the open one gold and underlined.
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 LogTab.entries.forEach { t ->
                     val on = t == tab
                     Box(
-                        Modifier.background(if (on) Pc.Page else Pc.Ground).border(1.dp, if (on) Pc.Gold else Pc.Border)
-                            .clickable { tab = t; detail = null; trainerDetail = null; routeDetail = null; query = ""; searchSort = null; searchFilter = null; sortPicked = false }.padding(horizontal = 7.dp, vertical = 6.dp),
-                    ) { PixText(t.label, 7, if (on) Pc.Gold else Pc.Text) }
-                }
-                Spacer(Modifier.weight(1f))
-                // The X in the top right takes the log away and the game-over popup is where you land.
-                Box(Modifier.background(Pc.Page).border(1.dp, Pc.Border).clickable { onClose() }.padding(horizontal = 10.dp, vertical = 6.dp)) {
-                    PixText("X", 9, Pc.Text)
+                        Modifier.weight(1f).heightIn(min = PcMin.DIALOG_TOUCH_DP.dp).background(if (on) Pc.Page else Pc.Ground)
+                            .border(if (on) 2.dp else 1.dp, if (on) Pc.Gold else Pc.Border)
+                            .clickable { tab = t; detail = null; trainerDetail = null; routeDetail = null; query = ""; searchSort = null; searchFilter = null; sortPicked = false },
+                        contentAlignment = Alignment.Center,
+                    ) { DialogText(t.label, 12, if (on) Pc.Gold else Pc.Text, underline = on) }
                 }
             }
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(8.dp))
             if (log == null) {
-                PixText("The log could not be read.", 8, Pc.Negative, wrap = true)
+                DialogText("The log could not be read.", 13, Pc.Negative)
                 return@Column
             }
             val d = detail
@@ -162,22 +173,31 @@ fun LogViewer(
             }
             val curSort = searchSort ?: LogSearch.defaultSort(tab)
             val curFilter = searchFilter ?: LogSearch.defaultFilter(tab)
+            // What the search suggests while it is typed: Pokemon by name (a tap opens one on the Pokemon tab, and
+            // filters by it on the others), or the words the chosen filter searches.
+            val suggestFor = curFilter ?: LogFilter.NAME
+            val suggestions = remember(log, query, suggestFor, logRoutes) {
+                when (suggestFor) {
+                    LogFilter.NAME -> LogSuggest.pokemon(log, query).map { LogSuggestion(it.name, it) }
+                    LogFilter.ABILITY -> LogSuggest.words(log.pokemon.flatMap { it.abilities }, query).map { LogSuggestion(it) }
+                    LogFilter.MOVE -> LogSuggest.words(log.pokemon.flatMap { p -> p.moves.map { it.second } + p.evoMoves }, query).map { LogSuggestion(it) }
+                    LogFilter.ROUTE -> LogSuggest.words(if (logRoutes.isNotEmpty()) logRoutes.map { it.name } else log.routes.map { it.name }, query).map { LogSuggestion(it) }
+                    LogFilter.TRAINER -> LogSuggest.words(log.trainers.map { logTitle(it.originalName) }, query).map { LogSuggestion(it) }
+                }
+            }
+            fun pick(s: LogSuggestion) {
+                val p = s.pokemon
+                if (p != null && tab == LogTab.POKEMON) detail = p else query = s.label
+            }
             if (tab != LogTab.MISC && tab != LogTab.TMS && rules != null && curSort != null && curFilter != null) {
                 LogSearchBar(query, { query = it }, LogSearch.sortsFor(tab), curSort, { searchSort = it; sortPicked = true },
-                    LogSearch.filtersFor(tab), curFilter, { searchFilter = it })
+                    LogSearch.filtersFor(tab), curFilter, { searchFilter = it }, suggestions, logSprite, ::pick)
                 Spacer(Modifier.height(6.dp))
             } else if (tab != LogTab.MISC && tab != LogTab.TMS) {
-                Row(Modifier.fillMaxWidth().background(Pc.Page).border(1.dp, Pc.Border).padding(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                    PixText("FIND", 7, Pc.Dim, Modifier.width(34.dp))
-                    BasicTextField(
-                        value = query, onValueChange = { query = it }, singleLine = true,
-                        textStyle = TextStyle(color = Pc.Text, fontSize = 12.sp),
-                        cursorBrush = SolidColor(Pc.Gold),
-                        modifier = Modifier.weight(1f),
-                    )
-                    if (query.isNotEmpty()) PcTap("X", 7, Pc.Dim, "Clear search") { query = "" }
-                }
-                Spacer(Modifier.height(6.dp))
+                LogSearchField(query, { query = it }, LogSearch.hint(if (tab == LogTab.POKEMON) LogFilter.NAME else null).let {
+                    if (tab == LogTab.POKEMON) it else "Search"
+                }, if (tab == LogTab.POKEMON) suggestions else emptyList(), logSprite, ::pick)
+                Spacer(Modifier.height(8.dp))
             }
             val q = query.trim()
             when (tab) {
@@ -189,10 +209,10 @@ fun LogViewer(
                     LazyColumn(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         items(rows, key = { it.id }) { p ->
                             Row(Modifier.fillMaxWidth().background(Pc.Page).border(1.dp, Pc.Border).clickable { detail = p }.padding(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                                PixText("%03d".format(p.id), 7, Pc.Dim, Modifier.width(30.dp))
-                                PixText(p.name, 8, Pc.Text, Modifier.weight(1f))
-                                PixText(p.types.joinToString("/"), 7, Pc.Dim, Modifier.width(96.dp))
-                                PixText("BST ${p.bst}", 7, Pc.Gold)
+                                DialogText("%03d".format(p.id), 12, Pc.Dim, Modifier.width(30.dp))
+                                DialogText(p.name, 13, Pc.Text, Modifier.weight(1f))
+                                DialogText(p.types.joinToString("/"), 12, Pc.Dim, Modifier.width(96.dp))
+                                DialogText("BST ${p.bst}", 12, Pc.Gold)
                             }
                         }
                     }
@@ -207,16 +227,16 @@ fun LogViewer(
                         items(rows, key = { it.number }) { t ->
                             Column(Modifier.fillMaxWidth().background(Pc.Page).border(1.dp, Pc.Border).padding(6.dp)) {
                                 Row(Modifier.fillMaxWidth()) {
-                                    PixText("#${t.number}", 7, Pc.Dim, Modifier.width(34.dp))
-                                    PixText(t.fullName, 8, Pc.Text, Modifier.weight(1f))
-                                    if (t.name.isNotBlank()) PixText(t.originalName, 7, Pc.Dim)
+                                    DialogText("#${t.number}", 12, Pc.Dim, Modifier.width(34.dp))
+                                    DialogText(t.fullName, 13, Pc.Text, Modifier.weight(1f))
+                                    if (t.name.isNotBlank()) DialogText(t.originalName, 12, Pc.Dim)
                                 }
                                 Spacer(Modifier.height(3.dp))
                                 t.party.forEach { m ->
                                     Row(Modifier.fillMaxWidth()) {
-                                        PixText(m.name, 7, Pc.Text, Modifier.weight(1f))
-                                        m.item?.let { PixText(it, 7, Pc.Gold, Modifier.padding(end = 8.dp)) }
-                                        PixText("Lv${m.level}", 7, Pc.Dim)
+                                        DialogText(m.name, 12, Pc.Text, Modifier.weight(1f))
+                                        m.item?.let { DialogText(it, 12, Pc.Gold, Modifier.padding(end = 8.dp)) }
+                                        DialogText("Lv${m.level}", 12, Pc.Dim)
                                     }
                                 }
                             }
@@ -232,16 +252,16 @@ fun LogViewer(
                         items(rows, key = { it.number }) { r ->
                             Column(Modifier.fillMaxWidth().background(Pc.Page).border(1.dp, Pc.Border).padding(6.dp)) {
                                 Row(Modifier.fillMaxWidth()) {
-                                    PixText(r.name, 8, Pc.Text, Modifier.weight(1f))
-                                    PixText("rate ${r.rate}", 7, Pc.Dim)
+                                    DialogText(r.name, 13, Pc.Text, Modifier.weight(1f))
+                                    DialogText("rate ${r.rate}", 12, Pc.Dim)
                                 }
                                 Spacer(Modifier.height(3.dp))
                                 // The reference collapses the set to one row per species with its level band.
                                 r.encounters.groupBy { it.name }.forEach { (name, es) ->
                                     val lo = es.minOf { it.minLevel }; val hi = es.maxOf { it.maxLevel }
                                     Row(Modifier.fillMaxWidth()) {
-                                        PixText(name, 7, Pc.Text, Modifier.weight(1f))
-                                        PixText(if (lo == hi) "Lv$lo" else "Lv$lo-$hi", 7, Pc.Dim)
+                                        DialogText(name, 12, Pc.Text, Modifier.weight(1f))
+                                        DialogText(if (lo == hi) "Lv$lo" else "Lv$lo-$hi", 12, Pc.Dim)
                                     }
                                 }
                             }
@@ -255,8 +275,8 @@ fun LogViewer(
                     LazyColumn(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         items(log.tms, key = { it.number }) { t ->
                             Row(Modifier.fillMaxWidth().background(Pc.Page).border(1.dp, Pc.Border).padding(6.dp)) {
-                                PixText("TM%02d".format(t.number), 7, Pc.Dim, Modifier.width(44.dp))
-                                PixText(t.move, 8, Pc.Text)
+                                DialogText("TM%02d".format(t.number), 12, Pc.Dim, Modifier.width(44.dp))
+                                DialogText(t.move, 13, Pc.Text)
                             }
                         }
                     }
@@ -274,50 +294,50 @@ enum class LogTab(val label: String) { POKEMON("POKEMON"), TRAINERS("TRAINERS"),
 private fun PokemonDetail(p: RandomizerLog.Pokemon, log: RandomizerLog, onBack: () -> Unit) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         Row(Modifier.fillMaxWidth().background(Pc.Page).border(1.dp, Pc.Border).padding(6.dp), verticalAlignment = Alignment.CenterVertically) {
-            PcTap("< BACK", 7, Pc.Dim, "Back") { onBack() }
-            PixText(p.name, 9, Pc.Gold, Modifier.weight(1f))
-            PixText(p.types.joinToString("/"), 7, Pc.Text)
+            LogBack(onBack)
+            DialogText(p.name, 15, Pc.Gold, Modifier.weight(1f))
+            DialogText(p.types.joinToString("/"), 12, Pc.Text)
         }
         Spacer(Modifier.height(4.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             Column(Modifier.weight(1f).background(Pc.Page).border(1.dp, Pc.Border).padding(6.dp)) {
                 p.statNames.forEachIndexed { i, n ->
                     Row(Modifier.fillMaxWidth()) {
-                        PixText(n, 7, Pc.Dim, Modifier.width(34.dp))
-                        PixText("${p.stats[i]}", 7, Pc.Text)
+                        DialogText(n, 12, Pc.Dim, Modifier.width(34.dp))
+                        DialogText("${p.stats[i]}", 12, Pc.Text)
                     }
                 }
                 Row(Modifier.fillMaxWidth().padding(top = 3.dp)) {
-                    PixText("BST", 7, Pc.Gold, Modifier.width(34.dp))
-                    PixText("${p.bst}", 7, Pc.Gold)
+                    DialogText("BST", 12, Pc.Gold, Modifier.width(34.dp))
+                    DialogText("${p.bst}", 12, Pc.Gold)
                 }
             }
             Column(Modifier.weight(1f).background(Pc.Page).border(1.dp, Pc.Border).padding(6.dp)) {
                 if (p.abilities.isNotEmpty()) {
-                    PixText("Abilities", 7, Pc.Dim)
-                    p.abilities.forEach { PixText(it, 7, Pc.Text, wrap = true) }
+                    DialogText("Abilities", 12, Pc.Dim)
+                    p.abilities.forEach { DialogText(it, 12, Pc.Text) }
                 }
-                if (p.item.isNotBlank()) { PixText("Item", 7, Pc.Dim); PixText(p.item, 7, Pc.Text, wrap = true) }
+                if (p.item.isNotBlank()) { DialogText("Item", 12, Pc.Dim); DialogText(p.item, 12, Pc.Text) }
                 if (p.evolutions.isNotEmpty()) {
-                    PixText("Evolves into", 7, Pc.Dim)
-                    p.evolutions.forEach { PixText(it, 7, Pc.Text, wrap = true) }
+                    DialogText("Evolves into", 12, Pc.Dim)
+                    p.evolutions.forEach { DialogText(it, 12, Pc.Text) }
                 }
             }
         }
         Spacer(Modifier.height(4.dp))
         Column(Modifier.fillMaxWidth().background(Pc.Page).border(1.dp, Pc.Border).padding(6.dp)) {
-            PixText("Level-up moves", 7, Pc.Dim)
+            DialogText("Level-up moves", 12, Pc.Dim)
             p.moves.forEach { (lv, mv) ->
-                Row(Modifier.fillMaxWidth()) { PixText("Lv$lv", 7, Pc.Dim, Modifier.width(40.dp)); PixText(mv, 7, Pc.Text) }
+                Row(Modifier.fillMaxWidth()) { DialogText("Lv$lv", 12, Pc.Dim, Modifier.width(40.dp)); DialogText(mv, 12, Pc.Text) }
             }
             if (p.evoMoves.isNotEmpty()) {
-                Spacer(Modifier.height(3.dp)); PixText("On evolution", 7, Pc.Dim)
-                p.evoMoves.forEach { PixText(it, 7, Pc.Text) }
+                Spacer(Modifier.height(3.dp)); DialogText("On evolution", 12, Pc.Dim)
+                p.evoMoves.forEach { DialogText(it, 12, Pc.Text) }
             }
             if (p.tmsLearnable.isNotEmpty()) {
-                Spacer(Modifier.height(3.dp)); PixText("TMs", 7, Pc.Dim)
+                Spacer(Modifier.height(3.dp)); DialogText("TMs", 12, Pc.Dim)
                 val byNum = log.tms.associateBy { it.number }
-                PixText(p.tmsLearnable.joinToString(", ") { n -> "TM%02d %s".format(n, byNum[n]?.move ?: "") }, 7, Pc.Text, wrap = true)
+                DialogText(p.tmsLearnable.joinToString(", ") { n -> "TM%02d %s".format(n, byNum[n]?.move ?: "") }, 12, Pc.Text)
             }
         }
     }

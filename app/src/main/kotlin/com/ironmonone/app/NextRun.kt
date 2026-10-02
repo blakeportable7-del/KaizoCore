@@ -86,6 +86,13 @@ class NextRun(val dir: File) {
         private val LOCK = Any()
 
         /**
+         * A claimed run this process has not installed yet. While it is, [clear] leaves [taken] alone: it is the
+         * install in progress's (rc33 audit P0-12). Without a claim held, a [taken] folder is what a killed install
+         * left behind, and goes.
+         */
+        @Volatile private var claimHeld = false
+
+        /**
          * The recipe for randomizing [prepared] (a ROM of [kind]) with [settings]
          * and the passes the run takes around it, [secondPass] and [prePass]
          * (null for a pass it does not take: ExtraPasses), by the app build
@@ -207,6 +214,7 @@ class NextRun(val dir: File) {
         taken.mkdirs()
         fun away(f: File): File = File(taken, f.name).also { move(f, it) }
         Staged(staged.recipe, staged.seed, away(staged.rom), staged.log?.let(::away), staged.sidecar?.let(::away))
+            .also { claimHeld = true }
     }
 
     /**
@@ -229,12 +237,17 @@ class NextRun(val dir: File) {
         if (staged.sidecar != null) move(staged.sidecar, sidecar) else sidecar.delete()
         writeLines(recipe, listOf("format=$FORMAT") + staged.recipe.lines() + "seed=%016x".format(staged.seed))
         taken.deleteRecursively()
+        claimHeld = false
     }
 
-    /** Deletes whatever is staged or claimed. */
+    /**
+     * Deletes whatever is staged, and a claimed run only when no install holds it. Turning off "Get the next run
+     * ready" while a NEW RUN was between claim and install used to delete the claimed run, and the install then
+     * failed after the run in play had been filed as ended and rotated away (rc33 audit P0-12).
+     */
     fun clear() = synchronized(LOCK) {
         clearLocked()
-        taken.deleteRecursively()
+        if (!claimHeld) taken.deleteRecursively()
     }
 
     private fun readyLocked(recipe: Recipe): Staged? {

@@ -96,6 +96,7 @@ private:
     rc_client_t* client = nullptr;
     rc_libretro_memory_regions_t regions{};
     bool regionsReady = false;
+    unsigned regionsConsole = 0;   // the console the regions were mapped for
     std::mutex queueLock;
     std::deque<CheevosServerCall> serverCalls;
     std::deque<CheevosEvent> events;

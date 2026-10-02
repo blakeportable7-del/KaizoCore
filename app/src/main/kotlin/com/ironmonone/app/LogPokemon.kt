@@ -35,9 +35,15 @@ import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.foundation.layout.heightIn
 import com.ironmonone.tracker.Gen3Types
 
-/** LogTabPokemon: every Pokemon as its icon with its name above; a tap opens its page. */
+/**
+ * LogTabPokemon: every Pokemon as its icon, a tap opening its page. Each cell carries its name, its types and its BST
+ * in a size a phone can read (2026-10-02, Blake asked for a better look than the reference's 7-pixel labels).
+ */
 @Composable
 internal fun LogPokemonTab(
     rows: List<RandomizerLog.Pokemon>,
@@ -45,22 +51,28 @@ internal fun LogPokemonTab(
     onPokemon: (RandomizerLog.Pokemon) -> Unit,
 ) {
     if (rows.isEmpty()) {
-        PixText("(No results)", 8, Pc.Dim)
+        DialogText("No Pok\u00e9mon match that search.", 14, Pc.Dim)
         return
     }
     LazyVerticalGrid(
-        GridCells.Adaptive(76.dp), Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(4.dp), horizontalArrangement = Arrangement.spacedBy(4.dp),
+        GridCells.Adaptive(108.dp), Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         items(rows, key = { it.id }) { p ->
             Column(
-                Modifier.background(Pc.Page).border(1.dp, Pc.Border).clickable { onPokemon(p) }.padding(4.dp),
+                Modifier.background(Pc.Page).border(1.dp, Pc.Border).clickable { onPokemon(p) }.padding(horizontal = 4.dp, vertical = 6.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                PixText(logTitle(p.name), 7, Pc.Text, Modifier.fillMaxWidth(), TextAlign.Center)
                 val art = spriteOf?.invoke(p)
-                if (art != null) Image(art, p.name, Modifier.size(40.dp), filterQuality = FilterQuality.None)
-                else Spacer(Modifier.size(40.dp))
+                if (art != null) Image(art, p.name, Modifier.size(56.dp), filterQuality = FilterQuality.None)
+                else Spacer(Modifier.size(56.dp))
+                DialogText(logTitle(p.name), 13, Pc.Text, Modifier.fillMaxWidth(), TextAlign.Center)
+                Spacer(Modifier.height(4.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(3.dp), verticalAlignment = Alignment.CenterVertically) {
+                    p.types.forEach { PcTypeChip(it.uppercase(), pcTypeColorByName(it)) }
+                }
+                Spacer(Modifier.height(3.dp))
+                DialogText("BST ${p.bst}", 12, Pc.Gold, align = TextAlign.Center)
             }
         }
     }
@@ -111,35 +123,40 @@ internal fun LogPokemonDetail(
     var view by remember(p.id) { mutableStateOf(StatView.BST) }
     val mine = team[p.name.uppercase()]
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        Row(Modifier.fillMaxWidth().background(Pc.Page).border(1.dp, Pc.Border).padding(6.dp), verticalAlignment = Alignment.CenterVertically) {
-            PcTap("< BACK", 7, Pc.Dim, "Back", Modifier.padding(end = 4.dp)) { onBack() }
-            PixText(p.name.uppercase(), 9, Pc.Gold, Modifier.weight(1f))
-            PixText(p.types.joinToString("/") { logTitle(it) }, 7, Pc.Text)
+        // The header (2026-10-02, readable): Back, the sprite, the name, its types as the tracker draws them.
+        Row(Modifier.fillMaxWidth().background(Pc.Page).border(1.dp, Pc.Border).padding(end = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+            LogBack(onBack)
+            val art = spriteOf?.invoke(p)
+            if (art != null) Image(art, null, Modifier.size(48.dp), filterQuality = FilterQuality.None)
+            Spacer(Modifier.width(8.dp))
+            DialogText(logTitle(p.name), 17, Pc.Gold, Modifier.weight(1f), heading = true)
+            Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) { p.types.forEach { PcTypeChip(it.uppercase(), pcTypeColorByName(it)) } }
         }
-        Spacer(Modifier.height(4.dp))
+        Spacer(Modifier.height(6.dp))
         // ABILITIES, the second dropped when it repeats the first.
-        Column(Modifier.fillMaxWidth().background(Pc.Page).border(1.dp, Pc.Border).padding(6.dp)) {
-            p.abilities.distinct().forEachIndexed { i, a -> PixText("${i + 1}: ${logTitle(a)}", 7, Pc.Text) }
+        Column(Modifier.fillMaxWidth().background(Pc.Page).border(1.dp, Pc.Border).padding(10.dp)) {
+            DialogText("Abilities", 12, Pc.Dim)
+            p.abilities.distinct().forEachIndexed { i, a -> DialogText("${i + 1}: ${logTitle(a)}", 14, Pc.Text) }
         }
         // EVOLUTIONS
         val prevos = if (TrackerOptions.logShowPreEvolutions) LogSearch.preEvolutions(log, p) else emptyList()
         val evos = p.evolutions.mapNotNull { log.pokemonNamed(it) }
         if (prevos.isNotEmpty() || evos.isNotEmpty()) {
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(6.dp))
             Row(
-                Modifier.fillMaxWidth().background(Pc.Page).border(1.dp, Pc.Border).padding(6.dp).horizontalScroll(rememberScrollState()),
-                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
+                Modifier.fillMaxWidth().background(Pc.Page).border(1.dp, Pc.Border).padding(8.dp).horizontalScroll(rememberScrollState()),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 prevos.forEach { pre -> EvoIcon(pre, spriteOf, onPokemon, evoMethodsOf?.let { LogEvoLabels.into(it(pre), pre.evolutions, p.name) }) }
-                if (prevos.isNotEmpty()) PixText(">", 9, Pc.Dim)
+                if (prevos.isNotEmpty()) DialogText(">", 16, Pc.Dim)
                 EvoIcon(p, spriteOf, null)
-                if (evos.isNotEmpty()) PixText(">", 9, Pc.Dim)
+                if (evos.isNotEmpty()) DialogText(">", 16, Pc.Dim)
                 val methods = evoMethodsOf?.invoke(p) ?: emptyList()
                 evos.forEachIndexed { i, evo -> EvoIcon(evo, spriteOf, onPokemon, evoMethodsOf?.let { LogEvoLabels.forward(methods, i) }) }
             }
         }
         // STAT GRAPH
-        Spacer(Modifier.height(4.dp))
+        Spacer(Modifier.height(6.dp))
         val keys = listOf("HP", "ATK", "DEF", "SPA", "SPD", "SPE")
         val values = when {
             view == StatView.IVS && mine != null -> mine.first
@@ -148,56 +165,68 @@ internal fun LogPokemonDetail(
         }
         fun barOf(v: Int) = if (view == StatView.IVS) minOf(v * 8, 255) else v
         fun colorOf(v: Int) = barOf(v).let { b -> if (b >= 180) Pc.Positive else if (b <= 40) Pc.Negative else Pc.Text }
-        Column(Modifier.fillMaxWidth().background(Pc.Page).border(1.dp, Pc.Border).padding(6.dp)) {
+        Column(Modifier.fillMaxWidth().background(Pc.Page).border(1.dp, Pc.Border).padding(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                PixText(when (view) { StatView.IVS -> "Your IVs"; StatView.EVS -> "Your EVs"; else -> "Base Stats" }, 7, Pc.Text, Modifier.weight(1f))
+                DialogText(when (view) { StatView.IVS -> "Your IVs"; StatView.EVS -> "Your EVs"; else -> "Base stats" }, 14, Pc.Text, Modifier.weight(1f))
                 if (mine != null) {
-                    PixText(when (view) { StatView.BST -> "Show IVs"; StatView.IVS -> "Show EVs"; else -> "Show BST" }, 7, Pc.Gold,
-                        Modifier.border(1.dp, Pc.Border).clickable {
-                            view = when (view) { StatView.BST -> StatView.IVS; StatView.IVS -> StatView.EVS; else -> StatView.BST }
-                        }.padding(horizontal = 6.dp, vertical = 3.dp))
-                } else PixText("Total: ${p.bst}", 7, Pc.Text)
+                    Box(Modifier.heightIn(min = PcMin.DIALOG_TOUCH_DP.dp).border(1.dp, Pc.Border).clickable {
+                        view = when (view) { StatView.BST -> StatView.IVS; StatView.IVS -> StatView.EVS; else -> StatView.BST }
+                    }.padding(horizontal = 12.dp), contentAlignment = Alignment.Center) {
+                        DialogText(when (view) { StatView.BST -> "Show IVs"; StatView.IVS -> "Show EVs"; else -> "Show BST" }, 13, Pc.Gold)
+                    }
+                } else DialogText("Total ${p.bst}", 14, Pc.Gold)
             }
             Spacer(Modifier.height(4.dp))
             Row(Modifier.fillMaxWidth().height(80.dp).border(1.dp, Pc.Border).padding(2.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.Bottom) {
                 values.forEach { v -> Box(Modifier.width(12.dp).fillMaxHeight((barOf(v) / 255f).coerceIn(0f, 1f)).background(colorOf(v))) }
             }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+            Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
                 keys.forEachIndexed { i, k ->
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        PixText(k.lowercase().replaceFirstChar { it.uppercase() }, 7, Pc.Text)
-                        PixText("${values.getOrElse(i) { 0 }}", 7, colorOf(values.getOrElse(i) { 0 }))
+                        DialogText(k.lowercase().replaceFirstChar { it.uppercase() }, 12, Pc.Dim)
+                        DialogText("${values.getOrElse(i) { 0 }}", 14, colorOf(values.getOrElse(i) { 0 }))
                     }
                 }
             }
         }
-        // MOVES
-        Spacer(Modifier.height(4.dp))
-        Column(Modifier.fillMaxWidth().background(Pc.Page).border(1.dp, Pc.Border).padding(6.dp)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                PixText("Levelup Moves", 7, if (levelTab) Pc.Gold else Pc.Text, Modifier.clickable { levelTab = true }.padding(vertical = 3.dp))
-                PixText("TM Moves", 7, if (!levelTab) Pc.Gold else Pc.Text, Modifier.clickable { levelTab = false }.padding(vertical = 3.dp))
+        // MOVES: two tabs, a full touch target each, the open one gold and underlined; the moves in rows a phone can read.
+        Spacer(Modifier.height(6.dp))
+        Column(Modifier.fillMaxWidth().background(Pc.Page).border(1.dp, Pc.Border).padding(horizontal = 10.dp, vertical = 4.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+                listOf(true to "Level-up moves", false to "TM moves").forEach { (level, name) ->
+                    val on = levelTab == level
+                    Box(Modifier.heightIn(min = PcMin.DIALOG_TOUCH_DP.dp).clickable { levelTab = level }, contentAlignment = Alignment.Center) {
+                        DialogText(name, 14, if (on) Pc.Gold else Pc.Text, underline = on)
+                    }
+                }
             }
-            Spacer(Modifier.height(3.dp))
+            @Composable
+            fun moveRow(lead: String, move: String, color: androidx.compose.ui.graphics.Color, mod: Modifier = Modifier) {
+                Row(Modifier.fillMaxWidth().padding(vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
+                    DialogText(lead, 13, Pc.Dim, Modifier.width(52.dp))
+                    DialogText(move, 14, color, mod)
+                }
+            }
             if (levelTab) {
-                p.evoMoves.forEach { mv -> PixText("Evo  ${logTitle(mv)}", 7, if (stab(mv)) Pc.Positive else Pc.Text) }
-                p.moves.forEach { (lv, mv) -> PixText("%02d  %s".format(lv, logTitle(mv)), 7, if (stab(mv)) Pc.Positive else Pc.Text) }
+                p.evoMoves.forEach { mv -> moveRow("Evo", logTitle(mv), if (stab(mv)) Pc.Positive else Pc.Text) }
+                p.moves.forEach { (lv, mv) -> moveRow("Lv %d".format(lv), logTitle(mv), if (stab(mv)) Pc.Positive else Pc.Text) }
+                if (p.moves.isEmpty() && p.evoMoves.isEmpty()) DialogText("The log lists no level-up moves for it.", 13, Pc.Dim)
             } else {
                 LogSearch.tmRows(p, log, frlg, TrackerOptions.logShowUnlearnableGymTms).forEach { r ->
                     val label = r.label
                     if (label != null) {
-                        PixText(label, 7, Pc.Gold, Modifier.padding(top = 3.dp))
+                        DialogText(label, 13, Pc.Gold, Modifier.padding(top = 8.dp, bottom = 2.dp))
                     } else {
-                        val text = "TM%02d  %s".format(r.number, logTitle(r.move))
+                        val num = "TM%02d".format(r.number)
                         if (r.unlearnable) {
                             // The reference fades a gym TM it cannot learn and strikes it through in red.
-                            PixText(text, 7, Pc.Text.copy(alpha = 0.62f), Modifier.drawWithContent {
+                            moveRow(num, logTitle(r.move), Pc.Text.copy(alpha = 0.62f), Modifier.drawWithContent {
                                 drawContent()
                                 val y = size.height / 2f
                                 drawLine(Pc.Negative.copy(alpha = 0.75f), Offset(0f, y), Offset(size.width, y), 1.dp.toPx())
                             })
-                        } else PixText(text, 7, if (stab(r.move)) Pc.Positive else Pc.Text)
+                        } else moveRow(num, logTitle(r.move), if (stab(r.move)) Pc.Positive else Pc.Text)
                     }
                 }
             }
@@ -212,8 +241,8 @@ private fun EvoIcon(p: RandomizerLog.Pokemon, spriteOf: ((RandomizerLog.Pokemon)
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         val art = spriteOf?.invoke(p)
-        if (art != null) Image(art, p.name, Modifier.size(32.dp), filterQuality = FilterQuality.None)
-        PixText(logTitle(p.name), 7, if (onPokemon == null) Pc.Gold else Pc.Text)
-        if (!method.isNullOrEmpty()) PixText(method, 7, Pc.Dim)
+        if (art != null) Image(art, p.name, Modifier.size(44.dp), filterQuality = FilterQuality.None)
+        DialogText(logTitle(p.name), 12, if (onPokemon == null) Pc.Gold else Pc.Text)
+        if (!method.isNullOrEmpty()) DialogText(method, 12, Pc.Dim)
     }
 }

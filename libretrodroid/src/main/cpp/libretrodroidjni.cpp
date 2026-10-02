@@ -199,9 +199,12 @@ JNIEXPORT jbyteArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_seri
 ) {
     try {
         auto [data, size] = LibretroDroid::getInstance().serializeState();
+        // KaizoCore fix (rc33): serializeState hands over a new[] buffer. It was never freed, so every save state
+        // and every rewind snapshot leaked its size (15 MB in 90 s on Crystal at 1x, 2026-10-01).
+        std::unique_ptr<int8_t[]> owned(data);
 
         jbyteArray result = env->NewByteArray(size);
-        env->SetByteArrayRegion(result, 0, size, data);
+        if (result != nullptr) env->SetByteArrayRegion(result, 0, size, owned.get());
 
         return result;
 
@@ -312,9 +315,11 @@ JNIEXPORT jbyteArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_seri
 ) {
     try {
         auto [data, size] = LibretroDroid::getInstance().serializeSRAM();
+        // KaizoCore fix (rc33): a copy made with new[], as serializeState's is; freed here once Java has it.
+        std::unique_ptr<int8_t[]> owned(data);
 
         jbyteArray result = env->NewByteArray(size);
-        env->SetByteArrayRegion(result, 0, size, (jbyte *) data);
+        if (result != nullptr) env->SetByteArrayRegion(result, 0, size, (jbyte *) owned.get());
 
         return result;
 

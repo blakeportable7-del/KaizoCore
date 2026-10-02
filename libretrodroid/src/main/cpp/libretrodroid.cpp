@@ -452,6 +452,7 @@ void LibretroDroid::loadGameFromPath(const std::string& gamePath) {
         LOGE("Cannot load game. Leaving.");
         throw std::runtime_error("Cannot load game");
     }
+    coreHasGame = true;   // KaizoCore: destroy() unloads only a game the core took (see there)
 
     afterGameLoad();
     gameLoaded = true;
@@ -480,6 +481,7 @@ void LibretroDroid::loadGameFromBytes(const int8_t *data, size_t size) {
         LOGE("Cannot load game. Leaving.");
         throw std::runtime_error("Cannot load game");
     }
+    coreHasGame = true;   // KaizoCore: destroy() unloads only a game the core took (see there)
 
     afterGameLoad();
     gameLoaded = true;
@@ -523,6 +525,7 @@ void LibretroDroid::loadGameFromVirtualFiles(std::vector<VFSFile> virtualFiles) 
         LOGE("Cannot load game. Leaving.");
         throw std::runtime_error("Cannot load game");
     }
+    coreHasGame = true;   // KaizoCore: destroy() unloads only a game the core took (see there)
 
     afterGameLoad();
 }
@@ -531,6 +534,10 @@ void LibretroDroid::destroy() {
     std::lock_guard<std::mutex> lock(coreLock);
     gameLoaded = false;
     framesRun = 0;
+    // KaizoCore (rc33 audit P1): a core whose game failed to load is torn down too now (GLRetroView.onDestroy used to
+    // skip it), and retro_unload_game is only for a game the core actually took.
+    const bool hadGame = coreHasGame;
+    coreHasGame = false;
 
     // IronMON One patch: destroy must be idempotent. The app tears the view down
     // explicitly (leaving the Play tab, and the sequenced NEW RUN reboot) AND the
@@ -547,7 +554,7 @@ void LibretroDroid::destroy() {
         Environment::getInstance().getHwContextDestroy()();
     }
 
-    core->retro_unload_game();
+    if (hadGame) core->retro_unload_game();
     core->retro_deinit();
     // LOCAL MODIFICATION (KaizoCore): the core is done with the ROM it was given.
     gameData.reset();

@@ -137,18 +137,26 @@ class TrackerTouchTest {
     fun `SETUP is a tracker button in both panels, so it gets the same 44dp box`() {
         for (f in listOf("TrackerPanel.kt", "NdsTrackerPanel.kt")) {
             assertTrue("PcSmallButton(\"SETUP\") { g() }" in read(f), "$f draws SETUP as a tracker button")
+            // In a battle SETUP ends the battle banner instead of taking a row of its own (2026-10-02, "wasted space").
+            assertTrue("onGear = onGear" in read(f), "$f hands SETUP to the battle banner")
         }
-        assertTrue("fun PcSmallButton(label: String, onClick: () -> Unit) = PcButton(label, onClick = onClick)" in read("PcTracker.kt"),
+        val pc = read("PcTracker.kt")
+        assertTrue("fun PcSmallButton(label: String, onClick: () -> Unit) = PcButton(label, onClick = onClick)" in pc,
             "and every tracker button takes the box")
+        val banner = pc.substringAfter("fun PcBattleBanner(").substringBefore("\n}\n")
+        assertTrue("PcButton(\"SETUP\", spoken = \"Tracker Setup\", onClick = it)" in banner, "the banner's SETUP is a tracker button too")
+        assertTrue("buttons = onSwapView != null || isWild || onGear != null" in banner, "and its band is 44dp tall for it")
     }
 
     @Test
     fun `the banner is a band the height of the box, so its buttons never reach the row above or the card below`() {
         val pc = read("PcTracker.kt")
         val band = pc.substringAfter("internal fun PcBannerBand(").substringBefore("\n}\n")
-        assertTrue("heightIn(min = if (buttons) PcMin.TOUCH_DP.dp else 0.dp)" in band, "the band is 44dp tall while it has buttons")
-        // The strip keeps the height it was drawn at: a button (11 reference pixels) or the label (9), and a border either side.
-        assertTrue("(if (buttons) PcRef.FONT + 2 + 2 else PcRef.FONT + 2).rp" in band, "the drawn strip is unchanged")
+        // KaizoCore's look (2026-10-02): the drawn band IS the touch row, a rounded bar at least as tall as a button's
+        // box, where it was a thin strip with blank space above and below it for the boxes.
+        assertTrue("heightIn(min = if (buttons) PcMin.TOUCH_DP.dp else (PcRef.FONT + 8).rp)" in band, "the band is 44dp tall while it has buttons")
+        assertFalse(Regex("padding\\((vertical|top|bottom) =|padding\\(\\d").containsMatchIn(band),
+            "nothing pads the band above or below, so a 44dp box fits inside a 44dp band")
         assertTrue("Box(Modifier.weight(1f)) { label() }" in band, "the label gives way, the buttons never do")
         // DS keeps its solid strip: only the battle banner lets the tracker's image show through.
         assertTrue("fill = Pc.Ground, buttons = true" in read("DsView.kt"))

@@ -2,7 +2,9 @@
 
 KaizoCore's tracker is its own copy of the IronMON trackers: [Ironmon-Tracker](https://github.com/besteon/Ironmon-Tracker)
 by Besteon for Gen 1 to 3, and the [NDS-Ironmon-Tracker](https://github.com/Brian0255/NDS-Ironmon-Tracker) for Gen 4
-and 5. It reads the game's memory while you play, and it keeps their options, their names and their defaults.
+and 5. It reads the game's memory while you play, and it keeps their options, their names and their defaults. Since
+rc33 it has a look of its own: rounded cards, type and status pills, and move names in their type's color with the DS
+tracker's type symbols. Your color theme sets every color.
 
 It reads the US versions of Red, Blue, Yellow, Gold, Silver, Crystal, Ruby, Sapphire, Emerald, FireRed, LeafGreen,
 Diamond, Pearl, Platinum, HeartGold, SoulSilver, White, Black 2 and White 2. Any other game plays without it. It
@@ -10,7 +12,7 @@ works in every mode: a Kaizo IronMON run, a Nuzlocke, a ROM hack or a game from 
 
 ## Where it sits
 
-- **Portrait**: under the game.
+- **Portrait**: under the game, with the moves beside the stats so the whole card fits on the screen.
 - **Landscape**: pick under Landscape tracker in Tracker Setup.
   - **Docked beside the game**: drag its edge to make it wider.
   - **Floating window over the game**: drag and resize it; **DOCK** puts it back.
@@ -24,12 +26,13 @@ works in every mode: a Kaizo IronMON run, a Nuzlocke, a ROM hack or a game from 
 - **Your Pokémon**: one card for your lead, or the one in battle. HP, the level with the level it evolves at beside
   it ("Lv.25 (30)"), stats, ability and item. **Show team view** adds your whole team as a strip (Gen 1 to 3).
 - **The enemy**: its HP as a bar, the abilities and moves you have seen it use, and six stat marking boxes.
-- **Moves**: PP, power and accuracy. Tap the Moves header for every move seen, with the levels it was seen at, and the
+- **Moves**: each name in its type's color, with its type's symbol, then PP, power and accuracy. Tap the Moves header for every move seen, with the levels it was seen at, and the
   moves the species learns.
 - **Stat marks**: tap a box to cycle through blank, +, -- and =. Your marks and notes on a species follow it through
   the run.
 - **Notes**: a note for every species. **OPEN NOTEBOOK** (Gen 1 to 3) shows them all.
 - **Abilities** (Gen 3 to 5): recorded as the game reveals them, up to two per species. Tap one to read it.
+- **Weather** (Game Boy Advance games): rain, sun, a sandstorm or hail, under the battle banner while it lasts.
 - **Badges, heals and friendship**: the badges carousel (Gold, Silver and Crystal show all 16), the heals box
   ("Heals: 62% HP (4)"), and friendship readiness (a FRIEND bar that reads READY on DS).
 - **Tap a move** to read it: PP, power, accuracy, contact and priority on Gen 1 to 3, and the description on DS.

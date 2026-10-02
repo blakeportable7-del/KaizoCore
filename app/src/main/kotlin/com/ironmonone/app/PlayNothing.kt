@@ -32,6 +32,22 @@ internal object PlayNothingCopy {
     fun goneLine(title: String) = "$title was removed or renamed. Pick another game."
     const val FAILED = "The new run did not start"
     const val BACK_TO_KAIZO = "Back to Kaizo IronMON"
+    const val MAKING = "Your new run is being made"
+    const val MAKING_LINE = "It starts here by itself as soon as it is ready."
+}
+
+/**
+ * The Play tab while a new run is being made (RunJob.installing, rc33 audit P0-5): the run screens' own progress
+ * panel and a line saying it starts by itself, instead of the run about to be replaced. MainActivity draws this in
+ * place of PlayScreen, so the new run boots on a fresh Play screen once it is in.
+ */
+@Composable
+internal fun PlayRunBeingMade(modifier: Modifier) {
+    Column(modifier.fillMaxSize().padding(16.dp)) {
+        EmptyState(PlayNothingCopy.MAKING, PlayNothingCopy.MAKING_LINE)
+        Spacer(Modifier.height(12.dp))
+        ProgressPanel(RunJob.phase)
+    }
 }
 
 /**

@@ -115,7 +115,7 @@ internal fun SecondScreenFrame(content: @Composable () -> Unit) {
                 contentAlignment = androidx.compose.ui.Alignment.TopCenter,
             ) {
                 val w = secondScreenColumnWidth(maxWidth, maxHeight)
-                androidx.compose.runtime.CompositionLocalProvider(LocalCanvasMax provides w, LocalBackdropHosted provides true) {
+                androidx.compose.runtime.CompositionLocalProvider(LocalCanvasMax provides w, LocalBackdropHosted provides true, LocalOnSecondScreen provides true) {
                     androidx.compose.foundation.layout.Column(
                         androidx.compose.ui.Modifier.width(w).fillMaxHeight()
                             .verticalScroll(androidx.compose.foundation.rememberScrollState()),

@@ -28,8 +28,10 @@ class CrashResumeTest {
         slot.file.parentFile.mkdirs(); slot.file.writeBytes(bytes); slot.stamp.writeText(stampedFor)
     }
 
-    private fun atCoreUp(loadsAllowed: Boolean = true, load: suspend (ByteArray) -> Boolean): String? = runBlocking {
-        CrashResume.atCoreUp(marker, run, slot, stamp, loadsAllowed, events, why = { "the app crashed" }, load = load)
+    private fun atCoreUp(
+        loadsAllowed: Boolean = true, settle: suspend () -> Unit = {}, load: suspend (ByteArray) -> Boolean,
+    ): String? = runBlocking {
+        CrashResume.atCoreUp(marker, run, slot, stamp, loadsAllowed, events, why = { "the app crashed" }, load = load, settle = settle)
     }
 
     @Test
@@ -153,5 +155,56 @@ class CrashResumeTest {
         slot.leftMark.writeText("1790000000000")
         assertEquals("Could not load the auto-save. It is still in File > States.", atCoreUp { false })
         assertTrue(events.entries().isEmpty())
+    }
+
+    // ------------------------------------------------------------------ a core that dies just after the load (rc33)
+
+    /** melonDS took a state it could not run and died a frame later, when the marker already said "playing". */
+    @Test
+    fun `the marker says resuming until the core has run a moment with the state`() {
+        saved()
+        CrashResume.playing(marker, run.id)
+        var during: CrashResume.Left? = null
+        val said = atCoreUp(settle = { during = CrashResume.parse(marker) }) { true }
+        assertEquals(CrashResume.Left(run.id, resuming = true), during, "a death in the first frames after the load leaves resuming")
+        assertTrue(said!!.startsWith("Back where you were"))
+        assertEquals(CrashResume.Left(run.id, resuming = false), CrashResume.parse(marker))
+    }
+
+    @Test
+    fun `a game left the normal way settles the same way`() {
+        saved()
+        slot.leftMark.writeText("1790000000000")
+        var during: CrashResume.Left? = null
+        assertEquals(CrashResume.RETURNED, atCoreUp(settle = { during = CrashResume.parse(marker) }) { true })
+        assertEquals(CrashResume.Left(run.id, resuming = true), during)
+        assertEquals(CrashResume.Left(run.id, resuming = false), CrashResume.parse(marker))
+    }
+
+    @Test
+    fun `leaving in the settle time never brings a cleared marker back`() {
+        saved()
+        CrashResume.playing(marker, run.id)
+        val left = runCatching {
+            atCoreUp(settle = { CrashResume.closed(marker); throw kotlinx.coroutines.CancellationException("left the game") }) { true }
+        }
+        assertTrue(left.isFailure)
+        assertFalse(marker.exists(), "a game closed the normal way would otherwise resume by itself at the next launch")
+    }
+
+    @Test
+    fun `a view rebuilt in the settle time still counts the resume`() {
+        saved()
+        CrashResume.playing(marker, run.id)
+        runCatching { atCoreUp(settle = { throw kotlinx.coroutines.CancellationException("view rebuilt") }) { true } }
+        assertEquals(CrashResume.Left(run.id, resuming = false), CrashResume.parse(marker))
+    }
+
+    @Test
+    fun `a core refusing the state is not waited on`() {
+        saved()
+        CrashResume.playing(marker, run.id)
+        assertEquals("Could not load the auto-save. It is still in File > States.", atCoreUp(settle = { fail("nothing went in") }) { false })
+        assertEquals(CrashResume.Left(run.id, resuming = false), CrashResume.parse(marker))
     }
 }

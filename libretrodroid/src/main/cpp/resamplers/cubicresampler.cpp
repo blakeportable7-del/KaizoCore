@@ -37,7 +37,9 @@ void CubicResampler::render(const std::function<int32_t(int16_t *, int32_t)> &pu
         const int32_t got = std::max(0, std::min(missing, pull(scratch.data(), missing)));
         pending.reserve(static_cast<size_t>(framesNeeded) * 2);
         for (int32_t i = 0; i < got * 2; i++) pending.push_back(static_cast<float>(scratch[i]));
-        // Underrun: hold the last frame instead of dropping to silence.
+        // Underrun: hold the last frame instead of dropping to silence. With no frame at all, silence: reading the
+        // last frame of an empty buffer read at size - 2, outside it (rc33 audit P1, muted turbo at 4x and up).
+        if (pending.size() < 2) { pending.assign(2, 0.0f); }
         while (static_cast<int32_t>(pending.size() / 2) < framesNeeded) {
             const float l = pending[pending.size() - 2], r = pending[pending.size() - 1];
             pending.push_back(l);
@@ -56,10 +58,11 @@ void CubicResampler::render(const std::function<int32_t(int16_t *, int32_t)> &pu
     }
 
     // Drop the frames the next call no longer needs, keeping one before the
-    // next read position for the cubic's left neighbour.
+    // next read position for the cubic's left neighbour. Never all of them: at 4x and up one call's step can pass
+    // the end, and an emptied buffer is what the underrun hold then read outside (rc33 audit P1).
     position += sinkFrames * step;
     const auto frames = static_cast<int32_t>(pending.size() / 2);
-    const int32_t drop = std::min(static_cast<int32_t>(std::floor(position)) - 1, frames);
+    const int32_t drop = std::min(static_cast<int32_t>(std::floor(position)) - 1, frames - 1);
     if (drop > 0) {
         pending.erase(pending.begin(), pending.begin() + static_cast<size_t>(drop) * 2);
         position -= drop;

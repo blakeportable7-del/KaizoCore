@@ -573,8 +573,8 @@ class StatMarks(private val file: File) {
         return changed
     }
 
-    /** Every move this species has shown this run, most recent first. */
-    fun movesSeenFor(species: Int): List<SeenMove> = movesSeen[species] ?: emptyList()
+    /** Every move this species has shown this run, most recent first: a copy, never the list being added to (P0-10). */
+    fun movesSeenFor(species: Int): List<SeenMove> = movesSeen[species]?.toList() ?: emptyList()
 
     /** Records a sighting. Returns true when it is new for this map. */
     fun seeOnRoute(mapId: Int, species: Int): Boolean {

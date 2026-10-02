@@ -23,27 +23,47 @@ object StateSlots {
     const val COUNT = 8
     const val AUTO = 0
 
+    private val writeLocks = java.util.concurrent.ConcurrentHashMap<String, Any>()
+
     /**
      * Write a state through a .tmp and a rename. Returns null on success, or
      * the sentence to show. The write used to run bare in a background task,
      * so a full phone threw there and closed the app (audit, 2026-09-27); the
      * previous save is left as it was and the .tmp is removed.
+     *
+     * One writer per file at a time, and the slot is never deleted to make way
+     * for the new one (rc33 audit P0-2): two quick saves to one slot shared
+     * the .tmp, the second rename failed, its fallback deleted the slot the
+     * first had just written, and it still said "Saved to slot N."
      */
-    fun writeAtomic(f: File, bytes: ByteArray): String? {
+    fun writeAtomic(f: File, bytes: ByteArray): String? = synchronized(writeLocks.getOrPut(f.absolutePath) { Any() }) {
         val tmp = File(f.parentFile, f.name + ".tmp")
-        return try {
+        try {
             f.parentFile?.mkdirs()
             // Flushed to the disk before the rename, not only handed to the
             // page cache: after a dead battery the slot holds the old state
             // or the new one, never a torn one.
             java.io.FileOutputStream(tmp).use { out -> out.write(bytes); out.fd.sync() }
-            if (!tmp.renameTo(f)) { f.delete(); tmp.renameTo(f) }
+            replace(tmp, f)
             null
         } catch (e: java.io.IOException) {
             tmp.delete()
             if ((e.message ?: "").contains("ENOSPC") || (e.message ?: "").contains("No space"))
                 "Could not save: this phone is out of space. Your last save is still there."
             else "Could not save: ${e.message ?: "the file could not be written"}. Your last save is still there."
+        }
+    }
+
+    /**
+     * [tmp] over [target] in one step, replacing it. Never deletes [target] first, so a failure leaves the old
+     * file and throws (an IOException the caller reports) instead of looking like a success.
+     */
+    fun replace(tmp: File, target: File) {
+        val opts = arrayOf(java.nio.file.StandardCopyOption.REPLACE_EXISTING, java.nio.file.StandardCopyOption.ATOMIC_MOVE)
+        try {
+            java.nio.file.Files.move(tmp.toPath(), target.toPath(), *opts)
+        } catch (e: java.nio.file.AtomicMoveNotSupportedException) {
+            java.nio.file.Files.move(tmp.toPath(), target.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING)
         }
     }
 
@@ -59,6 +79,8 @@ object StateSlots {
         val locked: Boolean get() = lockFile.exists()
         val backup: File get() = File(file.parentFile, file.nameWithoutExtension + ".bak")
         val backupThumb: File get() = File(file.parentFile, file.nameWithoutExtension + ".bak.png")
+        /** The backup's run stamp: UNDO puts it back with the state it belongs to. */
+        val backupStamp: File get() = File(stamp.parentFile, stamp.nameWithoutExtension + ".bak.id")
         val hasBackup: Boolean get() = backup.exists() && backup.length() > 0
         /**
          * Beside the auto slot only: there while the state in it is the moment the game was left or paused
@@ -71,11 +93,12 @@ object StateSlots {
 
         fun setLocked(on: Boolean) { if (on) lockFile.writeText("1") else lockFile.delete() }
 
-        /** Keep the current state as the backup before it is overwritten. */
+        /** Keep the current state as the backup before it is overwritten, with its thumbnail and its run stamp. */
         fun keepBackup() {
             if (!exists) return
             runCatching { file.copyTo(backup, overwrite = true) }
             runCatching { if (thumb.exists()) thumb.copyTo(backupThumb, overwrite = true) else backupThumb.delete() }
+            runCatching { if (stamp.exists()) stamp.copyTo(backupStamp, overwrite = true) else backupStamp.delete() }
         }
 
         /** Swap the backup back in; the state it replaces becomes the backup. */
@@ -90,6 +113,13 @@ object StateSlots {
                 if (thumb.exists()) thumb.copyTo(t, overwrite = true)
                 if (backupThumb.exists()) backupThumb.copyTo(thumb, overwrite = true) else thumb.delete()
                 if (t.exists()) { t.copyTo(backupThumb, overwrite = true); t.delete() } else backupThumb.delete()
+                // The run stamp goes with its state (rc33 audit P1): UNDO kept the overwriting save's stamp, so an
+                // older seed's state then passed the run check and loaded into this run. A backup made before rc33
+                // has no stamp of its own, and an unstamped state is refused, never loaded into the wrong run.
+                val st = File(stamp.parentFile, stamp.name + ".swap")
+                if (stamp.exists()) stamp.copyTo(st, overwrite = true)
+                if (backupStamp.exists()) backupStamp.copyTo(stamp, overwrite = true) else stamp.delete()
+                if (st.exists()) { st.copyTo(backupStamp, overwrite = true); st.delete() } else backupStamp.delete()
                 true
             }.getOrDefault(false)
         }

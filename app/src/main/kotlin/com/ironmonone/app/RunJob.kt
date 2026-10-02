@@ -43,6 +43,18 @@ object RunJob {
         private set
 
     /**
+     * A new run is being made and installed: the randomize's own phases, never an import, a patch or an export.
+     * Play does not start while this is true (MainActivity). A game booted then was the run about to be replaced:
+     * its battery save and auto-save landed on the new run's files under the new run's stamp, and on a DS game the
+     * install overwrote the ROM the core held open (rc33 audit P0-5). Play shows the progress and starts the new run
+     * when it is in.
+     */
+    val installing: Boolean get() = isInstalling(busy, phase)
+
+    fun isInstalling(busy: Boolean, phase: RunPhase): Boolean =
+        busy && (phase == RunPhase.ROTATING || phase == RunPhase.RANDOMIZING || phase == RunPhase.FINISHING)
+
+    /**
      * Called on the main thread when a new run is ready. RUN sets it while it
      * is on screen and clears it when it leaves, so a run that finishes after
      * the player went elsewhere does not pull them to Play.

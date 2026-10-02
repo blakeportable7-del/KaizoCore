@@ -129,6 +129,9 @@ class KeyBindings(private val file: File) {
             }
         }
 
+        /** The bindings' file under filesDir: Controls writes it, and the app reads it as it starts. */
+        const val FILE = "prep/keys.txt"
+
         /** Process-wide snapshot so dispatchKeyEvent needs no Context. */
         @Volatile
         var active: Map<Int, Int> = DEFAULTS.entries

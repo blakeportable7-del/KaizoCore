@@ -97,7 +97,7 @@ private fun PartyCard(
     val dash = "---"
     // DataHelper.lua:140-151: hidden, the reference draws a stand-in whose stages are all neutral.
     val stages = if (hidden) emptyMap<String, Int>() else p.statStages
-    PcCard {
+    PcMonCard(head = {
         PcHeadBlock(
             // "Show nicknames": the nickname in place of the species when it has one
             // that differs from the species name (DataHelper.lua:159).
@@ -148,6 +148,7 @@ private fun PartyCard(
             if (StageChevrons.accEvaReplacesBst(inBattle, acc, eva)) PcAccEvaRow(acc, eva)
             else PcStatRow("BST", p.base?.bst?.toString() ?: "?", rightJustify = TrackerOptions.rightJustifiedNumbers)
         }
+    }) {
         // "Moves 3/11 (17)" - learned so far / total this species learns, and
         // the level the next one arrives at, exactly as the PC tracker shows it.
         PcMovesSection(
@@ -202,7 +203,7 @@ private fun EnemyCard(
     /** How this game numbers species, for the Walking Pals icon (WalkingPals.trackerDex). */
     iconDex: WalkingPals.Dex = WalkingPals.Dex.GEN3,
 ) {
-    PcCard {
+    PcMonCard(head = {
         PcHeadBlock(
             name = e.speciesName,
             status = EnemyView.status(e, hidden),
@@ -292,6 +293,7 @@ private fun EnemyCard(
             // Live stage chevrons for the enemy, when any stat has moved.
             EnemyView.stageRows(e, hidden).forEach { (n, st) -> PcStatRow(n, "", st) }
         }
+    }) {
         // The enemy gets the SAME moves table as the player, which is what
         // the reference does - it fills the ordinary moves area from tracked
         // moves rather than printing a sentence. The asterisk is the
@@ -565,7 +567,8 @@ fun TrackerPanel(
     val starter = state?.starterOffered?.takeIf { TrackerOptions.showStarterBallInfo }
     var starterClosed by remember { mutableStateOf<Int?>(null) }
     if (starter == null) starterClosed = null
-    if (starter != null && starter != starterClosed) {
+    // Not on the second screen: its window cannot host a dialog (LocalOnSecondScreen, rc33 audit P0-7).
+    if (starter != null && starter != starterClosed && !LocalOnSecondScreen.current) {
         val base = state?.starterBase
         PcPokemonInfo(
             name = onSpeciesName?.invoke(starter) ?: "#$starter",
@@ -591,8 +594,14 @@ fun TrackerPanel(
       // The Main background colour, and the player's image over it (TrackerBackdrop.kt).
       Column(Modifier.fillMaxWidth().then(trackerBackdrop()).padding(PcRef.MARGIN.rp)) {
           // The reference's gear sits at the top of the tracker screen; SETUP is its NavigationMenu.ButtonSetup.
-          onGear?.let { g ->
-              Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
+          // In a battle it ends the battle banner; otherwise it shares a slim bar with the route the player is on.
+          // It had a row to itself, empty but for it (2026-10-02, Blake: "Lots of wasted space").
+          // The same tests, in the same order, as the when below that draws the banner.
+          val bannerShows = state != null && unsupportedNote == null && !state.unreadable && state.partyCount != 0 &&
+              !(ironmonOver && state.gameOver != null) && state.inBattle
+          onGear?.takeIf { !bannerShows }?.let { g ->
+              Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                  PixText(routeName.orEmpty(), PcRef.FONT, Pc.Dim, Modifier.weight(1f), weight = androidx.compose.ui.text.font.FontWeight.Medium)
                   // Program.ActiveRepel:shouldDisplay - only while one is running, never in
                   // battle, off the map or in the Hall of Fame, and the reference puts it in the top right.
                   if (TrackerOptions.showRepel && state != null && state.repelVisible) {
@@ -601,7 +610,7 @@ fun TrackerPanel(
                   }
                   PcSmallButton("SETUP") { g() }
               }
-              Spacer(Modifier.height(3.dp))
+              Spacer(Modifier.height(2.rp))
           }
           // TeamViewArea: the reference draws it under the game; here it heads the panel.
           if (TrackerOptions.showTeamView && state != null && !state.unreadable && state.party.isNotEmpty()) {
@@ -726,8 +735,10 @@ fun TrackerPanel(
                         onSwapView = if (state.enemy != null && !stackBoth)
                             { { viewingOwn = !viewingOwn } } else null,
                         onTrainerTap = onTrainerInfo,
+                        onGear = onGear,
+                        weather = state.weather,
                     )
-                    Spacer(Modifier.height(1.rp))
+                    Spacer(Modifier.height(2.rp))
                 }
                 val enemy = state.enemy?.takeIf { state.inBattle && (stackBoth || !viewingOwn) }
 
@@ -739,9 +750,9 @@ fun TrackerPanel(
                 // The enemy card is emitted AFTER your lead. In swap mode
                 // exactly one of the two is ever visible, so that order is
                 // invisible there - it only sets the stacking order here.
-                // Your lead, i.e. the active battler: the tracker keeps slot 0
-                // as the viewed own Pokemon and puts its stat stages there.
-                state.party.take(if (enemy != null && !stackBoth) 0 else 1).forEach { p ->
+                // Your Pokemon on the field in a battle, your lead otherwise (TrackerState.onField): slot 1 is
+                // not it after a switch (rc33 audit P1). The tracker puts its stat stages on it.
+                listOfNotNull(state.onField).take(if (enemy != null && !stackBoth) 0 else 1).forEach { p ->
                     PartyCard(onMoveHistory = onMoveHistory, onTypeDefenses = onTypeDefenses, p, spriteFor,
                         healPercent = state.healPercent,
                         healCount = state.healCount,
@@ -779,7 +790,7 @@ fun TrackerPanel(
                         team = state.enemyTeam,
                         teamLabel = "Team:".takeIf { generation < 3 },
                         moveLevels = onMoveLevels?.invoke(enemy.species) ?: emptyList(),
-                        moveCtx = enemyMoveContext(enemy, state.party.firstOrNull(), state.weather, onWeight)
+                        moveCtx = enemyMoveContext(enemy, state.onField, state.weather, onWeight)
                             .copy(hide = InfoRules.hiddenMoveInfo(state.randomized), hideEffectiveness = InfoRules.hideEffectiveness(state.randomized, state.isGhostBattle, own = false), generation = generation),
                         rand = state.randomized,
                         catchText = state.catchPercent?.takeIf { state.isWildBattle && TrackerOptions.showCatchRate }?.let { pct ->
@@ -817,7 +828,7 @@ fun TrackerPanel(
                     lastAttack = state.lastAttackMove?.takeIf { TrackerOptions.showLastDamage }?.let { mv ->
                         com.ironmonone.tracker.LastAttack.text(mv, state.lastAttackDamage, state.lastAttackTeams)
                     },
-                    lastAttackLethal = com.ironmonone.tracker.LastAttack.lethal(state.lastAttackDamage, state.party.firstOrNull()?.mon?.curHp),
+                    lastAttackLethal = com.ironmonone.tracker.LastAttack.lethal(state.lastAttackDamage, state.onField?.mon?.curHp),
                     battleDetailsSummary = BattleSummary.line(state.battleSummaries, viewingOwn = !state.inBattle || viewingOwn),
                     routeName = routeName,
                     routeSeen = routeSeen,

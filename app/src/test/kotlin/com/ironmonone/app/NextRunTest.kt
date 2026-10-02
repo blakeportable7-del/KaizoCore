@@ -142,6 +142,27 @@ class NextRunTest {
         assertEquals(2L, stage.ready(recipe)?.seed, "a stage not asked for does not replace the one there")
     }
 
+    /**
+     * rc33 audit P0-12: turning off "Get the next run ready" runs clear(), and clear() deleted the claimed run while
+     * a NEW RUN was between claim and install, after the run in play had already been filed as ended.
+     */
+    @Test
+    fun `turning the next run off mid-install leaves the claimed run to the install`() {
+        val cur = File(File(root, "runs").apply { mkdirs() }, "current.gba").apply { writeText("old rom") }
+        stage.make(recipe, 5L, engine())
+        val want = File(stage.dir, "next.gba").readBytes()
+        val s = assertNotNull(stage.claim(recipe))
+        stage.clear()                                            // the switch turned off now
+        assertTrue(s.rom.exists(), "the claimed run is still there for the install")
+        stage.install(s, cur)
+        assertContentEquals(want, cur.readBytes())
+        assertFalse(File(stage.dir, "taken").exists())
+        // With no claim held, a taken folder is a killed install's leftover and clear() frees its space.
+        File(stage.dir, "taken").apply { mkdirs(); File(this, "next.gba").writeBytes(ByteArray(8)) }
+        stage.clear()
+        assertFalse(File(stage.dir, "taken").exists())
+    }
+
     @Test
     fun `a claimed run is out of reach of the next stage, and installs with its own log and sidecar only`() {
         val runs = File(root, "runs").apply { mkdirs() }

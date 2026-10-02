@@ -127,27 +127,47 @@ object Backup {
         return n
     }
 
-    /** Restore from a backup. Returns files written; -1 when it is not a KaizoCore backup. */
+    /** Where a restore lands before it is known to be a whole KaizoCore backup. Not a backed-up path. */
+    const val STAGING = ".restore-staging"
+
+    /**
+     * Restore from a backup. Returns files written; -1 when it is not a KaizoCore backup, and then nothing changed.
+     *
+     * The whole zip is read into [STAGING] first and moved into place only when it is a KaizoCore backup read to its
+     * end (rc33 audit P1): entries used to be written as they were read, so a damaged or foreign zip left a phone half
+     * restored, and the message said nothing had changed. A zip that breaks part way throws, with nothing moved.
+     */
     fun read(filesDir: File, input: InputStream): Int {
-        var n = 0
-        var marker = false
-        ZipInputStream(input.buffered()).use { zip ->
-            while (true) {
-                val e = zip.nextEntry ?: break
-                if (e.name == "KAIZOCORE-BACKUP.txt") { marker = true; zip.closeEntry(); continue }
-                if (e.isDirectory || !admits(e.name)) { zip.closeEntry(); continue }
-                val target = File(filesDir, e.name)
-                if (!target.canonicalPath.startsWith(filesDir.canonicalPath)) { zip.closeEntry(); continue }
-                target.parentFile?.mkdirs()
-                val tmp = File(target.parentFile, target.name + ".tmp")
-                tmp.outputStream().use { zip.copyTo(it) }
-                if (!tmp.renameTo(target)) { target.delete(); tmp.renameTo(target) }
-                if (e.time > 0) target.setLastModified(e.time)
-                n++; zip.closeEntry()
+        val stage = File(filesDir, STAGING).apply { deleteRecursively(); mkdirs() }
+        try {
+            var marker = false
+            val staged = ArrayList<Pair<File, File>>()
+            ZipInputStream(input.buffered()).use { zip ->
+                while (true) {
+                    val e = zip.nextEntry ?: break
+                    if (e.name == "KAIZOCORE-BACKUP.txt") { marker = true; zip.closeEntry(); continue }
+                    if (e.isDirectory || !admits(e.name)) { zip.closeEntry(); continue }
+                    val target = File(filesDir, e.name)
+                    if (!target.canonicalPath.startsWith(filesDir.canonicalPath)) { zip.closeEntry(); continue }
+                    val held = File(stage, e.name).apply { parentFile?.mkdirs() }
+                    held.outputStream().use { zip.copyTo(it) }
+                    if (e.time > 0) held.setLastModified(e.time)
+                    staged += held to target
+                    zip.closeEntry()
+                }
             }
+            if (!marker) return -1
+            for ((held, target) in staged) {
+                target.parentFile?.mkdirs()
+                val time = held.lastModified()
+                StateSlots.replace(held, target)
+                if (time > 0) target.setLastModified(time)
+            }
+            afterRestore(filesDir)
+            return staged.size
+        } finally {
+            stage.deleteRecursively()
         }
-        if (marker) afterRestore(filesDir)
-        return if (marker) n else -1
     }
 
     /**

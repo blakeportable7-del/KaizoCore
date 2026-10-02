@@ -31,15 +31,47 @@ object AppBarActions {
  * The wild-only rule is enforced by the Play screen, which clears [onFlee]
  * whenever the current battle is not a wild one. A trainer battle never offers
  * Run, and mashing the sequence into one would open the Bag instead.
+ *
+ * It runs only when B went down on the action menu (2026-10-01, Blake: "it is
+ * making the game locked into the bag"). It used to fire on every B released in
+ * a wild battle: B in the Bag closed nothing, because the run's A picked an item
+ * again, and a B out of the move menu ran, the game being back on the action
+ * menu by the time B came up. [menuUp] is read as B goes down, before the game
+ * has seen it; a held key's repeats never arm it again. A game whose tracker
+ * cannot see its battle menu (DS, 2026-10-02) never runs on B: the tracker's
+ * RUN button, two taps, still does.
  */
 object FleeOnB {
     /** Set while a WILD battle is on screen; null at every other moment. */
     var onFlee: (() -> Unit)? = null
 
+    /** Whether the battle's action menu is taking input this moment (ActionMenuGate); null where nothing can tell. */
+    var menuUp: (() -> Boolean)? = null
+
+    private var held = false
+    private var armed = false
+
+    /** B went down: armed only on the action menu of a wild battle. */
+    fun pressed() {
+        if (held) return
+        held = true
+        armed = onFlee != null && menuUp?.invoke() == true
+    }
+
+    /** B came up: [run] only when it went down armed. */
+    fun released(run: () -> Unit = { onFlee?.invoke() }) {
+        val go = armed
+        held = false
+        armed = false
+        if (go) run()
+    }
+
     fun handle(action: Int, keyCode: Int) {
         if (keyCode != android.view.KeyEvent.KEYCODE_BUTTON_B) return
-        if (action != android.view.KeyEvent.ACTION_UP) return
-        onFlee?.invoke()
+        when (action) {
+            android.view.KeyEvent.ACTION_DOWN -> pressed()
+            android.view.KeyEvent.ACTION_UP -> released()
+        }
     }
 }
 

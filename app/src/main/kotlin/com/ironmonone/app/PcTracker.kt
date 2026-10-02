@@ -6,6 +6,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -135,6 +136,21 @@ object PcRef {
     const val ICON = 32
     /** Moves box: y = 92, w = RIGHT_GAP - 2*MARGIN, h = 44. */
     const val MOVES_W = WIDTH - 2 * MARGIN         // 140
+    /** A card's head: the info box and the stats box side by side, 96 + 44. */
+    const val HEAD_W = INFO_W + STATS_W            // 140
+    /**
+     * The moves table's number columns. The reference's are 20, 24 and 19 (PP at 82, Pow at 102, Acc at 126); KaizoCore's
+     * look gives them what two and three digits need and hands the 10 units to the type symbol (TypeSymbols), so a
+     * move's name keeps the room it had.
+     */
+    const val PP_W = 16
+    const val POW_W = 20
+    const val ACC_W = 17
+    /**
+     * KaizoCore's wide card (2026-10-02): the head, a one-pixel rule and the moves box side by side inside the
+     * margins, where the reference stacks the moves under the head.
+     */
+    const val WIDE_WIDTH = MARGIN + HEAD_W + 1 + MOVES_W + MARGIN   // 291
 }
 
 /**
@@ -149,6 +165,27 @@ object PcRef {
  */
 val LocalCanvasMax = androidx.compose.runtime.compositionLocalOf { 224.dp }
 
+/**
+ * True when [PcCanvas] has room for the wide card (PcMonCard): the moves BESIDE the head, not under it. Portrait on
+ * a phone has it; the landscape split and the floating window, at their usual widths, keep the reference's stack.
+ */
+val LocalTrackerWide = androidx.compose.runtime.compositionLocalOf { false }
+
+/** Inside a wide card's side column: the moves table drops the rule over its header, the column's own edge is it. */
+internal val LocalMovesBeside = androidx.compose.runtime.compositionLocalOf { false }
+
+/**
+ * The smallest unit the wide card may be drawn at: 9-unit text at 10.8dp. A narrower pane keeps the stacked card,
+ * whose unit is larger.
+ */
+internal val WIDE_MIN_RPX = 1.2.dp
+
+/** The unit the canvas draws at, and whether it lays its cards out wide, for a pane [width] wide under [cap]. */
+internal fun canvasUnit(width: androidx.compose.ui.unit.Dp, cap: androidx.compose.ui.unit.Dp): Pair<androidx.compose.ui.unit.Dp, Boolean> {
+    val wide = minOf(width / PcRef.WIDE_WIDTH, cap / PcRef.WIDTH)
+    return if (wide >= WIDE_MIN_RPX) wide to true else minOf(width, cap) / PcRef.WIDTH to false
+}
+
 @Composable
 fun PcCanvas(
     modifier: Modifier = Modifier,
@@ -161,10 +198,16 @@ fun PcCanvas(
         // the card rendered 1234px tall, and it shoved the d-pad about a
         // thousand pixels below the fold. The reference has no portrait layout
         // and no on-screen controls, so there is nothing to copy for that
-        // case: cap the unit at the size it has in the split, and the tracker
-        // is simply the same tracker with room left for the game and the pad.
-        val rpx = minOf(maxWidth, LocalCanvasMax.current) / PcRef.WIDTH
-        androidx.compose.runtime.CompositionLocalProvider(LocalRpx provides rpx) {
+        // case: cap the unit at the size it has in the split.
+        //
+        // Capped, a portrait card was the split's card stretched across the
+        // phone: a strip of blank in the middle of every card, and the moves
+        // scrolled out of the little room the game and the pad leave (Blake,
+        // 2026-10-02: "Lots of wasted space in our current tracker"). Where the
+        // pane holds a head and a moves box side by side at a readable size,
+        // the card is drawn that way instead (PcMonCard).
+        val (rpx, wide) = canvasUnit(maxWidth, LocalCanvasMax.current)
+        androidx.compose.runtime.CompositionLocalProvider(LocalRpx provides rpx, LocalTrackerWide provides wide) {
             content()
         }
     }
@@ -202,6 +245,8 @@ object Pc {
      * Theme flag 1 at "0" (Theme.MOVE_TYPES_ENABLED off): move names in the lower
      * box text colour with a small bar in the move's type colour
      * (TrackerScreen.lua:1530), instead of names in the type colour.
+     * Kept so a theme's code reads and saves whole; since 2026-10-02 the move rows
+     * colour names by type whatever it says (TrackerLook.moveName).
      */
     var moveTypeBar by mutableStateOf(false)
     /**
@@ -400,6 +445,8 @@ fun PixText(
      * default and opted into for prose (descriptions, notes).
      */
     wrap: Boolean = false,
+    /** KaizoCore's look (TrackerLook): names and buttons a weight heavier. */
+    weight: FontWeight = FontWeight.Normal,
 ) {
     // `size` is in REFERENCE PIXELS. Outside a PcCanvas one reference pixel is
     // 1.dp, which is what this used to be in sp, so nothing else moves.
@@ -419,7 +466,7 @@ fun PixText(
                 trim = androidx.compose.ui.text.style.LineHeightStyle.Trim.None,
             ),
         ),
-        textAlign = align, modifier = modifier, fontWeight = FontWeight.Normal,
+        textAlign = align, modifier = modifier, fontWeight = weight,
         maxLines = if (wrap) Int.MAX_VALUE else 1,
         overflow = androidx.compose.ui.text.style.TextOverflow.Clip,
         softWrap = wrap)
@@ -458,24 +505,10 @@ fun DialogText(
 @Composable
 fun PcTypeChip(label: String, color: Color) {
     if (label.isBlank()) return
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val icon = remember(label) { PcAssets.typeIcon(context, label) }
-    if (icon != null) {
-        // The files are 30x12 and the reference draws them at 30x12, stacked
-        // 12 apart (TrackerScreen.lua:1141). Sizing them in dp instead put
-        // them at roughly 1.4x on a fractional scale, so two stacked chips
-        // did not line up with each other or with the box they sit in.
-        androidx.compose.foundation.Image(
-            bitmap = icon, contentDescription = label,
-            modifier = Modifier.width(30.rp).height(12.rp),
-            filterQuality = androidx.compose.ui.graphics.FilterQuality.None,
-        )
-    } else {
-        // Only for a type with no shipped icon (a hack adding its own).
-        Box(
-            Modifier.width(30.rp).height(12.rp).background(color),
-            contentAlignment = Alignment.Center,
-        ) { PixText(label.uppercase(), PcRef.FONT - 2, Color.White) }
+    // KaizoCore's look (2026-10-02): a pill in the type's colour, in the 30 by 12 the reference's badge took, stacked
+    // 12 apart (TrackerScreen.lua:1141), with a pixel of air between two.
+    Box(Modifier.width(30.rp).height(12.rp).semantics { contentDescription = label }, contentAlignment = Alignment.TopStart) {
+        TrackerTypePill(label, color)
     }
 }
 
@@ -552,18 +585,21 @@ fun PcMarkColumn(marks: IntArray, onCycle: (Int) -> Unit, singleSpecial: Boolean
             verticalAlignment = Alignment.CenterVertically,
         ) {
             PixText(label, PcRef.FONT, Pc.Text, Modifier.width(27.rp))
+            // KaizoCore's look: a rounded chip on the faint raised surface, washed in the mark's colour once marked,
+            // where the reference draws an 8x8 square in the border colour. The glyph keeps its colour.
+            val markColor = when (state) {
+                1 -> Pc.Positive
+                2 -> Pc.Negative
+                else -> Pc.Text
+            }
+            val chip = androidx.compose.foundation.shape.RoundedCornerShape(2.rp)
             Box(
-                Modifier.size(8.rp).background(Pc.Ground).border(1.rp, Pc.Border),
+                Modifier.size(9.rp).clip(chip)
+                    .background(if (state == 0) TrackerLook.inset else markColor.copy(alpha = 0.22f), chip)
+                    .border(1.rp, if (state == 0) TrackerLook.outline else markColor.copy(alpha = 0.7f), chip),
                 contentAlignment = Alignment.Center,
             ) {
-                PixText(
-                    StatMarks.symbol(state).trim(), PcRef.FONT - 2,
-                    when (state) {
-                        1 -> Pc.Positive
-                        2 -> Pc.Negative
-                        else -> Pc.Text
-                    },
-                )
+                PixText(StatMarks.symbol(state).trim(), PcRef.FONT - 2, markColor, weight = FontWeight.Medium)
             }
         }
     }
@@ -634,7 +670,8 @@ fun PcHeadBlock(
         Column(Modifier.weight(1f)) {
             Row(Modifier.padding(2.rp)) {
                 // TrackerScreen.Buttons.PokemonIcon: the icon is the tap target, as well as the name.
-                Box(if (onNameTap != null) Modifier.clickable { onNameTap() } else Modifier) {
+                Box((if (onNameTap != null) Modifier.clickable { onNameTap() } else Modifier)
+                    .clip(androidx.compose.foundation.shape.RoundedCornerShape(4.rp)).background(TrackerLook.inset)) {
                     // Either set: Gen 1-3 by Gen 3's ids, Gen 4-9 and a Nat. Dex build's forms by national number (WalkingPals).
                     val iconCtx = androidx.compose.ui.platform.LocalContext.current
                     val pal = remember(iconSpecies, iconDex) { if (iconSpecies > 0) WalkingPals.find(iconCtx, iconSpecies, iconDex) else null }
@@ -647,17 +684,9 @@ fun PcHeadBlock(
                         PcGenderSymbol(gender, Modifier.padding(start = (21 + if (gender == com.ironmonone.tracker.Gender3.FEMALE) 3 else 0).rp, top = 18.rp))
                     }
                     // TrackerScreen.lua, STATUS ICON: 16x8 at the card's x + 30 - 16 + 1, y + 1,
-                    // over the icon's top right (the icon sits 2 in from the card here).
-                    if (status.isNotEmpty()) {
-                        val ctx = androidx.compose.ui.platform.LocalContext.current
-                        remember(status) { PcAssets.status(ctx, status) }?.let { art ->
-                            androidx.compose.foundation.Image(
-                                bitmap = art, contentDescription = status,
-                                modifier = Modifier.padding(start = 13.rp).width(16.rp).height(8.rp),
-                                filterQuality = androidx.compose.ui.graphics.FilterQuality.None,
-                            )
-                        }
-                    }
+                    // over the icon's top right (the icon sits 2 in from the card here). KaizoCore's look draws it as
+                    // a pill in the status's colour (TrackerStatusPill) where the reference has its pixel image.
+                    if (status.isNotEmpty()) TrackerStatusPill(status, Modifier.padding(start = 13.rp, top = 1.rp))
                 }
                 Column(Modifier.padding(start = 2.rp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -665,6 +694,7 @@ fun PcHeadBlock(
                             name, PcRef.FONT, Pc.Text,
                             if (onNameTap != null) Modifier.clickable { onNameTap() }
                             else Modifier,
+                            weight = FontWeight.Medium,
                         )
                         if (gender != null && genderFitsAfter(name)) {
                             Spacer(Modifier.width(4.rp))
@@ -695,6 +725,8 @@ fun PcHeadBlock(
                                 },
                             )
                         }
+                        // KaizoCore's look: the same fraction as a bar under it.
+                        if (hpText == null && maxHp > 0) { Spacer(Modifier.height(1.rp)); TrackerHpBar(curHp, maxHp) }
                         Spacer(Modifier.height(1.rp))
                     }
                     if (holdExpFraction != null) {
@@ -737,11 +769,11 @@ fun PcHeadBlock(
             }
             if (belowHead != null) {
                 Spacer(Modifier.height(3.dp))
-                Box(Modifier.fillMaxWidth().height(1.dp).background(Pc.Border))
+                Box(Modifier.fillMaxWidth().height(1.dp).background(TrackerLook.divider))
                 belowHead()
             }
         }
-        Box(Modifier.width(1.rp).fillMaxHeight().background(Pc.Border))
+        Box(Modifier.width(1.rp).fillMaxHeight().background(TrackerLook.divider))
         // 44 reference pixels: the reference's own stats box width.
         Column(Modifier.width(PcRef.STATS_W.rp).padding(vertical = 1.rp)) {
             statColumn()
@@ -804,10 +836,11 @@ fun PcMovesSection(
 ) {
     val numAlign = if (!referenceColumns || rightJustify) TextAlign.End else TextAlign.Start
     val headAlign = if (referenceColumns) TextAlign.Start else TextAlign.End
-    Box(Modifier.fillMaxWidth().height(1.dp).background(Pc.LowerBorder))
+    // Beside the head (PcMonCard, wide) the card's edge and the rule between the columns frame it already.
+    if (!LocalMovesBeside.current) Box(Modifier.fillMaxWidth().height(1.dp).background(Pc.LowerBorder.copy(alpha = 0.28f)))
     Row(
         Modifier.fillMaxWidth()
-            .then(Pc.HeaderGroundX?.let { Modifier.background(TrackerBackground.boxFill(it)) } ?: Modifier)
+            .then(Pc.HeaderGroundX?.let { Modifier.background(TrackerBackground.boxFill(it)) } ?: Modifier.background(TrackerLook.inset))
             .padding(vertical = 1.rp, horizontal = 2.rp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -824,12 +857,12 @@ fun PcMovesSection(
         if (catchText != null) {
             PixText(catchText, PcRef.FONT, Pc.Header, if (onCatchTap != null) Modifier.clickable { onCatchTap() } else Modifier)
         } else {
-            PixText("PP", PcRef.FONT, Pc.Header, Modifier.width(20.rp), headAlign)
-            PixText("Pow", PcRef.FONT, Pc.Header, Modifier.width(24.rp), headAlign)
-            PixText("Acc", PcRef.FONT, Pc.Header, Modifier.width(19.rp), headAlign)
+            PixText("PP", PcRef.FONT, Pc.Header, Modifier.width(PcRef.PP_W.rp), headAlign)
+            PixText("Pow", PcRef.FONT, Pc.Header, Modifier.width(PcRef.POW_W.rp), headAlign)
+            PixText("Acc", PcRef.FONT, Pc.Header, Modifier.width(PcRef.ACC_W.rp), headAlign)
         }
     }
-    Box(Modifier.fillMaxWidth().height(1.rp).background(Pc.LowerBorder))
+    Box(Modifier.fillMaxWidth().height(1.rp).background(Pc.LowerBorder.copy(alpha = 0.28f)))
     Column(
         (Pc.LowerGroundX?.let { Modifier.fillMaxWidth().background(TrackerBackground.boxFill(it)) } ?: Modifier)
             .padding(vertical = 1.rp)
@@ -850,12 +883,15 @@ fun PcMovesSection(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 PcCategoryIcon(r.category)
+                // KaizoCore's look: the name in its type's colour on every theme, made to read on the lower box
+                // (TrackerLook.moveName). A theme's move-types flag (Pc.moveTypeBar) drew a plain name with a bar in
+                // the type's colour instead; Blake likes the names coloured (2026-10-02), so the rows ignore it.
                 // A blank row takes the live quiet colour (BLANK_MOVE captured it once at start-up).
-                val nameColor = if (r.blank) Pc.Dim else if (Pc.moveTypeBar) Pc.LowerText else r.color
-                if (Pc.moveTypeBar && !r.blank) {
-                    Box(Modifier.width(2.rp).height(7.rp).background(r.color))
-                    Spacer(Modifier.width(2.rp))
-                }
+                val nameColor = if (r.blank) Pc.Dim else TrackerLook.moveName(r.color)
+                // The DS tracker's type symbol before the name, on every game (Blake, 2026-10-02: "I like the
+                // symbols"). None where the type is hidden or unknown, and the slot is held so the names line up.
+                TypeSymbol(r.typeName.takeIf { !r.blank })
+                Spacer(Modifier.width(1.rp))
                 PixText(r.name, PcRef.FONT, nameColor, Modifier.weight(1f))
                 if (r.hiddenPowerArrows && onHiddenPower != null) {
                     // MainScreenUIInitializer.initHiddenPowerArrows: "<" and ">" in the lower box's text colour.
@@ -869,29 +905,29 @@ fun PcMovesSection(
                 // invention and it does not fit: it truncated to "15/1" and
                 // took the Pow and Acc columns off the right edge with it.
                 if (referenceColumns) {
-                    Row(Modifier.width(20.rp), verticalAlignment = Alignment.CenterVertically) {
-                        PixText(if (r.blank) "---" else r.ppText ?: "${r.pp}", PcRef.FONT, Pc.LowerText, Modifier.width(12.rp), numAlign)
-                        Spacer(Modifier.width(3.rp))
+                    Row(Modifier.width(PcRef.PP_W.rp), verticalAlignment = Alignment.CenterVertically) {
+                        PixText(if (r.blank) "---" else r.ppText ?: "${r.pp}", PcRef.FONT, Pc.LowerText, Modifier.width(10.rp), numAlign)
+                        Spacer(Modifier.width(1.rp))
                         Box(Modifier.width(5.rp), contentAlignment = Alignment.Center) {
                             r.effect?.let { PcEffectGlyph(it, Modifier.wrapContentWidth(unbounded = true)) }
                         }
                     }
                 } else PixText(
                     if (r.blank) "---" else "${r.pp}",
-                    PcRef.FONT, Pc.LowerText, Modifier.width(20.rp), TextAlign.End)
+                    PcRef.FONT, Pc.LowerText, Modifier.width(PcRef.PP_W.rp), TextAlign.End)
                 val shownPower = r.powerText?.let { if (it == "0") "---" else it }
                     ?: if (r.power == null || r.power == 0) "---" else "${r.power}"
                 // The effectiveness mark sits just left of the power digits, as
                 // the reference draws it at movePowerOffset - 5.
                 if (referenceColumns) {
-                    PixText(shownPower, PcRef.FONT, if (r.stab) Pc.AltPositive else Pc.LowerText, Modifier.width(24.rp), numAlign)
-                } else Row(Modifier.width(24.rp), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
+                    PixText(shownPower, PcRef.FONT, if (r.stab) Pc.AltPositive else Pc.LowerText, Modifier.width(PcRef.POW_W.rp), numAlign)
+                } else Row(Modifier.width(PcRef.POW_W.rp), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
                     r.effect?.let { PcEffectGlyph(it); Spacer(Modifier.width(1.rp)) }
                     PixText(shownPower, PcRef.FONT, if (r.stab) Pc.AltPositive else Pc.LowerText)
                 }
                 val shownAcc = r.accText?.let { if (it == "0") "---" else it }
                     ?: if (r.acc == null || r.acc == 0) "---" else "${r.acc}"
-                PixText(shownAcc, PcRef.FONT, Pc.LowerText, Modifier.width(19.rp), numAlign)
+                PixText(shownAcc, PcRef.FONT, Pc.LowerText, Modifier.width(PcRef.ACC_W.rp), numAlign)
             }
         }
     }
@@ -1350,7 +1386,8 @@ private fun PcCarouselLine(
     onTap: (() -> Unit)? = null,
 ) {
     Row(
-        Modifier.fillMaxWidth().background(TrackerBackground.boxFill(Pc.LowerGroundX ?: Pc.Ground)).border(1.dp, Pc.LowerBorder)
+        Modifier.fillMaxWidth().clip(androidx.compose.foundation.shape.RoundedCornerShape(TrackerLook.RADIUS.rp))
+            .background(TrackerBackground.boxFill(Pc.LowerGroundX ?: Pc.Ground)).border(1.dp, Pc.LowerBorder.copy(alpha = 0.55f), androidx.compose.foundation.shape.RoundedCornerShape(TrackerLook.RADIUS.rp))
             .then(if (onTap != null) Modifier.clickable { onTap() } else Modifier)
             .padding(horizontal = 6.dp, vertical = 5.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -1581,7 +1618,8 @@ fun PcBadgeRow(badges: Int, set: String, leagueBeaten: Boolean = false) {
     }
     val artSet = if (set == "HGSS_J") "HGSS" else set
     Row(
-        Modifier.fillMaxWidth().background(TrackerBackground.boxFill(Pc.Ground)).border(1.dp, Pc.Border)
+        Modifier.fillMaxWidth().clip(androidx.compose.foundation.shape.RoundedCornerShape(TrackerLook.RADIUS.rp))
+            .background(TrackerBackground.boxFill(Pc.Ground)).border(1.dp, TrackerLook.outline, androidx.compose.foundation.shape.RoundedCornerShape(TrackerLook.RADIUS.rp))
             .padding(horizontal = 4.dp, vertical = 3.dp),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically,
@@ -1662,10 +1700,34 @@ fun PcNoteRow(note: String, onEdit: () -> Unit) {
 
 @Composable
 fun PcCard(content: @Composable () -> Unit) {
+    // KaizoCore's look (TrackerLook): a rounded card, its outline the theme's border softened.
+    val shape = androidx.compose.foundation.shape.RoundedCornerShape(TrackerLook.RADIUS.rp)
     Column(
-        Modifier.fillMaxWidth().padding(bottom = 2.rp)
-            .background(TrackerBackground.boxFill(Pc.Ground)).border(1.rp, Pc.Border),
+        Modifier.fillMaxWidth().padding(bottom = 3.rp).then(Modifier.clip(shape))
+            .background(TrackerBackground.boxFill(Pc.Ground), shape).border(1.rp, TrackerLook.outline, shape),
     ) { content() }
+}
+
+/**
+ * A Pokemon's card: its [head] (PcHeadBlock: the info and the stats), then [rest] (the moves, and on the DS the
+ * encounter and note rows). On a wide canvas (LocalTrackerWide) the rest goes BESIDE the head, the head at the
+ * reference's 140 units and the rest in what is left, so a phone in portrait shows the whole card at once.
+ */
+@Composable
+fun PcMonCard(head: @Composable () -> Unit, rest: @Composable () -> Unit) = PcCard {
+    if (LocalTrackerWide.current) {
+        // IntrinsicSize.Min: the rule between the two runs the height of the taller.
+        Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+            Column(Modifier.width(PcRef.HEAD_W.rp)) { head() }
+            Box(Modifier.width(1.rp).fillMaxHeight().background(TrackerLook.divider))
+            Column(Modifier.weight(1f)) {
+                androidx.compose.runtime.CompositionLocalProvider(LocalMovesBeside provides true) { rest() }
+            }
+        }
+    } else {
+        head()
+        rest()
+    }
 }
 
 /** The reference's 13x14 die, drawn in "Default text" like its other pixel buttons, with a 24dp hit area. */
@@ -1761,8 +1823,9 @@ internal fun PcButton(
             },
         contentAlignment = Alignment.Center,
     ) {
-        Box(Modifier.background(Color(0xFF303030)).padding(horizontal = 3.rp, vertical = 1.rp)) {
-            PixText(label, PcRef.FONT, color)
+        // KaizoCore's look: a pill on the faint raised surface, the label a weight heavier.
+        Box(Modifier.clip(androidx.compose.foundation.shape.RoundedCornerShape(50)).background(TrackerLook.inset).padding(horizontal = 6.rp, vertical = 2.rp)) {
+            PixText(label, PcRef.FONT, color, weight = FontWeight.Medium)
         }
     }
 }
@@ -1802,18 +1865,17 @@ internal fun PcBannerBand(
     label: @Composable () -> Unit,
     controls: @Composable RowScope.() -> Unit,
 ) {
-    // The row's content is a button (11 reference pixels) or the label (9), inside a 1-pixel border either side.
-    val stripHeight = (if (buttons) PcRef.FONT + 2 + 2 else PcRef.FONT + 2).rp
-    Box(
-        Modifier.fillMaxWidth().heightIn(min = if (buttons) PcMin.TOUCH_DP.dp else 0.dp),
-        contentAlignment = Alignment.Center,
+    // KaizoCore's look (2026-10-02, "lots of wasted space"): the band IS the touch row, a rounded bar as tall as its
+    // buttons' touch boxes, where it used to be a thin strip with blank space above and below it for them.
+    val shape = androidx.compose.foundation.shape.RoundedCornerShape(TrackerLook.RADIUS.rp)
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = if (buttons) PcMin.TOUCH_DP.dp else (PcRef.FONT + 8).rp)
+            .clip(shape).background(fill, shape).border(1.rp, TrackerLook.outline, shape).padding(horizontal = 4.rp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(Modifier.fillMaxWidth().height(stripHeight).background(fill).border(1.rp, Pc.Border))
-        Row(Modifier.fillMaxWidth().padding(horizontal = 2.rp), verticalAlignment = Alignment.CenterVertically) {
-            // The label gives way, so the buttons are never squeezed off a narrow pane.
-            Box(Modifier.weight(1f)) { label() }
-            controls()
-        }
+        // The label gives way, so the buttons are never squeezed off a narrow pane.
+        Box(Modifier.weight(1f)) { label() }
+        controls()
     }
 }
 
@@ -1829,6 +1891,10 @@ fun PcBattleBanner(
     onSwapView: (() -> Unit)? = null,
     /** TrainersOnRouteScreen: the TRAINER BATTLE banner opens Trainer Info for the opponent. */
     onTrainerTap: (() -> Unit)? = null,
+    /** Tracker Setup, at the banner's end: in a battle SETUP has no row of its own (2026-10-02, "wasted space"). */
+    onGear: (() -> Unit)? = null,
+    /** The battle's weather (TrackerState.weather), as a pill under the label; null for clear skies or a game without it. */
+    weather: String? = null,
 ) {
     val run = remember { ArmedTap() }
     // A timer per arming: armedAt changes on every tap that arms, so an older timer never disarms a newer one.
@@ -1837,7 +1903,7 @@ fun PcBattleBanner(
     }
     PcBannerBand(
         fill = TrackerBackground.boxFill(Pc.Ground),
-        buttons = onSwapView != null || isWild,
+        buttons = onSwapView != null || isWild || onGear != null,
         label = {
             val trainerTap = if (isWild) null else onTrainerTap
             Box(
@@ -1847,10 +1913,17 @@ fun PcBattleBanner(
                 } else Modifier,
                 contentAlignment = Alignment.CenterStart,
             ) {
-                PixText(
-                    if (isWild) "WILD BATTLE" else "TRAINER BATTLE", PcRef.FONT,
-                    if (isWild) Pc.Positive else Pc.Negative,
-                )
+                // The band is a touch row's height anyway: the weather takes the line under the label, not a row.
+                Column {
+                    PixText(
+                        if (isWild) "WILD BATTLE" else "TRAINER BATTLE", PcRef.FONT,
+                        if (isWild) Pc.Positive else Pc.Negative, weight = FontWeight.Medium,
+                    )
+                    if (weather != null && TrackerWeather.name(weather) != null) {
+                        Spacer(Modifier.height(2.rp))
+                        TrackerWeatherPill(weather)
+                    }
+                }
             }
         },
     ) {
@@ -1872,6 +1945,10 @@ fun PcBattleBanner(
                 spoken = PcBannerCopy.runSpoken(run.armed),
                 alert = run.armed,
             ) { if (run.tap(android.os.SystemClock.elapsedRealtime())) onFlee() }
+        }
+        onGear?.let {
+            Spacer(Modifier.width(PcMin.BUTTON_GAP_DP.dp))
+            PcButton("SETUP", spoken = "Tracker Setup", onClick = it)
         }
     }
 }

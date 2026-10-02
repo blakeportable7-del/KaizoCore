@@ -211,15 +211,15 @@ internal fun LogTrainersTab(
 ) {
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().padding(bottom = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            PixText("Filter by:", 7, Pc.Dim)
+            DialogText("Filter by:", 12, Pc.Dim)
             LogTrainerFilter.entries.forEach { f ->
                 val on = if (query.isNotBlank()) f == LogTrainerFilter.ALL else f == filter
-                PixText(f.label, 7, if (on) Pc.Gold else Pc.Text, Modifier.clickable { onFilter(f) }.padding(vertical = 4.dp))
+                DialogText(f.label, 12, if (on) Pc.Gold else Pc.Text, Modifier.clickable { onFilter(f) }.padding(vertical = 4.dp))
             }
         }
         val rows = remember(log, filter, query, custom, searchBy, sortBy) { rules.rows(log, filter, query, custom, searchBy, sortBy) }
         if (rows.isEmpty()) {
-            PixText("(No results)", 8, Pc.Dim)
+            DialogText("(No results)", 13, Pc.Dim)
             return@Column
         }
         LazyVerticalGrid(
@@ -238,7 +238,7 @@ internal fun LogTrainerTile(t: RandomizerLog.Trainer, rules: LogTrainerRules, cu
         Modifier.background(Pc.Page).border(1.dp, Pc.Border).clickable { onClick() }.padding(6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        PixText(rules.displayName(t, custom), 7, Pc.Text, Modifier.fillMaxWidth(), TextAlign.Center)
+        DialogText(rules.displayName(t, custom), 12, Pc.Text, Modifier.fillMaxWidth(), TextAlign.Center)
         Spacer(Modifier.height(4.dp))
         PokeBalls(t.party.size, rules.isGiovanni(t.number))
     }
@@ -284,10 +284,10 @@ internal fun LogTrainerDetail(
     val ctx = LocalContext.current
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         Row(Modifier.fillMaxWidth().background(Pc.Page).border(1.dp, Pc.Border).padding(6.dp), verticalAlignment = Alignment.CenterVertically) {
-            PcTap("< BACK", 7, Pc.Dim, "Back", Modifier.padding(end = 4.dp)) { onBack() }
+            LogBack(onBack)
             Column(Modifier.weight(1f)) {
-                PixText(rules.detailClass(t, custom).uppercase(), 8, Pc.Gold)
-                PixText(rules.detailName(t, custom).uppercase(), 8, Pc.Gold)
+                DialogText(rules.detailClass(t, custom).uppercase(), 13, Pc.Gold)
+                DialogText(rules.detailName(t, custom).uppercase(), 13, Pc.Gold)
             }
             rules.gymNumber(t.number)?.let { g ->
                 val art = remember(badgeSet, g) { badgeSet?.let { PcAssets.badge(ctx, it, g, true) } }
@@ -304,7 +304,7 @@ internal fun LogTrainerDetail(
         }
         Column(Modifier.fillMaxWidth().background(Pc.Page).border(1.dp, Pc.Border).padding(6.dp)) {
             t.party.forEachIndexed { i, m ->
-                PixText("${i + 1}. ${logTitle(m.name)}", 7, Pc.Text,
+                DialogText("${i + 1}. ${logTitle(m.name)}", 12, Pc.Text,
                     Modifier.clickable { log.pokemonNamed(m.name)?.let(onPokemon) }.padding(vertical = 2.dp))
             }
         }
@@ -327,16 +327,16 @@ private fun LogPartyCell(
             val art = p?.let { spriteOf?.invoke(it) }
             if (art != null) Image(art, m.name, Modifier.size(36.dp), filterQuality = FilterQuality.None)
             else Spacer(Modifier.size(36.dp))
-            PixText("Lv.${m.level}", 7, Pc.Text)
+            DialogText("Lv.${m.level}", 12, Pc.Text)
         }
         Spacer(Modifier.width(4.dp))
         Column(Modifier.weight(1f)) {
             val moves = p?.let { log.movesAt(it, m.level) } ?: emptyList()
             moves.forEach { mv ->
                 val stab = moveTypes[mv.uppercase()]?.let { it in monTypes } == true
-                PixText(logTitle(mv), 7, if (stab) Pc.Positive else Pc.Text)
+                DialogText(logTitle(mv), 12, if (stab) Pc.Positive else Pc.Text)
             }
-            m.item?.let { PixText(logTitle(it), 7, Pc.Gold) }
+            m.item?.let { DialogText(logTitle(it), 12, Pc.Gold) }
         }
     }
 }

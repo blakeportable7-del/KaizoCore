@@ -2,6 +2,55 @@
 
 Short and plain, one list per release. Newest first.
 
+## rc33 (2 October 2026)
+
+**New**
+
+- **The tracker has KaizoCore's own look:** rounded cards, type and status pills, an HP bar and pill buttons. Your color theme still sets every color.
+- **Move names in their type's color, with a type symbol** before each one, on every game. The symbols are the DS tracker's.
+- **No wasted space:** on a phone in portrait the whole card fits on the screen, with the moves beside the stats. SETUP no longer takes a row of its own.
+- **Weather on Game Boy Advance games:** rain, sun, a sandstorm or hail shows under the battle banner while it lasts.
+- **Search the randomizer log:** it suggests Pokémon as you type, and one typo is forgiven. Every page of the log is easier to read.
+
+**Fixed**
+
+- **B to run** only runs from the battle menu (Fight, Bag, Pokémon, Run). B in the Bag, the party screen or the move list goes back again, on Game Boy Advance and Game Boy games. On DS games B is only B: the tracker's RUN button still runs.
+- **Crackling sound** on Game Boy Advance games.
+- **Black 2 and White 2 crashed at every launch** when the last auto-save was taken at the wrong moment. They open where you left off now.
+- **After a switch, the tracker shows the Pokémon on the field**, not your first party slot. Heals, Calc Atk and the move matchups follow it.
+- **Saves:**
+  - Two quick saves to one slot could delete it.
+  - A save that fails on a full phone says so.
+  - Each DS game keeps its own save: a HeartGold run no longer opens on the last Platinum run's save.
+  - UNDO brings a slot back with its own run.
+  - Save states no longer use more memory the longer you play.
+  - Time Machine no longer keeps every restore point after a restore, which could run the phone out of memory.
+- **Runs:**
+  - NEW RUN starts one run, however fast you tap.
+  - A run made while Play is open boots on its own, instead of being written into the game you were playing.
+  - Turning off "Get the next run ready" no longer deletes the run being installed.
+  - A randomized Nuzlocke asks before ending a run in another game.
+  - A blackout in Red, Blue or Yellow ends the run.
+  - On DS games an egg no longer keeps an "entire party faints" run alive.
+- **Backups and cloud sync:** a restore is all or nothing and restarts the app at once; cloud sync never leaves a half-written copy; a backup picked for restoring is linked only once the restore goes through.
+- **Patches** work on Android 8 to 12, and a patch copied out of the app only part way is copied again.
+- **32-bit phones:** the app no longer installs where no game could play.
+- **Cheats** are no longer lost after a Nuzlocke, and hardcore mode turns them off.
+- **RetroAchievements:** achievements no longer all show as unsupported.
+- **Your key bindings** work from the moment the app starts.
+- **The docked facecam** lets go of the camera when you turn it off.
+- **A game the emulator refuses** says so, instead of a black screen.
+- **Dual-screen handhelds:** the starter's info no longer opens on the second screen, where it crashed.
+- **A big DS game loading** no longer freezes the app's tabs.
+- **Streaming** no longer risks a crash while it reads your stat marks.
+
+**Known issues**
+
+- DS double battles are not tracked.
+- Gold, Silver and Crystal Survival: the 7 Kanto heals are added by hand.
+- Black 2 and White 2 use about 1 GB of memory.
+- The DS core leaks a little memory on each load.
+
 ## rc32 (1 October 2026)
 
 **New**

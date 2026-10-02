@@ -127,11 +127,17 @@ class GLRetroView(
     }
 
     @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
-    fun onDestroy() = catchExceptions {
-        renderObserver?.let { lifecycle?.removeObserver(it) }
-        renderObserver = null
-        LibretroDroid.destroy()
-        lifecycle = null
+    fun onDestroy() {
+        // KaizoCore (rc33 audit P1): torn down even after an aborted load. catchExceptions does nothing once isAborted,
+        // so a core whose game failed to load was never destroyed.
+        try {
+            renderObserver?.let { lifecycle?.removeObserver(it) }
+            renderObserver = null
+            LibretroDroid.destroy()
+            lifecycle = null
+        } catch (e: Exception) {
+            Log.e(TAG_LOG, "Error destroying GLRetroView", e)
+        }
     }
 
     private fun getDeviceLanguage() = Locale.getDefault().language
@@ -221,7 +227,8 @@ class GLRetroView(
         val listener = stateLoadListener
         runCatching { listener?.beforeStateLoad() }
         val loaded = runOnEmulationThread(useEmulationThread, false) {
-            LibretroDroid.unserializeState(data)
+            // A melonDS state with a DMA mid-burst crashed a core that had just booted (MelonState, rc33).
+            LibretroDroid.unserializeState(MelonState.safeToLoad(data))
         }
         runCatching { listener?.afterStateLoad(loaded) }
         return loaded

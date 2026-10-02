@@ -105,7 +105,8 @@ class AutoSave(private val state: File, private val stampFile: File) {
     fun save(bytes: ByteArray, capturedAt: Long, stamp: String, leaving: Boolean = false) {
         if (bytes.isEmpty() || !PrepStore.stampKnown(stamp)) return
         if (capturedAt > lastCapture) lastCapture = capturedAt
-        writer.execute { write(bytes, capturedAt, stamp, leaving) }
+        // The writer's answer was dropped here, so a full phone stopped auto-saving in silence (rc33 audit P0-8).
+        writer.execute { write(bytes, capturedAt, stamp, leaving)?.let { SaveTrouble.report(SaveTrouble.AUTO, it) } }
     }
 
     /**

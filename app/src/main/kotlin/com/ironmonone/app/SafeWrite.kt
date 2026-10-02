@@ -11,17 +11,17 @@ import java.io.FileOutputStream
  * untouched.
  */
 object SafeWrite {
-    fun bytes(file: File, bytes: ByteArray): Boolean = runCatching {
-        file.parentFile?.mkdirs()
+    fun bytes(file: File, bytes: ByteArray): Boolean {
         val tmp = File(file.parentFile, file.name + ".tmp")
-        FileOutputStream(tmp).use { it.write(bytes); it.fd.sync() }
-        // Android replaces the target on rename; a desktop JVM on Windows may refuse, so try once more after removing it.
-        if (!tmp.renameTo(file)) {
-            file.delete()
-            check(tmp.renameTo(file)) { "rename" }
-        }
-        true
-    }.getOrDefault(false)
+        return runCatching {
+            file.parentFile?.mkdirs()
+            FileOutputStream(tmp).use { it.write(bytes); it.fd.sync() }
+            // One atomic replace, on Android and on a desktop JVM alike. It used to delete the file and rename again
+            // when the first rename failed, and a full phone left the .tmp behind (rc33 audit P0-8).
+            StateSlots.replace(tmp, file)
+            true
+        }.getOrElse { if (tmp.isFile) tmp.delete(); false }
+    }
 
     fun text(file: File, text: String): Boolean = bytes(file, text.toByteArray(Charsets.UTF_8))
 }

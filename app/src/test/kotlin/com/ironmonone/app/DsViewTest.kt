@@ -128,7 +128,8 @@ class DsViewTest {
         val panel = File("src/main/kotlin/com/ironmonone/app/NdsTrackerPanel.kt").readText()
         assertTrue("if (stackBoth || !showEnemy) state.playerPokemon?.let { p ->" in panel, "your one card")
         assertTrue("if (showEnemy) shownEnemy?.let {" in panel, "the opponent's card")
-        assertTrue("PcBattleBanner(state.isWildBattle, onFlee, viewingOwn = !showEnemy, onSwapView = onSwap)" in panel)
+        // SETUP rides in the banner during a battle (2026-10-02): it had a row of its own.
+        assertTrue("PcBattleBanner(state.isWildBattle, onFlee, viewingOwn = !showEnemy, onSwapView = onSwap, onGear = onGear)" in panel)
         assertTrue("onLock = { view.toggleLock(state, TrackerOptions.dsEnemyLocking) }" in panel)
         assertTrue("view.onPause(effectivenessReady, state, TrackerOptions.dsAutoSwapToEnemy)" in panel)
         assertFalse("state.party.forEachIndexed" in panel, "the six cards are back")

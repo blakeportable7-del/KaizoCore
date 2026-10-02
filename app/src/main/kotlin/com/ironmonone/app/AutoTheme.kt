@@ -114,8 +114,9 @@ object AutoTheme {
      * malformed one. Its first eleven colours mean what a Gen 3 theme's do (top box =
      * upper box, move header = header) and land in the same places. Of the rest:
      * move names in the bottom box's text colour with the type beside them ("Color
-     * move names by type" off, type icons on: this app's type bar stands in for the
-     * DS type icon), the physical and special icons on and in the bottom box's text
+     * move names by type" off, type icons on), kept in the theme though the move rows
+     * colour names by type on every theme since 2026-10-02 (TrackerLook.moveName),
+     * the physical and special icons on and in the bottom box's text
      * colour (where this app always draws them), the gear in the top box's.
      */
     fun applyDs(code: String): Boolean {

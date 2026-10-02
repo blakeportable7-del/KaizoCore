@@ -23,7 +23,7 @@
 #include <oboe/Oboe.h>
 #include <oboe/FifoBuffer.h>
 
-#include "resamplers/cubicresampler.h"
+#include "resamplers/windowedsincresampler.h"
 
 namespace libretrodroid {
 
@@ -71,8 +71,8 @@ private:
     const double maxp = 0.003;
     const double maxi = 0.02;
 
-    // LOCAL MODIFICATION (KaizoCore): see resamplers/cubicresampler.h.
-    CubicResampler resampler;
+    // LOCAL MODIFICATION (KaizoCore): see resamplers/windowedsincresampler.h (and cubicresampler.h before it).
+    WindowedSincResampler resampler;
     std::unique_ptr<oboe::FifoBuffer> fifoBuffer = nullptr;
     std::unique_ptr<int16_t[]> temporaryAudioBuffer = nullptr;
 

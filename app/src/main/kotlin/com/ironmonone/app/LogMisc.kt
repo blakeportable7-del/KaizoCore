@@ -56,27 +56,27 @@ internal fun LogMiscTab(log: RandomizerLog) {
                     TrackerOptions.logCustomTrainerNames = !TrackerOptions.logCustomTrainerNames; TrackerOptions.save()
                 }
             }
-            PixText("Share Seed", 7, Pc.Text, Modifier.border(1.dp, Pc.Border).clickable { share = true }.padding(horizontal = 8.dp, vertical = 5.dp))
+            DialogText("Share Seed", 12, Pc.Text, Modifier.border(1.dp, Pc.Border).clickable { share = true }.padding(horizontal = 8.dp, vertical = 5.dp))
         }
         Spacer(Modifier.height(10.dp))
         LogInfo("Pokémon Game:", log.game)
         LogInfo("Randomizer Version:", log.version)
         LogInfo("Random Seed:", log.seed)
-        PixText("Settings String:", 8, Pc.Text, Modifier.padding(top = 4.dp))
-        log.settingsString.chunked(39).forEach { PixText(it, 7, Pc.Text, Modifier.padding(start = 8.dp)) }
+        DialogText("Settings String:", 13, Pc.Text, Modifier.padding(top = 4.dp))
+        log.settingsString.chunked(39).forEach { DialogText(it, 12, Pc.Text, Modifier.padding(start = 8.dp)) }
 
         Spacer(Modifier.height(12.dp))
-        PixText("From the log (not on the PC tracker's Misc tab)", 7, Pc.Dim)
+        DialogText("From the log (not on the PC tracker's Misc tab)", 12, Pc.Dim)
         Spacer(Modifier.height(4.dp))
-        PixText("Starters", 8, Pc.Gold)
-        log.starters.forEach { PixText(it, 7, Pc.Text) }
+        DialogText("Starters", 13, Pc.Gold)
+        log.starters.forEach { DialogText(it, 12, Pc.Text) }
         Spacer(Modifier.height(6.dp))
-        PixText("Static encounters", 8, Pc.Gold)
-        log.statics.forEach { (a, b) -> PixText("$a  ->  $b", 7, Pc.Text) }
+        DialogText("Static encounters", 13, Pc.Gold)
+        log.statics.forEach { (a, b) -> DialogText("$a  ->  $b", 12, Pc.Text) }
         if (log.pickup.isNotEmpty()) {
             Spacer(Modifier.height(6.dp))
-            PixText("Pickup items", 8, Pc.Gold)
-            log.pickup.forEach { PixText(it, 7, Pc.Text, wrap = true) }
+            DialogText("Pickup items", 13, Pc.Gold)
+            log.pickup.forEach { DialogText(it, 12, Pc.Text) }
         }
     }
     if (share) ShareSeedDialog(log) { share = false }
@@ -85,16 +85,16 @@ internal fun LogMiscTab(log: RandomizerLog) {
 @Composable
 private fun LogCheck(label: String, on: Boolean, onToggle: () -> Unit) {
     Row(Modifier.clickable { onToggle() }.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-        PixText(if (on) "[X]" else "[ ]", 8, Pc.Gold, Modifier.width(26.dp))
-        PixText(label, 8, Pc.Text)
+        DialogText(if (on) "[X]" else "[ ]", 13, Pc.Gold, Modifier.width(26.dp))
+        DialogText(label, 13, Pc.Text)
     }
 }
 
 @Composable
 private fun LogInfo(label: String, value: String) {
     Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
-        PixText(label, 8, Pc.Text, Modifier.width(150.dp))
-        PixText(value.ifBlank { "---" }, 8, Pc.Text, wrap = true)
+        DialogText(label, 13, Pc.Text, Modifier.width(150.dp))
+        DialogText(value.ifBlank { "---" }, 13, Pc.Text)
     }
 }
 
@@ -106,21 +106,21 @@ private fun ShareSeedDialog(log: RandomizerLog, onClose: () -> Unit) {
     var copied by remember { mutableStateOf(false) }
     Dialog(onDismissRequest = onClose) {
         Column(Modifier.fillMaxWidth().background(Pc.Page).border(1.dp, Pc.Border).padding(10.dp)) {
-            PixText("Share Randomizer Seed", 9, Pc.Gold)
+            DialogText("Share Randomizer Seed", 15, Pc.Gold)
             Spacer(Modifier.height(6.dp))
-            PixText("Copy/paste everything below to share. Load it through Randomizer --> Premade Seed.", 7, Pc.Text, wrap = true)
+            DialogText("Copy/paste everything below to share. Load it through Randomizer --> Premade Seed.", 12, Pc.Text)
             Spacer(Modifier.height(8.dp))
-            PixText(text, 7, Pc.Text, Modifier.fillMaxWidth().border(1.dp, Pc.Border).padding(6.dp), wrap = true)
+            DialogText(text, 12, Pc.Text, Modifier.fillMaxWidth().border(1.dp, Pc.Border).padding(6.dp))
             Spacer(Modifier.height(8.dp))
             Row {
-                PixText(if (copied) "COPIED" else "COPY", 8, if (copied) Pc.Positive else Pc.Gold,
+                DialogText(if (copied) "COPIED" else "COPY", 13, if (copied) Pc.Positive else Pc.Gold,
                     Modifier.border(1.dp, Pc.Border).clickable {
                         val cm = ctx.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
                         cm.setPrimaryClip(android.content.ClipData.newPlainText("Randomizer seed", text))
                         copied = true
                     }.padding(horizontal = 10.dp, vertical = 6.dp))
                 Spacer(Modifier.width(10.dp))
-                PixText("CLOSE", 8, Pc.Text, Modifier.border(1.dp, Pc.Border).clickable { onClose() }.padding(horizontal = 10.dp, vertical = 6.dp))
+                DialogText("CLOSE", 13, Pc.Text, Modifier.border(1.dp, Pc.Border).clickable { onClose() }.padding(horizontal = 10.dp, vertical = 6.dp))
             }
         }
     }

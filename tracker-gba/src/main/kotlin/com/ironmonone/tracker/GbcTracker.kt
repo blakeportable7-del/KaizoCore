@@ -27,7 +27,7 @@ class GbcTracker(
     private val rom: ByteArray,
     /** Which Gen 2 game's addresses to use; null when the header names none of them. */
     private val map: Gen2Map? = Gen2Map.forRom(rom),
-) : GbLookups {
+) : GbLookups, ActionMenuGate {
     companion object {
         const val RAM = 0x02000000L
 
@@ -42,6 +42,22 @@ class GbcTracker(
         const val EGG = 0xFD
         const val PARTY_STRIDE = 48                // party_struct; the reference steps 44, Gen 1's size
         const val ENEMY_MON = 0x1206L              // wEnemyMon (reference estats)
+        /**
+         * BattleMenuHeader (pokecrystal and pokegold engine/battle/menu.asm): a 2D menu boxed at (8, 12), two rows
+         * and two columns six apart, STATICMENU_CURSOR | STATICMENU_DISABLE_B. Init2DMenuCursorPosition makes that
+         * InitY 0x0E, InitX 0x09, CursorOffsets 0x26 and a joypad filter of A alone: no other battle menu leaves B
+         * out. And on screen: Place2DMenuCursor keeps the address of the tile it drew the cursor on, which ExitMenu
+         * puts back, so a menu already gone has no cursor there.
+         */
+        internal fun battleMenuUp(menu: ByteArray, tileAt: (Long) -> Int): Boolean {
+            if (menu.size < 13) return false
+            fun u(i: Int) = menu[i].toInt() and 0xFF
+            if (u(0) != 0x0E || u(1) != 0x09 || u(2) != 2 || u(3) != 2 || u(6) != 0x26 || u(7) != 0x01) return false
+            val tile = u(11) or (u(12) shl 8)
+            if (tile !in 0xC000..0xCFFF) return false
+            return tileAt(tile.toLong()) == 0xED   // "▶"
+        }
+
         const val BATTLE_MODE = 0x122DL            // wBattleMode: 0 none, 1 wild, 2 trainer (reference gBattleTypeFlags)
         const val ENEMY_LAST_MOVE = 0x0608L        // wEnemyMoveStruct 0xC608 (reference eMove): its first byte is the move id. wCurEnemyMove is 0xC6E4
         const val ENEMY_TURNS = 0x06DCL            // wEnemyTurnsTaken 0xC6DC (reference oppTurn): counts the turns the opponent's move ran
@@ -196,6 +212,17 @@ class GbcTracker(
     // ------------------------------------------------------------------ WRAM
 
     private fun ram(off: Long, len: Int): ByteArray = memory.read(RAM + off, len)
+
+    /** B-to-Run's gate (ActionMenuGate): a wild battle (wBattleMode 1) with its action menu up, read live. */
+    override fun isChoosingActionInWild(): Boolean {
+        val m = map ?: return false
+        if (m.menu2D == 0L) return false
+        val mode = ram(m.battleMode, 1)
+        if (mode.isEmpty() || mode[0].toInt() != 1) return false
+        return battleMenuUp(ram(m.menu2D, 13)) { addr ->
+            ram(addr - 0xC000L, 1).firstOrNull()?.toInt()?.and(0xFF) ?: -1
+        }
+    }
     private val m: Gen2Map get() = map ?: Gen2Map.CRYSTAL   // read() refuses first when map is null
     private fun be16(b: ByteArray, o: Int): Int = (b.u8(o) shl 8) or b.u8(o + 1)
 
@@ -468,10 +495,15 @@ class GbcTracker(
         val inBattle = mode == 1 || mode == 2
         var enemy = if (inBattle) readEnemy() else run { enemyMoves.clear(); null }
         val battling = inBattle && enemy != null
+        // The player's Pokemon on the field (wCurBattleMon, a slot; eggs are not in [party], so through partySlots):
+        // slot 1 is not it after a switch (rc33 audit P1).
+        val onField = if (battling && m.curBattleMon != 0L)
+            ram(m.curBattleMon, 1).let { if (it.isEmpty()) -1 else it.u8(0) }.let { s -> partySlots.indexOf(s).takeIf { it >= 0 } } ?: 0
+        else 0
         // Battle.updateStatStagesGen2 (Gen 2 reference Battle.lua:699-722): the active battlers' stages,
-        // drawn only in battle, yours on slot 1 as the reference views it (Battle.getViewedPokemon).
+        // drawn only in battle, yours on the Pokemon on the field as the reference views it (Battle.getViewedPokemon).
         if (battling && party.isNotEmpty()) {
-            party = listOf(party[0].copy(statStages = gbStatStages(ram(m.statLevels, 7), GEN2_STAGES))) + party.drop(1)
+            party = party.mapIndexed { i, p -> if (i == onField) p.copy(statStages = gbStatStages(ram(m.statLevels, 7), GEN2_STAGES)) else p }
             enemy = enemy?.copy(statStages = gbStatStages(ram(m.statLevels + 8, 7), GEN2_STAGES))
         }
         lastMove.read(battling, turn = ram(m.playerTurns, 1).let { if (it.isEmpty()) 0 else it.u8(0) },
@@ -484,11 +516,12 @@ class GbcTracker(
             m.mapGroup != 0L -> ram(m.mapGroup, 2).takeIf { it.size == 2 }?.let { (it.u8(0) shl 8) or it.u8(1) }
             else -> null
         }
-        val lead = party.firstOrNull()
+        val lead = party.getOrNull(onField)
         val heals = readHeals(bag, lead?.mon?.maxHp ?: 0)
         return TrackerState(
             partyCount = party.size,
             party = party,
+            ownOnField = onField,
             inBattle = battling,
             isWildBattle = inBattle && mode == 1,
             enemy = enemy,
@@ -563,6 +596,14 @@ data class Gen2Map(
     val wildMon: Long = 0L,
     /** The randomizer's TrainerDataTableOffset ([Crystal (U)] and [Gold (U)] in gen2_offsets.ini). */
     val trainerTable: Int = 0,
+    /**
+     * w2DMenuCursorInitY, the first of the 2D menu's bytes (InitY, InitX, NumRows, NumCols, Flags1, Flags2,
+     * CursorOffsets, JoypadFilter, CursorY, CursorX, CursorOffCharacter, CursorCurrentTile x2): pokecrystal 0xCFA1,
+     * pokegold 0xCED8 (tools/wram_layout.py). B-to-Run reads the battle menu from them.
+     */
+    val menu2D: Long = 0L,
+    /** wCurBattleMon, the party slot of the player's Pokemon in battle: pokecrystal 0xD0D4, pokegold 0xCFC6. */
+    val curBattleMon: Long = 0L,
 ) {
     companion object {
         val CRYSTAL = Gen2Map(
@@ -580,6 +621,8 @@ data class Gen2Map(
             options = 0x0FCCL, playerState = 0x195DL, numBalls = 0x18D7L, balls = 0x18D8L, nicks = 0x1E41L, enemyDvs = 0x120CL,
             wildMon = 0x064EL,      // wWildMon C64E
             trainerTable = 0x39999,
+            menu2D = 0x0FA1L,
+            curBattleMon = 0x10D4L,
         )
 
         /** pokegold: wPartyCount DA22, wPartySpecies DA23, wPartyMons DA2A, wEnemyMon D0EF, wBattleMode D116,
@@ -598,6 +641,8 @@ data class Gen2Map(
             options = 0x1199L, playerState = 0x1682L, numBalls = 0x15FCL, balls = 0x15FDL, nicks = 0x1B8CL, enemyDvs = 0x10F5L,
             wildMon = 0x114FL,      // wWildMon D14F
             trainerTable = 0x3993E,
+            menu2D = 0x0ED8L,
+            curBattleMon = 0x0FC6L,
         )
 
         /**

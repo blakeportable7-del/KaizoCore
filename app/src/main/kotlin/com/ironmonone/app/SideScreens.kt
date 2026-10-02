@@ -127,7 +127,13 @@ fun SideScreenDialogs(
         ScoreSheetDialog(result, spriteFor) { s.scoreSheet = false }
     }
     if (s.timeMachineDialog && timeMachine != null) {
-        timeMachine.viewing = true
+        // Nothing is trimmed while the list is open (the reference's viewing flag), and every way out ends that and
+        // trims: Close, a restore, or leaving Play with it open. A restore used to leave the flag on, so restore points
+        // piled up for the rest of the visit until memory ran out (rc33 audit P0-3).
+        androidx.compose.runtime.DisposableEffect(timeMachine) {
+            timeMachine.viewing = true
+            onDispose { timeMachine.viewing = false; timeMachine.cleanup() }
+        }
         TimeMachineDialog(
             timeMachine, enabled = TrackerOptions.restorePoints,
             onEnable = { TrackerOptions.restorePoints = it; TrackerOptions.save() },
@@ -137,7 +143,7 @@ fun SideScreenDialogs(
                 onRestore(rp)
                 s.timeMachineDialog = false
             },
-        ) { s.timeMachineDialog = false; timeMachine.viewing = false; timeMachine.cleanup() }
+        ) { s.timeMachineDialog = false }
     }
     s.moveHistory?.let { (species, n, lv) ->
         MoveHistoryDialog(
@@ -273,7 +279,8 @@ class PlayUiState {
  * once the core is up it takes its real size, and a resize then is instant.
  */
 fun Modifier.holdSizeWhileLoading(ui: PlayUiState, loading: Boolean): Modifier =
-    this.clipToBounds().layout { measurable, constraints ->
+    // The same moment also holds the tabs: leaving Play mid-load is the same wait on the GL thread (PlayLoading, P0-11).
+    this.also { PlayLoading.note(loading) }.clipToBounds().layout { measurable, constraints ->
         val held = if (loading) (ui.heldSize ?: androidx.compose.ui.unit.IntSize(constraints.maxWidth, constraints.maxHeight)
             .takeIf { constraints.hasBoundedWidth && constraints.hasBoundedHeight }?.also { ui.heldSize = it })
         else { ui.heldSize = null; null }

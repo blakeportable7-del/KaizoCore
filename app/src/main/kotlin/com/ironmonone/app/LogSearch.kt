@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.BasicTextField
@@ -64,6 +65,15 @@ object LogSearch {
     }
     fun defaultFilter(tab: LogTab): LogFilter? = when (tab) {
         LogTab.POKEMON -> LogFilter.NAME; LogTab.TRAINERS -> LogFilter.TRAINER; LogTab.ROUTES -> LogFilter.ROUTE; else -> null
+    }
+
+    /** What the empty search box says it searches. */
+    fun hint(filter: LogFilter?): String = when (filter) {
+        LogFilter.ABILITY -> "Search an ability"
+        LogFilter.MOVE -> "Search a level-up move"
+        LogFilter.ROUTE -> "Search a route"
+        LogFilter.TRAINER -> "Search a trainer"
+        else -> "Search a Pok\u00e9mon"
     }
 
     /** A base stat by the reference's key, whatever this log's table header calls it. */
@@ -152,9 +162,9 @@ object LogSearch {
 }
 
 /**
- * LogSearchScreen, sized for a phone: "Search:" with its filter, "Sort by:"
- * with its order, and the text. The reference's on-screen keyboard is the
- * phone's own here.
+ * LogSearchScreen, sized for a phone (2026-10-02, Blake: "better UI and an actual search bar that suggests pokemon
+ * as you type the name"): the search box with its suggestions (LogSearchField), then what it searches by and the
+ * order, each a choice in the tracker's own style. The reference's on-screen keyboard is the phone's own here.
  */
 @Composable
 internal fun LogSearchBar(
@@ -166,25 +176,20 @@ internal fun LogSearchBar(
     filters: List<LogFilter>,
     filter: LogFilter,
     onFilter: (LogFilter) -> Unit,
+    suggestions: List<LogSuggestion> = emptyList(),
+    spriteOf: ((RandomizerLog.Pokemon) -> androidx.compose.ui.graphics.ImageBitmap?)? = null,
+    onSuggestion: (LogSuggestion) -> Unit = {},
 ) {
-    Column(Modifier.fillMaxWidth().background(Pc.Page).border(1.dp, Pc.Border).padding(6.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            PixText("Search:", 7, Pc.Dim, Modifier.width(50.dp))
+    Column(Modifier.fillMaxWidth()) {
+        LogSearchField(query, onQuery, LogSearch.hint(filter), suggestions, spriteOf, onSuggestion)
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            DialogText("Search by", 12, Pc.Dim)
+            Spacer(Modifier.width(8.dp))
             LogPicker(filter.label, filters.map { it.label }) { onFilter(filters[it]) }
-            Spacer(Modifier.width(14.dp))
-            PixText("Sort by:", 7, Pc.Dim, Modifier.width(50.dp))
+            Spacer(Modifier.weight(1f))
+            DialogText("Sort", 12, Pc.Dim)
+            Spacer(Modifier.width(8.dp))
             LogPicker(sort.label, sorts.map { it.label }) { onSort(sorts[it]) }
-        }
-        Spacer(Modifier.height(4.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            PixText("FIND", 7, Pc.Dim, Modifier.width(34.dp))
-            BasicTextField(
-                value = query, onValueChange = onQuery, singleLine = true,
-                textStyle = TextStyle(color = Pc.Text, fontSize = 12.sp),
-                cursorBrush = SolidColor(Pc.Gold),
-                modifier = Modifier.weight(1f),
-            )
-            if (query.isNotEmpty()) PixText("X", 7, Pc.Dim, Modifier.clickable { onQuery("") }.padding(4.dp))
         }
     }
 }
@@ -194,13 +199,17 @@ internal fun LogSearchBar(
 private fun LogPicker(current: String, options: List<String>, onPick: (Int) -> Unit) {
     var open by remember { mutableStateOf(false) }
     Box {
-        PixText("$current ▼", 7, Pc.Gold, Modifier.clickable { open = true }.padding(vertical = 4.dp))
+        Box(Modifier.heightIn(min = PcMin.DIALOG_TOUCH_DP.dp).clickable { open = true }, contentAlignment = Alignment.CenterStart) {
+            DialogText("$current \u25bc", 13, Pc.Gold)
+        }
         if (open) {
             Popup(onDismissRequest = { open = false }, properties = PopupProperties(focusable = true)) {
                 Column(Modifier.background(Pc.Page).border(1.dp, Pc.Gold)) {
                     options.forEachIndexed { i, o ->
-                        PixText(o, 8, if (o == current) Pc.Gold else Pc.Text,
-                            Modifier.clickable { onPick(i); open = false }.padding(horizontal = 12.dp, vertical = 8.dp))
+                        Box(Modifier.heightIn(min = PcMin.DIALOG_TOUCH_DP.dp).clickable { onPick(i); open = false }.padding(horizontal = 16.dp),
+                            contentAlignment = Alignment.CenterStart) {
+                            DialogText(o, 14, if (o == current) Pc.Gold else Pc.Text)
+                        }
                     }
                 }
             }

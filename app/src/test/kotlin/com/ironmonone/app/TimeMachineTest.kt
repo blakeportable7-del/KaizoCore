@@ -47,6 +47,27 @@ class TimeMachineTest {
         assertTrue("it.isWildBattle && records && Demo.mode == null && trackerRef != null" in play)
     }
 
+    /**
+     * rc33 audit P0-3: a restore through the dialog left `viewing` on, so `cleanup` returned early for the rest of
+     * the visit and restore points (tens of MB each on DS) piled up. The dialog now holds the flag in a
+     * DisposableEffect, so leaving it any way at all, a restore included, clears the flag and trims.
+     */
+    @Test
+    fun `nothing is trimmed while the list is open, and leaving it any way trims`() {
+        val tm = TimeMachine()
+        tm.viewing = true
+        for (i in 1..14) tm.create(null, "Map", i * 1000L, snap)
+        assertEquals("kept while the player is choosing", 14, tm.points.size)
+        // What the dialog's onDispose does, whichever way it closed.
+        tm.viewing = false; tm.cleanup()
+        assertEquals(10, tm.points.size)
+        assertEquals("# 14 - Map", tm.points[0].label)
+        // The wiring: the flag lives in the dialog's DisposableEffect, set nowhere else in composition.
+        val side = java.io.File("src/main/kotlin/com/ironmonone/app/SideScreens.kt").readText().replace("\r\n", "\n")
+        assertTrue(Regex("DisposableEffect\\(timeMachine\\) \\{\\s*timeMachine.viewing = true\\s*onDispose \\{ timeMachine.viewing = false; timeMachine.cleanup\\(\\) \\}").containsMatchIn(side))
+        assertEquals(1, Regex("timeMachine.viewing = true").findAll(side).count())
+    }
+
     @Test
     fun `ten are kept, newest first, and a restore leaves a return point`() {
         val tm = TimeMachine()

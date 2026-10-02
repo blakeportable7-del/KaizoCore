@@ -38,4 +38,22 @@ class StateSlotsTest {
         assertEquals(5, StateSlots.latest(slots)?.n)
         assertTrue(slots[1].savedLabel() != "empty")
     }
+
+    /** rc33 audit P1: UNDO brought back the old state but kept the stamp of the save that overwrote it. */
+    @Test
+    fun `undo brings back the old state's own run stamp`() {
+        val dir = java.nio.file.Files.createTempDirectory("undo").toFile()
+        val slot = StateSlots.Slot(1, java.io.File(dir, "state1.bin"), java.io.File(dir, "state1.id"), java.io.File(dir, "state1.png"))
+        slot.file.writeText("seed A state"); slot.stamp.writeText("emerald-u/aaaa")
+        slot.keepBackup()
+        slot.file.writeText("seed B state"); slot.stamp.writeText("emerald-u/bbbb")
+        kotlin.test.assertTrue(slot.restoreBackup())
+        kotlin.test.assertEquals("seed A state", slot.file.readText())
+        kotlin.test.assertEquals("emerald-u/aaaa", slot.stamp.readText(), "the old state with its own stamp")
+        kotlin.test.assertEquals("emerald-u/bbbb", slot.backupStamp.readText(), "and the swapped-out one keeps its")
+        // A backup kept before rc33 has no stamp: the restored state is unstamped, which a load refuses.
+        slot.backupStamp.delete()
+        kotlin.test.assertTrue(slot.restoreBackup())
+        kotlin.test.assertFalse(slot.stamp.exists())
+    }
 }

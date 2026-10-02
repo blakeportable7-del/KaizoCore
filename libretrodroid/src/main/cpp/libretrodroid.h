@@ -126,6 +126,8 @@ public:
      * before the core is ready to answer.
      */
     std::atomic<bool> gameLoaded { false };
+    // KaizoCore: retro_load_game succeeded and retro_unload_game has not run yet (destroy() unloads only then).
+    bool coreHasGame = false;
 
     /**
      * Frames the core has actually run. melonDS builds its CoreState lazily on

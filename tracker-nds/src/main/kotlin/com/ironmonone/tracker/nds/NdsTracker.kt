@@ -649,8 +649,10 @@ class NdsTracker(
         val party = battleParty(versionRel)
         val gen5 = map.absolute
         if (lossCondition == com.ironmonone.tracker.LossCondition.ENTIRE_PARTY) {
+            // An egg in the battle copy never faints, so "everyone at 0 HP" never came and the run never ended
+            // (rc33 audit P1). Gen 4 skips eggs; Gen 5's battle data carries no egg bit to skip by.
             val wiped = if (gen5) gen5PartyPointers().let { p -> p.isNotEmpty() && p.all { battleHp(it) == 0 } }
-                else party.isNotEmpty() && party.values.all { it.curHp == 0 }
+                else party.values.filter { !it.isEgg }.let { real -> real.isNotEmpty() && real.all { it.curHp == 0 } }
             if (wiped) return true
         }
         // Kaizo Doubles: either of the battle copy's first two slots. No DS reference has it; the

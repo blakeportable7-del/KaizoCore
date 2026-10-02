@@ -68,9 +68,9 @@ internal fun LogTmsTab(
     val ctx = LocalContext.current
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().padding(bottom = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            PixText("Filter by:", 7, Pc.Dim)
+            DialogText("Filter by:", 12, Pc.Dim)
             LogTmFilter.entries.forEach { f ->
-                PixText(f.label, 7, if (f == filter) Pc.Gold else Pc.Text, Modifier.clickable { onFilter(f) }.padding(vertical = 4.dp))
+                DialogText(f.label, 12, if (f == filter) Pc.Gold else Pc.Text, Modifier.clickable { onFilter(f) }.padding(vertical = 4.dp))
             }
         }
         if (filter == LogTmFilter.GYM) {
@@ -82,13 +82,13 @@ internal fun LogTmsTab(
                         if (art != null) Image(art, "badge ${r.gym}", Modifier.size(20.dp), filterQuality = FilterQuality.None)
                         else Spacer(Modifier.size(20.dp))
                         Spacer(Modifier.width(6.dp))
-                        PixText("TM%02d  %s".format(r.number, logTitle(r.move)), 8, Pc.Text, Modifier.weight(1f))
+                        DialogText("TM%02d  %s".format(r.number, logTitle(r.move)), 13, Pc.Text, Modifier.weight(1f))
                         val leader = r.leader
                         if (leader != null) {
                             val name = logTitle(if (custom && leader.name.isNotBlank()) leader.customShortName else leader.shortName)
-                            PixText(name, 7, Pc.Gold, Modifier.clickable { onTrainer(leader) }.padding(horizontal = 6.dp, vertical = 2.dp))
+                            DialogText(name, 12, Pc.Gold, Modifier.clickable { onTrainer(leader) }.padding(horizontal = 6.dp, vertical = 2.dp))
                         }
-                        PixText("Gym ${r.gym}", 7, Pc.Dim, Modifier.width(42.dp))
+                        DialogText("Gym ${r.gym}", 12, Pc.Dim, Modifier.width(42.dp))
                     }
                 }
             }
@@ -97,7 +97,7 @@ internal fun LogTmsTab(
             LazyVerticalGrid(GridCells.Adaptive(150.dp), Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(2.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 items(tms, key = { it.number }) { t ->
-                    PixText("TM%02d  %s".format(t.number, logTitle(t.move)), 7, Pc.Text,
+                    DialogText("TM%02d  %s".format(t.number, logTitle(t.move)), 12, Pc.Text,
                         Modifier.fillMaxWidth().background(Pc.Page).border(1.dp, Pc.Border).padding(6.dp))
                 }
             }

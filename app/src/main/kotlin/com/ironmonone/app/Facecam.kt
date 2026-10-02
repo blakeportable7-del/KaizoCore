@@ -147,17 +147,6 @@ fun FacecamBubble(onDenied: () -> Unit) {
         // the camera down and rebuilt it on unrelated state changes.
         CameraPreview(front, lifecycleOwner)
     }
-
-    DisposableEffect(Unit) {
-        onDispose {
-            // Never block the main thread on the provider future here.
-            val future = ProcessCameraProvider.getInstance(context)
-            future.addListener(
-                { runCatching { future.get().unbindAll() } },
-                ContextCompat.getMainExecutor(context),
-            )
-        }
-    }
 }
 
 /**
@@ -174,9 +163,22 @@ private fun BoxScope.CameraPreview(front: Boolean, lifecycleOwner: LifecycleOwne
         scaleType = PreviewView.ScaleType.FILL_CENTER
     } }
     AndroidView(factory = { view }, modifier = Modifier.matchParentSize())
+    // The camera is let go when the preview leaves, the docked one and the bubble alike (rc33 audit P1: only the
+    // bubble did, so the docked camera stayed in use after CAM went off or Play was left). A bind still on its way
+    // when the preview goes is dropped. Both run on the main executor, so the order is the order they were asked.
+    val alive = remember { java.util.concurrent.atomic.AtomicBoolean(true) }
+    DisposableEffect(Unit) {
+        onDispose {
+            alive.set(false)
+            // Never block the main thread on the provider future here.
+            val future = ProcessCameraProvider.getInstance(context)
+            future.addListener({ runCatching { future.get().unbindAll() } }, ContextCompat.getMainExecutor(context))
+        }
+    }
     LaunchedEffect(front) {
         val future = ProcessCameraProvider.getInstance(context)
         future.addListener({
+            if (!alive.get()) return@addListener
             runCatching {
                 val provider = future.get()
                 val preview = Preview.Builder().build()

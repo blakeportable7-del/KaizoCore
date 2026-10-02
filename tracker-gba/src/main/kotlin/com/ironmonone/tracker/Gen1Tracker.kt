@@ -38,9 +38,38 @@ class Gen1Tracker(
     private val memory: MemoryReader,
     private val rom: ByteArray,
     private val map: Gen1Map? = Gen1Map.forRom(rom),
-) : GbLookups {
+) : GbLookups, ActionMenuGate {
     companion object {
         const val RAM = GbcTracker.RAM
+
+        /**
+         * The menu bytes HandleMenuInput reads, wTopMenuItemY 0xCC24 to wLastMenuItem 0xCC2A, and the tile map wTileMap
+         * 0xC3A0, as offsets: the same in pokered and pokeyellow (tools/wram_layout.py).
+         */
+        const val MENU = 0x0C24L
+        const val TILE_MAP = 0x03A0L
+        const val CURSOR_TILE = 0xED   // "▶", pokered's charmap
+
+        /** wPlayerMonNumber 0xCC2F, the party index of the player's Pokemon in battle: the same in both games. */
+        const val PLAYER_MON_NUMBER = 0x0C2FL
+
+        /**
+         * DisplayBattleMenu (pokered and pokeyellow engine/battle/core.asm) waits on HandleMenuInput with the cursor at
+         * row 0x0E, in column 0x09 (FIGHT, ITEM) watching RIGHT and A, or column 0x0F (PKMN, RUN) watching LEFT and A,
+         * two items a column. B is never watched there; every other battle menu (the move menu, the item list, the
+         * party) watches B, so nothing else can look like it.
+         */
+        internal fun battleMenuUp(menu: ByteArray, tileMap: (col: Int, row: Int) -> Int): Boolean {
+            if (menu.size < 7) return false
+            val top = menu[0].toInt() and 0xFF
+            val col = menu[1].toInt() and 0xFF
+            val max = menu[4].toInt() and 0xFF
+            val keys = menu[5].toInt() and 0xFF
+            if (top != 0x0E || max != 1) return false
+            if (!((col == 0x09 && keys == 0x11) || (col == 0x0F && keys == 0x21))) return false
+            // And on screen, its cursor in that column: the menu bytes outlive the menu by a text box or two.
+            return tileMap(col, 0x0E) == CURSOR_TILE || tileMap(col, 0x10) == CURSOR_TILE
+        }
         const val PARTY_STRIDE = 44
         const val ENEMY_SIZE = 29
         const val BASE_STRIDE = 28
@@ -142,6 +171,16 @@ class Gen1Tracker(
 
     // ------------------------------------------------------------------ RAM
     private fun ram(off: Long, len: Int): ByteArray = memory.read(RAM + off, len)
+
+    /** B-to-Run's gate (ActionMenuGate): a wild battle (wIsInBattle 1) with its action menu up, read live. */
+    override fun isChoosingActionInWild(): Boolean {
+        val m = map ?: return false
+        val battle = ram(m.inBattle, 1)
+        if (battle.isEmpty() || battle[0].toInt() != 1) return false
+        return battleMenuUp(ram(MENU, 7)) { col, row ->
+            ram(TILE_MAP + row * 20L + col, 1).firstOrNull()?.toInt()?.and(0xFF) ?: -1
+        }
+    }
     private fun be16(b: ByteArray, o: Int): Int = (b.u8(o) shl 8) or b.u8(o + 1)
 
     /** Gen 1 status byte: bits 0-2 sleep turns, 3 poison, 4 burn, 5 freeze, 6 paralysis. */
@@ -369,20 +408,23 @@ class Gen1Tracker(
         val inBattle = mode == 1 || mode == 2
         var enemy = if (inBattle) readEnemy() else run { enemyMoves.clear(); null }
         val battling = inBattle && enemy != null
+        // The player's Pokemon on the field (wPlayerMonNumber): slot 1 is not it after a switch (rc33 audit P1).
+        // The party list stops at the first bad slot, so an index is a slot.
+        val onField = if (battling) ram(PLAYER_MON_NUMBER, 1).let { if (it.isEmpty()) 0 else it.u8(0) }.takeIf { it in party.indices } ?: 0 else 0
         // Battle.updateStatStages (Battle.lua:735-761): the active battlers' stages, drawn only in battle,
-        // yours on slot 1 as the reference views it (Battle.getViewedPokemon).
+        // yours on the Pokemon on the field as the reference views it (Battle.getViewedPokemon).
         if (battling && party.isNotEmpty()) {
-            party = listOf(party[0].copy(statStages = gbStatStages(ram(m.statMods, 6), GEN1_STAGES))) + party.drop(1)
+            party = party.mapIndexed { i, p -> if (i == onField) p.copy(statStages = gbStatStages(ram(m.statMods, 6), GEN1_STAGES)) else p }
             enemy = enemy?.copy(statStages = gbStatStages(ram(m.statMods + 0x14, 6), GEN1_STAGES))
         }
         lastMove.read(battling, turn = ram(m.aiTurns, 1).let { if (it.isEmpty()) 0 else it.u8(0) },
             move = ram(m.enemyMove, 1).let { if (it.isEmpty()) 0 else it.u8(0) })
         val badges = ram(m.badges, 1).let { if (it.isEmpty()) 0 else it.u8(0) }
-        val lead = party.firstOrNull()
+        val lead = party.getOrNull(onField)
         val heals = readHeals(bag, lead?.mon?.maxHp ?: 0)
         val mapId = ram(m.curMap, 1).takeIf { m.curMap != 0L && it.isNotEmpty() }?.u8(0)
         return TrackerState(
-            partyCount = party.size, party = party,
+            partyCount = party.size, party = party, ownOnField = onField,
             inBattle = battling, isWildBattle = inBattle && mode == 1, enemy = enemy,
             // "Team:" in a trainer battle: the one ball the reference knows (gbEnemyTeam).
             enemyTeam = gbEnemyTeam(trainerBattle = battling && mode == 2, enemy = enemy),

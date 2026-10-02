@@ -197,4 +197,15 @@ class PatcherTest {
         b.truncateTo?.let { out.write(it shr 16); out.write(it shr 8); out.write(it) }
         return out.toByteArray()
     }
+
+    /** rc33 audit P1: the first bytes of a patch, read so Android 8 to 12 can (InputStream.readNBytes is API 33). */
+    @Test
+    fun `head reads up to n bytes, fewer from a shorter file`() {
+        val dir = java.nio.file.Files.createTempDirectory("head").toFile()
+        val long = File(dir, "a.bin").apply { writeBytes(ByteArray(100) { it.toByte() }) }
+        assertEquals((0 until 8).map { it.toByte() }, Patcher.head(long, 8).toList())
+        val short = File(dir, "b.bin").apply { writeBytes(byteArrayOf(1, 2, 3)) }
+        assertEquals(listOf<Byte>(1, 2, 3), Patcher.head(short, 8).toList())
+        assertEquals(0, Patcher.head(File(dir, "c.bin").apply { writeBytes(ByteArray(0)) }, 8).size)
+    }
 }

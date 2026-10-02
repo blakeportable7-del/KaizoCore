@@ -49,6 +49,7 @@ class GbPanelWiringTest {
     fun `the carousel's last attack line and its colour come from LastAttack`() {
         val panel = src("TrackerPanel.kt")
         assertTrue("com.ironmonone.tracker.LastAttack.text(mv, state.lastAttackDamage, state.lastAttackTeams)" in panel)
-        assertTrue("lastAttackLethal = com.ironmonone.tracker.LastAttack.lethal(state.lastAttackDamage, state.party.firstOrNull()?.mon?.curHp)," in panel)
+        // The Pokemon on the field takes the hit, not party slot 1 after a switch (TrackerState.onField, rc33 audit P1).
+        assertTrue("lastAttackLethal = com.ironmonone.tracker.LastAttack.lethal(state.lastAttackDamage, state.onField?.mon?.curHp)," in panel)
     }
 }

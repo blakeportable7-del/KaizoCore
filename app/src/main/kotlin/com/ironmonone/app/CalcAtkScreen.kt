@@ -156,7 +156,7 @@ fun CalcAtkDialog(fill: CalcAtk.Fill?, enemyStats: Pair<Int, Int>?, onClose: () 
 fun calcAtkFill(t: com.ironmonone.tracker.GbaTracker, s: com.ironmonone.tracker.TrackerState): CalcAtk.Fill? {
     val id = s.lastAttackMoveId.takeIf { it > 0 } ?: return null
     val row = t.moveRowFor(id) ?: return null
-    val own = s.party.firstOrNull() ?: return null
+    val own = s.onField ?: return null   // the Pokemon that was hit: slot 1 is not it after a switch (rc33 audit P1)
     val enemy = s.enemy ?: return null
     return CalcAtk.autoFill(
         moveId = id, power = com.ironmonone.tracker.MoveRules.basePower(id, row.power), type = row.type, category = row.category,

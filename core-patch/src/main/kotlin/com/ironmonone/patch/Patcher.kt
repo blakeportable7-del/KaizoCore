@@ -68,8 +68,24 @@ object Patcher {
      * 128 MB DS dump never sits in the heap); the small formats go through
      * memory. Returns the target's CRC32.
      */
+    /**
+     * Up to [n] bytes from the start of [file]: fewer when it is shorter. InputStream.readNBytes does this on a
+     * desktop JVM but is API 33 on Android, so on Android 8 to 12 every file-to-file patch threw NoSuchMethodError
+     * (rc33 audit P1). This loop works on every Android the app supports.
+     */
+    fun head(file: java.io.File, n: Int): ByteArray = file.inputStream().use { input ->
+        val buf = ByteArray(n)
+        var got = 0
+        while (got < n) {
+            val r = input.read(buf, got, n - got)
+            if (r < 0) break
+            got += r
+        }
+        if (got == n) buf else buf.copyOf(got)
+    }
+
     fun applyFiles(patch: java.io.File, source: java.io.File, target: java.io.File, romName: String = "that ROM", onProgress: ((Long, Long) -> Unit)? = null): Long {
-        val head = patch.inputStream().use { it.readNBytes(8) }
+        val head = head(patch, 8)
         if (Xdelta.isXdelta(head)) {
             Xdelta.apply(patch, source, target, onProgress)
         } else {

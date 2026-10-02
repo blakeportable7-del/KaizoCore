@@ -104,6 +104,16 @@ class NdsRunOverTest {
         assertNotNull(t.read().runOver)
     }
 
+    /** rc33 audit P1: an egg in the battle copy never faints, so the entire party never read as wiped. */
+    @Test
+    fun `an egg in the party does not keep an entire-party run alive`() {
+        party(overworld = listOf(10 to 40, 9 to 20), battle = listOf(10 to 0))
+        put(versionRel + m.playerBattleBase + 236L, Gen4.encodeParty(0x101L, 25, 1, 7, 7, listOf(0, 0, 0, 0), egg = true))
+        inBattle(true)
+        val t = tracker(LossCondition.ENTIRE_PARTY)
+        assertNotNull(t.read().runOver, "the only Pokemon that can fight has fainted")
+    }
+
     @Test
     fun `Kaizo Doubles ends the run when either of the first two faints`() {
         party(overworld = listOf(10 to 40, 9 to 20, 8 to 30), battle = listOf(10 to 40, 9 to 20, 8 to 30))

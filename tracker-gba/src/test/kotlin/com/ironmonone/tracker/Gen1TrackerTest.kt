@@ -314,4 +314,25 @@ class Gen1TrackerTest {
         assertNull(Gen1Map.forRom(rom(map, "TETRIS", 0x00)))
         assertTrue(Gen1Tracker(w, rom(map, "TETRIS", 0x00)).read().unreadable)
     }
+
+    /** rc33 audit P1: in a battle the Pokemon on the field (wPlayerMonNumber) gets the stages and the heals, not slot 1. */
+    @Test
+    fun `in a battle the Pokemon on the field is the one wPlayerMonNumber names`() {
+        val map = Gen1Map.RED_BLUE
+        fun battle(onField: Int): TrackerState {
+            val w = overworld(map)
+            w.put(map.inBattle, 1)
+            val e = map.enemyMon
+            w.put(e, 0x03); w.be16(e + 1, 12); w.put(e + 14, 4); w.be16(e + 15, 18)
+            w.put(Gen1Tracker.PLAYER_MON_NUMBER, onField)
+            intArrayOf(9, 7, 7, 7, 7, 7).forEachIndexed { i, v -> w.put(map.statMods + i, v) }   // ATTACK +2
+            return Gen1Tracker(w, rom(map, "POKEMON RED", 0x00)).read()
+        }
+        val s = battle(1)
+        assertEquals(1, s.ownOnField)
+        assertEquals(18, s.onField!!.mon.maxHp)
+        assertTrue(s.party[0].statStages.isEmpty(), "slot 1 is not on the field")
+        assertTrue(s.party[1].statStages.isNotEmpty())
+        assertTrue(s.healPercent != battle(0).healPercent, "heals are counted against the Pokemon on the field")
+    }
 }

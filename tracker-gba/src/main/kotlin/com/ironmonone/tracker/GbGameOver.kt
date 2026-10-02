@@ -20,6 +20,8 @@ package com.ironmonone.tracker
  * fainting mid-battle ended the run before the battle was over.
  */
 internal object GbGameOver {
+    /** pokered's wIsInBattle after a lost battle, until the blackout clears it. */
+    const val LOST_BATTLE = 0xFF
     /**
      * [condition] is the player's "Game is considered over when" choice. The Game Boy references
      * have no such option and always use the lead; Blake, 2026-09-29, gives the player full
@@ -27,6 +29,12 @@ internal object GbGameOver {
      * say. The timing stays the references': only once the battle byte reads 0.
      */
     fun lost(battleByte: Int, party: List<TrackedMon>, condition: LossCondition = LossCondition.LEAD): Boolean {
+        // Gen 1's lost-battle mark (wIsInBattle 0xFF, pokered's LOST_BATTLE). The blackout that follows sets the byte
+        // to 0 and heals the party in one routine (ResetStatusAndHalveMoneyOnBlackout, then HealParty), so no poll ever
+        // read "battle over, lead at 0 HP" and a blackout never ended the run (rc33 audit P1). The mark holds through
+        // the "blacked out" text and the fade. Only with every Pokemon at 0 HP: a byte the game has not set yet at
+        // power-on is never a loss. Gen 2's battle byte never reads 0xFF.
+        if (battleByte == LOST_BATTLE) return party.isNotEmpty() && party.all { it.mon.curHp == 0 }
         if (battleByte != 0) return false
         return condition.lostMons(party.map { LossMon(it.mon.level, it.mon.curHp) })
     }

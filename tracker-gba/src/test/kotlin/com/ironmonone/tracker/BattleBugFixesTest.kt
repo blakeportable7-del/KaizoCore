@@ -57,6 +57,7 @@ class BattleBugFixesTest {
         put(b1 + 0x4C, garbageAt4C, 4)
         put(map.battleOutcome, 0, 1)
         put(map.battleMainFunc, map.handleTurnAction, 4)
+        put(map.battleCommunication, map.actionMenuState.toLong(), 1)   // the action menu is up
         put(map.battleTypeFlags, if (wild) 0x0 else 0x8, 4)
     }
 
@@ -127,9 +128,55 @@ class BattleBugFixesTest {
         assertFalse(t.isChoosingActionInWild())
     }
 
+    /**
+     * 2026-10-01 (Blake: "it is making the game locked into the bag"): gBattleMainFunc is the same inside the Bag, the
+     * party screen and the move menu. Only the action menu itself may run, where the battle waits on the action.
+     */
+    @Test
+    fun `flee gate is false in the Bag, the party screen and the move menu`() {
+        val m = fighting(wild = true)
+        val (t, _) = settle(m)
+        m.put(map.battleCommunication, map.actionMenuState + 1L, 1)    // STATE_WAIT_ACTION_CASE_CHOSEN
+        assertFalse(t.isChoosingActionInWild(), "the Bag is open")
+        m.put(map.battleCommunication, map.actionMenuState - 1L, 1)    // STATE_BEFORE_ACTION_CHOSEN
+        assertFalse(t.isChoosingActionInWild(), "the menu is not up yet")
+        m.put(map.battleCommunication, map.actionMenuState.toLong(), 1)
+        assertTrue(t.isChoosingActionInWild(), "back on the action menu")
+    }
+
     @Test
     fun `flee gate is never true in a trainer battle`() {
         val (t, _) = settle(fighting(wild = false))
         assertFalse(t.isChoosingActionInWild())
+    }
+
+    // ------------------------------------------------------------ the Pokemon on the field (rc33 audit P1)
+
+    /**
+     * Slot 1 fainted at the start, or a switch: gBattlerPartyIndexes[0] names another slot, and the own card, its
+     * stat stages, heals, Calc Atk and the matchups follow it (TrackerState.onField), as the reference's
+     * Battle.getViewedPokemon does.
+     */
+    @Test
+    fun `in a battle the Pokemon on the field is the one gBattlerPartyIndexes names, not slot 1`() {
+        val m = fighting(wild = true)
+        m.put(map.partyCount, 2, 1)
+        m.put(map.party, mon(25, 8, 0, 20, status = 0))                          // slot 1: fainted
+        m.put(map.party + map.monLayout.size, mon(4, 12, 30, 33, status = 0))   // slot 2: on the field
+        m.put(map.battlerPartyIndexes, 1, 2)
+        m.put(map.battleMons + 0x18, byteArrayOf(6, 8, 6, 6, 6, 6, 6, 6))      // battler 0: ATK +2
+        val (t, s) = settle(m)
+        assertEquals(1, s.ownOnField)
+        assertEquals(4, s.onField?.mon?.species)
+        assertEquals(8, s.party[1].statStages["ATK"], "the stages are the Pokemon's on the field")
+        assertTrue(s.party[0].statStages.isEmpty(), "slot 1 is not on the field")
+        // Out of the battle, the lead again.
+        m.put(map.battleOutcome, 1, 1)
+        m.put(map.battleMainFunc, map.returnToOverworld, 4)
+        var after = t.read()
+        repeat(3) { if (after.inBattle) after = t.read() }
+        assertTrue(!after.inBattle)
+        assertEquals(0, after.ownOnField)
+        assertEquals(25, after.onField?.mon?.species)
     }
 }

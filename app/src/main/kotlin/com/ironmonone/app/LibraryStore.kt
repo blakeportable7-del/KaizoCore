@@ -415,7 +415,7 @@ class LibraryStore(private val root: File, private val savesDir: File? = savesDi
      * checksums at the end, and are small.
      */
     fun importPatchFile(displayName: String, source: File, declaredFor: Entry? = null): PatchEntry {
-        val head = source.inputStream().use { it.readNBytes(64) }
+        val head = com.ironmonone.patch.Patcher.head(source, 64)
         if (Patcher.detect(head) != PatchFormat.XDELTA) return importPatch(displayName, source.readBytes(), declaredFor).also { source.delete() }
         val forCrc = declaredFor?.crc
         val target = unique(patchDir, displayName)

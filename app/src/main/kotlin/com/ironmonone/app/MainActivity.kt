@@ -162,6 +162,10 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         Demo.mode = intent?.getStringExtra("demo")
         CrashLog.installHandler(this)
+        SaveTrouble.init(this)
+        // The player's saved key bindings and controller actions, published now (rc33 audit P1): only More > Controls
+        // ever loaded them, so after a restart a remapped pad played on the defaults until that screen was opened.
+        runCatching { KeyBindings(java.io.File(filesDir, KeyBindings.FILE)) }
         // PREP and ADD FILES stream picks into the cache; a pick that was never
         // finished (a crash, a second tap) is worthless after a restart and, at
         // 512 MB a DS dump, fills a phone. Swept every launch.
@@ -248,10 +252,11 @@ class MainActivity : ComponentActivity() {
         val fromPad = (event.source and InputDevice.SOURCE_GAMEPAD) ==
             InputDevice.SOURCE_GAMEPAD
         if (fromPad && event.keyCode in PAD_KEYS) {
+            // Before the core gets the press: B-to-Run reads the battle menu the game is on as B goes down.
+            FleeOnB.handle(event.action, event.keyCode)
             LibretroDroid.onKeyEvent(0, event.action, event.keyCode)
             NewRunCombo.track(event.action, event.keyCode)
             SpriteMotion.key(event.action, event.keyCode)
-            FleeOnB.handle(event.action, event.keyCode)
             return true
         }
 
@@ -264,10 +269,10 @@ class MainActivity : ComponentActivity() {
             // The player's own bindings, falling back to the defaults baked into
             // KeyBindings so a fresh install is playable with no setup.
             KeyBindings.active[event.keyCode]?.let { mapped ->
+                FleeOnB.handle(event.action, mapped)
                 LibretroDroid.onKeyEvent(0, event.action, mapped)
                 NewRunCombo.track(event.action, mapped)
                 SpriteMotion.key(event.action, mapped)
-                FleeOnB.handle(event.action, mapped)
                 return true
             }
         }
@@ -459,7 +464,8 @@ private fun App() {
                     }
                 }
                 // Where Play's empty screen sends the player (PlayNothing): Play takes no new parameters (2026-09-30).
-                Tab.PLAY -> androidx.compose.runtime.CompositionLocalProvider(
+                // While a new run is being made, Play waits on it instead of booting the run it replaces (rc33 P0-5).
+                Tab.PLAY -> if (RunJob.installing) PlayRunBeingMade(Modifier.fillMaxSize()) else androidx.compose.runtime.CompositionLocalProvider(
                     LocalShellNav provides ShellNav(openMyGames = { nav = nav.openMyGames() }, openKaizo = { nav = nav.open(HomeMode.KAIZO) }),
                 ) { PlayScreen(
                     Modifier.fillMaxSize(),
@@ -492,13 +498,20 @@ private fun App() {
                 // Labels stop growing at a 1.3 font scale so the tabs fit one row.
                 val fontScale = LocalDensity.current.fontScale
                 val labelSp = (12f * minOf(fontScale, 1.3f) / fontScale).sp
+                val tabContext = androidx.compose.ui.platform.LocalContext.current
                 Tab.entries.forEach { t ->
                     val active = tab == t
                     Column(
                         Modifier.weight(1f)
                             .heightIn(min = Shell.touchTarget)
                             .clip(androidx.compose.foundation.shape.RoundedCornerShape(14.dp))
-                            .selectable(selected = active, role = androidx.compose.ui.semantics.Role.Tab) { nav = nav.pick(t); showChrome = false }
+                            .selectable(selected = active, role = androidx.compose.ui.semantics.Role.Tab) {
+                                // Not away from Play while its game is still loading: the teardown would wait on the
+                                // GL thread and freeze the app (PlayLoading, rc33 audit P0-11).
+                                if (tab == Tab.PLAY && t != Tab.PLAY && PlayLoading.holds()) {
+                                    android.widget.Toast.makeText(tabContext, PlayLoading.WAIT, android.widget.Toast.LENGTH_SHORT).show()
+                                } else { nav = nav.pick(t); showChrome = false }
+                            }
                             .padding(vertical = 6.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {

@@ -82,6 +82,11 @@ bool Cheevos::isHardcore() const {
 void Cheevos::loadGame(const std::string& path, unsigned consoleId) {
     if (client == nullptr) create();
     lastLoadError.clear();
+    // The memory map first (rc33 audit P1): rc_client checks every achievement's addresses while it loads the game,
+    // through readMemoryThunk, and the map used to be made only in loadCallback, after that check. Every read came
+    // back empty and every achievement was disabled as unsupported. Play calls this once the core has drawn a frame,
+    // so the core's own memory map is there.
+    initMemory(consoleId);
     rc_client_begin_identify_and_load_game(client, consoleId, path.c_str(), nullptr, 0, &loadCallback, nullptr);
 }
 
@@ -123,6 +128,7 @@ void Cheevos::initMemory(unsigned consoleId) {
     mmap.num_descriptors = (unsigned) descriptors.size();
     if (rc_libretro_memory_init(&regions, &mmap, &coreMemoryInfo, consoleId)) {
         regionsReady = true;
+        regionsConsole = consoleId;
         LOGI("Cheevos: memory regions ready, %u bytes", (unsigned) regions.total_size);
     } else {
         LOGE("Cheevos: could not map the core's memory for console %u", consoleId);
@@ -230,7 +236,8 @@ void Cheevos::loadCallback(int result, const char* error_message, rc_client_t* c
         e.title = g->title ? g->title : "";
         e.points = (int) g->id;
         e.badgeUrl = g->badge_url ? g->badge_url : "";
-        self.initMemory(g->console_id);
+        // Mapped again only when the game turned out to be another console's (a Game Boy game on the GBC core).
+        if (!self.regionsReady || self.regionsConsole != g->console_id) self.initMemory(g->console_id);
     }
     self.pushEvent(e);
 }

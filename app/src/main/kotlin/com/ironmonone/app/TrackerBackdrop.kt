@@ -26,6 +26,13 @@ import kotlin.math.ceil
  */
 val LocalBackdropHosted = compositionLocalOf { false }
 
+/**
+ * True for the tracker drawn on the second screen (SecondScreen's presentation window). A Compose Dialog opened from
+ * there has no window token on Android 12 and later and crashes the app, so nothing on that screen may open one by
+ * itself (rc33 audit P0-7: the starter-ball info did, from game state, where the touch block could not stop it).
+ */
+val LocalOnSecondScreen = androidx.compose.runtime.staticCompositionLocalOf { false }
+
 /** One draw of the backdrop into the box being drawn. The plan is [TrackerBackground.plan]; this only runs it. */
 fun DrawScope.paintBackdrop() {
     val img = TrackerBackground.image

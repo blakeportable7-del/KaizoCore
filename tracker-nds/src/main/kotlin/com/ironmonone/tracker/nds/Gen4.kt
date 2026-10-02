@@ -273,6 +273,7 @@ object Gen4 {
         female: Boolean = false,
         experience: Long = 0,
         form: Int = 0,
+        egg: Boolean = false,
         /** A nickname of the Pokemon's own: written into block C, and bit 31 of the IV word says it has one. */
         nickname: String? = null,
     ): ByteArray {
@@ -292,7 +293,7 @@ object Gen4 {
         pp.forEachIndexed { i, v -> if (i < 4) blocks[b + 0x08 + i] = v.toByte() }
         ppUps.forEachIndexed { i, v -> if (i < 4) blocks[b + 0x0C + i] = v.toByte() }
         // IVs set, egg bit clear (bit 30) so the tracker does not skip it, and the nickname bit (31) only for a named one.
-        blocks.putU32(b + 0x10, if (nickname != null) 0xBFFFFFFFL else 0x3FFFFFFFL)
+        blocks.putU32(b + 0x10, (if (nickname != null) 0xBFFFFFFFL else 0x3FFFFFFFL) or (if (egg) 0x40000000L else 0L))
         nickname?.let { n ->
             val c = blockOffset(pid, 2)
             n.take(10).forEachIndexed { i, ch -> blocks.putU16(c + i * 2, if (gen5) ch.code else gen4Code(ch)) }

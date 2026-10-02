@@ -382,7 +382,7 @@ private fun NdsPartyCard(
     // MainScreen.lua:860-889: GEN_5_ITEMS[heldItem].name, "---" for no item (entry 0)
     // and blank for an id the table lacks.
     val lines = ndsHeadLines(m, enemy = false, itemName = p.itemName, abilityName = p.abilityName)
-    PcCard {
+    PcMonCard(head = {
         PcHeadBlock(
             name = p.speciesName + (if (m.shiny) " *" else ""),
             status = if (m.curHp <= 0) "FNT" else p.statusCondition,
@@ -414,6 +414,7 @@ private fun NdsPartyCard(
             PcStatRow("SPE", "${m.spe}", p.statStages["SPE"], nature = m.nature)
             PcStatRow("BST", p.info?.bst?.toString() ?: "?")
         }
+    }) {
         PcMovesSection(
             movesOf(p, inBattle, moveCtx, own = true, hiddenPowerType, hiddenPowerJustChanged),
             header = if (p.movesTotal > 0) {
@@ -464,7 +465,7 @@ private fun NdsEnemyCard(
     // and the ability line "Last level" (an ability it reveals goes into its note,
     // Tracker.trackAbilityNote).
     val lines = ndsHeadLines(e.mon, enemy = true, encounters = encounters, lastLevel = lastLevel)
-    PcCard {
+    PcMonCard(head = {
         PcHeadBlock(
             name = e.speciesName,
             status = if (e.mon.curHp <= 0) "FNT" else e.statusCondition,
@@ -489,15 +490,17 @@ private fun NdsEnemyCard(
                 .filterValues { it != 6 }
                 .forEach { (n, st) -> PcStatRow(n, "", st) }
         }
-        androidx.compose.foundation.layout.Box(
-            Modifier.fillMaxWidth().height(1.dp).background(Pc.Border))
+    }) {
+        // Beside the head (a wide card) the side column's top is the card's own edge.
+        if (!LocalMovesBeside.current) androidx.compose.foundation.layout.Box(
+            Modifier.fillMaxWidth().height(1.dp).background(TrackerLook.divider))
         // infoBottomFrame (MainScreenUIInitializer.lua:657-718): the lock icon, then the encounter frame.
         Row(Modifier.padding(4.dp), verticalAlignment = Alignment.CenterVertically) {
             lock?.let { DsLockIcon(it, onLock); Spacer(Modifier.width(3.dp)) }
             encounterLine?.invoke()
         }
         androidx.compose.foundation.layout.Box(
-            Modifier.fillMaxWidth().height(1.dp).background(Pc.Border))
+            Modifier.fillMaxWidth().height(1.dp).background(TrackerLook.divider))
         // The reference's tracked moves for this opponent: only what it has used, this run.
         PcMovesSection(enemyMovesOf(e, movesSeenRunWide, moveInfoFor, inBattle = true, ctx = moveCtx), header = "Moves",
             onHeaderTap = onMoveHistory?.let { cb -> { cb(e.mon.species, e.speciesName, e.mon.level) } },
@@ -689,7 +692,10 @@ fun NdsTrackerPanel(
       // The Main background colour, and the player's image over it (TrackerBackdrop.kt).
       Column(Modifier.fillMaxWidth().then(trackerBackdrop()).padding(PcRef.MARGIN.rp)) {
           // The reference's gear sits at the top of the tracker screen; SETUP is its NavigationMenu.ButtonSetup.
-          onGear?.let { g ->
+          // In a battle it ends the battle banner (2026-10-02, "wasted space"); otherwise it has the top bar.
+          val bannerShows = state != null && state.inBattle &&
+              !(state.runOver != null && state.runOver != com.ironmonone.tracker.nds.NdsRunOver.WON && ironmonOver)
+          onGear?.takeIf { !bannerShows }?.let { g ->
               Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
                   // RepelDrawer: the DS tracker draws its own three item icons.
                   if (TrackerOptions.showRepel && state != null && !state.inBattle && state.repelSteps > 0) {
@@ -698,7 +704,7 @@ fun NdsTrackerPanel(
                   }
                   PcSmallButton("SETUP") { g() }
               }
-              Spacer(Modifier.height(3.dp))
+              Spacer(Modifier.height(2.rp))
           }
           timer?.let { RunTimerLine(it); Spacer(Modifier.height(3.dp)) }
           NuzlockeNdsPanel(state) // the Nuzlocke run's area, cap and graveyard, when this game has one (2026-09-30)
@@ -746,8 +752,8 @@ fun NdsTrackerPanel(
                 // No swap control when both are on screen; none during the pause after a new opponent.
                 val onSwap = if (!stackBoth && view.canSwap(state, effectivenessReady)) { { view.swap(state, effectivenessReady) } } else null
                 if (state.inBattle) {
-                    PcBattleBanner(state.isWildBattle, onFlee, viewingOwn = !showEnemy, onSwapView = onSwap)
-                    Spacer(Modifier.height(4.dp))
+                    PcBattleBanner(state.isWildBattle, onFlee, viewingOwn = !showEnemy, onSwapView = onSwap, onGear = onGear)
+                    Spacer(Modifier.height(2.rp))
                 } else if (onSwap != null) {
                     // After the battle a locked opponent stays in reach (readMemory keeps it while locked).
                     DsLockedBanner(viewingOwn = !showEnemy, onSwap)

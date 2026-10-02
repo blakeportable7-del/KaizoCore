@@ -35,11 +35,19 @@ object CloudSync {
     /** The backup is rewritten no more often than this unless asked by hand. */
     const val MIN_INTERVAL_MS = 2 * 60 * 1000L
 
-    data class Link(val uri: String, val provider: String, val lastSync: Long, val fingerprint: String)
+    /**
+     * [restorePending]: linked to restore from (another phone's file) and not restored yet. Nothing is written to the
+     * file while it is set (rc33 audit P0-9).
+     */
+    data class Link(val uri: String, val provider: String, val lastSync: Long, val fingerprint: String, val restorePending: Boolean = false)
+
+    private const val PENDING = "restore-pending"
 
     sealed class Result {
         object NotLinked : Result()
         object Unchanged : Result()
+        /** Linked to restore from, not restored yet: nothing was written. */
+        object RestorePending : Result()
         data class Written(val files: Int) : Result()
         data class Failed(val reason: String) : Result()
     }
@@ -48,10 +56,12 @@ object CloudSync {
     fun parse(text: String): Link? {
         val l = text.lines()
         if (l.size < 2 || l[0].isBlank()) return null
-        return Link(l[0].trim(), l.getOrElse(1) { "" }.trim(), l.getOrNull(2)?.trim()?.toLongOrNull() ?: 0L, l.getOrNull(3)?.trim() ?: "")
+        return Link(l[0].trim(), l.getOrElse(1) { "" }.trim(), l.getOrNull(2)?.trim()?.toLongOrNull() ?: 0L, l.getOrNull(3)?.trim() ?: "",
+            restorePending = l.getOrNull(4)?.trim() == PENDING)
     }
 
-    fun format(link: Link): String = "${link.uri}\n${link.provider}\n${link.lastSync}\n${link.fingerprint}\n"
+    fun format(link: Link): String =
+        "${link.uri}\n${link.provider}\n${link.lastSync}\n${link.fingerprint}\n" + (if (link.restorePending) "$PENDING\n" else "")
 
     fun load(filesDir: File): Link? = runCatching { parse(File(filesDir, CONFIG).readText()) }.getOrNull()
 
@@ -88,12 +98,24 @@ object CloudSync {
     }
 
     // --------------------------------------------------------------- link
-    fun link(context: Context, uri: Uri): Link {
+    fun link(context: Context, uri: Uri, restorePending: Boolean = false): Link {
         val flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
         runCatching { context.contentResolver.takePersistableUriPermission(uri, flags) }
-        val link = Link(uri.toString(), providerName(uri.authority), 0L, "")
+        val link = Link(uri.toString(), providerName(uri.authority), 0L, "", restorePending)
         save(context.filesDir, link)
         return link
+    }
+
+    /**
+     * "Use my file from another phone": linked with the restore pending, in one write (rc33 audit P0-9). The link was
+     * saved first and the confirm lived only in the screen's memory, so if Android ended the app before the player
+     * pressed Restore, the next sync put this nearly empty phone over the old phone's backup.
+     */
+    fun linkForRestore(context: Context, uri: Uri): Link = link(context, uri, restorePending = true)
+
+    /** The restore went through: from now on the file is this phone's to keep in sync. */
+    fun restoreDone(filesDir: File) {
+        load(filesDir)?.takeIf { it.restorePending }?.let { save(filesDir, it.copy(restorePending = false)) }
     }
 
     fun unlink(context: Context) {
@@ -110,6 +132,8 @@ object CloudSync {
     /** Rewrite the linked document from the current files. Blocking; call off the main thread. */
     fun sync(context: Context, force: Boolean = false): Result {
         val link = load(context.filesDir) ?: return Result.NotLinked
+        // Another phone's file, not restored from yet: writing would replace that phone's backup with this one's.
+        if (link.restorePending) return Result.RestorePending
         val fp = fingerprint(context.filesDir)
         val now = System.currentTimeMillis()
         if (!force) {
@@ -118,9 +142,21 @@ object CloudSync {
         }
         val uri = Uri.parse(link.uri)
         val n = runCatching {
-            // "wt": truncate. Without it a shorter backup leaves the old tail
-            // behind and the zip's central directory is no longer at the end.
-            (context.contentResolver.openOutputStream(uri, "wt") ?: error("no stream")).use { Backup.write(context.filesDir, it) }
+            synchronized(writeLock) {
+                // The zip is made whole on this phone first, then copied over the synced file in one pass. Made
+                // straight into the file, a failure part way (a file changing, no space) left the only cloud copy cut
+                // short; and one sync at a time, so Sync now and a background sync never interleave (rc33 audit P1).
+                val tmp = File(context.cacheDir, "cloudsync.zip.tmp")
+                try {
+                    val files = tmp.outputStream().buffered(1 shl 20).use { Backup.write(context.filesDir, it) }
+                    // "wt": truncate. Without it a shorter backup leaves the old tail
+                    // behind and the zip's central directory is no longer at the end.
+                    (context.contentResolver.openOutputStream(uri, "wt") ?: error("no stream")).use { out ->
+                        tmp.inputStream().buffered(1 shl 20).use { it.copyTo(out, 1 shl 20) }
+                    }
+                    files
+                } finally { tmp.delete() }
+            }
         }.getOrElse { e ->
             return Result.Failed(when (e) {
                 is SecurityException -> "The link to ${link.provider} was lost. Link it again."
@@ -148,6 +184,8 @@ object CloudSync {
 
     // --------------------------------------------------------- background
     private val worker = Executors.newSingleThreadExecutor { r -> Thread(r, "cloud-sync").apply { isDaemon = true } }
+    /** One write to the synced file at a time: a background sync and Sync now used to interleave on it. */
+    private val writeLock = Any()
     private val running = AtomicBoolean(false)
     @Volatile var lastResult: Result? = null
         private set
@@ -161,6 +199,8 @@ object CloudSync {
             try {
                 val r = sync(app)
                 lastResult = r
+                // A background sync that failed was never shown anywhere (rc33 audit P1).
+                if (r is Result.Failed) SaveTrouble.report(SaveTrouble.CLOUD, r.reason)
                 onDone?.invoke(r)
             } finally { running.set(false) }
         }

@@ -38,6 +38,37 @@ internal object RunSaves {
     /** Where rc32's first builds set a save aside on a new seed. */
     fun setAside(save: File): File = File(save.parentFile, save.name + ".last-run")
 
+    /** A DS game's own run save while another DS game's run holds current.sav. */
+    fun dsParked(filesDir: File, gameId: String): File = File(filesDir, "saves/ds/$gameId.sav")
+
+    /** Which DS game the run save beside current.nds belongs to. */
+    fun dsOwner(save: File): File = File(save.parentFile, save.name + ".game")
+
+    /**
+     * Before a run of [kind] moves in (rc33 audit P1). melonDS names the save after the ROM, and every DS run's ROM is
+     * current.nds, so every DS game shared saves/current.sav: a HeartGold run opened on the last Platinum run's save.
+     * A DS run's save is now one file per game, as the Game Boy and GBA ones always were: the other game's is parked
+     * under its own name and [kind]'s comes back. A new seed of the same game keeps its save, as before. [previous]
+     * is the run being replaced, which owns a save written before rc33 recorded owners.
+     */
+    fun dsSwap(filesDir: File, kind: RomKind, previous: RomKind?) {
+        if (kind.platform != Platform.NDS) return
+        val save = File(filesDir, "saves/current.sav")
+        val marker = dsOwner(save)
+        val owner = runCatching { marker.readText().trim() }.getOrNull()?.takeIf { it.isNotEmpty() }
+            ?: previous?.takeIf { it.platform == Platform.NDS }?.id
+        if (owner == kind.id) { runCatching { marker.writeText(kind.id) }; return }
+        if (save.isFile) {
+            // A save whose game is not known is kept under a name of its own rather than handed to this game.
+            val parked = dsParked(filesDir, owner ?: "unknown-" + save.lastModified())
+            parked.parentFile?.mkdirs()
+            runCatching { StateSlots.replace(save, parked) }
+        }
+        val mine = dsParked(filesDir, kind.id)
+        if (mine.isFile && !save.exists()) runCatching { StateSlots.replace(mine, save) }
+        runCatching { marker.parentFile?.mkdirs(); marker.writeText(kind.id) }
+    }
+
     fun plan(save: File, kind: RomKind): Plan {
         val bytes = runCatching { save.takeIf { it.isFile }?.readBytes() }.getOrNull() ?: return Plan.NONE
         if (!SaveCheck.hasProgress(bytes, kind.platform)) return Plan.NONE

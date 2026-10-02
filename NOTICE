@@ -206,6 +206,9 @@ NDS-Ironmon-Tracker (Brian0255) - GPL-3.0   Brian0255/NDS-Ironmon-Tracker
   (commit 4a45e1aa, 2026-09-26, read 2026-09-29): its MAIN_POINTER and
   POINTER_OFFSETS are NdsPointerOffsets, checked against the file by
   NdsAddressAuditTest.
+  The seventeen move type symbols drawn before a move's name on every tracker
+  (app TypeSymbols.kt) are this project's IconDrawer.lua *_FILLED icons, their
+  pixel grids and colours transcribed 2026-10-02.
   GPL-3.0 is this app's own licence.
 
 melonDS libretro core — GPL-3.0               melonDS-emu/melonDS

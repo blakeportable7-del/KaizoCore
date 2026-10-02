@@ -199,9 +199,11 @@ fun NuzlockeScreen(
         message = null
         if (randomized) {
             val kind = chosenKind ?: return
-            val inPlay = store.loadLastRun()?.first == kind.id && store.currentRunFor(kind).isFile
-            if (inPlay) {
-                confirm = StartConfirm("Randomize a new ${kind.displayName}? The run in play ends, and so does its ledger.", "Yes, randomize") { startNow() }
+            // Any run in play is asked about, as the Kaizo screen asks: there is one run slot, so a randomized Nuzlocke of
+            // one game ended another game's run without a word (rc33 audit P0-6).
+            val question = NuzlockeStarts.replaceQuestion(kind, store.loadLastRun()?.first?.let { RomKind.byId(it) }, store.currentRun.exists())
+            if (question != null) {
+                confirm = StartConfirm(question, "Yes, randomize") { startNow() }
             } else startNow()
         } else {
             val entry = pickedPlain ?: return
@@ -481,6 +483,16 @@ fun NuzlockeScreen(
 // ---------------------------------------------------------------------------------------------------------------
 
 internal object NuzlockeStarts {
+
+    /**
+     * What to ask before a randomized Nuzlocke of [kind] takes the one run slot, or null when no run is in play
+     * ([runInPlay]). [inPlay] is the run's game, named when it is another one (rc33 audit P0-6).
+     */
+    fun replaceQuestion(kind: RomKind, inPlay: RomKind?, runInPlay: Boolean): String? = when {
+        !runInPlay -> null
+        inPlay == null || inPlay == kind -> "Randomize a new ${kind.displayName}? The run in play ends, and so does its ledger."
+        else -> "Randomize a new ${kind.displayName}? Your ${inPlay.displayName} run in play ends."
+    }
 
     /** The family of games a kind belongs to: it picks the data the ledger reads and the rules that make sense. */
     fun systemOf(kind: RomKind?): NuzlockeSystem = when (kind?.generation) {

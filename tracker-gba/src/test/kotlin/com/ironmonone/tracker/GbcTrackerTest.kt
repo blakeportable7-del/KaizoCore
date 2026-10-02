@@ -464,4 +464,26 @@ class GbcTrackerTest {
         w.put(GbcTracker.PARTY_COUNT, 6)          // lies: only two structs and a terminator
         assertEquals(2, GbcTracker(w, rom()).read().partyCount)
     }
+
+    /** rc33 audit P1: wCurBattleMon is a party slot; with an egg before it, the list index is one less. */
+    @Test
+    fun `in a battle the Pokemon on the field is the one wCurBattleMon names, eggs skipped`() {
+        val w = overworld()
+        w.put(GbcTracker.PARTY_COUNT, 3)
+        party(w, 0, 155, 12, 0, 40, listOf(52, 33, 0, 0))                 // the lead has fainted
+        party(w, 1, 175, 5, 20, 20, listOf(33, 0, 0, 0))
+        w.put(GbcTracker.PARTY_SPECIES + 1, 0xFD)                         // an egg
+        party(w, 2, 161, 5, 18, 18, listOf(33, 0, 0, 0))
+        w.put(GbcTracker.PARTY_SPECIES + 3, 0xFF)
+        w.put(GbcTracker.BATTLE_MODE, 1)
+        val e = GbcTracker.ENEMY_MON
+        w.put(e, 161); w.put(e + 2, 33); w.put(e + 13, 4); w.be16(e + 16, 12); w.be16(e + 18, 18)
+        w.put(Gen2Map.CRYSTAL.curBattleMon, 2)                             // slot 3 is out
+        intArrayOf(9, 7, 7, 7, 7, 7, 7).forEachIndexed { i, v -> w.put(Gen2Map.CRYSTAL.statLevels + i, v) }
+        val s = GbcTracker(w, rom()).read()
+        assertEquals(1, s.ownOnField, "slot 3 is list entry 2: the egg in slot 2 is not listed")
+        assertEquals(161, s.onField!!.mon.species)
+        assertTrue(s.party[0].statStages.isEmpty(), "slot 1 is not on the field")
+        assertTrue(s.party[1].statStages.isNotEmpty())
+    }
 }

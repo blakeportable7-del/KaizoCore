@@ -170,9 +170,8 @@ private fun PresetTile(p: ThemePresets.Preset, current: Boolean, onClick: () -> 
 /**
  * A small tracker in a theme's colours, after the PC tracker's own preview (Drawing.drawTrackerThemePreview): the
  * main background, the top box with lines in the top text, intermediate, positive and negative colours, the header,
- * and the lower box with three moves. With [WholeTheme.moveTypeBar] the moves' type shows as a bar beside a name in the
- * lower text colour; without it the names are in their type colours (Fire, Water, Grass). [page] false draws only the
- * boxes, to lay them over the image.
+ * and the lower box with three moves, their names in their type colours (Fire, Water, Grass) as the tracker draws them
+ * on every theme (TrackerLook.moveName). [page] false draws only the boxes, to lay them over the image.
  */
 @Composable
 internal fun ThemePreview(t: WholeTheme, modifier: Modifier = Modifier, page: Boolean = true) {
@@ -208,12 +207,7 @@ internal fun ThemePreview(t: WholeTheme, modifier: Modifier = Modifier, page: Bo
         for (i in 0..2) {
             val y = lowY + lowH * (0.16f + i * 0.27f)
             val x = m + bw * 0.06f
-            if (t.moveTypeBar) {
-                line(x, y, bar * 1.6f, types[i])
-                line(x + bar * 2.4f, y, bw * 0.36f, t.lowerText)
-            } else {
-                line(x, y, bw * 0.44f, types[i])
-            }
+            line(x, y, bw * 0.44f, TrackerLook.readable(types[i], t.lowerGround, t.lowerText))
             line(m + bw * 0.66f, y, bw * 0.24f, t.lowerText)
         }
     }

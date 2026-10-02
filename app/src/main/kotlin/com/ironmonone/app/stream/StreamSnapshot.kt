@@ -158,7 +158,7 @@ object StreamSnapshot {
     }
 
     private fun enemy(e: EnemyInfo, s: TrackerState, notes: Notes, tracker: GbaTracker? = null, generation: Int = 3, hidden: Boolean = false): Map<String, Any?> {
-      val ctx = com.ironmonone.app.enemyMoveContext(e, s.party.firstOrNull(), s.weather, weightOf(tracker))
+      val ctx = com.ironmonone.app.enemyMoveContext(e, s.onField, s.weather, weightOf(tracker))
           .copy(hide = com.ironmonone.app.InfoRules.hiddenMoveInfo(s.randomized), generation = generation)
       return linkedMapOf(
         "species" to e.species, "name" to e.speciesName, "level" to e.level,
