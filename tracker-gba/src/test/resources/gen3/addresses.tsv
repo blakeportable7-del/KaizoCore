@@ -36,6 +36,26 @@ Emerald (U)	gTasks	0x03005E00
 Emerald (U)	Task_HandleConfirmStarterInput	0x08134400
 Emerald (U)	gBattlerPartyIndexes	0x0202406E
 Emerald (U)	sSpecialFlags	0x020375FC
+Emerald (U)	gBattlerAttacker	0x0202420B
+Emerald (U)	gBattleCommunication	0x02024332
+Emerald (U)	gCurrentTurnActionNumber	0x02024082
+Emerald (U)	gActionsByTurnOrder	0x0202407A
+Emerald (U)	gHitMarker	0x02024280
+Emerald (U)	BattleScript_FocusPunchSetUp	0x082DB20F
+Emerald (U)	BattleScript_SnatchedMove	0x082DB1B6
+Emerald (U)	BattleScript_MoveUsedIsConfused	0x082DB2C0
+Emerald (U)	BattleScript_MoveUsedIsConfused2	0x082DB2C9
+Emerald (U)	BattleScript_MoveUsedIsConfusedNoMore	0x082DB303
+Emerald (U)	BattleScript_MoveUsedWokeUp	0x082DB22E
+Emerald (U)	BattleScript_MoveUsedIsInLove	0x082DB32A
+Emerald (U)	BattleScript_MoveUsedIsInLove2	0x082DB333
+Emerald (U)	BattleScript_MoveUsedIsFrozen	0x082DB26D
+Emerald (U)	BattleScript_MoveUsedIsFrozen2	0x082DB270
+Emerald (U)	BattleScript_MoveUsedIsFrozen3	0x082DB272
+Emerald (U)	BattleScript_MoveUsedUnfroze	0x082DB27C
+Emerald (U)	BattleScript_MoveUsedUnfroze2	0x082DB281
+Emerald (U)	gBattleTextBuff1	0x02022F58
+Emerald (U)	gTrainerBattleOpponent_A	0x02038BCA
 FireRed (U) v1.0	gBattleTerrain	0x02022B50
 FireRed (U) v1.0	gBattleWeather	0x02023F1C
 FireRed (U) v1.0	gBattleStructPtr	0x02023FE8
@@ -72,6 +92,26 @@ FireRed (U) v1.0	gameVarsOffset	0x00001000
 FireRed (U) v1.0	gTasks	0x03005090
 FireRed (U) v1.0	gBattlerPartyIndexes	0x02023BCE
 FireRed (U) v1.0	sSpecialFlags	0x020370E0
+FireRed (U) v1.0	gBattlerAttacker	0x02023D6B
+FireRed (U) v1.0	gBattleCommunication	0x02023E82
+FireRed (U) v1.0	gCurrentTurnActionNumber	0x02023BE2
+FireRed (U) v1.0	gActionsByTurnOrder	0x02023BDA
+FireRed (U) v1.0	gHitMarker	0x02023DD0
+FireRed (U) v1.0	BattleScript_FocusPunchSetUp	0x081D9025
+FireRed (U) v1.0	BattleScript_SnatchedMove	0x081D8FCC
+FireRed (U) v1.0	BattleScript_MoveUsedIsConfused	0x081D90D6
+FireRed (U) v1.0	BattleScript_MoveUsedIsConfused2	0x081D90DF
+FireRed (U) v1.0	BattleScript_MoveUsedIsConfusedNoMore	0x081D9119
+FireRed (U) v1.0	BattleScript_MoveUsedWokeUp	0x081D9044
+FireRed (U) v1.0	BattleScript_MoveUsedIsInLove	0x081D9140
+FireRed (U) v1.0	BattleScript_MoveUsedIsInLove2	0x081D9149
+FireRed (U) v1.0	BattleScript_MoveUsedIsFrozen	0x081D9083
+FireRed (U) v1.0	BattleScript_MoveUsedIsFrozen2	0x081D9086
+FireRed (U) v1.0	BattleScript_MoveUsedIsFrozen3	0x081D9088
+FireRed (U) v1.0	BattleScript_MoveUsedUnfroze	0x081D9092
+FireRed (U) v1.0	BattleScript_MoveUsedUnfroze2	0x081D9097
+FireRed (U) v1.0	gBattleTextBuff1	0x02022AB8
+FireRed (U) v1.0	gTrainerBattleOpponent_A	0x020386AE
 FireRed (U) v1.1	gBattleTerrain	0x02022B50
 FireRed (U) v1.1	gBattleWeather	0x02023F1C
 FireRed (U) v1.1	gBattleStructPtr	0x02023FE8
@@ -108,6 +148,26 @@ FireRed (U) v1.1	gameVarsOffset	0x00001000
 FireRed (U) v1.1	gTasks	0x03005090
 FireRed (U) v1.1	gBattlerPartyIndexes	0x02023BCE
 FireRed (U) v1.1	sSpecialFlags	0x020370E0
+FireRed (U) v1.1	gBattlerAttacker	0x02023D6B
+FireRed (U) v1.1	gBattleCommunication	0x02023E82
+FireRed (U) v1.1	gCurrentTurnActionNumber	0x02023BE2
+FireRed (U) v1.1	gActionsByTurnOrder	0x02023BDA
+FireRed (U) v1.1	gHitMarker	0x02023DD0
+FireRed (U) v1.1	BattleScript_FocusPunchSetUp	0x081D9095
+FireRed (U) v1.1	BattleScript_SnatchedMove	0x081D903C
+FireRed (U) v1.1	BattleScript_MoveUsedIsConfused	0x081D9146
+FireRed (U) v1.1	BattleScript_MoveUsedIsConfused2	0x081D914F
+FireRed (U) v1.1	BattleScript_MoveUsedIsConfusedNoMore	0x081D9189
+FireRed (U) v1.1	BattleScript_MoveUsedWokeUp	0x081D90B4
+FireRed (U) v1.1	BattleScript_MoveUsedIsInLove	0x081D91B0
+FireRed (U) v1.1	BattleScript_MoveUsedIsInLove2	0x081D91B9
+FireRed (U) v1.1	BattleScript_MoveUsedIsFrozen	0x081D90F3
+FireRed (U) v1.1	BattleScript_MoveUsedIsFrozen2	0x081D90F6
+FireRed (U) v1.1	BattleScript_MoveUsedIsFrozen3	0x081D90F8
+FireRed (U) v1.1	BattleScript_MoveUsedUnfroze	0x081D9102
+FireRed (U) v1.1	BattleScript_MoveUsedUnfroze2	0x081D9107
+FireRed (U) v1.1	gBattleTextBuff1	0x02022AB8
+FireRed (U) v1.1	gTrainerBattleOpponent_A	0x020386AE
 LeafGreen (U) v1.0	gBattleTerrain	0x02022B50
 LeafGreen (U) v1.0	gBattleWeather	0x02023F1C
 LeafGreen (U) v1.0	gBattleStructPtr	0x02023FE8
@@ -144,6 +204,26 @@ LeafGreen (U) v1.0	gameVarsOffset	0x00001000
 LeafGreen (U) v1.0	gTasks	0x03005090
 LeafGreen (U) v1.0	gBattlerPartyIndexes	0x02023BCE
 LeafGreen (U) v1.0	sSpecialFlags	0x020370E0
+LeafGreen (U) v1.0	gBattlerAttacker	0x02023D6B
+LeafGreen (U) v1.0	gBattleCommunication	0x02023E82
+LeafGreen (U) v1.0	gCurrentTurnActionNumber	0x02023BE2
+LeafGreen (U) v1.0	gActionsByTurnOrder	0x02023BDA
+LeafGreen (U) v1.0	gHitMarker	0x02023DD0
+LeafGreen (U) v1.0	BattleScript_FocusPunchSetUp	0x081D9001
+LeafGreen (U) v1.0	BattleScript_SnatchedMove	0x081D8FA8
+LeafGreen (U) v1.0	BattleScript_MoveUsedIsConfused	0x081D90B2
+LeafGreen (U) v1.0	BattleScript_MoveUsedIsConfused2	0x081D90BB
+LeafGreen (U) v1.0	BattleScript_MoveUsedIsConfusedNoMore	0x081D90F5
+LeafGreen (U) v1.0	BattleScript_MoveUsedWokeUp	0x081D9020
+LeafGreen (U) v1.0	BattleScript_MoveUsedIsInLove	0x081D911C
+LeafGreen (U) v1.0	BattleScript_MoveUsedIsInLove2	0x081D9125
+LeafGreen (U) v1.0	BattleScript_MoveUsedIsFrozen	0x081D905F
+LeafGreen (U) v1.0	BattleScript_MoveUsedIsFrozen2	0x081D9062
+LeafGreen (U) v1.0	BattleScript_MoveUsedIsFrozen3	0x081D9064
+LeafGreen (U) v1.0	BattleScript_MoveUsedUnfroze	0x081D906E
+LeafGreen (U) v1.0	BattleScript_MoveUsedUnfroze2	0x081D9073
+LeafGreen (U) v1.0	gBattleTextBuff1	0x02022AB8
+LeafGreen (U) v1.0	gTrainerBattleOpponent_A	0x020386AE
 Ruby (U) v1.0	gBattleTerrain	0x0300428C
 Ruby (U) v1.0	gBattleWeather	0x02024DB8
 Ruby (U) v1.0	gStatuses3	0x02024C98
@@ -178,6 +258,26 @@ Ruby (U) v1.0	gTasks	0x03004B20
 Ruby (U) v1.0	Task_HandleConfirmStarterInput	0x0810A330
 Ruby (U) v1.0	gBattlerPartyIndexes	0x02024A6A
 Ruby (U) v1.0	sSpecialFlags	0x0202E8E2
+Ruby (U) v1.0	gBattlerAttacker	0x02024C07
+Ruby (U) v1.0	gBattleCommunication	0x02024D1E
+Ruby (U) v1.0	gCurrentTurnActionNumber	0x02024A7E
+Ruby (U) v1.0	gActionsByTurnOrder	0x02024A76
+Ruby (U) v1.0	gHitMarker	0x02024C6C
+Ruby (U) v1.0	BattleScript_FocusPunchSetUp	0x081D94EA
+Ruby (U) v1.0	BattleScript_SnatchedMove	0x081D9491
+Ruby (U) v1.0	BattleScript_MoveUsedIsConfused	0x081D9598
+Ruby (U) v1.0	BattleScript_MoveUsedIsConfused2	0x081D95A1
+Ruby (U) v1.0	BattleScript_MoveUsedIsConfusedNoMore	0x081D95D7
+Ruby (U) v1.0	BattleScript_MoveUsedWokeUp	0x081D9509
+Ruby (U) v1.0	BattleScript_MoveUsedIsInLove	0x081D95FE
+Ruby (U) v1.0	BattleScript_MoveUsedIsInLove2	0x081D9607
+Ruby (U) v1.0	BattleScript_MoveUsedIsFrozen	0x081D9548
+Ruby (U) v1.0	BattleScript_MoveUsedIsFrozen2	0x081D954B
+Ruby (U) v1.0	BattleScript_MoveUsedIsFrozen3	0x081D954D
+Ruby (U) v1.0	BattleScript_MoveUsedUnfroze	0x081D9557
+Ruby (U) v1.0	BattleScript_MoveUsedUnfroze2	0x081D955C
+Ruby (U) v1.0	gBattleTextBuff1	0x030041C0
+Ruby (U) v1.0	gTrainerBattleOpponent_A	0x0202FF5E
 Sapphire (U) v1.0	gBattleTerrain	0x0300428C
 Sapphire (U) v1.0	gBattleWeather	0x02024DB8
 Sapphire (U) v1.0	gStatuses3	0x02024C98
@@ -212,3 +312,23 @@ Sapphire (U) v1.0	gTasks	0x03004B20
 Sapphire (U) v1.0	Task_HandleConfirmStarterInput	0x0810A330
 Sapphire (U) v1.0	gBattlerPartyIndexes	0x02024A6A
 Sapphire (U) v1.0	sSpecialFlags	0x0202E8E2
+Sapphire (U) v1.0	gBattlerAttacker	0x02024C07
+Sapphire (U) v1.0	gBattleCommunication	0x02024D1E
+Sapphire (U) v1.0	gCurrentTurnActionNumber	0x02024A7E
+Sapphire (U) v1.0	gActionsByTurnOrder	0x02024A76
+Sapphire (U) v1.0	gHitMarker	0x02024C6C
+Sapphire (U) v1.0	BattleScript_FocusPunchSetUp	0x081D947A
+Sapphire (U) v1.0	BattleScript_SnatchedMove	0x081D9421
+Sapphire (U) v1.0	BattleScript_MoveUsedIsConfused	0x081D9528
+Sapphire (U) v1.0	BattleScript_MoveUsedIsConfused2	0x081D9531
+Sapphire (U) v1.0	BattleScript_MoveUsedIsConfusedNoMore	0x081D9567
+Sapphire (U) v1.0	BattleScript_MoveUsedWokeUp	0x081D9499
+Sapphire (U) v1.0	BattleScript_MoveUsedIsInLove	0x081D958E
+Sapphire (U) v1.0	BattleScript_MoveUsedIsInLove2	0x081D9597
+Sapphire (U) v1.0	BattleScript_MoveUsedIsFrozen	0x081D94D8
+Sapphire (U) v1.0	BattleScript_MoveUsedIsFrozen2	0x081D94DB
+Sapphire (U) v1.0	BattleScript_MoveUsedIsFrozen3	0x081D94DD
+Sapphire (U) v1.0	BattleScript_MoveUsedUnfroze	0x081D94E7
+Sapphire (U) v1.0	BattleScript_MoveUsedUnfroze2	0x081D94EC
+Sapphire (U) v1.0	gBattleTextBuff1	0x030041C0
+Sapphire (U) v1.0	gTrainerBattleOpponent_A	0x0202FF5E

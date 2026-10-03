@@ -56,6 +56,7 @@ object GameFacts {
         synchronized(cache) { cache[key]?.let { return it } }
         val facts = when (kind.engine) {
             com.ironmonone.core.Engine.NATDEX -> readNatDex(rom)
+            com.ironmonone.core.Engine.MAXDEX -> readMaxDex(rom)
             com.ironmonone.core.Engine.ZX -> readZx(kind, rom)
         }
         synchronized(cache) {
@@ -96,6 +97,24 @@ object GameFacts {
         val h = factory.create(com.dabomstew.pkrandom.RandomSource.instance())
         h.loadRom(rom.absolutePath)
         val list = if (h.generationOfPokemon() >= 6) h.pokemonInclFormes.filter { it == null || !it.actuallyCosmetic } else h.pokemon
+        return Facts(
+            species = named(list.map { it?.fullName() }),
+            ownStarters = h.starters.map { list.indexOf(it) },
+            hasAbilities = h.abilitiesPerPokemon() > 0,
+            hasMoveTutors = h.hasMoveTutors(),
+        )
+    }
+
+    /**
+     * The same for MaxDex, read by its own engine. Build your own is not offered on MaxDex in its first version; this
+     * is here so every engine answers, and reads the ROM the way the MaxDex randomizer will.
+     */
+    private fun readMaxDex(rom: File): Facts {
+        MaxDexEngine.refusal(rom)?.let { throw IllegalArgumentException(it) }
+        val factory = com.dabomstew.pkrandommd.romhandlers.Gen3RomHandler.Factory()
+        val h = factory.create(com.dabomstew.pkrandommd.RandomSource.instance())
+        h.loadRom(rom.absolutePath)
+        val list = h.pokemon
         return Facts(
             species = named(list.map { it?.fullName() }),
             ownStarters = h.starters.map { list.indexOf(it) },

@@ -1,29 +1,43 @@
 package com.ironmonone.app
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.dp
 import java.io.File
 
 /**
  * "Track PC Heals" (off by default in the reference): how many Pokemon Center
  * heals this attempt has left, or has used.
  *
- * Counting down it starts at 10, up at 0; either way 0 to 99. The +/- buttons
- * change it by hand. With the heart on (auto-tracking; off each session, as the
- * reference's toggle starts), a new Pokemon Center heal or rest at home - game
- * statistics 15 and 16 - moves it by one (Program.lua:1203). Kept per attempt,
- * so a new run starts fresh.
+ * Counting down it starts at 10, up at 0; either way 0 to 99. The counter's
+ * sheet (PcHealCounter) adds or removes a heal by hand. With automatic counting
+ * on (the red heart; off each session, as the reference's toggle starts), a new
+ * Pokemon Center heal or rest at home, game statistics 15 and 16, moves it by
+ * one (Program.lua:1203). Kept per attempt, so a new run starts fresh.
  */
 object PcHeals {
     private val counts = mutableStateMapOf<Int, Int>()
@@ -157,6 +171,17 @@ object PcHeals {
         }
     }
 
+    /**
+     * Whether the run in play can be counted automatically: a Game Boy game's save has no heal statistic for the
+     * heart to read (observeBadges), so its sheet leaves the switch out. The run is prep/lastrun.txt's game, as in
+     * [limitForLastRun]; the counter shows for runs only.
+     */
+    fun lastRunCountsItself(): Boolean {
+        val prep = file?.parentFile ?: return true
+        val id = runCatching { File(prep, "lastrun.txt").readLines().firstOrNull() }.getOrNull() ?: return true
+        return com.ironmonone.core.RomKind.byId(id.trim())?.platform != com.ironmonone.core.Platform.GBC
+    }
+
     /** Utils.getCenterHealColor. */
     fun color(n: Int): Color =
         if (TrackerOptions.pcHealsCountDownward) when { n < 1 -> Pc.Negative; n < 6 -> Pc.Gold; else -> Pc.Text }
@@ -194,29 +219,76 @@ private val HEART = listOf(
     "00122222100", "00012221000", "00001210000", "00000100000", "00000000000",
 )
 
+/** What the PC heal counter and its sheet say. */
+internal object PcHealsCopy {
+    const val TITLE = "PC HEALS"
+    const val ADD = "Add a heal"
+    const val REMOVE = "Remove a heal"
+    const val AUTO = "Count heals automatically"
+    const val CHANGE = "Change"
+
+    fun count(n: Int, down: Boolean = TrackerOptions.pcHealsCountDownward) = if (down) "Heals left: $n" else "Heals used: $n"
+
+    /** What a screen reader says for the counter on the card. */
+    fun spoken(n: Int, down: Boolean = TrackerOptions.pcHealsCountDownward) = "PC " + count(n, down).replaceFirstChar { it.lowercase() }
+}
+
 /**
- * The PC heal counter in the heals box (TrackerScreen.lua:1274): the heart
- * toggle on top - an outline off, red on - and the count right-aligned, with a
- * small green + and red - beside it.
+ * The PC heal counter in the heals box (TrackerScreen.lua:1274): the heart on top, an outline while heals are counted
+ * by hand and red while they are counted automatically, and the count right-aligned, with a small green + and red -
+ * beside it. All of it is one 44dp target that opens [PcHealsSheet] (rc32 audit P2 #42, #43): the + and - were 5 by
+ * 9dp glyphs stacked with no gap, so a tap a few dp off moved the count the wrong way, and one stray tap on the heart
+ * switched automatic counting with nothing said. The heart is a mark of the state now, not a switch.
  */
 @Composable
 internal fun PcHealCounter(attempt: Int) {
     val n = PcHeals.count(attempt)
-    Column(horizontalAlignment = Alignment.End) {
-        val on = PcHeals.autoTracking
-        PcPixelImageColors(
-            HEART,
-            if (on) mapOf('1' to Color(0xFFF04037), '2' to Color(0xFFFF0000), '3' to Color(0xFFFFFFFF))
-            else mapOf('1' to Pc.Text),
-            Modifier.clickable { PcHeals.autoTracking = !PcHeals.autoTracking },
-        )
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column {
-                PixText("+", PcRef.FONT - 3, Pc.Positive, Modifier.clickable { PcHeals.add(attempt, +1) })
-                PixText("-", PcRef.FONT - 3, Pc.Negative, Modifier.clickable { PcHeals.add(attempt, -1) })
+    var sheet by remember { mutableStateOf(false) }
+    Column(
+        Modifier.sizeIn(minWidth = PcMin.TOUCH_DP.dp, minHeight = PcMin.TOUCH_DP.dp)
+            .clickable(role = Role.Button, onClickLabel = PcHealsCopy.CHANGE) { sheet = true }
+            .semantics { contentDescription = PcHealsCopy.spoken(n) },
+        horizontalAlignment = Alignment.End,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Column(Modifier.clearAndSetSemantics { }, horizontalAlignment = Alignment.End) {
+            val on = PcHeals.autoTracking
+            PcPixelImageColors(
+                HEART,
+                if (on) mapOf('1' to Color(0xFFF04037), '2' to Color(0xFFFF0000), '3' to Color(0xFFFFFFFF))
+                else mapOf('1' to Pc.Text),
+            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column {
+                    PixText("+", PcRef.FONT - 3, Pc.Positive)
+                    PixText("-", PcRef.FONT - 3, Pc.Negative)
+                }
+                Spacer(Modifier.width(2.rp))
+                PixText("$n", PcRef.FONT, PcHeals.color(n))
             }
-            Spacer(Modifier.width(2.rp))
-            PixText("$n", PcRef.FONT, PcHeals.color(n))
+        }
+    }
+    if (sheet) PcHealsSheet(attempt) { sheet = false }
+}
+
+/**
+ * The PC heal counter's sheet: the count, 48dp Add and Remove, and the automatic count as a labelled switch, left out
+ * on a Game Boy game, whose save has no heal statistic to count (PcHeals.lastRunCountsItself).
+ */
+@Composable
+private fun PcHealsSheet(attempt: Int, onClose: () -> Unit) {
+    val countsItself = remember { PcHeals.lastRunCountsItself() }
+    androidx.compose.ui.window.Dialog(onDismissRequest = onClose) {
+        Column(Modifier.width(300.dp).background(Pc.Page).border(1.dp, Pc.Border).padding(8.dp)) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                DialogText(PcHealsCopy.TITLE, 16, Pc.Text, Modifier.weight(1f), heading = true)
+                PcTap("X", 9, Pc.Dim, "Close") { onClose() }
+            }
+            val n = PcHeals.count(attempt)
+            DialogText(PcHealsCopy.count(n), 15, PcHeals.color(n), Modifier.padding(vertical = 6.dp).semantics { liveRegion = LiveRegionMode.Polite })
+            GearButton(PcHealsCopy.ADD) { PcHeals.add(attempt, +1) }
+            GearButton(PcHealsCopy.REMOVE) { PcHeals.add(attempt, -1) }
+            if (countsItself) GearToggle(PcHealsCopy.AUTO, PcHeals.autoTracking) { PcHeals.autoTracking = it }
         }
     }
 }

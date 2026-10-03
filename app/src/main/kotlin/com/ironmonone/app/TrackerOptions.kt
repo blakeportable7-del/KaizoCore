@@ -20,6 +20,8 @@ enum class LandscapeTracker(val label: String) { DOCKED("Docked beside the game"
 
 object TrackerOptions {
     var landscapeTracker by mutableStateOf(LandscapeTracker.DOCKED)
+    /** The floating window pinned where it is, size and place (FloatingTracker's lock, Blake, 2026-10-02). */
+    var floatingLocked by mutableStateOf(false)
     var showBallPicker by mutableStateOf(true)
     /** "Show random ball picker" in a Nuzlocke: its own switch, off by default (Blake, 2026-09-30). */
     var nuzlockeBallPicker by mutableStateOf(false)
@@ -222,7 +224,13 @@ object TrackerOptions {
     var carouselItems by mutableStateOf(CAROUSEL_DEFAULT)
     /** "CarouselSpeed": 1/2, 1, 2, 3 or 4. */
     var carouselSpeed by mutableStateOf("1")
-    fun carouselShows(key: String) = key in carouselItems.split(",")
+    private var carouselParsed: Pair<String, Set<String>> = "" to emptySet()
+    fun carouselShows(key: String): Boolean {
+        // Split once per change, not for each of the carousel's items on every draw (rc32 audit P3 #45).
+        val items = carouselItems
+        val parsed = carouselParsed.takeIf { it.first == items } ?: (items to items.split(",").toSet()).also { carouselParsed = it }
+        return key in parsed.second
+    }
     fun setCarouselItem(key: String, on: Boolean) {
         // SetupScreen's saveCarouselSettings: the list in the setup's own order.
         val keys = listOf("Badges", "Notes", "RouteInfo", "Trainers", "LastAttack", "BattleDetails", "Pedometer", "GachaMon")
@@ -271,20 +279,21 @@ object TrackerOptions {
         lossBySettings.clear()   // the file is the whole record
         dsLossBySettings.clear()
         autoSwapChoice.value = null
-        if (!f.exists()) return
+        // Through the writer: what the last save handed over is read before the disk (DiskWriter.read).
+        val lines = DiskWriter.read(f)?.lineSequence() ?: return
         runCatching {
-            f.forEachLine { line ->
-                val cut = line.indexOf('='); if (cut <= 0) return@forEachLine
+            lines.forEach { line ->
+                val cut = line.indexOf('='); if (cut <= 0) return@forEach
                 // A per-settings line keys on a file name, which may itself hold '='; the value never does.
                 if (line.startsWith("lossConditionFor.")) {
                     val eq = line.lastIndexOf('=')
                     lossBySettings[line.substring("lossConditionFor.".length, eq)] = LossCondition.byKey(line.substring(eq + 1).trim())
-                    return@forEachLine
+                    return@forEach
                 }
                 if (line.startsWith("dsLossConditionFor.")) {
                     val eq = line.lastIndexOf('=')
                     dsLossBySettings[line.substring("dsLossConditionFor.".length, eq)] = LossCondition.byKey(line.substring(eq + 1).trim())
-                    return@forEachLine
+                    return@forEach
                 }
                 val k = line.substring(0, cut).trim(); val v = line.substring(cut + 1).trim()
                 when (k) {
@@ -343,20 +352,23 @@ object TrackerOptions {
                     "carouselItems" -> carouselItems = v
                     "carouselSpeed" -> if (v in listOf("1/2", "1", "2", "3", "4")) carouselSpeed = v
                     "landscapeTracker" -> landscapeTracker = LandscapeTracker.entries.firstOrNull { it.name == v } ?: LandscapeTracker.DOCKED
+                    "floatingLocked" -> floatingLocked = v == "true"
                 }
             }
         }
     }
 
+    /**
+     * Written whole (SafeWrite) on the writer's thread (DiskWriter). It was rewritten in place, so a kill in the middle
+     * left the file short or empty: every option back at its default and each settings file's game over rule forgotten
+     * (rc32 audit P2 #65, P3 #71). Every Tracker Setup switch saves, so the sync stays off the main thread.
+     */
     fun save() {
         val f = file ?: return
-        runCatching {
-            f.parentFile?.mkdirs()
-            f.writeText(text())
-        }
+        DiskWriter.write(f, text())
     }
 
-    fun text(): String = "showBallPicker=$showBallPicker\nshowCategoryIcons=$showCategoryIcons\nhealsWhole=$healsWhole\nshowTeamView=$showTeamView\nautoPokemonThemes=$autoPokemonThemes\nrestorePoints=$restorePoints\nshowTimer=$showTimer\ntourneyTracker=$tourneyTracker\nkantoBadgesFirst=$kantoBadgesFirst\nshowBothBadgeSets=$showBothBadgeSets\nlogCustomTrainerNames=$logCustomTrainerNames\nlogShowUnlearnableGymTms=$logShowUnlearnableGymTms\nlogShowPreEvolutions=$logShowPreEvolutions\nlossCondition=${lossCondition.key}\ndsLossCondition=${dsLossCondition.key}\nlandscapeTracker=${landscapeTracker.name}\nshowRepel=$showRepel\nanimatedSprites=$animatedSprites\nspritesWalk=$spritesWalk\ndetermineFriendship=$determineFriendship\ndisplayPedometer=$displayPedometer\nshowMoveEffectiveness=$showMoveEffectiveness\nshowCatchRate=$showCatchRate\ncalculateVariableDamage=$calculateVariableDamage\ncountEnemyPp=$countEnemyPp\nshowLastDamage=$showLastDamage\ncalcAtkWildOnly=$calcAtkWildOnly\n${autoSwapChoice.value?.let { "autoSwapToEnemyChoice=$it\n" } ?: ""}showNicknames=$showNicknames\ndisplayGender=$displayGender\nshowExpBar=$showExpBar\ncolorStatNumbers=$colorStatNumbers\nrightJustifiedNumbers=$rightJustifiedNumbers\ntrackPcHeals=$trackPcHeals\npcHealsCountDownward=$pcHealsCountDownward\nhideStatsUntilSummary=$hideStatsUntilSummary\nshowDataForVanillaGame=$showDataForVanillaGame\nopenBookPlayMode=$openBookPlayMode\nrevealInfoIfRandomized=$revealInfoIfRandomized\nallowCarouselRotation=$allowCarouselRotation\ncarouselItems=$carouselItems\ncarouselSpeed=$carouselSpeed\nshowStarterBallInfo=$showStarterBallInfo\ndsPokecenterHeals=$dsPokecenterHeals\ndsExpBar=$dsExpBar\ndsAccEva=$dsAccEva\ndsAutoSwapToEnemy=$dsAutoSwapToEnemy\ndsEnemyLocking=$dsEnemyLocking\ntrackerOnSecondScreen=$trackerOnSecondScreen\nfrlgGuidePictures=$frlgGuidePictures\nshowTypeMatchups=$showTypeMatchups\nnuzlockeBallPicker=$nuzlockeBallPicker\n" +
+    fun text(): String = "showBallPicker=$showBallPicker\nshowCategoryIcons=$showCategoryIcons\nhealsWhole=$healsWhole\nshowTeamView=$showTeamView\nautoPokemonThemes=$autoPokemonThemes\nrestorePoints=$restorePoints\nshowTimer=$showTimer\ntourneyTracker=$tourneyTracker\nkantoBadgesFirst=$kantoBadgesFirst\nshowBothBadgeSets=$showBothBadgeSets\nlogCustomTrainerNames=$logCustomTrainerNames\nlogShowUnlearnableGymTms=$logShowUnlearnableGymTms\nlogShowPreEvolutions=$logShowPreEvolutions\nlossCondition=${lossCondition.key}\ndsLossCondition=${dsLossCondition.key}\nlandscapeTracker=${landscapeTracker.name}\nfloatingLocked=$floatingLocked\nshowRepel=$showRepel\nanimatedSprites=$animatedSprites\nspritesWalk=$spritesWalk\ndetermineFriendship=$determineFriendship\ndisplayPedometer=$displayPedometer\nshowMoveEffectiveness=$showMoveEffectiveness\nshowCatchRate=$showCatchRate\ncalculateVariableDamage=$calculateVariableDamage\ncountEnemyPp=$countEnemyPp\nshowLastDamage=$showLastDamage\ncalcAtkWildOnly=$calcAtkWildOnly\n${autoSwapChoice.value?.let { "autoSwapToEnemyChoice=$it\n" } ?: ""}showNicknames=$showNicknames\ndisplayGender=$displayGender\nshowExpBar=$showExpBar\ncolorStatNumbers=$colorStatNumbers\nrightJustifiedNumbers=$rightJustifiedNumbers\ntrackPcHeals=$trackPcHeals\npcHealsCountDownward=$pcHealsCountDownward\nhideStatsUntilSummary=$hideStatsUntilSummary\nshowDataForVanillaGame=$showDataForVanillaGame\nopenBookPlayMode=$openBookPlayMode\nrevealInfoIfRandomized=$revealInfoIfRandomized\nallowCarouselRotation=$allowCarouselRotation\ncarouselItems=$carouselItems\ncarouselSpeed=$carouselSpeed\nshowStarterBallInfo=$showStarterBallInfo\ndsPokecenterHeals=$dsPokecenterHeals\ndsExpBar=$dsExpBar\ndsAccEva=$dsAccEva\ndsAutoSwapToEnemy=$dsAutoSwapToEnemy\ndsEnemyLocking=$dsEnemyLocking\ntrackerOnSecondScreen=$trackerOnSecondScreen\nfrlgGuidePictures=$frlgGuidePictures\nshowTypeMatchups=$showTypeMatchups\nnuzlockeBallPicker=$nuzlockeBallPicker\n" +
         lossBySettings.entries.joinToString("") { (name, c) -> "lossConditionFor.$name=${c.key}\n" } +
         dsLossBySettings.entries.joinToString("") { (name, c) -> "dsLossConditionFor.$name=${c.key}\n" }
 }

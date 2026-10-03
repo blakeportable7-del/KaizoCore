@@ -60,6 +60,15 @@ class GhostBattleTest {
         mem.put16(m.battleResults + 0x24, LICK)
         mem.put32(m.scriptCurrInstr, 0x081D929AL)
         mem.put8(m.scriptingBattler, 1)
+        // Its move action: the Gastly in the enemy's party knows Lick, and it is the opponent's turn (EnemyMoveWatch).
+        mem.put8(m.battlerAttacker, 1)
+        val plain = ByteArray(48).also { it[0] = 92; it[12] = LICK.toByte() }
+        for (w in 0 until 12) for (i in 0 until 4) {
+            val v = ((plain[w * 4 + i].toInt() and 0xFF) xor ((24 shr (i * 8)) and 0xFF))
+            mem.put8(m.enemyParty + 0x20 + w * 4 + i, v)
+        }
+        mem.put32(m.enemyParty, 24L)
+        mem.put8(m.enemyParty + 0x54, 18); mem.put16(m.enemyParty + 0x56, 30); mem.put16(m.enemyParty + 0x58, 30)
     }
 
     /** Two polls: the first enters the battle, the second makes its data ready. */
@@ -104,7 +113,8 @@ class GhostBattleTest {
         val m = GameMap.FIRERED_U_V10
         stage(mem, m, GHOST or UNVEILED)
         val t = GbaTracker(mem.reader(), m)
-        val s = settle(t)
+        settle(t)
+        val s = t.read()   // the move tracking's second poll in the opponent's action
         assertFalse(s.isGhostBattle)
         val e = assertNotNull(s.enemy)
         assertFalse(e.isGhost)

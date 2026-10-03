@@ -37,9 +37,11 @@ object ZxEngine {
             val msg = e.message ?: ""
             throw NatDexEngine.EngineException(
                 when {
+                    // The player reads this (RunJob.randomizeFailure), in the run screen's words: no dash, no "vanilla"
+                    // (rc32 audit P2 #72, P3 #53).
                     "newer version" in msg ->
-                        "\"${settingsFile.name}\" is a Nat. Dex settings file. The vanilla " +
-                            "engine cannot read it - use a standard settings file."
+                        "\"${settingsFile.name}\" is a mode for the Nat. Dex version of this game. Pick a standard " +
+                            "mode, or make the Nat. Dex version in Library, Patched versions."
                     else -> "Could not read \"${settingsFile.name}\": $msg"
                 }, e
             )
@@ -66,16 +68,19 @@ object ZxEngine {
             com.ironmonone.core.Generation.GBA3 -> Gen3RomHandler.Factory()
         }
         if (!factory.isLoadable(sourceRom.absolutePath)) {
+            // The player reads this (RunJob.randomizeFailure): a game, not a ROM, and the console it is for; a Game Boy
+            // game was called a GBA one (rc35 follow-up N #5).
             throw NatDexEngine.EngineException(
-                if (isNds)
-                    "\"${sourceRom.name}\" is not a DS Pokémon ROM this engine can open."
-                else
-                    "\"${sourceRom.name}\" is not a GBA Pokémon ROM this engine can open."
+                "\"${sourceRom.name}\" is not a ${consoleName(gen)} Pokémon game the randomizer can open."
             )
         }
         val handler = factory.create(RandomSource.instance())
         handler.loadRom(sourceRom.absolutePath)
+        // The engine clears Limit Pokemon for a Gen 3 game that is not its clean dump (Settings.tweakForRom: a patched
+        // build, or the 60% levels' pre-pass output), and the run ignored the limit without a word (rc32 audit P3 #90).
+        val limited = settings.isLimitPokemon
         settings.tweakForRom(handler)
+        val limitDropped = limited && !settings.isLimitPokemon
 
         val logBuffer = ByteArrayOutputStream()
         val log = PrintStream(logBuffer, false, "UTF-8")
@@ -103,7 +108,29 @@ object ZxEngine {
             runCatching { writeTrackerSidecar(handler, dest) }
         }
 
-        return NatDexEngine.Outcome(seed, String(logBuffer.toByteArray(), Charsets.UTF_8))
+        val logText = String(logBuffer.toByteArray(), Charsets.UTF_8)
+        return NatDexEngine.Outcome(seed, if (limitDropped) withNote(logText, LIMIT_DROPPED) else logText)
+    }
+
+    /** Said in the log's header and when the run is made (RunJob) when the engine turned Limit Pokemon off. */
+    /** A console as the app's words name it, for a game the randomizer cannot open. */
+    internal fun consoleName(gen: com.ironmonone.core.Generation): String = when (gen.platform) {
+        com.ironmonone.core.Platform.NDS -> "DS"
+        com.ironmonone.core.Platform.GBA -> "GBA"
+        com.ironmonone.core.Platform.GBC -> "Game Boy"
+    }
+
+    const val LIMIT_DROPPED = "Limit Pokemon was not applied: the randomizer turns it off for Red, Blue and Yellow, and for a " +
+        "Gen 3 game that is not the clean dump, such as a patched build or one with the 60% levels."
+
+    /** [log] with [note] as a line of its own after the header's settings string, marked as the app's (RandomizerLog.NOTE). */
+    internal fun withNote(log: String, note: String): String {
+        val line = com.ironmonone.app.RandomizerLog.NOTE + note
+        val at = log.indexOf("Settings String:")
+        val end = if (at < 0) -1 else log.indexOf('\n', at)
+        if (end < 0) return line + "\n" + log
+        val nl = if (log[end - 1] == '\r') "\r\n" else "\n"
+        return log.substring(0, end + 1) + line + nl + log.substring(end + 1)
     }
 
     /** Vanilla counterparts of the Nat. Dex helpers, so the editor can accept a
@@ -159,22 +186,29 @@ object ZxEngine {
         sidecar.bufferedWriter().use { w ->
             handler.pokemon.forEach { p ->
                 p ?: return@forEach
-                fun ability(i: Int) =
-                    if (i <= 0) "" else runCatching { handler.abilityName(i) }.getOrDefault("")
-                val bst = p.hp + p.attack + p.defense + p.speed + p.spatk + p.spdef
-                w.write(
-                    listOf(
-                        p.number,
-                        p.name,
-                        p.primaryType?.name ?: "",
-                        p.secondaryType?.name ?: "",
-                        bst,
-                        ability(p.ability1),
-                        ability(p.ability2),
-                    ).joinToString("\t")
-                )
+                w.write(sidecarLine(p) { i -> runCatching { handler.abilityName(i) }.getOrDefault("") })
                 w.newLine()
             }
         }
+    }
+
+    /**
+     * One species' sidecar line. The growth rate, as the ROM numbers it (ExpCurve.toByte), went on the end in rc34: the DS
+     * experience bar assumed Fluctuating for every Pokemon in every mode (rc32 audit P3 #118). NdsTracker reads a sidecar
+     * without it as before.
+     */
+    internal fun sidecarLine(p: com.dabomstew.pkrandomzx.pokemon.Pokemon, abilityName: (Int) -> String): String {
+        fun ability(i: Int) = if (i <= 0) "" else abilityName(i)
+        val bst = p.hp + p.attack + p.defense + p.speed + p.spatk + p.spdef
+        return listOf(
+            p.number,
+            p.name,
+            p.primaryType?.name ?: "",
+            p.secondaryType?.name ?: "",
+            bst,
+            ability(p.ability1),
+            ability(p.ability2),
+            p.growthCurve?.toByte()?.toString() ?: "",
+        ).joinToString("\t")
     }
 }

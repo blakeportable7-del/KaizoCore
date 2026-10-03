@@ -38,4 +38,29 @@ class ScoreSheetTest {
         assertEquals(-10, r.rows[0].score); assertEquals(1, r.rows[1].score)
         assertEquals(5, r.rows[0].cells.size)
     }
+
+    /** rc32 audit P2 #82: a phone whose language writes a decimal comma graded every sheet under 100% a D. */
+    @Test
+    fun `the grade is the same in a language that writes a decimal comma`() {
+        val f = File.createTempFile("marks", ".txt"); f.deleteOnExit()
+        val marks = StatMarks(f)
+        // Eight marks, seven of them right: 87.5%, a B.
+        val base = HashMap<Int, BaseStats>()
+        for (sp in 1..8) {
+            marks.setAll(sp, intArrayOf(1, 0, 0, 0, 0, 0))   // HP +
+            base[sp] = BaseStats(if (sp == 8) 45 else 130, 49, 49, 45, 65, 65, 12, 3, 65, 0)
+        }
+        val before = java.util.Locale.getDefault()
+        try {
+            for (locale in listOf(java.util.Locale.GERMANY, java.util.Locale.FRANCE, java.util.Locale("ar", "EG"))) {
+                java.util.Locale.setDefault(locale)
+                val r = ScoreSheet.build(marks, { base[it] }, { "#$it" })
+                assertEquals(8, r.total); assertEquals(7, r.great)
+                assertEquals("$locale", "87.5", r.percentage)
+                assertEquals("$locale", 'B', r.letter)
+            }
+        } finally {
+            java.util.Locale.setDefault(before)
+        }
+    }
 }

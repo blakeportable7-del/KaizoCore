@@ -143,7 +143,8 @@ with open(out / "evo-names.tsv", "w", encoding="utf-8", newline=nl) as f:
 print("evo-names", n)
 
 def flat(v):
-    return plain(v).replace(tab, " ").replace(chr(13), " ").replace(nl, " ").strip()
+    # The reference writes "levelling up"; a player reads American English (Blake, 2026-10-03).
+    return plain(v).replace(tab, " ").replace(chr(13), " ").replace(nl, " ").strip().replace("levelling", "leveling")
 
 # ability descriptions
 n = 0

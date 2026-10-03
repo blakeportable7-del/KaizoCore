@@ -19,7 +19,7 @@ import kotlin.test.assertTrue
 class FasterEmeraldTest {
 
     private fun patched(kind: RomKind): Pair<ByteArray, ByteArray>? {
-        val rom = System.getenv("IRONMON_ROMS")?.let { File(it, "emerald-u.gba") }?.takeIf { it.isFile }
+        val rom = Dumps.rom("emerald-u.gba")
         if (rom == null) { println("FasterEmeraldTest skipped: set IRONMON_ROMS (emerald-u.gba)"); return null }
         val opt = PrepOptions.forKind(RomKind.EMERALD_U).first { it.out?.id == kind.id }
         val vanilla = rom.readBytes()

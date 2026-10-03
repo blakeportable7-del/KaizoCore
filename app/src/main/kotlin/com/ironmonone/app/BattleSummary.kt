@@ -22,14 +22,17 @@ import androidx.compose.ui.unit.dp
  */
 internal object BattleSummary {
     /**
-     * Battle.getViewedIndex (Battle.lua:243-254): 0 your battler, 1 the opponent's. The right-hand
-     * battlers of a double battle are 2 and 3; this panel views the left ones.
+     * Battle.getViewedIndex (Battle.lua:243-254) in a single battle: 0 your battler, 1 the opponent's. A double
+     * battle's right-hand battlers are 2 and 3, which GbaViewState.viewedBattler names.
      */
     fun viewedIndex(viewingOwn: Boolean): Int = if (viewingOwn) 0 else 1
 
     /** The line's text for the viewed battler, or null when it has nothing to show (BattleDetailsScreen.hasDetails). */
-    fun line(summaries: List<String>, viewingOwn: Boolean): String? =
-        summaries.getOrNull(viewedIndex(viewingOwn))?.takeIf { it.isNotBlank() }
+    fun line(summaries: List<String>, viewingOwn: Boolean): String? = line(summaries, viewedIndex(viewingOwn))
+
+    /** The same for battler [battler], 0 to 3. */
+    fun line(summaries: List<String>, battler: Int): String? =
+        summaries.getOrNull(battler)?.takeIf { it.isNotBlank() }
 }
 
 /** Constants.PixelImages.SPARKLES, 12x12: TrackerScreen.Buttons.BattleDetailsSummary's icon. */
@@ -41,8 +44,9 @@ private val SPARKLES = listOf(
 /** TrackerScreen.Buttons.BattleDetailsSummary: the sparkles and the summary; a tap opens Battle Details. */
 @Composable
 internal fun PcBattleSummaryLine(text: String, onTap: (() -> Unit)?) {
+    // Through boxFill like every other tracker box, so a picture behind the tracker shows through it (rc32 audit P3 #21).
     Row(
-        Modifier.fillMaxWidth().background(Pc.LowerGroundX ?: Pc.Ground).border(1.dp, Pc.LowerBorder)
+        Modifier.fillMaxWidth().background(TrackerBackground.boxFill(Pc.LowerGroundX ?: Pc.Ground)).border(1.dp, Pc.LowerBorder)
             .then(if (onTap != null) Modifier.clickable { onTap() } else Modifier)
             .padding(horizontal = 6.dp, vertical = 5.dp),
         verticalAlignment = Alignment.CenterVertically,

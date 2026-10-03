@@ -49,4 +49,25 @@ class HealsInBagTest {
         // calcSortValue gives all but the Potion 0, and Pager.defaultSort breaks the tie by id.
         assertEquals(listOf(13, 3, 85, 95, 110), t.healsInBag(null).map { it.id })
     }
+
+    @Test
+    fun `the X items, Dire Hit and Guard Spec are Battle items, after the heals and ahead of the balls`() {
+        // MiscData.BattleItems (MiscData.lua:530-549): the flutes 39 to 41, then 73 to 79. Only the flutes were filed there
+        // (rc32 audit P2 #129). Items: X Attack 75, Guard Spec. 73, Potion 13, Blue Flute 39, 82; Poke Balls: Great Ball 3.
+        val ram = HashMap<Long, Byte>()
+        fun put(a: Long, vararg b: Int) { b.forEachIndexed { i, v -> ram[a + i] = v.toByte() } }
+        put(m.saveBlock1Fixed + m.bagItemsOffset, 75, 0, 1, 0, 73, 0, 2, 0, 13, 0, 1, 0, 39, 0, 1, 0, 82, 0, 1, 0)
+        put(m.saveBlock1Fixed + m.bagBallsOffset, 3, 0, 1, 0)
+        val reader = MemoryReader { a, n -> ByteArray(n) { ram[a + it] ?: 0 } }
+        val rows = GbaTracker(reader, m).healsInBag(null)
+        assertEquals(listOf(13, 39, 73, 75, 3, 82), rows.map { it.id })
+        for (id in listOf(39, 73, 75)) {
+            val r = rows.first { it.id == id }
+            assertEquals("Battle" to 20000, r.category to r.sortValue, "item $id")
+        }
+        assertEquals("Other", rows.first { it.id == 82 }.category, "82 is nothing in the games")
+        // The Nat. Dex expansion adds X Sp. Def, 82 (NatDexExtension.lua:4765-4771).
+        val natDex = GbaTracker(reader, m.copy(expandedSpeciesIds = true)).healsInBag(null)
+        assertEquals("Battle", natDex.first { it.id == 82 }.category)
+    }
 }

@@ -23,8 +23,7 @@ class NdsDumpNuzlockeTest {
     }
 
     private fun dump(name: String): File? {
-        val dir = System.getenv("IRONMON_DUMPS")?.let { File(it) }?.takeIf { it.isDirectory }
-        val f = dir?.let { File(it, name) }?.takeIf { it.isFile }
+        val f = Dumps.dump(name)
         if (f == null) println("SKIP: $name is not on this machine (IRONMON_DUMPS)")
         return f
     }

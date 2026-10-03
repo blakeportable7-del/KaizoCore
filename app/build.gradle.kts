@@ -3,9 +3,25 @@ plugins {
     kotlin("android")
 }
 
+// The release key (rc32 audit P2 #7, #8; docs/RELEASING.md, "The release key"). Until Blake's release certificate is
+// pinned in tools/release-certs.txt, a release build is signed with the debug key, the one every installed copy trusts.
+// Once it is, the release build comes out unsigned (app-release-unsigned.apk) and tools/sign_release.py signs it with both
+// keys, so that a phone holding the debug key's build still takes the update. The same file pins it for release.sh and
+// site_bump.py. -Pironmon.debugSigned=true signs one with the debug key anyway, for an emulator that never had a release:
+// such an APK cannot update a phone that took one signed with the release key.
+val releaseKeyPinned: Boolean = rootProject.file("tools/release-certs.txt").readLines()
+    .map { it.substringBefore('#').trim().split(Regex("\\s+")) }
+    .filter { it[0] == "release" }
+    .also { require(it.size == 1) { "tools/release-certs.txt: expected one release line, found ${it.size}" } }
+    .single().getOrNull(1)
+    ?.also { require(Regex("[0-9a-f]{64}").matches(it)) { "tools/release-certs.txt: the release line is not a SHA-256" } } != null
+
 android {
     namespace = "com.ironmonone.app"
     compileSdk = 34
+    // The NDK libretrodroid builds with. Without it here AGP cannot find the strip tool and ships
+    // liblibretrodroid.so with its debug info, about 9 MB a library (rc32 audit P2 #4, P3 #10).
+    ndkVersion = "26.1.10909125"
 
     defaultConfig {
         applicationId = "com.ironmonone.app"
@@ -13,10 +29,10 @@ android {
         // module later would raise this to 29, which is a decision, not an accident.
         minSdk = 26
         targetSdk = 34
-        versionCode = 42
+        versionCode = 44
         // The build id rides on the version so INFO and the bug report say WHICH rc15:
         // three same-named builds went to Blake's phone in one evening (2026-09-08).
-        val baseVersion = "1.0.0-rc33"
+        val baseVersion = "1.0.0-rc34"
         versionName = baseVersion + "+" + (project.findProperty("buildId")?.toString()?.takeIf { it.isNotBlank() } ?: "local")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         // Only the ABIs the emulator cores ship for (app/src/main/jniLibs): with libretrodroid built for four, a
@@ -44,8 +60,8 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
-            // Personal sideload build: the debug key is the signing story.
-            signingConfig = signingConfigs.getByName("debug")
+            // The debug key until the release key is pinned (releaseKeyPinned, above); unsigned after, for sign_release.py.
+            signingConfig = if (releaseKeyPinned && !project.hasProperty("ironmon.debugSigned")) null else signingConfigs.getByName("debug")
         }
     }
 
@@ -107,6 +123,8 @@ dependencies {
     // so it can coexist with the Nat. Dex fork's com.dabomstew.pkrandom in one APK.
     implementation(project(":engine-natdex"))
     implementation(project(":engine-zx"))
+    // MaxDex 1.0's randomizer: Nat. Dex 1.1.3 with Trip's changes, renamed com.dabomstew.pkrandommd.
+    implementation(project(":engine-maxdex"))
     implementation(project(":editor"))
     implementation(project(":tracker-gba"))
     implementation(project(":tracker-nds"))
@@ -125,7 +143,9 @@ dependencies {
 
     // Facecam bubble for streaming: CameraX preview only, bound to the activity
     // lifecycle. No capture, no storage - the streaming app records the screen.
-    implementation("androidx.camera:camera-camera2:1.3.3")
-    implementation("androidx.camera:camera-lifecycle:1.3.3")
-    implementation("androidx.camera:camera-view:1.3.3")
+    // 1.4: its JNI library is 16 KB aligned, which a 16 KB page phone needs to load it; 1.3.3's was 4 KB
+    // (rc32 audit P3 #11).
+    implementation("androidx.camera:camera-camera2:1.4.2")
+    implementation("androidx.camera:camera-lifecycle:1.4.2")
+    implementation("androidx.camera:camera-view:1.4.2")
 }

@@ -9,7 +9,9 @@ Sources, saved beside the settings generator's inputs in tools/upr-settings/:
   community/             the community rulesets (fetched 2026-09-29): SurvivalRevival-README.md
                          (Reimittv/SurvivalRevivalIronMON), Ironmon Journey.md (PappyQC's gist),
                          Chaos Kaizo Ironmon Rules.md (UTDZac's gist), evo-kaizo-puyAqPyt.txt (the
-                         pastebin), and Nat.-Dex-Ruleset-Changes.md (the Nat. Dex Extension wiki)
+                         pastebin), and Nat.-Dex-Ruleset-Changes.md (the Nat. Dex Extension wiki);
+                         MaxDex-Ruleset.md holds every version of the Ruleset page of Trip's MaxDex
+                         wiki (Tripc423/Maxdex), which was deleted 2026-07-03 (saved 2026-10-02)
 
 A mode's file lists every ruleset it builds on, in order, because each source
 says to read the earlier ones first ("this ruleset includes all of the
@@ -20,10 +22,16 @@ ruleset changes. Nothing is paraphrased: table rows become bullets, HTML list
 items become indented sub-bullets, links keep their text and URL, and the
 emphasis markers the RULES box cannot draw are dropped. The only words added
 are lines starting "In KaizoCore", which say where the app does a step for
-the player.
+the player. A British spelling is written the American way (american(): the
+Nat. Dex page's "favourites" becomes "favorites"); only the spelling moves.
 
 Which files are written follows the bundled presets: a mode gets a file for
-each family, and each Nat. Dex family, that has a preset for it.
+each family, and each Nat. Dex family, that has a preset for it. MaxDex's own
+preset ("FRLG MaxDex Kaizo.rnqs") gets <family>-MaxDex: the Nat. Dex text as
+it reads for v1.0.0 to v1.1.3, the version MaxDex is built on (Blake,
+2026-10-03: "Max dex is allowed a bst 600 pokemon"), then a MaxDex section
+made from every version of Trip's page. KaizoCore's Nat. Dex games are 1.2.1
+and keep the page's v1.2.0+ rules instead.
 
 Run:  python tools/rules/build_rules.py   (from the repo root)
 """
@@ -46,6 +54,8 @@ SOURCES = {
     "chaoskaizo": ("Chaos Kaizo IronMON rules by UTDZac", "https://gist.github.com/UTDZac/c8c3a84553840f8eabb063be80a33ee7", "last changed 2023-09-20"),
     "evokaizo": ("Evo Kaizo rules, a pastebin that names no author", "https://pastebin.com/puyAqPyt", "undated"),
     "natdex": ("Nat. Dex Ruleset Changes, the Nat. Dex Extension wiki by CyanSixFour", "https://github.com/CyanSMP64/NatDexExtension/wiki/Nat.-Dex-Ruleset-Changes", "last changed 2026-06-29"),
+    # The page is gone from the wiki; its history is in the wiki's own repository (community/MaxDex-Ruleset.md).
+    "maxdex": ("Ruleset page of the MaxDex wiki by Trip (Tripc423), every version", "https://github.com/Tripc423/Maxdex.wiki.git", "made 2026-06-19, last changed and deleted 2026-07-03"),
 }
 
 FAMILIES = {   # heading in official-settings.md -> (family tag, label)
@@ -106,6 +116,33 @@ def plain(s):
     s = re.sub(r"(?<![*\w])\*\*([A-Za-z0-9(\[\"'][^*\n]*?)\*\*(?!\*)", r"\1", s)
     s = re.sub(r"(?<![*\w])\*([A-Za-z0-9(\[\"'][^*\n]*?)\*(?!\*)", r"\1", s)
     return s
+
+# British spellings and their American ones (Blake, 2026-10-03: every word a player reads is
+# American English, the rulesets' own words included). AmericanSpellingTest reads what this writes.
+AMERICAN = [
+    (re.compile(r"\b([Ff])avour"), r"\1avor"),                 # favourite, favourites, favour
+    (re.compile(r"\b([Cc])olour"), r"\1olor"),
+    (re.compile(r"\b([Bb])ehaviour"), r"\1ehavior"),
+    (re.compile(r"\b([Hh])onour"), r"\1onor"),
+    (re.compile(r"\b([Nn])eighbour"), r"\1eighbor"),
+    (re.compile(r"\b([Cc])entre(s?)\b"), r"\1enter\2"),        # Survival Revival's Pokemon Centre
+    (re.compile(r"\b([Cc])entred\b"), r"\1entered"),
+    (re.compile(r"\b([Ll])icence"), r"\1icense"),
+    (re.compile(r"\b([Dd])efence"), r"\1efense"),
+    (re.compile(r"\b([Rr])ecognis"), r"\1ecogniz"),
+    (re.compile(r"\b([Gg])rey(s|ed|ing)?\b"), r"\1ray\2"),
+]
+URL = re.compile(r"https?://\S+")
+
+def american(s):
+    """[s] with each British spelling in AMERICAN written the American way. Links stay as they are."""
+    out, at = [], 0
+    for m in list(URL.finditer(s)) + [None]:
+        part = s[at:m.start() if m else len(s)]
+        for pat, us in AMERICAN: part = pat.sub(us, part)
+        out.append(part)
+        if m: out.append(m.group(0)); at = m.end()
+    return "".join(out)
 
 def clean(s):
     s = s.replace("—", ", ").replace("–", "-")
@@ -276,17 +313,18 @@ def game_updates(games_md, family_heading, natdex=False):
     return out
 
 def preset_matrix():
-    """(family, Nat. Dex) -> the modes it has a bundled preset for."""
+    """(family, build) -> the modes it has a bundled preset for; the build is "", "NatDex" or "MaxDex"."""
     fam = {}
     for f in PRESETS.glob("*.rnqs"):
         n = f.stem
         if "PART 2" in n or "PRE-PASS" in n: continue   # run by the app around a preset, never a mode
         tag = n.split()[0]
         natdex = "natdex" in n.lower()
+        maxdex = "maxdex" in n.lower()   # MaxDex's own file: its own folder, never the plain game's
         key = re.sub(r"[^a-z0-9]", "", re.sub(r"natdex v[\d.]+", "", n.lower()).replace(tag.lower(), "", 1))
         for k in MODE_KEYS:
             if k in key: key = k; break
-        fam.setdefault((tag, natdex), set()).add(key)
+        fam.setdefault((tag, "MaxDex" if maxdex else "NatDex" if natdex else ""), set()).add(key)
     return fam
 
 # ------------------------------------------------------------------ the community rulesets
@@ -312,9 +350,13 @@ def evo_rules():
     t = re.sub(r"(?m)^Setting String if you want to try.*$", "", t)
     return render_md(t), {}
 
-def natdex_changes():
-    """The wiki page, without what applies to Nat. Dex 1.0.0 to 1.1.3 only: the app's
-    Nat. Dex is 1.2.1."""
+# What the page marks as one version's own: a bullet with its sub-bullets, or a heading with its section.
+V113_ONLY = "v1.0.0 to v1.1.3 only"
+V120_ONLY = "v1.2.0+ only"
+
+def natdex_changes(drop=V113_ONLY):
+    """The wiki page without the rules it marks [drop]. KaizoCore's Nat. Dex is 1.2.1, so its books leave out what
+    applies to v1.0.0 to v1.1.3 only; MaxDex's book leaves out the v1.2.0+ rules instead (see NOTE_MAXDEX)."""
     t = (COMM / "Nat.-Dex-Ruleset-Changes.md").read_text(encoding="utf-8")
     kept, drop_below = [], None
     for line in t.splitlines():
@@ -326,12 +368,63 @@ def natdex_changes():
                 drop_below = None
             else:
                 continue
-        if "v1.0.0 to v1.1.3 only" in line:
+        if drop in line:
             drop_below = ind if not line.lstrip().startswith("#") else -1
             continue
         kept.append(line)
-    lines = render_md("\n".join(kept))
-    return ["(Rules the page marks \"v1.0.0 to v1.1.3 only\" are left out: KaizoCore's Nat. Dex is 1.2.1.)"] + lines
+    return render_md("\n".join(kept))
+
+NATDEX_NOTE = "(Rules the page marks \"v1.0.0 to v1.1.3 only\" are left out: KaizoCore's Nat. Dex is 1.2.1.)"
+# The Nat. Dex page's note, as it reads on MaxDex, which is built on Nat. Dex 1.1.3 (Blake, 2026-10-03: "Max dex is
+# allowed a bst 600 pokemon").
+NATDEX_NOTE_MAXDEX = ("(Rules the page marks \"v1.2.0+ only\" are left out: MaxDex is built on Nat. Dex 1.1.3, so the ones marked "
+                      "\"v1.0.0 to v1.1.3 only\" are its own. See MaxDex, below.)")
+# Which rules the app holds a MaxDex run to: BstRule and FavoriteBall take MaxDex's 1.1.3 lines, Favorites its nine.
+NOTE_MAXDEX = ("In KaizoCore, MaxDex is held to the Nat. Dex rules above for v1.0.0 to v1.1.3, the version it is built on: a starter "
+               "may have up to 600 BST, any other Pokémon must be under 600, a Pokémon may evolve to 600 or more unless it becomes "
+               "a legendary of 601 or more, and each of your up to 9 favorites may have up to 600 BST. Trip's page names no version.")
+MAXDEX_LISTS = ["Extra Abilities Banned", "Extra Banned Moves"]
+
+def maxdex_versions():
+    """Every saved version of the MaxDex wiki's Ruleset page, oldest first: (date, text), text None where it was deleted."""
+    t = (COMM / "MaxDex-Ruleset.md").read_text(encoding="utf-8")
+    out = []
+    for part in re.split(r"(?m)^## ", t)[1:]:
+        head, _, body = part.partition("\n")
+        body = "\n".join(l for l in body.splitlines() if not l.startswith("<!--")).strip()
+        out.append((head.split()[1], None if body == "(deleted)" else body))
+    return out
+
+def listed(text, label):
+    """The names on a version's "Label: a, b, c" line, in order."""
+    m = re.search(r"(?m)^" + re.escape(label) + r":(.*)$", text)
+    return [x.strip() for x in m.group(1).split(",") if x.strip()] if m else []
+
+def maxdex_rules():
+    """MaxDex's section: the page's last version in full, then what each version changed, worked out from the saved
+    versions so no count is kept by hand, then where the app stands."""
+    vs = maxdex_versions()
+    pages = [text for _, text in vs if text is not None]
+    out = [f"Trip's MaxDex wiki had a Ruleset page from {vs[0][0]} to {vs[-1][0]}, when it was deleted. Its last version, in full:"]
+    out += render_md(pages[-1])
+    out.append("What each version of the page said:")
+    prev = None
+    for date, text in vs:
+        if text is None:
+            out.append(f"- {date}: the page was deleted."); continue
+        now = {label: listed(text, label) for label in MAXDEX_LISTS}
+        if prev is None:
+            first = re.sub(r"\s*\(https?://[^)]*\)", "", clean(text.splitlines()[0]))
+            extra = [f"{label} ({len(v)})" for label, v in now.items() if v]
+            out.append(f"- {date}: {first}" + (", plus " + " and ".join(extra) if extra else "") + ".")
+        else:
+            said = []
+            for label in MAXDEX_LISTS:
+                gone = [x for x in prev[label] if x not in now[label]]
+                if gone: said.append(f"{label} came off" if not now[label] else f"{', '.join(gone)} came off {label}")
+            out.append(f"- {date}: " + ("; ".join(said) if said else "no change to its lists") + ".")
+        prev = now
+    return out + [NOTE_MAXDEX]
 
 # ------------------------------------------------------------------ writing
 
@@ -362,16 +455,20 @@ def main():
         "chaoskaizo": ("Chaos Kaizo IronMON",) + chaos_rules(),
         "evokaizo": ("Evo Kaizo IronMON",) + evo_rules(),
     }
-    natdex = natdex_changes()
+    natdex = [NATDEX_NOTE] + natdex_changes()
+    natdex_maxdex = [NATDEX_NOTE_MAXDEX] + natdex_changes(drop=V120_ONLY)
+    maxdex = maxdex_rules()
 
     matrix = preset_matrix()
     today = datetime.date.today().isoformat()
     written = []
     for heading, (family, fam_label) in FAMILIES.items():
-        for natdex_build in (False, True):
+        # The game, its Nat. Dex build, and MaxDex (FireRed's, from Trip's own preset): Nat. Dex plus its own section.
+        for build in ("", "NatDex", "MaxDex"):
+            natdex_build = build != ""
             updates = game_updates(games_md, heading, natdex_build)
-            modes = sorted(matrix.get((family, natdex_build), set()), key=lambda m: list(CHAIN).index(m) if m in CHAIN else 99)
-            label = fam_label + (", Nat. Dex" if natdex_build else "")
+            modes = sorted(matrix.get((family, build), set()), key=lambda m: list(CHAIN).index(m) if m in CHAIN else 99)
+            label = fam_label + {"": "", "NatDex": ", Nat. Dex", "MaxDex": ", MaxDex"}[build]
             for mode in modes:
                 if mode not in CHAIN: continue
                 out = [f"# {label}: {MODE_LABEL[mode]}", "",
@@ -408,15 +505,18 @@ def main():
                     for t, ls in own:
                         out += [f"### {t}", ""] + ls + [""]
                 if natdex_build:
-                    out += ["## Nat. Dex ruleset changes", ""] + natdex + [""]
+                    out += ["## Nat. Dex ruleset changes", ""] + (natdex_maxdex if build == "MaxDex" else natdex) + [""]
                     used.append("natdex")
+                if build == "MaxDex":
+                    out += ["## MaxDex", ""] + maxdex + [""]
+                    used.append("maxdex")
                 out += ["## Sources", ""]
                 for k in used:
                     n, u, d = SOURCES[k]; out.append(f"- {n}: {u} ({d})")
                 out += ["", f"Generated {today} by tools/rules/build_rules.py. Rulesets get revised; if this reads behind a source, regenerate."]
-                text = re.sub(r"\n{3,}", "\n\n", "\n".join(out)).rstrip() + "\n"
+                text = american(re.sub(r"\n{3,}", "\n\n", "\n".join(out)).rstrip() + "\n")
                 assert "—" not in text, (family, mode)
-                d = OUT / (family + ("-NatDex" if natdex_build else ""))
+                d = OUT / (family + ("-" + build if build else ""))
                 d.mkdir(parents=True, exist_ok=True)
                 (d / f"{mode}.md").write_text(text, encoding="utf-8")
                 written.append(f"{d.name}/{mode}")

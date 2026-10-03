@@ -5,7 +5,7 @@
 Download the APK from [willowcreek.group/kaizocore](https://willowcreek.group/kaizocore) or the GitHub release, open
 it, and let Android install it. [Install and update](Install-and-update) has the details.
 
-You need Android 8 or newer. DS games want a phone with at least 3 GB of RAM.
+You need a 64-bit phone with Android 8 or newer (a 32-bit phone cannot install it). DS games want a phone with at least 3 GB of RAM.
 
 ## 2. Add your games
 

@@ -9,12 +9,18 @@
 //
 // steps:
 //   tracker, attempts   { state: <snapshot> }       a server-sent "state" event
+//   tracker             { fetch: {status, body} }   what /dex.json answers from now on; { call: "<code>" } runs page code
+//                       { advance: <ms> }           the clock moves, and the page's timers with it
 //   attempts            { plain: "7" }              the plain-text answer changes, and the 5 second poll comes round
 //   game                { open: true }              the socket opens
 //                       { picture: true }           a picture arrives (the fake browser decodes it at once)
 //                       { sound: true }             a little sound arrives (this is what makes the page ask for a click)
 //                       { close: true }             the socket drops
 //                       { advance: <ms> }           the clock moves, and the page's timers with it
+//   favorite            { reply: {status, etag, body} }   what the favorite's picture answers from now on (null: the
+//                                                   phone cannot be reached); job.reply is the first, job.path the
+//                                                   page's own address, like "/favorite/4"
+//                       { advance: <ms> }           the clock moves, and the page's timers with it (it asks every 2 s)
 //
 // The page's own script is cut out of the HTML, so this runs the page the phone serves, not a copy.
 'use strict';
@@ -77,9 +83,14 @@ function trackerHost() {
   FakeEventSource.made = [];
   const d = fakeDocument();
   const c = clock();
+  // What /dex.json answers ({status, body}); none: the phone is unreachable.
+  let dexReply = null;
   const sandbox = {
     URLSearchParams, location: { search: job.search || '' }, document: d.document, EventSource: FakeEventSource,
-    setTimeout: c.setTimeout, clearTimeout: c.clearTimeout, fetch: () => Promise.reject(new Error('offline')),
+    setTimeout: c.setTimeout, clearTimeout: c.clearTimeout,
+    fetch: () => dexReply
+      ? Promise.resolve({ ok: dexReply.status === 200, status: dexReply.status, json: () => Promise.resolve(dexReply.body) })
+      : Promise.reject(new Error('offline')),
     console, JSON, Math, String, Number, Object, Array, Promise,
   };
   sandbox.window = sandbox;
@@ -92,11 +103,15 @@ function trackerHost() {
       sources: FakeEventSource.made.length,
     }),
     step: async (s) => {
+      if (s.fetch) dexReply = s.fetch;
       if (s.state) {
         const es = FakeEventSource.made[FakeEventSource.made.length - 1];
         es.listeners.state({ data: JSON.stringify(s.state) });
       }
+      // The page's own code, as a tap would run it ("overTab='dex';loadDex()").
+      if (s.call) vm.runInContext(s.call, sandbox);
       await settle();
+      if (s.advance) await c.advance(s.advance);
     },
   };
 }
@@ -186,8 +201,52 @@ function gameHost() {
   };
 }
 
+// A favorite's page (2026-10-03, StreamFavorites): what it asks the phone for, and which picture it shows. The fake
+// browser has a picture loaded the moment its address is set, as a small PNG from the phone is.
+function favoriteHost() {
+  const d = fakeDocument();
+  const c = clock();
+  let reply = job.reply || null;
+  const asked = [];
+  let made = 0, revoked = 0;
+  const img = d.el('f');
+  Object.defineProperty(img, 'src', { get() { return img._src || ''; }, set(v) { img._src = v; if (img.onload) img.onload(); } });
+  const sandbox = {
+    URLSearchParams, encodeURIComponent, console, JSON, Math, String, Number, Object, Array, Promise,
+    location: { search: job.search || '?k=abcd', pathname: job.path || '/favorite/1' },
+    document: d.document, setTimeout: c.setTimeout, clearTimeout: c.clearTimeout, setInterval: c.setInterval,
+    fetch: (url, opts) => {
+      asked.push({ url, cache: (opts && opts.cache) || '' });
+      if (!reply) return Promise.reject(new Error('offline'));
+      const r = reply;
+      return Promise.resolve({
+        ok: r.status === 200, status: r.status,
+        headers: { get: (h) => (String(h).toLowerCase() === 'etag' ? (r.etag || null) : null) },
+        blob: () => Promise.resolve({ body: r.body }),
+      });
+    },
+    URL: { createObjectURL: (b) => 'blob:' + (++made) + ':' + b.body, revokeObjectURL: () => { revoked++; } },
+  };
+  sandbox.window = sandbox;
+  vm.createContext(sandbox);
+  vm.runInContext(script, sandbox);
+  const lastAsked = () => asked[asked.length - 1] || { url: '', cache: '' };
+  return {
+    seen: () => ({
+      src: img.src, visibility: img.style.visibility || '', rendering: img.style.imageRendering || '',
+      fetches: asked.length, url: lastAsked().url, cache: lastAsked().cache, made, revoked,
+    }),
+    step: async (s) => {
+      if (s.reply !== undefined) reply = s.reply;
+      await settle();
+      if (s.advance) await c.advance(s.advance);
+      await settle();
+    },
+  };
+}
+
 (async () => {
-  const host = { tracker: trackerHost, attempts: attemptsHost, game: gameHost }[job.page]();
+  const host = { tracker: trackerHost, attempts: attemptsHost, game: gameHost, favorite: favoriteHost }[job.page]();
   await settle();
   const out = { initial: host.seen(), steps: [] };
   for (const s of job.steps || []) { await host.step(s); out.steps.push(host.seen()); }

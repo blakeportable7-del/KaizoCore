@@ -24,30 +24,31 @@ import com.ironmonone.tracker.GbaTracker
  * the effects in play. The reference shows one group at a time behind a
  * picker of team balls; the phone has the room, so every group with
  * anything in it is listed under its own underlined heading, in the
- * reference's order and words. Refreshed with every tracker poll.
+ * reference's order and words. Refreshed with every tracker poll. In
+ * DialogText, which follows the phone's font size (rc32 audit P2 #19).
  */
 @Composable
 fun BattleDetailsDialog(d: GbaTracker.BattleDetails?, onClose: () -> Unit) {
     Dialog(onDismissRequest = onClose) {
         Column(Modifier.width(300.dp).background(Pc.Page).border(1.dp, Pc.Border).padding(8.dp).verticalScroll(rememberScrollState())) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                PixText("BATTLE DETAILS", 10, Pc.Text, Modifier.weight(1f))
+                DialogText("BATTLE DETAILS", 16, Pc.Text, Modifier.weight(1f), heading = true)
                 PcTap("X", 9, Pc.Dim, "Close") { onClose() }
             }
             Spacer(Modifier.height(4.dp))
             if (d == null) {
-                PixText("Terrain: ---", 8, Pc.Text); PixText("Weather: ---", 8, Pc.Text); PixText("Turn: ---", 8, Pc.Text)
-                Spacer(Modifier.height(6.dp)); PixText("Not in a battle.", 8, Pc.Dim)
+                DialogText("Terrain: ---", 13, Pc.Text); DialogText("Weather: ---", 13, Pc.Text); DialogText("Turn: ---", 13, Pc.Text)
+                Spacer(Modifier.height(6.dp)); DialogText("Not in a battle.", 13, Pc.Dim)
                 return@Column
             }
-            PixText("Terrain: ${d.terrain}", 8, Pc.Text)
-            PixText("Weather: ${d.weather}", 8, Pc.Text)
-            PixText("Turn: ${d.turn}", 8, Pc.Text)
+            DialogText("Terrain: ${d.terrain}", 13, Pc.Text)
+            DialogText("Weather: ${d.weather}", 13, Pc.Text)
+            DialogText("Turn: ${d.turn}", 13, Pc.Text)
             Spacer(Modifier.height(6.dp))
             @Composable fun group(title: String, lines: List<GbaTracker.BattleDetail>) {
                 if (lines.isEmpty()) return
-                PixText(title, 8, Pc.Gold); Spacer(Modifier.height(2.dp))
-                lines.forEach { PixText(it.text, 8, Pc.Text, Modifier.padding(start = 6.dp), wrap = true) }
+                DialogText(title, 13, Pc.Gold); Spacer(Modifier.height(2.dp))
+                lines.forEach { DialogText(it.text, 13, Pc.Text, Modifier.padding(start = 6.dp)) }
                 Spacer(Modifier.height(6.dp))
             }
             group("Allied Pokemon", d.mons[0])
@@ -56,7 +57,7 @@ fun BattleDetailsDialog(d: GbaTracker.BattleDetails?, onClose: () -> Unit) {
             group("Allied Team", d.sides[0])
             group("Enemy Team", d.sides[1])
             group("Field Effects", d.field)
-            if (d.field.isEmpty() && d.sides.all { it.isEmpty() } && d.mons.all { it.isEmpty() }) PixText("No effects in play.", 8, Pc.Dim)
+            if (d.field.isEmpty() && d.sides.all { it.isEmpty() } && d.mons.all { it.isEmpty() }) DialogText("No effects in play.", 13, Pc.Dim)
         }
     }
 }

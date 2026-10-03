@@ -39,7 +39,7 @@ class LibraryOrganizeTest {
         val lib = LibraryStore(Files.createTempDirectory("lib").toFile())
         // Black: the one DS kind whose CRC is still unpinned (every other was pinned from a dump on 2026-09-06).
         val hg = lib.import("whatever.nds", dsRom("POKEMON B", "IRBO"))
-        assertEquals(LibraryStore.Category.CLEAN, hg.category, "header match, CRC unpinned: clean but unverified")
+        assertEquals(LibraryStore.Category.OTHER_VERSIONS, hg.category, "header match, CRC unpinned: a real game the tracker does not read (rc32 audit P2 #25)")
         assertTrue(hg.unverified)
         assertEquals("This is Pokémon Black (U), a copy KaizoCore has not checked yet. It plays here without a tracker.", hg.subtitle)
         val mk = lib.import("mk.nds", dsRom("MARIO KART", "AMCE"))

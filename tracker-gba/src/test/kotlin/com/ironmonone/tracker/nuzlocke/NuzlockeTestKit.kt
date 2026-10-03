@@ -70,10 +70,12 @@ internal class Sim(val rules: NuzlockeRules = rules(), val system: NuzlockeSyste
     var caps: LevelCapTable? = null
     var beaten: Set<String> = emptySet()
     var readable = true
+    /** The party is one a Battle Tent or Frontier lends (Snapshot.facility). */
+    var facility = false
 
     fun snapshot() = Snapshot(
         readable, area, inBattle, wild, ghost, method, enemy, opponent, end, turn,
-        party, partyCount ?: party.size, badges, balls, bag, style, caps, beaten,
+        party, partyCount ?: party.size, badges, balls, bag, style, caps, beaten, facility,
     )
 
     fun poll(): Boolean = engine.update(snapshot(), now).also { now += 700 }

@@ -66,8 +66,10 @@ class LossConditionTest {
     @Test
     fun `eggs never count`() {
         val egg = LossMon(5, 0, isEgg = true)
-        // The lead is slot 1 itself: an egg there is not a fainted lead.
+        // The lead is the first Pokemon that is not an egg (Tracker.getPokemon skips eggs, Tracker.lua:105-140): an egg
+        // in slot 1 is never a fainted lead, and the Pokemon after it is the lead (rc32 audit P2 #136).
         kotlin.test.assertFalse(LossCondition.LEAD.lostMons(listOf(egg, LossMon(20, 30))))
+        kotlin.test.assertTrue(LossCondition.LEAD.lostMons(listOf(LossMon(5, 40, isEgg = true), LossMon(20, 0))))
         // Entire party: every REAL Pokemon down, the egg does not keep the run alive.
         kotlin.test.assertTrue(LossCondition.ENTIRE_PARTY.lostMons(listOf(LossMon(20, 0), LossMon(5, 40, isEgg = true))))
         // Highest level: a higher-level egg is not the highest Pokemon.

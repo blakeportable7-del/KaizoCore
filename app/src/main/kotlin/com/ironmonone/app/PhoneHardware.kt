@@ -15,8 +15,11 @@ import android.os.VibratorManager
  *
  * Rumble: libretro gives two motor strengths, 0..1. The phone has one motor
  * (usually), so the louder of the two drives it: above zero buzzes at that
- * amplitude for as long as the core keeps it there (a long one-shot that is
- * re-armed on every change), zero cancels.
+ * amplitude for as long as the core keeps it there, zero cancels. The core
+ * says only when the strength changes, so the buzz is a waveform that repeats
+ * until cancelled ([buzz]); it was a 2 s one-shot, and a game that held rumble
+ * on (Drill Dozer drilling) went still after two seconds (rc32 audit P3 #47).
+ * [follow] stops the motor when Play pauses or leaves.
  *
  * Sensors: libretro wants the accelerometer in g, the gyroscope in rad/s
  * and illuminance in lux. Android gives m/s^2, rad/s and lux, so only the
@@ -35,12 +38,41 @@ object PhoneHardware {
     fun amplitude(weak: Float, strong: Float): Int =
         (maxOf(weak, strong).coerceIn(0f, 1f) * 255f).toInt()
 
+    /** A waveform as VibrationEffect.createWaveform takes it: one-second steps at [amplitudes], repeating from [repeat]. */
+    class Buzz(val timings: LongArray, val amplitudes: IntArray, val repeat: Int)
+
+    /** What a strength above zero plays: [amp] (the motor's own strength without amplitude control), held until cancelled. */
+    fun buzz(amp: Int, hasAmplitudeControl: Boolean): Buzz =
+        Buzz(longArrayOf(1000), intArrayOf(if (hasAmplitudeControl) amp else VibrationEffect.DEFAULT_AMPLITUDE), repeat = 0)
+
     fun rumble(vib: Vibrator, weak: Float, strong: Float) {
         val amp = amplitude(weak, strong)
         runCatching {
             if (amp <= 0) vib.cancel()
-            else if (vib.hasAmplitudeControl()) vib.vibrate(VibrationEffect.createOneShot(2000, amp))
-            else vib.vibrate(VibrationEffect.createOneShot(2000, VibrationEffect.DEFAULT_AMPLITUDE))
+            else buzz(amp, vib.hasAmplitudeControl()).let { b -> vib.vibrate(VibrationEffect.createWaveform(b.timings, b.amplitudes, b.repeat)) }
+        }
+    }
+
+    /**
+     * Play's rumble: the motor follows [events] while the activity is resumed. A pause stops it and a resume puts the
+     * last strength back, since the core sends nothing while it is paused; leaving Play, or the setting going off, ends
+     * the collector and the motor with it (a repeating buzz is never left running).
+     */
+    suspend fun follow(vib: Vibrator, events: kotlinx.coroutines.flow.Flow<com.swordfish.libretrodroid.RumbleEvent>, lifecycle: androidx.lifecycle.Lifecycle) {
+        var last: com.swordfish.libretrodroid.RumbleEvent? = null
+        val obs = androidx.lifecycle.LifecycleEventObserver { _, e ->
+            if (e == androidx.lifecycle.Lifecycle.Event.ON_PAUSE) runCatching { vib.cancel() }
+            else if (e == androidx.lifecycle.Lifecycle.Event.ON_RESUME) last?.let { rumble(vib, it.strengthWeak, it.strengthStrong) }
+        }
+        lifecycle.addObserver(obs)
+        try {
+            events.collect { ev ->
+                last = ev
+                if (lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED)) rumble(vib, ev.strengthWeak, ev.strengthStrong)
+            }
+        } finally {
+            lifecycle.removeObserver(obs)
+            runCatching { vib.cancel() }
         }
     }
 

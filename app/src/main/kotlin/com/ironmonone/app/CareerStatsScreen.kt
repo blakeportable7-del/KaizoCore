@@ -3,6 +3,7 @@ package com.ironmonone.app
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -63,7 +64,7 @@ internal fun CareerStatsScreen(modifier: Modifier = Modifier) {
                         Gen3Box(Modifier.fillMaxWidth()) {
                             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                                 StatRow(StatsCopy.RUNS_STARTED, StatsCopy.number(s.runsStarted))
-                                StatRow(StatsCopy.RUNS_WON, StatsCopy.wins(s.wins, s.winsAfterRewinds))
+                                StatRow(StatsCopy.RUNS_WON, StatsCopy.wins(s.wins), StatsCopy.winsNote(s.winsAfterRewinds))
                                 StatRow(StatsCopy.TIME_PLAYED, StatsCopy.timePlayed(s.playSeconds))
                                 StatRow(StatsCopy.ENDED_MOST, StatsCopy.cause(s.topCause))
                                 StatRow(StatsCopy.STREAK, StatsCopy.streak(s.longestWinStreak))
@@ -107,14 +108,22 @@ internal fun CareerStatsScreen(modifier: Modifier = Modifier) {
 }
 
 /**
- * A label and its number on one line: the label takes the room and wraps at a large font, the number keeps its own.
- * A screen reader reads the two as one thing.
+ * A label and its number on one line: the label takes the room and wraps at a large font, and the number never takes
+ * more than half the row, wrapping inside its half: a long one squeezed the label to a letter a line, or to nothing,
+ * at a large font (rc32 audit P2 #15). [note] is a line of its own under them. A screen reader reads it all as one thing.
  */
 @Composable
-private fun StatRow(label: String, value: String) {
-    Row(Modifier.fillMaxWidth().semantics(mergeDescendants = true) {}, verticalAlignment = Alignment.Top) {
-        Text(label, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium, color = Shell.hintOnPaper)
-        Spacer(Modifier.width(12.dp))
-        Text(value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, color = Shell.inkOnPaper, textAlign = TextAlign.End)
+private fun StatRow(label: String, value: String, note: String? = null) {
+    Column(Modifier.fillMaxWidth().semantics(mergeDescendants = true) {}) {
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+            val half = maxWidth / 2
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+                Text(label, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium, color = Shell.hintOnPaper)
+                Spacer(Modifier.width(12.dp))
+                Text(value, Modifier.widthIn(max = half), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium,
+                    color = Shell.inkOnPaper, textAlign = TextAlign.End)
+            }
+        }
+        note?.let { Text(it, Modifier.fillMaxWidth().padding(top = 2.dp), style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper) }
     }
 }

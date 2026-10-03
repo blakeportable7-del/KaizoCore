@@ -37,6 +37,7 @@ class TrackedAbilitiesTest {
         marks(dir).apply { revealAbility(1, "Overgrow"); revealAbility(1, "Chlorophyll") }
         assertEquals(listOf("Overgrow", "Chlorophyll"), marks(dir).abilitiesFor(1))
 
+        DiskWriter.drain()   // the saves above are on their way to disk (rc32 audit P2 #90): there before the old file goes over them
         File(dir, "abilities.txt").writeText("7:Torrent\n")
         val old = marks(dir)
         assertEquals("Torrent", old.abilityFor(7))

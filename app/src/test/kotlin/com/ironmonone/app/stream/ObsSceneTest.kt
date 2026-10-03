@@ -47,13 +47,17 @@ class ObsSceneTest {
         assertFalse(scene.containsKey("version")); assertFalse(scene.containsKey("resolution"))
     }
 
+    /** The game, the tracker, the attempt counter, then the nine favorites (StreamFavorites, 2026-10-03). */
+    private val favoriteNames = (1..StreamFavorites.SLOTS).map { "KaizoCore favorite $it" }
+    private val mainNames = listOf("KaizoCore game", "KaizoCore tracker", "KaizoCore attempts")
+
     @Test
-    fun `one scene and three browser sources, with unique names`() {
+    fun `one scene, three browser sources and one for each favorite, with unique names`() {
         val scene = parse()
         val all = sources(scene)
-        assertEquals(listOf("scene", "browser_source", "browser_source", "browser_source"), all.map { it["id"] })
+        assertEquals(listOf("scene") + List(3 + StreamFavorites.SLOTS) { "browser_source" }, all.map { it["id"] })
         assertEquals(all.size, all.map { it["name"] }.toSet().size, "names are how items find their sources")
-        assertEquals(setOf("KaizoCore game", "KaizoCore tracker", "KaizoCore attempts"), browsers(scene).map { it["name"] }.toSet())
+        assertEquals(mainNames + favoriteNames, browsers(scene).map { it["name"] })
         for (s in all) assertEquals(s["id"], s["versioned_id"])
     }
 
@@ -61,7 +65,7 @@ class ObsSceneTest {
     fun `every url in the file is this phone's address with its key`() {
         val scene = parse()
         val urls = browsers(scene).map { settings(it)["url"] as String }
-        assertEquals(3, urls.size)
+        assertEquals(3 + StreamFavorites.SLOTS, urls.size)
         for (u in urls) {
             val uri = URI(u)
             assertEquals("http", uri.scheme, u)
@@ -70,12 +74,12 @@ class ObsSceneTest {
             assertTrue(uri.rawQuery.split('&').contains("k=$token"), "the key is in $u")
         }
         assertEquals(
-            setOf("/game", "/tracker", "/attempts.html"),
+            setOf("/game", "/tracker", "/attempts.html") + (1..StreamFavorites.SLOTS).map { "/favorite/$it" },
             urls.map { URI(it).path }.toSet(),
-            "the game, the tracker and the attempt counter",
+            "the game, the tracker, the attempt counter and each favorite's page",
         )
         // No other string in the file is a URL.
-        assertEquals(3, Regex("http://").findAll(ObsScene.json(base, token)).count())
+        assertEquals(3 + StreamFavorites.SLOTS, Regex("http://").findAll(ObsScene.json(base, token)).count())
     }
 
     @Test
@@ -96,7 +100,8 @@ class ObsSceneTest {
                 "body { background-color: rgba(0, 0, 0, 0); margin: 0px auto; overflow: hidden; }", s["css"],
                 "OBS's own default CSS: the page stays see-through",
             )
-            assertEquals(false, s["is_local_file"]); assertEquals(false, s["shutdown"]); assertEquals(true, s["restart_when_active"])
+            assertEquals(false, s["is_local_file"]); assertEquals(true, s["restart_when_active"])
+            assertEquals(b["name"] in favoriteNames, s["shutdown"], "only the hidden favorites shut down while out of sight")
             assertEquals(255L, b["mixers"], "all audio tracks, as OBS writes a source with sound")
         }
         val game = settings(byName(scene, "KaizoCore game"))
@@ -111,10 +116,12 @@ class ObsSceneTest {
         // the phone is streaming, so each source's first load fails; without this box nothing ever loads it again, and
         // the streamer sees three error pages until they know to press Refresh cache of current page.
         val sources = browsers(parse())
-        assertEquals(3, sources.size)
+        assertEquals(3 + StreamFavorites.SLOTS, sources.size)
         for (b in sources) {
             assertEquals(true, settings(b)["restart_when_active"], "${b["name"]} reloads when its scene becomes active")
-            assertEquals(false, settings(b)["shutdown"], "${b["name"]} is not torn down when it is out of sight")
+            // The favorites are hidden in the scene, so they are shut down while hidden and cost OBS nothing until shown.
+            if (b["name"] in favoriteNames) assertEquals(true, settings(b)["shutdown"], "${b["name"]} sleeps while hidden")
+            else assertEquals(false, settings(b)["shutdown"], "${b["name"]} is not torn down when it is out of sight")
         }
     }
 
@@ -156,9 +163,11 @@ class ObsSceneTest {
         val scene = parse()
         val names = sources(scene).map { it["name"] }.toSet()
         val items = items(scene)
-        assertEquals(3, items.size)
+        assertEquals(3 + StreamFavorites.SLOTS, items.size)
         for (i in items) assertTrue(i["name"] in names, "item ${i["name"]} names a source in the file")
-        assertEquals(3, items.map { it["id"] }.toSet().size)
+        assertEquals(3 + StreamFavorites.SLOTS, items.map { it["id"] }.toSet().size)
+        // The three are shown; the favorites are there to show, hidden until the streamer clicks an eye.
+        assertEquals(mainNames.map { true } + favoriteNames.map { false }, items.map { it["visible"] })
         val counter = settings(byName(scene, "KaizoCore"))["id_counter"] as Long
         assertTrue(items.all { (it["id"] as Long) <= counter }, "a new item must not reuse an id")
     }
@@ -167,7 +176,18 @@ class ObsSceneTest {
     fun `the layout fits 1920 by 1080 with nothing overlapping`() {
         val scene = parse()
         class Box(val name: String, val x: Double, val y: Double, val w: Double, val h: Double)
-        val boxes = items(scene).map { i ->
+        // What shows when the scene is imported; the hidden favorites are held to the canvas and to each other below.
+        val all = items(scene)
+        val favorites = all.filter { it["visible"] == false }
+        assertEquals(favoriteNames, favorites.map { it["name"] })
+        for ((n, f) in favorites.withIndex()) {
+            @Suppress("UNCHECKED_CAST") val pos = f["pos"] as Map<String, Double>
+            val size = settings(byName(scene, f["name"] as String))["width"] as Long
+            assertEquals(n * 128.0, pos["x"], "in a row along the top, one beside the next")
+            assertEquals(0.0, pos["y"])
+            assertTrue(pos["x"]!! + size <= 1920, "${f["name"]} is inside the canvas")
+        }
+        val boxes = all.filter { it["visible"] == true }.map { i ->
             @Suppress("UNCHECKED_CAST") val pos = i["pos"] as Map<String, Double>
             @Suppress("UNCHECKED_CAST") val scale = i["scale"] as Map<String, Double>
             val s = settings(byName(scene, i["name"] as String))
@@ -194,7 +214,7 @@ class ObsSceneTest {
         val top = parse(top = true)
         val gameOf = { s: Map<String, Any?> -> settings(byName(s, "KaizoCore game"))["url"] as String }
         assertEquals(gameOf(normal) + "&top=1", gameOf(top))
-        for (n in listOf("KaizoCore tracker", "KaizoCore attempts")) {
+        for (n in listOf("KaizoCore tracker", "KaizoCore attempts") + favoriteNames) {
             assertEquals(settings(byName(normal, n))["url"], settings(byName(top, n))["url"], n)
         }
         assertEquals(1, Regex("top=1").findAll(ObsScene.json(base, token, topOnly = true)).count())

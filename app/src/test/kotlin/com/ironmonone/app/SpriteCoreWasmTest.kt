@@ -4,7 +4,6 @@ import com.ironmonone.tracker.Overworld
 import com.ironmonone.tracker.OverworldAddresses
 import com.ironmonone.tracker.OverworldMath
 import com.ironmonone.tracker.OverworldScan
-import java.io.File
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import kotlin.test.Test
@@ -199,11 +198,11 @@ class SpriteCoreWasmTest {
 
     /** Nat. Dex has no table: its addresses are read out of the dumps, when they are here (IRONMON_ROMS, never copied). */
     private fun natDexTables(): List<OverworldAddresses> {
-        val dir = System.getenv("IRONMON_ROMS")?.let { File(it) }?.takeIf { it.isDirectory }
+        val dir = Dumps.romsDir()
         if (dir == null) { println("SpriteCoreWasmTest: Nat. Dex tables skipped, set IRONMON_ROMS"); return emptyList() }
         return listOf("firered-natdex-121.gba", "emerald-natdex-121.gba").mapNotNull { name ->
-            val f = File(dir, name)
-            if (!f.isFile) { println("SpriteCoreWasmTest: $name missing, skipped"); null }
+            val f = Dumps.file(dir, name)
+            if (f == null) { println("SpriteCoreWasmTest: $name missing, skipped"); null }
             else OverworldScan.find(f.readBytes(), "Nat. Dex $name")
         }
     }

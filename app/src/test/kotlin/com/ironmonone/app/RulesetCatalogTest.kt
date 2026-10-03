@@ -73,7 +73,7 @@ class RulesetCatalogTest {
             assertTrue(RulesetCatalog.isCompatible(k, File("/presets/" + k.family + " Super Kaizo.rnqs")), "the file itself stays pickable")
         }
         for (k in listOf(RomKind.EMERALD_U, RomKind.EMERALD_SMARTAI, RomKind.PLATINUM_U, RomKind.PLATINUM_SUPERKAIZO,
-                RomKind.HEARTGOLD_U, RomKind.SOULSILVER_U, RomKind.FIRERED_U_V10, RomKind.LEAFGREEN_SMARTAI))
+                RomKind.HEARTGOLD_U, RomKind.HEARTGOLD_SUPERKAIZO, RomKind.HEARTGOLD_IRONMON, RomKind.SOULSILVER_U, RomKind.FIRERED_U_V10, RomKind.LEAFGREEN_SMARTAI))
             assertTrue("superkaizo" in RulesetCatalog.forRom(k, sk).map { it.key }, k.id)
     }
 
@@ -87,7 +87,9 @@ class RulesetCatalogTest {
         // A clean build names the PREPARE option that makes the right one.
         val named = mapOf(RomKind.EMERALD_U to "Super Kaizo: Smart AI patch", RomKind.EMERALD_FASTER to "Super Kaizo: Smart AI patch",
             RomKind.FIRERED_U_V10 to "Super Kaizo: Smart AI patch", RomKind.LEAFGREEN_U to "Super Kaizo: Smart AI patch",
-            RomKind.HEARTGOLD_U to "Super Kaizo 0.0.3 patch", RomKind.PLATINUM_U to "Super Kaizo 1.0 patch")
+            RomKind.HEARTGOLD_U to "Super Kaizo 0.0.3 patch", RomKind.PLATINUM_U to "Super Kaizo 1.0 patch",
+            // IronMON HGSS gives no trainer smart AI: Super Kaizo on it names the Super Kaizo build, as on HeartGold.
+            RomKind.HEARTGOLD_IRONMON to "Super Kaizo 0.0.3 patch")
         for ((k, option) in named) {
             val w = RulesetCatalog.superKaizoWarning(k, "superkaizo")!!
             assertTrue("\"$option\"" in w && "Patched versions" in w, "${k.id}: $w")

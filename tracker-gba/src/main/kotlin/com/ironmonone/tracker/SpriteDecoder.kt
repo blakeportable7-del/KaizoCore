@@ -70,23 +70,32 @@ object SpriteDecoder {
         val pic = lz77(memory.read(picPtr, 0xC00)) ?: return null
         val palRaw = lz77(memory.read(palPtr, 0x100)) ?: return null
         if (pic.size < 0x800 || palRaw.size < 32) return null
+        return frame(pic, palette(palRaw), 0)
+    }
 
+    /** Sixteen BGR555 colors from a decompressed palette, as ARGB; color 0 is transparent. */
+    internal fun palette(raw: ByteArray): IntArray {
         val pal = IntArray(16)
         for (c in 0 until 16) {
-            val v = palRaw.u16(c * 2)
+            val v = raw.u16(c * 2)
             val r = (v and 31) shl 3
             val g = ((v shr 5) and 31) shl 3
             val b = ((v shr 10) and 31) shl 3
             pal[c] = if (c == 0) 0
             else (0xFF shl 24) or (r shl 16) or (g shl 8) or b
         }
+        return pal
+    }
 
+    /** Frame [index] of a decompressed picture (0x800 bytes of 8x8 4bpp tiles, eight across), as 64x64 ARGB in [pal]. */
+    internal fun frame(pic: ByteArray, pal: IntArray, index: Int): IntArray {
+        val base = index * 0x800
         val px = IntArray(64 * 64)
         for (t in 0 until 64) {
             val tx = (t % 8) * 8
             val ty = (t / 8) * 8
             for (i in 0 until 32) {
-                val b = pic.u8(t * 32 + i)
+                val b = pic.u8(base + t * 32 + i)
                 val x = (i % 4) * 2
                 val y = i / 4
                 px[(ty + y) * 64 + tx + x] = pal[b and 0xF]

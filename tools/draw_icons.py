@@ -1,8 +1,9 @@
 """
-Draw the app's own type, status and badge icons, replacing the ones copied
-from the tracker repositories (which are Nintendo's art). Same file names,
-same sizes, so nothing in the app changes: types/<name>.png 30x12,
-status/<CODE>.png 16x8, badges/<SET>_badge<n>[_OFF].png 16x16.
+Draw the app's own type and status icons, replacing the ones copied from the
+tracker repositories (which are Nintendo's art). Same file names, same sizes,
+so nothing in the app changes: types/<name>.png 30x12, status/<CODE>.png 16x8.
+The badges are the trackers' own badge art (NOTICE, BUNDLED IN THE APK): this
+script does not draw them, so it cannot write over them.
 
     python tools/draw_icons.py
 
@@ -84,56 +85,12 @@ def status_icon(code, color):
     text(d, 3, 1, code, ink)
     return im
 
-# ---- badges: a medal per gym, one colour per set, the gym number on it.
-SETS = {"FRLG": (200, 56, 56), "RSE": (72, 160, 88), "DPPT": (72, 112, 200), "HGSS": (216, 168, 48), "HGSS_K": (200, 88, 56), "BW": (120, 128, 136), "BW2": (52, 84, 132)}
-
-MEDAL = [
-    "0000111111110000",
-    "0001111111111000",
-    "0011111111111100",
-    "0111111111111110",
-    "0111111111111110",
-    "1111111111111111",
-    "1111111111111111",
-    "1111111111111111",
-    "1111111111111111",
-    "1111111111111111",
-    "1111111111111111",
-    "0111111111111110",
-    "0111111111111110",
-    "0011111111111100",
-    "0001111111111000",
-    "0000111111110000",
-]
-
-def badge_icon(color, n, lit):
-    im = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
-    px = im.load()
-    body = color if lit else (88, 88, 88)
-    rim = darker(body, 0.5)
-    shine = tuple(min(255, int(v * 1.35)) for v in body)
-    for y, row in enumerate(MEDAL):
-        for x, bit in enumerate(row):
-            if bit != "1":
-                continue
-            edge = (y == 0 or y == 15 or x == 0 or x == 15 or MEDAL[y - 1][x] == "0" or MEDAL[y + 1][x] == "0" or MEDAL[y][x - 1] == "0" or MEDAL[y][x + 1] == "0")
-            px[x, y] = (rim if edge else (shine if (x + y) < 12 and lit else body)) + (255,)
-    d = ImageDraw.Draw(im)
-    label = str(n)
-    ink = (255, 255, 255, 255) if lit else (40, 40, 40, 255)
-    text(d, 8 - text_width(label) // 2, 5, label, ink)
-    return im
-
 def main():
     for name, (label, color) in TYPES.items():
         type_icon(label, color).save(os.path.join(ROOT, "types", name + ".png"))
     for code, color in STATUS.items():
         status_icon(code, color).save(os.path.join(ROOT, "status", code + ".png"))
-    for s, color in SETS.items():
-        for n in range(1, 9):
-            badge_icon(color, n, True).save(os.path.join(ROOT, "badges", "%s_badge%d.png" % (s, n)))
-            badge_icon(color, n, False).save(os.path.join(ROOT, "badges", "%s_badge%d_OFF.png" % (s, n)))
-    print("types", len(TYPES), "status", len(STATUS), "badges", len(SETS) * 16)
+    print("types", len(TYPES), "status", len(STATUS))
 
 if __name__ == "__main__":
     main()

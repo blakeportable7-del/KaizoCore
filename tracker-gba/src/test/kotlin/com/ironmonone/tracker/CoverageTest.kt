@@ -98,4 +98,24 @@ class CoverageTest {
         val cov = t.coverage(emptyList())
         assertEquals(0, cov.values.sumOf { it.size })
     }
+
+    @Test
+    fun `on the Nat Dex expansion the info screen and coverage take its chart`() {
+        // rc33 audit P1 #70. Vanilla Emerald's table under a map flagged as the expansion: only the chart differs.
+        val t = tracker() ?: run { println("SKIP: clean dump missing"); return }
+        val nd = GbaTracker(romReader(cleanRom.readBytes()), t.map.copy(expandedSpeciesIds = true))
+        val skarmory = 227
+        val dragonite = 149
+        val ghost = 7
+        assertTrue(listOf("Ghost", "Dark").all { it in t.effectivenessAgainst(skarmory).getValue(0.5) })
+        val ndSkarmory = nd.effectivenessAgainst(skarmory)
+        kotlin.test.assertFalse(ndSkarmory.values.flatten().any { it == "Ghost" || it == "Dark" }, "neutral on the expansion")
+        assertTrue("Fairy" in ndSkarmory.getValue(0.5))
+        assertTrue("Fairy" in nd.effectivenessAgainst(dragonite).getValue(2.0))
+        kotlin.test.assertFalse("Fairy" in t.effectivenessAgainst(dragonite).values.flatten())
+        assertTrue(skarmory in t.coverage(listOf(ghost)).getValue(0.5))
+        assertTrue(skarmory in nd.coverage(listOf(ghost)).getValue(1.0))
+        assertEquals("Fairy", nd.typeNames.last(), "the Coverage Calculator offers Fairy")
+        kotlin.test.assertFalse("Fairy" in t.typeNames)
+    }
 }

@@ -89,15 +89,40 @@ class CrashResumeTest {
         CrashResume.playing(marker, run.id)
         CrashResume.left(marker, finishing = true, destroyed = true)     // the app finishing
         assertNull(CrashResume.parse(marker))
-        // Destroyed without finishing: Android recreates the activity in this
-        // same process, whose first core-up has already read the marker.
+        // Destroyed without finishing (a font size or language change, Don't keep activities): Android recreates the
+        // activity in this same process, whose first core-up has already read the marker. Play's close took the snapshot
+        // of the moment (AutoSave's left mark) and kept the marker, for a process that dies before the game is back.
         saved(byteArrayOf(4))
+        slot.leftMark.writeText("1790000000000")
         CrashResume.playing(marker, run.id)
         CrashResume.leftover(marker)
         CrashResume.left(marker, finishing = false, destroyed = true)
+        assertEquals(CrashResume.Left(run.id, resuming = false), CrashResume.parse(marker), "kept on disk")
         var loaded: ByteArray? = null
-        assertTrue(atCoreUp { loaded = it; true }!!.startsWith("Back where you were"))
+        assertEquals(CrashResume.RETURNED, atCoreUp { loaded = it; true }, "back where it was left, as after a tab switch")
         assertContentEquals(byteArrayOf(4), loaded)
+        // rc32 audit P2 #33, P3 #26: nothing crashed and no time went back, so nothing goes on the run's record. It used
+        // to file a resume after the app closed, with the reason of an older exit.
+        assertTrue(events.entries().none { it.kind == RunEvents.Kind.RESUME }, "no resume on the record")
+    }
+
+    @Test
+    fun `a rebuild with no snapshot of the moment only offers the auto-save, and a dead process still resumes on record`() {
+        saved(byteArrayOf(5))   // a periodic auto-save: up to three minutes back, no left mark
+        CrashResume.playing(marker, run.id)
+        CrashResume.leftover(marker)
+        CrashResume.left(marker, finishing = false, destroyed = true)
+        assertEquals("Auto-save from ${slot.savedLabel()}: File > States > Resume.", atCoreUp { fail("time would go back by itself") })
+        assertTrue(events.entries().isEmpty())
+        // The same marker read by a new process (no core-up here has read it): the app died with the game open.
+        val fresh = File(filesDir, "prep/playing3.txt").also { marker.copyTo(it) }
+        var loaded: ByteArray? = null
+        val said = runBlocking {
+            CrashResume.atCoreUp(fresh, run, slot, stamp, true, events, why = { "the app crashed" }, load = { loaded = it; true }, settle = {})
+        }
+        assertTrue(said!!.startsWith("Back where you were"))
+        assertContentEquals(byteArrayOf(5), loaded)
+        assertEquals(RunEvents.Kind.RESUME, events.entries().single().kind)
     }
 
     @Test

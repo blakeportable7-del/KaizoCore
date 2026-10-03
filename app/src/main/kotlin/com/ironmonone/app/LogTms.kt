@@ -5,14 +5,17 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -64,14 +67,13 @@ internal fun LogTmsTab(
     filter: LogTmFilter,
     onFilter: (LogTmFilter) -> Unit,
     onTrainer: (RandomizerLog.Trainer) -> Unit,
+    names: LogNames = LogNames.PLAIN,
 ) {
     val ctx = LocalContext.current
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().padding(bottom = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             DialogText("Filter by:", 12, Pc.Dim)
-            LogTmFilter.entries.forEach { f ->
-                DialogText(f.label, 12, if (f == filter) Pc.Gold else Pc.Text, Modifier.clickable { onFilter(f) }.padding(vertical = 4.dp))
-            }
+            LogTmFilter.entries.forEach { f -> LogChoice(f.label, f == filter) { onFilter(f) } }
         }
         if (filter == LogTmFilter.GYM) {
             val rows = remember(log, rules, frlg) { LogTms.gymRows(log, rules, frlg) }
@@ -82,11 +84,14 @@ internal fun LogTmsTab(
                         if (art != null) Image(art, "badge ${r.gym}", Modifier.size(20.dp), filterQuality = FilterQuality.None)
                         else Spacer(Modifier.size(20.dp))
                         Spacer(Modifier.width(6.dp))
-                        DialogText("TM%02d  %s".format(r.number, logTitle(r.move)), 13, Pc.Text, Modifier.weight(1f))
+                        DialogText("TM%02d  %s".format(r.number, names.move(r.move)), 13, Pc.Text, Modifier.weight(1f))
                         val leader = r.leader
                         if (leader != null) {
                             val name = logTitle(if (custom && leader.name.isNotBlank()) leader.customShortName else leader.shortName)
-                            DialogText(name, 12, Pc.Gold, Modifier.clickable { onTrainer(leader) }.padding(horizontal = 6.dp, vertical = 2.dp))
+                            // The leader opens their team: a 48dp target, it was a 12sp word with 2dp above and below (rc32 audit P2 #26).
+                            Box(Modifier.heightIn(min = PcMin.DIALOG_TOUCH_DP.dp).clickable(role = Role.Button) { onTrainer(leader) }.padding(horizontal = 6.dp), contentAlignment = Alignment.Center) {
+                                DialogText(name, 12, Pc.Gold)
+                            }
                         }
                         DialogText("Gym ${r.gym}", 12, Pc.Dim, Modifier.width(42.dp))
                     }
@@ -97,7 +102,7 @@ internal fun LogTmsTab(
             LazyVerticalGrid(GridCells.Adaptive(150.dp), Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(2.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 items(tms, key = { it.number }) { t ->
-                    DialogText("TM%02d  %s".format(t.number, logTitle(t.move)), 12, Pc.Text,
+                    DialogText("TM%02d  %s".format(t.number, names.move(t.move)), 12, Pc.Text,
                         Modifier.fillMaxWidth().background(Pc.Page).border(1.dp, Pc.Border).padding(6.dp))
                 }
             }

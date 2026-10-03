@@ -31,4 +31,14 @@ class RunClockTest {
         assertEquals(3, RunClock.of("heartgold-u#1"), "attempt 1 of another game is another run")
         assertEquals(0, RunClock.of(RunClock.key("emerald-u", 3)))
     }
+
+    @Test fun `every read in Play counts, not only the ones that changed something`() {
+        // rc33 audit P1 #31: the clock was fed by effects keyed on the state, so a read that changed nothing (most DS
+        // reads) counted no time; the three poll loops feed it now. #29: the run's timer and routes follow the run.
+        val play = java.io.File("src/main/kotlin/com/ironmonone/app/PlayScreen.kt").readText()
+        kotlin.test.assertEquals(3, Regex(Regex.escape("RunClock.tick(session.kind?.id?.takeIf { session.isRun }")).findAll(play).count(), "the DS, Game Boy and GBA loops")
+        kotlin.test.assertFalse("RunClock.observe(" in play, "no effect keyed on the state feeds it")
+        for (name in listOf("val openBook = remember(session.id, gameKeyForRom) { OpenBookRoutes() }", "val runTimer = remember(session.id, gameKeyForRom)"))
+            kotlin.test.assertTrue(name in play, name)
+    }
 }

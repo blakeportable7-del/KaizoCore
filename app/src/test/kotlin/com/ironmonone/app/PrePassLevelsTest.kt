@@ -28,7 +28,7 @@ import kotlin.test.assertTrue
 class PrePassLevelsTest {
     private val presets = File("src/main/assets/presets")
     private val bundled by lazy { presets.listFiles { f -> f.extension == "rnqs" }!!.associate { it.name to it.readBytes() } }
-    private fun rom(name: String): File? = System.getenv("IRONMON_ROMS")?.let { File(it, name) }?.takeIf { it.isFile }
+    private fun rom(name: String): File? = Dumps.rom(name)
 
     private fun handler(gen: Generation, f: File): RomHandler {
         val factory = if (gen == Generation.GBC2) Gen2RomHandler.Factory() else Gen3RomHandler.Factory()

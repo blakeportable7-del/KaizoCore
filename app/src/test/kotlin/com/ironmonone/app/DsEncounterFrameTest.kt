@@ -18,7 +18,7 @@ class DsEncounterFrameTest {
     @Test
     fun `levels read as a range only where the area's data is ranges`() {
         assertEquals("Lv 3, 5", trackedLevelsText(listOf(3, 5), usesRange = false))
-        assertEquals("Level 3 - 7", trackedLevelsText(listOf(3, 5, 7), usesRange = true))
+        assertEquals("Level 3 to 7", trackedLevelsText(listOf(3, 5, 7), usesRange = true))
         assertEquals("?", trackedLevelsText(null, usesRange = false))
     }
 

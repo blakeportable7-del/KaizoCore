@@ -35,6 +35,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -94,18 +95,11 @@ fun EditorScreen(
     // file was so every row can be compared against it. Without a baseline the
     // only change indicator possible is a counter, which tells you that
     // something moved but never what.
-    val loaded: Triple<Any, Any, Class<*>>? = remember(file) {
-        fun read(): Pair<Any, Class<*>>? {
-            runCatching { FileInputStream(file).use { NdSettings.read(it) } }
-                .getOrNull()?.let { return it to NdSettings::class.java }
-            runCatching { FileInputStream(file).use { ZxSettings.read(it) } }
-                .getOrNull()?.let { return it to ZxSettings::class.java }
-            return null
-        }
-        val a = read() ?: return@remember null
-        val b = read() ?: return@remember null
-        Triple(a.first, b.first, a.second)
-    }
+    //
+    // The edited copy is kept with the activity as its settings string (EditorCopies): Android ending the app while it
+    // was in the background reopened the editor on the file with every unsaved edit gone (RC35-NOTICED N #12).
+    val loaded: Triple<Any, Any, Class<*>>? =
+        rememberSaveable(file, stateSaver = EditorCopies.saver(file)) { mutableStateOf(EditorCopies.load(file)) }.value
 
     if (loaded == null) {
         androidx.activity.compose.BackHandler { onClose() }
@@ -113,8 +107,11 @@ fun EditorScreen(
             Column(modifier.fillMaxSize().padding(16.dp)) {
                 EmptyState(
                     "Could not read that preset.",
-                    "\"${file.name}\" is not a settings file either engine " +
-                        "recognises. It may be from a newer randomizer.",
+                    // MaxDex's file is read by its own randomizer only, which the editor does not edit in this first version.
+                    if (RnqsInfo.of(file).maxDex) "\"${file.name}\" is a MaxDex settings file. The editor does not change MaxDex files yet; " +
+                        "the file runs as Trip made it."
+                    else "\"${file.name}\" is not a settings file either engine " +
+                        "recognizes. It may be from a newer randomizer.",
                 )
                 Spacer(Modifier.height(12.dp))
                 Gen3Button("BACK") { onClose() }
@@ -194,7 +191,7 @@ fun EditorScreen(
     // Leaving with changes that were never saved asks first. The phone's Back
     // used to leave the editor (and the app) with no word, losing every edit
     // (audit, 2026-09-27). What was last saved is kept as its settings string.
-    var savedString by remember { mutableStateOf<String?>(null) }
+    var savedString by rememberSaveable { mutableStateOf<String?>(null) }
     val dirty = changedCount > 0 && runCatching { settings.toString() }.getOrNull() != savedString
     var confirmLeave by remember { mutableStateOf(false) }
     fun leave() { if (dirty) confirmLeave = true else onClose() }
@@ -550,6 +547,50 @@ fun EditorScreen(
             }
         }
     }
+}
+
+/**
+ * The editor's two copies of a preset: the one edited, the file as it was, and the engine class that read it (a preset
+ * belongs to one engine). The edited copy is kept in the activity's saved state as its settings string, which the
+ * engines read back with Settings.fromString, so a process death keeps the unsaved edits (RC35-NOTICED N #12).
+ */
+internal object EditorCopies {
+    fun load(file: File): Triple<Any, Any, Class<*>>? {
+        fun read(): Pair<Any, Class<*>>? {
+            runCatching { FileInputStream(file).use { NdSettings.read(it) } }
+                .getOrNull()?.let { return it to NdSettings::class.java }
+            runCatching { FileInputStream(file).use { ZxSettings.read(it) } }
+                .getOrNull()?.let { return it to ZxSettings::class.java }
+            return null
+        }
+        val a = read() ?: return null
+        val b = read() ?: return null
+        return Triple(a.first, b.first, a.second)
+    }
+
+    /**
+     * The edited copy as text: its engine's class name, then its settings string, or the name alone when the copy will
+     * not write one (the file is then read as it is). Null only when there is no copy.
+     */
+    fun save(loaded: Triple<Any, Any, Class<*>>?): String? =
+        loaded?.let { (working, _, cls) -> cls.name + "\n" + (runCatching { working.toString() }.getOrNull() ?: "") }
+
+    /**
+     * [file] read again, with the edited copy put back from [saved]. The file as it is now when the saved string is not
+     * for the engine that reads the file, or will not read.
+     */
+    fun restore(file: File, saved: String): Triple<Any, Any, Class<*>>? {
+        val fresh = load(file) ?: return null
+        val cls = saved.substringBefore('\n')
+        val body = saved.substringAfter('\n', "")
+        if (cls != fresh.third.name || body.isEmpty()) return fresh
+        val working = runCatching { fresh.third.getMethod("fromString", String::class.java).invoke(null, body) }.getOrNull() ?: return fresh
+        return Triple(working, fresh.second, fresh.third)
+    }
+
+    fun saver(file: File) = androidx.compose.runtime.saveable.Saver<Triple<Any, Any, Class<*>>?, String>(
+        save = { save(it) }, restore = { restore(file, it) },
+    )
 }
 
 /** A text-only button for a destructive choice, in the danger colour. */

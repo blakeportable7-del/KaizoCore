@@ -110,11 +110,16 @@ fun SideScreenDialogs(
     // Truant is tracked (BattleDetailsScreen.lua:1574-1588). Set here rather than in PlayScreen,
     // which is near the verifier's limit (see SideScreenState).
     androidx.compose.runtime.SideEffect { trackerRef?.trackedAbilities = statMarks::abilitiesFor }
+    // The pedometer's reset and goal belong to this game's run: the notes (one StatMarks per game, made again when Play
+    // opens one), the attempt and the seed name it (rc32 audit P3 #46). Here for the same reason as the line above.
+    androidx.compose.runtime.SideEffect { Pedometer.follow(Triple(statMarks, attempt, currentSeed)) }
+    // The run's rival, kept with its notes because the tracker is made again on every visit to Play (rc32 audit P2 #130).
+    androidx.compose.runtime.SideEffect { TrackerRival.sync(trackerRef, statMarks) }
     // A DS game gets the DS tracker's preset themes, any other game the PC tracker's (ThemePresets).
     if (s.colorTheme) ColorThemeDialog(ds = ndsTrackerRef != null) { s.colorTheme = false }
     // A Nuzlocke's own rules, asked for by Rules in the File menu or Tracker Setup (2026-09-30, UX audit P0-6).
     NuzlockeLedgerRequested()
-    if (s.calcAtkOpen) CalcAtkDialog(s.calcAtkFill, enemyStats = null) { s.calcAtkOpen = false }
+    if (s.calcAtkOpen) CalcAtkDialog(s.calcAtkFill) { s.calcAtkOpen = false }
     if (s.trackedPokemon) TrackedPokemonDialog(statMarks, statMarks.encounteredSpecies(), ndsTrackerRef, dsSpriteOf) { s.trackedPokemon = false }
     if (s.tourney && tourney != null) TourneyDialog(tourney, currentSeed) { s.tourney = false }
     if (s.pastRuns && pastRunStore != null) PastRunsDialog(pastRunStore, dsSpriteOf) { s.pastRuns = false }
@@ -158,7 +163,9 @@ fun SideScreenDialogs(
     }
     if (s.healsDialog) {
         val gba = trackerRef
-        val rows = remember(trackerState, gba) { runCatching { gba?.healsInBag(trackerState?.party?.firstOrNull()) }.getOrNull() ?: emptyList() }
+        // The Pokemon the card shows, never an Egg in slot 1 (TrackerState.onField, rc32 audit P2 #136), and in a double
+        // battle the one of yours the view shows (GbaViewState.own).
+        val rows = remember(trackerState, gba, gbaView.view) { runCatching { gba?.healsInBag(gbaView.own(trackerState)) }.getOrNull() ?: emptyList() }
         HealsInBagDialog(rows) { s.healsDialog = false }
     }
     if (s.notebookDialog) {
@@ -168,6 +175,7 @@ fun SideScreenDialogs(
             lastLevelOf = { statMarks.lastLevelSeen(it) }, lastSeenSpecies = enemySpecies.takeIf { it > 0 },
             speciesName = { id -> trackerRef?.speciesName(id) ?: gbNames?.invoke(id) ?: "#$id" },
             spriteFor = spriteFor,
+            speciesIds = NotebookSpecies.ids(trackerRef, trackerState?.badgeSet),
         ) { s.notebookDialog = false }
     }
     if (s.catchRatesDialog) {
@@ -198,7 +206,7 @@ fun SideScreenDialogs(
         val st = trackerState
         TrainerInfoDialog(
             t, routeName = st?.mapId?.let { m -> gba?.routeInfo(m)?.first },
-            leadLevel = st?.party?.firstOrNull()?.mon?.level,
+            leadLevel = st?.lead?.mon?.level,
             canShowTeams = InfoRules.canShowTrainerTeams(gba?.trainerTeamsRandomized()),
             // TrainerInfoScreen.lua:325: in the battle against this trainer, a fainted Pokemon shows.
             faintedSlots = if (st != null && st.inBattle && st.opponentTrainerId == t.id) st.enemyParty.filter { !it.alive }.map { it.slot }.toSet() else emptySet(),
@@ -252,8 +260,7 @@ class PlayUiState {
     var speedPicker by mutableStateOf(false)
     /** Landscape: FILE shows the chip strip; More swaps it for the full menu. Never both at once. */
     var moreOpen by mutableStateOf(false)
-    /** The layout and skin as they were when the editor opened, for Cancel. */
-    var layoutBefore: PadLayout? = null
+    /** The skin as it was when the editor opened, for Cancel; the layouts' own are PadLayouts'. */
     var skinBefore: PadSkin? = null
     var confirmKeepLayout by mutableStateOf(false)
     /** Landscape: the editor bar at the bottom edge instead of the top, when a control sits under it. */
@@ -266,6 +273,19 @@ class PlayUiState {
     var coreUp by mutableStateOf<Any?>(null)
     /** The game view's size while its core loads (see [holdSizeWhileLoading]). */
     var heldSize: androidx.compose.ui.unit.IntSize? = null
+    /** Landscape with the tracker off screen: its menu at the top left, shown by a tap on the game and hidden by the next (ScreenTap). */
+    var tapMenuShown by mutableStateOf(false)
+    /** Whether that menu stands in for the tracker's now; set by ScreenTapMenu, read by the game view's listener. */
+    var tapMenuEnabled = false
+    /** The DS screens as drawn, where a tap is play; null on other consoles or with the top screen alone. */
+    var tapDsLayout: ScreenTap.DsLayout? = null
+
+    /** A tap that reached the game view: the menu shows, or hides, unless it was play on the DS touch screen. */
+    fun onScreenTap(x: Float, y: Float, viewW: Float, viewH: Float) {
+        if (!tapMenuEnabled) return
+        tapDsLayout?.let { if (ScreenTap.onTouchScreen(it, x, y, viewW, viewH)) return }
+        tapMenuShown = !tapMenuShown
+    }
 }
 
 /**
@@ -335,7 +355,7 @@ fun NewRunConfirmDialog(beforeRead: () -> Unit, onConfirm: () -> Unit, onDismiss
     val filesDir = context.applicationContext.filesDir
     val store = remember { PrepStore(filesDir) }
     val session = remember { runCatching { store.session() }.getOrNull() }
-    if (session == null || !session.isRun) {
+    if (session == null || !PlayRules.newRunOffered(session)) {
         ShellDialog("No run to start", onDismiss) {
             DialogBody(NewRunCopy.NOT_A_RUN)
             Gen3Button("OK", accent = true, onClick = onDismiss)
@@ -512,12 +532,12 @@ fun dsLayoutName(key: String?): String = when (key) {
 fun DsScreensDialog(current: String?, onPick: (String?) -> Unit, onDismiss: () -> Unit) {
     ShellDialog("DS screens", onDismiss) {
         Column(Modifier.heightIn(max = 360.dp).verticalScroll(rememberScrollState())) {
-            (listOf<String?>(null) + PadLayout.DS_LAYOUTS).forEach { k ->
+            (listOf<String?>(null) + NdsScreens.choices).forEach { k ->
                 Row(
                     Modifier.fillMaxWidth().clickable { onPick(k) }.heightIn(min = Shell.touchTarget).padding(horizontal = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    ShellRadio(k == current)
+                    ShellRadio(k == NdsScreens.shownAs(current))
                     Text(dsLayoutName(k), style = MaterialTheme.typography.bodyMedium, color = Shell.inkOnPaper,
                         modifier = Modifier.padding(start = 12.dp))
                 }

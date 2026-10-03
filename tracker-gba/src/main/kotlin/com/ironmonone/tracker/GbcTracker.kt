@@ -83,10 +83,14 @@ class GbcTracker(
          * Gen 2: 0 Normal 1 Fighting 2 Flying 3 Poison 4 Ground 5 Rock 6 Bird
          * 7 Bug 8 Ghost 9 Steel, then 20 Fire 21 Water 22 Grass 23 Electric
          * 24 Psychic 25 Ice 26 Dragon 27 Dark. Bird is the unused slot.
+         * 19 is CURSE_TYPE, Curse's own (pokecrystal constants/type_constants.asm:22-23, data/moves/moves.asm:190):
+         * Gen 3's ??? (9), as the Gen 2 reference shows it (MoveData.lua:2038, Types.UNKNOWN). It read Normal
+         * (rc32 audit P3 #110).
          */
         fun gen3Type(gen2: Int): Int = when (gen2) {
             in 0..5 -> gen2
             7 -> 6; 8 -> 7; 9 -> 8
+            19 -> 9
             20 -> 10; 21 -> 11; 22 -> 12; 23 -> 13; 24 -> 14; 25 -> 15; 26 -> 16; 27 -> 17
             else -> 0
         }
@@ -247,7 +251,9 @@ class GbcTracker(
             moves = List(4) { b.u8(2 + it) }, pp = List(4) { b.u8(23 + it) and 0x3F },
             ivs = listOf(hpDv, atkDv, defDv, spdDv, spcDv, spcDv), evs = List(6) { 0 },
             ppUps = List(4) { (b.u8(23 + it) shr 6) and 0x3 },
-            abilitySlot = 0, nature = 0, shiny = atkDv == 2 && defDv == 10 && spdDv == 10 && spcDv == 10,
+            // The game's CheckShininess (pokecrystal engine/gfx/color.asm:3-36): bit 1 of the Attack DV, not Attack 2 alone.
+            // The Lake of Rage Gyarados is Attack 14 (ATKDEFDV_SHINY $EA) and read not shiny (rc32 audit P2 #134).
+            abilitySlot = 0, nature = 0, shiny = Gen12Nuzlocke.shiny(2, dv),
             status = b.u8(32).toLong(), curHp = curHp, maxHp = maxHp,
             atk = be16(b, 38), def = be16(b, 40), spe = be16(b, 42), spAtk = be16(b, 44), spDef = be16(b, 46),
         )
@@ -330,13 +336,23 @@ class GbcTracker(
     /** The party slot each Pokemon of the last [readParty] came from: an egg holds a slot and is not read, so the two can differ. */
     private var partySlots: List<Int> = emptyList()
 
+    /** The game's count of Pokemon at the last [readParty], eggs left out, or -1 (GbNuzReads.partyCount). */
+    private var gameCount = -1
+
+    /** The eggs of the last [readParty], for the Nuzlocke reads (GbNuzReads.eggs), and the species list's EGG slots. */
+    private var eggs: List<GbEgg> = emptyList()
+    private var eggSlots = 0
+
     private fun readParty(): List<TrackedMon> {
         val raw = ram(m.partyCount, 1).let { if (it.isEmpty()) 0 else it.u8(0) }
         lastCount = raw
         val count = raw.coerceIn(0, 6)
         val species = ram(m.partySpecies, 7)
+        eggSlots = if (raw in 1..6) (0 until raw).count { species.size > it && species.u8(it) == EGG } else 0
+        gameCount = if (raw in 1..6) raw - eggSlots else -1
         val out = ArrayList<TrackedMon>(6)
         val slots = ArrayList<Int>(6)
+        val eggsSeen = ArrayList<GbEgg>(2)
         for (i in 0 until 6) {
             val sp = if (species.size > i) species.u8(i) else 0
             // 0xFF terminates the list; 0 is empty. Read structs past the count
@@ -346,14 +362,29 @@ class GbcTracker(
             // An egg is 0xFD in the species list. It stopped the read, so every Pokemon after
             // it was missing, and an "entire party" run ended while they stood (review,
             // 2026-09-29). An egg does not battle and is not tracked: the read goes on past it.
-            if (sp == EGG) continue
+            // The Nuzlocke engine still wants to know it is there, and from where (rc32 audit P2 #140).
+            if (sp == EGG) { eggOf(i)?.let { eggsSeen += it }; continue }
             if (sp !in 1..251) break
             val mon = partyMon(ram(m.partyMons + i * PARTY_STRIDE.toLong(), PARTY_STRIDE), sp) ?: break
             out += tracked(mon)
             slots += i
         }
         partySlots = slots
+        eggs = eggsSeen
         return out
+    }
+
+    /**
+     * The egg in party slot [slot], from its party struct (pokecrystal macros/ram.asm party_struct): the species it will
+     * hatch into at 0, its trainer id at 6 and 7, its DVs at 21 and 22, its level at 31. Null when the struct does not read
+     * as one: no species in range, or no level.
+     */
+    private fun eggOf(slot: Int): GbEgg? {
+        val b = ram(m.partyMons + slot * PARTY_STRIDE.toLong(), PARTY_STRIDE)
+        if (b.size < PARTY_STRIDE) return null
+        val species = b.u8(0); val level = b.u8(31)
+        if (species !in 1..251 || level !in 1..100) return null
+        return GbEgg(slot, (b.u8(6) shl 8) or b.u8(7), (b.u8(21) shl 8) or b.u8(22), species, level)
     }
 
     /** battle_struct (wEnemyMon): species 0, item 1, moves 2, dvs 6, pp 8, happiness 12, level 13, status 14, hp 16, maxhp 18, stats 20.., types 30-31. */
@@ -389,6 +420,8 @@ class GbcTracker(
             statusCondition = statusName(b.u8(14)),
             // The opponent's evolution, all in the default colour (TrackerScreen.lua:734).
             evo = EvoText.forEnemy(evolution(species)),
+            // Its DVs (battle_struct +6), for whether it is shiny and Unown's letter on the Walking Pals icon.
+            dvs = (b.u8(6) shl 8) or b.u8(7),
         )
     }
 
@@ -405,20 +438,18 @@ class GbcTracker(
         return out
     }
 
-    private fun readHeals(bag: List<Pair<Int, Int>>, maxHp: Int): Pair<Int, Int> {
-        if (maxHp <= 0) return 0 to 0
-        var total = 0; var count = 0
-        for ((id, qty) in bag) {
-            val heal = HEALS[id] ?: continue
-            if (qty !in 1..99) continue
-            val each = if (heal.second) maxHp * heal.first / 100 else minOf(heal.first, maxHp)
-            total += each * qty; count += qty
-        }
-        return (total * 100 / maxHp) to count
+    /** Heals in Bag for a Pokemon with [maxHp]: the PC tracker's rounding, not integer division (HealTotals, rc32 audit P2 #99). */
+    private fun readHeals(bag: List<Pair<Int, Int>>, maxHp: Int): HealTotals {
+        val items = LinkedHashMap<Int, Int>()
+        for ((id, qty) in bag) if (id in HEALS && qty in 1..99) items[id] = (items[id] ?: 0) + qty
+        return HealTotals.of(items, maxHp) { id -> HEALS[id]?.let { it.first.toDouble() to it.second } }
     }
 
     /** "Game is considered over when", set by the app from its options; the lead by default. */
     @Volatile var lossCondition: LossCondition = LossCondition.LEAD
+
+    /** Red beaten on Mt. Silver, the GSC rulebook's win (GbWin). */
+    private val win = GbWin.gen2()
 
     // ------------------------------------------------------------------ the Nuzlocke reads (2026-09-30)
 
@@ -478,6 +509,8 @@ class GbcTracker(
             battleStyleSet = if (options < 0) null else (options and 0x40) != 0,
             opponent = opponent, caps = n.caps(),
             nicknames = partySlots.map { slot -> if (nicks.size >= (slot + 1) * 11) GbText.decode(nicks, slot * 11) else "" },
+            partyCount = gameCount,
+            eggs = eggs, eggSlots = eggSlots,
         )
         return NuzlockeReads(gb = gb)
     }
@@ -518,6 +551,8 @@ class GbcTracker(
         }
         val lead = party.getOrNull(onField)
         val heals = readHeals(bag, lead?.mon?.maxHp ?: 0)
+        // Read first, as the GBA tracker reads its win before its loss (rc32 audit P2 #135).
+        val won = win.read(mode, byteAt(m.trainerClass), byteAt(m.battleResult))
         return TrackerState(
             partyCount = party.size,
             party = party,
@@ -530,8 +565,9 @@ class GbcTracker(
             // Johto's eight in the art's order, Kanto's eight above them (the badge row draws all sixteen).
             badges = johtoInArtOrder(johto) or (kanto shl 8),
             badgeSet = "GSC",
-            healPercent = heals.first,
-            healCount = heals.second,
+            healPercent = heals.percent,
+            healCount = heals.count,
+            healHp = heals.hp,
             // "Last move: X" between the enemy's moves (GbLastMove); MoveData.isValid is 1..251.
             lastAttackMove = lastMove.shown.takeIf { it in 1..251 }?.let { moveName(it) },
             // Program.updateMapLocation (Program.lua:1121-1134): the map is wCurLandmark, named from
@@ -539,7 +575,7 @@ class GbcTracker(
             // (isValidMapLocation is mapId ~= nil), so the Time Machine makes its points.
             mapId = mapId, routeName = if (m.curLandmark != 0L) mapId?.let { landmarkNames[it] } else null,
             // The player's condition, checked once the battle byte reads 0, never mid-battle (GbGameOver).
-            gameOver = if (GbGameOver.lost(mode, party, lossCondition)) GameOver.LOST else null,
+            gameOver = if (won) GameOver.WON else if (GbGameOver.lost(mode, party, lossCondition)) GameOver.LOST else null,
             diagnostics = "${m.name}  party=%d mode=%d".format(party.size, mode),
             nuz = runCatching { nuzReads(party, mode, battling, enemy, bag, mapId) }.getOrNull(),
             // A count of 0 is a game with no party yet (the title screen, the

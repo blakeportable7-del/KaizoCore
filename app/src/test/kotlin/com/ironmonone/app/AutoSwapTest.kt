@@ -21,7 +21,10 @@ class AutoSwapTest {
 
     @Test
     fun `the panel swaps to the opponent when it sends one out`() {
+        // Since rc34 the view is GbaViewState's, which turns to the side that sent it out (DoublesViewTest drives it).
         val src = File("src/main/kotlin/com/ironmonone/app/TrackerPanel.kt").readText().replace("\r\n", "\n")
-        assertTrue(Regex("LaunchedEffect\\(state\\.enemyOnField\\) \\{\\s*if \\(TrackerOptions\\.autoSwapToEnemy\\(gameBoy = generation < 3\\) && opponentSentOut\\(enemySlots, state\\.enemyOnField\\)\\) viewingOwn = false").containsMatchIn(src))
+        assertTrue(Regex("LaunchedEffect\\(state\\.inBattle, state\\.enemyOnField\\) \\{\\s*view\\.onRead\\(state, TrackerOptions\\.autoSwapToEnemy\\(gameBoy = generation < 3\\)\\)").containsMatchIn(src))
+        val view = File("src/main/kotlin/com/ironmonone/app/DoublesView.kt").readText().replace("\r\n", "\n")
+        assertTrue("if (autoSwap && side != null) view = BattleView(own = false, left = side == 0)" in view)
     }
 }

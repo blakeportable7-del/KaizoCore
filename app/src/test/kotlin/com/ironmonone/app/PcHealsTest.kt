@@ -130,4 +130,21 @@ class PcHealsTest {
         PcHeals.observeBadges(11, 8, PcHeals.Limit.SURVIVAL)
         assertEquals(10, PcHeals.count(11), "a counter the player switched off is left alone")
     }
+
+    /**
+     * rc32 audit P2 #43: the counter's sheet offers automatic counting only where the game keeps a heal statistic: a
+     * Game Boy game has none, so its heals are entered by hand and the switch is left out.
+     */
+    @Test
+    fun `only a game with a heal statistic is offered automatic counting`() {
+        val lastRun = java.io.File(dir, "lastrun.txt")
+        lastRun.writeText("red-u\nGB Survival.rnqs\n")
+        assertEquals(false, PcHeals.lastRunCountsItself(), "Red")
+        lastRun.writeText("crystal-u\nGSC Survival.rnqs\n")
+        assertEquals(false, PcHeals.lastRunCountsItself(), "Crystal")
+        lastRun.writeText("emerald-u\nRSE Survival.rnqs\n")
+        assertEquals(true, PcHeals.lastRunCountsItself(), "Emerald")
+        lastRun.delete()
+        assertEquals(true, PcHeals.lastRunCountsItself(), "no run on record: the switch is offered, as before")
+    }
 }

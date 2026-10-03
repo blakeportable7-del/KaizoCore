@@ -1,6 +1,18 @@
 package com.ironmonone.app
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.unit.dp
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -165,6 +177,41 @@ internal fun TrackerWeatherPill(code: String) {
             .padding(horizontal = 3.rp),
         contentAlignment = Alignment.Center,
     ) { PixText(name.uppercase(), PcRef.FONT - 3, TrackerLook.onFill(fill), weight = FontWeight.Medium) }
+}
+
+/**
+ * Tracker Setup as a gear, set apart from the tracker's word buttons (Blake, 2026-10-02: "the setup button needs to be
+ * differential to other buttons maybe a gear icon"), in the same touch box as they have.
+ */
+@Composable
+internal fun TrackerGearButton(onClick: () -> Unit) {
+    val color = Pc.Text
+    Box(
+        Modifier.sizeIn(minWidth = PcMin.TOUCH_DP.dp, minHeight = PcMin.TOUCH_DP.dp)
+            .clickable(role = Role.Button) { onClick() }
+            .semantics { contentDescription = "Tracker Setup" },
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(Modifier.clip(CircleShape).background(TrackerLook.inset).padding(6.dp)) {
+            Canvas(Modifier.size(18.dp)) {
+                val s = size.minDimension
+                val ring = s * 0.27f
+                val ringW = s * 0.17f
+                drawCircle(color, radius = ring, center = center, style = Stroke(ringW))
+                for (i in 0 until 8) {
+                    val a = i * PI / 4
+                    val dx = cos(a).toFloat()
+                    val dy = sin(a).toFloat()
+                    drawLine(
+                        color,
+                        Offset(center.x + dx * (ring + ringW * 0.3f), center.y + dy * (ring + ringW * 0.3f)),
+                        Offset(center.x + dx * s * 0.5f, center.y + dy * s * 0.5f),
+                        strokeWidth = s * 0.17f,
+                    )
+                }
+            }
+        }
+    }
 }
 
 /** HP as a bar under the number, rounded, in [TrackerLook.hpColor] on a faint track. */

@@ -110,19 +110,37 @@ object ExtraPasses {
      * What a run's record says when its official file ran without what the rules add (IronMON rules check R4,
      * 2026-09-30): the 60% levels switched off ("50% levels"), a Red, Blue or Yellow build with neither the patch nor
      * PART 2 ("no PART 2"), Super Kaizo on a build without smart AI ("no Smart AI"), and a mode that is not a 60% one on
-     * Faster Emerald 1.3.2, which carries 6% of its own ("+6% levels"). Null when it played as its rules have it, and
-     * for a custom file, which says "(custom)" instead (CustomRuns).
+     * Faster Emerald 1.3.2, which carries 6% of its own ("+6% levels"), or with the pre-pass switched on: Standard and
+     * Ultimate with the 60% levels on read as plain official runs while their levels were about x1.59 (rc32 audit P2 #20).
+     * Null when it played as its rules have it, and for a custom file, which says "(custom)" instead (CustomRuns).
      */
     fun variant(kind: RomKind, settingsName: String, bytes: ByteArray?, bundled: Map<String, ByteArray>, prePassTaken: Boolean, part2Taken: Boolean): String? {
         val official = officialName(settingsName, bytes, bundled) ?: return null
         val ruleset = RnqsInfo.parse(official).ruleset
         val notes = buildList {
             if (prePassName(kind) != null && callsFor60(kind, ruleset) && !prePassTaken) add("50% levels")
-            if (carries60(kind) && !callsFor60(kind, ruleset)) add("+6% levels")
+            if ((carries60(kind) || (prePassName(kind) != null && prePassTaken)) && !callsFor60(kind, ruleset)) add("+6% levels")
             if (takesPart2(kind) && !patched(kind) && !part2Taken) add("no PART 2")
             if (ruleset == "superkaizo" && RulesetCatalog.superKaizoWarning(kind, "superkaizo") != null) add("no Smart AI")
         }
         return notes.joinToString(", ").ifEmpty { null }
+    }
+
+    /**
+     * RUN's line under the 60% levels switch. It said "as the official settings do" for every file on the game, Standard
+     * and Ultimate included, whose rules use the mode's +50% only (rc32 audit P2 #20); for those it says so, and that the
+     * record of an official file run with the switch on says "+6% levels".
+     */
+    fun prePassLine(kind: RomKind, ruleset: String?, official: Boolean): String {
+        val line = if (callsFor60(kind, ruleset)) {
+            val game = if (kind.family == "GSC") "Gold, Silver and Crystal Kaizo and Survival" else "Emerald Kaizo and every mode built on it"
+            "$game: trainer and wild levels +6% first, then the mode's +50%, as the official settings do."
+        } else {
+            (ruleset?.let { "${RnqsInfo.rulesetLabel(it)}'s rules use" } ?: "This settings file uses") +
+                " the mode's +50% only. On, trainer and wild levels go up 6% first" +
+                if (official) ", and the run's record says +6% levels." else "."
+        }
+        return line + if (official) "" else " This settings file is custom or edited, so it runs exactly as saved unless you switch this on."
     }
 
     /** On by default: an official preset on a Red, Blue or Yellow build without the patch. */
@@ -149,11 +167,9 @@ object ExtraPasses {
         @Synchronized
         fun set(kindId: String, settingsName: String, key: String, on: Boolean) {
             val kept = read().filterNot { it[0] == kindId && it[1] == settingsName && it[2] == key }
-            runCatching {
-                file.parentFile?.mkdirs()
-                file.writeText((kept + listOf(listOf(kindId, settingsName, key, if (on) "on" else "off")))
-                    .joinToString("") { it.joinToString("\t") + "\n" })
-            }
+            // Whole or not at all (SafeWrite): written in place, a kill in the middle forgot every choice (rc32 audit P2 #65).
+            SafeWrite.text(file, (kept + listOf(listOf(kindId, settingsName, key, if (on) "on" else "off")))
+                .joinToString("") { it.joinToString("\t") + "\n" })
         }
     }
 

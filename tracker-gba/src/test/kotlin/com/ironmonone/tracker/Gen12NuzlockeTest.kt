@@ -24,14 +24,15 @@ class Gen12NuzlockeTest {
         generation: Int = 2, game: String = "c", keys: List<String> = listOf("c"), place: String? = "Route 29", detail: String? = "Route 29",
         playerId: Int = 0x1234, enemyDvs: Int = -1, enemyHpLast: Int = -1, lastWild: Boolean = true, battleResult: Int = -1,
         escaped: Boolean = false, captured: Boolean = false, battleType: Int = 0, ghost: Boolean = false, surfing: Boolean = false,
+        enemyFled: Boolean = false,
     ) = GbNuzReads(
         generation = generation, game = game, gameKeys = keys, place = place, detail = detail, playerId = playerId, enemyDvs = enemyDvs,
         enemyHpLast = enemyHpLast, lastWild = lastWild, battleResult = battleResult, escaped = escaped, captured = captured,
-        battleType = battleType, ghost = ghost, surfing = surfing,
+        battleType = battleType, ghost = ghost, surfing = surfing, enemyFled = enemyFled,
     )
 
-    private fun gen1(battleResult: Int, lastWild: Boolean = true, hp: Int = -1, escaped: Boolean = false, captured: Boolean = false) =
-        reads(1, "rb", listOf("rb"), battleResult = battleResult, lastWild = lastWild, enemyHpLast = hp, escaped = escaped, captured = captured)
+    private fun gen1(battleResult: Int, lastWild: Boolean = true, hp: Int = -1, escaped: Boolean = false, captured: Boolean = false, enemyFled: Boolean = false) =
+        reads(1, "rb", listOf("rb"), battleResult = battleResult, lastWild = lastWild, enemyHpLast = hp, escaped = escaped, captured = captured, enemyFled = enemyFled)
 
     private fun gen2(battleResult: Int, lastWild: Boolean = true, hp: Int = -1, captured: Boolean = false) =
         reads(2, battleResult = battleResult, lastWild = lastWild, enemyHpLast = hp, captured = captured)
@@ -142,10 +143,23 @@ class Gen12NuzlockeTest {
         assertEquals(BattleEnd.RAN, Gen12Nuzlocke.battleEnd(gen1(2, hp = 5)), "2 with no ball is the player running")
         assertEquals(BattleEnd.WON, Gen12Nuzlocke.battleEnd(gen1(0, hp = 0)), "the wild Pokemon fainted")
         assertEquals(BattleEnd.MON_FLED, Gen12Nuzlocke.battleEnd(gen1(0, hp = 7)), "it left with HP to spare")
-        assertEquals(BattleEnd.RAN, Gen12Nuzlocke.battleEnd(gen1(0, hp = 7, escaped = true)), "Teleport, a Poke Doll, Roar or Whirlwind")
+        assertEquals(BattleEnd.RAN, Gen12Nuzlocke.battleEnd(gen1(0, hp = 7, escaped = true)), "your Teleport, a Poke Doll, Roar or Whirlwind")
+        // rc33 audit P1 #75: the wild Pokemon's own Teleport, Roar or Whirlwind sets the same flag.
+        assertEquals(BattleEnd.MON_FLED, Gen12Nuzlocke.battleEnd(gen1(0, hp = 7, escaped = true, enemyFled = true)), "a wild Abra teleported")
         assertEquals(BattleEnd.UNKNOWN, Gen12Nuzlocke.battleEnd(gen1(0, hp = -1)), "never saw the enemy's HP")
         assertEquals(BattleEnd.UNKNOWN, Gen12Nuzlocke.battleEnd(gen1(-1)), "unread")
         assertEquals(BattleEnd.UNKNOWN, Gen12Nuzlocke.battleEnd(gen1(5, hp = 3)), "a value the game does not use")
+    }
+
+    @Test
+    fun `it was the wild Pokemon that left when its move is Teleport, Roar or Whirlwind and yours is not`() {
+        val teleport = 0x64; val roar = 0x2E; val whirlwind = 0x12; val tackle = 0x21
+        assertTrue(Gen12Nuzlocke.enemyLeft(teleport, tackle))
+        assertTrue(Gen12Nuzlocke.enemyLeft(roar, tackle))
+        assertTrue(Gen12Nuzlocke.enemyLeft(whirlwind, 0))
+        assertFalse(Gen12Nuzlocke.enemyLeft(tackle, teleport), "your Teleport")
+        assertFalse(Gen12Nuzlocke.enemyLeft(teleport, teleport), "both: the game does not say whose went first")
+        assertFalse(Gen12Nuzlocke.enemyLeft(tackle, tackle), "a Poke Doll")
     }
 
     @Test
@@ -279,6 +293,25 @@ class Gen12NuzlockeTest {
         assertEquals(setOf("gym1", "gym2", "brock"), beaten(crystal, 0b11 or (1 shl 8)))
         assertEquals(setOf("blue"), beaten(crystal, 1 shl 15), "the Earth Badge is the last Kanto bit")
         assertEquals(emptySet(), beaten(reads(2), 0xFF), "no table to say which")
+    }
+
+    /** rc32 audit P3 #106: the default name of dex 32 drops its male sign in GbText, and species.tsv calls it NIDORAN M. */
+    @Test
+    fun `a name that is the species' own without its M or F is the species name`() {
+        assertEquals("NIDORAN M", Gen12Nuzlocke.nickname("NIDORAN", "NIDORAN M"))
+        assertEquals("NIDORAN M", Gen12Nuzlocke.nickname("Nidoran", "NIDORAN M"), "case makes no name")
+        assertEquals("NIDORAN", Gen12Nuzlocke.nickname("NIDORAN", "NIDORAN"), "the female, which species.tsv calls NIDORAN")
+        assertEquals("NIDO", Gen12Nuzlocke.nickname("NIDO", "NIDORAN M"))
+        assertEquals("SPARKY", Gen12Nuzlocke.nickname("SPARKY", "PIKACHU"))
+        assertEquals("", Gen12Nuzlocke.nickname("", "NIDORAN M"))
+        // Crystal's dex 32 through the adapter: the ledger reads it as no nickname.
+        val state = TrackerState(
+            partyCount = 1, inBattle = false, isWildBattle = false,
+            party = listOf(partyMon(32, "NIDORAN M", 0)),
+            nuz = NuzlockeReads(gb = reads().copy(nicknames = listOf("NIDORAN"))),
+        )
+        val m = assertNotNull(NuzlockeAdapters.snapshot(state)).party.single()
+        assertTrue(m.nickname.equals(m.speciesName, ignoreCase = true))
     }
 
     @Test

@@ -22,6 +22,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -33,23 +34,17 @@ import com.ironmonone.tracker.CalcAtk
  * variable of the formula shown and tappable to change, as CalcAtkScreen draws them. [fill] is
  * what the extension fills in by itself (CalcAtk.autoFill); null opens it empty.
  *
- * [enemyStats] is the enemy's real ATK and SPA, used only as the extension uses them: its
- * "*" beside the estimate when neither is within 10% of it (LabelConfidence), which says the
- * formula is missing a multiplier. Null skips that check, as the extension does without an enemy.
+ * The extension's low-confidence mark (LabelConfidence) is left out: it compares the estimate with
+ * the opponent's real ATK and SPA, which the tracker otherwise keeps hidden, so it is never shown
+ * (Blake, 2026-10-02, rc32 audit P3 #22). The dialog is not given those stats at all.
  */
 @Composable
-fun CalcAtkDialog(fill: CalcAtk.Fill?, enemyStats: Pair<Int, Int>?, onClose: () -> Unit) {
+fun CalcAtkDialog(fill: CalcAtk.Fill?, onClose: () -> Unit) {
     val empty = CalcAtk.Inputs(level = 0, damage = 0, defense = 0, power = 0)
     var inputs by remember { mutableStateOf(fill?.inputs ?: empty) }
     var editing by remember { mutableStateOf<String?>(null) }
     val estimate = CalcAtk.estimate(inputs)
     val found = CalcAtk.found(estimate)
-    // LabelConfidence.checkAccuracyOfCalc: 10% either side of the estimate.
-    val confident = enemyStats == null || !found || run {
-        val lo = estimate.first - estimate.first * 0.1
-        val hi = estimate.second + estimate.second * 0.1
-        enemyStats.first.toDouble() in lo..hi || enemyStats.second.toDouble() in lo..hi
-    }
 
     Dialog(onDismissRequest = onClose) {
         Column(
@@ -57,8 +52,10 @@ fun CalcAtkDialog(fill: CalcAtk.Fill?, enemyStats: Pair<Int, Int>?, onClose: () 
                 .verticalScroll(rememberScrollState()).padding(10.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
+            // Its words in sp, following the phone's font size, and its rows and buttons 48dp (rc32 audit P2 #19,
+            // rc35 follow-up N #29): they were 7 to 12dp text, 40dp rows and the tracker's small buttons.
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                PixText("ATTACKING DAMAGE CALC.", 9, Pc.Text, Modifier.weight(1f))
+                DialogText("ATTACKING DAMAGE CALC.", 15, Pc.Text, Modifier.weight(1f), heading = true)
                 PcTap("X", 9, Pc.Dim, spoken = "Close") { onClose() }
             }
             // The estimate: the low roll's stat in the negative colour over the high roll's.
@@ -67,25 +64,24 @@ fun CalcAtkDialog(fill: CalcAtk.Fill?, enemyStats: Pair<Int, Int>?, onClose: () 
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(Modifier.weight(1f)) {
-                    PixText("Attack stat estimate", 8, Pc.Dim)
+                    DialogText("Attack stat estimate", 12, Pc.Dim)
                     if (found) {
-                        PixText("${estimate.first}" + if (!confident) " *" else "", 12, Pc.Negative)
-                        PixText("${estimate.second}", 12, Pc.Positive)
-                    } else PixText("---", 12, Pc.Dim)
+                        DialogText("${estimate.first}", 16, Pc.Negative)
+                        DialogText("${estimate.second}", 16, Pc.Positive)
+                    } else DialogText("---", 16, Pc.Dim)
                 }
-                PcSmallButton("CLEAR") { inputs = empty }
+                GearButton("CLEAR", Modifier) { inputs = empty }
             }
-            if (fill?.guessed == true) PixText("The move's power is a guess.", 7, Pc.Dim, wrap = true)
-            if (!confident) PixText("* Something in the formula is missing, so this is off.", 7, Pc.Dim, wrap = true)
+            if (fill?.guessed == true) DialogText("The move's power is a guess.", 12, Pc.Dim)
 
             @Composable
             fun value(key: String, label: String, text: String) {
                 Row(
-                    Modifier.fillMaxWidth().heightIn(min = 40.dp).clickable { editing = key }.padding(horizontal = 2.dp),
+                    Modifier.fillMaxWidth().heightIn(min = PcMin.DIALOG_TOUCH_DP.dp).clickable(role = Role.Button) { editing = key }.padding(horizontal = 2.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    PixText(label, 8, Pc.Text, Modifier.weight(1f))
-                    PixText(text, 8, Pc.Gold)
+                    DialogText(label, 13, Pc.Text, Modifier.weight(1f))
+                    DialogText(text, 13, Pc.Gold)
                 }
             }
             fun mult(v: Double) = when (v) { 0.0 -> "0x"; 0.25 -> "1/4x"; 0.5 -> "1/2x"; 1.0 -> "1x"; 2.0 -> "2x"; 4.0 -> "4x"; else -> "${v}x" }
@@ -117,7 +113,7 @@ fun CalcAtkDialog(fill: CalcAtk.Fill?, enemyStats: Pair<Int, Int>?, onClose: () 
         }
         Dialog(onDismissRequest = { editing = null }) {
             Column(Modifier.background(Pc.Ground).border(1.dp, Pc.Border).padding(12.dp)) {
-                PixText("Edit value", 10, Pc.Text)
+                DialogText("Edit value", 14, Pc.Text, heading = true)
                 Spacer(Modifier.height(8.dp))
                 androidx.compose.material3.OutlinedTextField(
                     value = draft, onValueChange = { draft = it }, singleLine = true,
@@ -127,7 +123,7 @@ fun CalcAtkDialog(fill: CalcAtk.Fill?, enemyStats: Pair<Int, Int>?, onClose: () 
                 )
                 Spacer(Modifier.height(10.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    PcSmallButton("SAVE") {
+                    GearButton("SAVE", Modifier.weight(1f)) {
                         // The extension: tonumber(text) or the default, so anything unreadable resets it.
                         val n = draft.trim().toDoubleOrNull()
                         inputs = when (key) {
@@ -140,8 +136,7 @@ fun CalcAtkDialog(fill: CalcAtk.Fill?, enemyStats: Pair<Int, Int>?, onClose: () 
                         }
                         editing = null
                     }
-                    Spacer(Modifier.width(4.dp))
-                    PcSmallButton("CANCEL") { editing = null }
+                    GearButton("CANCEL", Modifier.weight(1f)) { editing = null }
                 }
             }
         }
@@ -150,14 +145,17 @@ fun CalcAtkDialog(fill: CalcAtk.Fill?, enemyStats: Pair<Int, Int>?, onClose: () 
 
 /**
  * Calc Atk's auto-fill from the tracker's last read (CalcAtk.lua autoApplyValues): the move the
- * enemy last used and the damage it did (DamageWatch), your lead, the enemy on the field and the
- * battle weather. Null when there is no hit to work from.
+ * enemy last used and the damage it did (DamageWatch), your Pokemon and the enemy the tracker
+ * shows (Battle.getViewedPokemon(true) and (false), CalcAtk.lua:241-242) and the battle weather.
+ * Null when there is no hit to work from.
  */
 fun calcAtkFill(t: com.ironmonone.tracker.GbaTracker, s: com.ironmonone.tracker.TrackerState): CalcAtk.Fill? {
     val id = s.lastAttackMoveId.takeIf { it > 0 } ?: return null
     val row = t.moveRowFor(id) ?: return null
-    val own = s.onField ?: return null   // the Pokemon that was hit: slot 1 is not it after a switch (rc33 audit P1)
-    val enemy = s.enemy ?: return null
+    // The Pokemon that was hit: slot 1 is not it after a switch (rc33 audit P1), and in a double battle it is the one of
+    // yours the view shows (GbaViewState), as the opponent is.
+    val own = gbaView.own(s) ?: return null
+    val enemy = gbaView.foe(s) ?: return null
     return CalcAtk.autoFill(
         moveId = id, power = com.ironmonone.tracker.MoveRules.basePower(id, row.power), type = row.type, category = row.category,
         damage = s.lastAttackDamage,
@@ -166,5 +164,7 @@ fun calcAtkFill(t: com.ironmonone.tracker.GbaTracker, s: com.ironmonone.tracker.
         enemyTypes = listOf(enemy.type1, enemy.type2), enemyLevel = enemy.level,
         enemyCurHp = enemy.curHp, enemyMaxHp = enemy.maxHp, enemyBurned = enemy.statusCondition == "BRN",
         enemyBaseFriendship = enemy.base?.baseFriendship, wild = s.isWildBattle, weatherWord = s.weatherWord,
+        natDex = t.expandedSpeciesIds,
+        maxDex = t.nameSet == "maxdex",
     )
 }

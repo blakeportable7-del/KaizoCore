@@ -31,7 +31,7 @@ import java.util.Random;
 
 public class RandomSource {
 
-    // LOCAL MODIFICATION (KaizoCore): a randomize on an interrupted thread
+    // LOCAL MODIFICATION (KaizoCore, 2026-09-29): a randomize on an interrupted thread
     // stops at its next draw. The app makes the next run ahead on a
     // background thread (NextRunJob) and has to stop it when the player
     // starts a different run; nothing else can stop the engine midway. The

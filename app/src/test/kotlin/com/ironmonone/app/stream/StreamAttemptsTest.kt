@@ -114,6 +114,47 @@ class StreamAttemptsTest {
 
     private val tracker = java.io.File("src/main/assets/stream/tracker.html").readText()
 
+    @Test
+    fun `the randomizer data belongs to one run, and a failed answer is not kept`() {
+        // rc33 audit P1 #5: OBS keeps the page open, and the next run opened on the last run's data; a refused answer
+        // was stored as an empty list for the page's whole life.
+        org.junit.Assume.assumeTrue("node is not installed", PageRunner.available)
+        val lostA = PageSnapshots.of(run = true, outcome = com.ironmonone.tracker.GameOver.LOST, attempt = 41)
+        val lostB = PageSnapshots.of(run = true, outcome = com.ironmonone.tracker.GameOver.LOST, attempt = 42)
+        val bulbasaur = listOf(mapOf("species" to 1, "name" to "BULBASAUR", "types" to listOf("Grass"), "bst" to 318))
+        val seen = PageRunner.run("tracker", tracker, "?k=abcd", listOf(
+            mapOf("state" to lostA),
+            mapOf("fetch" to mapOf("status" to 200, "body" to bulbasaur), "call" to "loadDex()"),
+            mapOf("state" to lostB),
+            mapOf("fetch" to mapOf("status" to 403, "body" to "not over"), "call" to "loadDex()"),
+            mapOf("fetch" to mapOf("status" to 200, "body" to emptyList<Any>()), "call" to "loadDex()"),
+        )).steps
+        assertTrue("BULBASAUR" in seen[1].str("over"), "run 41's data")
+        kotlin.test.assertFalse("BULBASAUR" in seen[2].str("over"), "run 42 opens on its final party, not run 41's data")
+        assertTrue("Final party" in seen[2].str("over"))
+        assertTrue("try again" in seen[3].str("over"), "a refused answer says so")
+        assertTrue("No randomizer data for this game." in seen[4].str("over"), "and the next tap asks again")
+    }
+
+    /**
+     * RC35-NOTICED N #7: the phone builds the randomizer data once the run is over, and a tap in that moment was told it
+     * could not load. The server says 503 for it now, and the page waits and asks again by itself.
+     */
+    @Test
+    fun `randomizer data still being built is waited for, not called a failure`() {
+        org.junit.Assume.assumeTrue("node is not installed", PageRunner.available)
+        val lost = PageSnapshots.of(run = true, outcome = com.ironmonone.tracker.GameOver.LOST, attempt = 41)
+        val bulbasaur = listOf(mapOf("species" to 1, "name" to "BULBASAUR", "types" to listOf("Grass"), "bst" to 318))
+        val seen = PageRunner.run("tracker", tracker, "?k=abcd", listOf(
+            mapOf("state" to lost),
+            mapOf("fetch" to mapOf("status" to 503, "body" to "building"), "call" to "loadDex()"),
+            mapOf("fetch" to mapOf("status" to 200, "body" to bulbasaur), "advance" to 2000),
+        )).steps
+        assertTrue("Loading" in seen[1].str("over"), "still loading while it is built")
+        kotlin.test.assertFalse("try again" in seen[1].str("over"), "not a failure")
+        assertTrue("BULBASAUR" in seen[2].str("over"), "asked again by itself, and shown")
+    }
+
     private fun needNode() = Assume.assumeTrue("node is not on the PATH, so the pages' own scripts are not run", PageRunner.available)
 
     private fun trackerShowing(state: Map<String, Any?>) =

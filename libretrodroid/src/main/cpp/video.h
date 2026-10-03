@@ -19,6 +19,7 @@
 #define LIBRETRODROID_VIDEO_H
 
 #include <GLES2/gl2.h>
+#include <memory>
 #include <optional>
 #include <array>
 
@@ -109,7 +110,8 @@ private:
     ImmersiveMode immersiveMode;
     VideoLayout videoLayout;
 
-    Renderer* renderer;
+    // KaizoCore (rc32 audit P3 #101): owned, so a game closed frees it. A raw pointer leaked one renderer per game.
+    std::unique_ptr<Renderer> renderer;
 };
 
 }

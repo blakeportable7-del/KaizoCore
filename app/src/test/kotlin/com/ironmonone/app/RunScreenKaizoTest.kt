@@ -51,7 +51,9 @@ class RunScreenKaizoTest {
             listOf("standard", "ultimate", "kaizo", "superkaizo", "survival", "kaizodoubles", "chaoskaizo", "ironmonjourney"),
             RulesetCatalog.forRom(RomKind.EMERALD_U, presets).map { it.key })
         // Whatever a game offers: Standard, Ultimate, Kaizo, then Super Kaizo where it has it, then the variants.
-        for (k in RomKind.all) {
+        // MaxDex offers its one mode, Kaizo, as Trip ships it.
+        assertEquals(listOf("kaizo"), RulesetCatalog.forRom(RomKind.FIRERED_MAXDEX_10, presets).map { it.key })
+        for (k in RomKind.all.filterNot { it.isMaxDex }) {
             val keys = RulesetCatalog.forRom(k, presets).map { it.key }
             assertTrue(keys.take(3) == listOf("standard", "ultimate", "kaizo"), "${k.id}: $keys")
             if ("superkaizo" in keys) assertEquals("superkaizo", keys[3], "${k.id}: Super Kaizo follows Kaizo")
@@ -166,9 +168,9 @@ class RunScreenKaizoTest {
         Claim("survival", "an eleventh after your eighth badge", "Once you earn your 8th badge you earn a bonus 11th heal."),
         Claim("survivalrevival", "Kaizo with", "ALL PREVIOUS Standard, Ultimate, and Kaizo rules"),
         Claim("survivalrevival", "five Pokémon Center heals after your first badge",
-            "After receiving your first Gym badge you MUST immediately use the Pokémon Centre. You may now only use the Pokémon Centre up to 5 times for the remainder of the run."),
+            "After receiving your first Gym badge you MUST immediately use the Pokémon Center. You may now only use the Pokémon Center up to 5 times for the remainder of the run."),
         Claim("survivalrevival", "one more after your eighth",
-            "After Acquiring your 8th Gym badge, you gain one Bonus Pokémon Centre usage."),
+            "After Acquiring your 8th Gym badge, you gain one Bonus Pokémon Center usage."),
         Claim("kaizodoubles", "every trainer battle is a double battle", "All trainer battles possible are doubles battles (2v2)."),
         Claim("kaizodoubles", "The run ends if either of your two Pokémon faints",
             "if either of your two Pokémon faint it's game over and the run ends."),
@@ -386,7 +388,8 @@ class RunScreenKaizoTest {
         assertTrue("if (selectedRom?.first?.id != pair.first.id)" in card, "tapping the game that is picked leaves its mode as it is")
         assertFalse("modes.firstOrNull()?.let { selectedSettings = it.preset }" in run)
         val effect = run.substringAfter("LaunchedEffect(selectedRom) {").substringBefore("\n        }\n")
-        assertTrue("openingFor(rom)?.let { selectedSettings = it }" in effect && "isCompatible(rom, cur)" in effect)
+        // The screen's own list rule (RulesetCatalog.listedFor): an untagged file the player picked is not snapped away (rc32 audit P2 #78).
+        assertTrue("openingFor(rom)?.let { selectedSettings = it }" in effect && "listedFor(rom, cur)" in effect)
     }
 
     @Test
@@ -443,9 +446,57 @@ class RunScreenKaizoTest {
         assertTrue("fun pairingProblem(): String? = RunPairing.problem(selectedRom, selectedSettings)" in run)
     }
 
+    /**
+     * RC35-NOTICED N #16, the rest of rc32 audit P2 #63: the lists were read in composition, and listPrepared reads a build
+     * whose checksum is not in its memo whole, seconds on the main thread for a DS game. They are read on the IO thread,
+     * and every pick made from them follows the read, not the count that asked for it.
+     */
+    @Test
+    fun `the games and the settings files are read off the main thread, and the picks follow the read`() {
+        assertTrue("produceState<RunLists?>(null, refresh) {" in run)
+        assertTrue("withContext(kotlinx.coroutines.Dispatchers.IO) { RunLists(refresh, store.listPrepared(), store.listSettings()) }" in run)
+        assertFalse("remember(refresh) { store.listPrepared() }" in run)
+        assertFalse("remember(refresh) { store.listSettings() }" in run)
+        for (keyed in listOf("var selectedRom by remember(listed)", "var selectedSettings by remember(listed)", "val lastRun = remember(listed)",
+            "val libraryFiles = remember(listed)"))
+            assertTrue(keyed in run, keyed)
+        // The selection after a save or a patched copy waits for the lists that hold the new file.
+        assertEquals(2, Regex("""LaunchedEffect\(listed\) \{""").findAll(run).count())
+        assertFalse("LaunchedEffect(refresh)" in run)
+    }
+
+    /** RC35-NOTICED N #13, the rest of rc32 audit P2 #33: Build your own and its pages were plain remember. */
+    @Test
+    fun `Build your own is kept with the activity, its game and its pages`() {
+        assertTrue("var buildGame by androidx.compose.runtime.saveable.rememberSaveable(stateSaver = RunLists.BuildGameSaver)" in run)
+        val dir = java.nio.file.Files.createTempDirectory("buildgame").toFile()
+        try {
+            val rom = File(dir, "emerald.gba").apply { writeBytes(ByteArray(8)) }
+            assertEquals(RomKind.EMERALD_U to rom, RunLists.buildGameOf(RomKind.EMERALD_U.id + "\n" + rom.path))
+            assertEquals(null, RunLists.buildGameOf(RomKind.EMERALD_U.id + "\n" + File(dir, "gone.gba").path), "a game gone since")
+            assertEquals(null, RunLists.buildGameOf("not-a-game\n" + rom.path))
+            // The builder's plan, its starters and its picks, back as they were; a starting point gone since is none.
+            val base = File(dir, "RSE Kaizo.rnqs").apply { writeBytes(byteArrayOf(1)) }
+            for (plan in listOf(
+                GameBuild.Plan(),
+                GameBuild.Plan(base, GameBuild.Starters.Pick(listOf(1, null, 255)), linkedMapOf("movesets" to "RANDOM_PREFER_TYPE", "tms" to "keep")),
+                GameBuild.Plan(null, GameBuild.Starters.Random, emptyMap()),
+                GameBuild.Plan(null, GameBuild.Starters.Own, mapOf("evolutions" to "a=b")),
+            )) assertEquals(plan, PlanText.planOf(PlanText.of(plan)))
+            base.delete()
+            assertEquals(null, PlanText.planOf(PlanText.of(GameBuild.Plan(base))).base)
+            assertEquals(listOf(4, null), PlanText.slotsOf(PlanText.slotsText(listOf(4, null))))
+        } finally { dir.deleteRecursively() }
+        val build = File("src/main/kotlin/com/ironmonone/app/BuildYourGame.kt").readText()
+        for (v in listOf("var step by rememberSaveable", "var plan by rememberSaveable(stateSaver = PlanText.Saver)", "var slot by rememberSaveable",
+            "var typedName by rememberSaveable", "var pickMemory by rememberSaveable(stateSaver = PlanText.SlotsSaver)"))
+            assertTrue(v in build, v)
+    }
+
     @Test
     fun `the game list opens with the selected game first`() {
-        assertTrue("val gamesShown = remember(refresh) { RunGames.selectedFirst(preparedList, firstRom?.first?.id) }" in run)
+        // Keyed on the lists read (RC35-NOTICED N #16): they come from the IO thread now.
+        assertTrue("val gamesShown = remember(listed) { RunGames.selectedFirst(preparedList, firstRom?.first?.id) }" in run)
         assertTrue("gamesShown.forEach { pair ->" in run)
         assertFalse("preparedList.forEach { pair ->" in run)
     }

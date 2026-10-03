@@ -37,7 +37,7 @@ class DsTrackerIconsTest {
     fun `the head block animates only with the switch on and a sheet found, and walks only with walking on`() {
         val pc = src("PcTracker.kt")
         val head = pc.substringAfter("fun PcHeadBlock(").substringBefore("PcSprite(sprite)")
-        assertTrue("WalkingPals.find(iconCtx, iconSpecies, iconDex)" in head)
+        assertTrue("WalkingPals.ready(iconCtx).let { ix -> remember(ix, iconSpecies, iconDex, iconLook) { if (iconSpecies > 0) ix?.find(iconSpecies, iconDex, iconLook) else null } }" in head)
         assertTrue("val animated = pal != null && TrackerOptions.animatedSprites &&" in head)
         assertTrue(pc.substringAfter("WalkingPalsIcon(pal, status, 1.rp, PcRef.ICON.rp)").trimStart().startsWith("if (!animated) PcSprite(sprite)"))
         assertTrue("val walk = TrackerOptions.spritesWalk && !SpriteMotion.inBattle && SpriteMotion.walking()" in src("WalkingPals.kt"))

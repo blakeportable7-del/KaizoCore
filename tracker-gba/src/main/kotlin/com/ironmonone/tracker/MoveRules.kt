@@ -107,18 +107,30 @@ object MoveRules {
      * is the Gen 1 tracker's chart, which its Utils.netEffectiveness reads
      * (MoveData.lua TypeToEffectiveness: Poison and Bug 2x on each other,
      * Ghost 0x on Psychic); it drew the move rows with it, not just Type
-     * Defenses.
+     * Defenses. [natDex]: the Nat. Dex expansion's chart (Gen3Types.effect).
      */
-    fun effectiveness(id: Int, type: Int?, category: String?, targetTypes: List<Int>, gen1: Boolean = false): Double {
+    fun effectiveness(id: Int, type: Int?, category: String?, targetTypes: List<Int>, gen1: Boolean = false, power: String? = null, natDex: Boolean = false,
+                      maxDex: Boolean = false): Double {
         if (type == null || targetTypes.isEmpty() || id in TYPELESS) return 1.0
         if (category == "STA") {
             val immune = STATUS_WILL_FAIL[id] ?: return 1.0
             return if (targetTypes.any { it in immune }) 0.0 else 1.0
         }
-        var total = Gen3Types.effect(type, targetTypes[0], gen1)
-        if (targetTypes.size > 1 && targetTypes[1] != targetTypes[0]) total *= Gen3Types.effect(type, targetTypes[1], gen1)
+        // MaxDex 1.0's Freeze-Dry (its move 578) is super effective on Water whatever the chart says, as MaxDexExtension.lua's
+        // max_netEffectiveness has it; any other type it meets, the chart decides.
+        fun chart(t: Int) = if (maxDex && id == MAXDEX_FREEZE_DRY && t == WATER) 2.0 else Gen3Types.effect(type, t, gen1, natDex)
+        var total = chart(targetTypes[0])
+        if (targetTypes.size > 1 && targetTypes[1] != targetTypes[0]) total *= chart(targetTypes[1])
+        // Utils.lua:715-721: a move whose damage is fixed ([power] "0" or "---" as shown: Seismic Toss, Night Shade, Dragon
+        // Rage, Super Fang, the one-hit KOs) still checks immunities but otherwise ignores the chart. The ROM stores power
+        // 1 for them, so they read as attacks and took a 2x or 1/2 mark (rc33 audit P1 #77).
+        if ((power == "0" || power == "---") && total != 0.0) return 1.0
         return total
     }
+
+    /** Freeze-Dry's id on MaxDex 1.0 (maxdex/moves.tsv); on other builds the id is another move. */
+    const val MAXDEX_FREEZE_DRY = 578
+    private const val WATER = 11
 
     /** One side of the battle, as the adjustments need it. */
     data class Side(

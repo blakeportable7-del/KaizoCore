@@ -123,8 +123,8 @@ object CoreOptions {
 
     val GBA: List<Option> = listOf(
         Option(FILTER_KEY, "Video filter", FILTERS, "Default", "Video", hint = "LCD and CRT mimic a screen; Upscale smooths pixel art."),
-        Option("mgba_color_correction", "Colour correction", listOf("OFF", "GBA", "GBC", "Auto"), "OFF", "Video",
-            hint = "GBA reproduces the original screen's washed colours."),
+        Option("mgba_color_correction", "Color correction", listOf("OFF", "GBA", "GBC", "Auto"), "OFF", "Video",
+            hint = "GBA reproduces the original screen's washed colors."),
         Option("mgba_interframe_blending", "Frame blending", listOf("OFF", "mix", "mix_smart", "lcd_ghosting", "lcd_ghosting_fast"), "OFF", "Video",
             hint = "Blends frames like the real LCD; fixes flicker some games rely on."),
         Option("mgba_frameskip", "Frameskip", listOf("disabled", "auto", "auto_threshold", "fixed_interval"), "disabled", "Performance"),
@@ -152,11 +152,11 @@ object CoreOptions {
 
     val GBC: List<Option> = listOf(
         Option(FILTER_KEY, "Video filter", FILTERS, "Default", "Video"),
-        Option("gambatte_gb_colorization", "Game Boy colourisation", listOf("disabled", "auto", "GBC", "SGB", "internal"), "disabled", "Video",
+        Option("gambatte_gb_colorization", "Game Boy colorization", listOf("disabled", "auto", "GBC", "SGB", "internal"), "disabled", "Video",
             hint = "For original Game Boy games: Auto uses the GBC/SGB palette the game shipped with; Internal palette uses the one below."),
         // "custom" is left out (2026-09-27, audit): it reads a palette file the app has no way to import.
         Option("gambatte_gb_internal_palette", "Internal palette", GB_PALETTES, "GB - DMG", "Video"),
-        Option("gambatte_gbc_color_correction", "GBC colour correction", listOf("GBC only", "always", "disabled"), "GBC only", "Video"),
+        Option("gambatte_gbc_color_correction", "GBC color correction", listOf("GBC only", "always", "disabled"), "GBC only", "Video"),
         Option("gambatte_gbc_color_correction_mode", "Correction mode", listOf("accurate", "fast"), "accurate", "Video"),
         Option("gambatte_dark_filter_level", "Dark filter (%)", range(0, 50, 5), "0", "Video"),
         Option("gambatte_mix_frames", "Frame blending", listOf("disabled", "mix", "lcd_ghosting", "lcd_ghosting_fast"), "disabled", "Video"),
@@ -199,11 +199,21 @@ object CoreOptions {
             hint = "Touch: the stylus is your finger on the bottom screen. Leave it."),
         Option("melonds_mic_input", "Microphone input", listOf("Blow Noise", "White Noise", "Microphone Input", "None"), "Blow Noise", "Hardware",
             hint = "Blow Noise answers any mic prompt with a breath."),
+        // The DS's own sound is 10-bit with no interpolation, and that is what melonDS sends unless told otherwise
+        // ("Automatic" is 10-bit on a DS): every sample a multiple of 32, a grain on every fade and note tail, and the
+        // instruments' steps as hash at 12 to 16 kHz, 28 dB under the music (Black 2's title, read off the stream tap,
+        // 2026-10-02). Blake heard it as crackling, as he had the GBA's static. 16-bit and cubic are the core's own
+        // clean settings; the DS's own sound is a tap away. The core reads the bit depth only as the game boots
+        // (switched mid-game the samples stayed 16-bit; after a restart they were 10-bit), the interpolation at once.
+        Option("melonds_audio_bitrate", "Audio bit depth", listOf("16-bit", "10-bit", "Automatic"), "16-bit", "Audio", restart = true,
+            hint = "16-bit is clean. 10-bit is the DS's own sound, grain and all."),
+        Option("melonds_audio_interpolation", "Audio interpolation", listOf("Cubic", "Cosine", "Linear", "None"), "Cubic", "Audio",
+            hint = "Cubic smooths the instruments. None is how the DS played them."),
         RUMBLE_ROW, SENSORS_ROW,
         Option("melonds_boot_directly", "Boot straight into the game", listOf("enabled", "disabled"), "enabled", "System", restart = true,
             hint = "Off shows the DS menu first; needs real firmware."),
         Option("melonds_use_fw_settings", "Use firmware settings", listOf("disabled", "enabled"), "disabled", "System", restart = true,
-            hint = "On reads your name, colour and language from an imported firmware.bin."),
+            hint = "On reads your name, color and language from an imported firmware.bin."),
         Option("melonds_language", "Language", listOf("English", "Japanese", "French", "German", "Italian", "Spanish"), "English", "System", restart = true),
         Option("melonds_randomize_mac_address", "Random MAC address", listOf("disabled", "enabled"), "disabled", "System", restart = true),
         // In the DSi group, so it is not drawn as a row: the DSi section switches it,
@@ -215,6 +225,19 @@ object CoreOptions {
 
     fun forPlatform(p: Platform): List<Option> = when (p) {
         Platform.GBA -> GBA; Platform.GBC -> GBC; Platform.NDS -> NDS
+    }
+
+    /**
+     * The options a boot of [platform] is given, from [values]: every core option, none of the app's own keys. With DSi
+     * mode off the DSi pair goes with its plain-DS values instead of being left out: the core kept a key left out at its
+     * last value, so after Reset all a game that had been a DSi kept booting as one (rc32 audit P2 #121).
+     */
+    fun coreVariables(platform: Platform, values: Map<String, String>): List<Pair<String, String>> {
+        val out = LinkedHashMap(values.filterKeys { it !in APP_KEYS })
+        if (!DsiMode.isOn(values)) {
+            for (o in forPlatform(platform)) if (o.group == DSI_GROUP) out[o.key] = DsiMode.OFF[o.key] ?: o.default
+        }
+        return out.map { (k, v) -> k to v }
     }
 
     /** System files a console can take, by file name, with what they enable. */

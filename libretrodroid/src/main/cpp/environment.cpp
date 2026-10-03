@@ -28,6 +28,7 @@
 #include "../../libretro-common/include/libretro.h"
 #include "log.h"
 #include "environment.h"
+#include "memrange.h"
 #include "vfs/vfs.h"
 #include "microphone/microphoneinterface.h"
 
@@ -66,12 +67,23 @@ void Environment::deinitialize() {
 
     rumbleStates.fill(libretrodroid::RumbleState {});
 
+    // KaizoCore (rc32 audit P2 #121): the core's options go with the core. They were kept for the life of the process,
+    // and SET_VARIABLES keeps a value already set, so an option the app stopped sending (the DSi pair after Reset all)
+    // stayed at its last value for every later game.
+    variables.clear();
+    dirtyVariables = false;
+    controllers.clear();
+    sensorMask = 0;
+
+    // KaizoCore (rc32 audit P2 #122): cleared under the lock the readers take.
+    std::lock_guard<std::mutex> lock(memoryDescriptorsLock);
     memoryDescriptors.clear();
 }
 
 // IronMON One patch ------------------------------------------------------------
 
 void Environment::setMemoryMaps(const struct retro_memory_map* maps) {
+    std::lock_guard<std::mutex> lock(memoryDescriptorsLock);   // KaizoCore (rc32 audit P2 #122)
     memoryDescriptors.clear();
     if (maps == nullptr || maps->descriptors == nullptr) return;
     memoryDescriptors.assign(maps->descriptors, maps->descriptors + maps->num_descriptors);
@@ -84,7 +96,7 @@ size_t Environment::readMemoryRegion(uint64_t address, size_t length, unsigned c
         if (desc.ptr == nullptr) continue;
         uint64_t start = desc.start;
         uint64_t len = desc.len;
-        if (address >= start && address + length <= start + len) {
+        if (libretrodroid::rangeInside(address, length, start, len)) {   // KaizoCore (rc32 audit P3 #93)
             auto* base = static_cast<unsigned char*>(desc.ptr) + desc.offset;
             std::memcpy(output, base + (address - start), length);
             return length;
@@ -100,7 +112,7 @@ size_t Environment::writeMemoryRegion(uint64_t address, size_t length, const uns
         if ((desc.flags & RETRO_MEMDESC_CONST) != 0) continue;
         uint64_t start = desc.start;
         uint64_t len = desc.len;
-        if (address >= start && address + length <= start + len) {
+        if (libretrodroid::rangeInside(address, length, start, len)) {   // KaizoCore (rc32 audit P3 #93)
             auto* base = static_cast<unsigned char*>(desc.ptr) + desc.offset;
             std::memcpy(base + (address - start), input, length);
             return length;

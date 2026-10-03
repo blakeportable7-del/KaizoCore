@@ -23,6 +23,11 @@ import androidx.compose.ui.unit.dp
 import com.ironmonone.app.gen3.Gen3
 import com.ironmonone.app.gen3.Gen3Button
 
+/** The dialog's words that a test holds. */
+internal object RetroAchievementsCopy {
+    const val RUN = "A run does not load achievements: a randomized game has no achievement set. Play a game from your library to earn them."
+}
+
 /**
  * RetroAchievements: sign in, see the game's set, choose hardcore.
  *
@@ -78,8 +83,9 @@ fun RetroAchievementsDialog(
                 Text("${summary.user}  ·  ${summary.score} points", style = MaterialTheme.typography.bodyMedium, color = Gen3.Ink)
                 Spacer(Modifier.height(4.dp))
                 when {
+                    // Any game in the run slot, a randomized Nuzlocke as well as a Kaizo IronMON run (rc32 audit P3 #59).
                     tracked -> Text(
-                        "IronMON run: achievements are not loaded here. A randomized ROM has no set, and the run stays unquestionable. Play a game from the library to earn them.",
+                        RetroAchievementsCopy.RUN,
                         style = MaterialTheme.typography.bodySmall, color = Gen3.Ink,
                     )
                     summary.gameLoaded -> Text(

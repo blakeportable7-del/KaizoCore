@@ -22,7 +22,8 @@ import kotlin.math.roundToInt
 /**
  * The player's own image behind the tracker (2026-09-29), drawn where the Main background colour is
  * drawn (TrackerBackdrop.kt), under a black layer at [dim] percent so the text over it stays readable.
- * The boxes keep their own fill colours; give one an alpha in the editor and the image shows through it.
+ * Every tracker box takes [seeThrough] percent off its fill while an image is set ([boxFill]), so the image shows
+ * through them; a box colour given an alpha in the editor lets it through further.
  *
  * The photo picker hands over an image, which is decoded off the main thread, turned upright by its EXIF
  * orientation, scaled so its long side is at most [MAX_LONG_SIDE] and kept as JPEG quality [JPEG_QUALITY]
@@ -50,6 +51,9 @@ object TrackerBackground {
      */
     const val DEFAULT_SEE_THROUGH = 35
     const val MAX_SEE_THROUGH = 80
+
+    /** Under the picker: the photo goes wherever the backup goes (rc32 audit P2 #94). */
+    const val IN_BACKUPS = "Backups and cloud sync include this photo."
 
     /** Fill covers the whole box and crops what does not fit; Fit shows the whole image and leaves the colour around it. */
     enum class Fit(val label: String) { FILL("Fill"), FIT("Fit") }
@@ -113,13 +117,13 @@ object TrackerBackground {
         seeThrough = s
     }
 
-    fun save() { dir?.let { SafeWrite.text(File(it, SETTINGS_FILE), settingsText()) } }
+    /** Whole (SafeWrite), on the writer's thread (DiskWriter): each slider release and Fill or Fit tap saves (rc32 audit P3 #69). */
+    fun save() { dir?.let { DiskWriter.write(File(it, SETTINGS_FILE), settingsText()) } }
 
     /** Reads the settings now and decodes the image, if there is one, on another thread. */
     fun load(filesDir: File) {
         dir = filesDir
-        val settings = File(filesDir, SETTINGS_FILE)
-        applySettings(if (settings.isFile) runCatching { settings.readText() }.getOrDefault("") else "")
+        applySettings(DiskWriter.read(File(filesDir, SETTINGS_FILE)).orEmpty())
         image = null
         val file = File(filesDir, IMAGE_FILE)
         if (file.isFile) runAsync { image = runCatching { decoder(file) }.getOrNull() }

@@ -45,6 +45,8 @@ object HackLinks {
             PC + "326118/", setOf("firered-u-v10"), "FireRed 1.0 (US)"),
         HackLink("Faster FireRed", "DrMaple", "Quality of life for IronMON: faster, hidden items marked. KaizoCore already includes it.",
             "https://github.com/DrMaple/Faster-FireRed/releases", setOf("firered-u-v11"), "FireRed 1.1 (US)"),
+        HackLink("MaxDex Kaizo IronMON", "Trip", "Nat. Dex Kaizo with moves and abilities through Gen 9. KaizoCore already includes it. Tap PATCH on your FireRed 1.1 in My games and pick MaxDex.",
+            MaxDexInfo.REPO, setOf("firered-u-v11"), "FireRed 1.1 (US)"),
         // ---- Emerald ----
         HackLink("Faster Emerald", "DrMaple", "Quality of life for IronMON: shorter intro, instant healing, hidden items marked. KaizoCore already includes it.",
             "https://github.com/DrMaple/Faster-Emerald/releases", setOf("emerald-u"), "Emerald (US)"),
@@ -66,6 +68,8 @@ object HackLinks {
         HackLink("Renegade Platinum", "Drayano", "All 493 Pokémon, tougher trainers, no trade evolutions.",
             "https://projectpokemon.org/home/forums/topic/52294-pok%C3%A9mon-renegade-platinum/", setOf("platinum-u"), "Platinum (US)"),
         // ---- HeartGold / SoulSilver ----
+        HackLink("IronMON HGSS", "PyroMikeGit", "Quality of life for IronMON: faster animations, the intro skipped, less talk. KaizoCore already includes it.",
+            "https://github.com/PyroMikeGit/IronMONHGSS/releases", setOf("heartgold-u"), "HeartGold (US)"),
         HackLink("Sacred Gold", "Drayano", "All 493 Pokémon and a steeper difficulty curve.",
             "https://gbatemp.net/threads/pokemon-sacred-gold-storm-silver.327567/", setOf("heartgold-u"), "HeartGold (US)"),
         HackLink("Storm Silver", "Drayano", "All 493 Pokémon and a steeper difficulty curve.",

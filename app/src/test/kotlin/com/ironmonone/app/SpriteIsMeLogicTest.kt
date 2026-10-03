@@ -101,12 +101,65 @@ class SpriteIsMeLogicTest {
         assertTrue(list.any { it.second == "Charizard-X" }, "a form, by the table's own spelling")
         assertTrue(1 in ids && 277 in ids && 411 in ids, "Gen 1-3 as before")
         assertEquals(386, ids.count { it <= 411 }, "every Gen 1-3 Pokemon, and no unused slot")
-        // Only those with a sheet: Simisear and Charizard-Y have none.
-        assertTrue(539 !in ids && 1053 !in ids)
+        // Only those with a sheet: Simisear and Mega Falinks have none. Charizard-Y walks as Charizard (Blake, 2026-10-02:
+        // a Mega or form with no sheet of its own uses its base species').
+        assertTrue(539 !in ids && 1263 !in ids)
+        assertTrue(1053 in ids)
         // Each listed one draws: its sheets are there.
         for (id in ids) assertTrue(ShippedPals.index.find(id, Dex.NAT_DEX) != null, "$id")
         assertTrue(list.size >= 1100, "only ${list.size}")
         assertEquals(list.map { it.first }, list.map { it.first }.sorted(), "the table's order")
+    }
+
+    // ------------------------------------------------------------------ MaxDex 1.0 (2026-10-03)
+
+    /** A MaxDex lead by MaxDex's own ids: the Nat. Dex Extension's to 1235, its Legends Z-A Megas by name. */
+    @Test
+    fun `a MaxDex lead walks by MaxDex's own numbering, Gen 9 and the Z-A Megas included`() {
+        val koraidon = Lead(1032, 30, false, Dex.MAX_DEX)
+        assertEquals(Choice(Source.PAL, Pal(Pack.NATIONAL, "1007"), koraidon), L.choose(Who.LEAD, 0, Own.NONE, false, koraidon, shipped))
+        // MaxDex's 1236 is Dragonite-M, where Nat. Dex keeps Battle Bond Greninja: it walks as Dragonite until its own is drawn.
+        assertEquals(Pal(Pack.GEN3, "149"), L.choose(Who.LEAD, 0, Own.NONE, false, Lead(1236, 30, false, Dex.MAX_DEX), shipped).pal)
+        assertEquals(Pal(Pack.NATIONAL, "998"), L.choose(Who.LEAD, 0, Own.NONE, false, Lead(1280, 30, false, Dex.MAX_DEX), shipped).pal, "Baxcalibur-M")
+        // One nobody has drawn yet leaves the trainer, as the line under the switch says: Miraidon, and Falinks-M.
+        assertEquals(Choice(Source.NONE), L.choose(Who.LEAD, 0, Own.NONE, false, Lead(1033, 30, false, Dex.MAX_DEX), shipped))
+        assertEquals(Choice(Source.NONE), L.choose(Who.LEAD, 0, Own.NONE, false, Lead(1276, 30, false, Dex.MAX_DEX), shipped))
+    }
+
+    /** Always use counts in the picker's numbering on MaxDex too: a Gen 9 pick is the same Pokemon on every game. */
+    @Test
+    fun `always use a Gen 9 Pokemon on MaxDex, and the lead or the trainer when the pick has no sprite`() {
+        val dragoniteM = Lead(1236, 0, false, Dex.MAX_DEX)
+        val baxcalibur = assertNotNull(Favorites.idOf("Baxcalibur"))
+        assertEquals(Choice(Source.PAL, Pal(Pack.NATIONAL, "998"), dragoniteM), L.choose(Who.ALWAYS, baxcalibur, Own.NONE, false, dragoniteM, shipped), "fainted with its lead")
+        val koraidon = assertNotNull(Favorites.idOf("Koraidon"))
+        assertEquals(Pal(Pack.NATIONAL, "1007"), L.choose(Who.ALWAYS, koraidon, Own.NONE, false, null, shipped).pal, "before the first Pokemon")
+        // A Z-A Mega picked by its name walks as MaxDex's own does.
+        assertEquals(ShippedPals.index.find(1236, Dex.MAX_DEX), L.choose(Who.ALWAYS, assertNotNull(Favorites.idOf("Dragonite-M")), Own.NONE, false, null, shipped).pal)
+        // A pick with no sprite falls to the lead; with none for the lead either, the trainer stays.
+        val miraidon = assertNotNull(Favorites.idOf("Miraidon"))
+        assertEquals(Pal(Pack.GEN3, "149"), L.choose(Who.ALWAYS, miraidon, Own.NONE, false, dragoniteM, shipped).pal)
+        assertEquals(Choice(Source.NONE), L.choose(Who.ALWAYS, miraidon, Own.NONE, false, Lead(1033, 30, false, Dex.MAX_DEX), shipped))
+    }
+
+    /** The picker lists the Nat. Dex table on every game: each MaxDex Pokemon that walks is in it by name, and draws the same. */
+    @Test
+    fun `every MaxDex Pokemon with a walking sprite can be picked by its name, and the pick draws what the lead would`() {
+        val byName = L.choices(Favorites.namesInOrder, shipped).associate { (id, name) -> name.lowercase() to id }
+        val maxDex = assertNotNull(GameMap::class.java.getResourceAsStream("/maxdex/species.tsv"))
+            .bufferedReader(Charsets.UTF_8).useLines { WalkingPals.parseSpecies(it) }
+        var walking = 0
+        var gen9 = 0
+        for ((id, name) in maxDex) {
+            if (id in 252..276) continue   // Gen 3's unused slots, "none" in both tables: no Pokemon
+            val pal = ShippedPals.index.find(id, Dex.MAX_DEX) ?: continue
+            val pick = assertNotNull(byName[name.lowercase()], "MaxDex's $id, $name, walks but is not in the list")
+            assertEquals(pal, L.choose(Who.ALWAYS, pick, Own.NONE, false, null, shipped).pal, "$name, picked")
+            walking++
+            if (id in 931..1050) gen9++
+        }
+        assertTrue(walking >= 1200, "only $walking")
+        assertTrue(gen9 >= 100, "only $gen9 of Gen 9's 120")
     }
 
     // ------------------------------------------------------------------ which animation
@@ -264,6 +317,47 @@ class SpriteIsMeLogicTest {
         // A Nat. Dex build keeps the party where FireRed does and numbers on past 411 (GameMap.expandedSpeciesIds).
         val natDex = map.copy(name = "Nat. Dex", expandedSpeciesIds = true)
         assertEquals(SpriteLead.Reading.Found(Lead(412, 18, false, Dex.NAT_DEX)), SpriteLead.read(party(natDex, mon(412, 18)), natDex))
+        // MaxDex 1.0 keeps its party where its tracker extension says, and numbers its own way: an expanded build that is not
+        // Nat. Dex past 1235.
+        val maxDex = GameMap.MAXDEX_FR_10
+        assertEquals(SpriteLead.Reading.Found(Lead(1236, 18, false, Dex.MAX_DEX)), SpriteLead.read(party(maxDex, mon(1236, 18)), maxDex))
+        assertEquals(listOf(Dex.GEN3, Dex.NAT_DEX, Dex.MAX_DEX), listOf(map, natDex, maxDex).map(SpriteLead::dexOf))
+    }
+
+    // ------------------------------------------------------------------ shiny and forms (Blake, 2026-10-03)
+
+    /** "If they are shiny you should be able to play as shiny". */
+    @Test
+    fun `the lead walks as its game draws it, shiny and in its form`() {
+        // Shiny for the player's ids (trainer id 0 here): the personality's two halves agree.
+        assertEquals(Lead(25, 30, false, look = WalkingPals.Look(shiny = true)), (SpriteLead.read(party(map, mon(25, 30, pid = 0x140010)), map) as SpriteLead.Reading.Found).lead)
+        // Unown's letter from its personality: E, then a shiny E.
+        assertEquals(WalkingPals.Look("201-e"), (SpriteLead.read(party(map, mon(201, 30, pid = 0x108)), map) as SpriteLead.Reading.Found).lead.look)
+        assertEquals(WalkingPals.Look("201-e", shiny = true), (SpriteLead.read(party(map, mon(201, 30, pid = 0x60000)), map) as SpriteLead.Reading.Found).lead.look)
+        // Deoxys in its game's form.
+        for ((m, form) in listOf(GameMap.FIRERED_U_V10 to "386-attack", GameMap.LEAFGREEN_U to "386-defense", GameMap.EMERALD_U to "386-speed", GameMap.RUBY_U to null)) {
+            assertEquals(form, (SpriteLead.read(party(m, mon(410, 30)), m) as SpriteLead.Reading.Found).lead.look.form, m.name)
+        }
+        // A Nat. Dex build's Castform in a weather form walks as Castform.
+        val natDex = map.copy(name = "Nat. Dex", expandedSpeciesIds = true)
+        assertEquals(PalForms.CASTFORM_GEN3, (SpriteLead.read(party(natDex, mon(1163, 30)), natDex) as SpriteLead.Reading.Found).lead.species)
+    }
+
+    @Test
+    fun `the lead's look and the always use shiny switch reach the sheets, which fall back to plain`() {
+        // As the engine wires it: the lookup's look, here the shipped one.
+        val look: (Pal, WalkingPals.Look) -> Pal = ShippedPals.index::look
+        val shinyPikachu = Lead(25, 30, false, look = WalkingPals.Look(shiny = true))
+        assertEquals(Pal(Pack.GEN3, "25", shiny = true), L.choose(Who.LEAD, 0, Own.NONE, false, shinyPikachu, shipped, lookOf = look).pal)
+        assertEquals(Pal(Pack.GEN3, "25"), L.choose(Who.LEAD, 0, Own.NONE, false, lead(25), shipped, lookOf = look).pal)
+        // Always use: the switch, whatever the lead is.
+        assertEquals(Pal(Pack.GEN3, "94", shiny = true), L.choose(Who.ALWAYS, 94, Own.NONE, false, lead(25), shipped, alwaysShiny = true, lookOf = look).pal)
+        assertEquals(Pal(Pack.GEN3, "94"), L.choose(Who.ALWAYS, 94, Own.NONE, false, shinyPikachu, shipped, alwaysShiny = false, lookOf = look).pal, "the lead's shininess is the lead's")
+        // No shiny ships for Karrablast (613 in the Nat. Dex table): its plain sheets, silently.
+        assertEquals(Pal(Pack.NATIONAL, "588"), L.choose(Who.ALWAYS, 613, Own.NONE, false, null, shipped, alwaysShiny = true, lookOf = look).pal)
+        // Unown's letter.
+        val unownE = Lead(201, 30, false, look = WalkingPals.Look("201-e", shiny = true))
+        assertEquals(Pal(Pack.NATIONAL, "201-e", shiny = true), L.choose(Who.LEAD, 0, Own.NONE, false, unownE, shipped, lookOf = look).pal)
     }
 
     @Test

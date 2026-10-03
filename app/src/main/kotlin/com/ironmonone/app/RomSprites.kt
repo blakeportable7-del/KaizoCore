@@ -24,13 +24,18 @@ import java.io.File
  * behind a 48-byte header and XOR-encrypted with the game's LCG. Gen 5 keeps
  * twenty per species; the front sprite is LZ-compressed, drawn as a 64x144
  * tiled strip and unscrambled onto 96x96; the palette is at +18 (+19 shiny).
+ * The alternate forms' pictures are read in the same pass, by [RomFormSprites].
  */
 object RomSprites {
 
     data class Decoded(val width: Int, val height: Int, val argb: IntArray)
 
-    /** The archive inside the ROM, per game; null for a console with no such archive. */
-    fun narcPath(kind: RomKind): String? = when (kind.id) {
+    /**
+     * The archive inside the ROM, per game; null for a console with no such archive. A patched build (Super Kaizo, the
+     * Faster and IronMON patches) is looked up by its base game: its files are the base game's, and matching the exact
+     * id gave those builds no ROM pictures at all (found 2026-10-03).
+     */
+    fun narcPath(kind: RomKind): String? = when (kind.baseId ?: kind.id) {
         "platinum-u" -> "poketool/pokegra/pl_pokegra.narc"
         "heartgold-u", "soulsilver-u" -> "a/0/0/4"
         "black-u", "white-u", "black2-u", "white2-u" -> "a/0/0/4"
@@ -144,7 +149,8 @@ object RomSprites {
         val path = narcPath(kind) ?: return -1
         val dir = cacheDir(filesDir, kind).apply { mkdirs() }
         android.util.Log.i("KaizoCore", "RomSprites: ${kind.id} cache holds ${dir.list()?.size ?: 0} files before decoding")
-        if (File(dir, "$maxSpecies.png").exists() && File(dir, "1.png").exists()) return 0
+        // The forms have a pass of their own (RomFormSprites), so a cache made before they were read gets them next visit.
+        if (File(dir, "$maxSpecies.png").exists() && File(dir, "1.png").exists() && RomFormSprites.done(dir, kind)) return 0
         val nds = NDSRom(rom.absolutePath)
         val narc = NARCArchive(nds.getFile(path))
         val gen5 = isGen5(kind)
@@ -169,6 +175,7 @@ object RomSprites {
             }
             onProgress?.invoke(species)
         }
+        written += RomFormSprites.decodeAll(nds, dir, kind, ::writePng)
         android.util.Log.i("KaizoCore", "RomSprites: ${kind.id} decoded $written new sprites; cache now ${dir.list()?.size ?: 0} files")
         return written
     }

@@ -3,7 +3,10 @@ package com.ironmonone.app
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.ui.Alignment
@@ -50,21 +53,19 @@ object HiddenPowerTypes {
         file = f
         types.clear()
         runCatching {
-            if (f.exists()) f.forEachLine { line ->
-                val (k, v) = line.split('=').takeIf { it.size == 2 } ?: return@forEachLine
-                val pid = k.trim().toLongOrNull() ?: return@forEachLine
-                val t = v.trim().toIntOrNull() ?: return@forEachLine
+            DiskWriter.read(f)?.lineSequence()?.forEach { line ->
+                val (k, v) = line.split('=').takeIf { it.size == 2 } ?: return@forEach
+                val pid = k.trim().toLongOrNull() ?: return@forEach
+                val t = v.trim().toIntOrNull() ?: return@forEach
                 if (t in CYCLE) types[pid] = t
             }
         }
     }
 
+    /** Whole or not at all, off the main thread (DiskWriter): it was rewritten in place on each tap (rc32 audit P2 #65). */
     private fun save() {
         val f = file ?: return
-        runCatching {
-            f.parentFile?.mkdirs()
-            f.writeText(types.entries.joinToString("") { "${it.key}=${it.value}\n" })
-        }
+        DiskWriter.write(f, types.entries.joinToString("") { "${it.key}=${it.value}\n" })
     }
 }
 
@@ -86,11 +87,20 @@ private val RIGHT_ARROW = listOf(
 internal fun HiddenPowerPicker(pid: Long) {
     val t = HiddenPowerTypes.of(pid)
     Row(verticalAlignment = Alignment.CenterVertically) {
-        PcPixelImage(LEFT_ARROW, Pc.Text, Modifier.clickable { HiddenPowerTypes.prev(pid) })
-        Spacer(Modifier.width(6.dp))
+        // Each arrow a 48dp button with a spoken name (rc32 audit P2 #19): they were the arrow's own pixels, unnamed.
+        HiddenPowerStep(HiddenPowerCopy.PREVIOUS) { HiddenPowerTypes.prev(pid) }
         if (t != null) InfoTypeTag(com.ironmonone.tracker.Gen3Types.name(t), pcTypeColor(t))
         else InfoTag("???", Pc.Dim)
-        Spacer(Modifier.width(6.dp))
-        PcPixelImage(RIGHT_ARROW, Pc.Text, Modifier.clickable { HiddenPowerTypes.next(pid) })
+        HiddenPowerStep(HiddenPowerCopy.NEXT) { HiddenPowerTypes.next(pid) }
     }
+}
+
+@Composable
+private fun HiddenPowerStep(spoken: String, onClick: () -> Unit) {
+    androidx.compose.foundation.layout.Box(
+        Modifier.sizeIn(minWidth = PcMin.DIALOG_TOUCH_DP.dp, minHeight = PcMin.DIALOG_TOUCH_DP.dp)
+            .clickable(onClickLabel = spoken, role = androidx.compose.ui.semantics.Role.Button) { onClick() }
+            .semantics { contentDescription = spoken },
+        contentAlignment = Alignment.Center,
+    ) { PcPixelImage(if (spoken == HiddenPowerCopy.NEXT) RIGHT_ARROW else LEFT_ARROW, Pc.Text) }
 }

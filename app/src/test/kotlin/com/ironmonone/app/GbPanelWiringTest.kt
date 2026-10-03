@@ -16,7 +16,9 @@ class GbPanelWiringTest {
     /** A Game Boy battle opens on your own card unless the player picked auto swap (TrackerOptions.autoSwapToEnemy). */
     @Test
     fun `the panel and the gear ask auto swap for the game being played`() {
-        assertTrue("mutableStateOf(!(state.inBattle && TrackerOptions.autoSwapToEnemy(gameBoy = generation < 3)))" in src("TrackerPanel.kt"))
+        // The panel hands the shared battle view the setting for this game (GbaViewState.onRead, rc34).
+        assertTrue("view.onRead(state, TrackerOptions.autoSwapToEnemy(gameBoy = generation < 3))" in src("TrackerPanel.kt"))
+        assertTrue("view = BattleView(own = !(state.inBattle && autoSwap))" in src("DoublesView.kt"))
         // Two toggles of that name: the DS tracker's own setting, else the Gen 1 to 3 one.
         val gear = src("TrackerGearDialog.kt").lines().filter { "\"Auto swap to enemy\"" in it }
         assertEquals(2, gear.size, gear.joinToString("\n"))
@@ -49,7 +51,8 @@ class GbPanelWiringTest {
     fun `the carousel's last attack line and its colour come from LastAttack`() {
         val panel = src("TrackerPanel.kt")
         assertTrue("com.ironmonone.tracker.LastAttack.text(mv, state.lastAttackDamage, state.lastAttackTeams)" in panel)
-        // The Pokemon on the field takes the hit, not party slot 1 after a switch (TrackerState.onField, rc33 audit P1).
-        assertTrue("lastAttackLethal = com.ironmonone.tracker.LastAttack.lethal(state.lastAttackDamage, state.onField?.mon?.curHp)," in panel)
+        // The Pokemon on the field takes the hit, not party slot 1 after a switch (TrackerState.onField, rc33 audit P1), and in
+        // a double battle the one of yours the view shows (GbaViewState.own, rc34).
+        assertTrue("lastAttackLethal = com.ironmonone.tracker.LastAttack.lethal(state.lastAttackDamage, view.own(state)?.mon?.curHp)," in panel)
     }
 }

@@ -1,0 +1,11 @@
+Public domain parts of the mGBA core
+
+MurmurHash3, in src/util/hash.c:
+
+MurmurHash3 was written by Austin Appleby, and is placed in the public
+domain. The author hereby disclaims copyright to this source code.
+
+The LZMA SDK, in src/third-party/lzma (7z.h):
+
+7z.h -- 7z interface
+2017-04-03 : Igor Pavlov : Public domain

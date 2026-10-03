@@ -1,0 +1,1280 @@
+1	Bulbasaur	16	6.9
+2	Ivysaur	32	13.0
+3	Venusaur		100.0
+4	Charmander	16	8.5
+5	Charmeleon	36	19.0
+6	Charizard		90.5
+7	Squirtle	16	9.0
+8	Wartortle	36	22.5
+9	Blastoise		85.5
+10	Caterpie	7	2.9
+11	Metapod	10	9.9
+12	Butterfree		32.0
+13	Weedle	7	3.2
+14	Kakuna	10	10.0
+15	Beedrill		29.5
+16	Pidgey	18	1.8
+17	Pidgeotto	36	30.0
+18	Pidgeot		39.5
+19	Rattata	20	3.5
+20	Raticate		18.5
+21	Spearow	20	2.0
+22	Fearow		38.0
+23	Ekans	22	6.9
+24	Arbok		65.0
+25	Pikachu	THUNDER	6.0
+26	Raichu		30.0
+27	Sandshrew	22	12.0
+28	Sandslash		29.5
+29	Nidoran F	16	7.0
+30	Nidorina	MOON	20.0
+31	Nidoqueen		60.0
+32	Nidoran M	16	9.0
+33	Nidorino	MOON	19.5
+34	Nidoking		62.0
+35	Clefairy	MOON	7.5
+36	Clefable		40.0
+37	Vulpix	FIRE	9.9
+38	Ninetales		19.9
+39	Jigglypuff	MOON	5.5
+40	Wigglytuff		12.0
+41	Zubat	22	7.5
+42	Golbat	FRIEND	55.0
+43	Oddish	21	5.4
+44	Gloom	LEAF_SUN	8.6
+45	Vileplume		18.6
+46	Paras	24	5.4
+47	Parasect		29.5
+48	Venonat	31	30.0
+49	Venomoth		12.5
+50	Diglett	26	0.8
+51	Dugtrio		33.3
+52	Meowth	28	4.2
+53	Persian		32.0
+54	Psyduck	33	19.6
+55	Golduck		76.6
+56	Mankey	28	28.0
+57	Primeape	43	32.0
+58	Growlithe	FIRE	19.0
+59	Arcanine		155.0
+60	Poliwag	25	12.4
+61	Poliwhirl	WATER_ROCK	20.0
+62	Poliwrath		54.0
+63	Abra	16	19.5
+64	Kadabra	LINKING_CORD	56.5
+65	Alakazam		48.0
+66	Machop	28	19.5
+67	Machoke	LINKING_CORD	70.5
+68	Machamp		130.0
+69	Bellsprout	21	4.0
+70	Weepinbell	LEAF	6.4
+71	Victreebel		15.5
+72	Tentacool	30	45.5
+73	Tentacruel		55.0
+74	Geodude	25	20.0
+75	Graveler	LINKING_CORD	105.0
+76	Golem		300.0
+77	Ponyta	40	30.0
+78	Rapidash		95.0
+79	Slowpoke	ROCK37	36.0
+80	Slowbro		78.5
+81	Magnemite	30	6.0
+82	Magneton	THUNDER	60.0
+83	Farfetch'd		15.0
+84	Doduo	31	39.2
+85	Dodrio		85.2
+86	Seel	34	90.0
+87	Dewgong		120.0
+88	Grimer	38	30.0
+89	Muk", -- PUMP SLOP		30.0
+90	Shellder	WATER	4.0
+91	Cloyster		132.5
+92	Gastly	25	0.1
+93	Haunter	LINKING_CORD	0.1
+94	Gengar		40.5
+95	Onix	METAL_COAT	210.0
+96	Drowzee	26	32.4
+97	Hypno		75.6
+98	Krabby	28	6.5
+99	Kingler		60.0
+100	Voltorb	30	10.4
+101	Electrode		66.6
+102	Exeggcute	LEAF	2.5
+103	Exeggutor		120.0
+104	Cubone	28	6.5
+105	Marowak		45.0
+106	Hitmonlee		49.8
+107	Hitmonchan		50.2
+108	Lickitung	33	65.5
+109	Koffing	35	1.0
+110	Weezing		9.5
+111	Rhyhorn	42	115.0
+112	Rhydon	KINGS_ROCK	120.0
+113	Chansey	FRIEND	34.6
+114	Tangela	38	35.0
+115	Kangaskhan		80.0
+116	Horsea	32	8.0
+117	Seadra	DRAGON_SCALE	25.0
+118	Goldeen	33	15.0
+119	Seaking		39.0
+120	Staryu	WATER	34.5
+121	Starmie		80.0
+122	Mr. Mime		54.5
+123	Scyther	COAT_ROCK	56.0
+124	Jynx		40.6
+125	Electabuzz	THUNDER	30.0
+126	Magmar", -- MAMGAR	FIRE	44.5
+127	Pinsir		55.0
+128	Tauros		88.4
+129	Magikarp	20	10.0
+130	Gyarados		235.0
+131	Lapras		220.0
+132	Ditto		4.0
+133	Eevee	EEVEE_STONES_NATDEX	6.5
+134	Vaporeon		29.0
+135	Jolteon		24.5
+136	Flareon		25.0
+137	Porygon	UPGRADE	36.5
+138	Omanyte	40	7.5
+139	Omastar", -- LORD HELIX		35.0
+140	Kabuto	40	11.5
+141	Kabutops		40.5
+142	Aerodactyl		59.0
+143	Snorlax		460.0
+144	Articuno		55.4
+145	Zapdos		52.6
+146	Moltres		60.0
+147	Dratini	30	3.3
+148	Dragonair	55	16.5
+149	Dragonite		210.0
+150	Mewtwo		122.0
+151	Mew		4.0
+152	Chikorita	16	6.4
+153	Bayleef	32	15.8
+154	Meganium		100.5
+155	Cyndaquil	14	7.9
+156	Quilava	36	19.0
+157	Typhlosion		79.5
+158	Totodile	18	9.5
+159	Croconaw	30	25.0
+160	Feraligatr		88.8
+161	Sentret	15	6.0
+162	Furret		32.5
+163	Hoothoot	20	21.2
+164	Noctowl		40.8
+165	Ledyba	18	10.8
+166	Ledian		35.6
+167	Spinarak	22	8.5
+168	Ariados		33.5
+169	Crobat		75.0
+170	Chinchou	27	12.0
+171	Lanturn		22.5
+172	Pichu	FRIEND	2.0
+173	Cleffa	FRIEND	3.0
+174	Igglybuff	FRIEND	1.0
+175	Togepi	FRIEND	1.5
+176	Togetic	SHINY	3.2
+177	Natu	25	2.0
+178	Xatu		15.0
+179	Mareep	15	7.8
+180	Flaaffy	30	13.3
+181	Ampharos		61.5
+182	Bellossom		5.8
+183	Marill	18	8.5
+184	Azumarill		28.5
+185	Sudowoodo		38.0
+186	Politoed		33.9
+187	Hoppip	18	0.5
+188	Skiploom	27	1.0
+189	Jumpluff		3.0
+190	Aipom	32	11.5
+191	Sunkern	SUN	1.8
+192	Sunflora		8.5
+193	Yanma	33	38.0
+194	Wooper	20	8.5
+195	Quagsire		75.0
+196	Espeon		26.5
+197	Umbreon		27.0
+198	Murkrow	DUSK	2.1
+199	Slowking		79.5
+200	Misdreavus	DUSK	1.0
+201	Unown		5.0
+202	Wobbuffet		28.5
+203	Girafarig	32	41.5
+204	Pineco	31	7.2
+205	Forretress		125.8
+206	Dunsparce	32	14.0
+207	Gligar	RAZOR_FANG	64.8
+208	Steelix		400.0
+209	Snubbull	23	7.8
+210	Granbull		48.7
+211	Qwilfish		3.9
+212	Scizor		118.0
+213	Shuckle		20.5
+214	Heracross		54.0
+215	Sneasel	RAZOR_CLAW	28.0
+216	Teddiursa	30	8.8
+217	Ursaring	MOON	125.8
+218	Slugma	38	35.0
+219	Magcargo		55.0
+220	Swinub	33	6.5
+221	Piloswine	45	55.8
+222	Corsola		5.0
+223	Remoraid	25	12.0
+224	Octillery		28.5
+225	Delibird		16.0
+226	Mantine		220.0
+227	Skarmory		50.5
+228	Houndour	24	10.8
+229	Houndoom		35.0
+230	Kingdra		152.0
+231	Phanpy	25	33.5
+232	Donphan		120.0
+233	Porygon2	DUBIOUS_DISC	32.5
+234	Stantler	41	71.2
+235	Smeargle		58.0
+236	Tyrogue	20	21.0
+237	Hitmontop		48.0
+238	Smoochum	30	6.0
+239	Elekid	30	23.5
+240	Magby	30	21.4
+241	Miltank		75.5
+242	Blissey		46.8
+243	Raikou		178.0
+244	Entei		198.0
+245	Suicune		187.0
+246	Larvitar	30	72.0
+247	Pupitar	55	152.0
+248	Tyranitar		202.0
+249	Lugia		216.0
+250	Ho-Oh		199.0
+251	Celebi		5.0
+252	none		0.0
+253	none		0.0
+254	none		0.0
+255	none		0.0
+256	none		0.0
+257	none		0.0
+258	none		0.0
+259	none		0.0
+260	none		0.0
+261	none		0.0
+262	none		0.0
+263	none		0.0
+264	none		0.0
+265	none		0.0
+266	none		0.0
+267	none		0.0
+268	none		0.0
+269	none		0.0
+270	none		0.0
+271	none		0.0
+272	none		0.0
+273	none		0.0
+274	none		0.0
+275	none		0.0
+276	none		0.0
+277	Treecko	16	5.0
+278	Grovyle	36	21.6
+279	Sceptile		52.2
+280	Torchic	16	2.5
+281	Combusken	36	19.5
+282	Blaziken		52.0
+283	Mudkip	16	7.6
+284	Marshtomp	36	28.0
+285	Swampert		81.9
+286	Poochyena	18	13.6
+287	Mightyena		37.0
+288	Zigzagoon	20	17.5
+289	Linoone		32.5
+290	Wurmple	7	3.6
+291	Silcoon	10	10.0
+292	Beautifly		28.4
+293	Cascoon	10	11.5
+294	Dustox		31.6
+295	Lotad	14	2.6
+296	Lombre	WATER	32.5
+297	Ludicolo		55.0
+298	Seedot	14	4.0
+299	Nuzleaf	LEAF	28.0
+300	Shiftry		59.6
+301	Nincada	20	5.5
+302	Ninjask		12.0
+303	Shedinja		1.2
+304	Taillow	22	2.3
+305	Swellow		19.8
+306	Shroomish	23	4.5
+307	Breloom		39.2
+308	Spinda		5.0
+309	Wingull	25	9.5
+310	Pelipper		28.0
+311	Surskit	22	1.7
+312	Masquerain		3.6
+313	Wailmer	40	130.0
+314	Wailord", -- STONKS		398.0
+315	Skitty	MOON	11.0
+316	Delcatty		32.6
+317	Kecleon", -- KEKLEO-N		22.0
+318	Baltoy	36	21.5
+319	Claydol		108.0
+320	Nosepass	THUNDER	97.0
+321	Torkoal		80.4
+322	Sableye		11.0
+323	Barboach	30	1.9
+324	Whiscash		23.6
+325	Luvdisc		8.7
+326	Corphish	30	11.5
+327	Crawdaunt", -- FRAUD		32.8
+328	Feebas	WATER	7.4
+329	Milotic", -- THICC		162.0
+330	Carvanha	30	20.8
+331	Sharpedo		88.8
+332	Trapinch	35	15.0
+333	Vibrava	45	15.3
+334	Flygon		82.0
+335	Makuhita	24	86.4
+336	Hariyama		253.8
+337	Electrike	26	15.2
+338	Manectric		40.2
+339	Numel	33	24.0
+340	Camerupt		220.0
+341	Spheal	32	39.5
+342	Sealeo	44	87.6
+343	Walrein		150.6
+344	Cacnea	32	51.3
+345	Cacturne		77.4
+346	Snorunt	DAWN42	16.8
+347	Glalie		256.5
+348	Lunatone		168.0
+349	Solrock		154.0
+350	Azurill	FRIEND	2.0
+351	Spoink	32	30.6
+352	Grumpig		71.5
+353	Plusle		4.2
+354	Minun		4.2
+355	Mawile		11.5
+356	Meditite	37	11.2
+357	Medicham		31.5
+358	Swablu	35	1.2
+359	Altaria		20.6
+360	Wynaut	15	14.0
+361	Duskull	37	15.0
+362	Dusclops	DUSK	30.6
+363	Roselia	SHINY	2.0
+364	Slakoth	18	24.0
+365	Vigoroth	36	46.5
+366	Slaking		130.5
+367	Gulpin	26	10.3
+368	Swalot		80.0
+369	Tropius		100.0
+370	Whismur	20	16.3
+371	Loudred	40	40.5
+372	Exploud		84.0
+373	Clamperl	DEEPSEA	52.5
+374	Huntail		27.0
+375	Gorebyss		22.6
+376	Absol		47.0
+377	Shuppet	37	2.3
+378	Banette		12.5
+379	Seviper		52.5
+380	Zangoose		40.3
+381	Relicanth		23.4
+382	Aron	32	60.0
+383	Lairon	42	120.0
+384	Aggron		360.0
+385	Castform		0.8
+386	Volbeat		17.7
+387	Illumise		17.7
+388	Lileep	40	23.8
+389	Cradily		60.4
+390	Anorith	40	12.5
+391	Armaldo		68.2
+392	Ralts	20	6.6
+393	Kirlia	DAWN30	20.2
+394	Gardevoir		48.4
+395	Bagon	30	42.1
+396	Shelgon	50	110.5
+397	Salamence		102.6
+398	Beldum	20	95.2
+399	Metang	45	202.5
+400	Metagross		550.0
+401	Regirock		230.0
+402	Regice		175.0
+403	Registeel		205.0
+404	Kyogre		352.0
+405	Groudon		950.0
+406	Rayquaza		206.5
+407	Latias		40.0
+408	Latios		60.0
+409	Jirachi		1.1
+410	Deoxys		60.8
+411	Chimecho		1.0
+412	Turtwig	18	10.2
+413	Grotle	32	97.0
+414	Torterra		310.0
+415	Chimchar	14	6.2
+416	Monferno	36	22.0
+417	Infernape		55.0
+418	Piplup	16	5.2
+419	Prinplup	36	23.0
+420	Empoleon		84.5
+421	Starly	14	2.0
+422	Staravia	34	15.5
+423	Staraptor		24.9
+424	Bidoof	15	20.0
+425	Bibarel		31.5
+426	Kricketot	10	2.2
+427	Kricketune		25.5
+428	Shinx	15	9.5
+429	Luxio	30	30.5
+430	Luxray		42.0
+431	Budew	FRIEND	1.2
+432	Roserade		14.5
+433	Cranidos	30	31.5
+434	Rampardos		102.5
+435	Shieldon	30	57.0
+436	Bastiodon		149.5
+437	Burmy	20	3.4
+438	Wormadam		6.5
+439	Mothim		23.3
+440	Combee	FEMALE21	5.5
+441	Vespiquen		38.5
+442	Pachirisu		3.9
+443	Buizel	26	29.5
+444	Floatzel		33.5
+445	Cherubi	25	3.3
+446	Cherrim		9.3
+447	Shellos	30	6.3
+448	Gastrodon		29.9
+449	Ambipom		20.3
+450	Drifloon	28	1.2
+451	Drifblim		15.0
+452	Buneary	FRIEND	5.5
+453	Lopunny		33.3
+454	Mismagius		4.4
+455	Honchkrow		27.3
+456	Glameow	38	3.9
+457	Purugly		43.8
+458	Chingling	FRIEND	0.6
+459	Stunky	34	19.2
+460	Skuntank		38.0
+461	Bronzor	33	60.5
+462	Bronzong		187.0
+463	Bonsly	15	15.0
+464	Mime Jr.	15	13.0
+465	Happiny	SHINY	24.4
+466	Chatot		1.9
+467	Spiritomb		108.0
+468	Gible	24	20.5
+469	Gabite	48	56.0
+470	Garchomp		95.0
+471	Munchlax	FRIEND	105.0
+472	Riolu	FRIEND	20.2
+473	Lucario		54.0
+474	Hippopotas	34	49.5
+475	Hippowdon		300.0
+476	Skorupi	40	12.0
+477	Drapion		61.5
+478	Croagunk	37	23.0
+479	Toxicroak		44.4
+480	Carnivine		27.0
+481	Finneon	31	7.0
+482	Lumineon		24.0
+483	Mantyke	35	65.0
+484	Snover	40	50.5
+485	Abomasnow		135.5
+486	Weavile		34.0
+487	Magnezone		180.0
+488	Lickilicky		140.0
+489	Rhyperior		282.8
+490	Tangrowth		128.6
+491	Electivire		138.6
+492	Magmortar		68.0
+493	Togekiss		38.0
+494	Yanmega		51.5
+495	Leafeon		25.5
+496	Glaceon		25.9
+497	Gliscor		42.5
+498	Mamoswine		291.0
+499	Porygon-Z		34.0
+500	Gallade		52.0
+501	Probopass		340.0
+502	Dusknoir		106.6
+503	Froslass		26.6
+504	Rotom		0.3
+505	Uxie		0.3
+506	Mesprit		0.3
+507	Azelf		0.3
+508	Dialga		683.0
+509	Palkia		336.0
+510	Heatran		430.0
+511	Regigigas		420.0
+512	Giratina		750.0
+513	Cresselia		85.6
+514	Phione		3.1
+515	Manaphy		1.4
+516	Darkrai		50.5
+517	Shaymin		2.1
+518	Arceus		320.0
+519	Victini		4.0
+520	Snivy	17	8.1
+521	Servine	36	16.0
+522	Serperior		63.0
+523	Tepig	17	9.9
+524	Pignite	36	55.5
+525	Emboar		150.0
+526	Oshawott	17	5.9
+527	Dewott	36	24.5
+528	Samurott		94.6
+529	Patrat	20	11.6
+530	Watchog		27.0
+531	Lillipup	16	4.1
+532	Herdier	32	14.7
+533	Stoutland		61.0
+534	Purrloin	20	10.1
+535	Liepard		37.5
+536	Pansage	LEAF	10.5
+537	Simisage		30.5
+538	Pansear	FIRE	11.0
+539	Simisear		28.0
+540	Panpour	WATER	13.5
+541	Simipour		29.0
+542	Munna	MOON	23.3
+543	Musharna		60.5
+544	Pidove	21	2.1
+545	Tranquill	32	15.0
+546	Unfezant		29.0
+547	Blitzle	27	29.8
+548	Zebstrika		79.5
+549	Roggenrola	25	18.0
+550	Boldore	LINKING_CORD	102.0
+551	Gigalith		260.0
+552	Woobat	FRIEND	2.1
+553	Swoobat		10.5
+554	Drilbur	31	8.5
+555	Excadrill		40.4
+556	Audino		31.0
+557	Timburr	25	12.5
+558	Gurdurr	LINKING_CORD	40.0
+559	Conkeldurr		87.0
+560	Tympole	25	4.5
+561	Palpitoad	36	17.0
+562	Seismitoad		62.0
+563	Throh		55.5
+564	Sawk		51.0
+565	Sewaddle	20	2.5
+566	Swadloon	FRIEND	7.3
+567	Leavanny		20.5
+568	Venipede	22	5.3
+569	Whirlipede	30	58.5
+570	Scolipede		200.5
+571	Cottonee	SUN	0.6
+572	Whimsicott		6.6
+573	Petilil	SUN	6.6
+574	Lilligant		16.3
+575	Basculin		18.0
+576	Sandile	29	15.2
+577	Krokorok	40	33.4
+578	Krookodile		96.3
+579	Darumaka	35	37.5
+580	Darmanitan		92.9
+581	Maractus		28.0
+582	Dwebble	34	14.5
+583	Crustle		200.0
+584	Scraggy	39	11.8
+585	Scrafty		30.0
+586	Sigilyph		14.0
+587	Yamask	34	1.5
+588	Cofagrigus		76.5
+589	Tirtouga	37	16.5
+590	Carracosta		81.0
+591	Archen	37	9.5
+592	Archeops		32.0
+593	Trubbish	36	31.0
+594	Garbodor		107.3
+595	Zorua	30	12.5
+596	Zoroark		81.1
+597	Minccino	SHINY	5.8
+598	Cinccino		7.5
+599	Gothita	32	5.8
+600	Gothorita	41	18.0
+601	Gothitelle		44.0
+602	Solosis	32	1.0
+603	Duosion	41	8.0
+604	Reuniclus		20.1
+605	Ducklett	35	5.5
+606	Swanna		24.2
+607	Vanillite	35	5.7
+608	Vanillish	47	41.0
+609	Vanilluxe		57.5
+610	Deerling	34	19.5
+611	Sawsbuck		92.5
+612	Emolga		5.0
+613	Karrablast	LINKING_CORD	5.9
+614	Escavalier		33.0
+615	Foongus	39	1.0
+616	Amoonguss		10.5
+617	Frillish	40	33.0
+618	Jellicent		135.0
+619	Alomomola		31.6
+620	Joltik	36	0.6
+621	Galvantula		14.3
+622	Ferroseed	40	18.8
+623	Ferrothorn		110.0
+624	Klink	38	21.0
+625	Klang	49	51.0
+626	Klinklang		81.0
+627	Tynamo	39	0.3
+628	Eelektrik	THUNDER	22.0
+629	Eelektross		80.5
+630	Elgyem	42	9.0
+631	Beheeyem		34.5
+632	Litwick	41	3.1
+633	Lampent	DUSK	13.0
+634	Chandelure		34.3
+635	Axew	38	18.0
+636	Fraxure	48	36.0
+637	Haxorus		105.5
+638	Cubchoo	37	8.5
+639	Beartic		260.0
+640	Cryogonal		148.0
+641	Shelmet	LINKING_CORD	7.7
+642	Accelgor		25.3
+643	Stunfisk		11.0
+644	Mienfoo	50	20.0
+645	Mienshao		35.5
+646	Druddigon		139.0
+647	Golett	43	92.0
+648	Golurk		330.0
+649	Pawniard	52	10.2
+650	Bisharp	62	70.0
+651	Bouffalant		94.6
+652	Rufflet	54	10.5
+653	Braviary		41.0
+654	Vullaby	54	9.0
+655	Mandibuzz		39.5
+656	Heatmor		58.0
+657	Durant		33.0
+658	Deino	50	17.3
+659	Zweilous	64	50.0
+660	Hydreigon		160.0
+661	Larvesta	59	28.8
+662	Volcarona		46.0
+663	Cobalion		250.0
+664	Terrakion		260.0
+665	Virizion		200.0
+666	Tornadus		63.0
+667	Thundurus		61.0
+668	Reshiram		330.0
+669	Zekrom		345.0
+670	Landorus		68.0
+671	Kyurem		325.0
+672	Keldeo		48.5
+673	Meloetta		6.5
+674	Genesect		82.5
+675	Chespin	16	9.0
+676	Quilladin	36	29.0
+677	Chesnaught		90.0
+678	Fennekin	16	9.4
+679	Braixen	36	14.5
+680	Delphox		39.0
+681	Froakie	16	7.0
+682	Frogadier	36	10.9
+683	Greninja		40.0
+684	Bunnelby	20	5.0
+685	Diggersby		42.4
+686	Fletchling	17	1.7
+687	Fletchinder	35	16.0
+688	Talonflame		24.5
+689	Scatterbug	9	2.5
+690	Spewpa	12	8.4
+691	Vivillon		17.0
+692	Litleo	35	13.5
+693	Pyroar		81.5
+694	Flabébé	19	0.1
+695	Floette	SHINY	0.9
+696	Florges		10.0
+697	Skiddo	32	31.0
+698	Gogoat		91.0
+699	Pancham	32	8.0
+700	Pangoro		136.0
+701	Furfrou		28.0
+702	Espurr	25	3.5
+703	Meowstic		8.5
+704	Honedge	35	2.0
+705	Doublade	DUSK	4.5
+706	Aegislash		53.0
+707	Spritzee	LINKING_CORD	0.5
+708	Aromatisse		15.5
+709	Swirlix	LINKING_CORD	3.5
+710	Slurpuff		5.0
+711	Inkay	30	3.5
+712	Malamar		47.0
+713	Binacle	39	31.0
+714	Barbaracle		96.0
+715	Skrelp	48	7.3
+716	Dragalge		81.5
+717	Clauncher	37	8.3
+718	Clawitzer		35.3
+719	Helioptile	SUN	6.0
+720	Heliolisk		21.0
+721	Tyrunt	39	26.0
+722	Tyrantrum		270.0
+723	Amaura	39	25.2
+724	Aurorus		225.0
+725	Sylveon		23.5
+726	Hawlucha		21.5
+727	Dedenne		2.2
+728	Carbink		5.7
+729	Goomy	40	2.8
+730	Sliggoo	50	17.5
+731	Goodra		150.5
+732	Klefki		3.0
+733	Phantump	LINKING_CORD	7.0
+734	Trevenant		71.0
+735	Pumpkaboo	LINKING_CORD	5.0
+736	Gourgeist		12.5
+737	Bergmite	37	99.5
+738	Avalugg		505.0
+739	Noibat	48	8.0
+740	Noivern		85.0
+741	Xerneas		215.0
+742	Yveltal		203.0
+743	Zygarde		305.0
+744	Diancie		8.8
+745	Hoopa		9.0
+746	Volcanion		195.0
+747	Rowlet	17	1.5
+748	Dartrix	34	16.0
+749	Decidueye		36.6
+750	Litten	17	4.3
+751	Torracat	34	25.0
+752	Incineroar		83.0
+753	Popplio	17	7.5
+754	Brionne	34	17.5
+755	Primarina		44.0
+756	Pikipek	14	1.2
+757	Trumbeak	28	14.8
+758	Toucannon		26.0
+759	Yungoos	20	6.0
+760	Gumshoos		14.2
+761	Grubbin	20	4.4
+762	Charjabug	THUNDER	10.5
+763	Vikavolt		45.0
+764	Crabrawler	ICE	7.0
+765	Crabominable		180.0
+766	Oricorio		3.4
+767	Cutiefly	25	0.2
+768	Ribombee		0.5
+769	Rockruff	25	9.2
+770	Lycanroc		25.0
+771	Wishiwashi		0.3
+772	Mareanie	38	8.0
+773	Toxapex		14.5
+774	Mudbray	30	110.0
+775	Mudsdale		920.0
+776	Dewpider	22	4.0
+777	Araquanid		82.0
+778	Fomantis	34	1.5
+779	Lurantis		18.5
+780	Morelull	24	1.5
+781	Shiinotic		11.5
+782	Salandit	FEMALE33	4.8
+783	Salazzle		22.2
+784	Stufful	27	6.8
+785	Bewear		135.0
+786	Bounsweet	18	3.2
+787	Steenee	29	8.2
+788	Tsareena		21.4
+789	Comfey		0.3
+790	Oranguru		76.0
+791	Passimian		82.8
+792	Wimpod	30	12.0
+793	Golisopod		108.0
+794	Sandygast	42	70.0
+795	Palossand		250.0
+796	Pyukumuku		1.2
+797	Type: Null	FRIEND	120.5
+798	Silvally		100.5
+799	Minior		40.0
+800	Komala		19.9
+801	Turtonator		212.0
+802	Togedemaru		3.3
+803	Mimikyu		0.7
+804	Bruxish		19.0
+805	Drampa		185.0
+806	Dhelmise		210.0
+807	Jangmo-o	35	29.7
+808	Hakamo-o	45	47.0
+809	Kommo-o		78.2
+810	Tapu Koko		20.5
+811	Tapu Lele		18.6
+812	Tapu Bulu		45.5
+813	Tapu Fini		21.2
+814	Cosmog	43	0.1
+815	Cosmoem	53	999.9
+816	Solgaleo		230.0
+817	Lunala		120.0
+818	Nihilego		55.5
+819	Buzzwole		333.6
+820	Pheromosa		25.0
+821	Xurkitree		100.0
+822	Celesteela		999.9
+823	Kartana		0.1
+824	Guzzlord		888.0
+825	Necrozma		230.0
+826	Magearna		80.5
+827	Marshadow		22.2
+828	Poipole	50	1.8
+829	Naganadel		150.0
+830	Stakataka		820.0
+831	Blacephalon		13.0
+832	Zeraora		44.5
+833	Meltan		8.0
+834	Melmetal		80.0
+835	Grookey	16	5.0
+836	Thwackey	35	14.0
+837	Rillaboom		90.0
+838	Scorbunny	16	4.5
+839	Raboot	35	9.0
+840	Cinderace		33.0
+841	Sobble	16	4.0
+842	Drizzile	35	11.5
+843	Inteleon		45.2
+844	Skwovet	24	2.5
+845	Greedent		6.0
+846	Rookidee	18	1.8
+847	Corvisquire	38	16.0
+848	Corviknight		75.0
+849	Blipbug	10	8.0
+850	Dottler	30	19.5
+851	Orbeetle		40.8
+852	Nickit	18	8.9
+853	Thievul		19.9
+854	Gossifleur	20	2.2
+855	Eldegoss		2.5
+856	Wooloo	24	6.0
+857	Dubwool		43.0
+858	Chewtle	22	8.5
+859	Drednaw		115.5
+860	Yamper	25	13.5
+861	Boltund		34.0
+862	Rolycoly	18	12.0
+863	Carkol	34	78.0
+864	Coalossal		310.5
+865	Applin	SUN_LEAF_DAWN	0.5
+866	Flapple		1.0
+867	Appletun		13.0
+868	Silicobra	36	7.6
+869	Sandaconda		65.5
+870	Cramorant		18.0
+871	Arrokuda	26	1.0
+872	Barraskewda		30.0
+873	Toxel	30	11.0
+874	Toxtricity		40.0
+875	Sizzlipede	28	1.0
+876	Centiskorch		120.0
+877	Clobbopus	35	4.0
+878	Grapploct		39.0
+879	Sinistea	MOON	0.2
+880	Polteageist		0.4
+881	Hatenna	32	3.4
+882	Hattrem	42	4.8
+883	Hatterene		5.1
+884	Impidimp	32	5.5
+885	Morgrem	42	12.5
+886	Grimmsnarl		61.0
+887	Obstagoon		46.0
+888	Perrserker		28.0
+889	Cursola		0.4
+890	Sirfetch'd		117.0
+891	Mr. Rime		58.2
+892	Runerigus		66.6
+893	Milcery	SHINY	0.3
+894	Alcremie		0.5
+895	Falinks		62.0
+896	Pincurchin		1.0
+897	Snom	FRIEND	3.8
+898	Frosmoth		42.0
+899	Stonjourner		520.0
+900	Eiscue		89.0
+901	Indeedee		28.0
+902	Morpeko		3.0
+903	Cufant	34	100.0
+904	Copperajah		650.0
+905	Dracozolt		190.0
+906	Arctozolt		150.0
+907	Dracovish		215.0
+908	Arctovish		175.0
+909	Duraludon	METAL_COAT	40.0
+910	Dreepy	50	2.0
+911	Drakloak	60	11.0
+912	Dragapult		50.0
+913	Zacian		110.0
+914	Zamazenta		210.0
+915	Eternatus		950.0
+916	Kubfu	WATER_DUSK	12.0
+917	Urshifu		105.0
+918	Zarude		70.0
+919	Regieleki		145.0
+920	Regidrago		200.0
+921	Glastrier		800.0
+922	Spectrier		44.5
+923	Calyrex		7.7
+924	Wyrdeer		95.1
+925	Kleavor		89.0
+926	Ursaluna		290.0
+927	Basculegion		110.0
+928	Sneasler		43.0
+929	Overqwil		60.5
+930	Enamorus		48.0
+931	Sprigatito	16	4.1
+932	Floragato	36	12.2
+933	Meowscarada		31.2
+934	Fuecoco	16	9.8
+935	Crocalor	36	30.7
+936	Skeledirge		326.5
+937	Quaxly	16	6.1
+938	Quaxwell	36	21.5
+939	Quaquaval		61.9
+940	Lechonk	18	10.2
+941	Oinkologne		120.0
+942	Tarountula	15	4.0
+943	Spidops		16.5
+944	Nymble	24	1.0
+945	Lokix		17.5
+946	Pawmi	18	2.5
+947	Pawmo	FRIEND	6.5
+948	Pawmot		41.0
+949	Tandemaus	25	1.8
+950	Maushold		2.8
+951	Fidough	26	10.9
+952	Dachsbun		14.9
+953	Smoliv	25	6.5
+954	Dolliv	35	11.9
+955	Arboliva		48.2
+956	Squawkabilly		2.4
+957	Nacli	24	16.0
+958	Naclstack	38	105.0
+959	Garganacl		240.0
+960	Charcadet	MOON_SUN	10.5
+961	Armarouge		85.0
+962	Ceruledge		62.0
+963	Tadbulb	THUNDER	0.4
+964	Bellibolt		113.0
+965	Wattrel	25	3.6
+966	Kilowattrel		38.6
+967	Maschiff	30	16.0
+968	Mabosstiff		61.0
+969	Shroodle	28	0.7
+970	Grafaiai		27.2
+971	Bramblin	FRIEND	0.6
+972	Brambleghast		6.0
+973	Toedscool	30	33.0
+974	Toedscruel		58.0
+975	Klawf		79.0
+976	Capsakid	FIRE	3.0
+977	Scovillain		15.0
+978	Rellor	FRIEND	1.0
+979	Rabsca		3.5
+980	Flittle	35	1.5
+981	Espathra		90.0
+982	Tinkatink	24	8.9
+983	Tinkatuff	38	59.1
+984	Tinkaton		112.8
+985	Wiglett	26	1.8
+986	Wugtrio		5.4
+987	Bombirdier		42.9
+988	Finizen	38	60.2
+989	Palafin		60.2
+990	Varoom	40	35.0
+991	Revavroom		120.0
+992	Cyclizar		63.0
+993	Orthworm		310.0
+994	Glimmet	35	8.0
+995	Glimmora		45.0
+996	Greavard	30	35.0
+997	Houndstone		15.0
+998	Flamigo		37.0
+999	Cetoddle	ICE	45.0
+1000	Cetitan		700.0
+1001	Veluza		90.0
+1002	Dondozo		220.0
+1003	Tatsugiri		8.0
+1004	Annihilape		56.0
+1005	Clodsire		223.0
+1006	Farigiraf		160.0
+1007	Dudunsparce		39.2
+1008	Kingambit		120.0
+1009	Great Tusk		320.0
+1010	Scream Tail		8.0
+1011	Brute Bonnet		21.0
+1012	Flutter Mane		4.0
+1013	Slither Wing		92.0
+1014	Sandy Shocks		60.0
+1015	Iron Treads		240.0
+1016	Iron Bundle		11.0
+1017	Iron Hands		380.7
+1018	Iron Jugulis		111.0
+1019	Iron Moth		36.0
+1020	Iron Thorns		303.0
+1021	Frigibax	35	17.0
+1022	Arctibax	54	30.0
+1023	Baxcalibur		210.0
+1024	Gimmighoul	50	5.0
+1025	Gholdengo		30.0
+1026	Wo-Chien		74.2
+1027	Chien-Pao		152.2
+1028	Ting-Lu		699.7
+1029	Chi-Yu		4.9
+1030	Roaring Moon		380.0
+1031	Iron Valiant		35.0
+1032	Koraidon		303.0
+1033	Miraidon		240.0
+1034	Walking Wake		280.0
+1035	Iron Leaves		125.0
+1036	Dipplin	FRIEND	4.4
+1037	Poltchageist	MOON	1.1
+1038	Sinistcha		2.2
+1039	Okidogi		92.2
+1040	Munkidori		12.2
+1041	Fezandipiti		30.1
+1042	Ogerpon		39.8
+1043	Archaludon		60.0
+1044	Hydrapple		93.0
+1045	Gouging Fire		590.0
+1046	Raging Bolt		480.0
+1047	Iron Boulder		162.5
+1048	Iron Crown		156.0
+1049	Terapagos		6.5
+1050	Pecharunt		0.3
+1051	Venusaur-M		155.5
+1052	Charizard-X		110.5
+1053	Charizard-Y		100.5
+1054	Blastoise-M		101.1
+1055	Beedrill-M		40.5
+1056	Pidgeot-M		50.5
+1057	Alakazam-M		48.0
+1058	Slowbro-M		120.0
+1059	Gengar-M		40.5
+1060	Kangaskhan-M		100.0
+1061	Pinsir-M		59.0
+1062	Gyarados-M		305.0
+1063	Aerodactyl-M		79.0
+1064	Mewtwo-X		127.0
+1065	Mewtwo-Y		33.0
+1066	Ampharos-M		61.5
+1067	Steelix-M		740.0
+1068	Scizor-M		125.0
+1069	Heracross-M		62.5
+1070	Houndoom-M		49.5
+1071	Tyranitar-M		255.0
+1072	Sceptile-M		55.2
+1073	Blaziken-M		52.0
+1074	Swampert-M		102.0
+1075	Gardevoir-M		48.4
+1076	Sableye-M		161.0
+1077	Mawile-M		23.5
+1078	Aggron-M		395.0
+1079	Medicham-M		31.5
+1080	Manectric-M		44.0
+1081	Sharpedo-M		130.3
+1082	Camerupt-M		320.5
+1083	Altaria-M		20.6
+1084	Banette-M		13.0
+1085	Absol-M		49.0
+1086	Glalie-M		350.2
+1087	Salamence-M		112.6
+1088	Metagross-M		942.9
+1089	Latias-M		52.0
+1090	Latios-M		70.0
+1091	Lopunny-M		28.3
+1092	Garchomp-M		95.0
+1093	Lucario-M		57.5
+1094	Abomasnow-M		185.0
+1095	Gallade-M		56.4
+1096	Audino-M		32.0
+1097	Diancie-M		27.8
+1098	Rayquaza-M		392.0
+1099	Kyogre-P		430.0
+1100	Groudon-P		999.7
+1101	Rattata-A	20	3.8
+1102	Raticate-A		25.5
+1103	Raichu-A		21.0
+1104	Sandshrew-A	ICE	40.0
+1105	Sandslash-A		55.0
+1106	Vulpix-A	ICE	9.9
+1107	Ninetales-A		19.9
+1108	Diglett-A	26	1.0
+1109	Dugtrio-A		66.6
+1110	Meowth-A	FRIEND	4.2
+1111	Persian-A		33.0
+1112	Geodude-A	25	20.3
+1113	Graveler-A	LINKING_CORD	110.0
+1114	Golem-A		316.0
+1115	Grimer-A	38	42.0
+1116	Muk-A		52.0
+1117	Exeggutor-A		415.6
+1118	Marowak-A		34.0
+1119	Meowth-G	28	7.5
+1120	Ponyta-G	40	24.0
+1121	Rapidash-G		80.0
+1122	Slowpoke-G	WATER_ROCK	36.0
+1123	Slowbro-G		70.5
+1124	Farfetch'd-G	34	42.0
+1125	Weezing-G		16.0
+1126	Mr. Mime-G	42	56.8
+1127	Articuno-G		50.9
+1128	Zapdos-G		58.2
+1129	Moltres-G		66.0
+1130	Slowking-G		79.5
+1131	Corsola-G	38	0.5
+1132	Zigzagoon-G	20	17.5
+1133	Linoone-G	35	32.5
+1134	Darumaka-G	ICE	40.0
+1135	Darmanitan-G		120.0
+1136	Yamask-G	34	1.5
+1137	Stunfisk-G		20.5
+1138	Growlithe-H	FIRE	22.7
+1139	Arcanine-H		168.0
+1140	Voltorb-H	LEAF	13.0
+1141	Electrode-H		71.0
+1142	Typhlosion-H		69.8
+1143	Qwilfish-H	28	3.9
+1144	Sneasel-H	RAZOR_CLAW	27.0
+1145	Samurott-H		58.2
+1146	Lilligant-H		19.2
+1147	Zorua-H	30	12.5
+1148	Zoroark-H		73.0
+1149	Braviary-H		43.4
+1150	Sliggoo-H	50	68.5
+1151	Goodra-H		334.1
+1152	Avalugg-H		262.4
+1153	Decidueye-H		37.0
+1154	Tauros-P		115.0
+1155	Wooper-P	20	11.0
+1156	Pikachu-C		6.0
+1157	Pikachu-P		6.0
+1158	Tauros-PF		85.0
+1159	Tauros-PW		110.0
+1160	Eevee-P		6.5
+1161	Pichu-S		2.0
+1162	Castform-F		0.8
+1163	Castform-W		0.8
+1164	Castform-I		0.8
+1165	Deoxys-A		60.8
+1166	Deoxys-D		60.8
+1167	Deoxys-S		60.8
+1168	Burmy-S	20	3.4
+1169	Burmy-T	20	3.4
+1170	Wormadam-S		6.5
+1171	Wormadam-T		6.5
+1172	Cherrim-S		9.3
+1173	Rotom-Heat		0.3
+1174	Rotom-Wash		0.3
+1175	Rotom-Frost		0.3
+1176	Rotom-Fan		0.3
+1177	Rotom-Mow		0.3
+1178	Dialga-O		850.0
+1179	Palkia-O		660.0
+1180	Giratina-O		650.0
+1181	Shaymin-S		5.2
+1182	Basculin-B		18.0
+1183	Basculin-W	35	18.0
+1184	Darmanitan-Z		92.9
+1185	Darmanitan-GZ		120.0
+1186	Tornadus-T		63.0
+1187	Thundurus-T		61.0
+1188	Landorus-T		68.0
+1189	Kyurem-W		325.0
+1190	Kyurem-B		325.0
+1191	Meloetta-P		6.5
+1192	Greninja-A		40.0
+1193	Floette-E		0.9
+1194	Meowstic-F		8.5
+1195	Aegislash-B		53.0
+1196	Pumpkaboo-S	LINKING_CORD	3.5
+1197	Pumpkaboo-L	LINKING_CORD	7.5
+1198	Pumpkaboo-J	LINKING_CORD	15.0
+1199	Gourgeist-S		9.5
+1200	Gourgeist-L		14.0
+1201	Gourgeist-J		39.0
+1202	Zygarde-10		33.5
+1203	Zygarde-C		610.0
+1204	Hoopa-U		490.0
+1205	Oricorio-E		3.4
+1206	Oricorio-P		3.4
+1207	Oricorio-G		3.4
+1208	Lycanroc-M		25.0
+1209	Lycanroc-D		25.0
+1210	Wishiwashi-S		78.6
+1211	Minior-C		0.3
+1212	Necrozma-DM		460.0
+1213	Necrozma-DW		350.0
+1214	Necrozma-U		230.0
+1215	Toxtricity-L		40.0
+1216	Eiscue-N		89.0
+1217	Indeedee-F		28.0
+1218	Morpeko-H		3.0
+1219	Zacian-C		355.0
+1220	Zamazenta-C		785.0
+1221	Eternatus-E		999.9
+1222	Urshifu-R		105.0
+1223	Calyrex-I		809.1
+1224	Calyrex-S		53.6
+1225	Ursaluna-B		333.0
+1226	Basculegion-F		110.0
+1227	Enamorus-T		48.0
+1228	Oinkologne-F		120.0
+1229	Palafin-H		97.4
+1230	Gimmighoul-R	50	0.1
+1231	Ogerpon-W		39.8
+1232	Ogerpon-F		39.8
+1233	Ogerpon-R		39.8
+1234	Terapagos-T		16.0
+1235	Terapagos-S		77.0
+1236	Dragonite-M		210.0
+1237	Raichu-X		30.0
+1238	Raichu-Y		30.0
+1239	Clefable-M		40.0
+1240	Victreebel-M		15.5
+1241	Starmie-M		80.0
+1242	Meganium-M		100.5
+1243	Feraligatr-M		88.8
+1244	Skarmory-M		50.5
+1245	Chimecho-M		1.0
+1246	Absol-Z		47.0
+1247	Staraptor-M		24.9
+1248	Garchomp-Z		95.0
+1249	Lucario-Z		54.0
+1250	Froslass-M		26.6
+1251	Heatran-M		430.0
+1252	Darkrai-M		50.5
+1253	Emboar-M		150.0
+1254	Excadrill-M		40.4
+1255	Scolipede-M		200.5
+1256	Scrafty-M		30.0
+1257	Eelektross-M		80.5
+1258	Chandelure-M		34.3
+1259	Golurk-M		330.0
+1260	Chesnaught-M		90.0
+1261	Delphox-M		39.0
+1262	Greninja-M		40.0
+1263	Pyroar-M		81.5
+1264	Floette-M		0.9
+1265	Meowstic-M		8.5
+1266	Malamar-M		47.0
+1267	Barbaracle-M		96.0
+1268	Dragalge-M		81.5
+1269	Hawlucha-M		21.5
+1270	Zygarde-M		305.0
+1271	Crabominable-M		180.0
+1272	Golisopod-M		108.0
+1273	Drampa-M		185.0
+1274	Magearna-M		80.5
+1275	Zeraora-M		44.5
+1276	Falinks-M		62.0
+1277	Scovillain-M		9.0
+1278	Glimmora-M		45.0
+1279	Tatsugiri-M		8.0
+1280	Baxcalibur-M		210.0

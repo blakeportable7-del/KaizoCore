@@ -183,6 +183,53 @@ class HomeNavTest {
         assertEquals(AppNav().open(HomeMode.PLAY_ANY), AppNav().addGames())
     }
 
+    /**
+     * rc32 audit P2 #32: Android ending the app behind a file picker (or rebuilding it) brought it back on Home, so the
+     * pick never reached the screen that asked for it and an editor closed. The place is saved by name and read back.
+     */
+    @Test
+    fun `every place in the app comes back as it was saved`() {
+        val home = AppNav()
+        val places = listOf(
+            home, home.openStats(), home.play(), home.pick(Tab.LIBRARY), home.openPatchedVersions(), home.pick(Tab.MORE),
+            home.pick(Tab.MORE).withMorePage(1), home.open(HomeMode.KAIZO), home.open(HomeMode.NUZLOCKE), home.open(HomeMode.HACKS),
+            home.open(HomeMode.PLAY_ANY), home.play().pick(Tab.LIBRARY).withLibraryPage(AppNav.PATCHED_PAGE), home.play().pick(Tab.MORE).openStats(),
+        )
+        for (p in places) {
+            assertEquals(p, AppNav.fromSaved(p.saved()), p.saved())
+            assertEquals(p, AppNav.restore(p.saved(), "HOME"), "a launch with no game to reopen")
+        }
+        // Back from a restored Library still goes where it went before: the anchor came back with it.
+        assertEquals(Tab.PLAY, AppNav.restore(home.play().pick(Tab.LIBRARY).saved(), "HOME").back()!!.tab)
+    }
+
+    @Test
+    fun `a game to reopen wins over the saved place, and nothing readable is the opening place`() {
+        val library = AppNav().pick(Tab.LIBRARY).saved()
+        assertEquals(AppNav.opening("PLAY"), AppNav.restore(library, "PLAY"), "CrashResume finds the game in Play")
+        for (junk in listOf(null, "", "LIBRARY", "NOPE|||0|HOME|0", "LIBRARY||x|0|HOME|0", "LIBRARY||0|0|HOME|0|extra")) {
+            assertEquals(AppNav.opening("HOME"), AppNav.restore(junk, "HOME"), "$junk")
+        }
+        // A page past the two there are is the nearest one.
+        assertEquals(AppNav.PATCHED_PAGE, AppNav.fromSaved("LIBRARY||9|0|HOME|0")!!.libraryPage)
+    }
+
+    @Test
+    fun `the place and the editor are saved with the activity, and the screens keep their keys across a process`() {
+        val main = read("MainActivity.kt")
+        assertTrue("var nav by androidx.compose.runtime.saveable.rememberSaveable(" in main)
+        assertTrue("save = { it.saved() }, restore = { AppNav.restore(it, start) }" in main)
+        assertTrue("var editing by androidx.compose.runtime.saveable.rememberSaveable(stateSaver = EditingSaver)" in main)
+        // The Crossfade's key for each screen is made of names: an enum's own hash is new in every process, and a new key
+        // is a new screen whose saved state (a file picker's pending answer) is not given to it.
+        assertTrue("contentKey = { (e, t, m) -> listOf(e?.first?.path, e?.second, t.name, m?.name) }" in main)
+        assertFalse("androidx.compose.animation.Crossfade(" in main, "the plain Crossfade keys by the Triple's hash")
+        // And the font size, bold text and language no longer rebuild the activity at all.
+        val manifest = File("src/main/AndroidManifest.xml").readText()
+        val changes = Regex("""android:configChanges="([^"]+)"""").find(manifest)!!.groupValues[1].split('|')
+        for (c in listOf("fontScale", "fontWeightAdjustment", "locale", "layoutDirection")) assertTrue(c in changes, c)
+    }
+
     @Test
     fun `a launch starts on Play only for a resume`() {
         assertEquals(Tab.PLAY, AppNav.opening("PLAY").tab)
@@ -206,5 +253,19 @@ class HomeNavTest {
         for ((where, text) in listOf("HomeNav.kt" to read("HomeNav.kt"), "MainActivity's Library block" to block)) {
             assertFalse("Set up a game" in text || "All files" in text || "ALL_FILES_PAGE" in text, "$where still names the old pages")
         }
+    }
+
+    /**
+     * rc32 audit P3 #15: More's How it works opened "KaizoCore plays IronMON on your phone", against the welcome's ruling
+     * that it is an emulator for every game. It opens with the welcome's own sentence and names Home's four modes.
+     */
+    @Test
+    fun `How it works says what the welcome says, and names every mode`() {
+        assertEquals(HomeCopy.WELCOME_WHAT, HowItWorksCopy.INTRO)
+        for (m in HomeMode.entries) assertTrue(HowItWorksCopy.all.any { m.title in it && m.line in it }, "${m.title} is named with its line")
+        for (s in HowItWorksCopy.all) assertTrue(s in HomeCopy.all, "\"$s\" is in the copy-rule list")
+        val about = read("AboutScreen.kt")
+        assertFalse("KaizoCore plays IronMON on your phone" in about, "the old framing line is gone")
+        assertTrue("Text(HowItWorksCopy.INTRO" in about && "for (mode in HomeMode.entries)" in about && "HowItWorksCopy.STEPS" in about)
     }
 }

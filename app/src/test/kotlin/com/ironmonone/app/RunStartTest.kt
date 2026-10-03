@@ -59,8 +59,9 @@ class RunStartTest {
         assertEquals(0x42L, started.seed)
         assertContentEquals(ByteArray(64) { 2 }, store.currentRunFor(kind).readBytes())
         assertEquals("log 2 seed 66", Randomizers.logFor(store.currentRunFor(kind)).readText())
-        assertContentEquals(ByteArray(64) { 1 }, store.previousRunFor(kind).readBytes(), "the old run rotates to previous")
-        assertEquals("old log", Randomizers.logFor(store.previousRunFor(kind)).readText())
+        // The run it replaced goes, game and log: nothing read it, and it went into every backup (rc32 audit P2 #67).
+        assertFalse(store.previousRunFor(kind).exists(), "the old run is not kept as previous")
+        assertFalse(Randomizers.logFor(store.previousRunFor(kind)).exists())
         assertEquals("%016x".format(0x42L), store.lastSeed())
         assertEquals(kind.id to settings.name, store.loadLastRun())
         assertEquals(2, store.attempt(kind.id))
@@ -72,7 +73,7 @@ class RunStartTest {
             take = { store.nextRun.claim(it) }, stop = { fail("no seed was chosen") }, randomize = stub(3))
         assertFalse(fresh.wasStaged)
         assertContentEquals(ByteArray(64) { 3 }, store.currentRunFor(kind).readBytes())
-        assertContentEquals(ByteArray(64) { 2 }, store.previousRunFor(kind).readBytes())
+        assertFalse(store.previousRunFor(kind).exists())
         assertEquals("%016x".format(fresh.seed), store.lastSeed())
         assertEquals(3, store.attempt(kind.id))
     }
@@ -201,5 +202,29 @@ class RunStartTest {
         // A recipe that no longer names the seed on disk (a NEW RUN cut off halfway) is not the run's.
         store.saveLastSeed(0x1234L)
         assertEquals(null, NextRun.currentRecipe(store))
+    }
+
+    @Test
+    fun `a new run with no room for its game is refused before anything is made`() {
+        // rc32 audit P2 #119: only the run made ahead looked at the space, and a randomize that ran out of it partway
+        // could leave a cut-short game.
+        oldRun()
+        val e = assertFailsWith<RunSetupProblem> {
+            RunStart.start(store, kind, prepared, settings, seed = 0x51L, app = app, prePass = null, secondPass = null,
+                stop = {}, randomize = { _, _ -> fail("nothing is made without room for it") }, freeBytes = { 1000L })
+        }
+        assertEquals(Randomizers.NO_ROOM_BEFORE, e.message)
+        assertEquals(Randomizers.NO_ROOM_BEFORE, newRunFailureCopy(e), "Play's NEW RUN says it in the same words")
+        assertContentEquals(ByteArray(64) { 1 }, store.currentRunFor(kind).readBytes(), "the run in play is untouched")
+        assertEquals("%016x".format(0x0dL), store.lastSeed())
+        // A run made ahead needs no new room: it is already on disk.
+        store.nextRun.make(recipe(), 0x42L, stub(2))
+        val started = RunStart.start(store, kind, prepared, settings, seed = null, app = app, prePass = null, secondPass = null,
+            take = { store.nextRun.claim(it) }, stop = {}, randomize = { _, _ -> fail("a run made ahead was waiting") }, freeBytes = { 0L })
+        assertTrue(started.wasStaged)
+        // With room, a run is made there and then.
+        RunStart.start(store, kind, prepared, settings, seed = 0x52L, app = app, prePass = null, secondPass = null,
+            stop = {}, randomize = stub(3), freeBytes = { 1L shl 40 })
+        assertContentEquals(ByteArray(64) { 3 }, store.currentRunFor(kind).readBytes())
     }
 }

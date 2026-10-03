@@ -21,8 +21,30 @@ class BundledCopyTest {
         val got = BundledCopy.copyWhole(dest) { out -> out.write(ByteArray(10)); throw java.io.IOException("No space left on device") }
         assertNull(got)
         assertFalse(dest.exists())
-        assertFalse(File(dir, "patches/faster.ips.tmp").exists())
+        assertTrue(dest.parentFile.listFiles()!!.none { it.name.endsWith(".tmp") }, "no part copy left behind")
         assertFalse(BundledCopy.whole(dest))
+    }
+
+    /**
+     * rc32 audit P2 #74: two first-time copies of one patch (two patch jobs at once) shared one .tmp, so one emptied the
+     * other's half-written copy and the patch read back half written. Here the second copy starts while the first is
+     * half way through, and the first, which ends last, is what stays: whole, and marked at its own length.
+     */
+    @Test
+    fun `two copies of one patch at once do not write into each other`() {
+        val dest = File(dir, "patches/natdex.bps")
+        val inner = arrayOfNulls<File>(1)
+        val got = BundledCopy.copyWhole(dest) { outer ->
+            outer.write(ByteArray(100) { 1 })
+            inner[0] = BundledCopy.copyWhole(dest) { it.write(ByteArray(300) { 2 }) }
+            outer.write(ByteArray(100) { 1 })
+        }
+        assertEquals(dest, inner[0], "the second copy finished whole")
+        assertEquals(dest, got, "and so did the first")
+        assertEquals(200L, dest.length())
+        assertTrue(dest.readBytes().all { it == 1.toByte() }, "the copy that ended last is the one kept, unmixed")
+        assertTrue(BundledCopy.whole(dest))
+        assertTrue(dest.parentFile.listFiles()!!.none { it.name.endsWith(".tmp") })
     }
 
     @Test

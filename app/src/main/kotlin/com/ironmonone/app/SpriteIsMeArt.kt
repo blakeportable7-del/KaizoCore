@@ -6,88 +6,140 @@ import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import android.net.Uri
 import android.provider.OpenableColumns
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.graphics.asAndroidBitmap
 import java.io.ByteArrayOutputStream
 import java.io.File
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 
 /**
  * The pictures behind "Play as your Pokemon" on the phone: the Walking Pals sheets that ship in the app (the ones the
- * tracker's animated icons use, both sets, found by WalkingPals.find) and the player's own, decoded once and cropped a
- * frame at a time. All the rules about which frame and where it sits are SpriteIsMeLogic's and SheetSet's; this only
- * reads pixels.
+ * tracker's animated icons use, both sets, found by WalkingPals.Index.find) and the player's own. All the rules about which
+ * frame and where it sits are SpriteIsMeLogic's and SheetSet's; this only reads pixels.
+ *
+ * Nothing is read from a file or decoded in a tick, which runs on the main thread once a display frame: [prepare]
+ * decodes off it, and the tick crops what is ready. The player's sheets were decoded whole in a tick, up to 256 MB a
+ * sheet, and with a sheet set imported every frame opened its four files (rc32 audit P2 #88, P3 #66); every Pokemon
+ * met was kept for the session (P2 #106). Now the player's art is decoded once each time it changes, a sheet past
+ * SheetSet's bound is never read, and of the Walking Pals only the one Pokemon being played as is kept, so
+ * WalkingPals' bounded cache can never take its sheets away in the middle of a walk.
  */
 class AndroidSpriteArt(private val ctx: Context) : SpriteIsMeArt {
     private val filesDir: File = ctx.filesDir
 
-    private val palBitmaps = HashMap<String, Bitmap?>()
-    private val ownBitmaps = HashMap<WalkingPals.Anim, Bitmap?>()
-    private var cachedVersion = -1
-    private var ownSheetsCache: OwnSheets? = null
-    private var ownSheetsBuilt = false
-    private var pictureCache: SpriteArt.Fitted? = null
-    private var pictureBuilt = false
+    /** The player's own art for one art version and choice, as [prepare] left it. */
+    private class Own(
+        val version: Int, val choice: SpriteIsMeSettings.Own, val ready: Boolean, val sheets: OwnSheets?,
+        val bitmaps: Map<WalkingPals.Anim, Bitmap>, val picture: SpriteArt.Fitted?,
+    )
 
-    /** Drop what was decoded from the player's own files when the settings say they changed. */
-    private fun sync() {
-        val v = SpriteIsMeSettings.artVersion
-        if (v == cachedVersion) return
-        cachedVersion = v
-        ownBitmaps.clear(); ownSheetsCache = null; ownSheetsBuilt = false; pictureCache = null; pictureBuilt = false
+    /** The one Pokemon being played as, decoded. */
+    private class PalArt(val pal: WalkingPals.Pal, val sheets: Map<WalkingPals.Anim, WalkingPals.Sheet>?, val bitmaps: Map<WalkingPals.Anim, Bitmap>)
+
+    @Volatile private var own: Own? = null
+    @Volatile private var palArt: PalArt? = null
+    /** Each decode [prepare] finished, for [readiness]. */
+    private val decoded = java.util.concurrent.atomic.AtomicInteger()
+
+    /** The Pokemon a tick asked for and did not have yet, for [prepare] to decode. */
+    private val wanted = MutableStateFlow<WalkingPals.Pal?>(null)
+
+    /** The player's art as it stands now, or null while it is being read again. */
+    private fun ownNow(): Own? = own?.takeIf { it.version == SpriteIsMeSettings.artVersion && it.choice == SpriteIsMeSettings.own }
+
+    /**
+     * Decodes what the ticks draw, until cancelled; off the main thread (the runner's Default dispatcher): the player's
+     * own art each time it changes (SpriteIsMeSettings.artVersion, which every import, removal and sheet setting bumps),
+     * and each Pokemon a tick asks for.
+     */
+    suspend fun prepare() {
+        coroutineScope {
+            launch {
+                snapshotFlow { SpriteIsMeSettings.artVersion to SpriteIsMeSettings.own }.collect { (v, choice) -> prepareOwn(v, choice) }
+            }
+            wanted.collect { p -> if (p != null && palArt?.pal != p) preparePal(p) }
+        }
     }
 
-    private fun palBitmap(anim: WalkingPals.Anim, pal: WalkingPals.Pal): Bitmap? {
-        val key = pal.path(anim)
-        if (palBitmaps.containsKey(key)) return palBitmaps[key]
-        val b = WalkingPals.bitmap(ctx, anim, pal)?.asAndroidBitmap()
-        palBitmaps[key] = b
-        return b
+    private fun prepareOwn(version: Int, choice: SpriteIsMeSettings.Own) {
+        val note: String?
+        own = when (choice) {
+            SpriteIsMeSettings.Own.NONE -> { note = null; Own(version, choice, false, null, emptyMap(), null) }
+            SpriteIsMeSettings.Own.PICTURE -> {
+                val file = SpriteIsMeStore.pictureFile(filesDir)
+                val picture = if (!file.isFile) null else runCatching { decodePicture(file) }.getOrNull()
+                note = if (file.isFile && picture == null) SpriteIsMeCopy.OWN_UNREADABLE else null
+                Own(version, choice, picture != null, null, emptyMap(), picture)
+            }
+            SpriteIsMeSettings.Own.SHEET -> {
+                // Only sheets inside the bound: a bigger one is not read at all (SpriteIsMeStore.sheetSizes).
+                val sizes = SpriteIsMeStore.sheetSizes(filesDir)
+                val bitmaps = HashMap<WalkingPals.Anim, Bitmap>()
+                for (a in sizes.keys) {
+                    runCatching { BitmapFactory.decodeFile(SpriteIsMeStore.sheetFile(filesDir, a).path) }.getOrNull()?.let { bitmaps[a] = it }
+                }
+                val decoded = sizes.filterKeys { it in bitmaps }
+                val sheets = SheetSet.sheets(decoded, SpriteIsMeSettings.spec)
+                val rows = sheets?.mapValues { (a, s) -> maxOf(1, decoded.getValue(a).second / s.h) }
+                note = when {
+                    SpriteIsMeStore.oversized(filesDir) -> SpriteIsMeCopy.SHEET_TOO_BIG
+                    sizes.isNotEmpty() && sheets == null -> SpriteIsMeCopy.OWN_UNREADABLE
+                    else -> null
+                }
+                Own(version, choice, sheets != null, sheets?.let { OwnSheets(it, rows!!) }, bitmaps, null)
+            }
+        }
+        SpriteIsMeSupport.ownNote = note
+        decoded.incrementAndGet()
     }
 
-    override fun pal(id: Int, dex: WalkingPals.Dex): WalkingPals.Pal? =
-        WalkingPals.find(ctx, id, dex)?.takeIf { palBitmap(WalkingPals.Anim.IDLE, it) != null }
-
-    override fun palSheets(pal: WalkingPals.Pal): Map<WalkingPals.Anim, WalkingPals.Sheet>? =
-        WalkingPals.sheets(ctx, pal)?.filterKeys { palBitmap(it, pal) != null }?.takeIf { it.isNotEmpty() }
-
-    override fun palFrame(pal: WalkingPals.Pal, anim: WalkingPals.Anim, sheet: WalkingPals.Sheet, row: Int, index: Int): ArtPixels? =
-        palBitmap(anim, pal)?.let { crop(it, sheet, row, index) }
-
-    override fun ownReady(): Boolean = SpriteIsMeStore.ready(filesDir, SpriteIsMeSettings.own)
-
-    override fun ownSheets(): OwnSheets? {
-        sync()
-        if (ownSheetsBuilt) return ownSheetsCache
-        ownSheetsBuilt = true
-        val sizes = SpriteIsMeStore.sheetSizes(filesDir)
-        val sheets = SheetSet.sheets(sizes, SpriteIsMeSettings.spec) ?: return null
-        val rows = sheets.mapValues { (a, s) -> maxOf(1, (sizes.getValue(a).second) / s.h) }
-        ownSheetsCache = OwnSheets(sheets, rows)
-        return ownSheetsCache
-    }
-
-    override fun ownFrame(anim: WalkingPals.Anim, sheet: WalkingPals.Sheet, row: Int, index: Int): ArtPixels? {
-        sync()
-        val b = if (ownBitmaps.containsKey(anim)) ownBitmaps[anim]
-            else BitmapFactory.decodeFile(SpriteIsMeStore.sheetFile(filesDir, anim).path).also { ownBitmaps[anim] = it }
-        return b?.let { crop(it, sheet, row, index) }
-    }
-
-    override fun ownPicture(): SpriteArt.Fitted? {
-        sync()
-        if (pictureBuilt) return pictureCache
-        pictureBuilt = true
-        val b = BitmapFactory.decodeFile(SpriteIsMeStore.pictureFile(filesDir).path) ?: return null
+    private fun decodePicture(file: File): SpriteArt.Fitted? {
+        val b = BitmapFactory.decodeFile(file.path) ?: return null
         val px = IntArray(b.width * b.height)
         b.getPixels(px, 0, b.width, 0, 0, b.width, b.height)
-        pictureCache = SpriteArt.fit(ArtPixels(b.width, b.height, px))
-        return pictureCache
+        return SpriteArt.fit(ArtPixels(b.width, b.height, px))
     }
 
-    /** The frame at [index] of [row] as pixels; the first frame when the sheet is smaller than its table says (as the tracker's icon does). */
+    private fun preparePal(p: WalkingPals.Pal) {
+        val table = WalkingPals.index(ctx).sheets(p)
+        val bitmaps = HashMap<WalkingPals.Anim, Bitmap>()
+        table?.keys?.forEach { a -> WalkingPals.bitmap(ctx, a, p)?.asAndroidBitmap()?.let { bitmaps[a] = it } }
+        palArt = PalArt(p, table?.filterKeys { it in bitmaps }?.takeIf { it.isNotEmpty() }, bitmaps)
+        decoded.incrementAndGet()
+    }
+
+    /** The Pokemon decoded for [p], or null with [p] asked for: the frames show the trainer until it is in. */
+    private fun palFor(p: WalkingPals.Pal): PalArt? = palArt?.takeIf { it.pal == p } ?: run { wanted.value = p; null }
+
+    /** From the tables once they are read (WalkingPals.ready): a tick never reads them. Until then the trainer shows. */
+    override fun pal(id: Int, dex: WalkingPals.Dex): WalkingPals.Pal? = WalkingPals.ready(ctx)?.find(id, dex)
+
+    /** A shiny as its shiny and Unown as its letter, from the tables once they are read; [pal] itself until then. */
+    override fun look(pal: WalkingPals.Pal, look: WalkingPals.Look): WalkingPals.Pal = WalkingPals.ready(ctx)?.look(pal, look) ?: pal
+
+    override fun palSheets(pal: WalkingPals.Pal): Map<WalkingPals.Anim, WalkingPals.Sheet>? = palFor(pal)?.sheets
+
+    override fun palFrame(pal: WalkingPals.Pal, anim: WalkingPals.Anim, sheet: WalkingPals.Sheet, row: Int, index: Int): ArtPixels? =
+        palFor(pal)?.bitmaps?.get(anim)?.let { crop(it, sheet, row, index) }
+
+    /** What [prepare] found, from memory: no file is looked at in a tick. */
+    override fun ownReady(): Boolean = ownNow()?.ready == true
+
+    override fun ownSheets(): OwnSheets? = ownNow()?.sheets
+
+    override fun ownFrame(anim: WalkingPals.Anim, sheet: WalkingPals.Sheet, row: Int, index: Int): ArtPixels? =
+        ownNow()?.bitmaps?.get(anim)?.let { crop(it, sheet, row, index) }
+
+    override fun ownPicture(): SpriteArt.Fitted? = ownNow()?.picture
+
+    /** The tables once read, and one more each time [prepare] finishes a decode: a tick reads it, nothing more. */
+    override fun readiness(): Int = decoded.get() * 2 + if (WalkingPals.ready(ctx) != null) 1 else 0
+
+    /** The frame at [index] of [row] as pixels; the first frame when the sheet is smaller than its table says (WalkingPals.Sheet.cell). */
     private fun crop(b: Bitmap, sheet: WalkingPals.Sheet, row: Int, index: Int): ArtPixels? {
-        if (sheet.w <= 0 || sheet.h <= 0 || sheet.w > b.width || sheet.h > b.height) return null
-        val sx = (sheet.w * index).takeIf { it + sheet.w <= b.width } ?: 0
-        val sy = (sheet.h * row).takeIf { it + sheet.h <= b.height } ?: 0
+        val (sx, sy) = sheet.cell(row, index, b.width, b.height) ?: return null
         val px = IntArray(sheet.w * sheet.h)
         b.getPixels(px, 0, sheet.w, sx, sy, sheet.w, sheet.h)
         return ArtPixels(sheet.w, sheet.h, px)

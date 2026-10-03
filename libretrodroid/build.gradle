@@ -1,5 +1,5 @@
-// LibretroDroid 0.13.2 (GPL-3.0, Filippo Scognamiglio), vendored with the IronMON One
-// memory-read patch (SET_MEMORY_MAPS capture + readMemory JNI). Upstream:
+// LibretroDroid 0.13.2 (GPL-3.0, Filippo Scognamiglio), vendored with this project's
+// changes, which NOTICE lists with their markers. Upstream:
 // https://github.com/Swordfish90/LibretroDroid - see LICENSE in this directory.
 // Build file adapted to this repo's AGP 8.3 / Kotlin 1.9 toolchain; the C++ and the
 // module are otherwise upstream plus the marked patches.

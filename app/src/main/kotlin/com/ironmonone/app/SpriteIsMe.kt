@@ -53,6 +53,13 @@ object SpriteIsMeSupport {
     }
 
     var state: State by mutableStateOf(State.Unknown)
+
+    /**
+     * What to tell the player about their own sprite when it cannot be drawn: a sheet past the bound, or art that would
+     * not decode, either way played as the lead instead (rc32 audit P2 #88, P3 #66). Null when there is nothing to say.
+     * Set as the art is prepared (AndroidSpriteArt.prepare).
+     */
+    var ownNote: String? by mutableStateOf(null)
 }
 
 /** The emulator side, as the engine sees it. The phone's is [JniOverlayPort]; the tests count calls on a fake. */
@@ -88,6 +95,8 @@ object SpriteSnapshot {
 interface SpriteIsMeArt {
     /** The sheets of species [id], numbered as [dex] says (WalkingPals.Index.find), when it has an idle sheet to draw; else null. */
     fun pal(id: Int, dex: WalkingPals.Dex): WalkingPals.Pal?
+    /** [pal] as [look] says: its form, then its shiny, each where it ships (WalkingPals.Index.look); [pal] itself here. */
+    fun look(pal: WalkingPals.Pal, look: WalkingPals.Look): WalkingPals.Pal = pal
     fun palSheets(pal: WalkingPals.Pal): Map<WalkingPals.Anim, WalkingPals.Sheet>?
     fun palFrame(pal: WalkingPals.Pal, anim: WalkingPals.Anim, sheet: WalkingPals.Sheet, row: Int, index: Int): ArtPixels?
     /** The imported picture or sheet set is on disk and readable. */
@@ -95,6 +104,14 @@ interface SpriteIsMeArt {
     fun ownSheets(): OwnSheets?
     fun ownFrame(anim: WalkingPals.Anim, sheet: WalkingPals.Sheet, row: Int, index: Int): ArtPixels?
     fun ownPicture(): SpriteArt.Fitted?
+
+    /**
+     * Grows each time something a frame is drawn with becomes ready: the Walking Pals tables (read on a thread of their
+     * own), a Pokemon's sheets or the player's own art (both decoded off the main thread). The emulator side steps only
+     * while it has a picture, so its snapshot stands still while the art is on its way, and a tick that found it not
+     * ready was never repeated: a resumed run stayed the trainer until the switch was turned off and on (2026-10-03).
+     */
+    fun readiness(): Int
 }
 
 /** The player's sheet set as the animator wants it: the sheets and how many rows (facings) each has. */
@@ -103,11 +120,13 @@ class OwnSheets(val sheets: Map<WalkingPals.Anim, WalkingPals.Sheet>, val rows: 
 /**
  * One tick of the sprite choice, per display frame, with nothing Android in it so the tests drive it with a fake
  * port and fake art. With the switch off a tick makes no call at all after the one that switches the emulator
- * side off; with it on, a tick makes one cheap read and, only when the frame changed, one push.
+ * side off; with it on, a tick makes one cheap read and, only when the frame changed, one push. [now] is the clock the
+ * game's own steps are timed by and [afk] the phone's idle clock (no key for 55 seconds).
  */
 class SpriteIsMeEngine(
     private val port: SpriteOverlayPort,
     private val art: SpriteIsMeArt,
+    private val now: () -> Long = System::nanoTime,
     private val afk: () -> Boolean,
 ) {
     /** The lead Pokemon, kept up to date by whoever reads the party (a few times a second). */
@@ -124,10 +143,14 @@ class SpriteIsMeEngine(
     private var seenSnap = 0L
     private var seenWho = SpriteIsMeSettings.Who.LEAD
     private var seenAlways = 0
+    private var seenAlwaysShiny = false
     private var seenOwn = SpriteIsMeSettings.Own.NONE
     private var seenArt = 0
     private var seenLead: SpriteIsMeLogic.Lead? = null
     private var seenAfk = false
+    private var seenReady = 0
+    /** When the game last showed the player stepping or turning, by [now]; null until it has. */
+    private var gameMovedAt: Long? = null
 
     /** Give the emulator side this game's addresses. */
     fun configure(a: OverworldAddresses): Boolean {
@@ -153,26 +176,34 @@ class SpriteIsMeEngine(
         val frames = SpriteSnapshot.frames(snap)
         val movingNow = SpriteSnapshot.stepping(snap)
         val facingNow = SpriteSnapshot.facing(snap)
+        // The game's own steps and turns are the player's doing, whatever path the keys came by. Only the phone's idle
+        // clock counted, and keys that never reached it (the test bot's) left every sprite asleep 55 seconds in: one pose
+        // in every direction through a walk (2026-10-03). A walk held past 55 seconds did the same.
+        val t = now()
+        if (movingNow || (facingNow in 1..4 && facingNow != facing)) gameMovedAt = t
         if (facingNow in 1..4) facing = facingNow
 
         // Nothing moved since the last tick (the emulator is paused, or between frames on a fast display): nothing to work out.
         // Compared value by value: a hash of them collided in a test (two different snapshots, one hash) and froze the sprite.
+        // The art's readiness is one of the things that move: while it is on its way the snapshot stands still.
         val leadNow = lead
-        val afkNow = afk()
-        if (seen && snap == seenSnap && s.who == seenWho && s.always == seenAlways &&
-            s.own == seenOwn && s.artVersion == seenArt && leadNow == seenLead && afkNow == seenAfk) return
-        seen = true; seenSnap = snap; seenWho = s.who; seenAlways = s.always
-        seenOwn = s.own; seenArt = s.artVersion; seenLead = leadNow; seenAfk = afkNow
+        val afkNow = afk() && gameMovedAt.let { it == null || t - it >= SpriteIsMeLogic.IDLE_NANOS }
+        val readyNow = art.readiness()
+        if (seen && snap == seenSnap && s.who == seenWho && s.always == seenAlways && s.alwaysShiny == seenAlwaysShiny &&
+            s.own == seenOwn && s.artVersion == seenArt && leadNow == seenLead && afkNow == seenAfk && readyNow == seenReady) return
+        seen = true; seenSnap = snap; seenWho = s.who; seenAlways = s.always; seenAlwaysShiny = s.alwaysShiny
+        seenOwn = s.own; seenArt = s.artVersion; seenLead = leadNow; seenAfk = afkNow; seenReady = readyNow
 
         val ownReady = art.ownReady()
-        val choice = SpriteIsMeLogic.choose(s.who, s.always, s.own, ownReady, leadNow, art::pal)
+        val choice = SpriteIsMeLogic.choose(s.who, s.always, s.own, ownReady, leadNow, art::pal, s.alwaysShiny, art::look)
         val out = resolve(choice, frames, movingNow, facingNow)
         if (out == null) {
             if (pushed != null) { port.clearSprite(); pushed = null }
             return
         }
         val (key, pixels, ox, oy) = out
-        if (key != pushed) {
+        // No pixels: the frame is the one already pushed, and nothing was copied for it.
+        if (pixels != null && key != pushed) {
             if (port.setSprite(pixels.argb, pixels.w, pixels.h, ox, oy)) pushed = key
         }
     }
@@ -184,8 +215,14 @@ class SpriteIsMeEngine(
         nativeOn = false; pushed = null; configured = false
     }
 
-    private data class Out(val key: Key, val pixels: ArtPixels, val ox: Int, val oy: Int)
+    /** A frame to show: its key, and its pixels, which are null when it is the frame already pushed. */
+    private data class Out(val key: Key, val pixels: ArtPixels?, val ox: Int, val oy: Int)
 
+    /**
+     * The frame to show now, or null for none. The key comes first and the pixels only for a new one: the snapshot
+     * changes every emulated frame, so this runs 60 times a second on the main thread, and it used to crop, copy and
+     * scan a frame each time only to find it was the one already shown (rc32 audit P3 #65).
+     */
     private fun resolve(c: SpriteIsMeLogic.Choice, frames: Long, moving: Boolean, facingNow: Int): Out? {
         val version = SpriteIsMeSettings.artVersion
         when (c.source) {
@@ -194,25 +231,37 @@ class SpriteIsMeEngine(
                 val fitted = art.ownPicture() ?: return null
                 val flip = facing == 3
                 val bob = SpriteArt.bobOffset(moving, (frames / SpriteIsMeLogic.BOB_FRAMES).toInt())
+                val key = Key(c.source, null, null, 0, 0, flip, bob, version)
+                if (key == pushed) return Out(key, null, 0, 0)
                 val px = if (flip) SpriteArt.flipH(fitted.pixels) else fitted.pixels
-                return Out(Key(c.source, null, null, 0, 0, flip, bob, version), px, fitted.ox, fitted.oy + bob)
+                return Out(key, px, fitted.ox, fitted.oy + bob)
             }
             SpriteIsMeLogic.Source.PAL -> {
                 val pal = c.pal ?: return null
                 val sheets = art.palSheets(pal) ?: return null
                 val f = animator.frame(frames, moving, facingNow, seenAfk, c.lead, sheets) { if (it == WalkingPals.Anim.IDLE || it == WalkingPals.Anim.WALK) 8 else 1 } ?: return null
                 val sheet = sheets[f.anim] ?: return null
+                // A walk frame that stays up longer than two steps steps as a picture does, a pixel up on every other
+                // beat, so every Pokemon shows its walk (Blake, 2026-10-03: "Fix it for all sprites"): a walk of one
+                // frame, no walk and an idle of one (11 shipped sheets), and Silcoon's and Cascoon's 120-frame hold.
+                val walking = SpriteIsMeLogic.wantedAnim(seenAfk, c.lead, moving) == WalkingPals.Anim.WALK
+                val held = sheet.durations.size < 2 || sheet.durations[f.index] > SpriteIsMeLogic.HELD_FRAMES
+                val bob = if (walking && held) SpriteArt.bobOffset(true, (frames / SpriteIsMeLogic.BOB_FRAMES).toInt()) else 0
+                val key = Key(c.source, pal, f.anim, f.row, f.index, false, bob, version)
+                if (key == pushed) return Out(key, null, 0, 0)
                 val px = art.palFrame(pal, f.anim, sheet, f.row, f.index) ?: return null
                 // A few later sheets have frames past what the emulator side takes, mostly clear: cut to what shows.
                 val placed = SpriteArt.placeFrame(px, sheet.x, sheet.y)
-                return Out(Key(c.source, pal, f.anim, f.row, f.index, false, 0, version), placed.pixels, placed.ox, placed.oy)
+                return Out(key, placed.pixels, placed.ox, placed.oy + bob)
             }
             SpriteIsMeLogic.Source.SHEET -> {
                 val own = art.ownSheets() ?: return null
                 val f = animator.frame(frames, moving, facingNow, seenAfk, c.lead, own.sheets) { own.rows[it] ?: 1 } ?: return null
                 val sheet = own.sheets[f.anim] ?: return null
+                val key = Key(c.source, null, f.anim, f.row, f.index, false, 0, version)
+                if (key == pushed) return Out(key, null, 0, 0)
                 val px = art.ownFrame(f.anim, sheet, f.row, f.index) ?: return null
-                return Out(Key(c.source, null, f.anim, f.row, f.index, false, 0, version), px, sheet.x, sheet.y)
+                return Out(key, px, sheet.x, sheet.y)
             }
         }
     }
@@ -255,15 +304,15 @@ internal object SpriteIsMeRunner {
     suspend fun run(ctx: Context, retro: GLRetroView) {
         val reader = MemoryReader { a, n -> retro.readMemory(a, n) }
         val map = resolve(reader) ?: return
-        // The table for a retail game; for Nat. Dex, whose layout is in no table, the addresses read out of the game's own
-        // code (tracker-gba's OverworldScan, once, off the main thread).
+        // The table for a retail game; for Nat. Dex and MaxDex, whose layouts are in no table, the addresses read out of the
+        // game's own code (tracker-gba's OverworldScan, once, off the main thread).
         val addresses = withContext(Dispatchers.Default) { runCatching { Overworld.resolve(map, reader) }.getOrNull() }
         if (addresses == null) {
-            SpriteIsMeSupport.state = SpriteIsMeSupport.State.Unsupported(
-                if (Overworld.isNatDex(map)) SpriteIsMeCopy.NAT_DEX else SpriteIsMeCopy.NOT_KNOWN)
+            SpriteIsMeSupport.state = SpriteIsMeSupport.State.Unsupported(refusal(map))
             return
         }
-        val eng = SpriteIsMeEngine(JniOverlayPort, AndroidSpriteArt(ctx), afk = {
+        val art = AndroidSpriteArt(ctx)
+        val eng = SpriteIsMeEngine(JniOverlayPort, art, afk = {
             System.nanoTime() - SpriteMotion.lastInputNanos >= WalkingPals.IDLE_SECONDS_UNTIL_SLEEP * 1_000_000_000L
         })
         if (!eng.configure(addresses)) {
@@ -273,6 +322,9 @@ internal object SpriteIsMeRunner {
         engine = eng
         SpriteIsMeSupport.state = SpriteIsMeSupport.State.Supported(addresses.name)
         kotlinx.coroutines.coroutineScope {
+            // What the frames draw, decoded here and never in a tick: the player's own art each time it changes, and the
+            // Pokemon played as (rc32 audit P2 #88, #106).
+            launch(Dispatchers.Default) { art.prepare() }
             // The party, a few times a second and off the main thread: it takes the core's lock, as the tracker's reads do.
             launch(Dispatchers.Default) {
                 while (true) {
@@ -299,6 +351,18 @@ internal object SpriteIsMeRunner {
                 eng.tick()
             }
         }
+    }
+
+    /**
+     * The line for a GBA game whose overworld [Overworld.resolve] did not find: a MaxDex or Nat. Dex build's, a game named
+     * by its header whose code moved, as a hack built from the decompilations does (rc32 audit P2 #87: it showed the
+     * switch and never changed the character, with no word), or a game this does not know.
+     */
+    internal fun refusal(map: GameMap): String = when {
+        map.nameSet == "maxdex" -> SpriteIsMeCopy.MAX_DEX
+        Overworld.isNatDex(map) -> SpriteIsMeCopy.NAT_DEX
+        Overworld.hasTable(map) -> SpriteIsMeCopy.NO_OVERWORLD
+        else -> SpriteIsMeCopy.NOT_KNOWN
     }
 
     /**

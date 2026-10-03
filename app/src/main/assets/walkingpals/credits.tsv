@@ -1,0 +1,393 @@
+# Who drew each shiny in this folder (shiny-colors.tsv, shiny.tsv): PMD Sprite Collab d2ceb96254fb (2026-10-03), github.com/PMDCollab/SpriteCollab.
+# The plain sheets are Ironmon-Tracker's own copies of the collab's, credited as NOTICE says. Artists: the current
+# credits.txt entries for the animations used, then tracker.json's credit for the folder, by the names in
+# credit_names.txt (a Discord id where none is registered). Licenses as each contribution was given: CC_BY-NC_4 =
+# CC BY-NC 4.0; PMDCollab_1 = use with credit; PMDCollab_2 = use with credit, not for profit; Unspecified = Spike
+# Chunsoft's own sprites from the PMD games. The collab's terms for the whole repository: CC BY-NC 4.0.
+# key	sprite	SpriteCollab folder	artists	licenses
+1	Bulbasaur shiny	sprite/0001/0000/0001	ShyStarryRain	CC_BY-NC_4
+2	Ivysaur shiny	sprite/0002/0000/0001	SilverDeoxys563	PMDCollab_1
+3	Venusaur shiny	sprite/0003/0000/0001	SilverDeoxys563	PMDCollab_1
+4	Charmander shiny	sprite/0004/0000/0001	ShyStarryRain	CC_BY-NC_4
+5	Charmeleon shiny	sprite/0005/0000/0001	ShyStarryRain, Emmuffin	PMDCollab_2, CC_BY-NC_4
+6	Charizard shiny	sprite/0006/0000/0001	SilverDeoxys563, Emboarger, Emmuffin	PMDCollab_1
+7	Squirtle shiny	sprite/0007/0000/0001	SilverDeoxys563, ShyStarryRain	PMDCollab_1, CC_BY-NC_4
+8	Wartortle shiny	sprite/0008/0000/0001	Emmuffin	PMDCollab_2
+9	Blastoise shiny	sprite/0009/0000/0001	SilverDeoxys563	PMDCollab_1
+10	Caterpie shiny	sprite/0010/0000/0001	SilverDeoxys563	PMDCollab_1
+11	Metapod shiny	sprite/0011/0000/0001	SilverDeoxys563	PMDCollab_1
+12	Butterfree shiny	sprite/0012/0000/0001	Emmuffin	PMDCollab_1, CC_BY-NC_4
+13	Weedle shiny	sprite/0013/0000/0001	ShyStarryRain	PMDCollab_2
+14	Kakuna shiny	sprite/0014/0000/0001	SilverDeoxys563	PMDCollab_1
+15	Beedrill shiny	sprite/0015/0000/0001	SilverDeoxys563	PMDCollab_1
+16	Pidgey shiny	sprite/0016/0000/0001	SilverDeoxys563	PMDCollab_1
+17	Pidgeotto shiny	sprite/0017/0000/0001	Moo, bwappi	PMDCollab_1, PMDCollab_2
+18	Pidgeot shiny	sprite/0018/0000/0001	SilverDeoxys563	PMDCollab_1, PMDCollab_2
+19	Rattata shiny	sprite/0019/0000/0001	ShyStarryRain	PMDCollab_2
+20	Raticate shiny	sprite/0020/0000/0001	SilverDeoxys563, 3Monika4	PMDCollab_1
+21	Spearow shiny	sprite/0021/0000/0001	SilverDeoxys563	PMDCollab_1
+22	Fearow shiny	sprite/0022/0000/0001	SilverDeoxys563	PMDCollab_1
+23	Ekans shiny	sprite/0023/0000/0001	Emmuffin	CC_BY-NC_4
+24	Arbok shiny	sprite/0024/0000/0001	Morei, Moo	PMDCollab_1
+25	Pikachu shiny	sprite/0025/0000/0001	SilverDeoxys563	PMDCollab_1
+26	Raichu shiny	sprite/0026/0000/0001	G〜	PMDCollab_2
+27	Sandshrew shiny	sprite/0027/0000/0001	ShyStarryRain	CC_BY-NC_4
+28	Sandslash shiny	sprite/0028/0000/0001	SilverDeoxys563, XModxGodX, Emmuffin	PMDCollab_1
+29	Nidoran_F shiny	sprite/0029/0000/0001	lokatts	PMDCollab_1
+30	Nidorina shiny	sprite/0030/0000/0001	Audino, baronessfaron	PMDCollab_1, PMDCollab_2
+31	Nidoqueen shiny	sprite/0031/0000/0001	Emmuffin	PMDCollab_2
+32	Nidoran_M shiny	sprite/0032/0000/0001	Tacocoa	PMDCollab_1
+33	Nidorino shiny	sprite/0033/0000/0001	Anonymous	PMDCollab_1
+34	Nidoking shiny	sprite/0034/0000/0001	Tacocoa	PMDCollab_1
+35	Clefairy shiny	sprite/0035/0000/0001	Tacocoa	PMDCollab_1
+36	Clefable shiny	sprite/0036/0000/0001	Tacocoa	PMDCollab_1
+37	Vulpix shiny	sprite/0037/0000/0001	Lovi	PMDCollab_1
+38	Ninetales shiny	sprite/0038/0000/0001	Emmuffin	PMDCollab_1
+39	Jigglypuff shiny	sprite/0039/0000/0001	Emmuffin	CC_BY-NC_4
+40	Wigglytuff shiny	sprite/0040/0000/0001	Morei, Lovi	PMDCollab_1
+41	Zubat shiny	sprite/0041/0000/0001	Tacocoa	PMDCollab_1
+42	Golbat shiny	sprite/0042/0000/0001	Tacocoa	PMDCollab_1
+43	Oddish shiny	sprite/0043/0000/0001	Tacocoa	PMDCollab_1
+44	Gloom shiny	sprite/0044/0000/0001	Tacocoa	PMDCollab_1
+45	Vileplume shiny	sprite/0045/0000/0001	Emmuffin	PMDCollab_1
+46	Paras shiny	sprite/0046/0000/0001	Tacocoa	PMDCollab_1
+47	Parasect shiny	sprite/0047/0000/0001	ShyStarryRain	PMDCollab_2
+48	Venonat shiny	sprite/0048/0000/0001	Tacocoa, Emmuffin	PMDCollab_1, CC_BY-NC_4
+49	Venomoth shiny	sprite/0049/0000/0001	Anonymous	PMDCollab_1
+50	Diglett shiny	sprite/0050/0000/0001	El_Pangoro_Parse	PMDCollab_1
+51	Dugtrio shiny	sprite/0051/0000/0001	El_Pangoro_Parse	PMDCollab_1
+52	Meowth shiny	sprite/0052/0000/0001	El_Pangoro_Parse	PMDCollab_1
+53	Persian shiny	sprite/0053/0000/0001	El_Pangoro_Parse	PMDCollab_1
+54	Psyduck shiny	sprite/0054/0000/0001	<@!195280695009083392>, ShyStarryRain	PMDCollab_1, CC_BY-NC_4
+55	Golduck shiny	sprite/0055/0000/0001	El_Pangoro_Parse	PMDCollab_1
+56	Mankey shiny	sprite/0056/0000/0001	El_Pangoro_Parse	PMDCollab_1
+57	Primeape shiny	sprite/0057/0000/0001	G〜	PMDCollab_2
+58	Growlithe shiny	sprite/0058/0000/0001	Audino, Emmuffin	PMDCollab_1
+59	Arcanine shiny	sprite/0059/0000/0001	Tacocoa, baronessfaron	PMDCollab_1
+60	Poliwag shiny	sprite/0060/0000/0001	El_Pangoro_Parse	PMDCollab_1
+61	Poliwhirl shiny	sprite/0061/0000/0001	El_Pangoro_Parse, 3Monika4	PMDCollab_1
+62	Poliwrath shiny	sprite/0062/0000/0001	El_Pangoro_Parse	PMDCollab_1
+63	Abra shiny	sprite/0063/0000/0001	Tacocoa, 3Monika4, Emmuffin	PMDCollab_1
+64	Kadabra shiny	sprite/0064/0000/0001	El_Pangoro_Parse	PMDCollab_1
+65	Alakazam shiny	sprite/0065/0000/0001	Morei, Emmuffin	PMDCollab_1, PMDCollab_2
+66	Machop shiny	sprite/0066/0000/0001	Morei	PMDCollab_2
+67	Machoke shiny	sprite/0067/0000/0001	Tacocoa	PMDCollab_1
+68	Machamp shiny	sprite/0068/0000/0001	Tacocoa	PMDCollab_1
+69	Bellsprout shiny	sprite/0069/0000/0001	Audino	PMDCollab_1
+70	Weepinbell shiny	sprite/0070/0000/0001	Anonymous	PMDCollab_1
+71	Victreebel shiny	sprite/0071/0000/0001	Emmuffin	PMDCollab_2
+72	Tentacool shiny	sprite/0072/0000/0001	Tacocoa	PMDCollab_1
+73	Tentacruel shiny	sprite/0073/0000/0001	Tacocoa	PMDCollab_1
+74	Geodude shiny	sprite/0074/0000/0001	El_Pangoro_Parse	PMDCollab_1
+75	Graveler shiny	sprite/0075/0000/0001	Emmuffin	CC_BY-NC_4
+76	Golem shiny	sprite/0076/0000/0001	El_Pangoro_Parse, Emmuffin	PMDCollab_2, CC_BY-NC_4
+77	Ponyta shiny	sprite/0077/0000/0001	Tacocoa, Emmuffin	PMDCollab_1, CC_BY-NC_4
+78	Rapidash shiny	sprite/0078/0000/0001	El_Pangoro_Parse, Noo	PMDCollab_1
+79	Slowpoke shiny	sprite/0079/0000/0001	ShyStarryRain	CC_BY-NC_4
+80	Slowbro shiny	sprite/0080/0000/0001	Tacocoa	PMDCollab_1
+81	Magnemite shiny	sprite/0081/0000/0001	El_Pangoro_Parse	PMDCollab_1
+82	Magneton shiny	sprite/0082/0000/0001	El_Pangoro_Parse	PMDCollab_1
+83	Farfetch_d shiny	sprite/0083/0000/0001	Lovi	PMDCollab_1
+84	Doduo shiny	sprite/0084/0000/0001	Anonymous	PMDCollab_1
+85	Dodrio shiny	sprite/0085/0000/0001	Anonymous	PMDCollab_1
+86	Seel shiny	sprite/0086/0000/0001	Tacocoa	PMDCollab_1
+87	Dewgong shiny	sprite/0087/0000/0001	Tacocoa	PMDCollab_1
+88	Grimer shiny	sprite/0088/0000/0001	Emmuffin	CC_BY-NC_4
+89	Muk shiny	sprite/0089/0000/0001	G〜	CC_BY-NC_4
+90	Shellder shiny	sprite/0090/0000/0001	El_Pangoro_Parse	PMDCollab_1
+91	Cloyster shiny	sprite/0091/0000/0001	El_Pangoro_Parse, Emmuffin	PMDCollab_1
+92	Gastly shiny	sprite/0092/0000/0001	El_Pangoro_Parse, ShyStarryRain	PMDCollab_1
+93	Haunter shiny	sprite/0093/0000/0001	Tacocoa	PMDCollab_1
+94	Gengar shiny	sprite/0094/0000/0001	Tacocoa, Emboarger	PMDCollab_1
+95	Onix shiny	sprite/0095/0000/0001	El_Pangoro_Parse	PMDCollab_1
+96	Drowzee shiny	sprite/0096/0000/0001	El_Pangoro_Parse	PMDCollab_1
+97	Hypno shiny	sprite/0097/0000/0001	Lovi	PMDCollab_1
+98	Krabby shiny	sprite/0098/0000/0001	Tacocoa, G〜	PMDCollab_1, PMDCollab_2
+99	Kingler shiny	sprite/0099/0000/0001	Tacocoa	PMDCollab_1
+100	Voltorb shiny	sprite/0100/0000/0001	Emmuffin	PMDCollab_2
+101	Electrode shiny	sprite/0101/0000/0001	Tacocoa, Noo	PMDCollab_1
+102	Exeggcute shiny	sprite/0102/0000/0001	Prismatic, Noo	PMDCollab_1
+103	Exeggutor shiny	sprite/0103/0000/0001	Audino, Noo	PMDCollab_1
+104	Cubone shiny	sprite/0104/0000/0001	Emmuffin	PMDCollab_1, PMDCollab_2
+105	Marowak shiny	sprite/0105/0000/0001	El_Pangoro_Parse	PMDCollab_1
+106	Hitmonlee shiny	sprite/0106/0000/0001	Tacocoa	PMDCollab_1
+107	Hitmonchan shiny	sprite/0107/0000/0001	Tacocoa	PMDCollab_1
+108	Lickitung shiny	sprite/0108/0000/0001	Audino	PMDCollab_1
+109	Koffing shiny	sprite/0109/0000/0001	Tacocoa	PMDCollab_1
+110	Weezing shiny	sprite/0110/0000/0001	El_Pangoro_Parse	PMDCollab_1
+111	Rhyhorn shiny	sprite/0111/0000/0001	Tacocoa	PMDCollab_1
+112	Rhydon shiny	sprite/0112/0000/0001	Tacocoa	PMDCollab_1
+113	Chansey shiny	sprite/0113/0000/0001	Tacocoa	PMDCollab_1
+114	Tangela shiny	sprite/0114/0000/0001	Anonymous	PMDCollab_1
+115	Kangaskhan shiny	sprite/0115/0000/0001	Emmuffin	CC_BY-NC_4
+116	Horsea shiny	sprite/0116/0000/0001	Reppamon	PMDCollab_1
+117	Seadra shiny	sprite/0117/0000/0001	Tacocoa	PMDCollab_1
+118	Goldeen shiny	sprite/0118/0000/0001	Tacocoa	PMDCollab_1
+119	Seaking shiny	sprite/0119/0000/0001	Tacocoa	PMDCollab_1
+120	Staryu shiny	sprite/0120/0000/0001	Adrian	PMDCollab_1
+121	Starmie shiny	sprite/0121/0000/0001	Anonymous, Noo	PMDCollab_1
+122	Mr_Mime shiny	sprite/0122/0000/0001	Lovi	PMDCollab_1
+123	Scyther shiny	sprite/0123/0000/0001	Tacocoa	PMDCollab_1
+124	Jynx shiny	sprite/0124/0000/0001	Audino, ShyStarryRain	PMDCollab_1
+125	Electabuzz shiny	sprite/0125/0000/0001	Scizivire	PMDCollab_1
+126	Magmar shiny	sprite/0126/0000/0001	Lovi	PMDCollab_1
+127	Pinsir shiny	sprite/0127/0000/0001	El_Pangoro_Parse	PMDCollab_1
+128	Tauros shiny	sprite/0128/0000/0001	El_Pangoro_Parse	PMDCollab_1
+129	Magikarp shiny	sprite/0129/0000/0001	Scizivire, Noo	PMDCollab_1
+130	Gyarados shiny	sprite/0130/0000/0001	Noo, Emmuffin	CC_BY-NC_4
+131	Lapras shiny	sprite/0131/0000/0001	RaoKurai	PMDCollab_1
+132	Ditto shiny	sprite/0132/0000/0001	ShyStarryRain	CC_BY-NC_4
+133	Eevee shiny	sprite/0133/0000/0001	baronessfaron	PMDCollab_1
+134	Vaporeon shiny	sprite/0134/0000/0001	Emmuffin	CC_BY-NC_4
+135	Jolteon shiny	sprite/0135/0000/0001	Lovi, Morei	PMDCollab_1
+136	Flareon shiny	sprite/0136/0000/0001	Tacocoa, ShyStarryRain, FlowerSnek	PMDCollab_1
+137	Porygon shiny	sprite/0137/0000/0001	Tacocoa	PMDCollab_1
+138	Omanyte shiny	sprite/0138/0000/0001	Tacocoa	PMDCollab_1
+139	Omastar shiny	sprite/0139/0000/0001	Tacocoa	PMDCollab_1
+140	Kabuto shiny	sprite/0140/0000/0001	Emmuffin	CC_BY-NC_4
+141	Kabutops shiny	sprite/0141/0000/0001	Tacocoa	PMDCollab_1
+142	Aerodactyl shiny	sprite/0142/0000/0001	El_Pangoro_Parse	PMDCollab_1
+143	Snorlax shiny	sprite/0143/0000/0001	El_Pangoro_Parse	PMDCollab_1
+144	Articuno shiny	sprite/0144/0000/0001	El_Pangoro_Parse, Emmuffin	CC_BY-NC_4
+145	Zapdos shiny	sprite/0145/0000/0001	Emmuffin	CC_BY-NC_4
+146	Moltres shiny	sprite/0146/0000/0001	Emmuffin	CC_BY-NC_4
+147	Dratini shiny	sprite/0147/0000/0001	Pencil	PMDCollab_1
+148	Dragonair shiny	sprite/0148/0000/0001	Lovi	PMDCollab_1
+149	Dragonite shiny	sprite/0149/0000/0001	Deeshura	CC_BY-NC_4
+150	Mewtwo shiny	sprite/0150/0000/0001	El_Pangoro_Parse, JFain	PMDCollab_1
+151	Mew shiny	sprite/0151/0000/0001	Anonymous, Emboarger	PMDCollab_1, CC_BY-NC_4
+152	Chikorita shiny	sprite/0152/0000/0001	lokatts	PMDCollab_1
+153	Bayleef shiny	sprite/0153/0000/0001	Emmuffin	PMDCollab_2
+154	Meganium shiny	sprite/0154/0000/0001	Deeshura	PMDCollab_2
+155	Cyndaquil shiny	sprite/0155/0000/0001	lokatts	PMDCollab_1
+156	Quilava shiny	sprite/0156/0000/0001	lokatts, JFain	PMDCollab_1
+157	Typhlosion shiny	sprite/0157/0000/0001	◥θ┴θ◤, Emmuffin	PMDCollab_2, CC_BY-NC_4
+158	Totodile shiny	sprite/0158/0000/0001	Moo	PMDCollab_1
+159	Croconaw shiny	sprite/0159/0000/0001	Audino	PMDCollab_1
+160	Feraligatr shiny	sprite/0160/0000/0001	Audino	PMDCollab_1
+161	Sentret shiny	sprite/0161/0000/0001	Lovi, Emmuffin	PMDCollab_1
+162	Furret shiny	sprite/0162/0000/0001	Anonymous	PMDCollab_1
+163	Hoothoot shiny	sprite/0163/0000/0001	Lovi, Noo	PMDCollab_1
+164	Noctowl shiny	sprite/0164/0000/0001	Pencil, Noo, Emmuffin	PMDCollab_1, CC_BY-NC_4
+165	Ledyba shiny	sprite/0165/0000/0001	Pokejavi.	CC_BY-NC_4
+166	Ledian shiny	sprite/0166/0000/0001	Tacocoa	PMDCollab_1
+167	Spinarak shiny	sprite/0167/0000/0001	Emmuffin	PMDCollab_2
+168	Ariados shiny	sprite/0168/0000/0001	Prismatic	PMDCollab_1
+169	Crobat shiny	sprite/0169/0000/0001	Chi	PMDCollab_1
+170	Chinchou shiny	sprite/0170/0000/0001	Prismatic	PMDCollab_1
+171	Lanturn shiny	sprite/0171/0000/0001	Prismatic	PMDCollab_1
+172	Pichu shiny	sprite/0172/0000/0001	Lovi, Spikey-Valentine	PMDCollab_1, PMDCollab_2, CC_BY-NC_4
+173	Cleffa shiny	sprite/0173/0000/0001	Anonymous	PMDCollab_1
+174	Igglybuff shiny	sprite/0174/0000/0001	Anonymous	PMDCollab_1
+175	Togepi shiny	sprite/0175/0000/0001	RaoKurai	PMDCollab_1
+176	Togetic shiny	sprite/0176/0000/0001	Emmuffin	CC_BY-NC_4
+177	Natu shiny	sprite/0177/0000/0001	El_Pangoro_Parse, Hanbei	PMDCollab_1
+178	Xatu shiny	sprite/0178/0000/0001	Morei	PMDCollab_1
+179	Mareep shiny	sprite/0179/0000/0001	Anonymous, Emmuffin	PMDCollab_1
+180	Flaaffy shiny	sprite/0180/0000/0001	Anonymous, Emmuffin	PMDCollab_1, PMDCollab_2
+181	Ampharos shiny	sprite/0181/0000/0001	Anonymous, Noo	PMDCollab_1
+182	Bellossom shiny	sprite/0182/0000/0001	Morei	PMDCollab_1
+183	Marill shiny	sprite/0183/0000/0001	Tacocoa, JFain	PMDCollab_1
+184	Azumarill shiny	sprite/0184/0000/0001	Lovi, Noo	PMDCollab_1
+185	Sudowoodo shiny	sprite/0185/0000/0001	Prismatic, Noo	PMDCollab_1
+186	Politoed shiny	sprite/0186/0000/0001	Tacocoa	PMDCollab_1
+187	Hoppip shiny	sprite/0187/0000/0001	Reppamon, bwappi	PMDCollab_1, PMDCollab_2
+188	Skiploom shiny	sprite/0188/0000/0001	Anonymous, Morei	PMDCollab_1
+189	Jumpluff shiny	sprite/0189/0000/0001	Anonymous	PMDCollab_1
+190	Aipom shiny	sprite/0190/0000/0001	Prismatic, Noo, JFain	PMDCollab_1, PMDCollab_2
+191	Sunkern shiny	sprite/0191/0000/0001	Tacocoa	PMDCollab_1
+192	Sunflora shiny	sprite/0192/0000/0001	Tacocoa	PMDCollab_1
+193	Yanma shiny	sprite/0193/0000/0001	Moo	PMDCollab_1
+194	Wooper shiny	sprite/0194/0000/0001	Prismatic, Caitemis, Uni	PMDCollab_1
+195	Quagsire shiny	sprite/0195/0000/0001	Anonymous	PMDCollab_1
+196	Espeon shiny	sprite/0196/0000/0001	Lovi, Noo, baronessfaron	PMDCollab_1
+197	Umbreon shiny	sprite/0197/0000/0001	Emmuffin	CC_BY-NC_4
+198	Murkrow shiny	sprite/0198/0000/0001	Scizivire, Caitemis, Smalusion	PMDCollab_1, PMDCollab_2
+199	Slowking shiny	sprite/0199/0000/0001	Lovi	PMDCollab_1
+200	Misdreavus shiny	sprite/0200/0000/0001	Emmuffin	PMDCollab_2
+201	Unown shiny	sprite/0201/0000/0001	Tacocoa	PMDCollab_1
+202	Wobbuffet shiny	sprite/0202/0000/0001	Tacocoa, Noo	PMDCollab_1
+203	Girafarig shiny	sprite/0203/0000/0001	Emmuffin	PMDCollab_1
+204	Pineco shiny	sprite/0204/0000/0001	Tacocoa	PMDCollab_1
+205	Forretress shiny	sprite/0205/0000/0001	Tacocoa, G〜	PMDCollab_1, PMDCollab_2
+206	Dunsparce shiny	sprite/0206/0000/0001	G〜	CC_BY-NC_4
+207	Gligar shiny	sprite/0207/0000/0001	Prismatic, JFain	CC_BY-NC_4
+208	Steelix shiny	sprite/0208/0000/0001	Lovi	PMDCollab_1
+209	Snubbull shiny	sprite/0209/0000/0001	Emmuffin	CC_BY-NC_4
+210	Granbull shiny	sprite/0210/0000/0001	Chi	PMDCollab_1
+211	Qwilfish shiny	sprite/0211/0000/0001	Prismatic	PMDCollab_1
+212	Scizor shiny	sprite/0212/0000/0001	Anonymous	PMDCollab_2
+213	Shuckle shiny	sprite/0213/0000/0001	Anonymous, Noo	PMDCollab_1
+214	Heracross shiny	sprite/0214/0000/0001	Prismatic	PMDCollab_1
+215	Sneasel shiny	sprite/0215/0000/0001	Lovi, Emboarger	
+216	Teddiursa shiny	sprite/0216/0000/0001	El_Pangoro_Parse, Emmuffin	PMDCollab_1
+217	Ursaring shiny	sprite/0217/0000/0001	El_Pangoro_Parse	PMDCollab_1
+218	Slugma shiny	sprite/0218/0000/0001	Chi, ShyStarryRain	PMDCollab_1, PMDCollab_2
+219	Magcargo shiny	sprite/0219/0000/0001	Lovi	PMDCollab_1
+220	Swinub shiny	sprite/0220/0000/0001	Tacocoa, Caitemis	PMDCollab_1
+221	Piloswine shiny	sprite/0221/0000/0001	Scizivire	PMDCollab_1
+222	Corsola shiny	sprite/0222/0000/0001	<@!195280695009083392>, Noo	PMDCollab_1
+223	Remoraid shiny	sprite/0223/0000/0001	Avery	PMDCollab_1
+224	Octillery shiny	sprite/0224/0000/0001	Morei	PMDCollab_2
+225	Delibird shiny	sprite/0225/0000/0001	G〜	CC_BY-NC_4
+226	Mantine shiny	sprite/0226/0000/0001	Prismatic, Emmuffin	PMDCollab_1
+227	Skarmory shiny	sprite/0227/0000/0001	Morei	PMDCollab_2
+228	Houndour shiny	sprite/0228/0000/0001	Anonymous, Morei	PMDCollab_1
+229	Houndoom shiny	sprite/0229/0000/0001	Morei	PMDCollab_2
+230	Kingdra shiny	sprite/0230/0000/0001	Chi	PMDCollab_1
+231	Phanpy shiny	sprite/0231/0000/0001	Prismatic, ShyStarryRain	PMDCollab_1, PMDCollab_2
+232	Donphan shiny	sprite/0232/0000/0001	Lovi, Emmuffin	PMDCollab_1, CC_BY-NC_4
+233	Porygon2 shiny	sprite/0233/0000/0001	bwappi	PMDCollab_2
+234	Stantler shiny	sprite/0234/0000/0001	Emmuffin	PMDCollab_2
+235	Smeargle shiny	sprite/0235/0000/0001	Tacocoa, Emmuffin	PMDCollab_1
+236	Tyrogue shiny	sprite/0236/0000/0001	Prismatic, Emmuffin, Caitemis	PMDCollab_1, PMDCollab_2
+237	Hitmontop shiny	sprite/0237/0000/0001	Prismatic	PMDCollab_1
+238	Smoochum shiny	sprite/0238/0000/0001	Lovi, baronessfaron	PMDCollab_1, CC_BY-NC_4
+239	Elekid shiny	sprite/0239/0000/0001	G〜	PMDCollab_2
+240	Magby shiny	sprite/0240/0000/0001	Lovi, Emboarger	PMDCollab_1, PMDCollab_2
+241	Miltank shiny	sprite/0241/0000/0001	Lovi	PMDCollab_1
+242	Blissey shiny	sprite/0242/0000/0001	Lovi	PMDCollab_1
+243	Raikou shiny	sprite/0243/0000/0001	Emmuffin	CC_BY-NC_4
+244	Entei shiny	sprite/0244/0000/0001	Emmuffin	CC_BY-NC_4
+245	Suicune shiny	sprite/0245/0000/0001	Lovi	CC_BY-NC_4
+246	Larvitar shiny	sprite/0246/0000/0001	Lovi, JFain	PMDCollab_1
+247	Pupitar shiny	sprite/0247/0000/0001	Tacocoa	PMDCollab_1
+248	Tyranitar shiny	sprite/0248/0000/0001	Prismatic	PMDCollab_2
+249	Lugia shiny	sprite/0249/0000/0001	Audino	CC_BY-NC_4
+250	Ho_Oh shiny	sprite/0250/0000/0001	El_Pangoro_Parse, Deeshura	PMDCollab_1, CC_BY-NC_4
+251	Celebi shiny	sprite/0251/0000/0001	Emmuffin, CHUNSOFT	PMDCollab_1
+277	Treecko shiny	sprite/0252/0000/0001	YoukaiMinori, Morei	PMDCollab_1
+278	Grovyle shiny	sprite/0253/0000/0001	Morei, Deeshura, YoukaiMinori	PMDCollab_2, CC_BY-NC_4
+279	Sceptile shiny	sprite/0254/0000/0001	Lovi, Emmuffin	PMDCollab_1, CC_BY-NC_4
+280	Torchic shiny	sprite/0255/0000/0001	Moo	PMDCollab_1
+281	Combusken shiny	sprite/0256/0000/0001	Moo, Morei	PMDCollab_1
+282	Blaziken shiny	sprite/0257/0000/0001	baronessfaron	PMDCollab_2
+283	Mudkip shiny	sprite/0258/0000/0001	Anonymous	PMDCollab_1
+284	Marshtomp shiny	sprite/0259/0000/0001	Anonymous	PMDCollab_1
+285	Swampert shiny	sprite/0260/0000/0001	Anonymous, Emmuffin	PMDCollab_1
+286	Poochyena shiny	sprite/0261/0000/0001	Anonymous, Morei	PMDCollab_1
+287	Mightyena shiny	sprite/0262/0000/0001	Anonymous, Emboarger	PMDCollab_1
+288	Zigzagoon shiny	sprite/0263/0000/0001	Reppamon, Caitemis, Emmuffin	PMDCollab_1
+289	Linoone shiny	sprite/0264/0000/0001	Emmuffin	PMDCollab_2
+290	Wurmple shiny	sprite/0265/0000/0001	Avery	PMDCollab_1
+291	Silcoon shiny	sprite/0266/0000/0001	Tacocoa	PMDCollab_1
+292	Beautifly shiny	sprite/0267/0000/0001	Anonymous	PMDCollab_1
+293	Cascoon shiny	sprite/0268/0000/0001	Tacocoa	PMDCollab_1
+294	Dustox shiny	sprite/0269/0000/0001	Caitemis	PMDCollab_2
+295	Lotad shiny	sprite/0270/0000/0001	G〜	CC_BY-NC_4
+296	Lombre shiny	sprite/0271/0000/0001	Morei	PMDCollab_2
+297	Ludicolo shiny	sprite/0272/0000/0001	Morei	PMDCollab_2
+298	Seedot shiny	sprite/0273/0000/0001	Moo, Caitemis	PMDCollab_1
+299	Nuzleaf shiny	sprite/0274/0000/0001	Emmuffin	CC_BY-NC_4
+300	Shiftry shiny	sprite/0275/0000/0001	Morei	PMDCollab_2
+301	Nincada shiny	sprite/0290/0000/0001	El_Pangoro_Parse, Emmuffin	PMDCollab_1, CC_BY-NC_4
+302	Ninjask shiny	sprite/0291/0000/0001	El_Pangoro_Parse	PMDCollab_1
+303	Shedinja shiny	sprite/0292/0000/0001	El_Pangoro_Parse	PMDCollab_1
+304	Taillow shiny	sprite/0276/0000/0001	Morei	PMDCollab_2
+305	Swellow shiny	sprite/0277/0000/0001	Morei, Emmuffin	PMDCollab_2
+306	Shroomish shiny	sprite/0285/0000/0001	Tacocoa	PMDCollab_1
+307	Breloom shiny	sprite/0286/0000/0001	Emmuffin	CC_BY-NC_4
+308	Spinda shiny	sprite/0327/0000/0001	El_Pangoro_Parse	CC_BY-NC_4
+309	Wingull shiny	sprite/0278/0000/0001	Tacocoa	PMDCollab_1
+310	Pelipper shiny	sprite/0279/0000/0001	Morei	PMDCollab_2
+311	Surskit shiny	sprite/0283/0000/0001	Moo	PMDCollab_1
+312	Masquerain shiny	sprite/0284/0000/0001	Moo	PMDCollab_1
+313	Wailmer shiny	sprite/0320/0000/0001	Prismatic	PMDCollab_1
+314	Wailord shiny	sprite/0321/0000/0001	G〜	CC_BY-NC_4
+315	Skitty shiny	sprite/0300/0000/0001	lokatts	PMDCollab_1
+316	Delcatty shiny	sprite/0301/0000/0001	Ginnie	PMDCollab_2
+317	Kecleon shiny	sprite/0352/0000/0001	El_Pangoro_Parse, G〜, Top_Kec	CC_BY-NC_4
+318	Baltoy shiny	sprite/0343/0000/0001	Caitemis	PMDCollab_2
+319	Claydol shiny	sprite/0344/0000/0001	Lovi	PMDCollab_1
+320	Nosepass shiny	sprite/0299/0000/0001	Moo	PMDCollab_1
+321	Torkoal shiny	sprite/0324/0000/0001	Reppamon	PMDCollab_1
+322	Sableye shiny	sprite/0302/0000/0001	Morei	PMDCollab_2
+323	Barboach shiny	sprite/0339/0000/0001	Tacocoa	PMDCollab_1
+324	Whiscash shiny	sprite/0340/0000/0001	bwappi	PMDCollab_2
+325	Luvdisc shiny	sprite/0370/0000/0001	Chi	PMDCollab_1
+326	Corphish shiny	sprite/0341/0000/0001	Morei	PMDCollab_2
+327	Crawdaunt shiny	sprite/0342/0000/0001	Moo	PMDCollab_1
+328	Feebas shiny	sprite/0349/0000/0001	Chi	PMDCollab_1
+329	Milotic shiny	sprite/0350/0000/0001	Emmuffin	CC_BY-NC_4
+330	Carvanha shiny	sprite/0318/0000/0001	Lovi	PMDCollab_1
+331	Sharpedo shiny	sprite/0319/0000/0001	Lovi	PMDCollab_1
+332	Trapinch shiny	sprite/0328/0000/0001	El_Pangoro_Parse, Emmuffin, Caitemis	PMDCollab_1, CC_BY-NC_4
+333	Vibrava shiny	sprite/0329/0000/0001	El_Pangoro_Parse	PMDCollab_1
+334	Flygon shiny	sprite/0330/0000/0001	Deeshura	PMDCollab_2
+335	Makuhita shiny	sprite/0296/0000/0001	Emmuffin	CC_BY-NC_4
+336	Hariyama shiny	sprite/0297/0000/0001	Moo	PMDCollab_1
+337	Electrike shiny	sprite/0309/0000/0001	Tacocoa, JFain	PMDCollab_1, PMDCollab_2
+338	Manectric shiny	sprite/0310/0000/0001	Hemlock	PMDCollab_2
+339	Numel shiny	sprite/0322/0000/0001	Emmuffin	PMDCollab_2
+340	Camerupt shiny	sprite/0323/0000/0001	Prismatic, Emmuffin	PMDCollab_1, CC_BY-NC_4
+341	Spheal shiny	sprite/0363/0000/0001	Tacocoa, JFain	PMDCollab_1
+342	Sealeo shiny	sprite/0364/0000/0001	Emmuffin	PMDCollab_2
+343	Walrein shiny	sprite/0365/0000/0001	Emmuffin	CC_BY-NC_4
+344	Cacnea shiny	sprite/0331/0000/0001	NOLASMOR	PMDCollab_2
+345	Cacturne shiny	sprite/0332/0000/0001	Emmuffin	PMDCollab_2
+346	Snorunt shiny	sprite/0361/0000/0001	Emmuffin	CC_BY-NC_4
+347	Glalie shiny	sprite/0362/0000/0001	Tacocoa	PMDCollab_1
+348	Lunatone shiny	sprite/0337/0000/0001	Chesyon	CC_BY-NC_4
+349	Solrock shiny	sprite/0338/0000/0001	El_Pangoro_Parse	PMDCollab_1
+350	Azurill shiny	sprite/0298/0000/0001	ShyStarryRain	PMDCollab_1
+351	Spoink shiny	sprite/0325/0000/0001	Prismatic	PMDCollab_1
+352	Grumpig shiny	sprite/0326/0000/0001	Prismatic	PMDCollab_1
+353	Plusle shiny	sprite/0311/0000/0001	Emmuffin	CC_BY-NC_4
+354	Minun shiny	sprite/0312/0000/0001	El_Pangoro_Parse, baronessfaron	PMDCollab_1
+355	Mawile shiny	sprite/0303/0000/0001	Emmuffin	PMDCollab_2
+356	Meditite shiny	sprite/0307/0000/0001	Anonymous	PMDCollab_1
+357	Medicham shiny	sprite/0308/0000/0001	Morei	PMDCollab_2
+358	Swablu shiny	sprite/0333/0000/0001	Emmuffin	PMDCollab_2
+359	Altaria shiny	sprite/0334/0000/0001	Emmuffin	CC_BY-NC_4
+360	Wynaut shiny	sprite/0360/0000/0001	Tacocoa	PMDCollab_2
+361	Duskull shiny	sprite/0355/0000/0001	Emmuffin	PMDCollab_2
+362	Dusclops shiny	sprite/0356/0000/0001	G〜	CC_BY-NC_4
+363	Roselia shiny	sprite/0315/0000/0001	RaoKurai, G〜	PMDCollab_1, PMDCollab_2
+364	Slakoth shiny	sprite/0287/0000/0001	Moo	PMDCollab_1
+365	Vigoroth shiny	sprite/0288/0000/0001	Moo	PMDCollab_1
+366	Slaking shiny	sprite/0289/0000/0001	Moo	PMDCollab_1
+367	Gulpin shiny	sprite/0316/0000/0001	Emmuffin	CC_BY-NC_4
+368	Swalot shiny	sprite/0317/0000/0001	Emmuffin	CC_BY-NC_4
+369	Tropius shiny	sprite/0357/0000/0001	Emmuffin	CC_BY-NC_4
+370	Whismur shiny	sprite/0293/0000/0001	Moo	PMDCollab_1
+371	Loudred shiny	sprite/0294/0000/0001	Moo	PMDCollab_2
+372	Exploud shiny	sprite/0295/0000/0001	Moo	PMDCollab_1
+373	Clamperl shiny	sprite/0366/0000/0001	Lovi	PMDCollab_1
+374	Huntail shiny	sprite/0367/0000/0001	Prismatic	PMDCollab_1
+375	Gorebyss shiny	sprite/0368/0000/0001	Tacocoa	PMDCollab_1
+376	Absol shiny	sprite/0359/0000/0001	Top_Kec, Noo, Deeshura	CC_BY-NC_4
+377	Shuppet shiny	sprite/0353/0000/0001	Pokejavi.	CC_BY-NC_4
+378	Banette shiny	sprite/0354/0000/0001	Anonymous	PMDCollab_2
+379	Seviper shiny	sprite/0336/0000/0001	Emmuffin	CC_BY-NC_4
+380	Zangoose shiny	sprite/0335/0000/0001	El_Pangoro_Parse, KCN015, Noo	PMDCollab_1
+381	Relicanth shiny	sprite/0369/0000/0001	Prismatic	PMDCollab_1
+382	Aron shiny	sprite/0304/0000/0001	Emboarger, Morei	PMDCollab_1, PMDCollab_2
+383	Lairon shiny	sprite/0305/0000/0001	Emmuffin	PMDCollab_2
+384	Aggron shiny	sprite/0306/0000/0001	Morei	PMDCollab_2
+385	Castform shiny	sprite/0351/0000/0001	ShyStarryRain	PMDCollab_2
+386	Volbeat shiny	sprite/0313/0000/0001	Reppamon, G〜	CC_BY-NC_4
+387	Illumise shiny	sprite/0314/0000/0001	Emmuffin	PMDCollab_2
+388	Lileep shiny	sprite/0345/0000/0001	Anonymous	PMDCollab_1
+389	Cradily shiny	sprite/0346/0000/0001	Anonymous	PMDCollab_1
+390	Anorith shiny	sprite/0347/0000/0001	Moo	PMDCollab_1
+391	Armaldo shiny	sprite/0348/0000/0001	Morei	PMDCollab_2
+392	Ralts shiny	sprite/0280/0000/0001	Moo, Morei	PMDCollab_1, CC_BY-NC_4
+393	Kirlia shiny	sprite/0281/0000/0001	JFain, Morei	PMDCollab_1, CC_BY-NC_4
+394	Gardevoir shiny	sprite/0282/0000/0001	Morei	PMDCollab_1, CC_BY-NC_4
+395	Bagon shiny	sprite/0371/0000/0001	Pokejavi.	CC_BY-NC_4
+396	Shelgon shiny	sprite/0372/0000/0001	Tacocoa	PMDCollab_1
+397	Salamence shiny	sprite/0373/0000/0001	Emmuffin	PMDCollab_2
+398	Beldum shiny	sprite/0374/0000/0001	Audino	PMDCollab_1
+399	Metang shiny	sprite/0375/0000/0001	Audino	PMDCollab_1
+400	Metagross shiny	sprite/0376/0000/0001	Audino, Noo	PMDCollab_1
+401	Regirock shiny	sprite/0377/0000/0001	Chi	PMDCollab_1
+402	Regice shiny	sprite/0378/0000/0001	Tacocoa	PMDCollab_1
+403	Registeel shiny	sprite/0379/0000/0001	Audino	PMDCollab_1
+404	Kyogre shiny	sprite/0382/0000/0001	lokatts	PMDCollab_1
+405	Groudon shiny	sprite/0383/0000/0001	lokatts	CC_BY-NC_4
+406	Rayquaza shiny	sprite/0384/0000/0001	lokatts	PMDCollab_1
+407	Latias shiny	sprite/0380/0000/0001	Emmuffin	PMDCollab_1
+408	Latios shiny	sprite/0381/0000/0001	Reppamon	CC_BY-NC_4
+409	Jirachi shiny	sprite/0385/0000/0001	Emmuffin	CC_BY-NC_4
+410	Deoxys shiny	sprite/0386/0000/0001	Sonikku_A	PMDCollab_2
+411	Chimecho shiny	sprite/0358/0000/0001	lokatts	PMDCollab_2

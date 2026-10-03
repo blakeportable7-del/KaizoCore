@@ -87,6 +87,18 @@ internal object RunSaves {
         plan(save, kind).takeIf { it != Plan.NONE } ?: plan(setAside(save), kind)
 
     /**
+     * What a new run of [kind] would open with, before it is made (the Run tab's confirm): its own save, which for a DS
+     * game is parked under saves/ds/ while another DS game's run holds current.sav ([dsSwap]).
+     */
+    fun planForNewRun(filesDir: File, kind: RomKind, runRom: File): Plan {
+        if (kind.platform == Platform.NDS) {
+            val owner = runCatching { dsOwner(File(filesDir, "saves/current.sav")).readText().trim() }.getOrNull()
+            if (!owner.isNullOrEmpty() && owner != kind.id) return plan(dsParked(filesDir, kind.id), kind)
+        }
+        return planOnNewSeed(file(filesDir, kind, runRom), kind)
+    }
+
+    /**
      * As a new seed moves in. The save stays where it is. With no save, or one the game never wrote, a copy rc32's
      * first builds set aside comes back: Blake's Nat. Dex FireRed save in front of the three Poké Balls was one.
      * Returns what the new seed opens with.

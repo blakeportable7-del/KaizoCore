@@ -48,21 +48,25 @@ class SpriteIsMeWiringTest {
     @Test
     fun `the picker lists every Pokemon with a sprite, through the one lookup`() {
         val picker = src("SpriteIsMeUi.kt").substringAfter("private fun SpeciesPickerDialog(").substringBefore("\n}\n")
-        assertTrue("SpriteIsMeLogic.choices(Favorites.namesInOrder) { id, dex -> WalkingPals.find(ctx, id, dex) }" in picker, picker.take(400))
+        assertTrue("val ix = WalkingPals.ready(ctx)" in picker, picker.take(400))
+        assertTrue("remember(ix) { SpriteIsMeLogic.choices(Favorites.namesInOrder) { id, dex -> ix?.find(id, dex) } }" in picker, picker.take(400))
         assertFalse("1..411" in picker, "no Gen 1-3 cap")
-        // The lead says how its game numbers species, and the engine asks the art by that numbering.
-        assertTrue("if (map.expandedSpeciesIds) WalkingPals.Dex.NAT_DEX else WalkingPals.Dex.GEN3" in src("SpriteIsMeLogic.kt"))
-        assertTrue("SpriteIsMeLogic.choose(s.who, s.always, s.own, ownReady, leadNow, art::pal)" in src("SpriteIsMe.kt"))
+        // The lead says how its game numbers species (SpriteLead.dexOf, MaxDex's own way included), and the engine asks
+        // the art by that numbering.
+        assertTrue("return Reading.Found(lead(mon, dexOf(map), map))" in src("SpriteIsMeLogic.kt").substringAfter("fun read("))
+        // Drawn as the lead's look says, a picked Pokemon as its shiny when the switch says so (Blake, 2026-10-03).
+        assertTrue("SpriteIsMeLogic.choose(s.who, s.always, s.own, ownReady, leadNow, art::pal, s.alwaysShiny, art::look)" in src("SpriteIsMe.kt"))
     }
 
     /** "show Gen 4+ animations on the trackers": the GBA and Game Boy panel's icon finds either set by the game's numbering. */
     @Test
     fun `the tracker's animated icon is found by the game's numbering, past 411 too`() {
         val head = src("PcTracker.kt").substringAfter("fun PcHeadBlock(").substringBefore("PcSprite(sprite)")
-        assertTrue("WalkingPals.find(iconCtx, iconSpecies, iconDex)" in head, head.takeLast(600))
+        assertTrue("WalkingPals.ready(iconCtx).let { ix -> remember(ix, iconSpecies, iconDex, iconLook) { if (iconSpecies > 0) ix?.find(iconSpecies, iconDex, iconLook) else null } }" in head, head.takeLast(600))
         assertFalse("in 1..411" in head, "no Gen 1-3 cap on the animated icon")
         val panel = src("TrackerPanel.kt")
-        assertEquals(2, Regex("iconDex = WalkingPals\\.trackerDex\\(generation, speciesTotal\\)").findAll(panel).count(), "your card and the enemy's")
+        // MaxDex in Play numbers its own way past 1235 (MaxDexPlayTest), told by the session; every game goes through trackerDex.
+        assertEquals(2, Regex("iconDex = WalkingPals\\.trackerDex\\(generation, speciesTotal, maxDex\\)").findAll(panel).count(), "your card and the enemy's")
         assertEquals(2, Regex("iconDex = iconDex,").findAll(panel).count())
     }
     private fun cpp(name: String) = File("../libretrodroid/src/main/cpp/$name").readText().replace("\r\n", "\n")
@@ -119,6 +123,69 @@ class SpriteIsMeWiringTest {
         assertEquals(SpriteIsMeCopy.NOT_KNOWN, Overworld.whyNot(com.ironmonone.tracker.GameMap.FIRERED_U_V10.copy(name = "Some hack")))
     }
 
+    /**
+     * rc32 audit P2 #87: a hack built from the decompilations keeps its base game's header and moves its code. It got the
+     * base game's table, the native side never found its overworld, and the section showed its switch and never changed
+     * the character, with no word. Its own code is read now (Overworld.resolve), and when that fails it is told so.
+     */
+    @Test
+    fun `a game whose overworld moved is told so, in the tracker's own words`() {
+        val moved = com.ironmonone.tracker.GameMap.EMERALD_U
+        assertEquals(SpriteIsMeCopy.NO_OVERWORLD, SpriteIsMeRunner.refusal(moved))
+        assertEquals(SpriteIsMeCopy.NO_OVERWORLD, Overworld.whyNot(moved))
+        val natDex = com.ironmonone.tracker.GameMap.FIRERED_U_V10.copy(name = "Nat. Dex", expandedSpeciesIds = true)
+        assertEquals(SpriteIsMeCopy.NAT_DEX, SpriteIsMeRunner.refusal(natDex))
+        val unknown = com.ironmonone.tracker.GameMap.FIRERED_U_V10.copy(name = "Some hack")
+        assertEquals(SpriteIsMeCopy.NOT_KNOWN, SpriteIsMeRunner.refusal(unknown))
+        assertTrue("SpriteIsMeSupport.State.Unsupported(refusal(map))" in src("SpriteIsMe.kt"))
+        assertTrue(SpriteIsMeCopy.NO_OVERWORLD in SpriteIsMeCopy.all)
+        // MaxDex is read out of its own code since 2026-10-03; when that finds nothing it is named, not called Nat. Dex.
+        val maxDex = com.ironmonone.tracker.GameMap.MAXDEX_FR_10
+        assertEquals(SpriteIsMeCopy.MAX_DEX, SpriteIsMeRunner.refusal(maxDex))
+        assertEquals(SpriteIsMeCopy.MAX_DEX, Overworld.whyNot(maxDex))
+        assertTrue(SpriteIsMeCopy.MAX_DEX in SpriteIsMeCopy.all)
+    }
+
+    /**
+     * rc32 audit P2 #88, P3 #66, P2 #106: a tick runs on the main thread once a display frame. It decoded the player's
+     * sheets whole the first time each showed, opened the four sheet files on every frame, and decoded every Pokemon met.
+     */
+    @Test
+    fun `the art is decoded off the main thread, and a tick only crops what is ready`() {
+        val art = src("SpriteIsMeArt.kt").substringAfter("class AndroidSpriteArt(").substringBefore("\n}\n")
+        for (fn in listOf("override fun pal(", "override fun look(", "override fun palSheets(", "override fun palFrame(", "override fun ownReady(",
+            "override fun ownSheets(", "override fun ownFrame(", "override fun ownPicture(", "private fun palFor(", "override fun readiness(")) {
+            val body = art.substringAfter(fn).substringBefore("\n\n")
+            assertTrue(body.length < art.length / 2, fn)
+            assertFalse("BitmapFactory" in body || "SpriteIsMeStore" in body || "WalkingPals.bitmap" in body || "readBytes" in body, "$fn reads in a tick: $body")
+        }
+        val prepare = art.substringAfter("suspend fun prepare()")
+        assertTrue("BitmapFactory.decodeFile" in prepare && "WalkingPals.bitmap(" in prepare, "the decoding is in prepare")
+        // Each decode, when it is done, tells the ticks (readiness): a run resumed with the switch on stayed the trainer
+        // because nothing did (2026-10-03).
+        for (fn in listOf("private fun prepareOwn(", "private fun preparePal(")) {
+            assertTrue("decoded.incrementAndGet()" in art.substringAfter(fn).substringBefore("\n    }\n"), "$fn says when it is done")
+        }
+        assertTrue("override fun readiness(): Int = decoded.get() * 2 + if (WalkingPals.ready(ctx) != null) 1 else 0" in art)
+        assertTrue("val (sx, sy) = sheet.cell(row, index, b.width, b.height) ?: return null" in art, "the cut SpriteIsMeEverySheetTest checks every sheet with")
+        assertTrue("launch(Dispatchers.Default) { art.prepare() }" in src("SpriteIsMe.kt"), "which the runner starts off the main thread")
+        assertTrue("SpriteIsMeSupport.ownNote?.takeIf { s.who == SpriteIsMeSettings.Who.OWN" in src("SpriteIsMeUi.kt"), "art it cannot draw is said")
+    }
+
+    /**
+     * The test bot's keys went to the core alone, never to the walking sprites' idle clock and facing (SpriteMotion), so
+     * in every run the bot played every sprite fell asleep 55 seconds in and never walked (2026-10-03). They go through
+     * one helper now that feeds both, as the pad and a controller do.
+     */
+    @Test
+    fun `every key the test bot sends reaches the walking sprites too, as the pad's do`() {
+        val bot = File("src/debug/kotlin/com/ironmonone/app/bot/BotPort.kt").readText().replace("\r\n", "\n")
+        val helper = bot.substringAfter("private fun key(action: Int, code: Int) {").substringBefore("\n    }\n")
+        assertTrue("LibretroDroid.onKeyEvent(0, action, code)" in helper && "SpriteMotion.key(action, code)" in helper, helper)
+        assertEquals(1, Regex("LibretroDroid\\.onKeyEvent\\(").findAll(bot).count(), "no key goes to the core past the helper")
+        assertTrue(Regex("\\bkey\\(KeyEvent\\.ACTION_DOWN, code\\)").findAll(bot).count() >= 2 && Regex("\\bkey\\(KeyEvent\\.ACTION_UP, code\\)").findAll(bot).count() >= 3)
+    }
+
     // ------------------------------------------------------------------ backup
 
     @Test
@@ -159,7 +226,7 @@ class SpriteIsMeWiringTest {
         val credit = about.indexOf("Play as your Pok\\u00e9mon follows Sprite Is Me")
         assertTrue(walking in 0 until credit && credit - walking < 900, "the credit sits right after the Walking Pals one")
         assertTrue("UTDZac" in about.substring(credit, credit + 200))
-        assertTrue("MIT licence" in about.substring(credit, credit + 300).replace("\" +\n                \"", ""))
+        assertTrue("MIT license" in about.substring(credit, credit + 300).replace("\" +\n                \"", ""))
         assertTrue("CreditLink(\"https://github.com/UTDZac/SpriteIsMe-IronmonExtension\") { openOrSay(it) }" in about)
         assertFalse('\u2014' in about.substring(credit, credit + 400))
         // The licence NOTICE states is the repository's own, where a checkout is at hand.

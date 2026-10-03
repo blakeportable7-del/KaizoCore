@@ -1,6 +1,5 @@
 package com.ironmonone.tracker
 
-import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -31,7 +30,7 @@ class OverworldAddressTest {
     private class Rom(val name: String, val bytes: ByteArray, val table: OverworldAddresses)
 
     private val roms: List<Rom> by lazy {
-        val dir = System.getenv("IRONMON_ROMS")?.let(::File)?.takeIf { it.isDirectory }
+        val dir = Dumps.romsDir()
         if (dir == null) {
             println("OverworldAddressTest skipped: set IRONMON_ROMS")
             emptyList()
@@ -40,8 +39,8 @@ class OverworldAddressTest {
             "leafgreen-u.gba" to Overworld.LEAFGREEN_U,
             "emerald-u.gba" to Overworld.EMERALD_U, "ruby-u.gba" to Overworld.RUBY_U, "sapphire-u.gba" to Overworld.SAPPHIRE_U,
         ).mapNotNull { (file, table) ->
-            val f = File(dir, file)
-            if (!f.isFile) { println("OverworldAddressTest: $file missing, that game is skipped"); null }
+            val f = Dumps.file(dir, file)
+            if (f == null) { println("OverworldAddressTest: $file missing, that game is skipped"); null }
             else Rom(file, f.readBytes(), table)
         }
     }
@@ -84,8 +83,8 @@ class OverworldAddressTest {
     }
 
     private fun each(check: (Rom) -> Unit) {
-        if (roms.isEmpty()) return
-        assertTrue(roms.size >= 1)
+        // No ROM is a skip, and says so; the assertTrue(roms.size >= 1) that followed could not fail (rc32 audit P3 #84).
+        if (roms.isEmpty()) { println("SKIP: OverworldAddressTest has no ROM of the six to check"); return }
         roms.forEach(check)
     }
 

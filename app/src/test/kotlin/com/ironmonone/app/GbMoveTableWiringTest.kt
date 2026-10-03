@@ -49,6 +49,16 @@ class GbMoveTableWiringTest {
         val infos = calls(panel, "detailOf").filter { "mv," in it }
         assertEquals(2, infos.size, "your moves' info and the opponent's")
         infos.forEach { assertTrue("gen1 = generation == 1" in it, "a move info on Gen 3's chart: $it") }
-        assertTrue("MoveMatchup.general(mv.type, gen1)" in panel)
+        assertTrue("MoveMatchup.general(mv.type, gen1, natDex)" in panel)
+    }
+
+    @Test
+    fun `a fixed-damage move's shown power reaches the effectiveness rule`() {
+        // rc33 audit P1 #77: without it Seismic Toss and the rest took the chart's 2x and 1/2 marks.
+        val decor = java.io.File("src/main/kotlin/com/ironmonone/app/MoveDecor.kt").readText()
+        // MaxDex's flag rides along since its Freeze-Dry hits Water (MaxDexPlayTest).
+        kotlin.test.assertEquals(2, Regex(Regex.escape("gen1 = ctx.generation == 1, power = adj.power, natDex = ctx.natDex, maxDex = ctx.maxDex)")).findAll(decor).count())
+        val calc = java.io.File("../tracker-gba/src/main/kotlin/com/ironmonone/tracker/CalcAtk.kt").readText()
+        kotlin.test.assertTrue("MoveRules.effectiveness(moveId, moveType, category, ownTypes, power = power, natDex = natDex, maxDex = maxDex)" in calc)
     }
 }

@@ -70,12 +70,13 @@ fun PcTeamView(
     party.take(6).chunked(3).forEach { row -> Row(Modifier.fillMaxWidth()) {
         row.forEach { p ->
             val box = TeamBox.of(p, eggSpecies)
+            // Through boxFill like every other tracker box, so a picture behind the tracker shows through it (rc32 audit P3 #21).
             Column(
-                Modifier.width(boxW.rp).background(Pc.Ground).border(1.rp, Pc.Border).padding(1.rp),
+                Modifier.width(boxW.rp).background(TrackerBackground.boxFill(Pc.Ground)).border(1.rp, Pc.Border).padding(1.rp),
             ) {
                 PixText(box.name, PcRef.FONT - 1, Pc.Text)
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(if (box.tappable) Modifier.clickable { onMon(p) } else Modifier) { PcSprite(spriteFor(box.iconSpecies)) }
+                    Box(if (box.tappable) Modifier.clickable { onMon(p) } else Modifier) { PcSprite(romPicture(p.picture) ?: spriteFor(box.iconSpecies)) }
                     if (box.status.isNotEmpty()) PixText(box.status, PcRef.FONT - 3, Pc.Negative)
                 }
                 Column(Modifier.let { m -> if (onTypes != null && box.tappable) m.clickable { onTypes(p) } else m }) {

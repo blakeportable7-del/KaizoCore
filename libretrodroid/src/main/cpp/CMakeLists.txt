@@ -33,6 +33,8 @@ add_library(libretrodroid SHARED
         libretrodroidjni.cpp
         libretrodroid.h
         libretrodroid.cpp
+        gamecontent.h
+        gamecontent.cpp
         log.h
         core.h
         core.cpp

@@ -66,20 +66,28 @@ class PrepOptionsTest {
         assertEquals("faster-${RomKind.EMERALD_U.id}.ups", PrepOptions.forKind(RomKind.EMERALD_U)[2].asset)
         assertEquals("faster121-${RomKind.EMERALD_U.id}.ips", PrepOptions.forKind(RomKind.EMERALD_U)[3].asset)
         assertEquals(listOf("STANDARD", RomKind.FIRERED_V10_SMARTAI.id), PrepOptions.forKind(RomKind.FIRERED_U_V10).map { it.id })
-        assertEquals(listOf("STANDARD", "NATDEX", RomKind.FIRERED_V11_FASTER.id), PrepOptions.forKind(RomKind.FIRERED_U_V11).map { it.id })
+        // MaxDex last, made with Trip's patch, bundled since rc34 (MaxDexPrepareTest).
+        assertEquals(listOf("STANDARD", "NATDEX", RomKind.FIRERED_V11_FASTER.id, RomKind.FIRERED_MAXDEX_10.id), PrepOptions.forKind(RomKind.FIRERED_U_V11).map { it.id })
         assertEquals("faster-${RomKind.FIRERED_U_V11.id}.ips", PrepOptions.forKind(RomKind.FIRERED_U_V11)[2].asset)
         assertEquals(1, PrepOptions.forKind(RomKind.EMERALD_NATDEX_121).size)
         assertEquals(1, PrepOptions.forKind(RomKind.EMERALD_SMARTAI).size)
     }
 
     @Test
-    fun `HeartGold and Platinum offer Super Kaizo, Black 2 and White 2 offer Faster B2W2`() {
-        assertEquals(listOf("STANDARD", RomKind.HEARTGOLD_SUPERKAIZO.id), PrepOptions.forKind(RomKind.HEARTGOLD_U).map { it.id })
-        assertEquals("superkaizo-${RomKind.HEARTGOLD_U.id}.xdelta", PrepOptions.forKind(RomKind.HEARTGOLD_U)[1].asset)
+    fun `HeartGold offers IronMON HGSS and Super Kaizo, Platinum Super Kaizo, Black 2 and White 2 Faster B2W2`() {
+        // IronMON HGSS (Blake, 2026-10-02) is HeartGold's quality-of-life patch, named as its author names it, and a
+        // choice of its own beside Super Kaizo. HeartGold only: SoulSilver is offered neither.
+        val hg = PrepOptions.forKind(RomKind.HEARTGOLD_U)
+        assertEquals(listOf("STANDARD", RomKind.HEARTGOLD_IRONMON.id, RomKind.HEARTGOLD_SUPERKAIZO.id), hg.map { it.id })
+        assertEquals("ironmon-${RomKind.HEARTGOLD_U.id}.xdelta", hg[1].asset)
+        assertEquals("IronMON HGSS: quality-of-life patch", hg[1].label)
+        assertEquals("Skips the intro, shortens the talk until Goldenrod, and speeds up walking and battle animations.", PrepOptions.describe(hg[1]))
+        assertEquals("superkaizo-${RomKind.HEARTGOLD_U.id}.xdelta", hg[2].asset)
+        assertEquals(listOf("STANDARD"), PrepOptions.forKind(RomKind.SOULSILVER_U).map { it.id })
         assertEquals(listOf("STANDARD", RomKind.PLATINUM_SUPERKAIZO.id), PrepOptions.forKind(RomKind.PLATINUM_U).map { it.id })
         assertEquals("superkaizo-${RomKind.PLATINUM_U.id}.xdelta", PrepOptions.forKind(RomKind.PLATINUM_U)[1].asset)
         assertEquals("Super Kaizo 1.0 patch", PrepOptions.forKind(RomKind.PLATINUM_U)[1].label)
-        assertEquals("Super Kaizo 0.0.3 patch", PrepOptions.forKind(RomKind.HEARTGOLD_U)[1].label)
+        assertEquals("Super Kaizo 0.0.3 patch", hg[2].label)
         // Diamond and Pearl have no Super Kaizo patch (the README's Platinum patch is for Platinum 1.0 only).
         assertEquals(listOf("STANDARD"), PrepOptions.forKind(RomKind.DIAMOND_U).map { it.id })
         assertEquals(listOf("STANDARD", RomKind.BLACK2_FASTER.id, RomKind.BLACK2_FASTERPWT.id), PrepOptions.forKind(RomKind.BLACK2_U).map { it.id })
@@ -107,11 +115,11 @@ class PrepOptionsTest {
     /** The bundled patches applied to the pinned dumps give the pinned CRCs. Needs IRONMON_ROMS=<dir with <kindid>.<ext>>. */
     @Test
     fun `bundled patches reproduce the pinned builds from real dumps`() {
-        val dir = System.getenv("IRONMON_ROMS")?.let { java.io.File(it) }?.takeIf { it.isDirectory } ?: return
+        val dir = Dumps.romsDir() ?: return
         var checked = 0
         for (k in RomKind.allPatched) {
             val base = RomKind.byId(k.baseId)!!
-            val rom = java.io.File(dir, base.id + "." + base.fileExtension).takeIf { it.isFile } ?: continue
+            val rom = Dumps.file(dir, base.id + "." + base.fileExtension) ?: continue
             val opt = PrepOptions.forKind(base).first { it.out?.id == k.id }
             val patch = java.io.File("src/main/assets/patches/" + opt.asset)
             assertTrue(patch.isFile, opt.asset!!)

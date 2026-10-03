@@ -46,8 +46,10 @@ class SetupShowsWhatWorksTest {
             .map { it.name }.toList()
         assertEquals(emptyList(), hits, "a backup holds the current run's randomized game")
         val about = read("AboutScreen.kt")
-        assertTrue("Your library games are never in it" in about)
-        assertTrue("so a restored run comes back whole" in about)
+        // The card's words are BackupCopy.CARD now (rc32 audit P2 #2), wrapped over several source lines: read the value.
+        assertTrue("Text(BackupCopy.CARD" in about)
+        assertTrue("Your library games are never in it" in BackupCopy.CARD)
+        assertTrue("so a restored run comes back whole" in BackupCopy.CARD)
         assertFalse("ROMs" in about.substringAfter("Text(\"Backup\"").substringBefore("Gen3Button(\"Back up\""))
     }
 }

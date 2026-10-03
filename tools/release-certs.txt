@@ -1,0 +1,10 @@
+# The certificates a KaizoCore release is signed with (rc32 audit P2 #7, #8; docs/RELEASING.md, "The release key").
+# Read by app/build.gradle.kts, tools/release.sh (through release_checks.py), tools/site_bump.py and tools/sign_release.py.
+# Nothing here is secret: anyone's apksigner prints a certificate's SHA-256 from any copy of the APK.
+#
+# players: the debug key in ~/.android/debug.keystore. Every copy installed before the release key trusts it, and an
+# Android 8 phone reads only its signature, so it signs every release, before the switch and after. It never changes.
+players c2954523b48a0b59e96e56cdd35cb8048469245f78a50a6e797c0a06a8608b07
+# release: Blake's release key, written here by `python tools/sign_release.py --setup` once he has made it. While it is
+# empty, a release is signed with the debug key alone, exactly as before.
+release

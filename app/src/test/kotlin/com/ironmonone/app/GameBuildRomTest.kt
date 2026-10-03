@@ -24,8 +24,8 @@ import com.dabomstew.pkrandomzx.Settings as ZxSettings
  * are `emerald-natdex-121.gba` and `firered-natdex-121.gba`, the same folder's patched dumps.
  */
 class GameBuildRomTest {
-    private val roms = System.getenv("IRONMON_ROMS")?.let(::File)?.takeIf { it.isDirectory }
-    private fun rom(kind: RomKind): File? = roms?.let { File(it, kind.id + "." + kind.fileExtension) }?.takeIf { it.isFile }
+    private val roms = Dumps.romsDir()
+    private fun rom(kind: RomKind): File? = roms?.let { Dumps.file(it, kind.id + "." + kind.fileExtension) }
 
     private val presets = File("src/main/assets/presets").listFiles { f -> f.extension == "rnqs" }!!.sortedBy { it.name }
 

@@ -79,4 +79,21 @@ class LibraryPatchFilesTest {
         assertTrue(LibraryStore.looksLikePatch("hack.VCDIFF"))
         assertTrue(LibraryStore.looksLikePatch("hack.bps"))
     }
+
+    @Test
+    fun `an xdelta put on another copy of its game says it is for another version, not that the patch is damaged`() {
+        // rc32 audit P2 #115: "The patch file is damaged ... (the source dump may be the wrong revision)" sent players
+        // to download a good patch again.
+        val dir = Files.createTempDirectory("libx").toFile()
+        val lib = LibraryStore(dir)
+        val base = lib.import("heartgold-test.nds", dsRom())
+        // Made for a longer dump than this one: the trimmed DS dump case.
+        val patchFile = File(dir.parentFile, "hack-" + System.nanoTime() + ".xdelta").apply { writeBytes(xdelta(base.sizeBytes.toInt() + 16)) }
+        val p = lib.importPatchFile("My Hack.xdelta", patchFile, declaredFor = base)
+        val e = kotlin.test.assertFailsWith<com.ironmonone.patch.SourceMismatch> { lib.apply(base, p) }
+        assertEquals("This patch was made for a different version of the game. Nothing was changed.", patchFailure(e))
+        assertEquals(patchFailure(com.ironmonone.patch.WrongSourceRom(1L, 2L, "x")), patchFailure(e))
+        assertTrue(dir.listFiles()!!.none { it.name.startsWith(".patching-") }, "no temp file left behind")
+        assertContentEquals(dsRom(), base.file.readBytes(), "the original is untouched")
+    }
 }

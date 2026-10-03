@@ -267,4 +267,41 @@ class NdsGen5MapTest {
         val s = NdsTracker(blackInBattle().reader(RAM), null, NdsGameMap.PLATINUM).read()
         assertTrue(!s.located)
     }
+
+    /** rc33 audit P1 #82: the trainer is read before the fetch guard, so a refused read still says whose battle it is. */
+    @Test
+    fun `a Gen 5 read the guard refuses still reads the trainer`() {
+        val r = blackInBattle()
+        r.u32(map.playerBattleBase, 0x12345678L)          // the battle's party does not start with your lead yet
+        r.u16(map.enemyTrainerId, 0x123)
+        val s = NdsTracker(r.reader(RAM), null, map).read()
+        assertTrue(s.inBattle)
+        assertEquals(0x123, s.enemyTrainerId)
+        assertTrue(!s.isWildBattle, "a trainer battle, not a wild one")
+        assertTrue(!s.battleFetched)
+        r.u16(map.enemyTrainerId, 0)
+        val wild = NdsTracker(r.reader(RAM), null, map).read()
+        assertTrue(wild.isWildBattle)
+        assertEquals(0, wild.enemyTrainerId)
+    }
+
+    /** rc33 audit P1 #81: an egg's battle data never reaches 0 HP; Gen 5 finds it through the Pokemon its block points at. */
+    @Test
+    fun `a Gen 5 egg does not keep an entire-party run alive`() {
+        val r = blackInBattle()
+        // A fetched singles battle: two battler records.
+        r.u32(map.mainBattleDataPtr + 0x18, RAM + 0x330000L); r.u32(map.mainBattleDataPtr + 0x18 + 0x1C, RAM + 0x340000L)
+        // The lead's battle data points at Serperior, fainted; the second party pointer at an egg with its 7 HP.
+        r.u32(0x300000L, RAM + 0x350000L)
+        r.put(0x350000L, Gen4.encodeParty(0x0BADF00DL, 497, 30, 0, 100, listOf(1, 2, 0, 0), gen5 = true))
+        r.u16(0x300000L + 0x0E, 100); r.u16(0x300000L + 0x10, 0)
+        r.u32(map.mainBattleDataPtr + 4, RAM + 0x360000L)
+        r.u32(0x360000L, RAM + 0x370000L)
+        r.put(0x370000L, Gen4.encodeParty(0x0E66L, 25, 1, 7, 7, listOf(0, 0, 0, 0), gen5 = true, egg = true))
+        r.u16(0x360000L + 0x0E, 7); r.u16(0x360000L + 0x10, 7)
+        val t = NdsTracker(r.reader(RAM), null, map).also { it.lossCondition = com.ironmonone.tracker.LossCondition.ENTIRE_PARTY }
+        val s = t.read()
+        assertTrue(s.battleFetched)
+        assertNotNull(s.runOver, "the only Pokemon that can fight has fainted")
+    }
 }

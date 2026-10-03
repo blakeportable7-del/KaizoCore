@@ -156,6 +156,11 @@ class RosterMon(
     var highestLevel: Int = level
     /** The player said this faint does not count: ignore HP 0 until it has been seen healthy again. */
     var forgiven: Boolean = false
+    /**
+     * The area key it was made for when an area's encounter was set to caught by hand (NuzlockeEdits.setEncounter),
+     * so the edit can take it back when the area is set to anything else (rc32 audit P2 #139). Null for every other.
+     */
+    var madeFor: String? = null
 
     /** It has a nickname of its own: not blank, and not the species name the game gives it by default ("ZIGZAGOON"). */
     val hasNickname: Boolean get() = nickname.isNotBlank() && !nickname.equals(speciesName, ignoreCase = true)
@@ -182,6 +187,13 @@ class Warning(
     val text: String,
     var dismissed: Boolean,
 )
+
+/**
+ * An egg the party held, where it was first seen: the place a gift egg was received, which is the area it uses up
+ * when it hatches (rc32 audit P2 #140). [counts] is false for an egg the party already held when the ledger began or
+ * before the rules did, which hatches free.
+ */
+class EggSeen(val areaKey: String, val areaName: String, val counts: Boolean)
 
 /** A survivor at the Champion, kept so the next game of a Genlocke can carry it on. */
 class Heir(
@@ -226,6 +238,13 @@ class RunMeta(
     /** Survivors carried in from the last game, and the ones saved at this game's Champion. */
     val heirsIn = ArrayList<Heir>()
     val heirsOut = ArrayList<Heir>()
+    /** The party's eggs by id, with where each was first seen (rc32 audit P2 #140). An egg leaves when it hatches. */
+    val eggs = LinkedHashMap<Long, EggSeen>()
+    /**
+     * Gen 3: each map section (the game's own "met at" place) the player has stood in outdoors, with that map's name,
+     * so a gift on an indoor map counts for the town or route the building is in (rc32 audit P2 #140).
+     */
+    val sections = LinkedHashMap<Int, String>()
 }
 
 /**
@@ -276,6 +295,39 @@ class NuzlockeLedger(val meta: RunMeta) {
     /** Every evolution line the run has caught, alive or dead, as its species ids. */
     fun species(includeDead: Boolean): List<Int> =
         roster.values.filter { includeDead || it.alive }.map { it.species }
+
+    /**
+     * A copy that shares nothing the engine or the edits change, so another thread can write it to text while the game
+     * goes on (rc32 audit P3 #39: the whole ledger was formatted on the main thread on every change). Made on the thread
+     * that owns the ledger. An Event, a Death, an Heir and the rules never change once made, so only their lists are new.
+     */
+    fun detached(): NuzlockeLedger {
+        val m = meta
+        val c = RunMeta(m.id, m.bind, m.game, m.rules, m.startedAt)
+        c.system = m.system; c.gameKey = m.gameKey; c.beatenBosses += m.beatenBosses
+        c.status = m.status; c.endedAt = m.endedAt; c.endReason = m.endReason
+        c.started = m.started; c.partySeen = m.partySeen; c.whiteoutLatched = m.whiteoutLatched; c.styleShift = m.styleShift
+        c.genlockeId = m.genlockeId; c.leg = m.leg; c.carriedFrom = m.carriedFrom
+        c.heirsIn += m.heirsIn; c.heirsOut += m.heirsOut
+        c.eggs.putAll(m.eggs); c.sections.putAll(m.sections)
+        val out = NuzlockeLedger(c)
+        for ((k, a) in areas) {
+            val r = AreaRecord(a.key, a.name)
+            r.encounter = a.encounter?.let { e -> Encounter(e.species, e.speciesName, e.level, e.pid, e.method, e.gender, e.shiny, e.at, e.outcome, e.monId, e.manual) }
+            for (x in a.extras) r.extras += Extra(x.kind, x.species, x.speciesName, x.level, x.pid, x.at, x.outcome, x.monId)
+            out.areas[k] = r
+        }
+        for ((id, r) in roster) {
+            out.roster[id] = RosterMon(r.id, r.species, r.speciesName, r.nickname, r.level, r.gender, r.origin, r.areaKey, r.areaName, r.at).also { n ->
+                n.inParty = r.inParty; n.alive = r.alive; n.death = r.death; n.shiny = r.shiny; n.violation = r.violation
+                n.partner = r.partner; n.types = r.types; n.highestLevel = r.highestLevel; n.forgiven = r.forgiven; n.madeFor = r.madeFor
+            }
+        }
+        out.events += events
+        for (w in warnings) out.warnings += Warning(w.id, w.at, w.kind, w.text, w.dismissed)
+        out.notes += notes
+        return out
+    }
 
     companion object {
         const val MAX_EVENTS = 4000

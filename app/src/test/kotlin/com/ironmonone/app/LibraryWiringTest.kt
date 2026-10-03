@@ -96,6 +96,39 @@ class LibraryWiringTest {
         assertTrue("loaded = true" in library)
     }
 
+    /**
+     * rc32 audit P2 #74: PATCH, APPLY and the rows of their windows started a job while one ran. Two runs of one
+     * built-in patch wrote one file and both failed, and the first to end turned busy off under the other.
+     */
+    @Test
+    fun `no patch job starts while another runs, and each writes a file of its own`() {
+        assertTrue("\"PATCH\", enabled = playable && !busy, onClick = onPatch)" in library, "the card's PATCH")
+        assertTrue("accent = romCount > 0, enabled = !busy, onClick = onApply)" in library, "the patch card's APPLY")
+        for (fn in listOf("fun runBuiltIn(", "fun runPatch(")) {
+            val body = code(library.substringAfter(fn).substringBefore("busy = true"))
+            assertTrue("if (busy) return" in body, "$fn returns while a job runs, before it sets busy")
+        }
+        val dir = java.nio.file.Files.createTempDirectory("prep").toFile()
+        val a = PrepRun.patchedTemp(dir, com.ironmonone.core.RomKind.PLATINUM_U)
+        val b = PrepRun.patchedTemp(dir, com.ironmonone.core.RomKind.PLATINUM_U)
+        assertTrue(a != b && a.isFile && b.isFile, "two runs of one patch, two files: $a $b")
+        assertTrue(a.name.endsWith("." + com.ironmonone.core.RomKind.PLATINUM_U.fileExtension))
+        assertFalse("\"prep-patched-\${outKind.id}.\${outKind.fileExtension}\"" in read("PrepRun.kt"), "the fixed name is gone")
+    }
+
+    /** rc32 audit P2 #73: the result of adding many files sat in the fixed card at the top and pushed the list off the screen. */
+    @Test
+    fun `the result of the last action is the list's first item`() {
+        val header = library.substringAfter("Column(modifier.fillMaxSize().padding(10.dp)) {").substringBefore("LazyColumn(")
+        assertFalse("status?.let" in header, "not in the card at the top")
+        assertTrue("LazyColumn(Modifier.weight(1f), state = listState," in library, "the list takes the height that is left")
+        val list = library.substringAfter("LazyColumn(Modifier.weight(1f)").substringBefore("for (cat in LibraryStore.Category.entries)")
+        assertTrue("item(key = \"status\")" in list, "the status comes before the shelves")
+        assertTrue("LaunchedEffect(status) { if (status != null) listState.animateScrollToItem(0) }" in library, "a new result is scrolled into view")
+    }
+
+    private fun code(text: String) = text.replace(Regex("/\\*.*?\\*/", RegexOption.DOT_MATCHES_ALL), "").replace(Regex("//[^\\n]*"), "")
+
     @Test
     fun `a game of another version can be the game an IPS is for`() {
         val dialog = library.substringAfter("Which game is \$name for?")

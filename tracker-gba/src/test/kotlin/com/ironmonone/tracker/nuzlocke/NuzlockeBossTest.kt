@@ -102,6 +102,15 @@ class NuzlockeBossTest {
     }
 
     @Test
+    fun `the Champion's battle is never level cap checked, whatever the party's levels`() {
+        // What the rules page must say (rc32 audit P2 #142): no cap inside the League, the Champion included.
+        val s = hardcore().starter(mon(1, Sp.SQUIRTLE, "SQUIRTLE", 99, nickname = "Shell"))
+        s.trainerBattle(NzOpponent(438, "CHAMPION BLUE", "Rival", "champion", 63), turnNow = 0)
+        assertTrue(capWarnings(s).isEmpty(), "level 99 is over every cap in the table")
+        assertTrue(s.ledger.events.any { it.kind == "boss" && "no level cap inside the League" in it.text })
+    }
+
+    @Test
     fun `rivals and team leaders only count as bosses when the rules say so`() {
         val rival = NzOpponent(326, "RIVAL BLUE", "Rival", null, 18)
         val off = hardcore().starter(mon(1, Sp.SQUIRTLE, "SQUIRTLE", 20, nickname = "Shell"))

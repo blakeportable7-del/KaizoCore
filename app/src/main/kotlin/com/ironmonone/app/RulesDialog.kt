@@ -36,6 +36,9 @@ object Rules {
     const val DIR = "rulesets"
     /** The folder a game's rules are in. */
     fun dirFor(family: String, natDex: Boolean): String = if (natDex) "$family-NatDex" else family
+    /** The same for [kind], which may be MaxDex's: FRLG-MaxDex, the Nat. Dex rules with MaxDex's own section. */
+    fun dirFor(family: String, natDex: Boolean, kind: com.ironmonone.core.RomKind?): String =
+        if (kind?.isMaxDex == true) "$family-MaxDex" else dirFor(family, natDex)
     fun modesFor(context: android.content.Context, dir: String): List<String> =
         order(runCatching { context.assets.list("$DIR/$dir")?.map { it.removeSuffix(".md") } ?: emptyList() }.getOrDefault(emptyList()))
     fun text(context: android.content.Context, dir: String, mode: String): String? =
@@ -73,7 +76,7 @@ object Rules {
 @Composable
 fun RulesDialog(family: String, mode: String?, natDex: Boolean = false, kind: com.ironmonone.core.RomKind? = null, onDismiss: () -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
-    val dir = Rules.dirFor(family, natDex)
+    val dir = Rules.dirFor(family, natDex, kind)
     val modes = remember(dir, kind?.id) { Rules.shown(Rules.modesFor(context, dir), kind) }
     val opening = remember(dir, mode) { Rules.opening(modes, mode) }
     var current by remember(dir, mode) { mutableStateOf(opening.first) }

@@ -28,6 +28,7 @@ class BundledPresetsTest {
             when (engine) {
                 Engine.ZX -> com.dabomstew.pkrandomzx.Settings.read(it)
                 Engine.NATDEX -> com.dabomstew.pkrandom.Settings.read(it)
+                Engine.MAXDEX -> com.dabomstew.pkrandommd.Settings.read(it)
             }
         }
     }.isSuccess
@@ -43,14 +44,21 @@ class BundledPresetsTest {
             val engines = kinds.map { it.engine }.toSet()
             assertEquals(1, engines.size, "${f.name} is offered to both engines' games: ${kinds.map { it.id }}")
             assertTrue(readsWith(engines.single(), f), "${f.name} does not load in ${engines.single()}")
-            val other = if (engines.single() == Engine.ZX) Engine.NATDEX else Engine.ZX
-            assertFalse(readsWith(other, f), "${f.name} also loads in $other")
+            val others = when (engines.single()) {
+                Engine.ZX -> listOf(Engine.NATDEX)
+                Engine.NATDEX -> listOf(Engine.ZX)
+                // MaxDex's 1.1.3 engine brings an older file up to its own version, so it is the one held to both others refusing its file.
+                Engine.MAXDEX -> listOf(Engine.ZX, Engine.NATDEX)
+            }
+            for (other in others) assertFalse(readsWith(other, f), "${f.name} also loads in $other")
         }
     }
 
     // The order the rules build (2026-09-30, UX audit P0-12): Standard, Ultimate, Kaizo, Super Kaizo, then the variants.
     private val gen3 = listOf("standard", "ultimate", "kaizo", "superkaizo", "survival")
     private fun expected(k: RomKind): List<String> = when {
+        // MaxDex ships one preset, Kaizo, as Trip does.
+        k.isMaxDex -> listOf("kaizo")
         k.isNatDex -> gen3 + listOf("survivalrevival", "kaizodoubles", "chaoskaizo", "evokaizo", "ironmonjourney")
         k.family == "FRLG" -> gen3 + listOf("survivalrevival", "kaizodoubles", "chaoskaizo", "evokaizo", "ironmonjourney")
         k.family == "RSE" && (k.baseId ?: k.id) in setOf(RomKind.RUBY_U.id, RomKind.SAPPHIRE_U.id) ->
@@ -70,7 +78,7 @@ class BundledPresetsTest {
             assertEquals(expected(k), modes.map { it.key }, k.id)
             for (m in modes) {
                 val i = RnqsInfo.of(m.preset)
-                assertTrue(i.gameTag == k.family && i.natDex == k.isNatDex, "${k.id} ${m.key}: ${m.preset.name}")
+                assertTrue(i.gameTag == k.family && i.natDex == k.isNatDex && i.maxDex == k.isMaxDex, "${k.id} ${m.key}: ${m.preset.name}")
             }
         }
         // Spot checks on the new files: the Nat. Dex ones only on the Nat. Dex builds, Evo Kaizo only on FireRed and LeafGreen.
@@ -78,6 +86,21 @@ class BundledPresetsTest {
         assertEquals("RSE NatDex v1.2 Survival Revival.rnqs", RulesetCatalog.forRom(RomKind.EMERALD_NATDEX_121, files).single { it.key == "survivalrevival" }.preset.name)
         assertEquals("FRLG Survival Revival.rnqs", RulesetCatalog.forRom(RomKind.LEAFGREEN_U, files).single { it.key == "survivalrevival" }.preset.name)
         assertTrue(RulesetCatalog.forRom(RomKind.EMERALD_U, files).none { it.key == "evokaizo" || it.key == "survivalrevival" })
+        // MaxDex's own file, on MaxDex only, and none of Nat. Dex 1.2's there.
+        assertEquals(listOf("FRLG MaxDex Kaizo.rnqs"), RulesetCatalog.forRom(RomKind.FIRERED_MAXDEX_10, files).map { it.preset.name })
+        assertTrue(RomKind.all.filter { !it.isMaxDex }.none { k -> RulesetCatalog.forRom(k, files).any { it.preset.name == "FRLG MaxDex Kaizo.rnqs" } })
+    }
+
+    /** Trip's file, byte for byte (Tripc423/Maxdex, maxdex/FRLG MaxDex Kaizo.rnqs; engine-maxdex/PINNED.txt). */
+    @Test
+    fun `the MaxDex preset is Trip's file`() {
+        val f = File(presets, "FRLG MaxDex Kaizo.rnqs")
+        val sha = java.security.MessageDigest.getInstance("SHA-256").digest(f.readBytes()).joinToString("") { "%02x".format(it) }
+        assertEquals("af51837c44942be36cb1b407be1fe4bebd6c5d08f0cc95f9325aa1fa7491ec9e", sha)
+        val i = RnqsInfo.of(f)
+        assertEquals("FRLG", i.gameTag); assertEquals("kaizo", i.ruleset)
+        assertTrue(i.maxDex && i.natDex)
+        assertEquals("FRLG MaxDex Kaizo", i.label)
     }
 
     @Test
@@ -101,8 +124,7 @@ class BundledPresetsTest {
      */
     @Test
     fun `the new modes randomize a real dump of each game they are offered for`() {
-        val dir = System.getenv("IRONMON_ROMS")?.let(::File)?.takeIf { it.isDirectory }
-            ?: return println("BundledPresetsTest skipped: set IRONMON_ROMS")
+        val dir = Dumps.romsDir() ?: return println("BundledPresetsTest skipped: set IRONMON_ROMS")
         val new = files.filter { f -> RnqsInfo.of(f).let { it.natDex || it.ruleset in setOf("ironmonjourney", "chaoskaizo", "evokaizo", "survivalrevival") } }
         var ran = 0
         for (f in new) {

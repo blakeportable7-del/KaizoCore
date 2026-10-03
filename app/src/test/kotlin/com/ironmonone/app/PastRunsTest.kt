@@ -32,6 +32,36 @@ class PastRunsTest {
         assertEquals(2, again.totalRuns()); assertEquals(2, PastRunStore(f).totalRuns())
     }
 
+    /**
+     * rc32 audit P2 #41: Retry, or Continue playing and coming back to Play, logged one run again, a win included for
+     * a run already lost. A run is logged once, by its attempt and seed, and only a Retry after the first end replaces it.
+     */
+    @Test
+    fun `a run is logged once, and a retried run's next end replaces it`() {
+        val f = File.createTempFile("pastruns", ".tsv"); f.delete(); f.deleteOnExit()
+        val store = PastRunStore(f)
+        val zubat = mon("ZUBAT", 245, "Poison", "Flying", "Inner Focus", listOf("Bite"))
+        val onix = mon("ONIX", 385, "Rock", "Ground", "Sturdy", listOf("Tackle"))
+        val lost = PastRun(1000, 60, zubat, onix, "Route 203", 1, PastRun.PAST_LAB, attempt = 3, seed = "00000000000000aa")
+        assertEquals(true, store.logEnd(lost, events = emptyList()))
+        // Continue playing, a later visit, and the champion: the first end stays the run's.
+        val won = PastRun(5000, 900, zubat, onix, "", 8, PastRun.WON, attempt = 3, seed = "00000000000000aa")
+        assertEquals(false, store.logEnd(won, events = emptyList()))
+        assertEquals(1, PastRunStore(f).totalRuns())
+        assertEquals(PastRun.PAST_LAB, PastRunStore(f).all().single().progress)
+        // Retry the battle after that loss, and lose again: the new end replaces it.
+        val again = PastRun(7000, 1000, zubat, onix, "Route 204", 2, PastRun.PAST_LAB, attempt = 3, seed = "00000000000000aa")
+        val retry = RunEvents.Entry(6000, RunEvents.Kind.RETRY, "battle start", "")
+        assertEquals(true, store.logEnd(again, events = listOf(retry)))
+        assertEquals("one line, the second end's", listOf(2), PastRunStore(f).all().map { it.badges })
+        assertEquals("the run's name is kept on its line", 3 to "00000000000000aa", PastRunStore(f).all().single().let { it.attempt to it.seed })
+        // Another attempt is another run; a line from before runs were named matches nothing.
+        assertEquals(true, store.logEnd(PastRun(8000, 10, zubat, onix, "", 0, PastRun.NOWHERE, attempt = 4, seed = "00000000000000bb"), emptyList()))
+        store.log(PastRun(9000, 10, zubat, onix, "", 0, PastRun.NOWHERE))
+        assertEquals(true, store.logEnd(PastRun(9500, 10, zubat, onix, "", 0, PastRun.NOWHERE), emptyList()))
+        assertEquals(4, PastRunStore(f).totalRuns())
+    }
+
     @Test
     fun `Black and White count Past N where every other game counts Past Lab`() {
         // StatisticsScreen.lua:52-53: VERSION_GROUP 4 renames the first Overall Progress bar.

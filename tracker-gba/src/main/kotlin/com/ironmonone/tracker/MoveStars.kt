@@ -10,6 +10,10 @@ package com.ironmonone.tracker
  * level than another ranks above it. A move is starred when it was not seen at
  * level 1 and at least as many new moves have come in as its rank - enough to
  * have pushed it out.
+ *
+ * The rank counts every tracked move, not only the four shown (Utils.lua:568-579 compares each of the four against all
+ * of Tracker.getMoves, which is never trimmed). Counted among the four alone, older sightings lowered every rank, and
+ * the card could star all four moves where the PC tracker stars none (rc32 audit P2 #137).
  */
 object MoveStars {
     /**
@@ -19,11 +23,11 @@ object MoveStars {
      */
     fun of(tracked: List<Pair<Int, Int>>, level: Int, moveLevels: List<Int>): Set<Int> {
         if (level <= 1 || tracked.isEmpty()) return emptySet()
-        val four = tracked.take(4).map { (id, lv) -> id to maxOf(lv, 1) }
+        val all = tracked.map { (id, lv) -> id to maxOf(lv, 1) }
         val out = HashSet<Int>()
-        four.forEachIndexed { i, (id, lv) ->
+        all.take(4).forEachIndexed { i, (id, lv) ->
             val learnedSince = moveLevels.count { it > lv && it <= level }
-            val rank = 1 + four.indices.count { j -> j != i && lv > four[j].second }
+            val rank = 1 + all.indices.count { j -> j != i && lv > all[j].second }
             if (lv != 1 && learnedSince >= rank) out += id
         }
         return out

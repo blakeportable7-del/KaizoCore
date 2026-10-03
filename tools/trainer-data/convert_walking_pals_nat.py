@@ -20,10 +20,36 @@ share a key, straight from PMD Sprite Collab (github.com/PMDCollab/SpriteCollab,
     <assets>/walkingpals-nat/natdex-map.tsv
         The Nat. Dex Extension's species ids 412-1283 (tracker-gba/.../natdex/species.tsv) to the
         sheet each one uses: the national number, the form key, the set and the key in it, blank
-        with the reason when PMD Sprite Collab has no sheet for it.
+        with the reason when PMD Sprite Collab has no sheet for it. A Mega or form with no sheet of
+        its own takes its base species' set and key, and the note says the base stands in (Blake,
+        2026-10-02); the first run after its own is drawn uses that instead.
     <assets>/walkingpals-nat/credits.tsv
         Who drew each sheet: the artists credits.txt (and tracker.json) name for the folder and the
-        animations used, with the licence each contribution was given under.
+        animations used, with the license each contribution was given under. Each shiny's own artists
+        follow, a row per key whose shiny ships ("<sprite> shiny", its own folder).
+    <assets>/walkingpals-nat/shiny-colors.tsv, shiny.tsv, shiny/{idle,walk,sleep,faint}/<key>.png
+        The shinies (Blake, 2026-10-03: "If they are shiny you should be able to play as shiny"). See
+        THE SHINIES below.
+
+UNOWN'S LETTERS. Besides the Nat. Dex's own forms, every letter Sprite Collab has drawn for Unown ships
+as "201-<letter>" ("201-b" to "201-z", "201-exclamation", "201-question"): no Nat. Dex id names them,
+because the original games draw Unown's letter from the Pokemon's own data (Gen 3 its personality,
+Gen 2 its DVs), and the app works the letter out the same way (WalkingPals' PalForms). Unown A is the
+base sheet.
+
+THE SHINIES. Sprite Collab keeps a Pokemon's shiny one level below its plain folder (tracker.json:
+species, then form "0000"..., then "0001" = Shiny, then gender): sprite/0025/0000/0001 is Pikachu's,
+sprite/0006/0001/0001 Mega Charizard X's. For every sheet written, the shiny of the same animation is
+cut the same way and checked against the plain sheet (recolor below): the same size, the same pixels
+clear and opaque (every alpha 0 or 255), and each opaque color of the plain sheet one color in the
+shiny wherever it appears. Such a shiny is an exact recolor, and ships as its color map only
+(shiny-colors.tsv: key, the animations a map covers, each plain color = its shiny color in RRGGBB);
+the app recolors the plain sheet with it, and the converter applies the map itself and compares the
+result with the shiny pixel for pixel before writing it. Every other shiny ships whole as a sheet of
+its own (shiny/<anim>/<key>.png, its row in shiny.tsv: the plain row when the frames and the pixels
+clear and opaque are the same, else placed by THE OFFSET RULE). Most of those split one plain color
+into two shiny ones (Bulbasaur's light green becomes two greens), which no map from colors can say.
+No shiny in Sprite Collab, or none for one animation: the app draws the plain one.
 
 Where it reads from: a cache folder OUTSIDE the repo (default C:/Users/bepor/walkingpals-cache)
 holding a partial clone of SpriteCollab: no blobs, depth 1, sparse. Only the files this needs are
@@ -103,6 +129,10 @@ LOOKS_LIKE_BASE = {
 SPECIAL_FORM = {"Minior-C": ("Red", "the Red Core stands in for every core colour")}
 # A base species with no sheet of its own, standing in with another of the same form.
 STAND_IN = {668: (FEMALE, "female", "no male Pyroar sheet in SpriteCollab; the female one stands in")}
+# The end of the note on a Mega or form walking as its base species (stand_in).
+STANDS_IN = "sheet stands in until its own is drawn"
+# Forms the original games draw from the Pokemon's own data, not from a species id: Unown's letter (UNOWN'S LETTERS).
+GAME_FORMS = (201,)
 
 
 def norm(s):
@@ -318,6 +348,9 @@ def plan(col, names):
         if t:
             targets[t.key] = t
 
+    for t in game_forms(col):
+        targets[t.key] = t
+
     for i in range(412, 1284):
         name = names[i]
         if i <= 1050:  # the expansion's base species: Gen 3's internal order carried on, 25 past national
@@ -372,7 +405,37 @@ def plan(col, names):
         t = Target(nat, fk, folder, "%s %s" % (base, real.replace("_", " ")), note)
         targets.setdefault(t.key, t)
         rows[i] = (nat, fk, "walkingpals-nat", t.key, note)
-    return targets, rows
+    return targets, stand_in(rows, names, by_name)
+
+
+def game_forms(col):
+    """UNOWN'S LETTERS: every form of GAME_FORMS' species that Sprite Collab has drawn, keyed "<national>-<form>"."""
+    out = []
+    for nat in GAME_FORMS:
+        node = col.tracker["%04d" % nat]
+        for fid, g in sorted(node.get("subgroups", {}).items()):
+            folder = "sprite/%04d/%s" % (nat, fid)
+            if fid != "0000" and g.get("name") and col.has(folder):
+                out.append(Target(nat, form_key(g["name"]), folder, "%s %s" % (node["name"], g["name"].replace("_", " "))))
+    return out
+
+
+def stand_in(rows, names, by_name):
+    """Blake, 2026-10-02: a Mega or form with no sheet of its own walks as its base species, "only if we don't have the
+    correct sprites". It runs after every form has looked for its own slot, so a form with a sheet keeps it, and a sheet
+    drawn later takes over on the next run with no change here. The base's sheet is whatever its own row uses (Gen 1-3
+    in walkingpals/ by Gen 3's id); a base species with no sheet leaves the form blank, and a species is never given
+    another's."""
+    for i in sorted(rows):
+        nat, form, kit, key, note = rows[i]
+        if i <= 1050 or kit:
+            continue
+        base = gen3_internal(nat, names, by_name) if nat <= 386 else nat + 25
+        kit, key = ("walkingpals", str(base)) if nat <= 386 else rows[base][2:4]
+        if kit:
+            why = note[len("no sheet: "):] if note.startswith("no sheet: ") else note
+            rows[i] = (nat, form, kit, key, "%s; %s's %s" % (why, names[base], STANDS_IN))
+    return rows
 
 
 def gen3_internal(nat, names, by_name):
@@ -421,6 +484,205 @@ def credits_for(col, t, used, who):
     return [who.get(pid, pid) for pid in people], licences
 
 
+# ---------------------------------------------------------------- the shinies
+
+SHINY = "0001"  # tracker.json's shiny subgroup, under the form
+
+
+def shiny_folder(folder):
+    """The folder of [folder]'s shiny: the species, its form ("0000" for none), "0001", then its gender if it has one."""
+    parts = folder.split("/")
+    rest = parts[2:] + ["0000"] * (3 - len(parts[2:]))
+    rest[1] = SHINY
+    while rest and rest[-1] == "0000":
+        rest.pop()
+    return "/".join(parts[:2] + rest)
+
+
+def rgb24(px):
+    """Pixels (..., 4) as RRGGBB numbers."""
+    px = px.astype(np.uint32)
+    return (px[..., 0] << 16) | (px[..., 1] << 8) | px[..., 2]
+
+
+def apply_colors(plain, colors):
+    """[plain] with every opaque pixel's color swapped for the map's, as the app does it (WalkingPals.ShinyColors):
+    a color the map does not hold is left as it was."""
+    keys = np.array(sorted(colors), dtype=np.uint32)
+    vals = np.array([colors[k] for k in sorted(colors)], dtype=np.uint32)
+    out = plain.copy()
+    mask = out[..., 3] == 255
+    src = rgb24(out[mask])
+    at = np.clip(np.searchsorted(keys, src), 0, len(keys) - 1)
+    new = np.where(keys[at] == src, vals[at], src)
+    px = out[mask]
+    px[:, 0], px[:, 1], px[:, 2] = (new >> 16) & 255, (new >> 8) & 255, new & 255
+    out[mask] = px
+    return out
+
+
+def recolor(plain, shiny):
+    """THE SHINIES' proof for one sheet: ({plain color: shiny color}, "") when [shiny] is an exact recolor of [plain]
+    (RGBA arrays cut alike), else (None, why). The map is applied and compared before it is handed back."""
+    if plain.shape != shiny.shape:
+        return None, "frames"
+    if not (np.isin(plain[..., 3], (0, 255)).all() and np.isin(shiny[..., 3], (0, 255)).all()):
+        return None, "partly clear pixels"
+    mask = plain[..., 3] == 255
+    if (mask != (shiny[..., 3] == 255)).any():
+        return None, "other pixels clear"
+    pairs = np.unique(np.stack([rgb24(plain[mask]), rgb24(shiny[mask])], 1), axis=0)
+    if len(np.unique(pairs[:, 0])) != len(pairs):
+        return None, "a color split in two"
+    colors = {int(a): int(b) for a, b in pairs}
+    if not same_pixels(apply_colors(plain, colors), shiny):
+        sys.exit("a color map did not make its shiny")  # cannot happen: the map was read off these two sheets
+    return colors, ""
+
+
+def color_rows(key, maps):
+    """One key's maps as shiny-colors.tsv rows: animations whose maps agree on every color they share share a row."""
+    groups = []
+    for anim in ANIMS:
+        if anim not in maps:
+            continue
+        m = maps[anim]
+        for anims, merged in groups:
+            if all(merged.get(c, v) == v for c, v in m.items()):
+                anims.append(anim)
+                merged.update(m)
+                break
+        else:
+            groups.append(([anim], dict(m)))
+    return [[key, ",".join(anims), " ".join("%06x=%06x" % (c, merged[c]) for c in sorted(merged))] for anims, merged in groups]
+
+
+class Shinies:
+    """One set's shinies: the color maps, the sheets of their own and their rows, who drew them, and what was counted.
+
+    [hand_placed]: the set's rows were placed by hand (Ironmon-Tracker's Gen 1-3 table), so a sheet of its own ships only
+    with the plain sheet's frames, and takes the plain row; otherwise one with other frames, or other pixels clear, is
+    placed by THE OFFSET RULE."""
+
+    def __init__(self, col, hand_placed):
+        self.col, self.hand_placed = col, hand_placed
+        self.who = credit_names(col)
+        self.colors, self.sheets, self.pngs, self.credits = [], [], {}, []
+        self.stats, self.why = collections.Counter(), collections.Counter()
+        self.without = []  # keys with no shiny at all
+
+    def add(self, key, national, label, folder, rows, plains, cut):
+        """The shiny of every animation in [rows] (the plain rows by animation, with [plains] the plain sheets as the app
+        draws them). [cut](anim, sheet, w, h, durs) cuts a shiny sheet as the plain one was cut, or None."""
+        s = shiny_folder(folder)
+        if not self.col.has(s):
+            self.without.append(key)
+            return
+        ad = anim_data(self.col.dir / s / "AnimData.xml")
+        maps, own, used = {}, {}, set()
+        for anim, row in rows.items():
+            src = ad.get(PMD[anim])
+            if not src or not self.col.has(s, src[0] + "-Anim.png"):
+                self.stats["no shiny for the animation"] += 1
+                continue
+            name, w, h, durs = src
+            sheet = cut(anim, np.array(Image.open(self.col.dir / s / (name + "-Anim.png")).convert("RGBA")), w, h, durs)
+            same = (w, h, durs) == (row["w"], row["h"], row["durs"])
+            if sheet is None or (self.hand_placed and (w, h, len(durs)) != (row["w"], row["h"], len(row["durs"]))):
+                self.stats["no shiny that fits the plain frames"] += 1
+                continue
+            used.add(name)
+            colors, why = recolor(plains[anim], sheet) if same else (None, "frames")
+            if colors:
+                maps[anim] = colors
+            else:
+                own[anim] = (sheet, w, h, durs)
+                self.why[why] += 1
+        if not maps and not own:
+            self.without.append(key)
+            return
+        self.stats["color maps"] += len(maps)
+        self.stats["sheets of their own"] += len(own)
+        self.stats["many to one"] += sum(len(set(m.values())) != len(m) for m in maps.values())
+        self.colors += color_rows(key, maps)
+        placed, moved = {a: dict(r) for a, r in rows.items()}, set()
+        for anim, (sheet, w, h, durs) in own.items():
+            r = rows[anim]
+            alike = (w, h, durs) == (r["w"], r["h"], r["durs"]) and ((sheet[..., 3] > 0) == (plains[anim][..., 3] > 0)).all()
+            if not self.hand_placed and not alike:
+                x, y = place(anim, sheet, w, h, len(durs))
+                placed[anim] = dict(w=w, h=h, x=x, y=y, durs=durs)
+                moved.add(anim)
+        if "walk" in moved:
+            snap_walk(placed)
+        for anim in ANIMS:
+            if anim in own:
+                sheet = own[anim][0]
+                png = encode_png(sheet)
+                if not same_pixels(sheet, np.array(Image.open(io.BytesIO(png)).convert("RGBA"))):
+                    sys.exit("re-encoding changed the shiny %s %s" % (key, anim))
+                self.pngs[(anim, key)] = png
+                self.stats["bytes"] += len(png)
+                r = placed[anim]
+                self.sheets.append([key, anim, r["w"], r["h"], r["x"], r["y"], ",".join(map(str, r["durs"]))])
+        people, licences = credits_for(self.col, Target(national, "", s, label), used, self.who)
+        self.credits.append([key, label + " shiny", s, ", ".join(people), ", ".join(licences)])
+
+    def write(self, out, src, set_name):
+        for anim in ANIMS:
+            d = out / "shiny" / anim
+            d.mkdir(parents=True, exist_ok=True)
+            for p in d.glob("*.png"):  # a rerun replaces them, so one Sprite Collab dropped does not linger
+                p.unlink()
+        for (anim, key), png in self.pngs.items():
+            (out / "shiny" / anim / (key + ".png")).write_bytes(png)
+        write_tsv(out / "shiny-colors.tsv", ["key", "animations", "colors"], [
+            "The shiny %s that are exact recolors of their plain sheets, from %s." % (set_name, src),
+            "Written by tools/trainer-data/convert_walking_pals_nat.py (THE SHINIES); the app recolors the plain sheet with",
+            "the map. colors: each opaque color of the plain sheet = the shiny's color for it, as RRGGBB; animations whose",
+            "maps agree on every color they share share a row. A key or animation not here or in shiny.tsv has no shiny.",
+        ], self.colors)
+        write_tsv(out / "shiny.tsv", ["key", "animation", "w", "h", "x", "y", "durations"], [
+            "The shiny %s that are not exact recolors of their plain sheets, as sheets of their own in shiny/, from" % set_name,
+            src + ". The same columns as the set's own table. Written by",
+            "tools/trainer-data/convert_walking_pals_nat.py (THE SHINIES).",
+        ], self.sheets)
+
+    def report(self, what):
+        s = self.stats
+        print("%s shinies: %d color maps, %d sheets of their own (%.2f MB; why: %s), %d many-to-one maps; %d keys with none" % (
+            what, s["color maps"], s["sheets of their own"], s["bytes"] / 1e6,
+            ", ".join("%s %d" % kv for kv in sorted(self.why.items())), s["many to one"], len(self.without)))
+        if s["no shiny for the animation"] or s["no shiny that fits the plain frames"]:
+            print("  plain only for one animation: %d with no shiny sheet, %d whose shiny does not fit the plain frames" % (
+                s["no shiny for the animation"], s["no shiny that fits the plain frames"]))
+        if self.without:
+            print("  no shiny:", " ".join(self.without))
+
+
+def nat_cut(anim, sheet, w, h, durs):
+    """A sheet cut as walkingpals-nat/ keeps it, or None when it is smaller than its frames."""
+    if sheet.shape[1] < w * len(durs) or sheet.shape[0] < h:
+        return None
+    keep = ROWS_KEPT[anim]
+    return sheet[: (keep * h if keep else sheet.shape[0] // h * h), : w * len(durs)]
+
+
+def want_shinies(col, folders):
+    """Fetch the shiny AnimData.xml and credits.txt of [folders], then the sheets the first names."""
+    shiny = [shiny_folder(f) for f in folders]
+    col.want(p for s in shiny for p in (s + "/AnimData.xml", s + "/credits.txt") if p in col.files)
+    need = set()
+    for s in shiny:
+        if col.has(s):
+            ad = anim_data(col.dir / s / "AnimData.xml")
+            for anim in ANIMS:
+                src = ad.get(PMD[anim])
+                if src and col.has(s, src[0] + "-Anim.png"):
+                    need.add("%s/%s-Anim.png" % (s, src[0]))
+    col.want(need)
+
+
 # ---------------------------------------------------------------- convert
 
 def convert(col, targets, out):
@@ -440,24 +702,26 @@ def convert(col, targets, out):
             if src and col.has(t.folder, src[0] + "-Anim.png"):
                 need.add("%s/%s-Anim.png" % (t.folder, src[0]))
     col.want(need)
+    want_shinies(col, [t.folder for t in targets.values()])
     who = credit_names(col)
+    shinies = Shinies(col, hand_placed=False)
     table, credits, missing, stats = [], [], collections.defaultdict(list), collections.Counter()
     for key in sorted(targets, key=lambda k: (int(k.split("-")[0]), k)):
         t, ad = targets[key], datas[key]
-        rows, used = {}, set()
+        rows, used, plains = {}, set(), {}
         for anim in ANIMS:
             src = ad.get(PMD[anim])
             if not src or not col.has(t.folder, src[0] + "-Anim.png"):
                 missing[anim].append(key)
                 continue
             name, w, h, durs = src
-            sheet = np.array(Image.open(col.dir / t.folder / (name + "-Anim.png")).convert("RGBA"))
-            if sheet.shape[1] < w * len(durs) or sheet.shape[0] < h:
-                print("  skip %s %s: sheet %s smaller than %d frames of %dx%d" % (key, anim, sheet.shape[:2], len(durs), w, h))
+            whole = np.array(Image.open(col.dir / t.folder / (name + "-Anim.png")).convert("RGBA"))
+            sheet = nat_cut(anim, whole, w, h, durs)
+            if sheet is None:
+                print("  skip %s %s: sheet %s smaller than %d frames of %dx%d" % (key, anim, whole.shape[:2], len(durs), w, h))
                 missing[anim].append(key)
                 continue
-            keep = ROWS_KEPT[anim]
-            sheet = sheet[: (keep * h if keep else sheet.shape[0] // h * h), : w * len(durs)]
+            plains[anim] = sheet
             x, y = place(anim, sheet, w, h, len(durs))
             png = encode_png(sheet)
             back = np.array(Image.open(io.BytesIO(png)).convert("RGBA"))
@@ -475,7 +739,8 @@ def convert(col, targets, out):
                 table.append([key, anim, r["w"], r["h"], r["x"], r["y"], ",".join(map(str, r["durs"]))])
         people, licences = credits_for(col, t, used, who)
         credits.append([key, t.label.replace("_", " "), t.folder, ", ".join(people), ", ".join(licences)])
-    return table, credits, missing, stats
+        shinies.add(key, t.national, t.label.replace("_", " "), t.folder, rows, plains, nat_cut)
+    return table, credits, missing, stats, shinies
 
 
 def write_tsv(path, header, comment, rows):
@@ -627,8 +892,9 @@ def main():
     for anim in ANIMS:  # a rerun replaces the set, so a sheet SpriteCollab dropped does not linger
         for p in (out / anim).glob("*.png") if (out / anim).is_dir() else []:
             p.unlink()
-    table, credits, missing, stats = convert(col, targets, out)
+    table, credits, missing, stats, shinies = convert(col, targets, out)
     src = "PMD Sprite Collab %s (%s), github.com/PMDCollab/SpriteCollab" % (col.commit[:12], col.date)
+    shinies.write(out, src, "Walking Pals in this folder")
     write_tsv(out / "walkingpals-nat.tsv", ["key", "animation", "w", "h", "x", "y", "durations"], [
         "Walking Pals after Gen 3, keyed by NATIONAL dex number (<national> or <national>-<form>),",
         "never by the Gen 3 internal id walkingpals/ uses. Written by tools/trainer-data/convert_walking_pals_nat.py",
@@ -642,12 +908,14 @@ def main():
         "Licences as each contribution was given: CC_BY-NC_4 = CC BY-NC 4.0; PMDCollab_1 = use with credit;",
         "PMDCollab_2 = use with credit, not for profit; Unspecified = Spike Chunsoft's own sprites from the PMD games.",
         "The collab's terms for the whole repository: CC BY-NC 4.0 (non-commercial, credit the artists).",
-    ], credits)
+        "After the sheets, the shinies: a row per key whose shiny ships (shiny-colors.tsv, shiny.tsv), with its own folder.",
+    ], credits + shinies.credits)
     map_rows = [[i, names[i]] + list(rows[i]) for i in sorted(rows)]
     write_tsv(out / "natdex-map.tsv", ["natdex", "name", "national", "form", "set", "key", "note"], [
         "The Nat. Dex Extension's species ids 412-1283 (tracker-gba/src/main/resources/natdex/species.tsv) to a",
         "Walking Pals sheet. set walkingpals-nat: key is <national>[-<form>] in this folder; set walkingpals: key is",
-        "the Gen 3 internal id in walkingpals/. Blank set and key: no sheet, and the note says why.",
+        "the Gen 3 internal id in walkingpals/. Blank set and key: no sheet, and the note says why. A Mega or form",
+        "with no sheet of its own has its base species' set and key until its own is drawn, and the note says so.",
         "Ids 1-411 are Gen 3's own internal ids and walkingpals/ already covers them.",
     ], map_rows)
     per = collections.Counter(r[1] for r in table)
@@ -656,8 +924,11 @@ def main():
         if anim != "faint":
             print("  no %s: %s" % (anim, " ".join(missing[anim]) or "-"))
     print("  no faint: %d keys" % len(missing["faint"]))
+    shinies.report("walkingpals-nat")
     unmapped = [r for r in map_rows if not r[5]]
-    print("nat. dex ids 412-1283: %d mapped, %d without a sheet" % (len(map_rows) - len(unmapped), len(unmapped)))
+    standing = [r for r in map_rows if STANDS_IN in r[6]]
+    print("nat. dex ids 412-1283: %d mapped (%d of them a Mega or form walking as its base species), %d without a sheet" % (
+        len(map_rows) - len(unmapped), len(standing), len(unmapped)))
     for r in unmapped:
         print("  %d %s: %s" % (r[0], r[1], r[6]))
     if args.check_rule:

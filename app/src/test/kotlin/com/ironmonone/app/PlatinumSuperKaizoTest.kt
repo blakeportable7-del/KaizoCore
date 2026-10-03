@@ -22,7 +22,7 @@ class PlatinumSuperKaizoTest {
 
     @Test
     fun `the patch builds the pinned kind, and ZX randomizes it with DPPt Super Kaizo`() {
-        val rom = System.getenv("IRONMON_ROMS")?.let { File(it, "platinum-u.nds") }?.takeIf { it.isFile }
+        val rom = Dumps.rom("platinum-u.nds")
             ?: return println("PlatinumSuperKaizoTest skipped: set IRONMON_ROMS (platinum-u.nds)")
         val opt = PrepOptions.forKind(RomKind.PLATINUM_U).first { it.out?.id == RomKind.PLATINUM_SUPERKAIZO.id }
         val built = File.createTempFile("platsk", ".nds")

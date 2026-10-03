@@ -7,6 +7,10 @@ import java.io.File
  * counts between tracker reads: each read adds the time since the last one, up to a few
  * seconds, so a paused or backgrounded game (no reads) adds nothing and a gap never counts
  * as play. Kept per run in prep/run-clock.txt, "game#attempt=seconds" per line (attempts count per game).
+ *
+ * The file is written on the writer's thread (DiskWriter): it was synced from Play's poll loops on the main thread
+ * every 10 s of play (rc32 audit P2 #90, P3 #60). The maps are changed from those loops and from a new run's install
+ * on an IO thread (retire), so every function that touches them holds this object's lock.
  */
 object RunClock {
     /** Longest gap between two reads that still counts as play, in milliseconds. */
@@ -19,6 +23,7 @@ object RunClock {
     private var dirtySince = 0L
     private var file: File? = null
 
+    @Synchronized
     fun load(f: File) {
         file = f
         seconds.clear(); carryMs.clear(); lastKey = ""; lastAt = 0L
@@ -27,12 +32,13 @@ object RunClock {
 
     /**
      * The seconds [f] holds, by run key, as [load] reads them and as Your stats does (CareerStats): a line that is not
-     * "game#attempt=seconds" is skipped, and a file that is missing or cannot be read is an empty map.
+     * "game#attempt=seconds" is skipped, and a file that is missing or cannot be read is an empty map. Read through the
+     * writer (DiskWriter.read), so the seconds still on their way to disk count.
      */
     fun readSeconds(f: File): Map<String, Long> {
         val out = HashMap<String, Long>()
         runCatching {
-            if (f.exists()) f.forEachLine { line ->
+            DiskWriter.read(f)?.lineSequence()?.forEach { line ->
                 val cut = line.lastIndexOf('=')
                 if (cut > 0) {
                     val s = line.substring(cut + 1).trim().toLongOrNull()
@@ -46,13 +52,24 @@ object RunClock {
     /** The key of a run: the game and its attempt number, since attempts count per game. */
     fun key(game: String, attempt: Int): String = "$game#$attempt"
 
+    /**
+     * Play's poll loops, after each tracker read (rc33 audit P1 #31): the clock was fed only by reads that changed the
+     * state, and a DS state rarely changes, so most play time was dropped. [game] is null outside a run.
+     */
+    fun tick(game: String?, attempt: () -> Int, playing: Boolean) {
+        if (game == null || !playing) return
+        observe(key(game, attempt()), android.os.SystemClock.elapsedRealtime())
+    }
+
     /** Seconds played in the run [key]. */
+    @Synchronized
     fun of(key: String): Int = (seconds[key] ?: 0L).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
 
     /**
      * A tracker read of the run [key] at [nowMs] (a monotonic clock). The first read of a run,
      * or one after a gap longer than [MAX_STEP_MS], only sets the mark.
      */
+    @Synchronized
     fun observe(key: String, nowMs: Long) {
         if (key != lastKey) { lastKey = key; lastAt = nowMs; return }
         val step = nowMs - lastAt
@@ -70,6 +87,7 @@ object RunClock {
      * played under it. Its seconds move to a key of their own, "[key]~n", so Your stats (which adds every line)
      * still counts them, and the new run starts at 0.
      */
+    @Synchronized
     fun retire(key: String) {
         val had = seconds.remove(key) ?: return
         carryMs.remove(key)
@@ -80,12 +98,10 @@ object RunClock {
         save()
     }
 
+    @Synchronized
     fun save() {
         dirtySince = 0L
         val f = file ?: return
-        runCatching {
-            f.parentFile?.mkdirs()
-            SafeWrite.text(f, seconds.entries.sortedBy { it.key }.joinToString("") { "${it.key}=${it.value}\n" })
-        }
+        DiskWriter.write(f, seconds.entries.sortedBy { it.key }.joinToString("") { "${it.key}=${it.value}\n" })
     }
 }

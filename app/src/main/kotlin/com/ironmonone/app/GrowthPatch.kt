@@ -45,21 +45,23 @@ internal object GrowthPatch {
 
     /**
      * Applies the bundled patch to [base], the copy of [kind] already on the phone, and stores the result as the
-     * patched build. [base] is left as it is: it still plays from My games.
+     * patched build. [base] is left as it is: it still plays from My games. A failure is a [PrepFailure], worded for
+     * the player, which the job's status shows as it is; as a plain exception it read "Try again" (rc32 audit P3 #62).
      */
     fun make(context: Context, store: PrepStore, kind: RomKind, base: File): RomKind {
-        val out = buildFor(kind) ?: throw IllegalStateException("This game needs no growth patch.")
+        val out = buildFor(kind) ?: throw PrepFailure("This game needs no growth patch.")
         val asset = PrepOptions.forKind(kind).firstOrNull { it.out?.id == out.id }?.asset
-            ?: throw IllegalStateException("This version of KaizoCore does not carry the growth patch for this game.")
+            ?: throw PrepFailure("This version of KaizoCore does not carry the growth patch for this game.")
         val patch = store.bundledPatch(context, asset)
-            ?: throw IllegalStateException("This version of KaizoCore does not carry the growth patch for this game.")
+            ?: throw PrepFailure("This version of KaizoCore does not carry the growth patch for this game.")
         val tmp = File(context.cacheDir, "growth-${out.id}.${out.fileExtension}")
-        val crc = Patcher.applyFiles(patch, base, tmp, kind.displayName)
+        // A patch that throws part way leaves nothing behind in the cache (rc32 audit P3 #57).
+        val crc = patchInto(tmp) { Patcher.applyFiles(patch, base, tmp, kind.displayName) }
         if (crc != out.expectedCrc) {
             tmp.delete()
-            throw IllegalStateException("The patch applied, but the result is not a version this app knows. Your copy is probably a different version of the game. Nothing was changed.")
+            throw PrepFailure("The patch applied, but the result is not a version this app knows. Your copy is probably a different version of the game. Nothing was changed.")
         }
-        store.savePrepared(out, tmp)
+        store.savePrepared(out, tmp, crc)
         return out
     }
 }

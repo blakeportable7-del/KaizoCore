@@ -377,4 +377,20 @@ class NuzlockeSystemsTest {
         assertTrue("open the run again" in NuzlockeNotes.forGame(NuzlockeSystem.GEN2, "crystal").byHand.joinToString(" "))
         assertTrue("Challenge Mode" in NuzlockeNotes.forGame(NuzlockeSystem.GEN5, "black2").byHand.joinToString(" "))
     }
+
+    @Test
+    fun `the rules page says the League is checked once, at its first battle, and the Champion never`() {
+        // rc32 audit P2 #142: the page said the Elite Four and the Champion were checked when their battles start.
+        for ((system, game) in listOf(NuzlockeSystem.GEN1 to "red", NuzlockeSystem.GEN2 to "crystal", NuzlockeSystem.GEN4 to "platinum", NuzlockeSystem.GEN5 to "black2")) {
+            val caps = NuzlockeNotes.forGame(system, game).automatic.single { it.startsWith("Level caps") }
+            assertTrue("first Elite Four battle" in caps || "Elite Four member you fight first" in caps, "$system $game: $caps")
+            assertTrue("no cap" in caps, "$system $game: $caps")
+            assertFalse("Elite Four and the Champion are checked" in caps || "and the last fight are checked" in caps, "$system $game: $caps")
+            assertFalse(Regex("Champion (is|are) checked").containsMatchIn(caps), caps)
+        }
+        val gsc = NuzlockeNotes.forGame(NuzlockeSystem.GEN2, "crystal").byHand.joinToString(" ")
+        // rc32 audit P2 #140: the Game Boy Color tracker follows an egg from where it joined now, and the page says so.
+        assertTrue("uses up the area where you got it, not the one it hatches in" in gsc, gsc)
+        assertFalse("fix that on the Areas tab" in gsc, "no longer the player's to fix")
+    }
 }

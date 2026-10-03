@@ -62,10 +62,12 @@ object RunCodes {
                 if (kind.isNatDex || kind.patchTag != null) "Make ${kind.displayName} first (Library, Patched versions), then paste the code again."
                 else "Add ${kind.displayName} first (Library, My games), then paste the code again.",
             )
+        // Randomizer settings (advanced) is above Run codes, and this is said in the footer under both: "below" sent the
+        // player the wrong way (rc32 audit P3 #61).
         val file = settings.firstOrNull { runCatching { RunCode.settingsHashOf(sha(it)) }.getOrNull() == code.settingsHash }
             ?: return Plan.Refused(
                 "You do not have the settings this run was made with (${code.settingsName}). " +
-                    "Ask for the settings file, add it with Import under Randomizer settings below, then paste the code again.",
+                    "Ask for the settings file, add it with IMPORT under Randomizer settings (advanced), further up this screen, then paste the code again.",
             )
         if (code.prePass && ExtraPasses.prePassName(kind) == null)
             return Plan.Refused("This code asks for the 60% levels, which ${kind.displayName} does not take here.")

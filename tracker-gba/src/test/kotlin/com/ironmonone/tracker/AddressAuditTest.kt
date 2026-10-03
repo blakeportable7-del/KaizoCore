@@ -68,6 +68,29 @@ class AddressAuditTest {
         "gTasks" to { m: GameMap -> m.gTasks },
         "Task_HandleConfirmStarterInput" to { m: GameMap -> m.confirmStarterTask },
         "sSpecialFlags" to { m: GameMap -> m.specialFlags },
+        // The move tracking (EnemyMoveWatch, rc33 audit P1 #72).
+        "gBattlerAttacker" to { m: GameMap -> m.battlerAttacker },
+        "gBattleCommunication" to { m: GameMap -> m.battleCommunication },
+        "gCurrentTurnActionNumber" to { m: GameMap -> m.currentTurnActionNumber },
+        "gActionsByTurnOrder" to { m: GameMap -> m.actionsByTurnOrder },
+        "gHitMarker" to { m: GameMap -> m.hitMarker },
+        "BattleScript_FocusPunchSetUp" to { m: GameMap -> m.moveScripts?.focusPunchSetUp ?: 0L },
+        "BattleScript_SnatchedMove" to { m: GameMap -> m.moveScripts?.snatchedMove ?: 0L },
+        "BattleScript_MoveUsedIsConfused" to { m: GameMap -> m.moveScripts?.isConfused ?: 0L },
+        "BattleScript_MoveUsedIsConfused2" to { m: GameMap -> m.moveScripts?.isConfused2 ?: 0L },
+        "BattleScript_MoveUsedIsConfusedNoMore" to { m: GameMap -> m.moveScripts?.isConfusedNoMore ?: 0L },
+        "BattleScript_MoveUsedWokeUp" to { m: GameMap -> m.moveScripts?.wokeUp ?: 0L },
+        "BattleScript_MoveUsedIsInLove" to { m: GameMap -> m.moveScripts?.isInLove ?: 0L },
+        "BattleScript_MoveUsedIsInLove2" to { m: GameMap -> m.moveScripts?.isInLove2 ?: 0L },
+        "BattleScript_MoveUsedIsFrozen" to { m: GameMap -> m.moveScripts?.isFrozen ?: 0L },
+        "BattleScript_MoveUsedIsFrozen2" to { m: GameMap -> m.moveScripts?.isFrozen2 ?: 0L },
+        "BattleScript_MoveUsedIsFrozen3" to { m: GameMap -> m.moveScripts?.isFrozen3 ?: 0L },
+        "BattleScript_MoveUsedUnfroze" to { m: GameMap -> m.moveScripts?.unfroze ?: 0L },
+        "BattleScript_MoveUsedUnfroze2" to { m: GameMap -> m.moveScripts?.unfroze2 ?: 0L },
+        // The Champion's win reads the trainer fought (rc32 audit P3 #108); Trace's reveal reads the battler its message
+        // names (rc32 audit P2 #132).
+        "gTrainerBattleOpponent_A" to { m: GameMap -> m.trainerOpponent },
+        "gBattleTextBuff1" to { m: GameMap -> m.battleTextBuff1 },
     )
 
     @Test
@@ -87,6 +110,21 @@ class AddressAuditTest {
         }
         assertTrue(wrong.isEmpty(), "addresses disagreeing with the reference:\n" + wrong.joinToString("\n"))
         assertTrue(checked > 120, "only $checked addresses were compared; the fixture or the field list is wrong")
+    }
+
+    @Test
+    fun `the win's opponent and Trace's text buffer are compared in every game`() {
+        for (map in maps) for (n in listOf("gTrainerBattleOpponent_A", "gBattleTextBuff1")) {
+            assertTrue(reference.containsKey(map.name to n), "${map.name} $n is not in the fixture")
+        }
+    }
+
+    @Test
+    fun `the move tracking's reads and scripts are each compared`() {
+        // rc33 audit P1 #72: sixteen numbers per game, none of which a unit test can check against a live battle.
+        val names = fields.map { it.first }.filter { it.startsWith("BattleScript_") || it in setOf("gCurrentTurnActionNumber", "gActionsByTurnOrder", "gHitMarker") }
+        assertEquals(16, names.size)
+        for (map in maps) for (n in names) assertTrue(reference.containsKey(map.name to n), "${map.name} $n is not in the fixture")
     }
 
     /**

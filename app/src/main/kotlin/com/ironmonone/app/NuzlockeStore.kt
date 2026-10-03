@@ -39,7 +39,7 @@ class NuzlockeStore(filesDir: File) {
 
     /** Every run on disk, newest first. A file that is not a ledger, or is unreadable, is skipped and left alone. */
     fun list(): List<Entry> =
-        (dir.listFiles { f -> f.isFile && f.name.endsWith(".txt") } ?: emptyArray())
+        (dir.listFiles { f -> f.isFile && f.name.endsWith(".txt") } ?: emptyArray()).also { lists++ }
             .mapNotNull { f ->
                 val h = runCatching { f.bufferedReader(Charsets.UTF_8).use { r -> NuzlockeText.header(r.lineSequence().take(HEADER_LINES)) } }.getOrNull()
                 h?.let { Entry(f, it) }
@@ -82,13 +82,13 @@ class NuzlockeStore(filesDir: File) {
         return ledger
     }
 
-    /** Marks a run replaced. It stays on disk as history. The copy in memory, if there is one, is the freshest. */
-    fun abandon(id: String, at: Long): Boolean {
+    /** Marks a run replaced, saying by what ([reason]). It stays on disk as history. The copy in memory, if there is one, is the freshest. */
+    fun abandon(id: String, at: Long, reason: String = "Replaced by a newer run on this game."): Boolean {
         val ledger = NuzlockeTracking.loaded(id) ?: load(id) ?: return false
         if (ledger.meta.status == RunStatus.ABANDONED) return false
         ledger.meta.status = RunStatus.ABANDONED
         ledger.meta.endedAt = at
-        ledger.event(at, "over", "Replaced by a newer run on this game.")
+        ledger.event(at, "over", reason)
         val ok = save(ledger)
         NuzlockeTracking.forget(id)
         return ok
@@ -103,11 +103,12 @@ class NuzlockeStore(filesDir: File) {
     /**
      * Puts the ledgers of a game's randomized runs in order once the randomizer is idle (2026-09-29). A randomized
      * run's ledger is made before the game is (its seed is chosen first), so it can outlive a randomize that
-     * failed, and it goes stale when the next randomize of the same game replaces the run. [kindId] and [seedHex]
-     * are the run in place now (PrepStore.loadLastRun and lastSeed). Another seed's ledger of the same game is
-     * deleted if nothing was ever recorded in it, and marked replaced if something was. A ledger for another
-     * game, or one for the seed in place, is left alone, and nothing happens while the seed is not known (half way
-     * through a new run). Returns how many ledgers it dealt with.
+     * failed, and it goes stale when the next randomize replaces the run, of the same game or another: there is one
+     * run in place, so a randomized ledger for any other seed of any game is over (rc33 audit P1 #23: another game's
+     * stayed "In progress" for good). [kindId] and [seedHex] are the run in place now (PrepStore.loadLastRun and
+     * lastSeed). Such a ledger is deleted if nothing was ever recorded in it, and marked replaced if something was.
+     * The seed in place and every library game's ledger are left alone, and nothing happens while the seed is not
+     * known (half way through a new run). Returns how many ledgers it dealt with.
      */
     fun settleRandomized(kindId: String?, seedHex: String?, at: Long): Int {
         if (kindId == null || seedHex == null || !PrepStore.stampKnown("$kindId/$seedHex")) return 0
@@ -115,9 +116,11 @@ class NuzlockeStore(filesDir: File) {
         var n = 0
         for (e in list()) {
             val h = e.header
-            if (h.status != RunStatus.ACTIVE || h.bind == now || !RUN_BIND.matches(h.bind) || !h.bind.startsWith("$kindId/")) continue
+            if (h.status != RunStatus.ACTIVE || h.bind == now || !RUN_BIND.matches(h.bind)) continue
             val ledger = NuzlockeTracking.loaded(h.id) ?: load(h.id) ?: continue
-            if (untouched(ledger)) delete(h.id) else abandon(h.id, at)
+            val sameGame = h.bind.startsWith("$kindId/")
+            if (untouched(ledger)) delete(h.id)
+            else abandon(h.id, at, if (sameGame) "Replaced by a newer run on this game." else "Replaced by a randomized run of another game.")
             n++
         }
         return n
@@ -154,6 +157,9 @@ class NuzlockeStore(filesDir: File) {
         /** The header lives in the first lines: the format line, the run, the flags and the rules. */
         const val HEADER_LINES = 40
 
+        /** How many times the folder was listed, for the tests: a look that found nothing new must not list it again. */
+        @Volatile internal var lists = 0
+
         /**
          * What a session is tied to: a library game's id, or for the randomized run its game and seed. Null while
          * the run's seed is not on disk yet (PrepStore.stampKnown), which is half way through starting one.
@@ -178,8 +184,12 @@ class NuzlockeStore(filesDir: File) {
  */
 object NuzlockeTracking {
 
-    /** A run being fed. */
-    class Live(val store: NuzlockeStore, val ledger: NuzlockeLedger) {
+    /**
+     * A run being fed. A [staged] one is a staged demo's (Demo.mode): a copy of the run read from disk, fed the demo's
+     * made-up encounters, catches and deaths so the panel shows the ledger at work, and never written back. The
+     * player's own ledger and its copy in memory are not touched (rc32 audit P2 #29).
+     */
+    class Live(val store: NuzlockeStore, val ledger: NuzlockeLedger, val staged: Boolean = false) {
         val engine = NuzlockeEngine(ledger)
         val edits = NuzlockeEdits(ledger)
         /** What the panel last drew from, so the ledger can show the same area and caps. */
@@ -196,21 +206,32 @@ object NuzlockeTracking {
         /** After a change made by hand. */
         fun edited() = saveSoon()
 
+        /**
+         * The ledger is copied here, on the thread that feeds it, and written to text on the writer: the whole file
+         * (up to 4,000 events) was formatted on the main thread on every change (rc32 audit P3 #39). The writer never
+         * reads the live ledger, which the next poll changes: the rule of rc33 audit P0-10.
+         */
         private fun saveSoon() {
-            write(store.fileFor(ledger.meta.id), NuzlockeText.format(ledger), wait = false)
+            if (staged) return
+            val copy = ledger.detached()
+            write(store.fileFor(ledger.meta.id), wait = false) { NuzlockeText.format(copy) }
         }
 
-        /** Writes the ledger now, after everything queued, for a caller that is about to leave (and for the tests). */
-        fun saveNow(): Boolean = store.save(ledger)
+        /** Writes the ledger now, after everything queued, for a caller that is about to leave (and for the tests). A staged copy has nothing to write. */
+        fun saveNow(): Boolean = staged || store.save(ledger)
     }
 
     /** One writer, so two saves of a ledger reach the disk in the order they were made. */
     private val writer = Executors.newSingleThreadExecutor { r -> Thread(r, "nuzlocke-writer").apply { isDaemon = true } }
 
     /** Writes [text] to [file], or deletes it when [text] is null. With [wait] the answer is the write's own. */
-    fun write(file: File, text: String?, wait: Boolean): Boolean {
+    fun write(file: File, text: String?, wait: Boolean): Boolean = write(file, wait) { text }
+
+    /** The same, with the text made on the writer by [make], in its turn after every write already queued. */
+    fun write(file: File, wait: Boolean, make: () -> String?): Boolean {
         // A failed write is said, waited for or not: the ledger's save was ignored on a full phone (rc33 audit P0-8).
         val job = writer.submit<Boolean> {
+            val text = make()
             if (text == null) file.delete()
             else SafeWrite.text(file, text).also { if (!it) SaveTrouble.report(SaveTrouble.LEDGER, SaveTrouble.LEDGER_FAILED) }
         }
@@ -219,9 +240,14 @@ object NuzlockeTracking {
 
     private val live = HashMap<String, Live>()
 
+    /** A staged demo's copies of the runs (Live.staged), apart from the real ones; guarded by [live]'s lock. */
+    private val stagedLive = HashMap<String, Live>()
+
     // What the last look at the disk found, so a poll every few hundred milliseconds does not re-read the library.
     private var checkedAt = 0L
     private var checkedFor: String? = null
+    private var checkedBind: String? = null
+    private var checkedStamp = -1L
     private var found: Live? = null
     private var prep: PrepStore? = null
     private var prepKey: String? = null
@@ -264,18 +290,23 @@ object NuzlockeTracking {
 
     /** Lets go of a run's in-memory copy (it was replaced or deleted). */
     fun forget(id: String) {
-        synchronized(live) { live.remove(id) }
+        synchronized(live) { live.remove(id); stagedLive.remove(id) }
         if (found?.ledger?.meta?.id == id) found = null
         generation++
     }
 
-    /** The run for [bind] in [store], loading it the first time. Null when there is none. */
+    /**
+     * The run for [bind] in [store], loading it the first time. Null when there is none. While a staged demo is set
+     * (Demo.mode) it is a staged copy (Live.staged), so what the demo feeds never reaches the player's run.
+     */
     fun liveFor(store: NuzlockeStore, bind: String): Live? {
         val entry = store.current(bind) ?: return null
+        val staged = Demo.mode != null
         synchronized(live) {
-            live[entry.header.id]?.let { return it }
+            val lives = if (staged) stagedLive else live
+            lives[entry.header.id]?.let { return it }
             val ledger = store.load(entry.header.id) ?: return null
-            return Live(store, ledger).also { live[entry.header.id] = it }
+            return Live(store, ledger, staged).also { lives[entry.header.id] = it }
         }
     }
 
@@ -291,14 +322,25 @@ object NuzlockeTracking {
     /**
      * The run the Play screen is on, for the game it has open, or null when that game has no Nuzlocke. Looks at
      * the disk at most every two seconds, and again at once when a run starts.
+     *
+     * Each look works out the game in play (a few small files), but reads the ledgers' headers only when that game,
+     * the generation or the ledger folder changed since the last: it read every ledger on the phone every two seconds
+     * of play, on the main thread, a cost that grew with every Nuzlocke played (rc32 audit P3 #39).
      */
     fun current(filesDir: File, now: Long = System.currentTimeMillis()): Live? {
         val key = filesDir.path
         if (checkedFor == key && checkedGeneration == generation && now - checkedAt < RECHECK_MS) return found
-        checkedFor = key; checkedGeneration = generation; checkedAt = now
+        val gen = generation
+        checkedAt = now
         val p = prep.takeIf { prepKey == key } ?: PrepStore(filesDir).also { prep = it; prepKey = key }
         val bind = runCatching { NuzlockeStore.bindOf(p.session(), p.runIdentity()) }.getOrNull()
-        found = bind?.let { liveFor(NuzlockeStore(filesDir), it) }
+        val store = NuzlockeStore(filesDir)
+        // The folder's own time moves when a ledger is added, removed or replaced (SafeWrite renames), so a ledger put
+        // there by anything else (a restore) is still seen within a look.
+        val stamp = store.dir.lastModified()
+        if (checkedFor == key && checkedGeneration == gen && checkedBind == bind && checkedStamp == stamp) return found
+        checkedFor = key; checkedGeneration = gen; checkedBind = bind; checkedStamp = stamp
+        found = bind?.let { liveFor(store, it) }
         return found
     }
 
@@ -312,7 +354,7 @@ object NuzlockeTracking {
 
     /** Forgets everything in memory, for the tests. */
     internal fun reset() {
-        synchronized(live) { live.clear() }
-        found = null; checkedFor = null; checkedGeneration = -1; prep = null; prepKey = null
+        synchronized(live) { live.clear(); stagedLive.clear() }
+        found = null; checkedFor = null; checkedGeneration = -1; prep = null; prepKey = null; checkedBind = null; checkedStamp = -1L
     }
 }

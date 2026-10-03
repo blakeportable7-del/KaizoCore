@@ -32,22 +32,43 @@ class CheatStore(private val dir: File) {
             if (p.size < 3) null else Cheat(p[1], p[2].replace("\\n", "\n"), p[0] == "1")
         }
 
-    fun save(id: String, cheats: List<Cheat>) {
+    /**
+     * Keeps [cheats] for the game [id], whole or not at all (SafeWrite). False when the phone refused the write: it
+     * threw out of the dialog's tap, and the app closed mid-game on a full phone (rc32 audit P2 #16). It is said
+     * (SaveTrouble), since the dialog does not wait for the answer.
+     *
+     * A code goes in with plain line ends and a name on one line: a carriage return went into the file raw, and reading
+     * it back ended the line there, so a code pasted with Windows line ends kept only its first line, and a name with a
+     * line break lost the whole cheat (rc32 audit P3 #23).
+     */
+    fun save(id: String, cheats: List<Cheat>): Boolean {
         val f = file(id)
-        if (cheats.isEmpty()) { f.delete(); return }
-        val tmp = File(dir, f.name + ".tmp")
-        tmp.writeText(cheats.joinToString("\n") { c ->
-            listOf(if (c.enabled) "1" else "0", c.name.replace('\t', ' '), c.code.replace("\n", "\\n")).joinToString("\t")
+        if (cheats.isEmpty()) return f.delete() || !f.exists()
+        val ok = SafeWrite.text(f, cheats.joinToString("\n") { c ->
+            listOf(if (c.enabled) "1" else "0", oneLine(c.name), c.code.lines().joinToString("\\n")).joinToString("\t")
         })
-        if (!tmp.renameTo(f)) { f.delete(); tmp.renameTo(f) }
+        if (!ok) SaveTrouble.report(SaveTrouble.SETTING, SAVE_FAILED)
+        return ok
     }
 
+    /** A name as one line of the file: no tab, no line break of any kind. */
+    private fun oneLine(name: String): String = name.replace("\r\n", " ").replace('\r', ' ').replace('\n', ' ').replace('\t', ' ')
+
     companion object {
+        const val SAVE_FAILED = "Could not save the cheats. If this phone is out of space, free some, then try again."
+
         /**
          * Whether cheats may run at all for this session: never in a Kaizo IronMON run or a Nuzlocke, and in plain
          * play, tracked or not (2026-09-30, UX audit P1: every tracked game used to refuse them).
          */
         fun allowed(session: GameSession, nuzlocke: Boolean = NuzlockeTracking.inPlay()): Boolean = !session.isRun && !nuzlocke
+
+        /**
+         * What the core is handed (GLRetroView.setCheats): every code that normalises, enabled or not, in the list's
+         * order; nothing at all when cheats are not [allowed], which leaves the core with none.
+         */
+        fun forCore(cheats: List<Cheat>, platform: Platform, allowed: Boolean): List<Pair<Boolean, String>> =
+            if (!allowed) emptyList() else cheats.mapNotNull { c -> normalise(c.code, platform)?.let { c.enabled to it } }
 
         /**
          * What the core is given: lines trimmed, blank lines dropped, hex

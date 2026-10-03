@@ -30,6 +30,13 @@ class WrongSourceSize(val expectedBytes: Long, val actualBytes: Long) :
 
 class CorruptPatch(detail: String) : PatchException("The patch file is damaged: $detail")
 
+/**
+ * An xdelta put on another version of its game (rc32 audit P2 #115). An xdelta carries no checksum of its source, so
+ * the player says which game it is for; a window that copied from the source and then fails its Adler-32, or a source
+ * too short for a window (a trimmed DS dump), is the wrong game, not a damaged patch.
+ */
+class SourceMismatch : PatchException("This patch was made for a different version of the game.")
+
 class OutputMismatch(val expectedCrc: Long, val actualCrc: Long) :
     PatchException(
         "The patch applied but produced the wrong result " +

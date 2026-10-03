@@ -19,7 +19,23 @@ class CoreLoadErrorsTest {
         val lines = codes.map { CoreLoadErrorCopy.forCode(it) }
         assertEquals(codes.size, lines.toSet().size)
         for (l in lines) assertFalse('\u2014' in l, l)
-        assertTrue("CoreLoadErrors(retro) { status = it }" in File("src/main/kotlin/com/ironmonone/app/PlayScreen.kt").readText())
+        assertTrue("CoreLoadErrors(retro, session.isRun, Modifier.align(Alignment.Center))" in File("src/main/kotlin/com/ironmonone/app/PlayScreen.kt").readText())
+    }
+
+    /**
+     * rc32 audit P2 #53: the line was a toast gone after three seconds, leaving a black screen with nothing saying why,
+     * and File > Restart on that view reached a core that was never loaded (a null core when its library failed).
+     */
+    @Test
+    fun `the failure stays on screen with the way out, and Restart cannot reach a core with no game`() {
+        val src = File("src/main/kotlin/com/ironmonone/app/CoreLoadErrors.kt").readText().replace("\r\n", "\n")
+        val body = src.substringAfter("internal fun CoreLoadErrors(").substringBefore("\n}\n")
+        assertTrue("EmptyState(" in body && "CoreLoadErrorCopy.HEADLINE, line" in body, "a panel of its own, not a status line")
+        assertTrue("nav?.openMyGames" in body && "nav?.openKaizo" in body)
+        assertFalse("onError" in body)
+        val native = File("../libretrodroid/src/main/cpp/libretrodroid.cpp").readText().replace("\r\n", "\n")
+        val reset = native.substring(native.indexOf("void LibretroDroid::reset() {"), native.indexOf("std::pair<int8_t*, size_t> LibretroDroid::serializeState()"))
+        assertTrue(reset.indexOf("if (core == nullptr || !gameLoaded) return;") in 0 until reset.indexOf("core->retro_reset();"))
     }
 
     @Test

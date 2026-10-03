@@ -9,6 +9,7 @@ import android.view.KeyEvent
 import android.view.MotionEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -140,8 +141,7 @@ class MainActivity : ComponentActivity() {
     }
 
     // Analog stick / d-pad hat state, so an axis crossing only sends one key event.
-    private var hatX = 0
-    private var hatY = 0
+    private val hat = HatFold()
 
     /**
      * Set by the remap screen while it waits for a key. Returning true consumes
@@ -160,16 +160,22 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Demo.mode = intent?.getStringExtra("demo")
+        // A debuggable build only: this activity is exported, and the staged modes are for adb (rc32 audit P2 #29).
+        Demo.mode = Demo.fromLaunch(intent?.getStringExtra("demo"), (applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0)
         CrashLog.installHandler(this)
+        // Android's answers to an update, for the process: no screen closing drops one (rc32 audit P2 #105).
+        UpdateStatus.register(this)
         SaveTrouble.init(this)
         // The player's saved key bindings and controller actions, published now (rc33 audit P1): only More > Controls
         // ever loaded them, so after a restart a remapped pad played on the defaults until that screen was opened.
         runCatching { KeyBindings(java.io.File(filesDir, KeyBindings.FILE)) }
         // PREP and ADD FILES stream picks into the cache; a pick that was never
         // finished (a crash, a second tap) is worthless after a restart and, at
-        // 512 MB a DS dump, fills a phone. Swept every launch.
-        runCatching { cacheDir.listFiles()?.filter { it.name.startsWith("prep-") || it.name.startsWith("import-") }?.forEach { it.deleteRecursively() } }
+        // 512 MB a DS dump, fills a phone. Swept at a process's first activity (CacheSweep).
+        CacheSweep.once(cacheDir)
+        // What a kill left half made, each up to a whole game: a restore's staging folder (rc32 audit P3 #20) and a saved
+        // attempt's copy (P2 #66). Off the main thread: the attempts wait for a save copying now (the run files' lock).
+        Thread({ runCatching { Backup.sweepStaging(filesDir); PrepStore(filesDir).sweepUnfinishedAttempts() } }, "sweep").apply { isDaemon = true }.start()
         TrackerOptions.load(java.io.File(filesDir, "prep/tracker-options.txt"))
         // A new run knows whether its settings file is one KaizoCore comes with (CustomRuns, IronMON rules check R2).
         val appContext = applicationContext
@@ -182,10 +188,17 @@ class MainActivity : ComponentActivity() {
         ThemeStore.load(java.io.File(filesDir, "prep/theme.txt"))
         ThemePresets.load(java.io.File(filesDir, ThemePresets.FILE))
         TrackerBackground.load(filesDir)
+        // The bundled presets come up to date at launch, not only when the Run or Nuzlocke screen opens: NEW RUN from
+        // Play and the next-run worker read them too, and a stale copy ran as custom (rc33 audit P1 #53).
+        runCatching { PrepStore(this).seedBundledPresets(this) }
         NextRunJob.load(PrepStore(this))
         (getSystemService(INPUT_SERVICE) as InputManager)
             .registerInputDeviceListener(deviceListener, null)
         Controllers.refresh()
+        // The stream's address leaves out mobile data, which ConnectivityManager names (StreamHub.pickAddress).
+        com.ironmonone.app.stream.StreamHub.appContext = applicationContext
+        // The stream's favorite pictures follow the saved favorites, edited anywhere, with Play open or not (StreamFavoritePictures).
+        com.ironmonone.app.stream.StreamHub.favorites = StreamFavoritePictures.source(applicationContext)
         // The stream reminder (StreamReminder): from Android 13 the phone asks once, as the stream is turned on.
         com.ironmonone.app.stream.StreamHub.onStarted = {
             if (com.ironmonone.app.stream.StreamReminder.shouldAsk(this)) requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 71)
@@ -212,11 +225,26 @@ class MainActivity : ComponentActivity() {
     override fun onStop() {
         super.onStop()
         com.ironmonone.app.stream.StreamReminder.left(this)
+        // The notes and settings still queued for disk get there before Android may end a backgrounded app (DiskWriter,
+        // rc32 audit P2 #90), as Android waits for SharedPreferences' own queued writes here. Usually nothing is queued.
+        DiskWriter.drain(1000)
     }
 
     override fun onStart() {
         super.onStart()
         com.ironmonone.app.stream.StreamReminder.back(this)
+    }
+
+    // Android's confirmation for an update goes over the activity that is up, and one that came while none was is
+    // shown when one is again (UpdateStatus, rc32 audit P2 #105).
+    override fun onResume() {
+        super.onResume()
+        UpdateStatus.resumed(this)
+    }
+
+    override fun onPause() {
+        UpdateStatus.paused(this)
+        super.onPause()
     }
 
     /** Route controller AND keyboard keys into the core, same path as the pad. */
@@ -284,33 +312,92 @@ class MainActivity : ComponentActivity() {
         val joy = (event.source and InputDevice.SOURCE_JOYSTICK) ==
             InputDevice.SOURCE_JOYSTICK
         if (joy && event.action == MotionEvent.ACTION_MOVE) {
+            // The game's only while the Play screen says so, as keys are. Swallowed everywhere, the hat never reached
+            // Android, which turns it into d-pad keys that move through the menus, and with Play's text dialogs or the
+            // layout editor open the stick still drove the game (rc32 audit P2 #31). A direction held into that is let go.
+            if (!KeyBindings.routeToGame) {
+                press(hat.releaseAll())
+                return super.dispatchGenericMotionEvent(event)
+            }
             fun axis(a: Int, alt: Int): Int {
                 val v = event.getAxisValue(a).takeIf { kotlin.math.abs(it) > 0.5f }
                     ?: event.getAxisValue(alt).takeIf { kotlin.math.abs(it) > 0.5f } ?: 0f
                 return if (v > 0.5f) 1 else if (v < -0.5f) -1 else 0
             }
-            val nx = axis(MotionEvent.AXIS_HAT_X, MotionEvent.AXIS_X)
-            val ny = axis(MotionEvent.AXIS_HAT_Y, MotionEvent.AXIS_Y)
-            fun swap(old: Int, new: Int, neg: Int, pos: Int) {
-                if (old == new) return
-                if (old != 0) LibretroDroid.onKeyEvent(
-                    0, KeyEvent.ACTION_UP, if (old < 0) neg else pos)
-                if (new != 0) LibretroDroid.onKeyEvent(
-                    0, KeyEvent.ACTION_DOWN, if (new < 0) neg else pos)
-                if (old != 0) SpriteMotion.key(KeyEvent.ACTION_UP, if (old < 0) neg else pos)
-                if (new != 0) SpriteMotion.key(KeyEvent.ACTION_DOWN, if (new < 0) neg else pos)
-            }
-            swap(hatX, nx, KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT)
-            swap(hatY, ny, KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN)
-            hatX = nx; hatY = ny
+            press(hat.move(axis(MotionEvent.AXIS_HAT_X, MotionEvent.AXIS_X), axis(MotionEvent.AXIS_HAT_Y, MotionEvent.AXIS_Y)))
             return true
         }
         return super.dispatchGenericMotionEvent(event)
     }
+
+    /** The folded presses, to the core and to the walking sprites, in order. */
+    private fun press(keys: List<HatFold.Press>) {
+        for (k in keys) {
+            LibretroDroid.onKeyEvent(0, k.action, k.keyCode)
+            SpriteMotion.key(k.action, k.keyCode)
+        }
+    }
 }
 
+/**
+ * A stick or d-pad hat folded into d-pad presses, so an axis crossing sends one key event (rc32 audit P2 #31). Plain
+ * state, so the tests drive it: [move] is where the stick is now, each axis -1, 0 or 1.
+ */
+internal class HatFold {
+    data class Press(val action: Int, val keyCode: Int)
+
+    var x = 0
+        private set
+    var y = 0
+        private set
+
+    /** The presses that take the held directions to [nx], [ny]: a direction let go before its opposite goes down. */
+    fun move(nx: Int, ny: Int): List<Press> {
+        val out = ArrayList<Press>(4)
+        swap(x, nx, KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT, out)
+        swap(y, ny, KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN, out)
+        x = nx; y = ny
+        return out
+    }
+
+    /** Every direction still held, let go: the stick has stopped being the game's. */
+    fun releaseAll(): List<Press> = move(0, 0)
+
+    private fun swap(old: Int, new: Int, neg: Int, pos: Int, out: MutableList<Press>) {
+        if (old == new) return
+        if (old != 0) out += Press(KeyEvent.ACTION_UP, if (old < 0) neg else pos)
+        if (new != 0) out += Press(KeyEvent.ACTION_DOWN, if (new < 0) neg else pos)
+    }
+}
+
+/**
+ * The picks PREP and ADD FILES stream into the cache (prep-*, import-*), swept once a process, at its first activity. It
+ * ran in every onCreate, and an activity made again in a live process (KaizoCore opened again from the launcher while a
+ * new run was still being made: RunJob's scope outlives the activity) deleted the files a running job was writing
+ * (RC35-NOTICED N #19). A pick left by an earlier process is only ever found at the first. [done] is the process's own
+ * flag except in a test. True when it swept.
+ */
+internal object CacheSweep {
+    private val swept = java.util.concurrent.atomic.AtomicBoolean(false)
+
+    fun once(cacheDir: java.io.File, done: java.util.concurrent.atomic.AtomicBoolean = swept): Boolean {
+        if (!done.compareAndSet(false, true)) return false
+        runCatching { cacheDir.listFiles()?.filter { it.name.startsWith("prep-") || it.name.startsWith("import-") }?.forEach { it.deleteRecursively() } }
+        return true
+    }
+}
+
+/** The preset being edited and its generation, as text for the saved state (rc32 audit P2 #32). A file gone since is nothing open. */
+private val EditingSaver = androidx.compose.runtime.saveable.Saver<Pair<java.io.File, String?>?, String>(
+    save = { it?.let { (f, gen) -> f.path + "\n" + gen.orEmpty() } },
+    restore = { s ->
+        val path = s.substringBefore('\n')
+        java.io.File(path).takeIf { path.isNotEmpty() && it.isFile }?.let { it to s.substringAfter('\n', "").ifEmpty { null } }
+    },
+)
+
 @Composable
-@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class, androidx.compose.animation.ExperimentalAnimationApi::class)
 private fun App() {
     val appContext = androidx.compose.ui.platform.LocalContext.current
     // Where the app opens: Home, or Play when it is being reopened after closing in the
@@ -319,7 +406,11 @@ private fun App() {
     // The tab, the screen open on Home (Kaizo IronMON, Nuzlocke, ROM Hacks) and which page of
     // LIBRARY (0 set up a game, 1 all files) and MORE (0 controls, 1 backup and info) is showing.
     // Plain data in AppNav, so where every button and Back leads is tested (2026-09-29).
-    var nav by remember { mutableStateOf(AppNav.opening(start)) }
+    // Saved with the activity: Android ending the app behind a file picker brought it back on Home, and the pick never
+    // reached the screen that asked for it (rc32 audit P2 #32). AppNav.restore lets a game to reopen win.
+    var nav by androidx.compose.runtime.saveable.rememberSaveable(
+        stateSaver = androidx.compose.runtime.saveable.Saver<AppNav, String>(save = { it.saved() }, restore = { AppNav.restore(it, start) }),
+    ) { mutableStateOf(AppNav.opening(start)) }
     val tab = nav.tab
     // The welcome, on the first launch that opens on Home (Welcome.showAtLaunch).
     var welcome by remember { mutableStateOf(runCatching { Welcome.showAtLaunch(appContext.filesDir, start, Demo.mode) }.getOrDefault(false)) }
@@ -328,17 +419,23 @@ private fun App() {
     // app in the background to free memory is normal and is not announced.
     // The dialog sends the report to Blake when the player says so, or offers the share sheet
     // (CrashReportLaunch, 2026-09-29). `--es demo crash` stages it with a sample report.
-    var launchCrash by remember {
-        mutableStateOf(
-            if (Demo.mode == "crash") demoReport(appContext)
-            else runCatching { CrashLog.collect(appContext) }.getOrNull()
-                ?.takeIf { "CRASH" in it || "ANR" in it }
-        )
+    // Read off the main thread: a freeze's trace is megabytes, and it delayed the first frame of the launch after one
+    // (rc32 audit P3 #31). The update prompt waits until it is read, so the two dialogs still never stack.
+    var launchCrash by remember { mutableStateOf<String?>(null) }
+    var crashChecked by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        launchCrash = if (Demo.mode == "crash") demoReport(appContext)
+        else kotlinx.coroutines.withContext(Dispatchers.IO) { runCatching { CrashLog.collect(appContext) }.getOrNull() }
+            ?.takeIf { "CRASH" in it || "ANR" in it }
+        crashChecked = true
     }
     launchCrash?.let { text -> CrashReportLaunch(text, onClose = { launchCrash = null }) }
-    UpdatePrompt(show = tab != Tab.PLAY && launchCrash == null)
-    // The preset being edited, with the generation of the ROM it targets.
-    var editing by remember { mutableStateOf<Pair<java.io.File, String?>?>(null) }
+    UpdatePrompt(show = tab != Tab.PLAY && crashChecked && launchCrash == null)
+    // The preset being edited, with the generation of the ROM it targets. Saved with the activity too, so the editor
+    // is open again on the same file and its "Leave without saving?" is there (rc32 audit P2 #32).
+    var editing by androidx.compose.runtime.saveable.rememberSaveable(stateSaver = EditingSaver) {
+        mutableStateOf<Pair<java.io.File, String?>?>(null)
+    }
     val landscape =
         LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
     // Rotating on the Play tab IS the fullscreen gesture: no title, no tabs, no
@@ -412,12 +509,13 @@ private fun App() {
                 android.provider.Settings.Global.ANIMATOR_DURATION_SCALE,
                 1f,
             ) == 0f
-            androidx.compose.animation.Crossfade(
-                targetState = Triple(editing, tab, nav.mode),
+            // Keyed by names, not by the enums' own hash, which is new in every process: a key that changes is a new
+            // screen, and the saved state of the old one (a file picker's pending answer) never reaches it (rc32 audit P2 #32).
+            androidx.compose.animation.core.updateTransition(Triple(editing, tab, nav.mode), label = "tab").Crossfade(
                 animationSpec = androidx.compose.animation.core.tween(
                     if (reduceMotion) 0 else 120,
                 ),
-                label = "tab",
+                contentKey = { (e, t, m) -> listOf(e?.first?.path, e?.second, t.name, m?.name) },
             ) { (editingNow, tabNow, modeNow) ->
             editingNow?.let { file ->
                 EditorScreen(

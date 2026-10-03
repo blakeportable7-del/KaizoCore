@@ -2,13 +2,16 @@ package com.ironmonone.app
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -43,6 +46,10 @@ internal object HealsTabs {
  * HealsInBagScreen.lua: the bag by tab (All, HP, PP, Status, Battle), each
  * item with its count, green when it would help the lead right now (or when
  * there are 69 of it, as the reference has it). Refreshed with every poll.
+ * The words are DialogText, which follows the phone's font size, the close is
+ * a 48dp X that says Close and the tabs are 48dp tall and selectable (rc32
+ * audit P2 #19, #42, #102): they were fixed 8 to 10dp text, a 17 by 13dp X and
+ * 16dp tabs.
  */
 @Composable
 fun HealsInBagDialog(rows: List<GbaTracker.BagRow>, onClose: () -> Unit) {
@@ -51,24 +58,31 @@ fun HealsInBagDialog(rows: List<GbaTracker.BagRow>, onClose: () -> Unit) {
     Dialog(onDismissRequest = onClose) {
         Column(Modifier.width(300.dp).background(Pc.Page).border(1.dp, Pc.Border).padding(8.dp).verticalScroll(rememberScrollState())) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                PixText("HEALS IN BAG", 10, Pc.Text, Modifier.weight(1f))
-                PixText("X", 9, Pc.Dim, Modifier.clickable { onClose() }.padding(horizontal = 6.dp, vertical = 2.dp))
+                DialogText("HEALS IN BAG", 16, Pc.Text, Modifier.weight(1f), heading = true)
+                PcTap("X", 9, Pc.Dim, "Close") { onClose() }
             }
             Spacer(Modifier.height(4.dp))
             Row(Modifier.fillMaxWidth()) {
                 tabs.forEach { t ->
-                    PixText(t.uppercase(), 8, if (t == tab) Pc.Gold else Pc.Dim,
-                        Modifier.weight(1f).border(1.dp, if (t == tab) Pc.Gold else Pc.Border).clickable { tab = t }.padding(vertical = 4.dp), TextAlign.Center)
+                    val on = t == tab
+                    Box(
+                        Modifier.weight(1f).heightIn(min = PcMin.DIALOG_TOUCH_DP.dp)
+                            .border(if (on) 2.dp else 1.dp, if (on) Pc.Gold else Pc.Border)
+                            .selectable(selected = on, role = Role.Tab) { tab = t },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        DialogText(t.uppercase(), 12, if (on) Pc.Gold else Pc.Dim, align = TextAlign.Center, underline = on)
+                    }
                 }
             }
             Spacer(Modifier.height(6.dp))
             val shown = HealsTabs.rows(rows, tab)
-            if (shown.isEmpty()) PixText("Nothing in the bag for this.", 8, Pc.Dim)
+            if (shown.isEmpty()) DialogText("Nothing in the bag for this.", 13, Pc.Dim)
             shown.forEach { r ->
                 val c = if (HealsTabs.green(r, tab)) Pc.Positive else Pc.Text
                 Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
-                    PixText(r.name, 8, c, Modifier.weight(1f))
-                    PixText("x${r.quantity}", 8, c, Modifier.width(50.dp), TextAlign.End)
+                    DialogText(r.name, 13, c, Modifier.weight(1f))
+                    DialogText("x${r.quantity}", 13, c, Modifier.padding(start = 8.dp), TextAlign.End)
                 }
             }
         }

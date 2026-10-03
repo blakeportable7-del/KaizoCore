@@ -143,7 +143,11 @@ class AudioChunker(private val maxFrames: Int = 1024) {
  * page falls behind. A slow Wi-Fi link must cost the phone some frames, never the
  * emulator its speed and never memory.
  *
- *  - control frames (pong, close, hello) always go, first;
+ *  - control frames (close, hello) always go, first;
+ *  - the pong is ONE slot, after them: a newer one replaces an unsent older one,
+ *    as RFC 6455 5.5.3 lets an endpoint answer only the most recent ping. A page
+ *    that pinged without reading queued one per ping until the heap ran out
+ *    (rc32 audit P3 #77);
  *  - sound waits in order but is capped: past [audioCapBytes] the OLDEST goes, so
  *    what is left is the newest sound and the delay stays bounded;
  *  - the picture is ONE slot: a newer frame replaces an unsent older one.
@@ -155,6 +159,7 @@ internal class Outbox(private val audioCapBytes: Int) {
     private val lock = ReentrantLock()
     private val ready = lock.newCondition()
     private val control = ArrayDeque<ByteArray>()
+    private var pong: ByteArray? = null
     private val audio = ArrayDeque<ByteArray>()
     private var audioBytes = 0
     private var video: ByteArray? = null
@@ -169,6 +174,15 @@ internal class Outbox(private val audioCapBytes: Int) {
         lock.withLock {
             if (closed) return
             control.addLast(frame)
+            ready.signalAll()
+        }
+    }
+
+    /** The answer to a ping: it replaces one still waiting. */
+    fun putPong(frame: ByteArray) {
+        lock.withLock {
+            if (closed) return
+            pong = frame
             ready.signalAll()
         }
     }
@@ -198,11 +212,12 @@ internal class Outbox(private val audioCapBytes: Int) {
     /** The next frame to write, or null after [timeoutMs] with nothing to send (or once closed and empty). */
     fun take(timeoutMs: Long): ByteArray? = lock.withLock {
         var left = TimeUnit.MILLISECONDS.toNanos(timeoutMs)
-        while (control.isEmpty() && audio.isEmpty() && video == null) {
+        while (control.isEmpty() && pong == null && audio.isEmpty() && video == null) {
             if (closed || left <= 0) return null
             left = ready.awaitNanos(left)
         }
         control.removeFirstOrNull()?.let { return it }
+        pong?.let { pong = null; return it }
         audio.removeFirstOrNull()?.let { audioBytes -= it.size; return it }
         val v = video
         video = null
@@ -241,13 +256,19 @@ class GameStream(private val feed: GameFeed, private val maxViewers: Int = MAX_V
     private val viewers = CopyOnWriteArrayList<Viewer>()
     private var pump: Pump? = null
     @Volatile private var lastPicture: ByteArray? = null
+    /**
+     * Set by [shutdown], for good. A page whose connection was still arriving as the server stopped used to be added
+     * after it: the taps came back on and a pump ran on this stream, which the next STREAM ON's pump then raced for
+     * the same native buffers (rc32 audit P3 #82).
+     */
+    private var closed = false
 
     val viewerCount: Int get() = viewers.size
 
-    /** False when [maxViewers] are already connected. */
+    /** False when [maxViewers] are already connected, or the stream has been shut down. */
     @Synchronized
     internal fun add(viewer: Viewer): Boolean {
-        if (viewers.size >= maxViewers) return false
+        if (closed || viewers.size >= maxViewers) return false
         viewers.add(viewer)
         if (viewers.size == 1) startPump()
         lastPicture?.let { viewer.sendVideo(it) }
@@ -260,9 +281,10 @@ class GameStream(private val feed: GameFeed, private val maxViewers: Int = MAX_V
         if (viewers.isEmpty()) stopPump()
     }
 
-    /** Server shutdown: no viewer stays, and the taps go off whatever happened before. */
+    /** Server shutdown: no viewer stays, none can join after it, and the taps go off whatever happened before. */
     @Synchronized
     fun shutdown() {
+        closed = true
         viewers.clear()
         stopPump()
         runCatching { feed.setCapture(false) }
@@ -297,6 +319,7 @@ class GameStream(private val feed: GameFeed, private val maxViewers: Int = MAX_V
             val sound = ByteArray(SOUND_READ_BYTES)
             val rate = IntArray(1)
             val chunker = AudioChunker()
+            var emptyPasses = 0
             try {
                 while (!stop) {
                     var worked = false
@@ -330,7 +353,7 @@ class GameStream(private val feed: GameFeed, private val maxViewers: Int = MAX_V
                         // One bad read must not end the stream; do not spin on it either.
                         sleepQuietly(50)
                     }
-                    if (!worked) sleepQuietly(IDLE_SLEEP_MS)
+                    if (worked) emptyPasses = 0 else sleepQuietly(idleSleepMs(++emptyPasses))
                 }
             } finally {
                 encoder.release()
@@ -347,8 +370,20 @@ class GameStream(private val feed: GameFeed, private val maxViewers: Int = MAX_V
         /** Pages at once. Each costs a socket and two threads, and the picture is encoded once for all. */
         const val MAX_VIEWERS = 6
 
+        /**
+         * How long the pump sleeps after its [emptyPasses]-th pass in a row with no sound and no new picture: 4 ms for
+         * the first eight, then twice as long each pass, to 100 ms. With the game paused, in the background or on
+         * another tab, a connected OBS kept the pump at 250 passes a second, two JNI calls each (rc32 audit P3 #78).
+         * The first picture or sound after a still stretch can wait up to that 100 ms.
+         */
+        internal fun idleSleepMs(emptyPasses: Int): Long =
+            if (emptyPasses <= IDLE_FAST_PASSES) IDLE_SLEEP_MS
+            else minOf(MAX_IDLE_SLEEP_MS, IDLE_SLEEP_MS shl minOf(emptyPasses - IDLE_FAST_PASSES, 5))
+
         private const val SOUND_READ_BYTES = 32 * 1024
         private const val IDLE_SLEEP_MS = 4L
+        private const val IDLE_FAST_PASSES = 8
+        private const val MAX_IDLE_SLEEP_MS = 100L
         /** About 66 pictures a second at most, whatever the core's speed. */
         private const val MIN_FRAME_GAP_NS = 15_000_000L
     }

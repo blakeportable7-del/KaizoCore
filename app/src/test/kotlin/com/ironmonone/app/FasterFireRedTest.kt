@@ -14,11 +14,10 @@ import kotlin.test.assertTrue
  * Faster FireRed 1.3.2, the quality-of-life patch IronMON players use on
  * FireRed Rev 1 (marked hidden items, instant PC, shortened errands).
  *
- * The patch is not in this repo and never ships in the app: it is the player's
- * own file. This test runs only when both it and the v1.1 dump are to hand:
- *
- *   IRONMON_ROMS     a folder holding firered-u-v11.gba
- *   IRONMON_PATCHES  a folder holding Faster.FireRed.1.3.2.ips
+ * The patch ships in the app (assets/patches/faster-firered-u-v11.ips, the file
+ * PrepOptions applies), so this runs when the v1.1 dump is to hand: IRONMON_ROMS
+ * holding firered-u-v11.gba. It used to want its own copy in IRONMON_PATCHES,
+ * which nothing set, so the release gate never ran it (rc32 audit P3 #105).
  *
  * What it pins is what the app has to get right: the CRC that identifies the
  * patched build, that the tracker's ROM tables did not move, and that the
@@ -52,10 +51,10 @@ class FasterFireRedTest {
     }
 
     private fun files(): Triple<File, File, ByteArray>? {
-        val rom = System.getenv("IRONMON_ROMS")?.let { File(it, "firered-u-v11.gba") }?.takeIf { it.isFile }
-        val ips = System.getenv("IRONMON_PATCHES")?.let { File(it, "Faster.FireRed.1.3.2.ips") }?.takeIf { it.isFile }
-        if (rom == null || ips == null) {
-            println("FasterFireRedTest skipped: set IRONMON_ROMS (firered-u-v11.gba) and IRONMON_PATCHES (Faster.FireRed.1.3.2.ips)")
+        val rom = Dumps.rom("firered-u-v11.gba")
+        val ips = File("src/main/assets/patches/faster-firered-u-v11.ips")
+        if (rom == null) {
+            println("FasterFireRedTest skipped: set IRONMON_ROMS (firered-u-v11.gba)")
             return null
         }
         val base = rom.readBytes()

@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -76,6 +77,8 @@ private fun PartyCard(
     spriteFor: (Int) -> androidx.compose.ui.graphics.ImageBitmap?,
     healPercent: Int = -1,
     healCount: Int = 0,
+    /** The HP the heals add up to, for "Show heals as whole number" (TrackerState.healHp). */
+    healHp: Int = 0,
     onHealsTap: (() -> Unit)? = null,
     onMoveInfo: ((PcMove) -> Unit)? = null,
     onAbilityInfo: ((String) -> Unit)? = null,
@@ -83,6 +86,8 @@ private fun PartyCard(
     moveCtx: MoveContext? = null,
     /** Which attempt this is, for the PC heal counter. */
     attempt: Int = 0,
+    /** A run's game: only then is the PC heal counter the run's to show (rc33 audit P1 #57). */
+    runScoped: Boolean = true,
     /**
      * "Hide stats until summary shown", before this attempt has opened a
      * summary: icon, name and level only, as the reference's default Pokemon.
@@ -92,6 +97,15 @@ private fun PartyCard(
     inBattle: Boolean = false,
     /** How this game numbers species, for the Walking Pals icon (WalkingPals.trackerDex). */
     iconDex: WalkingPals.Dex = WalkingPals.Dex.GEN3,
+    /** The game (TrackerState.routeVersion), for the form a retail game draws Deoxys in on the Walking Pals icon. */
+    routeVersion: String = "",
+    /** Past the run's BST line, still as it joined (BstRule): the X. */
+    bstBroken: Boolean = false,
+    onBstTap: (() -> Unit)? = null,
+    /** This run's banned moves (MoveRule): the X on a move and the line on its card. */
+    markMove: (PcMove) -> PcMove = { it },
+    /** The game's generation: "Display gender" is the Game Boy Advance trackers' (CardGender). */
+    generation: Int = 3,
 ) {
     val m = p.mon
     val dash = "---"
@@ -116,20 +130,25 @@ private fun PartyCard(
             itemLine = if (hidden) "" else p.itemName.takeIf { it != "-" } ?: "",
             abilityLine = if (hidden) dash else p.abilityName,
             hpText = dash.takeIf { hidden },
-            onAbilityTap = onAbilityInfo?.let { cb -> { cb(p.abilityName) } },
+            onAbilityTap = onAbilityInfo?.let { cb -> abilityTapName(p.abilityName)?.let { name -> { cb(name) } } },
             onNameTap = onNameInfo,
-            sprite = spriteFor(m.species),
+            // The game's own picture where it is not the species' plain one (shiny, Unown's letter, Deoxys's form).
+            sprite = romPicture(p.picture) ?: spriteFor(m.species),
             iconSpecies = m.species,
             iconDex = iconDex,
+            // A shiny walks as its shiny, Unown as its letter (PalForms).
+            iconLook = PalForms.ofMon(m, generation, iconDex, routeVersion),
             evo = p.evo,
-            gender = if (TrackerOptions.displayGender) com.ironmonone.tracker.Gender3.of(p.base?.genderRatio ?: 255, m.pid) else null,
-            expFraction = if (TrackerOptions.showExpBar && p.expTotal > 0) p.expNow.toFloat() / p.expTotal else null,
+            // Hidden, the reference's stand-in has no gender of the Pokemon's own (Program.lua:1725).
+            gender = if (TrackerOptions.displayGender && !hidden) CardGender.of(generation, p.base?.genderRatio ?: 255, m.pid) else null,
+            expFraction = if (TrackerOptions.showExpBar && p.expTotal > 0) HiddenCard.expFraction(hidden, p.expNow, p.expTotal) else null,
             // Only the lead carries the Heals strip: the number is a share of
             // the lead's max HP, so repeating it under every party member would
             // print the same percentage against six different Pokemon.
             belowHead = if (healPercent >= 0) {
-                { PcHealsBlock(healPercent, healCount, wholeHp = healPercent * p.mon.maxHp / 100,
-                    pcHealsAttempt = attempt.takeIf { TrackerOptions.trackPcHeals }, onTap = onHealsTap) }
+                { val (pct, count, whole) = HiddenCard.heals(hidden, healPercent, healCount, healHp)
+                  PcHealsBlock(pct, count, wholeHp = whole,
+                    pcHealsAttempt = attempt.takeIf { runScoped && TrackerOptions.trackPcHeals }, onTap = onHealsTap) }
             } else null,
         ) {
             PcStatRow("HP", if (hidden) dash else "${m.maxHp}", stages["HP"], nature = m.nature.takeIf { !hidden }, rightJustify = TrackerOptions.rightJustifiedNumbers, colorNumber = TrackerOptions.colorStatNumbers)
@@ -146,13 +165,13 @@ private fun PartyCard(
             // TrackerScreen.lua:1435-1448: in battle, a moved accuracy or evasion takes BST's place.
             val acc = stages["ACC"] ?: 6; val eva = stages["EVA"] ?: 6
             if (StageChevrons.accEvaReplacesBst(inBattle, acc, eva)) PcAccEvaRow(acc, eva)
-            else PcStatRow("BST", p.base?.bst?.toString() ?: "?", rightJustify = TrackerOptions.rightJustifiedNumbers)
+            else PcStatRow("BST", p.base?.bst?.toString() ?: "?", rightJustify = TrackerOptions.rightJustifiedNumbers, broken = bstBroken, onBrokenTap = onBstTap)
         }
     }) {
         // "Moves 3/11 (17)" - learned so far / total this species learns, and
         // the level the next one arrives at, exactly as the PC tracker shows it.
         PcMovesSection(
-            if (hidden) emptyList() else p.moveRows.map { it.toPcMove(moveCtx) },
+            if (hidden) emptyList() else p.moveRows.map { markMove(it.toPcMove(moveCtx)) },
             referenceColumns = true, rightJustify = TrackerOptions.rightJustifiedNumbers,
             header = if (p.movesTotal > 0) "Moves ${p.movesLearned}/${p.movesTotal}" else "Moves",
             nextLevel = p.nextMoveLevel.takeIf { p.movesTotal > 0 },
@@ -202,6 +221,14 @@ private fun EnemyCard(
     hidden: Boolean = false,
     /** How this game numbers species, for the Walking Pals icon (WalkingPals.trackerDex). */
     iconDex: WalkingPals.Dex = WalkingPals.Dex.GEN3,
+    /** The opposing party (TrackerState.enemyParty) and the game, for the Walking Pals icon's shiny and form (PalForms). */
+    enemyParty: List<com.ironmonone.tracker.EnemyPartyMon> = emptyList(),
+    routeVersion: String = "",
+    /** The run's BST lines (BstRule): a wild one past them gets the X. */
+    bstLines: BstRule.Lines? = null,
+    onBstTap: (() -> Unit)? = null,
+    /** The game's generation: "Display gender" is the Game Boy Advance trackers' (CardGender). */
+    generation: Int = 3,
 ) {
     PcMonCard(head = {
         PcHeadBlock(
@@ -238,12 +265,13 @@ private fun EnemyCard(
             onNameTap = if (e.isGhost) null else onPokemonInfo,
             // The ghost stand-in's id is not a species: draw the pack's ghost (GhostCard.SPRITE).
             sprite = if (e.isGhost) PcAssets.gbaSprite(androidx.compose.ui.platform.LocalContext.current, GhostCard.SPRITE)
-                else spriteFor(e.species),
+                else romPicture(e.picture) ?: spriteFor(e.species),
             // The ghost stand-in has no Walking Pals sheet either: its still sprite, never a species found by its id.
             iconSpecies = if (e.isGhost) 0 else e.species,
             iconDex = iconDex,
+            iconLook = PalForms.ofEnemy(e, enemyParty, generation, iconDex, routeVersion),
             evo = e.evo,
-            gender = if (TrackerOptions.displayGender) com.ironmonone.tracker.Gender3.of(e.base?.genderRatio ?: 255, e.pid) else null,
+            gender = if (TrackerOptions.displayGender) CardGender.of(generation, e.base?.genderRatio ?: 255, e.pid) else null,
             // The box under the card: how often this has been seen, and for a
             // trainer the row of pokeballs showing how many they have left.
             belowHead = {
@@ -289,7 +317,8 @@ private fun EnemyCard(
             val acc = if (hidden) 6 else e.statStages["ACC"] ?: 6
             val eva = if (hidden) 6 else e.statStages["EVA"] ?: 6
             if (StageChevrons.accEvaReplacesBst(true, acc, eva)) PcAccEvaRow(acc, eva)
-            else PcStatRow("BST", GhostCard.bst(e), rightJustify = TrackerOptions.rightJustifiedNumbers)
+            else PcStatRow("BST", GhostCard.bst(e), rightJustify = TrackerOptions.rightJustifiedNumbers,
+                broken = isWild && !e.isGhost && BstRule.wildBreaks(e.base?.bst, bstLines), onBrokenTap = onBstTap)
             // Live stage chevrons for the enemy, when any stat has moved.
             EnemyView.stageRows(e, hidden).forEach { (n, st) -> PcStatRow(n, "", st) }
         }
@@ -308,7 +337,8 @@ private fun EnemyCard(
         // DataHelper.lua:258: an unrandomized learnset (or Open Book) shows its
         // actual moves at their live PP; otherwise the tracked ones, with stars.
         val actual = InfoRules.canShowMoves(rand)
-        val starred = if (actual) emptySet() else com.ironmonone.tracker.MoveStars.of(movesSeenRunWide.map { it.id to it.lastLv }, e.level, moveLevels)
+        // All four seen this battle: those four, used at this level, so none is starred (Tracker.getMoves).
+        val starred = if (actual || EnemyView.fourKnown(e)) emptySet() else com.ironmonone.tracker.MoveStars.of(movesSeenRunWide.map { it.id to it.lastLv }, e.level, moveLevels)
         val (shownRows, seenCount) = EnemyView.moveRows(e, movesSeenRunWide, moveRowFor, actual, hidden)
         PcMovesSection(
             rows = shownRows.map { r -> r.toPcMove(moveCtx).let { if (r.id in starred) it.copy(name = it.name + "*") else it } },
@@ -349,7 +379,9 @@ internal object EnemyView {
      * four at their live PP, blank while [hidden]. Otherwise the run's tracked moves
      * (Tracker.getMoves), this battle's rows winning where they overlap, except while [hidden]:
      * DataHelper.lua:325-331 takes a tracked move's PP from the stand-in, which has none, so it
-     * stays at its base PP.
+     * stays at its base PP. Once all four of its moves have been used this battle, those four are its rows
+     * (Tracker.BattleNotes.FourMovesIfAllKnown, Tracker.lua:389-393 and 604-606): the run's older sightings came first
+     * and could show a move this one does not have in place of one it used (rc33 audit P1 #56).
      */
     fun moveRows(e: EnemyInfo, seenRunWide: List<StatMarks.SeenMove>, moveRowFor: (Int) -> MoveRow?, actual: Boolean, hidden: Boolean): Pair<List<MoveRow>, Int> {
         val thisBattle = e.moveRows.distinctBy { it.id }.map { r -> if (hidden) moveRowFor(r.id) ?: r else r }
@@ -357,20 +389,42 @@ internal object EnemyView {
         val rows = when {
             actual && hidden -> emptyList()
             actual -> e.moves.mapIndexedNotNull { i, id -> if (id == 0) null else moveRowFor(id)?.copy(pp = e.movePps.getOrElse(i) { 0 }) }
+            fourKnown(e) -> thisBattle.take(4)
             else -> seen.take(4)
         }
         return rows to seen.size
     }
+
+    /** All four of its moves have been used this battle. */
+    fun fourKnown(e: EnemyInfo): Boolean = e.moveRows.distinctBy { it.id }.size >= 4
 }
 
 /**
- * Battle.updateViewSlots (Battle.lua:300-316): an opposing battler's party slot, left or (in a
- * double battle) right, now holds a different Pokemon from the one it held, which with "Auto swap
- * to enemy" on turns the view to the opponent (Battle.changeOpposingPokemonView, :945-952). A
- * slot not known before is the battle's start, which the battle's own swap covers.
+ * "Hide stats until summary shown" on your own card's Heals strip and experience bar (DataHelper.lua:140-151). The
+ * reference zeroes the heals while the card is hidden (DataHelper.lua:374-377), so its strip reads "0% HP (0)", and its
+ * stand-in has 0 of 100 experience (Program.lua:1721-1722), an empty bar. Both showed the real numbers here, which give
+ * the hidden max HP away (rc32 audit P2 #98).
  */
-internal fun opponentSentOut(before: List<Int>, now: List<Int>): Boolean =
-    now.indices.any { i -> before.getOrNull(i).let { it != null && it != now[i] } }
+internal object HiddenCard {
+    /** The percent, count and whole HP the strip prints. */
+    fun heals(hidden: Boolean, percent: Int, count: Int, wholeHp: Int): Triple<Int, Int, Int> =
+        if (hidden) Triple(0, 0, 0) else Triple(percent, count, wholeHp)
+
+    /** The experience bar's fill: empty while hidden. */
+    fun expFraction(hidden: Boolean, now: Int, total: Int): Float =
+        if (hidden || total <= 0) 0f else now.toFloat() / total
+}
+
+/**
+ * "Display gender" on a card: Gen 3's rule, the personality's low byte against the species' ratio (Gender3,
+ * TrackerScreen.lua:1334). Only on a Game Boy Advance game, where Tracker Setup offers the switch (TrackerGearDialog's
+ * gen3 scope): Gold, Silver and Crystal's tracker builds its personality from the species and the trainer id, so every
+ * one of your Pokemon of a species took the one gender the trainer id decided, and every opponent read female, with no
+ * switch there to turn it off (rc32 audit P2 #97). No Game Boy reference draws a gender.
+ */
+internal object CardGender {
+    fun of(generation: Int, ratio: Int, pid: Long): Int? = if (generation < 3) null else com.ironmonone.tracker.Gender3.of(ratio, pid)
+}
 
 /**
  * InfoScreen.showNextPokemon: the species [delta] ids on from [from], wrapping at [total],
@@ -406,6 +460,8 @@ fun TrackerPanel(
     unsupportedNote: String? = null,
     /** Opens the tracker's gear (the reference's SettingsGear). */
     onGear: (() -> Unit)? = null,
+    /** After SETUP in the first row: landscape's corner arrow (TrackerCornerMenu); null in portrait. */
+    headerTrailing: (@Composable () -> Unit)? = null,
     enemyMarks: IntArray = IntArray(StatMarks.COUNT),
     enemyEncounters: Int = 0,
     /** Level this species was at the previous time it was met, if ever. */
@@ -471,6 +527,22 @@ fun TrackerPanel(
      * which reference's move table and type chart the move rows follow.
      */
     generation: Int = 3,
+    /** The Nat. Dex expansion, whose species run past Gen 3's 411: its chart has Fairy, and Steel no longer resists Ghost or Dark. */
+    natDex: Boolean = speciesTotal > 411,
+    /**
+     * The game in Play is a run (PlayScreen: session.isRun). Only then are the PC heal count and the summary check the
+     * run's: a library game or a Nuzlocke passed the run's attempt and read and wrote its counts (rc33 audit P1 #57).
+     * Outside a run the summary check is kept for the session in memory.
+     */
+    runScoped: Boolean = true,
+    /** Kaizo's BST line (BstRule), from the run in Play; a test hands its own. */
+    bstLines: BstRule.Lines? = bstLinesInPlay(attempt),
+    /** What each of your Pokemon joined the run as, beside the run's marks. */
+    joinedForms: JoinedForms? = joinedFormsInPlay(attempt, bstLines),
+    /** The run's banned moves (MoveRule), from the run in Play; a test hands its own. */
+    moveRules: MoveRule.Rules? = moveRulesInPlay(attempt),
+    /** MaxDex 1.0 in Play (MaxDexInfo): its own numbering for the Walking Pals icons, and Freeze-Dry is super effective on Water. */
+    maxDex: Boolean = maxDexInPlay(attempt),
 ) {
     // The tracker's own game-over card is a Kaizo IronMON run's only (PlayRules, 2026-09-30).
     val ironmonOver = ironmonGameOverCard(state?.gameOver != null)
@@ -507,7 +579,9 @@ fun TrackerPanel(
             base?.type1?.let { Gen3Types.name(it) to it },
             base?.type2?.takeIf { it != base.type1 }?.let { Gen3Types.name(it) to it },
         ),
-        InfoRules.infoScreenHidesTypes(state?.randomized, ownLead = species == state?.party?.firstOrNull()?.mon?.species),
+        // DataHelper.lua:423: your lead is Battle.getViewedPokemon(true), never an Egg (RC35-NOTICED N #34), and in a
+        // double battle the one of yours the view shows (GbaViewState.own).
+        InfoRules.infoScreenHidesTypes(state?.randomized, ownLead = species == gbaView.own(state)?.mon?.species),
     ).map { (name, id) -> name to pcTypeColor(id) }
     // Built each time a lookup opens. A remembered list was computed while the tracker was
     // still attaching, so every name read "#id", and PlayScreen's name lambda never changes
@@ -534,7 +608,8 @@ fun TrackerPanel(
             evolution = onEvolution?.invoke(sp) ?: emptyList(),
             effectiveness = onEffectiveness?.invoke(sp) ?: emptyMap(),
             moveLevels = onMoveLevels?.invoke(sp) ?: emptyList(),
-            level = 0,
+            // The level of the Pokemon in battle, or your lead, when it is this species (DataHelper.lua:452-465).
+            level = InfoScreenLines.viewedLevel(sp, state),
             note = onSpeciesNote?.invoke(sp) ?: "",
         ) { speciesInfo = null }
     }
@@ -597,10 +672,29 @@ fun TrackerPanel(
           // In a battle it ends the battle banner; otherwise it shares a slim bar with the route the player is on.
           // It had a row to itself, empty but for it (2026-10-02, Blake: "Lots of wasted space").
           // The same tests, in the same order, as the when below that draws the banner.
+          // The attempt, in a Kaizo IronMON run (2026-10-02: "the tracker needs attempt count").
+          val attemptShown = attempt.takeIf { !LocalAttemptInTitle.current && ironmonRunInPlay(it) }
+          // What each of your Pokemon joined the run as (BstRule), read from the whole party so one that evolves
+          // out of sight is known by what it was (2026-10-02).
+          // A tap on a red BST: its value, the line, and whose it is (null key: a wild one).
+          var bstSheet by remember { mutableStateOf<Triple<Int, Int, Long?>?>(null) }
+          var joinedVersion by remember { mutableIntStateOf(0) }
+          bstSheet?.let { (bst, line, key) ->
+              BstRuleSheet(bst, line, own = key != null, onEvolved = { key?.let { joinedForms?.markEvolved(it) }; joinedVersion++; bstSheet = null },
+                  legendary = bstLines?.legendary) { bstSheet = null }
+          }
+          if (joinedForms != null && state != null && !state.unreadable) {
+              val party = state.party.map { BstRule.keyOf(it.mon, generation) to it.mon.species }
+              androidx.compose.runtime.LaunchedEffect(joinedForms, party) { party.forEach { (pid, sp) -> joinedForms.joinedAs(pid, sp) } }
+          }
           val bannerShows = state != null && unsupportedNote == null && !state.unreadable && state.partyCount != 0 &&
               !(ironmonOver && state.gameOver != null) && state.inBattle
           onGear?.takeIf { !bannerShows }?.let { g ->
               Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                  attemptShown?.let {
+                      PixText("ATTEMPT $it", PcRef.FONT - 1, Pc.Text, weight = androidx.compose.ui.text.font.FontWeight.Medium)
+                      Spacer(Modifier.width(6.rp))
+                  }
                   PixText(routeName.orEmpty(), PcRef.FONT, Pc.Dim, Modifier.weight(1f), weight = androidx.compose.ui.text.font.FontWeight.Medium)
                   // Program.ActiveRepel:shouldDisplay - only while one is running, never in
                   // battle, off the map or in the Hall of Fame, and the reference puts it in the top right.
@@ -608,7 +702,8 @@ fun TrackerPanel(
                       PcRepelBar(state.repelSteps, state.repelDuration)
                       Spacer(Modifier.width(6.dp))
                   }
-                  PcSmallButton("SETUP") { g() }
+                  TrackerGearButton { g() }
+                  headerTrailing?.invoke()
               }
               Spacer(Modifier.height(2.rp))
           }
@@ -656,9 +751,10 @@ fun TrackerPanel(
 
             state.partyCount == 0 -> PcCard {
                 Column(Modifier.padding(6.dp)) {
-                    favoriteLine?.list?.let {
-                        // Wrapped: a Nat. Dex run may name nine (FavoriteRules).
-                        PixText(it, 9, Pc.Negative, wrap = true); Spacer(Modifier.height(3.dp))
+                    // The favorites' icons, as the PC trackers' new-game screens draw them (FavoriteIcons), by the cards'
+                    // own sprites. They wrap: a Nat. Dex run may name nine (FavoriteRules).
+                    favoriteLine?.icons?.takeIf { it.isNotEmpty() }?.let {
+                        FavoriteIconRow(it, { sp -> spriteFor(sp) }); Spacer(Modifier.height(3.dp))
                     }
                     // In the lab, a ball holding a favorite the mode lets you take (FavoriteBall), and never the others.
                     if (state.inLab) favoriteLine?.balls?.forEach {
@@ -705,42 +801,48 @@ fun TrackerPanel(
                 // In battle it opens on the ENEMY, matching the reference's
                 // "Auto swap to enemy" default.
                 // Battle.inActiveBattle: the animated icons do not walk in battle.
+                var sessionSummary by remember { mutableStateOf(false) }
                 androidx.compose.runtime.SideEffect {
                     SpriteMotion.inBattle = state.inBattle
-                    // "Track PC Heals" auto-tracking watches the game's heal statistics.
-                    PcHeals.arm(attempt, pcHealsLimit, Integer.bitCount(state.badges))
-                    PcHeals.observe(attempt, state.centerHealsStat)
-                    PcHeals.observeBadges(attempt, Integer.bitCount(state.badges), pcHealsLimit)
-                    // Program.lua:552: opening a summary in the game reveals the card for this attempt.
-                    if (state.summaryOpen) SummaryChecks.mark(attempt)
+                    if (runScoped) {
+                        // "Track PC Heals" auto-tracking watches the game's heal statistics.
+                        PcHeals.arm(attempt, pcHealsLimit, Integer.bitCount(state.badges))
+                        PcHeals.observe(attempt, state.centerHealsStat)
+                        PcHeals.observeBadges(attempt, Integer.bitCount(state.badges), pcHealsLimit)
+                        // Program.lua:552: opening a summary in the game reveals the card for this attempt.
+                        if (state.summaryOpen) SummaryChecks.mark(attempt)
+                    } else if (state.summaryOpen) sessionSummary = true
                 }
-                var viewingOwn by remember(state.inBattle) {
-                    mutableStateOf(!(state.inBattle && TrackerOptions.autoSwapToEnemy(gameBoy = generation < 3)))
+                val hideStats = if (runScoped) SummaryChecks.hides(attempt, state.gameDataRandomized, generation)
+                    else SummaryChecks.hidesStats(TrackerOptions.hideStatsUntilSummary, state.gameDataRandomized, -1, generation) && !sessionSummary
+                // Which Pokemon the battle shows (GbaViewState: Battle.isViewingOwn and isViewingLeft), one view for every
+                // panel. A battle opens on the opponent with "Auto swap to enemy" on, and each Pokemon the opponent sends
+                // out turns the view to it again, on its side (Battle.lua:309-316, 945-952), not only the first.
+                val view = gbaView
+                androidx.compose.runtime.LaunchedEffect(state.inBattle, state.enemyOnField) {
+                    view.onRead(state, TrackerOptions.autoSwapToEnemy(gameBoy = generation < 3))
                 }
-                // Battle.lua:309-316: each Pokemon the opponent sends out turns the view to it
-                // again, not only the first; it used to swap at the start of the battle alone.
-                var enemySlots by remember(state.inBattle) { mutableStateOf(state.enemyOnField) }
-                androidx.compose.runtime.LaunchedEffect(state.enemyOnField) {
-                    if (TrackerOptions.autoSwapToEnemy(gameBoy = generation < 3) && opponentSentOut(enemySlots, state.enemyOnField)) viewingOwn = false
-                    enemySlots = state.enemyOnField
-                }
+                val viewingOwn = !state.inBattle || view.view.own
                 if (state.inBattle) {
                     // Fleeing is a WILD-battle action only; a trainer battle
                     // never offers it, so the banner hides RUN entirely.
                     PcBattleBanner(
                         state.isWildBattle, onFlee,
-                        viewingOwn = viewingOwn,
-                        // No swap control when both are already on screen:
-                        // it would toggle a view that is not hidden.
-                        onSwapView = if (state.enemy != null && !stackBoth)
-                            { { viewingOwn = !viewingOwn } } else null,
+                        viewingOwn = view.offersFoe(state, stackBoth),
+                        // A single battle has no swap when both are already on screen: it would toggle a view that
+                        // is not hidden. A double battle's swap walks the Pokemon on the field (GbaViewState.next).
+                        onSwapView = if (view.canSwap(state, stackBoth)) { { view.swap(state, stackBoth) } } else null,
                         onTrainerTap = onTrainerInfo,
                         onGear = onGear,
                         weather = state.weather,
+                        trailing = headerTrailing,
+                        attempt = attemptShown,
+                        side = view.sideWords(state, stackBoth),
+                        swapSpoken = view.swapSpoken(state, stackBoth),
                     )
                     Spacer(Modifier.height(2.rp))
                 }
-                val enemy = state.enemy?.takeIf { state.inBattle && (stackBoth || !viewingOwn) }
+                val enemy = view.foe(state)?.takeIf { stackBoth || !viewingOwn }
 
                 // LANDSCAPE shows both cards at once, yours on top: there is
                 // vertical room for two, and marking the enemy's stats while
@@ -751,14 +853,17 @@ fun TrackerPanel(
                 // exactly one of the two is ever visible, so that order is
                 // invisible there - it only sets the stacking order here.
                 // Your Pokemon on the field in a battle, your lead otherwise (TrackerState.onField): slot 1 is
-                // not it after a switch (rc33 audit P1). The tracker puts its stat stages on it.
-                listOfNotNull(state.onField).take(if (enemy != null && !stackBoth) 0 else 1).forEach { p ->
+                // not it after a switch (rc33 audit P1). The tracker puts its stat stages on it. In a double battle
+                // the one the view shows (GbaViewState.own), the right-hand one with its own stages and heals.
+                val ownHeals = view.heals(state)
+                listOfNotNull(view.own(state)).take(if (enemy != null && !stackBoth) 0 else 1).forEach { p ->
                     PartyCard(onMoveHistory = onMoveHistory, onTypeDefenses = onTypeDefenses, p, spriteFor,
-                        healPercent = state.healPercent,
-                        healCount = state.healCount,
+                        healPercent = ownHeals.percent,
+                        healCount = ownHeals.count,
+                        healHp = ownHeals.hp,
                         onHealsTap = onHealsInBag,
                         onMoveInfo = { mv ->
-                            moveInfo = detailOf(mv, onMoveDescription?.invoke(mv.id), noRomData = moveRowFor(mv.id)?.let { it.pp == 0 && (it.power ?: 0) == 0 } == true, gen1 = generation == 1)
+                            moveInfo = detailOf(mv, onMoveDescription?.invoke(mv.id), noRomData = moveRowFor(mv.id)?.let { it.pp == 0 && (it.power ?: 0) == 0 } == true, gen1 = generation == 1, natDex = natDex)
                                 // Your own Hidden Power: the info screen gets the type arrows.
                                 .copy(hiddenPowerPid = p.mon.pid.takeIf { mv.id == com.ironmonone.tracker.MoveRules.HIDDEN_POWER })
                         },
@@ -766,12 +871,20 @@ fun TrackerPanel(
                             info = Triple(name, "Ability", onAbilityDescription?.invoke(name))
                         },
                         onNameInfo = { monInfo = p },
-                        moveCtx = ownMoveContext(p, state.enemy?.takeIf { state.inBattle }, state.weather, onWeight)
-                            .copy(hideEffectiveness = InfoRules.hideEffectiveness(state.randomized, state.isGhostBattle, own = true), generation = generation),
+                        // Against the opponent shown, or its partner once it has fainted (GbaViewState.ownTarget).
+                        moveCtx = ownMoveContext(p, view.ownTarget(state), state.weather, onWeight)
+                            .copy(hideEffectiveness = InfoRules.hideEffectiveness(state.randomized, state.isGhostBattle, own = true), generation = generation, natDex = natDex, maxDex = maxDex),
                         attempt = attempt,
-                        hidden = SummaryChecks.hides(attempt, state.gameDataRandomized, generation),
-                        iconDex = WalkingPals.trackerDex(generation, speciesTotal),
-                        inBattle = state.inBattle)
+                        hidden = hideStats,
+                        iconDex = WalkingPals.trackerDex(generation, speciesTotal, maxDex),
+                        inBattle = state.inBattle,
+                        runScoped = runScoped,
+                        bstBroken = joinedVersion >= 0 && BstRule.ownBreaks(p.base?.bst, bstLines, joinedForms, BstRule.keyOf(p.mon, generation), p.mon.species, p.speciesName),
+                        // A legendary past MaxDex's legendary line keeps its X whatever it evolved from: no "it evolved" button.
+                        onBstTap = { bstSheet = Triple(p.base?.bst ?: 0, bstLines?.own ?: 0, BstRule.keyOf(p.mon, generation).takeUnless { BstRule.legendaryBreaks(p.base?.bst, bstLines, p.speciesName) }) },
+                        routeVersion = state.routeVersion,
+                        generation = generation,
+                        markMove = MoveRule.gbaMark(moveRules, p, state))
                 }
                 if (enemy != null) {
                     EnemyCard(onMoveHistory = onMoveHistory, onTypeDefenses = onTypeDefenses, enemy, revealedEnemyAbility, revealedEnemyAbility2, spriteFor,
@@ -789,16 +902,19 @@ fun TrackerPanel(
                         onPokemonInfo = if (onSpeciesBase != null) { { speciesInfo = enemy.species } } else null,
                         team = state.enemyTeam,
                         teamLabel = "Team:".takeIf { generation < 3 },
+                        enemyParty = state.enemyParty,
+                        routeVersion = state.routeVersion,
                         moveLevels = onMoveLevels?.invoke(enemy.species) ?: emptyList(),
-                        moveCtx = enemyMoveContext(enemy, state.onField, state.weather, onWeight)
-                            .copy(hide = InfoRules.hiddenMoveInfo(state.randomized), hideEffectiveness = InfoRules.hideEffectiveness(state.randomized, state.isGhostBattle, own = false), generation = generation),
+                        // Against your Pokemon shown, or your other one once it has fainted (GbaViewState.foeTarget).
+                        moveCtx = enemyMoveContext(enemy, view.foeTarget(state), state.weather, onWeight)
+                            .copy(hide = InfoRules.hiddenMoveInfo(state.randomized), hideEffectiveness = InfoRules.hideEffectiveness(state.randomized, state.isGhostBattle, own = false), generation = generation, natDex = natDex, maxDex = maxDex),
                         rand = state.randomized,
                         catchText = state.catchPercent?.takeIf { state.isWildBattle && TrackerOptions.showCatchRate }?.let { pct ->
                             // DataHelper.lua:402-406 works it from the viewed Pokemon, the blank stand-in while hidden.
-                            "~ ${if (SummaryChecks.hides(attempt, state.gameDataRandomized, generation)) 0 else pct}%  to catch" },
+                            "~ ${if (hideStats) 0 else pct}%  to catch" },
                         onCatchTap = onCatchRates,
                         // DataHelper.lua:144: the viewed Pokemon is hidden, the opponent included.
-                        hidden = SummaryChecks.hides(attempt, state.gameDataRandomized, generation),
+                        hidden = hideStats,
                         onAbilityLine = { line ->
                             // canShowUnknownAbilities: the species' two possible abilities;
                             // otherwise the tracked ones. Nothing there opens the notepad.
@@ -809,9 +925,12 @@ fun TrackerPanel(
                             else info = Triple(name, "Ability", onAbilityDescription?.invoke(name))
                         },
                         onMoveInfo = { mv ->
-                            moveInfo = detailOf(mv, onMoveDescription?.invoke(mv.id), noRomData = moveRowFor(mv.id)?.let { it.pp == 0 && (it.power ?: 0) == 0 } == true, gen1 = generation == 1)
+                            moveInfo = detailOf(mv, onMoveDescription?.invoke(mv.id), noRomData = moveRowFor(mv.id)?.let { it.pp == 0 && (it.power ?: 0) == 0 } == true, gen1 = generation == 1, natDex = natDex)
                         },
-                        iconDex = WalkingPals.trackerDex(generation, speciesTotal))
+                        iconDex = WalkingPals.trackerDex(generation, speciesTotal, maxDex),
+                        bstLines = bstLines,
+                        onBstTap = { bstSheet = Triple(enemy.base?.bst ?: 0, bstLines?.wild ?: 0, null) },
+                        generation = generation)
                 }
                 // The PC tracker's fourth area: one rotating strip, not a stack
                 // of permanent rows.
@@ -819,7 +938,7 @@ fun TrackerPanel(
                     inBattle = state.inBattle,
                     viewingOwn = !state.inBattle || viewingOwn,
                     isWildBattle = state.isWildBattle,
-                    leadLevel = state.party.firstOrNull()?.mon?.level ?: 0,
+                    leadLevel = state.lead?.mon?.level ?: 0,
                     routeTrainersDefeated = state.routeTrainersDefeated,
                     badges = state.badges,
                     badgeSet = state.badgeSet,
@@ -828,8 +947,9 @@ fun TrackerPanel(
                     lastAttack = state.lastAttackMove?.takeIf { TrackerOptions.showLastDamage }?.let { mv ->
                         com.ironmonone.tracker.LastAttack.text(mv, state.lastAttackDamage, state.lastAttackTeams)
                     },
-                    lastAttackLethal = com.ironmonone.tracker.LastAttack.lethal(state.lastAttackDamage, state.onField?.mon?.curHp),
-                    battleDetailsSummary = BattleSummary.line(state.battleSummaries, viewingOwn = !state.inBattle || viewingOwn),
+                    // The Pokemon on the field the view shows (Battle.getViewedPokemon(true), TrackerScreen.lua:742).
+                    lastAttackLethal = com.ironmonone.tracker.LastAttack.lethal(state.lastAttackDamage, view.own(state)?.mon?.curHp),
+                    battleDetailsSummary = BattleSummary.line(state.battleSummaries, view.viewedBattler(state)),
                     routeName = routeName,
                     routeSeen = routeSeen,
                     routeTotal = routeTotal,
@@ -853,11 +973,17 @@ fun TrackerPanel(
 
 
 /**
+ * The ability a card's ability line opens, or null for none: the Game Boy trackers write "-" there, and a tap opened a
+ * "-" ability card (rc32 audit P3 #43). The opponent's lines already send these to the notepad.
+ */
+internal fun abilityTapName(name: String): String? = name.trim().takeIf { it.isNotEmpty() && it != "-" && it != "---" }
+
+/**
  * A move popup's contents from a row and its description. The chart lines
  * are general facts about a damaging move's type - never about the opponent,
  * which is the player's to work out (Blake, 2026-09-05).
  */
-internal fun detailOf(mv: PcMove, summary: String?, noRomData: Boolean = false, gen1: Boolean = false): MoveDetail =
+internal fun detailOf(mv: PcMove, summary: String?, noRomData: Boolean = false, gen1: Boolean = false, natDex: Boolean = false): MoveDetail =
     MoveDetail(
         name = mv.name, typeId = mv.type.takeUnless { noRomData }, typeName = mv.typeName.takeUnless { noRomData },
         category = mv.category.takeUnless { noRomData }, contact = mv.contact,
@@ -866,8 +992,11 @@ internal fun detailOf(mv: PcMove, summary: String?, noRomData: Boolean = false, 
         priority = mv.priority, summary = summary,
         // Red, Blue and Yellow: the Gen 1 tracker's chart, as its move rows use.
         // Only with "Type matchups in move info" on (TrackerOptions.showTypeMatchups, off by default).
-        typeChart = if (TrackerOptions.showTypeMatchups && (mv.power ?: 0) > 0) MoveMatchup.general(mv.type, gen1) else null,
+        typeChart = if (TrackerOptions.showTypeMatchups && (mv.power ?: 0) > 0) MoveMatchup.general(mv.type, gen1, natDex) else null,
+        // Your own Hidden Power's chart follows its type arrows (MoveInfoText.chart), so it keeps what that needs.
+        chartShown = TrackerOptions.showTypeMatchups && (mv.power ?: 0) > 0, natDex = natDex,
         powerText = mv.powerText,
         // What the row hides stays hidden on the card (MoveInfoText).
         ppText = mv.ppText, accText = mv.accText,
+        banLine = mv.banLine,
     )

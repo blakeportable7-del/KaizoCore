@@ -25,6 +25,14 @@ internal object PrepRun {
     fun builtIns(entry: LibraryStore.Entry): List<PrepOptions.Option> =
         entry.kind?.takeIf { entry.verified }?.let { builtIns(it) }.orEmpty()
 
+    /**
+     * Where one run writes its patched game: a file of its own in [cacheDir]. The name was fixed per build, so two runs
+     * of one built-in patch wrote one file; the second truncated the first's, the first then failed its checksum and
+     * deleted it, and the second failed reading it (rc32 audit P2 #74).
+     */
+    fun patchedTemp(cacheDir: File, outKind: RomKind): File =
+        File.createTempFile("prep-patched-${outKind.id}-", ".${outKind.fileExtension}", cacheDir.apply { mkdirs() })
+
     /** A cache copy of a library game, for [run], identified from its header with the checksum the library already holds. */
     fun copyFromLibrary(context: Context, entry: LibraryStore.Entry, progress: FileProgress): Pair<File, RomIdentity.Result> {
         val tmp = File(context.cacheDir, "prep-" + System.nanoTime())
@@ -36,14 +44,16 @@ internal object PrepRun {
     /**
      * Makes [optionId] (null: the game's default option) of [kind] from [file], which this takes over, and returns what
      * to tell the player. Throws [PrepFailure], already worded, or [NeedPatch] when the Nat. Dex patch is not in this build.
+     * [crc] is [file]'s checksum when the caller read it (RomIdentity): a game stored as it is keeps it, so the list of
+     * prepared games never hashes it again (rc32 audit P2 #63).
      */
-    fun run(context: Context, store: PrepStore, file: File, kind: RomKind, optionId: String?, progress: FileProgress): String {
+    fun run(context: Context, store: PrepStore, file: File, kind: RomKind, optionId: String?, progress: FileProgress, crc: Long? = null): String {
         val options = PrepOptions.forKind(kind)
         val opt = options.firstOrNull { it.id == optionId } ?: PrepOptions.default(kind)
         return when (opt.mode) {
             PrepOptions.Mode.STANDARD -> {
                 progress.start("Saving", 0L)
-                store.savePrepared(kind, file)
+                store.savePrepared(kind, file, crc)
                 if (kind.isNatDex || kind.patchTag != null) "Already patched. Stored as is." else "Stored as a standard (vanilla) base."
             }
 
@@ -52,17 +62,41 @@ internal object PrepRun {
                 val outKind = opt.out ?: throw PrepFailure(NOT_IN_THIS_BUILD)
                 val patchFile = store.bundledPatch(context, opt.asset ?: throw PrepFailure(NOT_IN_THIS_BUILD))
                     ?: throw PrepFailure(NOT_IN_THIS_BUILD)
-                val tmp = File(context.cacheDir, "prep-patched-${outKind.id}.${outKind.fileExtension}")
-                progress.start("Patching", 0L)
-                val crc = Patcher.applyFiles(patchFile, file, tmp, kind.displayName) { done, total -> progress.done = done; progress.total = total }
-                if (outKind.expectedCrc != RomKind.CRC_UNKNOWN && crc != outKind.expectedCrc) {
-                    tmp.delete()
-                    throw PrepFailure("The patch applied, but the result is not a version this app knows. " +
-                        "Your dump is probably a different version of the game. Nothing was changed.")
+                val tmp = patchedTemp(context.cacheDir, outKind)
+                try {
+                    progress.start("Patching", 0L)
+                    val built = patchInto(tmp) { Patcher.applyFiles(patchFile, file, tmp, kind.displayName) { done, total -> progress.done = done; progress.total = total } }
+                    if (outKind.expectedCrc != RomKind.CRC_UNKNOWN && built != outKind.expectedCrc) {
+                        throw PrepFailure("The patch applied, but the result is not a version this app knows. " +
+                            "Your dump is probably a different version of the game. Nothing was changed.")
+                    }
+                    file.delete()
+                    store.savePrepared(outKind, tmp, built)
+                } finally {
+                    tmp.delete()   // moved into PrepStore by a run that worked, so only a failed one leaves it to delete
                 }
-                file.delete()
-                store.savePrepared(outKind, tmp)
                 "Patched to ${outKind.displayName}."
+            }
+
+            PrepOptions.Mode.MAXDEX -> {
+                // Trip's MaxDex.bps, built in since rc34; a copy of it in the library is the same file (MaxDexInfo.patchFile).
+                val outKind = opt.out ?: throw PrepFailure(NOT_IN_THIS_BUILD)
+                val patch = MaxDexInfo.patchFile(context, store, opt.asset ?: throw PrepFailure(NOT_IN_THIS_BUILD))
+                    ?: throw PrepFailure(MaxDexInfo.NEED_PATCH)
+                // Its own temp file, as PATCH has (rc32 audit P2 #74): a fixed name was shared by two runs of one kind.
+                val tmp = patchedTemp(context.cacheDir, outKind)
+                try {
+                    progress.start("Patching", 0L)
+                    val crc = patchInto(tmp) { Patcher.applyFiles(patch, file, tmp, kind.displayName) { done, total -> progress.done = done; progress.total = total } }
+                    if (crc != outKind.expectedCrc) {
+                        throw PrepFailure("The MaxDex patch applied, but the result is not MaxDex 1.0. Your FireRed may be another version. Nothing was changed.")
+                    }
+                    file.delete()
+                    store.savePrepared(outKind, tmp)
+                } finally {
+                    tmp.delete()   // moved into PrepStore by a run that worked, so only a failed one leaves it to delete
+                }
+                "Made ${outKind.displayName} with Trip's patch."
             }
 
             PrepOptions.Mode.NATDEX -> {
@@ -70,10 +104,11 @@ internal object PrepRun {
                 val patchFile = store.patchFileOrBundled(context, kind) ?: throw NeedPatch()
                 progress.start("Patching", 0L)
                 val out = Patcher.apply(patchFile.readBytes(), file.readBytes(), kind.displayName)
-                val outKind = RomKind.allNatDex.firstOrNull { it.expectedCrc == com.ironmonone.patch.Crc32.of(out) }
+                val outCrc = com.ironmonone.patch.Crc32.of(out)
+                val outKind = RomKind.allNatDex.firstOrNull { it.expectedCrc == outCrc }
                     ?: throw PrepFailure("The patch applied, but the result is not a Nat. Dex version this app knows. " +
                         "A newer Nat. Dex release needs an update of this app first. Nothing was changed.")
-                store.savePrepared(outKind, out)
+                store.savePrepared(outKind, out, outCrc)
                 // The copy is spent only once the build is stored; the cache copy used to stay behind here.
                 file.delete()
                 "Patched to ${outKind.displayName}."
@@ -81,6 +116,14 @@ internal object PrepRun {
         }
     }
 }
+
+/**
+ * Runs [apply], which writes a patched game into [tmp] and returns its checksum, and deletes [tmp] when it throws. A
+ * damaged patch, or a full phone, threw part way and left the part written in the cache: up to 512 MB for Faster B2W2
+ * or Super Kaizo, the space whose lack had made it fail (rc32 audit P3 #57).
+ */
+internal inline fun patchInto(tmp: File, apply: () -> Long): Long =
+    try { apply() } catch (t: Throwable) { tmp.delete(); throw t }
 
 internal class NeedPatch : Exception()
 

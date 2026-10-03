@@ -302,12 +302,11 @@ object SettingsReflector {
         // game KaizoCore runs (Gen 1 to 5); "Totems: allow alternate formes"
         // was on offer while editing a FireRed preset (walk-through, 2026-09-27).
         if (generation != null && id in LATER_GEN_ONLY) return true
-        val g = when (generation) {
-            null -> return false
-            "GBA3" -> "GEN3"
-            "NDS4" -> "GEN4"
-            else -> generation
-        }
+        // The generation's number, as rangeOf reads it: GBA3, NDS4, NDS5 (and the table's own GEN3) are GEN3, GEN4, GEN5.
+        // Only GBA3 and NDS4 were mapped, so a Black or White preset offered two alternate forme switches the randomizer
+        // ignores on Gen 5 (rc32 audit P3 #89).
+        if (generation == null) return false
+        val g = Regex("\\d+").find(generation)?.value?.let { "GEN$it" } ?: generation
         return (id to g) in UNSUPPORTED
     }
 

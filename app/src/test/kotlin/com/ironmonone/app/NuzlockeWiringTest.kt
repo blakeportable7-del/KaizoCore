@@ -111,6 +111,25 @@ class NuzlockeWiringTest {
     }
 
     @Test
+    fun `a death marked by hand takes the place and badges the game shows, and a Pokemon that never was can go`() {
+        // rc32 audit P3 #115: MARK DEAD recorded the catch area and no badges.
+        assertTrue("MonEditor(live, mon, here, snapshot?.badges, rev," in panel)
+        assertTrue("live.edits.markDead(mon.id, cause.trim(), now, here?.name, badges)" in panel)
+        // rc32 audit P2 #139: a Pokemon made for an area, or added by hand, can be taken off; one the tracker saw cannot.
+        val remove = panel.substringAfter("if (mon.id < 0 && !mon.inParty) {").substringBefore("\n        }\n")
+        assertTrue("live.edits.removeMon(mon.id, now)" in remove && "KEEP IT" in remove, "a second tap to be sure")
+    }
+
+    @Test
+    fun `the mid-run rules page leaves out the Genlocke switch, which only a start reads`() {
+        // rc32 audit P2 #39: flipping it in the middle of a run changed nothing.
+        val rulesTab = panel.substringAfter("private fun RulesTab(").substringBefore("\n}\n")
+        assertTrue("it.key != \"genlocke\"" in rulesTab)
+        assertTrue("meta.genlockeId.isNotEmpty() || rules.preset == NuzlockePreset.GENLOCKE" in rulesTab, "survivors are said only for a Genlocke")
+        assertTrue("val canContinue = NuzlockeStarts.canContinue(h, status)" in screen)
+    }
+
+    @Test
     fun `the ledger has a tab for what the player can do to each part of it`() {
         for (tab in listOf("AREAS", "TEAM", "GRAVE", "LOG", "RULES")) assertTrue("""LedgerTab.$tab ->""" in panel, tab)
         assertTrue("AreasTab(live, here, rev, onEdit = { areaEdit = it })" in panel)
@@ -178,6 +197,51 @@ class NuzlockeWiringTest {
         assertTrue("StartConfirm(" in screen.substringAfter("fun tryStart()"))
         assertTrue("running != null" in screen)
         assertTrue("enabled = problem == null && confirm == null" in screen, "Start waits for the answer")
+    }
+
+    /** RC35-NOTICED N #40: the plain start's question listed every ledger on the main thread (nz.current). */
+    @Test
+    fun `the plain start's question reads the ledgers off the main thread`() {
+        val tryStart = screen.substringAfter("fun tryStart() {").substringBefore("\n    }\n")
+        assertTrue("withContext(Dispatchers.IO) { runCatching { bind?.let { nz.current(it) } }" in tryStart)
+        assertEquals(1, Regex("""nz\.current\(""").findAll(tryStart).count(), "and nowhere else in it")
+        assertTrue("starting = true" in tryStart && "finally { starting = false }" in tryStart, "Start is held meanwhile")
+    }
+
+    /**
+     * RC35-NOTICED N #16, the rest of rc32 audit P2 #63: the lists were read in composition, and listPrepared reads a
+     * randomized build whose checksum is not in its memo whole, seconds on the main thread for a DS game.
+     */
+    @Test
+    fun `the games, the settings files and the ledgers are read off the main thread`() {
+        assertTrue("produceState<NuzlockeLists?>(null, refresh) {" in screen)
+        assertTrue("value = withContext(Dispatchers.IO) { NuzlockeLists.read(store, nz, refresh) }" in screen)
+        for (old in listOf("remember(refresh) { NuzlockeStarts.plainGames", "remember(refresh) { NuzlockeStarts.randomGames",
+            "remember(refresh) { runCatching { store.listSettings() }", "remember(refresh) { nz.list() }"))
+            assertFalse(old in screen, old)
+        // What the read gives: the settings files on disk, and nothing the store cannot read.
+        val files = java.nio.file.Files.createTempDirectory("nzlists").toFile()
+        try {
+            val prep = PrepStore(files)
+            File(files, "prep/settings/RSE Kaizo.rnqs").apply { parentFile.mkdirs(); writeBytes(byteArrayOf(1)) }
+            val lists = NuzlockeLists.read(prep, NuzlockeStore(files), 7)
+            assertEquals(7, lists.refresh)
+            assertEquals(listOf("RSE Kaizo.rnqs"), lists.settings.map { it.name })
+            assertTrue(lists.prepared.isEmpty() && lists.runs.isEmpty())
+        } finally { files.deleteRecursively() }
+    }
+
+    /** RC35-NOTICED N #13, the rest of rc32 audit P2 #33: the screen's choices were plain remember, lost to a process death. */
+    @Test
+    fun `the start's choices are kept with the activity`() {
+        for (v in listOf("preset", "rules", "typePick", "gameKey", "modeKey"))
+            assertTrue(Regex("""var $v by rememberSaveable[ (]""").containsMatchIn(screen), v)
+        assertTrue("rememberSaveable(stateSaver = NuzlockeChoices.RulesSaver)" in screen)
+        val rules = com.ironmonone.tracker.nuzlocke.NuzlockeRules.forPreset(com.ironmonone.tracker.nuzlocke.NuzlockePreset.MONOTYPE, 11)
+            .copy(giftsCount = true, dupes = false)
+        assertEquals(rules, NuzlockeChoices.rulesOf(NuzlockeChoices.rulesText(rules)))
+        for (p in com.ironmonone.tracker.nuzlocke.NuzlockePreset.entries)
+            assertEquals(p, com.ironmonone.tracker.nuzlocke.NuzlockePreset.byKey(p.key), "each preset has a key that reads back")
     }
 
     // ---------------------------------------------------------------- the store

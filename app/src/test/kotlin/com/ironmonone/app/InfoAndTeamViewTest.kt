@@ -32,7 +32,8 @@ class InfoAndTeamViewTest {
         assertFalse(InfoScreenLines.hasNoWeaknesses(mapOf(4.0 to listOf("Ice"))))
         val pc = File("src/main/kotlin/com/ironmonone/app/PcTracker.kt").readText().replace("\r\n", "\n")
         assertTrue("if (InfoScreenLines.hasNoWeaknesses(effectiveness)) PcInfoRow(\"Weak to\", InfoScreenLines.NO_WEAKNESSES)" in pc)
-        assertTrue("PixText(InfoScreenLines.learnLevels(moveLevels, level), 8, Pc.Dim, wrap = true)" in pc)
+        // In sp since rc34 (rc32 audit P2 #19, TrackerWindowsRestTest).
+        assertTrue("DialogText(InfoScreenLines.learnLevels(moveLevels, level), 13, Pc.Dim)" in pc)
         assertFalse("if (moveLevels.isNotEmpty()) {" in pc, "the learn levels always have their place")
     }
 

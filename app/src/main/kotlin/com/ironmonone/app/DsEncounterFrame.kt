@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
@@ -77,10 +78,10 @@ private fun compareLevelLists(la: List<Int>, lb: List<Int>, byName: () -> Int): 
     return byName()
 }
 
-/** fillTrackedEncounterRow's levels text: "Level 3 - 5" for range areas, else "Lv 3, 5". */
+/** fillTrackedEncounterRow's levels text: "Level 3 to 5" for range areas (its "3 - 5", no spaced hyphen: N #31), else "Lv 3, 5". */
 internal fun trackedLevelsText(levels: List<Int>?, usesRange: Boolean): String = when {
     levels.isNullOrEmpty() -> "?"
-    usesRange -> "Level ${levels.first()} - ${levels.last()}"
+    usesRange -> "Level ${levels.first()} to ${levels.last()}"
     else -> "Lv " + levels.joinToString(", ")
 }
 
@@ -100,7 +101,8 @@ fun DsEncounterDialog(
                 .clickable { tracked = !tracked }
                 .padding(10.dp)
         ) {
-            PixText(area.name, 11, Pc.Text, Modifier.fillMaxWidth(), align = TextAlign.Center)
+            // The window's words in sp, following the phone's font size (rc32 audit P2 #19, rc35 follow-up N #29).
+            DialogText(area.name, 15, Pc.Text, Modifier.fillMaxWidth(), align = TextAlign.Center, heading = true)
             Spacer(Modifier.padding(top = 6.dp))
             if (tracked) {
                 val order = sortTrackedEncounters(seen, nameOf)
@@ -109,15 +111,15 @@ fun DsEncounterDialog(
             } else {
                 area.slots.forEachIndexed { i, entries ->
                     Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
-                        PixText("${i + 1}", 8, Pc.Text, Modifier.width(18.dp))
-                        Column { entries.forEach { e -> PixText(e.label(), 8, Pc.Text) } }
+                        DialogText("${i + 1}", 12, Pc.Text, Modifier.widthIn(min = 28.dp))
+                        Column { entries.forEach { e -> DialogText(e.label(), 12, Pc.Text) } }
                     }
                 }
             }
             Spacer(Modifier.padding(top = 8.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                PixText(if (tracked) "Tap for the vanilla table" else "Tap for what you met", 7, Pc.Dim)
-                PcSmallButton("CLOSE") { onDismiss() }
+                DialogText(if (tracked) "Tap for the vanilla table" else "Tap for what you met", 12, Pc.Dim, Modifier.weight(1f))
+                GearButton("CLOSE", Modifier) { onDismiss() }
             }
         }
     }
@@ -126,7 +128,7 @@ fun DsEncounterDialog(
 @Composable
 private fun EncounterRow(name: String, levels: String) {
     Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
-        PixText(name, 8, Pc.Text, Modifier.width(96.dp))
-        PixText(levels, 8, Pc.Text)
+        DialogText(name, 12, Pc.Text, Modifier.width(112.dp))
+        DialogText(levels, 12, Pc.Text, Modifier.weight(1f))
     }
 }

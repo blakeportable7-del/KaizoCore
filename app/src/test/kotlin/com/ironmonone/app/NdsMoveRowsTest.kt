@@ -40,6 +40,22 @@ class NdsMoveRowsTest {
         assertTrue(rows.all { r -> r.name != "Ember" || r.stab }, "the opponent's STAB too")
     }
 
+    /** rc32 audit P2 #35: MoveUtils.getMoveHeader on both cards (MoveUtils.lua:134-149, MainScreen.lua:524-526). */
+    @Test
+    fun `both cards head their moves the DS tracker's way, learned of total and the next level`() {
+        val foe = tm(20).copy(movesLearned = 3, movesTotal = 12, nextMoveLevel = 14)
+        assertEquals("Moves: 3/12 (14)", ndsMovesHeader(foe))
+        assertEquals("Moves: 12/12", ndsMovesHeader(foe.copy(movesLearned = 12, nextMoveLevel = null)), "every one learned")
+        assertEquals("Moves", ndsMovesHeader(tm(20)), "a species the table lacks")
+    }
+
+    @Test
+    fun `your card and the opponent's both take that header`() {
+        val panel = File("src/main/kotlin/com/ironmonone/app/NdsTrackerPanel.kt").readText()
+        assertEquals(2, Regex("header = ndsMovesHeader\\(").findAll(panel).count(), "your card and the opponent's")
+        assertTrue("header = \"Moves\"," !in panel, "the opponent's bare header")
+    }
+
     @Test
     fun `a tap shows the move's description, and an empty row shows nothing`() {
         val row = ndsMoveRow(tackle, tm(10), 35, 35, inBattle = false, ctx = null)

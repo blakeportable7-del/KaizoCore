@@ -38,3 +38,12 @@ libretrodroid/build/
 
 # Release artefacts are attached to GitHub releases, not committed.
 dist/
+
+# Signing keys never go in a repo (master is archived into the public KaizoCore repo; rc33 audit P1 #3).
+*.keystore
+*.jks
+*.p12
+
+# Python caches: the release gate refuses untracked files (tools/release_checks.py)
+__pycache__/
+*.pyc

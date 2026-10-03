@@ -52,6 +52,21 @@ class DeathCardTest {
         assertEquals(listOf(3), history().all().map { it.badges })
     }
 
+    @Test fun `a retry still counts after the app restarts, by the run's own event log`() {
+        // rc33 audit P1 #49: the hook's memory of a retry died with the process, so the run's real end was never filed.
+        val h = history()
+        fileRunEnd(h, 37, seed, reopened = false) { RunRecord(37, seed, "Kaizo.rnqs", 0L, 5_000L, 600, RunRecord.Outcome.LOST, 2, null, null, "", "", it) }
+        val filed = h.find(37, seed)
+        val retry = RunEvents.Entry(at = 6_000L, kind = RunEvents.Kind.RETRY, slot = "battle start", detail = "")
+        assertTrue(retriedAfter(filed, listOf(retry)), "a RETRY logged after the filed end reopens it")
+        assertFalse(retriedAfter(filed, listOf(retry.copy(at = 4_000L))), "one from before it does not")
+        assertFalse(retriedAfter(null, listOf(retry)), "nothing filed, nothing to reopen")
+        val (won, earlier) = fileRunEnd(h, 37, seed, reopened = retriedAfter(filed, listOf(retry))) { rec(37, 8, RunRecord.Outcome.WON, restores = it) }
+        assertFalse(earlier); assertEquals(RunRecord.Outcome.WON, won.outcome, "the run's real end is filed")
+        val src = File("src/main/kotlin/com/ironmonone/app/RunHistory.kt").readText()
+        assertTrue("reopened = k in reopened || retriedAfter(history.find(attempt, seed), events)" in src)
+    }
+
     @Test fun `the lines say what ended the run`() {
         val trainerLoss = DeathCard("Pokemon Emerald", rec(37, 2), null, earlier = false)
         assertEquals("LOST TO" to "Lv.22 Magneton (LEADER WATTSON)", trainerLoss.headline())

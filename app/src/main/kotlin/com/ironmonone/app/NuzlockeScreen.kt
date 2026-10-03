@@ -31,7 +31,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -52,9 +54,11 @@ import com.ironmonone.tracker.nuzlocke.Heir
 import com.ironmonone.tracker.nuzlocke.NuzlockePreset
 import com.ironmonone.tracker.nuzlocke.NuzlockeRules
 import com.ironmonone.tracker.nuzlocke.NuzlockeSystem
+import com.ironmonone.tracker.nuzlocke.NuzlockeText
 import com.ironmonone.tracker.nuzlocke.RunStatus
 import com.ironmonone.tracker.nuzlocke.SafariRule
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.security.SecureRandom
@@ -91,18 +95,27 @@ fun NuzlockeScreen(
     val jobGeneration = RunJob.generation
     LaunchedEffect(jobGeneration) { if (jobGeneration > 0) refresh++ }
 
-    val plainGames = remember(refresh) { NuzlockeStarts.plainGames(runCatching { store.library.list() }.getOrDefault(emptyList())) }
-    val preparedGames = remember(refresh) { NuzlockeStarts.randomGames(runCatching { store.listPrepared() }.getOrDefault(emptyList())) }
-    val settingsList = remember(refresh) { runCatching { store.listSettings() }.getOrDefault(emptyList()) }
-    val runs = remember(refresh) { nz.list() }
+    // The games, the settings files and the ledgers, read off the main thread (RC35-NOTICED N #16, the rest of rc32 audit
+    // P2 #63): a randomized build whose checksum is not in the memo yet is read whole to check it, seconds for a DS game,
+    // and every ledger's header is read. Until the first read lands the screen is empty; a later one keeps what is shown.
+    val lists by androidx.compose.runtime.produceState<NuzlockeLists?>(null, refresh) {
+        value = withContext(Dispatchers.IO) { NuzlockeLists.read(store, nz, refresh) }
+    }
+    val listed = lists?.refresh ?: -1
+    val plainGames = lists?.plain.orEmpty()
+    val preparedGames = lists?.prepared.orEmpty()
+    val settingsList = lists?.settings.orEmpty()
+    val runs = lists?.runs.orEmpty()
     val playingId = remember(refresh) { runCatching { NuzlockeTracking.current(filesDir)?.ledger?.meta?.id }.getOrNull() }
 
-    var preset by remember { mutableStateOf(NuzlockePreset.STANDARD) }
-    var rules by remember { mutableStateOf(NuzlockeRules.forPreset(NuzlockePreset.STANDARD)) }
+    // The choices are kept with the activity (RC35-NOTICED N #13, the rest of rc32 audit P2 #33): Android ending the app
+    // while it was in the background brought it back on Standard with no game picked.
+    var preset by rememberSaveable(stateSaver = NuzlockeChoices.PresetSaver) { mutableStateOf(NuzlockePreset.STANDARD) }
+    var rules by rememberSaveable(stateSaver = NuzlockeChoices.RulesSaver) { mutableStateOf(NuzlockeRules.forPreset(NuzlockePreset.STANDARD)) }
     // The type picked for Monotype, kept while another preset is looked at.
-    var typePick by remember { mutableStateOf<Int?>(null) }
-    var gameKey by remember { mutableStateOf<String?>(null) }
-    var modeKey by remember { mutableStateOf<String?>(null) }
+    var typePick by rememberSaveable { mutableStateOf<Int?>(null) }
+    var gameKey by rememberSaveable { mutableStateOf<String?>(null) }
+    var modeKey by rememberSaveable { mutableStateOf<String?>(null) }
     var showRules by remember { mutableStateOf(false) }
     var confirm by remember { mutableStateOf<StartConfirm?>(null) }
     var message by remember { mutableStateOf<Pair<String, Boolean>?>(null) }
@@ -132,6 +145,9 @@ fun NuzlockeScreen(
         }
     }
 
+    // Nothing to pick from until the lists are read: an empty screen for that moment, not "no games".
+    if (lists == null) { androidx.compose.foundation.layout.Box(modifier.fillMaxSize()); return }
+
     val randomized = preset == NuzlockePreset.RANDOMIZER
     val pickedPlain = if (randomized) null else plainGames.firstOrNull { it.name == gameKey } ?: plainGames.singleOrNull()
     val pickedPrepared = if (!randomized) null else preparedGames.firstOrNull { it.first.id == gameKey } ?: preparedGames.singleOrNull()
@@ -144,8 +160,8 @@ fun NuzlockeScreen(
     val mode = if (fairPicked) null else modes.firstOrNull { it.key == modeKey }
     // A game that has been played already: the ledger starts from the team it finds there. Judged by what is in the
     // save (SaveCheck): an auto-save is written whenever a game is left, title screen included (QA 2026-09-29).
-    val hasSave = remember(pickedPlain?.name, refresh) {
-        pickedPlain?.let { e -> GameSession.forLibrary(e)?.let { s -> SaveCheck.hasProgress(store.sramFile(s), s.platform) } } == true
+    val hasSave = remember(pickedPlain?.name, listed) {
+        pickedPlain?.let { e -> GameSession.forLibrary(e)?.let { s -> SaveCheck.hasProgress(NuzlockeStarts.inGameSave(filesDir, s, store.sramFile(s)), s.platform) } } == true
     }
 
     fun say(text: String, isError: Boolean = false) { message = text to isError }
@@ -155,6 +171,11 @@ fun NuzlockeScreen(
         rules = NuzlockeRules.forPreset(p, if (p == NuzlockePreset.MONOTYPE) typePick else null)
         gameKey = null; modeKey = null; message = null; confirm = null
     }
+
+    // The disk work of a start or a delete runs off the main thread: start lists every ledger and both wait for the
+    // ledger's writer (rc32 audit P3 #39). [starting] keeps a second tap from starting a second run meanwhile.
+    val scope = rememberCoroutineScope()
+    var starting by remember { mutableStateOf(false) }
 
     fun startNow() {
         val at = System.currentTimeMillis()
@@ -167,31 +188,52 @@ fun NuzlockeScreen(
             if (RunJob.busy) { say("The randomizer is busy. Try again in a moment.", true); return }
             // The seed is chosen here, so the ledger can be tied to the game before the game exists.
             val seed = SecureRandom().nextLong()
-            val ledger = nz.start(
-                NuzlockeStore.bindOfRun(prepared.first.id, seed), NuzlockeStarts.gameLabel(prepared.first, true), rules, at,
-                system = NuzlockeStarts.systemOf(prepared.first), gameKey = NuzlockeStarts.gameKeyOf(prepared.first),
-            )
-            if (!RunJob.randomize(context, prepared, settingsFile, seed, nuzlocke = true)) {
-                nz.delete(ledger.meta.id)
-                say("The randomizer is busy. Try again in a moment.", true)
-                return
+            val startRules = rules
+            starting = true
+            scope.launch {
+                try {
+                    val ledger = withContext(Dispatchers.IO) {
+                        nz.start(
+                            NuzlockeStore.bindOfRun(prepared.first.id, seed), NuzlockeStarts.gameLabel(prepared.first, true), startRules, at,
+                            system = NuzlockeStarts.systemOf(prepared.first), gameKey = NuzlockeStarts.gameKeyOf(prepared.first),
+                        )
+                    }
+                    if (!RunJob.randomize(context, prepared, settingsFile, seed, nuzlocke = true)) {
+                        withContext(Dispatchers.IO) { nz.delete(ledger.meta.id) }
+                        say("The randomizer is busy. Try again in a moment.", true)
+                        return@launch
+                    }
+                    waiting = true
+                    refresh++
+                } finally {
+                    starting = false
+                }
             }
-            waiting = true
-            refresh++
         } else {
             val entry = pickedPlain ?: return
             val kind = entry.kind ?: return
             val session = GameSession.forLibrary(entry)
             if (session == null) { say("That game cannot be played here.", true); return }
-            store.library.selectLibrary(entry)
-            nz.start(
-                session.id, NuzlockeStarts.gameLabel(kind, false), rules, at,
-                genlockeId = leg?.genlockeId.orEmpty(), leg = leg?.leg ?: 0, carriedFrom = leg?.fromId.orEmpty(), carry = leg?.carry.orEmpty(),
-                system = NuzlockeStarts.systemOf(kind), gameKey = NuzlockeStarts.gameKeyOf(kind),
-            )
-            nextLeg = null
-            refresh++
-            onPlay()
+            // The next game of a Genlocke is one whatever the switch says now: only a start reads it (rc32 audit P2 #39).
+            val startRules = if (leg != null) rules.copy(genlocke = true) else rules
+            starting = true
+            scope.launch {
+                try {
+                    withContext(Dispatchers.IO) {
+                        store.library.selectLibrary(entry)
+                        nz.start(
+                            session.id, NuzlockeStarts.gameLabel(kind, false), startRules, at,
+                            genlockeId = leg?.genlockeId.orEmpty(), leg = leg?.leg ?: 0, carriedFrom = leg?.fromId.orEmpty(), carry = leg?.carry.orEmpty(),
+                            system = NuzlockeStarts.systemOf(kind), gameKey = NuzlockeStarts.gameKeyOf(kind),
+                        )
+                    }
+                    nextLeg = null
+                    refresh++
+                    onPlay()
+                } finally {
+                    starting = false
+                }
+            }
         }
     }
 
@@ -207,14 +249,22 @@ fun NuzlockeScreen(
             } else startNow()
         } else {
             val entry = pickedPlain ?: return
-            val running = GameSession.forLibrary(entry)?.let { nz.current(it.id) }?.takeIf { it.header.status == RunStatus.ACTIVE }
-            if (running != null) {
-                confirm = StartConfirm(
-                    "This game has a Nuzlocke in progress: ${running.header.preset.label}, started ${dayOf(running.header.startedAt)}. " +
-                        "Starting a new one replaces it. The old ledger stays in your runs.",
-                    "Yes, start a new one",
-                ) { startNow() }
-            } else startNow()
+            val bind = GameSession.forLibrary(entry)?.id
+            // Whether the game has a Nuzlocke in progress reads every ledger's header, off the main thread like the start
+            // itself (RC35-NOTICED N #40); [starting] holds the button meanwhile.
+            starting = true
+            scope.launch {
+                val running = try {
+                    withContext(Dispatchers.IO) { runCatching { bind?.let { nz.current(it) } }.getOrNull()?.takeIf { it.header.status == RunStatus.ACTIVE } }
+                } finally { starting = false }
+                if (running != null) {
+                    confirm = StartConfirm(
+                        "This game has a Nuzlocke in progress: ${running.header.preset.label}, started ${dayOf(running.header.startedAt)}. " +
+                            "Starting a new one replaces it. The old ledger stays in your runs.",
+                        "Yes, start a new one",
+                    ) { startNow() }
+                } else startNow()
+            }
         }
     }
 
@@ -300,7 +350,7 @@ fun NuzlockeScreen(
             if (randomized) {
                 val ds = NuzlockeStarts.systemOf(chosenKind).let { it == NuzlockeSystem.GEN4 || it == NuzlockeSystem.GEN5 }
                 Text(
-                    "Makes a new randomized game and opens it in Play. The run of that game you have now ends. " +
+                    "Makes a new randomized game and opens it in Play. The run you have in Play now ends, whatever game it is. " +
                         if (ds) "The level caps are the standard table for the game, because a DS game's boss levels cannot be read here."
                         else "Boss levels come from the new game, so the level caps follow it.",
                     style = MaterialTheme.typography.bodySmall, color = Shell.hintOnNight,
@@ -383,7 +433,7 @@ fun NuzlockeScreen(
                     val meta = NuzlockeTracking.loaded(h.id)?.meta
                     val status = meta?.status ?: h.status
                     val reason = meta?.endReason ?: h.endReason
-                    val canContinue = h.preset == NuzlockePreset.GENLOCKE && status == RunStatus.COMPLETE
+                    val canContinue = NuzlockeStarts.canContinue(h, status)
                     RunCard(
                         title = h.preset.label + " on " + h.game,
                         line = NuzlockeStarts.statusLine(status, reason, h.startedAt),
@@ -394,8 +444,9 @@ fun NuzlockeScreen(
                             val ledger = NuzlockeTracking.loaded(h.id) ?: nz.load(h.id)
                             if (ledger != null) {
                                 nextLeg = NextLeg(h.id, ledger.meta.genlockeId, ledger.meta.leg + 1, nz.heirsOf(h.id), ledger.meta.game)
-                                preset = NuzlockePreset.GENLOCKE
-                                rules = ledger.meta.rules
+                                // The chain's own preset and switches: a Hardcore Genlocke's next game is Hardcore too.
+                                rules = NuzlockeStarts.legRules(ledger.meta.rules)
+                                preset = rules.preset
                                 gameKey = null; modeKey = null; message = null; confirm = null
                             }
                         }),
@@ -432,6 +483,7 @@ fun NuzlockeScreen(
             }
             val problem = NuzlockeStarts.problem(
                 preset, rules, game = chosenKind != null, mode = fairPicked || mode != null, busy = busy, natDex = chosenKind?.isNatDex == true,
+                system = NuzlockeStarts.systemOf(chosenKind),
             )
             if (problem != null) {
                 Text(problem, style = MaterialTheme.typography.bodySmall, color = Shell.hintOnNight, modifier = Modifier.padding(bottom = 6.dp))
@@ -443,7 +495,7 @@ fun NuzlockeScreen(
                     else -> "Start Nuzlocke"
                 },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = problem == null && confirm == null,
+                enabled = problem == null && confirm == null && !starting,
                 accent = true,
             ) { tryStart() }
         }
@@ -466,10 +518,12 @@ fun NuzlockeScreen(
             Spacer(Modifier.height(12.dp))
             Row {
                 Gen3Button("Delete", accent = true) {
-                    nz.delete(id)
                     if (openId == id) openId = null
                     deleteId = null
-                    refresh++
+                    scope.launch {
+                        withContext(Dispatchers.IO) { nz.delete(id) }
+                        refresh++
+                    }
                 }
                 Spacer(Modifier.width(8.dp))
                 Gen3Button("Cancel") { deleteId = null }
@@ -512,12 +566,20 @@ internal object NuzlockeStarts {
         return (kind.baseId ?: kind.id).substringBefore("-u")
     }
 
+    /**
+     * The file a library game's in-game save is in: melonDS writes a DS game's own .sav, named after the ROM, in
+     * filesDir/saves (SaveGuard.dsSaveFile), and never the session's .srm ([sram]) that the other cores keep. The
+     * "already has a save" warning read the .srm on DS too and so never showed there (rc32 audit P2 #37).
+     */
+    fun inGameSave(filesDir: File, session: GameSession, sram: File): File =
+        if (session.platform.coreOwnsSaves) SaveGuard.dsSaveFile(File(filesDir, "saves"), session.file) else sram
+
     /** Library games a plain run can start on: a copy the app has checked, which is what lets the tracker read it. Every console the app tracks. */
     fun plainGames(entries: List<LibraryStore.Entry>): List<LibraryStore.Entry> =
-        entries.filter { it.verified && it.kind != null }
+        entries.filter { it.verified && it.kind != null && !it.kind.isMaxDex }   // no Nuzlocke on MaxDex in its first version
 
     /** Prepared games a randomized run can start on. */
-    fun randomGames(prepared: List<Pair<RomKind, File>>): List<Pair<RomKind, File>> = prepared
+    fun randomGames(prepared: List<Pair<RomKind, File>>): List<Pair<RomKind, File>> = prepared.filter { !it.first.isMaxDex }   // as plainGames
 
     /** The name a run carries: the game as the app knows it, and how it was made. */
     fun gameLabel(kind: RomKind, randomized: Boolean): String = if (randomized) kind.displayName + ", randomized" else kind.displayName
@@ -525,15 +587,40 @@ internal object NuzlockeStarts {
     /** The types a Monotype run can pick: Fairy exists only in the Nat. Dex builds, and Red, Blue and Yellow have no Steel or Dark Pokemon. */
     fun types(natDex: Boolean, system: NuzlockeSystem = NuzlockeSystem.GEN3): List<Int> = system.types + if (natDex) listOf(FAIRY) else emptyList()
 
-    /** Why Start is off, in words for the player, or null when it can run. */
-    fun problem(preset: NuzlockePreset, rules: NuzlockeRules, game: Boolean, mode: Boolean, busy: Boolean, natDex: Boolean): String? = when {
+    /**
+     * Why Start is off, in words for the player, or null when it can run. [system] is the picked game's: a type picked
+     * while no game was, Steel or Dark, stayed picked for Red, Blue or Yellow, which have none, and every wild Pokemon
+     * of the run was then skipped as the wrong type (rc32 audit P3 #38).
+     */
+    fun problem(
+        preset: NuzlockePreset, rules: NuzlockeRules, game: Boolean, mode: Boolean, busy: Boolean, natDex: Boolean,
+        system: NuzlockeSystem = NuzlockeSystem.GEN3,
+    ): String? = when {
         !game -> "Pick a game."
         preset == NuzlockePreset.MONOTYPE && rules.monotypeType == null -> "Pick the type."
         preset == NuzlockePreset.MONOTYPE && rules.monotypeType == FAIRY && !natDex -> "Fairy only exists in the Nat. Dex builds."
+        preset == NuzlockePreset.MONOTYPE && rules.monotypeType !in types(natDex, system) ->
+            "This game has no ${rules.monotypeLabel}-type Pokémon. Pick another type."
         preset == NuzlockePreset.RANDOMIZER && !mode -> "This game has no randomizer mode to pick."
         preset == NuzlockePreset.RANDOMIZER && busy -> "The randomizer is busy. Try again in a moment."
         else -> null
     }
+
+    /**
+     * Whether a finished run offers the next game of its Genlocke: a run started with the Genlocke switch on, whatever
+     * its preset, since the switch is on every preset and it is what the start reads (rc32 audit P2 #39: only the
+     * Genlocke preset was asked), and a Genlocke-preset run as before.
+     */
+    fun canContinue(header: NuzlockeText.Header, status: RunStatus): Boolean =
+        status == RunStatus.COMPLETE && (header.genlockeId.isNotEmpty() || header.preset == NuzlockePreset.GENLOCKE)
+
+    /**
+     * The rules a Genlocke's next game starts with: the last game's, its own preset kept (a Hardcore Genlocke stays
+     * Hardcore), the Genlocke switch on. The next game is played as it is, so a chain begun on a randomized game goes on
+     * as a Genlocke.
+     */
+    fun legRules(last: NuzlockeRules): NuzlockeRules =
+        last.copy(preset = if (last.preset == NuzlockePreset.RANDOMIZER) NuzlockePreset.GENLOCKE else last.preset, genlocke = true)
 
     /** A run's line in the list: where it stands, in a few plain words. */
     fun statusLine(status: RunStatus, endReason: String, startedAt: Long): String = when (status) {
@@ -548,6 +635,46 @@ internal object NuzlockeStarts {
 }
 
 private fun dayOf(at: Long): String = if (at <= 0) "an unknown day" else SimpleDateFormat("MMM d", Locale.US).format(Date(at))
+
+/**
+ * What the Nuzlocke screen lists, read together on the IO thread (RC35-NOTICED N #16): the library's games, the randomized
+ * builds (PrepStore.listPrepared reads a build whose checksum is not in its memo whole), the settings files and every
+ * ledger's header. [refresh] is the screen's count they were read for.
+ */
+internal class NuzlockeLists(
+    val refresh: Int,
+    val plain: List<LibraryStore.Entry>,
+    val prepared: List<Pair<RomKind, File>>,
+    val settings: List<File>,
+    val runs: List<NuzlockeStore.Entry>,
+) {
+    companion object {
+        fun read(store: PrepStore, nz: NuzlockeStore, refresh: Int) = NuzlockeLists(
+            refresh,
+            NuzlockeStarts.plainGames(runCatching { store.library.list() }.getOrDefault(emptyList())),
+            NuzlockeStarts.randomGames(runCatching { store.listPrepared() }.getOrDefault(emptyList())),
+            runCatching { store.listSettings() }.getOrDefault(emptyList()),
+            runCatching { nz.list() }.getOrDefault(emptyList()),
+        )
+    }
+}
+
+/** The Nuzlocke screen's choices as text for the saved state (RC35-NOTICED N #13). Anything that will not read back is the default. */
+internal object NuzlockeChoices {
+    val PresetSaver = androidx.compose.runtime.saveable.Saver<NuzlockePreset, String>(
+        save = { it.key }, restore = { NuzlockePreset.byKey(it) ?: NuzlockePreset.STANDARD },
+    )
+
+    /** The rules as the ledger writes them (NuzlockeRules.toEntries), one key=value a line. */
+    val RulesSaver = androidx.compose.runtime.saveable.Saver<NuzlockeRules, String>(
+        save = { rulesText(it) }, restore = { rulesOf(it) },
+    )
+
+    fun rulesText(r: NuzlockeRules): String = r.toEntries().joinToString("\n") { (k, v) -> "$k=$v" }
+
+    fun rulesOf(text: String): NuzlockeRules =
+        NuzlockeRules.fromEntries(text.lines().mapNotNull { l -> l.indexOf('=').takeIf { it > 0 }?.let { l.substring(0, it) to l.substring(it + 1) } }.toMap())
+}
 
 /** The next game of a Genlocke: which run it carries on from and who comes along. */
 private class NextLeg(val fromId: String, val genlockeId: String, val leg: Int, val carry: List<Heir>, val fromGame: String)

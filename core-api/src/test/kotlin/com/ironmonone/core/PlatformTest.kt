@@ -50,6 +50,9 @@ class PlatformTest {
         assertEquals(Engine.ZX, RomKind.PLATINUM_U.engine)
         assertEquals(Engine.NATDEX, RomKind.FIRERED_NATDEX_121.engine)
         assertEquals(Engine.NATDEX, RomKind.EMERALD_NATDEX_121.engine)
+        // MaxDex is a Nat. Dex build with its own randomizer: the MaxDex flag decides first.
+        assertEquals(Engine.MAXDEX, RomKind.FIRERED_MAXDEX_10.engine)
+        for (k in RomKind.all) assertEquals(k.isMaxDex, k.engine == Engine.MAXDEX, k.id)
     }
 
     @Test
@@ -65,6 +68,7 @@ class PlatformTest {
         assertEquals("DPPt", RomKind.PLATINUM_U.family)
         assertEquals(RomKind.FIRERED_U_V11.family, RomKind.FIRERED_NATDEX_121.family)
         assertEquals(RomKind.EMERALD_U.family, RomKind.EMERALD_NATDEX_121.family)
+        assertEquals(RomKind.FIRERED_U_V11.family, RomKind.FIRERED_MAXDEX_10.family)
     }
 
     @Test

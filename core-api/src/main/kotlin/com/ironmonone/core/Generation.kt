@@ -46,23 +46,36 @@ data class RomKind(
     val isNatDex: Boolean = false,
     /**
      * A ruleset patch this build carries: "pseudofluct" (Gen 1 and 2), "smartai"
-     * (Super Kaizo, Gen 3), "superkaizo" (Gen 4). Null for a clean dump and for
+     * (Super Kaizo, Gen 3), "superkaizo" (Gen 4), or a quality-of-life one:
+     * "faster", "faster121", "fasterpwt", "ironmon". Null for a clean dump and for
      * Nat. Dex, which has its own flag. PREP applies the bundled patch and stores
      * the result under this kind; the library shows it as patched.
      */
     val patchTag: String? = null,
     /** The clean kind this was patched from, so the tracker and the presets treat it as that game. */
     val baseId: String? = null,
+    /**
+     * MaxDex (Tripc423/Maxdex): Nat. Dex 1.1.3 grown to 1255 species, the Legends Z-A megas among them, with moves
+     * and abilities through Gen 9 and a physical or special byte on every move. A MaxDex build is a Nat. Dex build
+     * ([isNatDex] is true: its rules are the Nat. Dex rules, with nine favourites, the Fairy type chart and "already
+     * patched"), but it has its own randomizer, preset, rules page and tracker map, so everything that means Nat. Dex
+     * 1.2.1 in particular checks this first.
+     */
+    val isMaxDex: Boolean = false,
 ) {
     /** The console, and with it the core and the turbo cap. Never the extension. */
     val platform: Platform get() = generation.platform
 
     /** The randomizer fork this ROM belongs to. The one place that decision is made. */
-    val engine: Engine get() = if (isNatDex) Engine.NATDEX else Engine.ZX
+    val engine: Engine get() = when {
+        isMaxDex -> Engine.MAXDEX
+        isNatDex -> Engine.NATDEX
+        else -> Engine.ZX
+    }
 
     companion object {
         /** Every kind the app knows, so a stored id can be turned back into one. */
-        val all: List<RomKind> get() = allV1 + allNatDex + allPatched
+        val all: List<RomKind> get() = allV1 + allNatDex + allMaxDex + allPatched
 
         fun byId(id: String?): RomKind? = id?.let { k -> all.firstOrNull { it.id == k } }
 
@@ -313,6 +326,25 @@ data class RomKind(
         )
         val allNatDex = listOf(EMERALD_NATDEX_121, FIRERED_NATDEX_121)
 
+        /**
+         * MaxDex 1.0 (Trip, Tripc423/Maxdex): FireRed USA 1.1 patched with his MaxDex.bps of 2026-06-25. The CRC
+         * is the target CRC the patch carries, and Blake's own dump patched with it reads the same (2026-10-02).
+         * The patch is in the app since rc34 (assets/patches/maxdex-firered-u-v11.bps). As with Nat. Dex the header
+         * is unchanged ("POKEMON FIRE", BPRE, version 1), so the CRC is the only gate, and a new MaxDex.bps is a new
+         * kind: Trip's addresses move with every rebuild. Not Nat. Dex capable: it already is one.
+         */
+        val FIRERED_MAXDEX_10 = FIRERED_U_V11.copy(
+            id = "firered-maxdex-10",
+            family = "FRLG",
+            displayName = "Pokémon FireRed + MaxDex 1.0",
+            expectedCrc = 0x28C12926L,
+            titleDetect = "POKEMON FIRE",
+            natDexCapable = false,
+            isNatDex = true,
+            isMaxDex = true,
+        )
+        val allMaxDex = listOf(FIRERED_MAXDEX_10)
+
         // ---- Ruleset patches, 2026-09-08. CRCs: the BPS target CRC carried by the
         // patch itself (Gen 1 and 2), or measured by applying the IPS / xdelta to
         // the pinned dump (Gen 3, HeartGold, Platinum). FireRed 1.1's Smart AI waits on a dump.
@@ -368,8 +400,17 @@ data class RomKind(
         val BLACK2_FASTERPWT = patched(BLACK2_U, BLACK2_U.id + "-fasterpwt", "Pokémon Black 2 + Faster B2W2, no PWT", 0xF6A61854L, "fasterpwt")
         val WHITE2_FASTER = patched(WHITE2_U, WHITE2_U.id + "-faster", "Pokémon White 2 + Faster B2W2", 0xA1B0683EL, "faster")
         val WHITE2_FASTERPWT = patched(WHITE2_U, WHITE2_U.id + "-fasterpwt", "Pokémon White 2 + Faster B2W2, no PWT", 0xA358C309L, "fasterpwt")
+        /**
+         * IronMON HGSS 0.2.2a (PyroMikeGit), HeartGold's all-in-one IronMON patch, built in as Faster B2W2 is
+         * (2026-10-02, Blake). Its NoLimiter build: no frame limiter, so walking and battle animations run faster;
+         * the talk shortened until Goldenrod, five scenes cut, Name Raters added; on SilverstarStream and Foulton's
+         * intro skip. HeartGold only. Super Kaizo 0.0.3 is another choice, a patch of the clean game of its own.
+         * Measured by applying the xdelta to the pinned dump, every window's Adler-32 passing (2026-10-03,
+         * IronmonHgssTest): 127,005,664 bytes, header still POKEMON HG IPKE.
+         */
+        val HEARTGOLD_IRONMON = patched(HEARTGOLD_U, HEARTGOLD_U.id + "-ironmon", "Pokémon HeartGold + IronMON HGSS 0.2.2a", 0x6211D424L, "ironmon")
         val allPatched = listOf(RED_PF, BLUE_PF, YELLOW_PF, GOLD_PF, SILVER_PF, CRYSTAL_PF, FIRERED_V10_SMARTAI, LEAFGREEN_SMARTAI, EMERALD_SMARTAI, HEARTGOLD_SUPERKAIZO, FIRERED_V11_FASTER,
-            EMERALD_FASTER, EMERALD_FASTER121, BLACK2_FASTER, BLACK2_FASTERPWT, WHITE2_FASTER, WHITE2_FASTERPWT, PLATINUM_SUPERKAIZO)
+            EMERALD_FASTER, EMERALD_FASTER121, BLACK2_FASTER, BLACK2_FASTERPWT, WHITE2_FASTER, WHITE2_FASTERPWT, PLATINUM_SUPERKAIZO, HEARTGOLD_IRONMON)
     }
 }
 

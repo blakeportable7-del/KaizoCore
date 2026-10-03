@@ -31,10 +31,7 @@ class NdsDumpReplayTest {
         if (off < 0 || off >= ram.size) ByteArray(0) else ram.copyOfRange(off.toInt(), minOf(ram.size, (off + len).toInt()))
     }
 
-    private fun dump(name: String): ByteArray? {
-        val dir = System.getenv("IRONMON_DUMPS")?.let { File(it) }?.takeIf { it.isDirectory } ?: return null
-        return File(dir, name).takeIf { it.isFile }?.let { ram(it) }
-    }
+    private fun dump(name: String): ByteArray? = Dumps.dump(name)?.let { ram(it) }
 
     private fun setU32(ram: ByteArray, off: Int, v: Long) { for (i in 0 until 4) ram[off + i] = ((v shr (8 * i)) and 0xFF).toByte() }
     private fun u32(ram: ByteArray, off: Int): Long = (0 until 4).fold(0L) { acc, i -> acc or ((ram[off + i].toLong() and 0xFF) shl (8 * i)) }

@@ -15,7 +15,11 @@ import java.io.File
  */
 class KeyBindings(private val file: File) {
 
-    /** The console buttons a player can bind, in the order the screen lists them. */
+    /**
+     * The console buttons a player can bind, in the order the screen lists them. X and Y are the DS's: X opens the
+     * menu in every Gen 4 and 5 game, and a keyboard hides the touch pad, which was the only other way to press them
+     * (rc32 audit P2 #24).
+     */
     enum class Button(val label: String, val coreKey: Int) {
         UP("Up", KeyEvent.KEYCODE_DPAD_UP),
         DOWN("Down", KeyEvent.KEYCODE_DPAD_DOWN),
@@ -25,6 +29,8 @@ class KeyBindings(private val file: File) {
         B("B", KeyEvent.KEYCODE_BUTTON_B),
         L("L", KeyEvent.KEYCODE_BUTTON_L1),
         R("R", KeyEvent.KEYCODE_BUTTON_R1),
+        X("X (DS)", KeyEvent.KEYCODE_BUTTON_X),
+        Y("Y (DS)", KeyEvent.KEYCODE_BUTTON_Y),
         START("Start", KeyEvent.KEYCODE_BUTTON_START),
         SELECT("Select", KeyEvent.KEYCODE_BUTTON_SELECT),
     }
@@ -67,6 +73,9 @@ class KeyBindings(private val file: File) {
             Button.B to KeyEvent.KEYCODE_Z,
             Button.L to KeyEvent.KEYCODE_A,
             Button.R to KeyEvent.KEYCODE_S,
+            // Beside A and L, on keys no other default takes.
+            Button.X to KeyEvent.KEYCODE_D,
+            Button.Y to KeyEvent.KEYCODE_C,
             Button.START to KeyEvent.KEYCODE_ENTER,
             Button.SELECT to KeyEvent.KEYCODE_SHIFT_RIGHT,
         )
@@ -103,7 +112,7 @@ class KeyBindings(private val file: File) {
             KeyEvent.KEYCODE_DPAD_DOWN -> "Arrow down"
             KeyEvent.KEYCODE_DPAD_LEFT -> "Arrow left"
             KeyEvent.KEYCODE_DPAD_RIGHT -> "Arrow right"
-            KeyEvent.KEYCODE_DPAD_CENTER -> "D-pad centre"
+            KeyEvent.KEYCODE_DPAD_CENTER -> "D-pad center"
             KeyEvent.KEYCODE_ENTER -> "Enter"
             KeyEvent.KEYCODE_NUMPAD_ENTER -> "Numpad enter"
             KeyEvent.KEYCODE_SPACE -> "Space"
@@ -149,6 +158,7 @@ class KeyBindings(private val file: File) {
     private fun load() {
         bindings.clear()
         bindings.putAll(DEFAULTS)
+        val saved = HashSet<Button>()
         if (file.exists()) {
             runCatching {
                 file.forEachLine { line ->
@@ -160,11 +170,15 @@ class KeyBindings(private val file: File) {
                             if (a != null && code != null && code != 0) actions[a] = code
                         } else {
                             val button = Button.entries.firstOrNull { it.name == parts[0] }
-                            if (button != null && code != null) bindings[button] = code
+                            if (button != null && code != null) { bindings[button] = code; saved += button }
                         }
                     }
                 }
             }
+            // A button the file does not name (X and Y, for a file saved before them) keeps its default only while no
+            // saved row has that key: a player who bound D or C keeps what they bound (rc32 audit P2 #24).
+            val taken = saved.mapNotNull { bindings[it] }.toSet() + actions.values
+            for (b in Button.entries) if (b !in saved && bindings[b] in taken) bindings[b] = 0
         }
         republish()
     }

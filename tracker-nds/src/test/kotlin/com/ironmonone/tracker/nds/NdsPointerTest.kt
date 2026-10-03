@@ -1,6 +1,5 @@
 package com.ironmonone.tracker.nds
 
-import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -247,10 +246,10 @@ class NdsPointerTest {
     @Test
     fun `the real White 2 and Black 2 headers pick the maps that read through the pointer`() {
         // IRONMON_ROMS: the player's own dumps, whose cartridge header the DS copies to 0x023FFE00 in main RAM.
-        val dir = System.getenv("IRONMON_ROMS")?.let { File(it) }?.takeIf { it.isDirectory } ?: return
+        val dir = Dumps.romsDir() ?: return
         var seen = 0
         for ((file, expected) in listOf("white2-u.nds" to W2, "black2-u.nds" to B2)) {
-            val rom = File(dir, file).takeIf { it.isFile } ?: continue
+            val rom = Dumps.file(dir, file) ?: continue
             val ram = Ram()
             ram.put(NdsGameMap.CARTRIDGE_HEADER - RAM, rom.inputStream().use { it.readNBytes(0x200) })
             val map = assertNotNull(NdsGameMap.detect(ram.reader(RAM)), file)

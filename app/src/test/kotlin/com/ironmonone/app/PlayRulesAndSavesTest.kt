@@ -206,6 +206,38 @@ class PlayRulesAndSavesTest {
         assertTrue(install.indexOf("RunSaves.onNewSeed(") in 1 until install.indexOf("rotateRuns(kind)"), "the old run's save, before its ROM rotates")
     }
 
+    /**
+     * rc32 audit P3 #64: the call sites that make UX P0-1, P0-4 and P0-8 real could each be deleted with the suite green,
+     * because the tests drove the helpers alone. Each is held here, to the one line that matters.
+     */
+    @Test
+    fun `A+B+Start offers a new run for a run only, and the call sites behind the fixes stay in place`() {
+        // P0-1: PlayScreen arms the combo in every game; the dialog asks first, through PlayRules.
+        val library = GameSession(File(filesDir, "FireRed.gba"), Platform.GBA, RomKind.FIRERED_U_V10, "FireRed", "lib-1", isRun = false)
+        val run = GameSession.forRun(File(filesDir, "run.gba"), RomKind.FIRERED_U_V10)
+        assertFalse(PlayRules.newRunOffered(library), "a library game has no run to start")
+        assertTrue(PlayRules.newRunOffered(run))
+        fun src(name: String) = File("src/main/kotlin/com/ironmonone/app/$name").readText().replace("\r\n", "\n")
+        val dialog = src("SideScreens.kt").substringAfter("fun NewRunConfirmDialog(").substringBefore("internal object NewRunCopy")
+        val gate = dialog.indexOf("if (session == null || !PlayRules.newRunOffered(session)) {")
+        assertTrue(gate in 1 until dialog.indexOf("beforeRead()"), "refused before anything is read or written")
+        assertTrue("return" in dialog.substring(gate, dialog.indexOf("beforeRead()")), "and the refusal returns")
+        val play = src("PlayScreen.kt")
+        assertTrue("NewRunCombo.onFire = { confirmNewRun = true }" in play)
+        // P0-1: both panels take their own game-over card through ironmonGameOverCard, not the bare condition.
+        assertTrue("val ironmonOver = ironmonGameOverCard(state?.gameOver != null)" in src("TrackerPanel.kt"))
+        assertTrue("state.gameOver != null && ironmonOver -> {" in src("TrackerPanel.kt"))
+        assertTrue("val ironmonOver = ironmonGameOverCard(state?.runOver != null)" in src("NdsTrackerPanel.kt"))
+        assertTrue("&& ironmonOver -> {" in src("NdsTrackerPanel.kt"))
+        // P0-8: NEW NUZLOCKE gives the next game its ledger, inside newRun.
+        val newRun = play.substringAfter("    fun newRun() {").substringBefore("\n    }\n")
+        assertTrue("NuzlockeStore(context.applicationContext.filesDir).startNextRandomized(it, k, started.seed, System.currentTimeMillis())" in newRun)
+        // P0-4: back where the game was left. The core coming up reads the marker, and leaving Play clears it.
+        assertTrue("CrashResume.atCoreUp(store.playMarker, session, StateSlots.auto(context.filesDir, session), store.stateStamp(session)," in play)
+        val left = play.indexOf("CrashResume.left(store.playMarker,")
+        assertTrue(left > 0 && left - play.lastIndexOf("onDispose {", left) < 400, "inside the dispose that leaves Play")
+    }
+
     @Test
     fun `the new-run words say what happens to the save, with no dashes`() {
         assertTrue("stays" in NewRunCopy.save(RunSaves.Plan.HOLDS_TEAM) && "holds this run's team" in NewRunCopy.save(RunSaves.Plan.HOLDS_TEAM))

@@ -78,6 +78,8 @@ fun TrackerGearDialog(
     onDismiss: () -> Unit,
 ) {
     var confirmClear by remember { mutableStateOf(false) }
+    // How many times CLEAR TRACKED DATA has run while the dialog is open: the Notebook list below is built again on each.
+    var clears by remember { mutableStateOf(0) }
     // ExtrasScreen's result line: empty until the button is pressed, gone when the screen is left.
     var ivText by remember { mutableStateOf("") }
     // The game over lines screen (DeathQuotes) is opened from here so PlayScreen, at the verifier's limit, carries nothing for it.
@@ -193,7 +195,7 @@ fun TrackerGearDialog(
             if (scope.gen3 && !scope.natDex) GearToggle("Show data for vanilla game", TrackerOptions.showDataForVanillaGame) { TrackerOptions.showDataForVanillaGame = it; TrackerOptions.save() }
             // Only while a second display is connected: a dual-screen handheld or an external screen.
             val ctx = androidx.compose.ui.platform.LocalContext.current
-            val second = remember(ctx) { ctx.getSystemService(android.hardware.display.DisplayManager::class.java)?.let { presentationDisplay(it) } != null }
+            val second = remember(ctx) { ctx.getSystemService(android.hardware.display.DisplayManager::class.java)?.let { presentationDisplay(it, ownDisplayId(ctx)) } != null }
             if (second) GearToggle("Tracker on the second screen (view only)", TrackerOptions.trackerOnSecondScreen) { TrackerOptions.trackerOnSecondScreen = it; TrackerOptions.save() }
             if (!ds && (gameBoy || scope.randomized)) GearToggle("Reveal info if randomized", TrackerOptions.revealInfoIfRandomized) { TrackerOptions.revealInfoIfRandomized = it; TrackerOptions.save() }
             if (!ds && (gameBoy || scope.randomized)) GearToggle("Open Book Play Mode", TrackerOptions.openBookPlayMode) { TrackerOptions.openBookPlayMode = it; TrackerOptions.save() }
@@ -251,7 +253,9 @@ fun TrackerGearDialog(
 
             GearHead("Notebook")
             onNotebook?.let { GearButton("OPEN NOTEBOOK") { it() }; Spacer(Modifier.height(4.dp)) }
-            val noted = remember(marks) { (marks.markedSpecies() + marks.notedSpecies()).sorted() }
+            // Keyed on the clears too: the marks are the same object after YES, CLEAR, so the list kept every species, each
+            // now blank, until the dialog was opened again (rc32 audit P3 #70).
+            val noted = remember(marks, clears) { (marks.markedSpecies() + marks.notedSpecies()).sorted() }
             if (noted.isEmpty()) DialogText("Nothing marked or noted this run.", 12, Pc.Dim)
             noted.forEach { sp ->
                 val m = marks.of(sp)
@@ -283,7 +287,8 @@ fun TrackerGearDialog(
                 DialogText("Marks, notes, routes, moves and abilities for this run. Sure?", 13, Pc.Negative)
                 Spacer(Modifier.height(4.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    GearButton("YES, CLEAR", Modifier.weight(1f), accent = true) { marks.clear(); confirmClear = false; onCleared() }
+                    // The run's own counters stay (StatMarks.clear): a DS Survival run kept its heals used (rc32 audit P2 #91).
+                    GearButton("YES, CLEAR", Modifier.weight(1f), accent = true) { marks.clear(keepRunCounters = true); clears++; confirmClear = false; onCleared() }
                     GearButton("CANCEL", Modifier.weight(1f)) { confirmClear = false }
                 }
             }

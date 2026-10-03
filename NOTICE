@@ -43,7 +43,7 @@ https://github.com/DrMaple/Faster-FireRed
   was shown that and chose to bundle it anyway on 2026-09-23:
   app/src/main/assets/patches/faster-firered-u-v11.ips is Faster.FireRed.1.3.2.ips,
   unmodified (sha256 44bd14d4..a075d1218), shipped in the APK and offered on Library,
-  Set up a game, for FireRed 1.1.
+  Patched versions, for FireRed 1.1.
 
   This entry records a known gap, not a permission. DrMaple is credited by name and
   linked in the About screen and the README. If he objects, the fix is one file and
@@ -56,6 +56,47 @@ https://github.com/DrMaple/Faster-FireRed
   patches are listed under IRONMON MODE PATCHES AND SETTINGS below.
 
   The patch is the author's own work, not game content. No ROM is bundled.
+
+
+Trip (Tripc423) / Maxdex - NO LICENSE, BUNDLED ON BLAKE'S DECISION, NO GRANT
+https://github.com/Tripc423/Maxdex
+
+  MaxDex Kaizo IronMON 1.0 (2026-06-25): FireRed 1.1 made into Nat. Dex 1.1.3 with the
+  45 Legends Z-A megas, moves and abilities through Gen 9 and a physical or special
+  split by move, played with its own randomizer, settings file and tracker extension.
+  The repository carries no LICENSE file, so all rights are reserved by default. NO
+  permission has been asked for or given. Blake asked for MaxDex on 2026-10-02 ("fetch
+  it to see if we can add to kaizocore"); what ships was decided for KaizoCore that day,
+  and the patch joined it the next:
+
+  - The patch, MaxDex.bps (25,761,384 bytes, sha256 65d70b58..28e94b15057), is bundled
+    since rc34, unmodified, as app/src/main/assets/patches/maxdex-firered-u-v11.bps
+    (IRONMON MODE PATCHES AND SETTINGS). Blake, 2026-10-03, asked "can MaxDex.bps be in
+    the apk?", was told it adds about 26 MB and that the repository has no license
+    file, and answered "yes". Until then the player added their own copy. KaizoCore
+    knows the patch by the checksums it carries (FireRed USA 1.1, CRC 84EE4776, to
+    MaxDex 1.0, CRC 28C12926), so a copy a player added is the same file and is used
+    while it is there; either way the build is made from the player's own FireRed
+    (MaxDexInfo.kt).
+  - Bundled, from the repository at commit 4edff15 (2026-06-27):
+      presets/FRLG MaxDex Kaizo.rnqs, unmodified (IRONMON MODE PATCHES AND SETTINGS)
+      gbasprites-maxdex/412.png to 1280.png, maxdex/sprites_mons byte for byte
+      the tracker data tools/trainer-data/convert_maxdex.py makes from
+      MaxDexExtension.lua 1.0, MaxDexAbilities.lua and the maxdex/ folder: in
+      tracker-gba/src/main/resources, maxdex/species.tsv, moves.tsv and abilities.tsv,
+      and gen3/species-extra-maxdex.tsv, abilityscripts-maxdex.tsv and revos-maxdex.tsv.
+      The tracker map (GameMap.MAXDEX_FR_10) takes its addresses from the same file.
+  - MaxDex-Randomizer.jar is NOT bundled and was never run: its changes to the Nat. Dex
+    randomizer are ported by hand into engine-maxdex (LICENSED COMPONENTS, below).
+
+  Credit, as the wiki's Credits page gives it and the About screen repeats: Trip
+  (Tripc423); CyanSixFour (CyanSMP64) for the Nat. Dex Extension it is built on;
+  rh-hideout for pokeemerald-expansion's moves, abilities and animations
+  (https://github.com/rh-hideout/pokeemerald-expansion); and the testers Annadrol, Ehmtae, Micro Mouse, Frankie, Philanthropist, ColeB, Johnnyonthemove, Himmy, ValyaLoona, Demon_Quingar, Pokemon Tabletop Game, xxYungSmurfxx and Yitious.
+
+  This entry records a known gap, not a permission. If Trip objects, the fix is the
+  files listed above and the PrepOptions entry; a MaxDex build stays identified either
+  way, because that is a pinned checksum, not his file. No ROM is bundled.
 
 
 billgreenwald / ironmon_emu — NO LICENSE, PERMISSION REPORTED SECURED
@@ -100,24 +141,53 @@ mGBA — MPL 2.0                          https://github.com/mgba-emu/mgba
   MPL 2.0 section 3.3 permits distributing the combined work under GPL-3.0.
   Obligations are file-level: keep MPL headers, and offer source for any MODIFIED
   mGBA files under both MPL and GPL. Also vendor its third-party notices
-  (inih BSD-3, LZMA public domain, MurmurHash3).
+  (inih BSD-3, LZMA public domain, MurmurHash3): they ship in
+  app/src/main/assets/licenses/ since rc34 (see LICENSE TEXTS IN THE APK below).
 
 Universal Pokemon Randomizer ZX — GPL-3.0    Ajarmar/universal-pokemon-randomizer-zx
-  ** VENDORED IN THIS REPO ** at engine-zx/src, from tag v4.6.1, with its LICENSE.txt
-  at engine-zx/LICENSE.txt. Source is unmodified; our own tests live in engine-zx/test
-  so the vendored tree stays pristine. Preserve copyright notices; keep GPL-3.0.
+  ** VENDORED IN THIS REPO ** at engine-zx/src on 2026-08-30, from tag v4.6.1, with its
+  LICENSE.txt at engine-zx/LICENSE.txt. Changed since:
+  - 2026-08-30 (133f0f25): the packages com.dabomstew.pkrandom, compressors,
+    cuecompressors, launcher, pptxt and thenewpoketext renamed to
+    com.dabomstew.pkrandomzx and zx-prefixed names, with their resource paths, so both
+    engines fit in one APK.
+  - 2026-09-29: RandomSource.java stops a randomize on an interrupted thread, and a
+    seed still gives the same numbers ("LOCAL MODIFICATION (KaizoCore, 2026-09-29)").
+  - 2026-10-02: zxcuecompressors/BLZCoder.java throws on a bad BLZ header instead of
+    ending the process ("LOCAL MODIFICATION (KaizoCore), 2026-10-02"). None of the
+    three changes the ROM a seed makes.
+  Our own tests live in engine-zx/test. Preserve copyright notices; keep GPL-3.0.
 
 CyanSMP64 randomizer fork — GPL-3.0          CyanSMP64/universal-pokemon-randomizer-zx
-  Not yet vendored. Will collide with the above on package com.dabomstew.pkrandom and
-  needs build-time relocation. Preserve copyright notices; keep GPL-3.0.
-  This is also Cyan's fourth condition above.
+  ** VENDORED IN THIS REPO ** at engine-natdex/src on 2026-08-30: branch natdex, commit
+  71e50737, release v1.2.1 (engine-natdex/PINNED.txt), with engine-natdex/LICENSE.txt.
+  It keeps the package com.dabomstew.pkrandom; the ZX copy above is the renamed one.
+  Changed 2026-09-29: the same RandomSource.java change as above, marked the same way.
+  Changed 2026-10-03: cuecompressors/BLZCoder.java throws on a bad BLZ header instead of
+  ending the process, the same change as the ZX copy's ("LOCAL MODIFICATION (KaizoCore),
+  2026-10-03"). Neither change alters the ROM a seed makes. Our own tests live in
+  engine-natdex/test.
+  Preserve copyright notices; keep GPL-3.0. This is also Cyan's fourth condition above.
+
+MaxDex randomizer, ported - GPL-3.0         CyanSMP64/universal-pokemon-randomizer-zx, with Trip's changes
+  ** VENDORED IN THIS REPO ** at engine-maxdex/src on 2026-10-02: CyanSixFour's fork at
+  commit d53e08242f8609062ffc17375806365a68f31e60, release v1.1.3, with
+  engine-maxdex/LICENSE.txt, its packages renamed to com.dabomstew.pkrandommd and
+  md-prefixed names the way the ZX copy's were. Trip's changes for MaxDex 1.0
+  (MaxDex-Randomizer.jar, Tripc423/Maxdex, which publishes no source; sha256
+  b39836b01f668d1b31502741e62fbb64448f2e38df1eeb970f6b3c9762d0357b) are ported by hand,
+  each marked "LOCAL MODIFICATION (KaizoCore, MaxDex)", and checked against the jar's
+  compiled methods with javap; the jar itself was never run (engine-maxdex/PINNED.txt,
+  tools/maxdex/compare_jar.py). config/gen3_offsets.ini is
+  the jar's own file under a four-line notice. Also the same RandomSource.java change
+  as the engines above. Preserve copyright notices; keep GPL-3.0.
 
 besteon / Ironmon-Tracker — MIT              https://github.com/besteon/Ironmon-Tracker
   Used as the source of truth for tracker constants and as a specification.
 
 Sannji (mollo010) / Ironmon-gen-tracker - MIT   https://github.com/mollo010/Ironmon-gen-tracker
   The Gen 1 IronMON tracker for Red, Blue and Yellow, a fork of besteon's
-  Ironmon-Tracker. Its LICENSE.txt is the MIT licence as the fork carries it,
+  Ironmon-Tracker. Its LICENSE.txt is the MIT license as the fork carries it,
   "Copyright 2022-2023 Besteon". tracker-gba's Gen1Tracker follows its
   addresses and rules, and the Gen 1 move summaries, weights and evolutions in
   tracker-gba/src/main/resources/gen1 are taken from its data files
@@ -125,7 +195,7 @@ Sannji (mollo010) / Ironmon-gen-tracker - MIT   https://github.com/mollo010/Iron
 
 seadogstingray / Ironmon-gen-2-tracker - MIT   https://github.com/seadogstingray/Ironmon-gen-2-tracker
   The Gen 2 IronMON tracker for Crystal, a fork of the Gen 1 tracker above. Its
-  LICENSE.txt is the same MIT licence, "Copyright 2022-2023 Besteon".
+  LICENSE.txt is the same MIT license, "Copyright 2022-2023 Besteon".
   tracker-gba's GbcTracker follows its addresses and rules, and the Gen 2 move
   summaries, weights and evolutions in tracker-gba/src/main/resources/gen2 are
   taken from its data files (tools/extract_gb_data.py).
@@ -146,7 +216,7 @@ Fellshadow / Ironmon-Tracker-AutoPokemonThemes - MIT
 UTDZac / SpriteIsMe-IronmonExtension - MIT    https://github.com/UTDZac/SpriteIsMe-IronmonExtension
   Sprite Is Me, the Ironmon Tracker extension that turns your character into your lead Pokemon
   (v1.4, read 2026-09-28; its LICENSE is "Copyright (c) 2023 UTDZac"). "Play as your Pokemon"
-  follows its behaviour: the lead's Walking Pals sheet over the player out of battle, walk frames
+  follows its behavior: the lead's Walking Pals sheet over the player out of battle, walk frames
   while stepping, sleep after 55 seconds idle or when the lead sleeps, faint at 0 HP, a Pokemon
   picked or a default when there is no lead, and a custom sprite with its own frame size and frame
   lengths. None of its files is used. Its optional invisible-trainer patch
@@ -157,12 +227,22 @@ UTDZac / SpriteIsMe-IronmonExtension - MIT    https://github.com/UTDZac/SpriteIs
 UTDZac / DeathQuotes-IronmonExtension - MIT   https://github.com/UTDZac/DeathQuotes-IronmonExtension
   Death Quotes, the Gen 3 tracker extension that lets the player change the lines the
   Game Over screen shows (v1.1, last commit 2023-12-05), read 2026-09-29. Its LICENSE is
-  the MIT licence, "Copyright (c) 2023 UTDZac". The extension has no lines of its own: it
+  the MIT license, "Copyright (c) 2023 UTDZac". The extension has no lines of its own: it
   keeps the tracker's list and lets the player edit it, so the built-in lines here stay
   the tracker's (besteon's Languages/English.lua GameOverScreenQuotes, in PcTracker.kt).
   The idea is written again in Kotlin as DeathQuotes.kt, with the player's own lines kept
   in prep/death-quotes.txt, which Backup carries; none of its Lua is used. Credited on
   the About screen.
+
+UTDZac / FavoritesAsSources-IronmonExtension - MIT   https://github.com/UTDZac/FavoritesAsSources-IronmonExtension
+  Favorites As Sources, the Ironmon Tracker extension that copies a picture of each
+  favorite Pokemon, up to nine, to a file for OBS and copies again when the favorites
+  change (v1.0, commit d77e496d, 2026-04-11), read 2026-10-03. Its LICENSE is the MIT
+  license, "Copyright (c) 2026 UTDZac (Zeke)". The stream server's /favorite/1.png to
+  /favorite/9.png follow it: each favorite's picture as the tracker card draws it, with a
+  page per favorite for an OBS browser source that follows the favorites as they change
+  (app stream/StreamFavorites.kt). Written again in Kotlin; none of its Lua is used.
+  Credited on the About screen.
 
 rcheevos - MIT                                RetroAchievements/rcheevos
   ** VENDORED IN THIS REPO ** at libretrodroid/src/main/cpp/rcheevos, with its
@@ -178,18 +258,37 @@ Press Start 2P - SIL Open Font License 1.1    CodeMan38
 PMD Sprite Collab - CC BY-NC 4.0              https://sprites.pmdcollab.org
   The animated Pokemon of the Walking Pals icon set, by the collab's artists.
   Credited on the About screen. Non-commercial: the app is free.
+  Their shinies (2026-10-03) come straight from github.com/PMDCollab/SpriteCollab for both
+  sets below, by convert_walking_pals.py and convert_walking_pals_nat.py, and so do Unown's
+  letters (walkingpals-nat, 201-b to 201-question). A shiny that is an exact recolor of its
+  plain sheet ships as a color map (shiny-colors.tsv), any other as a sheet of its own
+  (shiny/). Each shiny's artists, with the license each contribution was given under, are in
+  walkingpals/credits.tsv and walkingpals-nat/credits.tsv.
   Gen 1-3 (app/src/main/assets/walkingpals) as Ironmon-Tracker ships them. Gen 4-9 and the
   Nat. Dex forms (app/src/main/assets/walkingpals-nat) straight from
   github.com/PMDCollab/SpriteCollab by tools/trainer-data/convert_walking_pals_nat.py, which
-  writes each sheet's artists and the licence of each contribution into
+  writes each sheet's artists and the license of each contribution into
   walkingpals-nat/credits.tsv. Sheets credited to CHUNSOFT are Spike Chunsoft's own sprites
-  from the Mystery Dungeon games, outside the collab's licence, as most of the Gen 1-3 set is.
+  from the Mystery Dungeon games, outside the collab's license, as most of the Gen 1-3 set is.
 
 LibretroDroid 0.13.2 — GPL-3.0                Swordfish90/LibretroDroid
-  ** VENDORED IN THIS REPO ** at libretrodroid/, with its LICENSE, plus the IronMON
-  One memory-read patch (SET_MEMORY_MAPS capture + readMemory JNI), each change
-  marked "IronMON One patch" in source. Oboe (Apache-2.0) and libretro-common
-  vendored within it as upstream ships them.
+  ** VENDORED IN THIS REPO ** at libretrodroid/, with its LICENSE. Oboe (Apache-2.0)
+  and libretro-common are vendored within it as upstream ships them. This project's
+  changes, each marked in source with the words in quotes:
+  - the memory-read patch, SET_MEMORY_MAPS capture and the readMemory and writeMemory
+    JNI: "IronMON One patch"
+  - RetroAchievements (cpp/cheevos.cpp and .h, cpp/CMakeLists.txt), the stream taps
+    for picture and sound (cpp/streamtap.cpp and .h) and the melonDS state guard
+    (MelonState.kt): "KaizoCore patch"
+  - Play as your Pokemon (cpp/sprite_core.h, cpp/sprite_overlay.cpp and .h,
+    SpriteOverlay.java): "KaizoCore addition"
+  - the game handed to the core as a read-only mapping kept for the game, so a
+    ROM is held once (cpp/gamecontent.cpp and .h): "KaizoCore addition"
+  - the audio work (cpp/audio.cpp and .h: the windowed sinc resampler and the cubic
+    resampler fix): "LOCAL MODIFICATION"
+  - the rc32 audit fixes of 2026-10-02 (memory locking, frame pacing, the screen's
+    refresh rate, the stylus, refused saves; cpp/memrange.h, StylusTouch.kt):
+    "KaizoCore (rc32 audit"
 
 mGBA libretro core — MPL 2.0                  mgba-emu/mgba
   Prebuilt .so per ABI in app/src/main/jniLibs, taken from Swordfish90/LemuroidCores
@@ -208,24 +307,56 @@ NDS-Ironmon-Tracker (Brian0255) - GPL-3.0   Brian0255/NDS-Ironmon-Tracker
   NdsAddressAuditTest.
   The seventeen move type symbols drawn before a move's name on every tracker
   (app TypeSymbols.kt) are this project's IconDrawer.lua *_FILLED icons, their
-  pixel grids and colours transcribed 2026-10-02.
-  GPL-3.0 is this app's own licence.
+  pixel grids and colors transcribed 2026-10-02.
+  GPL-3.0 is this app's own license.
 
-melonDS libretro core — GPL-3.0               melonDS-emu/melonDS
-  Prebuilt .so per ABI in app/src/main/jniLibs, taken from the same pinned
-  Swordfish90/LemuroidCores source as the mGBA core. GPL-3.0 is this app's own
-  licence, so redistribution is fine with source availability; no melonDS files
-  are modified. Runs Platinum on its built-in FreeBIOS, so no Nintendo BIOS or
-  firmware dump is required or bundled.
+melonDS libretro core — GPL-3.0               libretro/melonDS
+  Built here from source since rc34, the .so per ABI in app/src/main/jniLibs:
+  https://github.com/libretro/melonDS (melonDS 0.9.3) at commit
+  66b5d2634cd0a79030562811e6e05f5532f800ba, with two patches, both in
+  libretrodroid/cores/melonds/:
+  0001-unload-stops-the-render-thread-and-frees-the-screen-buffer.patch, ours,
+  which stops the core's 3D render thread and frees its screen buffer when a game
+  is unloaded; and 0002-3d-depth-no-longer-reads-a-value-it-never-set.patch,
+  melonDS's own later fix f143e89c931d12a234851e443b7d85f8017db9a3
+  (github.com/melonDS-emu/melonDS) brought back to this source, so the 3D
+  renderer never reads a depth value it has not set.
+  libretrodroid/cores/melonds/PINNED.txt records the commit, the patches and the
+  hashes of the libraries that ship, and `python tools/cores/build_core.py melonds`
+  builds them again from that source. The source of the core in the APK is that
+  commit plus those patches; GPL-3.0 is this app's own license. Until rc34 the core
+  was the libretro buildbot's nightly of 2026-09-07, of the same commit unpatched.
+  Runs Platinum on its built-in FreeBIOS, so no Nintendo BIOS or firmware dump is
+  required or bundled.
 
-androidx.media3 (SonicAudioProcessor) — Apache-2.0
-Oboe — Apache-2.0
-com.anggrayudi:storage — Apache-2.0
-Swordfish90/RadialGamePad — GPL-3.0          (compatible; this app is GPL-3.0)
+AndroidX and Jetpack Compose - Apache-2.0    https://developer.android.com/jetpack/androidx
+  core-ktx, activity-compose, lifecycle-runtime-ktx, and Compose (BOM 2024.05.00: ui,
+  ui-graphics, material3, material-icons-core).
+CameraX 1.4.2 - Apache-2.0                   camera-camera2, camera-lifecycle, camera-view
+  The facecam, with CameraX's JNI library (libimage_processing_util_jni.so).
+Kotlin standard library and kotlinx.coroutines - Apache-2.0
+Oboe - Apache-2.0                            vendored inside libretrodroid, above
 
 
-BUNDLED IN THE APK (personal builds)
-------------------------------------
+LICENSE TEXTS IN THE APK
+------------------------
+
+  Since rc34 (rc32 audit P3 #4) the full text of each license above ships in
+  app/src/main/assets/licenses/, beside the font's own OFL_press_start_2p.txt, and
+  More, Backup and info, Licenses shows them with what each covers (Licences.kt):
+  GPL-3.0 (this repository's LICENSE), GPL-2.0 (the text Git for Windows ships),
+  MPL-2.0 (mGBA's own LICENSE), Apache-2.0 (Oboe's LICENSE), each MIT project's
+  own LICENSE with its copyright line (rcheevos, the libretro-common files
+  LibretroDroid compiles, besteon's tracker, the Gen 1 and Gen 2 forks, Calc Atk,
+  Sprite Is Me, Death Quotes, Auto Pokemon Themes, Favorites As Sources), inih's BSD
+  license and the public domain notes of MurmurHash3 and the LZMA SDK from mGBA's tree,
+  and the PMD Sprite Collab's CC BY-NC 4.0 LICENSE.md. Each was copied from a copy on
+  the build machine, none fetched, except Favorites As Sources' LICENSE, read from its
+  repository on 2026-10-03.
+
+
+BUNDLED IN THE APK
+------------------
 
   app/src/main/assets/patches/   natdex-emerald.bps, natdex-firered.bps, and the
                                  IronMON mode patches listed under IRONMON MODE
@@ -234,17 +365,24 @@ BUNDLED IN THE APK (personal builds)
                                  (tools/draw_icons.py) since 2026-09-06; the
                                  tracker repositories' copies are no longer used
   app/src/main/assets/status/    6 status icons, same: tools/draw_icons.py
-  app/src/main/assets/badges/    112 badge icons, same: tools/draw_icons.py.
-                                 Numbered medals in a colour per set, not the
-                                 games' badge designs
+  app/src/main/assets/badges/    144 badge pictures (9 sets of 8, lit and unlit),
+                                 the trackers' own badge art: FRLG and RSE from
+                                 besteon/Ironmon-Tracker (images/badges); DPPT,
+                                 HGSS, HGSS_K, BW and BW2 from
+                                 Brian0255/NDS-Ironmon-Tracker (images/icons); GSC
+                                 and GSC_K from seadogstingray/Ironmon-gen-2-tracker.
+                                 They are the games' own badge designs.
+                                 tools/draw_icons.py no longer draws badges
   app/src/main/res/mipmap-*/ic_launcher_foreground.png  the app icon, from the
                                  master Blake Porterfield supplied on 2026-10-01
                                  (tools/icon/kaizocore-icon-master.webp), the ball
-                                 cut from its background and centred on white by
+                                 cut from its background and centered on white by
                                  tools/icon/make_launcher_icon.py
-  app/src/main/assets/icons/heart.png  the DS heals box's Pokecenter heart, 12x10,
-                                 from Brian0255/NDS-Ironmon-Tracker (images/icons)
-  app/src/main/assets/gen4sprites/  986 Pokemon sprites (493 + shiny), from
+  app/src/main/assets/icons/     heart.png, the DS heals box's Pokecenter heart, 12x10,
+                                 and Repel.png, SuperRepel.png and MaxRepel.png, from
+                                 Brian0255/NDS-Ironmon-Tracker (images/icons);
+                                 repelUsage.png from besteon/Ironmon-Tracker
+  app/src/main/assets/gen4sprites/  1298 Pokemon sprites (649 and their shiny forms), from
                                  Brian0255/NDS-Ironmon-Tracker
                                  (images/pokemonIconSets/hgsssprites).
                                  FALLBACK ONLY since 2026-09-06: RomSprites
@@ -268,6 +406,12 @@ BUNDLED IN THE APK (personal builds)
                                  Bundled because the Nat. Dex ROMs publish no
                                  front-pic table address, so there is nothing to
                                  decode and every card rendered blank.
+  app/src/main/assets/gbasprites-maxdex/  869 Pokemon icons, 412-1280, MaxDex's
+                                 own (Tripc423/Maxdex, maxdex/sprites_mons, byte
+                                 for byte; see the Trip entry above). Used on the
+                                 MaxDex build only: 1236-1280 are its Legends Z-A
+                                 megas, and 165 of its icons below that are not
+                                 the Nat. Dex set's.
   app/src/main/assets/frlg/      7 FireRed and LeafGreen dungeon guide maps (maps/),
                                  lossless WebP copies of the source PNGs, by Bill Greenwald (doctrDNA)
                                  from IronMon Emu, used with permission (see the ironmon_emu
@@ -275,7 +419,7 @@ BUNDLED IN THE APK (personal builds)
                                  SHA-256. Shown from the Gen 3 tracker on FireRed and LeafGreen
                                  only (FrlgPictures.kt). They show the games' own art, which is
                                  Nintendo's, so the note on Pokemon artwork below covers them too.
-  app/src/main/assets/presets/   74 settings files: every IronMON mode the app
+  app/src/main/assets/presets/   75 settings files: every IronMON mode the app
                                  offers, listed with their sources under IRONMON
                                  MODE PATCHES AND SETTINGS below
 
@@ -284,19 +428,15 @@ BUNDLED IN THE APK (personal builds)
   and an imported copy always wins so a newer release can be dropped in without
   an app update.
 
-  ** The sprites and icons above are Pokemon artwork; the tracker projects are
-  GPL-3.0 but the art is Nintendo's. Same standing as the patches: fine for a
-  local personal build, and a public release must remove them or obtain rights.
+  ** The sprites, badges and icons above are Pokemon artwork: the tracker projects
+  are GPL-3.0 or MIT, but the art is Nintendo's.
 
-  ** Licence status: Cyan's grant above is recorded as covering the extension's
-  Pokemon/move data and sprites, and explicitly NOT "anything else". The .bps
-  patches and the Nat. Dex .rnqs are his files and fall outside that recorded
-  scope. This is a LOCAL, personal, undistributed build, so bundling them is
-  not redistribution. Before ANY public release, either get that grant extended
-  in writing (record it above, the way the first one is recorded) or remove
-  these assets and go back to one-time import. Condition 3 still holds
-  regardless: no ROM is bundled, only patches. **
-  2026-09-28, Blake: "we have all licensing." See condition 7.
+  ** The APK is public, released on GitHub (blakeportable7-del/KaizoCore) and on
+  willowcreek.group/kaizocore. Cyan's grant above is recorded as covering the
+  extension's Pokemon/move data and sprites; the .bps patches and the Nat. Dex
+  .rnqs are his files too. 2026-09-28, Blake, on every bundled patch, settings
+  file and add-on: "we have all licensing." See condition 7. Condition 3 holds:
+  no ROM is bundled, only patches. **
 
   The settings files and their sources are listed under IRONMON MODE PATCHES AND
   SETTINGS below. (Until 2026-09-29 "DPPt Kaizo.rnqs" was the DS tracker's
@@ -399,6 +539,18 @@ https://github.com/SilverstarStream/faster_black2_white2/releases/tag/v1.0
     6ca59dfed6c0195992fa6f465522c77c602f965635c8fd393494d36cfa04f03d  faster-white2-u.xdelta    (W2_Faster.xdelta)
     fa22c692c83fae15b6bf9d8709f666951709c0ffd7e297ab260c626c6819c8cd  fasterpwt-white2-u.xdelta (W2_Faster_skipPWT.xdelta)
 
+PyroMikeGit / IronMONHGSS, IronMON HGSS for HeartGold
+https://github.com/PyroMikeGit/IronMONHGSS/releases/tag/v0.2.2
+
+  IronMON HGSS v0.2.2a (2023-08-13), the all-in-one IronMON patch for HeartGold:
+  the frame limiter removed so walking and battle animations run faster, the talk
+  shortened until Goldenrod, five scenes cut, Name Raters added in Cherrygrove and
+  Violet. Built on the intro skip patch by SilverstarStream and Foulton, per its
+  README; the title screen logo is Foulton's. For HeartGold only. The NoLimiter
+  build is bundled, byte for byte, SHA-256:
+    d5ecbf0f91dd185d6ab48f5cbf8713ab25eb2dae24c526f8d1285804f3340476  ironmon-heartgold-u.xdelta (HGPyroIronMONV0.2.2a.NoLimiter.xdelta)
+  Offered on Library, Patched versions, for HeartGold (RomKind.HEARTGOLD_IRONMON).
+
 SentorG / PlatinumSuperKaizo
 https://github.com/SentorG/PlatinumSuperKaizo/releases/tag/v1.0
 
@@ -410,7 +562,7 @@ https://github.com/SentorG/PlatinumSuperKaizo/releases/tag/v1.0
   Platinum.Super.Kaizo.IronMON.xdelta (not FLX, not Snowy) as
   app/src/main/assets/patches/superkaizo-platinum-u.xdelta, 22,894,434 bytes,
   sha256 3d0343e5c19645170f77957fa8dea4ede2c79b221e9ce0e2ce3271bb2fbb1290.
-  Offered on Library, Set up a game, for Platinum (RomKind.PLATINUM_SUPERKAIZO).
+  Offered on Library, Patched versions, for Platinum (RomKind.PLATINUM_SUPERKAIZO).
 
 CyanSMP64 / NatDexExtension, the Nat. Dex v1.2 settings files
 https://github.com/CyanSMP64/NatDexExtension/tree/v1.2.1/natdex/rnqs_files
@@ -474,16 +626,34 @@ The community rulesets' settings (IronMON Journey, Chaos Kaizo, Evo Kaizo, Survi
     6a42a186b6bb1acf48ed119b0ebd97b3cb860ad1fa4c3d10eb56861f0da1b809  FRLG Evo Kaizo.rnqs
     d36b87793483ad3e7a94a60d744703d106987d1e59b853d32068289a8b6eb48c  FRLG Survival Revival.rnqs
 
+Trip (Tripc423) / Maxdex, the MaxDex Kaizo settings file and patch
+https://github.com/Tripc423/Maxdex
+
+  "FRLG MaxDex Kaizo.rnqs", MaxDex 1.0's one mode, byte for byte as the repository
+  holds it (settings version 902, read by engine-maxdex). SHA-256:
+    af51837c44942be36cb1b407be1fe4bebd6c5d08f0cc95f9325aa1fa7491ec9e  FRLG MaxDex Kaizo.rnqs
+  The patch it is played on, MaxDex 1.0 (2026-06-25, commit 73bb022), bundled since rc34
+  byte for byte as the repository holds it (see the Trip entry above), and offered on
+  Library, Patched versions, for FireRed 1.1 (RomKind.FIRERED_MAXDEX_10). SHA-256:
+    65d70b582f14b493863d2c31d1f668301dc370bf46ece9f40ecaf28e94b15057  maxdex-firered-u-v11.bps (MaxDex.bps)
+  Its rules text (rulesets/FRLG-MaxDex/kaizo.md) is the Nat. Dex rules as they read for
+  v1.0.0 to v1.1.3, the version MaxDex is built on (Blake, 2026-10-03), with a MaxDex
+  section made from every version of the wiki's Ruleset page, deleted 2026-07-03
+  (tools/upr-settings/community/MaxDex-Ruleset.md).
+
 
 BINDING RELEASE CONDITIONS — verify every one before any public build
 ---------------------------------------------------------------------
 
-[ ] 1. App About screen credits "CyanSixFour / CyanSMP64" and links
-       https://github.com/CyanSMP64/NatDexExtension
-[ ] 2. Repo README carries the same credit and link          (DONE — see README.md)
-[ ] 3. No Pokemon ROM is shipped, hosted, or linked. This was already a project rule;
+[x] 1. App About screen credits "CyanSixFour / CyanSMP64" and links
+       https://github.com/CyanSMP64/NatDexExtension          (AboutScreen.kt, NATDEX_URL)
+[x] 2. Repo README carries the same credit and link          (README.md, Credits)
+[x] 3. No Pokemon ROM is shipped, hosted, or linked. This was already a project rule;
        it is now also a license condition, so breaching it breaches a grant.
-[ ] 4. Nothing implies this is an official IronMON or Nat. Dex release. The app name
+       2026-09-27, Blake: a hack's own release page may be linked, with a warning,
+       even where it also offers a finished game file (HackLinks.kt, Polished
+       Crystal); drop such links before any Play submission.
+[x] 4. Nothing implies this is an official IronMON or Nat. Dex release. The app name
        carries the IronMON word, so the About screen must state plainly that it is
        unaffiliated and unendorsed. A disclaimer line satisfies this regardless of
        the final name.
@@ -504,3 +674,6 @@ BINDING RELEASE CONDITIONS — verify every one before any public build
        link in the About screen and the README must stay.
        2026-09-28: Blake: "we have all licensing." The same holds for every mode
        patch listed under IRONMON MODE PATCHES AND SETTINGS: credit and link stay.
+[ ] 9. MaxDex (Tripc423/Maxdex) ships its patch, settings file, icons and tracker data
+       with NO grant: the patch since rc34, on Blake's "yes" of 2026-10-03. See the Trip
+       entry above. The credit and link on the About screen must stay.

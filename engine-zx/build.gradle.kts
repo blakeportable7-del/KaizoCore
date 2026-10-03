@@ -31,7 +31,7 @@ sourceSets {
             exclude("**/*.java")
         }
     }
-    // `src` is vendored and must stay untouched. `test` is ours.
+    // `src` is vendored, changed only where NOTICE says. `test` is ours.
     named("test") {
         java.setSrcDirs(listOf("test"))
     }

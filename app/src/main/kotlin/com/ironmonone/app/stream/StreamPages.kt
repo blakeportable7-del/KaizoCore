@@ -30,7 +30,13 @@ object StreamPages {
         val k = "k=" + URLEncoder.encode(token, "UTF-8")
         val urls = ObsScene.urls(base, token)
         val here = onPhone(base)
+        // One row a favorite, as the scene's favorite sources have them (StreamFavorites).
+        val favorites = (1..StreamFavorites.SLOTS).joinToString("\n") { n ->
+            "<tr><td>Favorite $n</td><td><div class=\"addr\"><input readonly value=\"" + esc(StreamFavorites.pageUrl(base, token, n)) +
+                "\"><button type=\"button\">Copy</button></div></td><td>${ObsScene.FAVORITE_SIZE} x ${ObsScene.FAVORITE_SIZE}</td></tr>"
+        }
         return SETUP
+            .replace("%FAVORITES%", favorites)
             .replace("%PHONE_NOTE%", if (here) PHONE_NOTE else "")
             .replace("%DOWNLOADS%", if (here) "" else DOWNLOADS)
             .replace("%SCENE%", "/obs-scene.json?$k")
@@ -118,7 +124,7 @@ code{font:13px Consolas,monospace;color:var(--gold)}
 <p>You should see your game. Click the page once to turn the sound on. If you do, the phone side works and any problem left is in OBS.</p>
 
 <h2><span class="n">2</span> Add it to OBS</h2>
-<p><b>Already use OBS scenes?</b> Do not import. In your gameplay scene choose <b>Sources</b>, <b>+</b>, <b>Browser</b>, and add the three addresses from the table below, one source each. On the game source tick <b>Control audio via OBS</b> and <b>Use custom frame rate</b>, 60.</p>
+<p><b>Already use OBS scenes?</b> Do not import. In your gameplay scene choose <b>Sources</b>, <b>+</b>, <b>Browser</b>, and add the three addresses from the table below, one source each. On the game source, check <b>Control audio via OBS</b> and <b>Use custom frame rate</b>, 60.</p>
 <p><b>New to OBS?</b> Download the scene in step 1, then:</p>
 <ol>
 <li>In OBS, open the <b>Scene Collection</b> menu and choose <b>Import Scene Collection</b>.</li>
@@ -129,7 +135,7 @@ code{font:13px Consolas,monospace;color:var(--gold)}
 
 <h2><span class="n">3</span> What you should see</h2>
 <p>The game on the left, the tracker box on the right, and <b>KaizoCore game</b> moving in the Audio Mixer. Viewers see only these: never the phone's buttons, menus or camera.</p>
-<p class="small">The tracker box shows the game's tracker where KaizoCore has one, and a line saying so where it does not. The scene puts the attempt counter under the tracker. The attempt counter shows in a Kaizo IronMON run and in a Nuzlocke on a randomized game. In a standard Nuzlocke, a ROM hack or any other game it stays blank: there is no attempt number. The scene is laid out for a 1920 x 1080 canvas, which is OBS's default. On another size, drag the three sources where you want them.</p>
+<p class="small">The tracker box shows the game's tracker where KaizoCore has one, and a line saying so where it does not. The scene puts the attempt counter under the tracker. The attempt counter shows in a Kaizo IronMON run. In a Nuzlocke, a ROM hack or any other game it stays blank: there is no attempt number. The scene is laid out for a 1920 x 1080 canvas, which is OBS's default. On another size, drag the three sources where you want them.</p>
 
 <h2>While you stream</h2>
 <ul>
@@ -150,8 +156,8 @@ code{font:13px Consolas,monospace;color:var(--gold)}
 <li><b>An error box in OBS</b> means the phone was not streaming when OBS started. Turn Stream on, then switch to another scene and back. Still an error? Right-click the source, choose Properties, press <b>Refresh cache of current page</b>.</li>
 <li><b>Same Wi-Fi.</b> The phone and the PC have to be on the same network. A guest network usually blocks it, and so does a VPN on either one.</li>
 <li><b>A game has to be running.</b> Open a game on the phone and check that the menu says STREAM ON. The picture waits for the game.</li>
-<li><b>Address changed?</b> Open this page again at the new address. In OBS, right-click each KaizoCore source, choose Properties and paste its new address from the table below: game, tracker, attempts. You do not need to import again. To stop it happening, give the phone a fixed address in your router's settings (often called an address reservation).</li>
-<li><b>Picture but no sound.</b> In OBS, right-click <b>KaizoCore game</b>, choose Properties and check that <b>Control audio via OBS</b> is ticked. Then check that it is not muted in the Audio Mixer.</li>
+<li><b>Address changed?</b> Open this page again at the new address. In OBS, right-click each KaizoCore source, choose Properties and paste its new address from the table below: game, tracker, attempts, favorites. You do not need to import again. To stop it happening, give the phone a fixed address in your router's settings (often called an address reservation).</li>
+<li><b>Picture but no sound.</b> In OBS, right-click <b>KaizoCore game</b>, choose Properties and make sure <b>Control audio via OBS</b> is checked. Then check that it is not muted in the Audio Mixer.</li>
 <li><b>Choppy picture or sound.</b> Use 5 GHz Wi-Fi and keep the phone near the router. A PC on a cable helps too.</li>
 <li><b>Still nothing?</b> Add <code>&amp;debug=1</code> to the game address. A small box in the corner shows the picture size, pictures a second and the sound state. Take it off before you go live.</li>
 <li>Every address here only works while STREAM is on in the app.</li>
@@ -161,10 +167,12 @@ code{font:13px Consolas,monospace;color:var(--gold)}
 <p>Each of these is one <b>Browser</b> source in OBS. Use <b>Copy</b>, then paste it into the source's URL box.</p>
 <table>
 <tr><th>Source</th><th>Address</th><th>Size</th></tr>
-<tr><td>Game, picture and sound</td><td><div class="addr"><input readonly value="%GAME%"><button type="button">Copy</button></div></td><td>%GAME_W% x %GAME_H%. Tick <b>Control audio via OBS</b> and <b>Use custom frame rate</b>, 60.</td></tr>
+<tr><td>Game, picture and sound</td><td><div class="addr"><input readonly value="%GAME%"><button type="button">Copy</button></div></td><td>%GAME_W% x %GAME_H%. Check <b>Control audio via OBS</b> and <b>Use custom frame rate</b>, 60.</td></tr>
 <tr><td>Tracker</td><td><div class="addr"><input readonly value="%TRACKER%"><button type="button">Copy</button></div></td><td>%TRACKER_W% x %TRACKER_H%</td></tr>
 <tr><td>Attempt counter</td><td><div class="addr"><input readonly value="%ATTEMPTS%"><button type="button">Copy</button></div></td><td>%TRACKER_W% x %ATTEMPTS_H%</td></tr>
+%FAVORITES%
 </table>
+<p class="small"><b>Favorites</b> are the favorite Pokémon you set for the game you are playing, one picture each, as the tracker shows them, numbered as their boxes are. Add each one you want as a <b>Browser</b> source. The imported scene has all nine, hidden: click the eye beside one in Sources to show it, then drag it where you want it. They change by themselves as soon as you change your favorites, and a box with no favorite shows nothing. The picture alone, a see-through PNG for your own overlays, is at the same address with .png after the number, like <code>/favorite/1.png</code>.</p>
 <p class="small"><b>Placing the boxes before a game runs.</b> Add <code>&amp;demo=battle</code> to the tracker address and <code>&amp;demo=1</code> to the attempt address. Take them off before you go live.</p>
 <p class="small">The game address ends in <code>&amp;int=1</code>, which keeps every pixel the same size. That is the sharpest picture, but it leaves a border, most on a DS with both screens showing. Take it off to fill the box. You can also add these to the end of the game address: <code>&amp;top=1</code> shows only the top DS screen, <code>&amp;smooth=1</code> softens the picture instead of keeping hard pixel edges, <code>&amp;audio=0</code> leaves the sound off.</p>
 <p class="small">For your own overlays: <a href="%STATE%">the tracker's raw data</a> and <a href="%COUNT%">the attempt number as plain text</a>. After a Kaizo IronMON run ends, the tracker box's Randomizer data tab shows every species as randomized.</p>
@@ -209,8 +217,8 @@ body{font:15px/1.25 "Segoe UI",Roboto,Arial,sans-serif;color:#e8e8e8}
   if (q.get('label')) document.getElementById('label').textContent = q.get('label');
   var n = document.getElementById('n');
   var box = document.getElementById('box');
-  // Only a run has attempts (Kaizo IronMON, and a Nuzlocke on a randomized game). In any other game the
-  // box stays invisible: the last run's number would be a wrong one.
+  // Only a Kaizo IronMON run has attempts. In a Nuzlocke or any other game the box stays invisible: the
+  // last run's number would be a wrong one (a Nuzlocke counts none, rc32 audit P2 #109).
   function show(v, counted) {
     var t = String(v == null ? '' : v).trim();
     if (counted && /^[0-9]+/.test(t)) { n.textContent = t; box.className = 'on'; }

@@ -34,6 +34,9 @@ public:
     void reset();
     unsigned advanceFrames();
     void wait();
+    // LOCAL MODIFICATION (KaizoCore, rc32 audit P2 #124): the time the next frame is due, for a caller that sleeps
+    // after letting go of the core lock. False under vsync, where the display paces the frames.
+    bool sleepTarget(TimePoint& out) const;
     double getTimeStretchFactor();
 private:
 

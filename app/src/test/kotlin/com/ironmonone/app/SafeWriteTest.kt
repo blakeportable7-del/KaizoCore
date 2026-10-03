@@ -29,10 +29,12 @@ class SafeWriteTest {
 
     @Test fun `the player's counters write through it`() {
         val src = File("src/main/kotlin/com/ironmonone/app")
-        assertTrue("SafeWrite.text(f, seconds" in File(src, "RunClock.kt").readText(), "run clock")
+        // The run clock and the DS values go through the background writer (rc32 audit P2 #90), which writes with SafeWrite.
+        assertTrue("DiskWriter.write(f, seconds" in File(src, "RunClock.kt").readText(), "run clock")
         assertTrue("SafeWrite.text(f, counts" in File(src, "PcHeals.kt").readText(), "heal counts")
         assertTrue("SafeWrite.text(attemptFile(romId)" in File(src, "PrepStore.kt").readText(), "attempts")
         assertTrue("SafeWrite.text(file, runs" in File(src, "RunHistory.kt").readText(), "run history")
-        assertTrue("SafeWrite.text(dsTrackedFile" in File(src, "StatMarks.kt").readText(), "the DS Pokecenter count")
+        assertTrue("DiskWriter.write(dsTrackedFile" in File(src, "StatMarks.kt").readText(), "the DS Pokecenter count")
+        assertTrue("SafeWrite.write(e.file, " in File(src, "DiskWriter.kt").readText(), "the background writer")
     }
 }

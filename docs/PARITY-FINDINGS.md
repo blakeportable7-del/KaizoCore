@@ -202,7 +202,8 @@ layout 275, Emerald's 274). DECIDED (Blake, 2026-09-29): "keep correct numbers".
 - OPEN (RBY): badge set "RBY" has no art; reference uses FRLG art.
 - OPEN (GSC): enemy moves recorded from any byte; reference only known moves, one per turn.
 - OPEN (GSC): Low Kick "WT"; Gen 2 reference power 50 acc 90.
-- OPEN (RBY): Gen 1 type chart only on Type Defenses, not on move rows / move info matchups.
+- DONE (RBY, 2026-10-02): the Gen 1 chart reaches Type Defenses, the info screen, move rows and move info; its Ice on
+  Fire is the game's 1x (pokered type_matchups.asm has no ICE, FIRE row), not the reference's 0.5 (rc32 audit P2 #128).
 - DECIDED (Blake, 2026-09-29: "correct values"): Yellow gBattleTypeFlags 0xD056 (the reference's 0xD057 is a
   bug), Crystal party count 0xDCD7 (reference 0xCCD7), Gen 1 learn levels from the ROM (the reference's table
   disagrees with it on 24 species). Still open for Blake: Gen 2 move data from the randomized ROM (reference:

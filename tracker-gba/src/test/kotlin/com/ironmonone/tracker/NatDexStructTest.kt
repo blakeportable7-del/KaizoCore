@@ -65,6 +65,23 @@ class NatDexStructTest {
     }
 
     @Test
+    fun `a Nat Dex nickname is read to its 12 letters`() {
+        // sizeofPokemonNickname is 12 on Nat. Dex (the ROM's byte at 0x08000176, NatDexExtension.lua:17600). Read as 10,
+        // FLETCHINDER came out FLETCHINDE and the Nuzlocke ledger took it for a nickname (rc32 audit P3 #112).
+        val twelve = natdex.copy(nickLen = 12)
+        val b = mon(twelve)
+        val letters = "FLETCHINDER".map { 0xBB + (it - 'A') }     // Gen 3's capitals, A at 0xBB
+        letters.forEachIndexed { i, v -> b[0x08 + i] = v.toByte() }
+        b[0x08 + letters.size] = 0xFF.toByte()
+        assertEquals("FLETCHINDER", PokemonDecoder.decode(b, twelve).nickname)
+        assertEquals("FLETCHINDE", PokemonDecoder.decode(b, natdex).nickname, "the vanilla 10 cuts it short")
+        // A vanilla Pokemon decodes as it always did: ten letters at most.
+        val v = mon(PokemonDecoder.Layout.VANILLA)
+        "PIKACHUUUUUU".map { 0xBB + (it - 'A') }.take(10).forEachIndexed { i, c -> v[0x08 + i] = c.toByte() }
+        assertEquals("PIKACHUUUU", PokemonDecoder.decode(v).nickname)
+    }
+
+    @Test
     fun `reading a Nat Dex mon with vanilla offsets gives nonsense`() {
         // This is the bug Blake hit, pinned: same bytes, wrong layout. If this
         // ever starts matching, the test above has stopped proving anything.

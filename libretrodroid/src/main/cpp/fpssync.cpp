@@ -61,4 +61,10 @@ void FPSSync::wait() {
     std::this_thread::sleep_until(lastFrame);
 }
 
+bool FPSSync::sleepTarget(TimePoint& out) const {
+    if (useVSync || lastFrame == MIN_TIME) return false;
+    out = lastFrame;
+    return true;
+}
+
 } //namespace libretrodroid

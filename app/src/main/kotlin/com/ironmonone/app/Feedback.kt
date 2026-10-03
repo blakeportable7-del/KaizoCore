@@ -41,6 +41,14 @@ object Feedback {
 
     data class Device(val model: String, val android: String, val appVersion: String)
 
+    /**
+     * The report's game (rc35 follow-up N #9): the game Play has, its family, else its console for one the tracker does
+     * not read, as a crash report names the game that crashed (CrashReport.gameOf, rc32 audit P3 #25). It was the last
+     * Kaizo run's family whatever the player was playing; null when Play has no game. Reads files: a tap's work.
+     */
+    fun gameInPlay(store: PrepStore): String? =
+        runCatching { store.session().takeIf { it.file.isFile }?.let { CrashReport.gameOf(it.id, it) } }.getOrNull()
+
     fun device(context: Context): Device = Device(
         model = (Build.MANUFACTURER + " " + Build.MODEL).trim(),
         android = "Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})",

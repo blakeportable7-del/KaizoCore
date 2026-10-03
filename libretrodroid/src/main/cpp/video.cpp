@@ -288,7 +288,7 @@ void Video::initializeRenderer(RenderingOptions renderingOptions) {
     auto shaders = ShaderManager::getShader(requestedShaderConfig);
 
     if (renderingOptions.hardwareAccelerated) {
-        renderer = new FramebufferRenderer(
+        renderer = std::make_unique<FramebufferRenderer>(
             renderingOptions.width,
             renderingOptions.height,
             renderingOptions.useDepth,
@@ -297,9 +297,9 @@ void Video::initializeRenderer(RenderingOptions renderingOptions) {
         );
     } else {
         if (renderingOptions.openglESVersion >= 3) {
-            renderer = new ImageRendererES3();
+            renderer = std::make_unique<ImageRendererES3>();
         } else {
-            renderer = new ImageRendererES2();
+            renderer = std::make_unique<ImageRendererES2>();
         }
     }
 

@@ -2,16 +2,17 @@ package com.ironmonone.app
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
@@ -29,9 +30,12 @@ import androidx.compose.ui.window.Dialog
  * first; then "Moves learned", the levels at which the species learns a move,
  * each level in a box, red when the viewed Pokemon is already past it and
  * green when it is still to come. Opened by tapping the Moves header on a
- * card (TrackerScreen.lua:352).
+ * card (TrackerScreen.lua:352). Its words are DialogText, which follows the
+ * phone's font size, and it closes with a 48dp X that says Close (rc32 audit
+ * P2 #19, #102): fixed 7 to 10dp text and a 17 by 13dp X that read "X".
  */
 @Composable
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 fun MoveHistoryDialog(
     name: String,
     level: Int,
@@ -43,35 +47,34 @@ fun MoveHistoryDialog(
     Dialog(onDismissRequest = onClose) {
         Column(Modifier.width(300.dp).background(Pc.Page).border(1.dp, Pc.Border).padding(8.dp).verticalScroll(rememberScrollState())) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                PixText(name.uppercase(), 10, Pc.Text, Modifier.weight(1f))
-                PixText("X", 9, Pc.Dim, Modifier.clickable { onClose() }.padding(horizontal = 6.dp, vertical = 2.dp))
+                DialogText(name.uppercase(), 16, Pc.Text, Modifier.weight(1f), heading = true)
+                PcTap("X", 9, Pc.Dim, "Close") { onClose() }
             }
             Spacer(Modifier.height(6.dp))
             Row(Modifier.fillMaxWidth()) {
-                PixText("Moves", 8, Pc.Gold, Modifier.weight(1f))
-                PixText("Min", 8, Pc.Gold, Modifier.width(34.dp), TextAlign.End)
-                PixText("Max", 8, Pc.Gold, Modifier.width(34.dp), TextAlign.End)
+                DialogText("Moves", 12, Pc.Gold, Modifier.weight(1f))
+                DialogText("Min", 12, Pc.Gold, Modifier.widthIn(min = 40.dp), TextAlign.End)
+                DialogText("Max", 12, Pc.Gold, Modifier.widthIn(min = 40.dp), TextAlign.End)
             }
             if (rows.isEmpty()) {
-                Spacer(Modifier.height(4.dp)); PixText("No tracked moves", 8, Pc.Text)
+                Spacer(Modifier.height(4.dp)); DialogText("No tracked moves", 13, Pc.Text)
             }
             rows.forEach { m ->
                 Row(Modifier.fillMaxWidth().padding(vertical = 1.dp)) {
-                    PixText(m.name, 8, Pc.Text, Modifier.weight(1f))
-                    PixText("${m.minLv}", 8, Pc.Text, Modifier.width(34.dp), TextAlign.End)
-                    PixText("${m.maxLv}", 8, Pc.Text, Modifier.width(34.dp), TextAlign.End)
+                    DialogText(m.name, 13, Pc.Text, Modifier.weight(1f))
+                    DialogText("${m.minLv}", 13, Pc.Text, Modifier.widthIn(min = 40.dp), TextAlign.End)
+                    DialogText("${m.maxLv}", 13, Pc.Text, Modifier.widthIn(min = 40.dp), TextAlign.End)
                 }
             }
             Spacer(Modifier.height(8.dp))
-            PixText("Moves learned", 8, Pc.Gold)
+            DialogText("Moves learned", 12, Pc.Gold)
             Spacer(Modifier.height(3.dp))
-            if (learnLevels.isEmpty()) PixText("No moves learned", 8, Pc.Text)
-            learnLevels.chunked(8).forEach { line ->
-                Row(Modifier.padding(bottom = 3.dp), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                    line.forEach { lv ->
-                        Box(Modifier.border(1.dp, Pc.Border).background(Pc.Ground).padding(horizontal = 4.dp, vertical = 2.dp)) {
-                            PixText("$lv", 7, if (level <= 0) Pc.Text else if (lv <= level) Pc.Negative else Pc.Positive)
-                        }
+            if (learnLevels.isEmpty()) DialogText("No moves learned", 13, Pc.Text)
+            // A flowing row, so a bigger font wraps the boxes onto the next line instead of past the dialog's edge.
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(3.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                learnLevels.forEach { lv ->
+                    Box(Modifier.border(1.dp, Pc.Border).background(Pc.Ground).padding(horizontal = 4.dp, vertical = 2.dp)) {
+                        DialogText("$lv", 12, if (level <= 0) Pc.Text else if (lv <= level) Pc.Negative else Pc.Positive)
                     }
                 }
             }
@@ -85,21 +88,22 @@ fun MoveHistoryDialog(
  * (Constants.GAME_STATS indices). The Gen 1 tracker's copy of this screen
  * shows the attempt count and zeros for the rest, and this does the same
  * for a Game Boy game. There is no play timer in this app yet, so that row
- * says so.
+ * says so. In DialogText, with a 48dp Close, and it scrolls now that a big
+ * font makes its ten rows taller (rc32 audit P2 #19, #102).
  */
 @Composable
 fun StatsDialog(rows: List<Pair<String, String>>, onClose: () -> Unit) {
     Dialog(onDismissRequest = onClose) {
-        Column(Modifier.width(300.dp).background(Pc.Page).border(1.dp, Pc.Border).padding(8.dp)) {
+        Column(Modifier.width(300.dp).background(Pc.Page).border(1.dp, Pc.Border).padding(8.dp).verticalScroll(rememberScrollState())) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                PixText("STATS", 10, Pc.Text, Modifier.weight(1f))
-                PixText("X", 9, Pc.Dim, Modifier.clickable { onClose() }.padding(horizontal = 6.dp, vertical = 2.dp))
+                DialogText("STATS", 16, Pc.Text, Modifier.weight(1f), heading = true)
+                PcTap("X", 9, Pc.Dim, "Close") { onClose() }
             }
             Spacer(Modifier.height(6.dp))
             rows.forEach { (label, value) ->
                 Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
-                    PixText(label, 8, Pc.Text, Modifier.weight(1f))
-                    PixText(value, 8, Pc.Text, Modifier.width(80.dp), TextAlign.End)
+                    DialogText(label, 13, Pc.Text, Modifier.weight(1f))
+                    DialogText(value, 13, Pc.Text, Modifier.padding(start = 8.dp), TextAlign.End)
                 }
             }
         }

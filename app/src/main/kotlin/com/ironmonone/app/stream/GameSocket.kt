@@ -82,7 +82,8 @@ internal class GameSocket(
         while (!finished) {
             val f = WebSocket.readFrame(input, MAX_INCOMING) ?: return
             when (f.opcode) {
-                WebSocket.OP_PING -> outbox.putControl(WebSocket.encode(WebSocket.OP_PONG, f.payload))
+                // One pong waiting at most, the newest (Outbox.putPong; rc32 audit P3 #77).
+                WebSocket.OP_PING -> outbox.putPong(WebSocket.encode(WebSocket.OP_PONG, f.payload))
                 WebSocket.OP_PONG -> { }
                 WebSocket.OP_CLOSE -> { sendClose(closeReply(f.payload)); return }
                 WebSocket.OP_TEXT, WebSocket.OP_BINARY -> {

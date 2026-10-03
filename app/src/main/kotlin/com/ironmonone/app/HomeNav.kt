@@ -120,7 +120,35 @@ internal data class AppNav(
         /** The state a launch starts in, from PrepStore.startingPoint(). */
         fun opening(startingPoint: String): AppNav =
             if (startingPoint == "PLAY") AppNav(tab = Tab.PLAY, anchor = Tab.PLAY) else AppNav()
+
+        /**
+         * Where the app was, from [saved] ([AppNav.saved]), when Android brings it back after ending it (rc32 audit P2 #32):
+         * the same screen is drawn again, so a file picker's answer reaches the screen that asked for it, which it
+         * cannot when the app comes back on Home. A game to reopen still wins: it is reopened in Play, where CrashResume
+         * finds it. Anything that does not read as a place is the opening one.
+         */
+        fun restore(saved: String?, startingPoint: String): AppNav {
+            if (startingPoint == "PLAY") return opening(startingPoint)
+            return saved?.let { fromSaved(it) } ?: opening(startingPoint)
+        }
+
+        /** [AppNav.saved] read back, or null. */
+        fun fromSaved(s: String): AppNav? = runCatching {
+            val f = s.split('|')
+            if (f.size != 6) return null
+            AppNav(
+                tab = Tab.valueOf(f[0]),
+                mode = f[1].takeIf { it.isNotEmpty() }?.let { HomeMode.valueOf(it) },
+                libraryPage = f[2].toInt().coerceIn(MY_GAMES_PAGE, PATCHED_PAGE),
+                morePage = f[3].toInt().coerceIn(0, 1),
+                anchor = Tab.valueOf(f[4]),
+                stats = f[5] == "1",
+            )
+        }.getOrNull()
     }
+
+    /** This place as one line of text, by name, for the saved state Android keeps (see [restore]). */
+    fun saved(): String = listOf(tab.name, mode?.name.orEmpty(), libraryPage, morePage, anchor.name, if (stats) 1 else 0).joinToString("|")
 }
 
 /**
@@ -234,8 +262,8 @@ internal object HomeCopy {
         "Backup and info, and it comes straight to me. Thank you. Blake"
 
 
-    /** Everything above, and the four buttons' words, for the copy-rule test. */
-    val all: List<String> = listOf(
+    /** Everything above, the four buttons' words and More's How it works, for the copy-rule test. */
+    val all: List<String> = HowItWorksCopy.all + listOf(
         PICK_A_MODE, LEFT_OFF, CONTINUE, continueSpoken("Pokemon Emerald"), LIBRARY_DETAIL, RUN_DETAIL, nuzlockeDetail("Standard"),
         nuzlockeDetail("Standard", com.ironmonone.tracker.nuzlocke.RunStatus.OVER), nuzlockeDetail("Standard", com.ironmonone.tracker.nuzlocke.RunStatus.OVER, "Whiteout"),
         nuzlockeDetail("Standard", com.ironmonone.tracker.nuzlocke.RunStatus.COMPLETE), ironmonDetail("Kaizo"),
@@ -243,4 +271,24 @@ internal object HomeCopy {
         STATS_LINK, STATS_LINK_SPOKEN, STATS_CARD_LINE, STATS_OPEN,
         WELCOME_TITLE, WELCOME_WHAT, WELCOME_DOES, WELCOME_NO_GAMES, ADD_GAMES, LOOK_AROUND, BETA_TITLE, BETA_ASK,
     ) + HomeMode.entries.flatMap { listOf(it.title, it.line, it.spoken) }
+}
+
+/**
+ * More's "How it works" card (rc32 audit P3 #15). It opened "KaizoCore plays IronMON on your phone", against the
+ * welcome's ruling (Blake, 2026-09-30) that KaizoCore is an emulator for every game with Pokémon tools on top. It
+ * opens with the welcome's own sentence now, so the two cannot drift, then Home's four modes in their own words, then
+ * where games come from and where they are played.
+ */
+internal object HowItWorksCopy {
+    const val INTRO = HomeCopy.WELCOME_WHAT
+    const val MODES_HEAD = "Home has four ways to play:"
+    val STEPS: List<Pair<String, String>> = listOf(
+        "1" to "Library: add your own game files. KaizoCore never downloads games.",
+        "2" to "Home: pick a way to play, then a game.",
+        "3" to "Play: play it. In a game the tracker reads, it fills in as you go.",
+    )
+    const val MORE = "Library also keeps your patches. More, Controls sets up a controller or keyboard."
+
+    /** Every line the card shows, for the copy-rule test (HomeCopy.all). */
+    val all: List<String> = listOf(INTRO, MODES_HEAD, MORE) + STEPS.map { it.second } + HomeMode.entries.map { "${it.title}: ${it.line}" }
 }

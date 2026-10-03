@@ -70,8 +70,11 @@ class LibraryShelvesTest {
         val other = lib.import("hg-copy.nds", LibraryRoms.ds("POKEMON HG", "IPKE"))
         assertEquals(LibraryStore.Category.OTHER_VERSIONS, other.category, "the US game with another checksum is not a ROM hack either")
         assertEquals(RomKind.HEARTGOLD_U, other.kind)
+        // A game whose copy is not pinned yet is a real game the tracker does not read, not a verified dump (rc32 audit P2 #25).
         val black = lib.import("black.nds", LibraryRoms.ds("POKEMON B", "IRBO"))
-        assertEquals(LibraryStore.Category.CLEAN, black.category, "a game whose copy is not pinned yet stays where it was")
+        assertTrue(black.unverified)
+        assertEquals(LibraryStore.Category.OTHER_VERSIONS, black.category)
+        assertEquals("This is Pokémon Black (U), a copy KaizoCore has not checked yet. It plays here without a tracker.", black.subtitle)
         val mk = lib.import("mk.nds", LibraryRoms.ds("MARIO KART", "AMCE"))
         assertEquals(LibraryStore.Category.OTHER, mk.category)
         assertEquals("A DS game (MARIO KART), but not one the tracker reads. It still plays, without a tracker.", mk.subtitle)
@@ -116,6 +119,31 @@ class LibraryShelvesTest {
         for (c in LibraryStore.Category.entries) assertTrue('—' !in c.blurb && '–' !in c.blurb, c.blurb)
     }
 
+    /**
+     * rc32 audit P2 #25: an unchecked Black sat under Clean ROMs, "Verified dumps. The tracker and the randomizer start
+     * here.", while its own card said it plays without a tracker. No file the tracker cannot read is under that shelf.
+     */
+    @Test
+    fun `no file the tracker refuses is shelved under the shelf that says verified`() {
+        val lib = store()
+        val files = listOf(
+            "black.nds" to LibraryRoms.ds("POKEMON B", "IRBO"),
+            "hg-copy.nds" to LibraryRoms.ds("POKEMON HG", "IPKE"),
+            "fr-de.gba" to LibraryRoms.gba("POKEMON FIRE", "BPRD"),
+            "fr11.gba" to LibraryRoms.gba("POKEMON FIRE", "BPRE", version = 1),
+            "red.gb" to LibraryRoms.gb("POKEMON RED", cgb = 0),
+            "mk.nds" to LibraryRoms.ds("MARIO KART", "AMCE"),
+        )
+        for ((name, bytes) in files) {
+            val e = lib.import(name, bytes)
+            assertFalse(e.verified, name)
+            assertTrue("Verified" !in e.category.blurb && "tracker and the randomizer start here" !in e.category.blurb, "$name is on ${e.category.title}")
+        }
+        // The same after the sidecars are read back.
+        for (e in lib.list()) assertTrue("Verified" !in e.category.blurb, "${e.name} is on ${e.category.title}")
+        assertEquals(LibraryStore.Category.CLEAN, entry(RomKind.EMERALD_U).category, "an exact copy of a pinned game is still a clean dump")
+    }
+
     @Test
     fun `a build the tracker reads says Tracker works, and the card adds nothing to it`() {
         val emerald = entry(RomKind.EMERALD_U)
@@ -148,7 +176,7 @@ class LibraryShelvesTest {
             lib.import("a.gba", LibraryRoms.gba("POKEMON FIRE", "BPRD")), lib.import("b.gba", LibraryRoms.gba("POKEMON FIRE", "BPRE", version = 1)),
             lib.import("c.nds", LibraryRoms.ds("POKEMON B", "IRBO")), lib.import("d.nds", LibraryRoms.ds("MARIO KART", "AMCE")),
             lib.import("e.nds", LibraryRoms.ds("POKEMON HG", "IPKD")), lib.import("f.gbc", LibraryRoms.gb("POKEMON RED", cgb = 0)),
-            entry(RomKind.EMERALD_U), entry(RomKind.EMERALD_NATDEX_121), entry(RomKind.HEARTGOLD_SUPERKAIZO),
+            entry(RomKind.EMERALD_U), entry(RomKind.EMERALD_NATDEX_121), entry(RomKind.HEARTGOLD_SUPERKAIZO), entry(RomKind.HEARTGOLD_IRONMON),
             LibraryStore.Entry(File("g.gba"), "g.gba", 7L, null, Platform.GBA, "s", baseName = "b.gba", patchName = "p.bps"),
         )
         for (e in entries) {
@@ -203,7 +231,7 @@ class LibraryShelvesTest {
         val dir = Files.createTempDirectory("sidecar").toFile()
         val lib = LibraryStore(dir)
         val e = lib.import("de.gba", LibraryRoms.gba("POKEMON FIRE", "BPRD"))
-        assertEquals("v3", File(dir, "de.gba.meta").readLines().first())
+        assertEquals(head, File(dir, "de.gba.meta").readLines().first())
         val back = LibraryStore(dir).list().single()
         assertEquals(e.verdict, back.verdict)
         assertEquals(e.summary, back.summary)
@@ -225,7 +253,59 @@ class LibraryShelvesTest {
         assertEquals("This is the German FireRed. The tracker reads the US English FireRed, v1.0 or v1.1. $playsWithout", again.summary)
         assertEquals("base.gba", again.baseName)
         assertEquals("patch.ips", again.patchName)
-        assertEquals("v3", File(dir, "de.gba.meta").readLines().first(), "and it is written as v3 from then on")
+        assertEquals(head, File(dir, "de.gba.meta").readLines().first(), "and it is written as the current version from then on")
+    }
+
+    /** What a sidecar starts with now: the version and the fingerprint of the table it was identified under. */
+    private val head = "v4 " + LibraryStore.tableFingerprint()
+
+    /**
+     * rc32 audit P3 #28: a sidecar's verdict was trusted while its version matched, whatever the table of games said
+     * since. A copy written as "not checked yet" before its game's checksum was pinned kept that verdict for good. A
+     * v3 sidecar (rc33 wrote them) is read again from the header, keeping the checksum it holds.
+     */
+    @Test
+    fun `a v3 sidecar's stale verdict is read again from the header`() {
+        val dir = Files.createTempDirectory("v3").toFile()
+        val lib = LibraryStore(dir)
+        lib.import("hg.nds", LibraryRoms.ds("POKEMON HG", "IPKE"))
+        val told = 0x0BADCAFEL   // not HeartGold's pinned checksum, and not the file's own
+        val stale = "This is Pokémon HeartGold (U), a copy KaizoCore has not checked yet. It plays here without a tracker."
+        File(dir, "hg.nds.meta").writeText(listOf("v3", "%08x".format(told), "heartgold-u", "NDS", "-", "-", "UNCHECKED", stale).joinToString("\n"))
+        val again = lib.list().single()
+        assertEquals(told, again.crc, "nothing was hashed again")
+        assertEquals(Verdict.OTHER_VERSION, again.verdict)
+        assertEquals(LibraryStore.Category.OTHER_VERSIONS, again.category)
+        assertTrue("not checked yet" !in again.subtitle, again.subtitle)
+        assertEquals(head, File(dir, "hg.nds.meta").readLines().first())
+    }
+
+    @Test
+    fun `a sidecar from another table of games is read again, and one from this table is trusted as written`() {
+        val dir = Files.createTempDirectory("table").toFile()
+        val lib = LibraryStore(dir)
+        lib.import("hg.nds", LibraryRoms.ds("POKEMON HG", "IPKE"))
+        val meta = File(dir, "hg.nds.meta")
+        val lines = meta.readLines()
+        // Written under this table: trusted, so nothing is identified again (the words come back as they were written).
+        meta.writeText((lines.dropLast(1) + "Kept as written.").joinToString("\n"))
+        assertEquals("Kept as written.", lib.list().single().summary)
+        // Written under another table (a checksum pinned since): identified again from the header.
+        meta.writeText((listOf("v4 00000000") + lines.drop(1).dropLast(1) + "Kept as written.").joinToString("\n"))
+        val again = lib.list().single()
+        assertTrue(again.summary != "Kept as written.", "re-identified")
+        assertEquals(LibraryStore.Category.OTHER_VERSIONS, again.category)
+        assertEquals(head, meta.readLines().first())
+    }
+
+    @Test
+    fun `the table's fingerprint moves when a checksum is pinned or a build is added`() {
+        val now = LibraryStore.tableFingerprint()
+        assertEquals(now, LibraryStore.tableFingerprint(RomKind.all), "the same table, the same fingerprint")
+        assertTrue(Regex("[0-9a-f]{8}").matches(now))
+        val pinned = RomKind.all.map { if (it.id == RomKind.BLACK_U.id) it.copy(expectedCrc = 0x12345678L) else it }
+        assertTrue(LibraryStore.tableFingerprint(pinned) != now, "Black pinned")
+        assertTrue(LibraryStore.tableFingerprint(RomKind.all + RomKind.FIRERED_U_V11.copy(id = "firered-u-v11-smartai")) != now, "a build added")
     }
 
     @Test
@@ -237,8 +317,8 @@ class LibraryShelvesTest {
         val again = lib.list().single()
         assertEquals(e.crc, again.crc, "hashed again, from the file")
         assertEquals(Verdict.OTHER_LANGUAGE, again.verdict)
-        // A v3 sidecar cut short is not trusted either.
-        File(dir, "de.gba.meta").writeText(listOf("v3", "00000001", "-", "GBA", "-", "-").joinToString("\n"))
+        // A current sidecar cut short is not trusted either.
+        File(dir, "de.gba.meta").writeText(listOf(head, "00000001", "-", "GBA", "-", "-").joinToString("\n"))
         assertEquals(e.crc, lib.list().single().crc)
     }
 

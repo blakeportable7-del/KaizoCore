@@ -1,0 +1,303 @@
+Randomizer Version: 4.6.0-END112
+Random Seed: -4619714808076434503
+Settings String: 904WRIkEjL8AP8AAgGRAAKeBhsECQEAFAAyCQAuEgAAG/8ABRAw5ATkAoZICTIGBAIyAAUYEEZpcmUgUmVkIChVKSAxLjFMRoqz48M4ig==
+
+--Randomized Evolutions--
+Charmander      -> MarowakA       
+Weedle          -> BurmyT         
+Pikachu         -> Manectric and ToxtricitL
+Zubat           -> WeezingG       
+
+--Pokemon Base Stats & Types--
+NUM|NAME      |TYPE             |  HP| ATK| DEF|SATK|SDEF| SPD|ABILITY1    |ABILITY2    |ITEM
+  1|Bulbasaur    |GRASS/POISON     |  75|  58|  58|  45|  43|  39|HOSPITALITY |-------     |
+  4|Charmander   |FIRE             |  50|  65|  66|  32|  40|  56|PRANKSTER   |GRASS PELT  |GUARD SPEC. (common)
+ 13|Weedle       |BUG/POISON       |  27|  33|  39|  47|  27|  21|NEUROFORCE  |AROMA VEIL  |
+ 25|Pikachu      |ELECTRIC         |  27|  38|  50|  85|  89|  30|PRANKSTER   |FRIEND GUARD|SODA POP (common)
+ 29|Nidoran♀     |POISON           |  47|  63|  25|  55|  52|  32|WATER BUBBLE|DOWNLOAD    |
+ 41|Zubat        |POISON/FLYING    |  45|  64|  23|  44|  45|  24|STAKEOUT    |Speed Boost |TM14 (rare)
+ 43|Oddish       |GRASS/POISON     |  68|  49|  38|  32|  62|  70|SWEET VEIL  |Magma Armor |LEAF STONE (rare)
+ 51|Dugtrio      |GROUND           |  86|  36|  26|  84|  67| 126|LEAF GUARD  |-------     |
+ 56|Mankey       |FIGHTING         |  21|  37|  18|  48| 105|  76|MEGA LAUNCHER|-------     |HP UP (rare)
+ 83|Farfetch’d   |NORMAL/FLYING    |  30|  11|  56|  83| 104|  94|STEELY SPIRIT|-------     |SUPER POTION (common), TM41 (rare)
+150|Mewtwo       |PSYCHIC          |  95|  51| 177| 150|  82| 124|GRIM NEIGH  |-------     |FRESH WATER (100%)
+310|Manectric    |ELECTRIC         |  82|  63|  35| 101| 144|  50|SURGE SURFER|-------     |
+383|Groudon      |GROUND           |  60| 115| 132|  99| 138| 125|PARENTAL BOND|-------     |MAX POTION (common)
+384|Rayquaza     |DRAGON/FLYING    | 167|  90| 199|  87|  26| 112|PRANKSTER   |-------     |BLACK FLUTE (common)
+662|Flechinder   |FIRE/FLYING      |  84|  58|  60|  52|  67|  61|Own Tempo   |-------     |WATER STONE (common), CHARCOAL (rare)
+782|Jangmo-o     |DRAGON           |  74|  78|  24|  77|  19|  27|RATTLED     |-------     |LAVA COOKIE (common), BLUE FLUTE (rare)
+985|ScreamTail   |FAIRY/PSYCHIC    |  63| 172| 185|  94|  45|  11|THERMAL EXCHANGE|Marvel Scale|TM17 (common), TM32 (rare)
+1021|RagingBolt   |ELECTRIC/DRAGON  |  82| 138| 125|  26|  70| 150|UNBURDEN    |Flash Fire  |TM13 (common)
+1035|KangaskhaM   |NORMAL           |  43| 151| 122|  39| 109| 126|FLUFFY      |-------     |BRIGHTPOWDER (rare)
+1039|MewtwoX      |PSYCHIC/FIGHTING | 138| 127| 110|  29| 178| 198|REFRIGERATE |-------     |
+1040|MewtwoY      |PSYCHIC          | 130|  17| 179| 214| 106| 134|NEUROFORCE  |-------     |
+1046|TyranitarM   |ROCK/DARK        | 102|  69|  35| 147| 187| 161|UNAWARE     |Marvel Scale|PP MAX (rare)
+1067|GarchompM    |DRAGON/GROUND    |  23|  43| 222|  64| 136| 213|TOXIC DEBRIS|FAIRY AURA  |DAWN STONE (common), X ACCURACY (rare)
+1073|RayquazaM    |DRAGON/FLYING    | 174|  58| 246| 133| 105|  65|FLOWER GIFT |BALL FETCH  |
+1074|KyogreP      |WATER            | 124| 103| 177|  27| 205| 133|STALL       |AROMA VEIL  |TM06 (common), TM20 (rare)
+1075|GroudonP     |GROUND/FIRE      | 112|  20|  65| 224| 162| 187|MOLD BREAKER|-------     |BLUE FLUTE (rare)
+1093|MarowakA     |FIRE/GHOST       |  74|  84|  22| 138|  15|  91|SAND RUSH   |-------     |
+1099|FarfetchdG   |FIGHTING         |  21|  90|  68|  19|  87|  92|Illuminate  |-------     |CHERI BERRY (rare)
+1100|WeezingG     |POISON/FAIRY     | 104| 108|  67|  96|  39|  77|MOXIE       |Effect Spore|FULL RESTORE (common), TINYMUSHROOM (rare)
+1101|Mr. MimeG    |ICE/PSYCHIC      | 132|  14|  62|  54| 107|  91|INTREPID SWORD|-------     |SILK SCARF (common), EXP. SHARE (rare)
+1144|BurmyT       |BUG              |  61|  41|  24|  46|  11|  40|Rough Skin  |-------     |
+1150|RotomFr      |ELECTRIC/ICE     | 104| 101|  57| 104|  76|  79|POWER OF ALCHEMY|-------     |POTION (rare)
+1160|DarmanitZG   |ICE/FIRE         | 116|  76|  63| 199|  26|  60|STRONG JAW  |Air Lock    |PROTEIN (common)
+1173|PumpkabooX   |GHOST/GRASS      |  33|  81|  51|  52|  99|  20|ORICHALCUM PULSE|-------     |
+1177|Zygarde10    |DRAGON/GROUND    |  37| 141| 119|  45|  94|  50|STAKEOUT    |-------     |
+1178|ZygardeC     |DRAGON/GROUND    | 121| 212| 188|  96|  64|  27|STRONG JAW  |PARENTAL BOND|HYPER POTION (common), REVIVE (rare)
+1189|NecrozmaU    |PSYCHIC/DRAGON   |  80| 159| 118| 132| 116| 150|STORM DRAIN |BULLETPROOF |
+1190|ToxtricitL   |ELECTRIC/POISON  |  71| 109|  92| 103|  97|  31|SAND FORCE  |-------     |
+1196|EternatusE   |POISON/DRAGON    | 224| 234| 172| 177|  80| 237|TANGLING HAIR|-------     |
+1245|ZygardeM     |DRAGON/GROUND    |  83| 139| 143|  39| 204| 170|MOTOR DRIVE |SAND RUSH   |
+
+--Pokemon Movesets--
+025 Pikachu -> Manectric
+HP  27 
+ATK 38 
+DEF 50 
+SPA 85 
+SPD 89 
+SPE 30 
+Level 0 : Entrainment
+Level 1 : Dire Claw
+Level 1 : Scary Face
+Level 1 : Mist
+Level 1 : Headbutt
+Level 1 : Metal Sound
+Level 1 : Sparkly Swirl
+Level 1 : Skull Bash
+Level 1 : Draining Kiss
+Level 1 : Zap Cannon
+Level 4 : Cosmic Power
+Level 8 : Snarl
+Level 12: Wicked Blow
+Level 16: Natural Gift
+Level 20: Extreme Speed
+Level 24: Torment
+Level 28: Hex
+Level 32: Sandstorm
+Level 36: Yawn
+Level 40: Tri Attack
+Level 44: Razor Shell
+
+1039 MewtwoX ->  (no evolution)
+HP  138
+ATK 127
+DEF 110
+SPA 29 
+SPD 178
+SPE 198
+Level 0 : Guillotine
+Level 1 : Psychic Noise
+Level 1 : Rage Fist
+Level 1 : Wring Out
+Level 1 : Aura Sphere
+Level 8 : Stealth Rock
+Level 16: Double Iron Bash
+Level 24: Triple Dive
+Level 32: Armor Cannon
+Level 40: Cosmic Power
+Level 48: Peck
+Level 56: Zing Zap
+Level 56: Chilling Water
+Level 64: Snap Trap
+Level 72: Leer
+Level 80: Stomping Tantrum
+Level 88: Yawn
+
+1173 PumpkabooX -> Cacturne
+HP  33 
+ATK 81 
+DEF 51 
+SPA 52 
+SPD 99 
+SPE 20 
+Level 0 : Magnet Bomb
+Level 1 : Telekinesis
+Level 1 : Infestation
+Level 1 : Incinerate
+Level 1 : Bonemerang
+Level 4 : Roost
+Level 8 : Moonlight
+Level 12: Night Shade
+Level 12: Triple Arrows
+Level 16: Judgment
+Level 20: Dragon Breath
+Level 24: Accelerock
+Level 24: Metal Sound
+Level 28: Sludge Wave
+Level 32: Syrup Bomb
+Level 36: Rock Climb
+Level 36: Steamroller
+Level 40: Jet Punch
+Level 44: Dragon Pulse
+Egg Moves:
+ - Burning Bulwark
+ - Scorching Sands
+ - Drill Run
+ - Freezing Glare
+
+1196 EternatusE ->  (no evolution)
+HP  224
+ATK 234
+DEF 172
+SPA 177
+SPD 80 
+SPE 237
+Level 1 : Poison Tail
+Level 1 : Confuse Ray
+Level 1 : invalid move at level1Level 1 : Agility
+Level 8 : Toxic
+Level 16: invalid move at level16Level 24: Dragon Dance
+Level 32: invalid move at level32Level 40: invalid move at level40Level 48: Flamethrower
+Level 56: invalid move at level56Level 64: Cosmic Power
+Level 72: Recover
+Level 80: Hyper Beam
+Level 88: Outrage
+
+043 Oddish -> Weepinbell
+HP  68 
+ATK 49 
+DEF 38 
+SPA 32 
+SPD 62 
+SPE 70 
+Level 0 : Inferno
+Level 1 : Psycho Shift
+Level 1 : Close Combat
+Level 1 : Flame Burst
+Level 1 : Pin Missile
+Level 4 : Spikes
+Level 8 : Esper Wing
+Level 12: Bug Bite
+Level 14: U-turn
+Level 16: Stored Power
+Level 18: Fire Punch
+Level 20: Population Bomb
+Level 24: Growl
+Level 28: Flatter
+Level 32: Fissure
+Level 36: Discharge
+Level 40: Psycho Boost
+Egg Moves:
+ - Heal Pulse
+ - Fairy Lock
+ - Foul Play
+ - Autotomize
+ - Inferno
+ - Lumina Crash
+
+051 Dugtrio ->  (no evolution)
+HP  86 
+ATK 36 
+DEF 26 
+SPA 84 
+SPD 67 
+SPE 126
+Level 0 : Jaw Lock
+Level 1 : Assurance
+Level 1 : Last Resort
+Level 1 : Blood Moon
+Level 1 : Aqua Step
+Level 1 : Behemoth Blade
+Level 1 : Grass Pledge
+Level 12: Earthquake
+Level 16: Electro Ball
+Level 20: Tar Shot
+Level 24: Roar of Time
+Level 30: Icicle Crash
+Level 36: Double Hit
+Level 42: Zen Headbutt
+Level 48: Feint
+Level 54: Thunder Fang
+
+056 Mankey -> Grapploct
+HP  21 
+ATK 37 
+DEF 18 
+SPA 48 
+SPD 105
+SPE 76 
+Level 0 : Thrash
+Level 1 : Disable
+Level 1 : Swords Dance
+Level 1 : Freezing Glare
+Level 1 : Razor Shell
+Level 5 : Refresh
+Level 8 : Whirlwind
+Level 12: Substitute
+Level 17: Power Gem
+Level 22: Aura Wheel
+Level 26: Hyperspace Hole
+Level 29: Bubble Beam
+Level 33: Ceaseless Edge
+Level 36: V-create
+Level 40: Trick-or-Treat
+Level 44: Accelerock
+Level 48: Spacial Rend
+Egg Moves:
+ - X-Scissor
+ - Mega Punch
+ - Mortal Spin
+ - Flail
+ - Fire Punch
+ - Coil
+ - Thunder Wave
+ - Fire Pledge
+
+383 Groudon ->  (no evolution)
+HP  60 
+ATK 115
+DEF 132
+SPA 99 
+SPD 138
+SPE 125
+Level 0 : Seed Flare
+Level 1 : Apple Acid
+Level 1 : Aqua Step
+Level 1 : Bite
+Level 1 : Substitute
+Level 1 : Freezy Frost
+Level 9 : Mimic
+Level 18: Iron Defense
+Level 27: Light Screen
+Level 36: V-create
+Level 45: Psych Up
+Level 54: Fiery Dance
+Level 72: Bullet Punch
+Level 81: Fire Fang
+Level 90: Techno Blast
+
+--TM Moves--
+TM01 Gigaton Hammer
+TM02 Sharpen
+TM03 Razor Shell
+TM04 Heal Pulse
+TM05 Astral Barrage
+TM06 Ice Burn
+
+--Trainers Pokemon--
+#278 (SWIMMER♀ CONNIE => Sailor Jessica)@241770 - Altaria Lv44, Ting-Lu Lv44, MewtwoX Lv44
+#316 (BIRD KEEPER MARLON => Gent Noelle)@241D60 - RotomFr Lv42, Iron Moth Lv42, Regieleki Lv42
+#366 (TEAM ROCKET GRUNT => Gent Marshall)@242530 - DarmanitZG Lv35, Armaldo Lv35, Sneasler Lv35
+
+--Static Pokemon--
+Mewtwo => Mewtwo
+Deoxys => Deoxys
+
+--Wild Pokemon--
+Set #103 - LOST CAVE Grass/Cave (rate=5)
+Manectric Lv60           HP 82  ATK 63  DEF 35  SPATK 101 SPDEF 144 SPEED 50 
+Numel Lv56               HP 65  ATK 58  DEF 35  SPATK 60  SPDEF 70  SPEED 19 
+PumpkabooX Lv66          HP 33  ATK 81  DEF 51  SPATK 52  SPDEF 99  SPEED 20 
+PumpkabooX Lv69          HP 33  ATK 81  DEF 51  SPATK 52  SPDEF 99  SPEED 20 
+Finneon Lv62             HP 27  ATK 106 DEF 54  SPATK 92  SPDEF 33  SPEED 18 
+Swampert Lv23            HP 79  ATK 65  DEF 96  SPATK 133 SPDEF 13  SPEED 149
+Swampert Lv30            HP 79  ATK 65  DEF 96  SPATK 133 SPDEF 13  SPEED 149
+PumpkabooX Lv72          HP 33  ATK 81  DEF 51  SPATK 52  SPDEF 99  SPEED 20 
+PumpkabooX Lv75          HP 33  ATK 81  DEF 51  SPATK 52  SPDEF 99  SPEED 20 
+Swampert Lv33            HP 79  ATK 65  DEF 96  SPATK 133 SPDEF 13  SPEED 149
+PumpkabooX Lv78          HP 33  ATK 81  DEF 51  SPATK 52  SPDEF 99  SPEED 20 
+Swampert Lv33            HP 79  ATK 65  DEF 96  SPATK 133 SPDEF 13  SPEED 149
+

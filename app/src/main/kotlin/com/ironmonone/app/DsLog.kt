@@ -40,7 +40,8 @@ class DsLog(
         val ability: String,
     )
 
-    class PivotMon(val pokemon: RandomizerLog.Pokemon, val minLevel: Int, val maxLevel: Int, val percent: Int)
+    /** [pokemon] is null only in a log that lists no Pokemon, where the wild one is known by [name] alone (rc32 audit P2 #71). */
+    class PivotMon(val pokemon: RandomizerLog.Pokemon?, val minLevel: Int, val maxLevel: Int, val percent: Int, val name: String = pokemon?.name ?: "")
 
     /** A Gym TMs row; [tm] -1 is HeartGold and SoulSilver's empty spacer. */
     class GymTm(val tm: Int, val move: String, val badgeSet: String, val badge: Int, val group: Group?, val leader: Battle?)
@@ -223,13 +224,16 @@ class DsLog(
 
     /** readStandardEncounter / readNonstandardEncounter: each line is a slot; a species' slots add up. */
     private fun read(encounters: List<RandomizerLog.Encounter>, percents: IntArray): List<PivotMon> {
-        val acc = LinkedHashMap<Int, PivotMon>()
+        val acc = LinkedHashMap<String, PivotMon>()
         encounters.forEachIndexed { i, e ->
             val pct = percents.getOrNull(i) ?: return@forEachIndexed
-            val p = log.pokemonNamed(e.name) ?: return@forEachIndexed
-            val had = acc[p.id]
-            acc[p.id] = if (had == null) PivotMon(p, e.minLevel, e.maxLevel, pct)
-            else PivotMon(p, minOf(had.minLevel, e.minLevel), maxOf(had.maxLevel, e.maxLevel), had.percent + pct)
+            val p = log.pokemonNamed(e.name)
+            // A name the log cannot map is skipped, as the reference does, unless the log lists no Pokemon at all.
+            if (p == null && log.pokemon.isNotEmpty()) return@forEachIndexed
+            val key = p?.id?.toString() ?: e.name.uppercase()
+            val had = acc[key]
+            acc[key] = if (had == null) PivotMon(p, e.minLevel, e.maxLevel, pct, p?.name ?: e.name)
+            else PivotMon(p, minOf(had.minLevel, e.minLevel), maxOf(had.maxLevel, e.maxLevel), had.percent + pct, had.name)
         }
         // PivotsScreen.sortIDs: most likely first, then the lower levels.
         return acc.values.sortedWith(compareByDescending<PivotMon> { it.percent }.thenBy { it.minLevel }.thenBy { it.maxLevel })
@@ -252,7 +256,7 @@ class DsLog(
             val start = moves[index].first
             var end = moves.getOrNull(index + 4)?.let { it.first - 1 } ?: 100
             if (end < start) end = start
-            return "Lv. $start - $end"
+            return "Lv. $start to $end"   // "to", not a spaced hyphen (rc35 follow-up N #31)
         }
 
         /**

@@ -1,6 +1,5 @@
 package com.ironmonone.tracker.nds
 
-import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -28,8 +27,7 @@ class Gen5StatusTest {
     @Test fun `in the rival battle dump Foresight is not a status and no one is statused`() {
         // IRONMON_DUMPS: .vendor/dumps. The enemy Larvitar has Odor Sleuth's condition (17) at
         // +0x60 and nothing else; the reference's loop reads only +0x20 and would miss any status.
-        val dir = System.getenv("IRONMON_DUMPS")?.let { File(it) }?.takeIf { it.isDirectory } ?: return
-        val f = File(dir, "b2-rand-rival-battle.bin").takeIf { it.isFile } ?: return
+        val f = Dumps.dump("b2-rand-rival-battle.bin") ?: return
         val ram = f.readBytes()
         fun u32(a: Long): Long { val o = (a - 0x02000000L).toInt(); return (0 until 4).fold(0L) { acc, i -> acc or ((ram[o + i].toLong() and 0xFF) shl (8 * i)) } }
         val ptr = 0x02000000L + 0x2573AC - 0x40

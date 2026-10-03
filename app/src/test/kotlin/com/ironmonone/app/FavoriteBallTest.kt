@@ -19,17 +19,20 @@ import kotlin.test.assertTrue
  */
 class FavoriteBallTest {
     private val books = File("src/main/assets/rulesets")
-    private val gen3Books: List<File> = listOf("RSE", "FRLG", "RSE-NatDex", "FRLG-NatDex").flatMap { d ->
+    private val gen3Books: List<File> = listOf("RSE", "FRLG", "RSE-NatDex", "FRLG-NatDex", "FRLG-MaxDex").flatMap { d ->
         File(books, d).listFiles()!!.filter { it.name.endsWith(".md") }
     }
+
+    /** The Nuzlocke case binds a ledger to the run in play; left set, a stream test run after it read every run as a Nuzlocke. */
+    @kotlin.test.AfterTest fun clean() { NuzlockeTracking.reset() }
 
     private fun ball(place: String, species: Int) = GbaTracker.BallOption(place, species, "")
 
     /** Whether [mode] takes a favorite of [bst]: [legendary] and [strong] as the rules count them, [national] for Cosmoem. */
     private fun ok(
         mode: String?, bst: Int, natDex: Boolean = false, legendary: Boolean = false, strong: Boolean = false,
-        national: Int? = null, legendaries: Int = if (legendary) 1 else 0,
-    ) = FavoriteBall.takeable(mode, natDex, FavoriteBall.Candidate(bst, legendary, strong, national), legendaries)
+        national: Int? = null, legendaries: Int = if (legendary) 1 else 0, maxDex: Boolean = false,
+    ) = FavoriteBall.takeable(mode, natDex, FavoriteBall.Candidate(bst, legendary, strong, national), legendaries, maxDex)
 
     @Test
     fun `each mode takes the favorites its official rules allow`() {
@@ -92,8 +95,11 @@ class FavoriteBallTest {
         for (f in gen3Books) {
             val text = f.readText()
             val mode = f.nameWithoutExtension
-            val natDex = f.parentFile.name.endsWith("-NatDex")
-            fun takes(bst: Int) = ok(mode, bst, natDex)
+            // MaxDex's book is the Nat. Dex rules for 1.1.3, and the app takes MaxDex as a Nat. Dex build with those lines.
+            val maxDex = f.parentFile.name.endsWith("-MaxDex")
+            val natDex = f.parentFile.name.endsWith("-NatDex") || maxDex
+            if (maxDex) assertTrue(com.ironmonone.core.RomKind.FIRERED_MAXDEX_10.isNatDex && com.ironmonone.core.RomKind.FIRERED_MAXDEX_10.isMaxDex)
+            fun takes(bst: Int) = ok(mode, bst, natDex, maxDex = maxDex)
             // Every book has the Favorites Clause; Journey's Rule #1 makes it moot.
             assertTrue("You can skip choosing the starter pick at Random ONLY if you find one of your" in text, f.path)
             if ("You can choose any of the 3 starters" in text) {
@@ -101,8 +107,14 @@ class FavoriteBallTest {
                 continue
             }
             when {
+                maxDex -> {
+                    assertTrue("Your favorites can be up to 600 BST in Kaizo, Survival and Super Kaizo, or 640 BST in Standard and Ultimate." in text, f.path)
+                    assertFalse("Your favorites can be up to 600 BST, and if you are playing Standard or Ultimate" in text, "${f.path}: the v1.2.0+ line")
+                    val plain = mode == "standard" || mode == "ultimate"
+                    assertTrue(if (plain) takes(640) && !takes(641) else takes(600) && !takes(601), f.path)
+                }
                 natDex -> {
-                    assertTrue("Your favourites can be up to 600 BST, and if you are playing Standard or Ultimate" in text, f.path)
+                    assertTrue("Your favorites can be up to 600 BST, and if you are playing Standard or Ultimate" in text, f.path)
                     assertTrue(takes(600) && !takes(601) || mode == "standard" || mode == "ultimate", f.path)
                     assertEquals(mode == "standard" || mode == "ultimate", takes(700), f.path)
                 }
@@ -175,8 +187,11 @@ class FavoriteBallTest {
             listOf("FAVORITE! BULBASAUR IN THE LEFT BALL", "FAVORITE! SQUIRTLE IN THE MIDDLE BALL", "FAVORITE! CHARMANDER IN THE RIGHT BALL"),
             FavoriteBall.shown(store2, session2, t, dir2).balls,
         )
-        // Before the tracker is up: the list alone.
-        assertEquals(FavoritesShown("FAVORITES: SQUIRTLE / GENGAR / DRAGONITE"), FavoriteBall.shown(store, session, null, dir))
+        // Before the tracker is up: the list alone, and its icons.
+        val early = FavoriteBall.shown(store, session, null, dir)
+        assertEquals("FAVORITES: SQUIRTLE / GENGAR / DRAGONITE", early.list)
+        assertTrue(early.balls.isEmpty())
+        assertEquals(listOf("Squirtle", "Gengar", "Dragonite"), early.icons.map { it.name })
     }
 
     @Test
@@ -207,8 +222,9 @@ class FavoriteBallTest {
         val noParty = panel.indexOf("state.partyCount == 0 -> PcCard {")
         val line = panel.indexOf("if (state.inLab) favoriteLine?.balls?.forEach {")
         assertTrue(noParty in 0 until line && line < panel.indexOf("state.gameOver != null && ironmonOver"), "on the no-party card")
-        assertTrue(panel.indexOf("favoriteLine?.list?.let {") in noParty until line, "under the favorites")
-        assertTrue("favoriteLine?.list?.let {" in File("src/main/kotlin/com/ironmonone/app/NdsTrackerPanel.kt").readText())
+        // Under the favorites, drawn as their icons since 2026-10-02 (FavoriteIconsTest).
+        assertTrue(panel.indexOf("FavoriteIconRow(it, { sp -> spriteFor(sp) })") in noParty until line, "under the favorites")
+        assertTrue("DsBallAndFavorites(randomBall, hgss = state.badgeSet == \"HGSS\", favoriteLine?.icons.orEmpty())" in File("src/main/kotlin/com/ironmonone/app/NdsTrackerPanel.kt").readText())
         // The Kaizo IronMON screen says so on a Game Boy Advance game, in any mode but Journey.
         val run = File("src/main/kotlin/com/ironmonone/app/RunScreen.kt").readText()
         assertTrue("val favBall = selectedRom?.first?.platform == com.ironmonone.core.Platform.GBA && favMode != null && favMode != FavoriteBall.JOURNEY" in run)

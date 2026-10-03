@@ -226,16 +226,43 @@ class GbaTrackerTest {
         assertEquals("Electric", Gen3Types.name(e1.type1))
         assertEquals(0, e1.movesSeen.size, "nothing revealed before the enemy moves")
 
+        // The last opponent move written is the AI's choice, not a use: on its own it reveals nothing (rc33 audit P1 #72).
+        // EnemyMovesSeenTest drives the move actions that do.
         lastUsed = 84
         val e2 = t.read().enemy!!
-        assertEquals(1, e2.movesSeen.size, "one move after one use")
+        assertEquals(0, e2.movesSeen.size, "a choice is not a use")
+    }
 
-        // battle ends, then a NEW battle: the seen page must reset
-        val end = t.read(); // still in battle in this fixture; simulate end:
-        lastUsed = 0
-        enemy[0x00] = 27   // different species
-        val e3 = t.read().enemy!!
-        assertEquals(0, e3.movesSeen.size, "new species starts a fresh seen page")
+    @Test
+    fun `the opponent's personality is read where each layout keeps it`() {
+        // rc33 audit P1 #73: Nat. Dex ROMs keep a 12-letter nickname, so personality is at +0x4C there and +0x48 is the
+        // experience; two wild Pokemon of one growth rate and level read the same "personality" before this.
+        fun pidOn(map: GameMap, at: Int): Long {
+            val enemy = ByteArray(map.battleMonSize).also {
+                it[0x00] = 25; it[0x2A] = 7; it[0x28] = 18; it[0x2C] = 22; it[0x21] = 13; it[0x22] = 13
+                // Experience 27 where vanilla keeps personality; the personality where this layout keeps it.
+                it[0x48] = 27
+                it[at] = 0xEF.toByte(); it[at + 1] = 0xBE.toByte(); it[at + 2] = 0xAD.toByte(); it[at + 3] = 0x1E
+            }
+            val reader = MemoryReader { address, length ->
+                when {
+                    address == map.partyCount -> byteArrayOf(0)
+                    address == map.battlersCount -> byteArrayOf(2)
+                    address == map.battleMons && length == 2 -> byteArrayOf(25, 0)
+                    address == map.battleTypeFlags -> ByteArray(4)
+                    address == map.battleMons + map.battleMonSize && length == map.battleMonSize -> enemy.copyOf()
+                    // As in the test above: the ROM reads as blank, anything else in RAM as unreadable.
+                    address >= 0x08000000L -> ByteArray(length)
+                    else -> ByteArray(0)
+                }
+            }
+            val t = GbaTracker(reader, map)
+            t.read()
+            return t.read().enemy!!.pid
+        }
+        assertEquals(0x1EADBEEFL, pidOn(GameMap.EMERALD_U, 0x48), "vanilla: +0x48")
+        val natDex = GameMap.EMERALD_U.copy(battleMonSize = 0x5C, status2Offset = 0x54)
+        assertEquals(0x1EADBEEFL, pidOn(natDex, 0x4C), "Nat. Dex: +0x4C")
     }
 
     // ------------------------------------------------------------------ fixtures

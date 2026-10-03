@@ -71,6 +71,32 @@ class Gen3NuzlockeTest {
     }
 
     @Test
+    fun `Ruby, Sapphire and Emerald's set battles that look like walking are statics by place and level`() {
+        // rc33 audit P1 #76: dowildbattle gives Kecleon, the item-ball Voltorb and the hideout Electrode a plain wild battle's type.
+        fun method(game: String, place: String, species: Int, level: Int, wild: Boolean = true) = Gen3Nuzlocke.snapshot(state(
+            inBattle = true, wild = wild, foe = enemy(species = species, level = level), area = place, encounterArea = "Walking",
+            nuz = standardNuz.copy(staticsGame = game),
+        ))!!.method
+        val kecleon = 317; val voltorb = 100; val magnemite = 81; val electrode = 101
+        assertEquals(Method.STATIC, method("e", "Route 120", kecleon, 30))
+        assertEquals(Method.STATIC, method("e", "Route 119", kecleon, 30))
+        assertEquals(Method.STATIC, method("rs", "Route 120", kecleon, 30))
+        assertEquals(Method.WALK, method("e", "Route 120", kecleon, 25), "a wild Kecleon is Lv 25 to 27")
+        assertEquals(Method.STATIC, method("e", "New Mauville Inner", voltorb, 25))
+        assertEquals(Method.WALK, method("e", "New Mauville Inner", magnemite, 25), "the row names Voltorb: a wild Magnemite at 25 counts")
+        assertEquals(Method.WALK, method("e", "New Mauville Inner", voltorb, 24))
+        assertEquals(Method.STATIC, method("e", "Aqua Hideout B1F", electrode, 30))
+        assertEquals(Method.STATIC, method("rs", "Magma Hideout B1F", electrode, 30), "Ruby's hideout")
+        assertEquals(Method.WALK, method("frlg", "Route 120", kecleon, 30), "FireRed and LeafGreen mark their own")
+        assertEquals(Method.WALK, method("e", "Route 3", 19, 30), "anywhere else a wild battle is an encounter")
+        assertEquals(Method.WALK, method("e", "Route 120", kecleon, 30, wild = false), "only a wild battle")
+        // The engine then frees it, as the Game Boy and DS adapters' statics.
+        val surf = Gen3Nuzlocke.snapshot(state(inBattle = true, wild = true, foe = enemy(species = kecleon, level = 30), area = "Route 120",
+            encounterArea = "Surfing", nuz = standardNuz.copy(staticsGame = "e")))!!.method
+        assertEquals(Method.SURF, surf, "a surfing encounter is never a static")
+    }
+
+    @Test
     fun `a party member keeps its personality value as its id, and gender comes from the species' ratio`() {
         val s = Gen3Nuzlocke.snapshot(state(party = listOf(
             tracked(decoded(0x180, nick = "Male")),                                            // low byte 0x80: at or above 127, male
@@ -215,5 +241,19 @@ class Gen3NuzlockeTest {
             nuz = NuzlockeReads(ballCount = 5, turn = 0, opponent = brock, caps = caps)))
         val w = ledger.openWarnings.single()
         assertTrue("level 30" in w.text && "cap of 22" in w.text, w.text)
+    }
+
+    @Test
+    fun `a building's map section and type reach the engine, so its gifts count for the town or route outside`() {
+        // rc32 audit P2 #140: the map section is the game's own "met at" place, and type 8 is a building.
+        val inside = Gen3Nuzlocke.snapshot(state(nuz = NuzlockeReads(ballCount = 5, mapSection = 0x66, mapType = 8), area = "Pokémon Center"))!!
+        assertEquals(0x66, inside.area.section)
+        assertTrue(inside.area.indoor)
+        val outside = Gen3Nuzlocke.snapshot(state(nuz = NuzlockeReads(ballCount = 5, mapSection = 0x66, mapType = 3), area = "Route 4"))!!
+        assertEquals(0x66, outside.area.section)
+        assertFalse(outside.area.indoor)
+        val unread = Gen3Nuzlocke.snapshot(state())!!
+        assertNull(unread.area.section)
+        assertFalse(unread.area.indoor)
     }
 }

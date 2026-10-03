@@ -28,9 +28,26 @@
     <!-- VIBRATE: the phone's motor plays a game's rumble (Game Boy Player,
          rumble carts, the DS Rumble Pak). Off in SETTINGS if unwanted. -->
     <uses-permission android:name="android.permission.VIBRATE" />
-    <!-- The stream reminder (StreamReminder): one notification while the stream is on and KaizoCore is in the background. -->
+    <!-- The stream's notification (StreamReminder): one, while the stream is on. Quiet while KaizoCore is in front, it
+         pops up to bring the player back when KaizoCore goes to the background. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- FOREGROUND_SERVICE (granted at install, no prompt): while the stream is on it runs as a foreground service,
+         StreamService, from the player's tap on STREAM until it is turned off. The notification is that service's, so
+         it goes when the stream does, and swiping KaizoCore away in Recents ends both (rc32 audit P3 #80). -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <!-- FOREGROUND_SERVICE_SPECIAL_USE (granted at install, no prompt): Android 14 asks every foreground service for a
+         type, and a stream server that OBS reads over Wi-Fi fits none of the listed ones, so StreamService is special
+         use and gives its reason in PROPERTY_SPECIAL_USE_FGS_SUBTYPE. Google Play reviews that reason before listing
+         an app; KaizoCore is sideloaded. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <!-- ACCESS_NETWORK_STATE (granted at install, no prompt): the stream's address for the PC leaves out the
+         interfaces Android says carry mobile data, which no PC can open (StreamHub.pickAddress, rc32 audit P3 #79). -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-feature android:name="android.hardware.camera.any" android:required="false" />
+    <!-- The CAMERA permission implies these two as required, which would hide the app from a phone with no rear
+         camera; the facecam is optional (rc32 audit P3 #14). -->
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
 
     <!-- A 32MB ROM, a 26MB patch and a 32MB output are held at once while patching. -->
     <application
@@ -41,14 +58,29 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.IronMonOne">
 
+        <!-- The font size, bold text and language are taken in place too: each rebuilt the activity mid-game, which closed
+             the settings editor and filed a resume on the run (rc32 audit P2 #32, #33). -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:configChanges="orientation|screenSize|keyboardHidden|screenLayout|smallestScreenSize|keyboard|navigation|uiMode|density">
+            android:configChanges="orientation|screenSize|keyboardHidden|screenLayout|smallestScreenSize|keyboard|navigation|uiMode|density|fontScale|fontWeightAdjustment|locale|layoutDirection">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- The stream as a foreground service (StreamService, rc32 audit P3 #80), from the player's tap on STREAM until
+             the stream stops. stopWithTask stays false: true would stop it without calling onTaskRemoved, which is
+             where a swipe from Recents ends the stream. -->
+        <service
+            android:name=".stream.StreamService"
+            android:exported="false"
+            android:stopWithTask="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="A stream server the player starts by hand: OBS on the player's PC reads the game, the tracker and the attempt counter from it over Wi-Fi." />
+        </service>
     </application>
 </manifest>

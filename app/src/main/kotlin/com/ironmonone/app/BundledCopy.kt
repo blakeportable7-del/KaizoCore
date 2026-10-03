@@ -27,15 +27,20 @@ internal object BundledCopy {
         context.assets.open(asset).use { it.copyTo(out) }
     }
 
-    /** Writes [dest] through a .tmp with [write], replaces it in one step and marks it whole; null on any failure. */
+    /**
+     * Writes [dest] through a .tmp with [write], replaces it in one step and marks it whole; null on any failure. The
+     * .tmp is this call's own: with one name for all, two first-time copies of one patch (two patch jobs at once) wrote
+     * the same file, and one could read the patch half written (rc32 audit P2 #74).
+     */
     fun copyWhole(dest: File, write: (java.io.OutputStream) -> Unit): File? {
-        val tmp = File(dest.parentFile, dest.name + ".tmp")
+        var tmp: File? = null
         return runCatching {
             dest.parentFile?.mkdirs()
-            tmp.outputStream().use { write(it) }
-            StateSlots.replace(tmp, dest)
+            val t = File.createTempFile(dest.name.padEnd(3, '_'), ".tmp", dest.absoluteFile.parentFile).also { tmp = it }
+            t.outputStream().use { write(it) }
+            StateSlots.replace(t, dest)
             markWhole(dest)
             dest
-        }.getOrElse { if (tmp.isFile) tmp.delete(); null }
+        }.getOrElse { tmp?.takeIf { it.isFile }?.delete(); null }
     }
 }

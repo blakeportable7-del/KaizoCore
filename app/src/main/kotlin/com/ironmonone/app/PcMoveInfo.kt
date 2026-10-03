@@ -49,6 +49,12 @@ data class MoveDetail(
     /** The row's PP and accuracy as the card draws them: "?" where "Reveal info if randomized" hides them (PcMove). */
     val ppText: String? = null,
     val accText: String? = null,
+    /** Why and when this run bans the move (MoveRule), shown first; null when it does not. */
+    val banLine: String? = null,
+    /** "Type matchups in move info" applies to this move (on, and the move has power): what [MoveInfoText.chart] needs. */
+    val chartShown: Boolean = false,
+    /** The Nat. Dex chart, with Fairy, for a chart worked out on the card. */
+    val natDex: Boolean = false,
 )
 
 /**
@@ -68,6 +74,17 @@ internal object MoveInfoText {
             else -> t
         }
     } ?: d.acc?.takeIf { it > 0 }?.let { "$it%" } ?: "-"
+
+    /**
+     * The matchups the card shows. Your own Hidden Power's is its set type's, read live like the tag and the category
+     * beside the arrows: the chart was worked out once, from the type the card opened with, so after the arrows it kept
+     * the old type's lines, and none at all when the card opened with no type set (rc32 audit P3 #73).
+     */
+    fun chart(d: MoveDetail): MoveMatchup.General? = when {
+        d.hiddenPowerPid == null -> d.typeChart
+        !d.chartShown -> null
+        else -> MoveMatchup.general(HiddenPowerTypes.of(d.hiddenPowerPid), natDex = d.natDex)
+    }
 }
 
 /**
@@ -100,6 +117,10 @@ fun PcMoveInfoContent(d: MoveDetail, onDismiss: () -> Unit) {
             }
         },
     ) {
+        d.banLine?.let { line ->
+            InfoParagraph(null, line, Pc.Negative)
+            Spacer(Modifier.height(10.dp))
+        }
         if (d.hiddenPowerPid != null) {
             // Read live, so the tag and category follow the arrows as they are tapped.
             val hp = HiddenPowerTypes.of(d.hiddenPowerPid)
@@ -132,7 +153,7 @@ fun PcMoveInfoContent(d: MoveDetail, onDismiss: () -> Unit) {
             d.priority?.takeIf { it != 0 }?.let { InfoStat("PRIORITY", if (it > 0) "+$it" else "$it", Pc.Gold) }
         }
         // The type chart for this move's type, in general. No opponent here.
-        d.typeChart?.let { g ->
+        MoveInfoText.chart(d)?.let { g ->
             Spacer(Modifier.height(10.dp))
             if (g.strongAgainst.isNotEmpty()) Matchup("Strong against", g.strongAgainst, Pc.Positive)
             if (g.resistedBy.isNotEmpty()) Matchup("Resisted by", g.resistedBy, Pc.Gold)
@@ -151,8 +172,8 @@ fun PcMoveInfoContent(d: MoveDetail, onDismiss: () -> Unit) {
 @Composable
 private fun Matchup(label: String, types: List<String>, color: Color) {
     Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
-        PixText(label, 12, color, Modifier.width(118.dp))
-        PixText(types.joinToString(", "), 12, Pc.Text, Modifier.weight(1f), wrap = true)
+        DialogText(label, 13, color, Modifier.width(118.dp))
+        DialogText(types.joinToString(", "), 13, Pc.Text, Modifier.weight(1f))
     }
 }
 

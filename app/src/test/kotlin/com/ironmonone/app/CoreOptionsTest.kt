@@ -9,6 +9,36 @@ import kotlin.test.assertTrue
 
 class CoreOptionsTest {
 
+    /** Whether [needle] occurs in [hay]: the shipped core's option strings are plain C strings in its .so. */
+    private fun contains(hay: ByteArray, needle: ByteArray): Boolean {
+        outer@ for (i in 0..hay.size - needle.size) {
+            for (j in needle.indices) if (hay[i + j] != needle[j]) continue@outer
+            return true
+        }
+        return false
+    }
+
+    @Test
+    fun `DS sound is 16-bit and cubic unless the player picks the DS's own, in words the shipped core knows`() {
+        val bits = CoreOptions.NDS.first { it.key == "melonds_audio_bitrate" }
+        val interp = CoreOptions.NDS.first { it.key == "melonds_audio_interpolation" }
+        assertEquals("16-bit", bits.default, "10-bit is the grain Blake heard as crackling (2026-10-02)")
+        assertEquals("Cubic", interp.default)
+        assertTrue("10-bit" in bits.values && "None" in interp.values, "the DS's own sound stays one tap away")
+        // Measured on the stream tap: a bit depth picked mid-game waits for the next boot, the interpolation does not.
+        assertTrue(bits.restart, "the bit depth says it applies on the next boot")
+        assertTrue(!interp.restart, "the interpolation changes at once")
+        assertEquals("16-bit", CoreOptionStore(Files.createTempDirectory("ds").toFile()).effective(Platform.NDS)["melonds_audio_bitrate"],
+            "a player with no stored value gets it, as every player who never opened the settings does")
+        // Each key and value, NUL-terminated, in both shipped builds of the core: a word it does not know is ignored
+        // and the core falls back to its own default, which is the 10-bit sound.
+        for (abi in listOf("arm64-v8a", "x86_64")) {
+            val so = File("src/main/jniLibs/$abi/libmelonds_libretro_android.so").readBytes()
+            for (s in listOf(bits.key, interp.key) + bits.values + interp.values)
+                assertTrue(contains(so, (s + "\u0000").toByteArray()), "$abi core lacks $s")
+        }
+    }
+
     @Test
     fun `every console's catalogue is well-formed and keys are unique`() {
         for (p in Platform.entries) {

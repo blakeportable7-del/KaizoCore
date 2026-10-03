@@ -38,14 +38,15 @@ class NuzlockeDemoTest {
     private val roms: File = System.getenv("IRONMON_ROMS")?.let(::File)?.takeIf { it.isDirectory } ?: File("C:/Users/bepor/IronMonOne/.vendor/roms")
 
     private fun rom(name: String): ByteArray? {
-        val f = File(roms, name)
-        if (!f.isFile) { println("SKIP: $name is not on this machine"); return null }
+        val f = Dumps.file(roms, name)
+        if (f == null) { println("SKIP: $name is not on this machine"); return null }
         return f.readBytes()
     }
 
     /** A game whose memory reads as zeros: the demo builds its own state, the tracker only lends its tables. */
-    private class Blank(private val base: Long) : MemoryReader {
-        override fun read(address: Long, length: Int): ByteArray = if (address >= base && address - base + length <= 0x10000) ByteArray(length) else ByteArray(0)
+    /** Zeros over the core's work RAM, 8 KB for Gen 1 and 32 KB for Gen 2 (rc32 audit P3 #117). */
+    private class Blank(private val base: Long, private val size: Int) : MemoryReader {
+        override fun read(address: Long, length: Int): ByteArray = if (address >= base && address - base + length <= size) ByteArray(length) else ByteArray(0)
     }
 
     private class Run(system: NuzlockeSystem) {
@@ -97,7 +98,7 @@ class NuzlockeDemoTest {
 
     @Test
     fun `gb-nuz on Red is a run the ledger follows from the starter to a faint and a win`() {
-        val t = Gen1Tracker(Blank(Gen1Tracker.RAM), rom("red-u.gbc") ?: return)
+        val t = Gen1Tracker(Blank(Gen1Tracker.RAM, 0x2000), rom("red-u.gbc") ?: return)
         checkGameBoy(NuzlockeSystem.GEN1, "Route 1", "Route 2") { NuzlockeAdapters.snapshot(Demo.gb1Nuz(t, it)) }
         // The place keys and the caps are the game's own, read through the tracker.
         val caps = assertNotNull(Demo.gb1Nuz(t, 0).nuz?.gb?.caps)
@@ -106,14 +107,14 @@ class NuzlockeDemoTest {
 
     @Test
     fun `gb-nuz on Yellow keeps Yellow's rows and caps`() {
-        val t = Gen1Tracker(Blank(Gen1Tracker.RAM), rom("yellow-u.gbc") ?: return)
+        val t = Gen1Tracker(Blank(Gen1Tracker.RAM, 0x2000), rom("yellow-u.gbc") ?: return)
         assertEquals("y", Demo.gb1Nuz(t, 0).nuz!!.gb!!.game)
         assertEquals(12, Demo.gb1Nuz(t, 0).nuz!!.gb!!.caps!!.byKey("gym1")!!.cap, "Yellow's Brock")
     }
 
     @Test
     fun `gb-nuz on Crystal is a run the ledger follows from the starter to a faint and a win`() {
-        val t = GbcTracker(Blank(GbcTracker.RAM), rom("crystal-u.gbc") ?: return)
+        val t = GbcTracker(Blank(GbcTracker.RAM, 0x8000), rom("crystal-u.gbc") ?: return)
         checkGameBoy(NuzlockeSystem.GEN2, "Route 29", "Route 30") { NuzlockeAdapters.snapshot(Demo.gb2Nuz(t, it)) }
         assertEquals("c", Demo.gb2Nuz(t, 0).nuz!!.gb!!.game)
         assertTrue(assertNotNull(Demo.gb2Nuz(t, 0).nuz!!.gb!!.caps).fromRom)
@@ -121,7 +122,7 @@ class NuzlockeDemoTest {
 
     @Test
     fun `gb-nuz gives each Game Boy Pokemon a gender from the ROM's ratio, the way the game does`() {
-        val t = GbcTracker(Blank(GbcTracker.RAM), rom("crystal-u.gbc") ?: return)
+        val t = GbcTracker(Blank(GbcTracker.RAM, 0x8000), rom("crystal-u.gbc") ?: return)
         val s = assertNotNull(NuzlockeAdapters.snapshot(Demo.gb2Nuz(t, 3)))
         // Cyndaquil with attack 7 and speed 7 (b = 119) against one female in eight (31), and Sentret with 3 and 10 (b = 58) against even odds (127).
         assertEquals(listOf(com.ironmonone.tracker.nuzlocke.Gender.MALE, com.ironmonone.tracker.nuzlocke.Gender.FEMALE), s.party.map { it.gender })
@@ -182,6 +183,5 @@ class NuzlockeDemoTest {
         assertTrue("""if (mode == "gb-nuz") return gb1Nuz(t)""" in demo)
         assertTrue("""if (mode == "gb-nuz") return gb2Nuz(t)""" in demo)
         assertTrue("""if (mode == "nds-nuz") return ndsNuz(t)""" in demo)
-        assertTrue("gb-nuz".startsWith("gb-") && "nds-nuz".startsWith("nds"))
     }
 }

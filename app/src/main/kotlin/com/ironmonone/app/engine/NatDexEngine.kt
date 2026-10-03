@@ -38,9 +38,9 @@ object NatDexEngine {
             val msg = e.message ?: ""
             throw EngineException(
                 when {
+                    // Shown to the player as it is (RunJob.randomizeFailure), in the same words as ZxEngine's (rc32 audit P2 #72, P3 #53).
                     "too old" in msg ->
-                        "\"${settingsFile.name}\" is a vanilla-era settings file. " +
-                            "This engine needs a Nat. Dex settings file."
+                        "\"${settingsFile.name}\" is a mode for the standard version of this game. Pick a Nat. Dex mode."
                     "newer version" in msg ->
                         "\"${settingsFile.name}\" was made for a newer randomizer than " +
                             "this app ships."
@@ -52,8 +52,9 @@ object NatDexEngine {
 
         val factory = Gen3RomHandler.Factory()
         if (!factory.isLoadable(sourceRom.absolutePath)) {
+            // A game, not a ROM, in the player's words, as ZxEngine says it (rc35 follow-up N #5).
             throw EngineException(
-                "\"${sourceRom.name}\" is not a GBA Pokémon ROM this engine can open."
+                "\"${sourceRom.name}\" is not a GBA Pokémon game the Nat. Dex randomizer can open."
             )
         }
         val handler = factory.create(RandomSource.instance())

@@ -1,0 +1,30 @@
+# Battles that are not a wild first encounter, Generation 3 (2026-10-02, rc33 audit P1 #76): a wild battle at PLACE at
+# exactly LEVEL is a set battle (a static), not the area's first encounter.
+#
+# Only the set battles the game gives no sign of. Ruby, Sapphire and Emerald start these with dowildbattle, whose battle
+# type is any wild battle's, so the tracker sees a walking encounter. FireRed and LeafGreen mark theirs with
+# BATTLE_TYPE_WILD_SCRIPTED, and every game's legendaries carry flags of their own; the tracker reads both, and neither
+# needs a row here.
+#
+# Columns: game, place, level, species, note, and for a row whose level a wild slot there shares, the species' national
+# dex number (Gen 3's own ids are the national numbers up to 251).
+#   game: rs = Ruby and Sapphire, e = Emerald.
+#   place: the tracker's name for the map, as gen3/routeinfo-ruby.tsv, -sapphire.tsv and -emerald.tsv spell it.
+#   level: the level the script gives the battle. species: the vanilla species, a note for people (a randomized game
+#   changes it and keeps the place and level). New Mauville's wild Voltorb and Magnemite are Lv 22 to 26, so its row
+#   names Voltorb: a wild Lv 25 Magnemite there stays an encounter, a wild Lv 25 Voltorb reads as the set one, and a
+#   randomized game's set Voltorb is another species and reads as an encounter.
+#
+# Sources: docs/research/nuzlocke-gen1-3.md 6.2.3 (Ruby and Sapphire) and 7.2.3 (Emerald): pret data/scripts/kecleon.inc
+# (setwildbattle SPECIES_KECLEON, 30) with the Route 119 and Route 120 objects, NewMauville_Inside (three setwildbattle
+# SPECIES_VOLTORB, 25) and the hideout's B1F (two setwildbattle SPECIES_ELECTRODE, 30; Magma Hideout in Ruby, Aqua Hideout
+# in Sapphire and Emerald).
+rs	Route 119	30	Kecleon	invisible until the Devon Scope, two on Route 119
+rs	Route 120	30	Kecleon	invisible until the Devon Scope, six on Route 120
+rs	New Mauville Inner	25	Voltorb	three fake item balls	100
+rs	Magma Hideout B1F	30	Electrode	two fake item balls, Ruby
+rs	Aqua Hideout B1F	30	Electrode	two fake item balls, Sapphire
+e	Route 119	30	Kecleon	invisible until the Devon Scope, two on Route 119
+e	Route 120	30	Kecleon	invisible until the Devon Scope, six on Route 120
+e	New Mauville Inner	25	Voltorb	three fake item balls	100
+e	Aqua Hideout B1F	30	Electrode	two fake item balls

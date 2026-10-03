@@ -58,6 +58,26 @@ class GuardrailsTest {
         assertTrue(RomKind.FIRERED_NATDEX_121.isNatDex)
     }
 
+    /**
+     * MaxDex 1.0 (Tripc423/Maxdex): pinned by the target CRC its patch carries, a Nat. Dex build of FireRed 1.1 with its
+     * own flag, and nothing that can be patched again. Its header is FireRed 1.1's, so the CRC is the only gate.
+     */
+    @Test
+    fun `MaxDex is pinned by its CRC and flagged, never by its header`() {
+        val k = RomKind.FIRERED_MAXDEX_10
+        assertEquals(0x28C12926L, k.expectedCrc)
+        assertEquals(RomKind.FIRERED_U_V11.titleDetect, k.titleDetect)
+        assertTrue(k.isNatDex)
+        assertTrue(k.isMaxDex)
+        assertFalse(k.natDexCapable)
+        assertEquals(null, k.patchTag)
+        assertEquals(listOf(k), RomKind.allMaxDex)
+        assertTrue(k in RomKind.all)
+        assertFalse(k in RomKind.allNatDex, "allNatDex is Nat. Dex 1.2.1's outputs, which its patch path checks against")
+        assertEquals(1, RomKind.all.count { it.isMaxDex })
+        assertEquals(k, RomKind.byId("firered-maxdex-10"))
+    }
+
     @Test
     fun `NatDex cannot be stacked on an already-patched ROM`() {
         assertTrue(RomKind.EMERALD_U.natDexCapable)

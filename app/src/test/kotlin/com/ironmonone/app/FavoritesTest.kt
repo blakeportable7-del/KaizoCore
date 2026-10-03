@@ -44,6 +44,13 @@ class FavoritesTest {
 
     /** Three on the Gen 1 to 3 trackers, four on a Gen 4 DS game, five on Gen 5; the list stops at the game's dex. */
     @Test
+    fun `the table's empty none rows are never offered or named`() {
+        assertEquals(false, Favorites.suggest("No").any { it.equals("None", ignoreCase = true) }, Favorites.suggest("No").toString())
+        assertNull(Favorites.idOf("none"))
+        assertEquals(true, Favorites.suggest("No").any { it == "Noctowl" })
+    }
+
+    @Test
     fun `slot count and dex cap follow the game`() {
         val K = com.ironmonone.core.RomKind
         kotlin.test.assertEquals(3, Favorites.slotCount(K.EMERALD_U)); kotlin.test.assertEquals(3, Favorites.slotCount(K.RED_U)); kotlin.test.assertEquals(3, Favorites.slotCount(null))

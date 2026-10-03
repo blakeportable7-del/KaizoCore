@@ -75,7 +75,7 @@ bool Audio::initializeStream() {
 
     oboe::Result result = builder.openManagedStream(stream);
     if (result == oboe::Result::OK) {
-        baseConversionFactor = (double) inputSampleRate / stream->getSampleRate();
+        baseConversionFactor.store((double) inputSampleRate / stream->getSampleRate());
         fifoBuffer = std::make_unique<oboe::FifoBuffer>(2, audioBufferSize);
         temporaryAudioBuffer = std::unique_ptr<int16_t[]>(new int16_t[audioBufferSize]);
         latencyTuner = std::make_unique<oboe::LatencyTuner>(*stream);
@@ -109,15 +109,33 @@ double Audio::computeMaximumLatency() const {
 }
 
 void Audio::start() {
+    std::lock_guard<std::mutex> lock(streamLock);
     startRequested = true;
     if (stream != nullptr)
         stream->requestStart();
 }
 
 void Audio::stop() {
+    std::lock_guard<std::mutex> lock(streamLock);
     startRequested = false;
     if (stream != nullptr)
         stream->requestStop();
+}
+
+void Audio::serviceRebuild() {
+    if (!rebuildPending.exchange(false)) return;
+    std::lock_guard<std::mutex> lock(streamLock);
+    LOGI("Reopening the sound stream after the device went away");
+    if (initializeStream() && startRequested && stream != nullptr) {
+        stream->requestStart();
+    }
+}
+
+void Audio::setInputSampleRate(int32_t rate) {
+    std::lock_guard<std::mutex> lock(streamLock);
+    if (rate <= 0) return;
+    inputSampleRate = rate;
+    if (stream != nullptr) baseConversionFactor.store((double) inputSampleRate / stream->getSampleRate());
 }
 
 void Audio::write(const int16_t *data, size_t frames) {
@@ -129,6 +147,8 @@ void Audio::write(const int16_t *data, size_t frames) {
     if (fifoBuffer == nullptr) {
         return;
     }
+    lastWriteNs.store(std::chrono::duration_cast<std::chrono::nanoseconds>(
+        std::chrono::steady_clock::now().time_since_epoch()).count());
     fifoBuffer->write(data, frames * 2);
 }
 
@@ -162,7 +182,7 @@ oboe::DataCallbackResult Audio::onAudioReady(oboe::AudioStream *oboeStream, void
     }
 
     double dynamicBufferFactor = computeDynamicBufferConversionFactor(0.001 * numFrames);
-    double finalConversionFactor = baseConversionFactor * dynamicBufferFactor * playbackSpeed;
+    double finalConversionFactor = baseConversionFactor.load() * dynamicBufferFactor * playbackSpeed;
 
     // LOCAL MODIFICATION (KaizoCore): read input at the exact fractional rate.
     // This used to round each callback's input to whole frames and stretch that
@@ -193,7 +213,15 @@ double Audio::computeDynamicBufferConversionFactor(double dt) {
     // Error is represented by normalized distance to half buffer utilization. Range [-1.0, 1.0]
     double errorMeasure = (framesCapacityInBuffer - 2.0f * framesAvailableInBuffer) / framesCapacityInBuffer;
 
-    errorIntegral += errorMeasure * dt;
+    // LOCAL MODIFICATION (KaizoCore, rc32 audit P2 #120). The integral is held while the core writes no sound (muted,
+    // fast forward, slow motion, rewind): it grew without end on the empty buffer, and back at 1x the game played flat
+    // and dropped sound for about as long as it had been silent. It is also kept within the range its output can use.
+    const int64_t nowNs = std::chrono::duration_cast<std::chrono::nanoseconds>(
+        std::chrono::steady_clock::now().time_since_epoch()).count();
+    const bool coreWriting = nowNs - lastWriteNs.load() < 100000000LL;
+    if (coreWriting) {
+        errorIntegral = std::clamp(errorIntegral + errorMeasure * dt, -maxi / ki, maxi / ki);
+    }
 
     // Wikipedia states that human ear resolution is around 3.6 Hz within the octave of 1000–2000 Hz.
     // This changes continuously, so we should try to keep it a very low value.
@@ -221,10 +249,9 @@ void Audio::onErrorAfterClose(oboe::AudioStream* oldStream, oboe::Result result)
     if (result != oboe::Result::ErrorDisconnected)
         return;
 
-    initializeStream();
-    if (startRequested) {
-        start();
-    }
+    // LOCAL MODIFICATION (KaizoCore, rc32 audit P3 #92): only flagged here. Rebuilt on Oboe's own thread, the new
+    // stream and buffer replaced the old ones under a write in progress on the emulation thread.
+    rebuildPending = true;
 }
 
 } //namespace libretrodroid

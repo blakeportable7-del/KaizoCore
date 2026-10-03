@@ -15,7 +15,8 @@ import com.ironmonone.core.RomKind
  *   what it is: it applies to every mode, not only Kaizo. It was the default here until 2026-09-30.
  * - FireRed 1.0, LeafGreen, Emerald: the Super Kaizo Smart AI patch, an option
  *   beside Standard (and Nat. Dex where it exists). Never stacked on Nat. Dex.
- * - HeartGold: the Super Kaizo 0.0.3 patch (xdelta), an option beside Standard.
+ * - HeartGold: IronMON HGSS (xdelta), its quality-of-life patch, and the Super Kaizo 0.0.3 patch (xdelta), two
+ *   options beside Standard.
  * - Platinum: the Platinum Super Kaizo 1.0 patch (xdelta), the same way.
  * - Everything else: stored as is. Black 2 / White 2 Kaizo needs no patch.
  *
@@ -26,7 +27,11 @@ import com.ironmonone.core.RomKind
  * is named by the base kind id so the asset and the option can never drift apart.
  */
 object PrepOptions {
-    enum class Mode { STANDARD, NATDEX, PATCH }
+    /**
+     * MAXDEX: Trip's MaxDex patch applied to FireRed 1.1 (PrepRun): built in since rc34, or the same file where a player
+     * added it to the library before then (MaxDexInfo.patchFile).
+     */
+    enum class Mode { STANDARD, NATDEX, PATCH, MAXDEX }
 
     const val STANDARD_LABEL = "Standard (the game as it is)"
     const val NATDEX_LABEL = "Nat. Dex (adds Pokémon from later games)"
@@ -41,6 +46,7 @@ object PrepOptions {
             else "Pick this if you are not sure."
         // What it adds, not just when to pick it (Blake, 2026-09-30); the full list is NatDexInfo.lines.
         Mode.NATDEX -> NatDexInfo.SHORT
+        Mode.MAXDEX -> MaxDexInfo.SHORT
         Mode.PATCH -> when (o.out?.patchTag) {
             "pseudofluct" -> if (o.out.generation == Generation.GB1)
                 "Adds the experience curve this game lacks, so a run needs only the first official settings pass. Without it, runs take the second pass instead."
@@ -54,6 +60,7 @@ object PrepOptions {
             }
             "faster121" -> "The same quality of life without the level increase. The one for Standard and Ultimate."
             "fasterpwt" -> "Also skips the Driftveil tournament and its three battles."
+            "ironmon" -> "Skips the intro, shortens the talk until Goldenrod, and speeds up walking and battle animations."
             else -> "Applies a patch before randomizing."
         }
     }
@@ -91,9 +98,13 @@ object PrepOptions {
             if (faster != null) add(patch("$fasterName: quality-of-life patch", faster, fasterExt))
             tagged("faster121")?.let { add(patch("Faster Emerald 1.2.1: for Standard and Ultimate", it, "ips")) }
             tagged("fasterpwt")?.let { add(patch("Faster B2W2, tournament skipped", it, "xdelta")) }
+            // HeartGold's quality-of-life patch goes by its own name, IronMON HGSS (PyroMikeGit, 2026-10-02).
+            tagged("ironmon")?.let { add(patch("IronMON HGSS: quality-of-life patch", it, "xdelta")) }
             if (smart != null) add(patch("Super Kaizo: Smart AI patch", smart, "ips"))
             // Each Super Kaizo patch under its own release number: HeartGold 0.0.3 (PyroMikeGit), Platinum 1.0 (SentorG).
             if (sk != null) add(patch(if (k.id == RomKind.PLATINUM_U.id) "Super Kaizo 1.0 patch" else "Super Kaizo 0.0.3 patch", sk, "xdelta"))
+            // MaxDex 1.0 (Tripc423/Maxdex), last: Trip's patch, bundled since rc34 and named as every bundled patch is.
+            MaxDexInfo.buildOf(k)?.let { add(Option(Mode.MAXDEX, MaxDexInfo.LABEL, "maxdex-${k.id}.bps", it)) }
         }
     }
 }

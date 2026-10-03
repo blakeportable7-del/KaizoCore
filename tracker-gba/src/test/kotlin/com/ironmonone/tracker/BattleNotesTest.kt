@@ -69,6 +69,17 @@ class BattleNotesTest {
     }
 
     @Test
+    fun `the age rank counts every tracked move, not only the four shown`() {
+        // Utils.lua:568-579 ranks each of the four against all of Tracker.getMoves (rc32 audit P2 #137).
+        // Four seen at Lv.20 and an older one at Lv.10; now Lv.30, learning at 25: one move since, rank 2. No star.
+        assertEquals(emptySet(), MoveStars.of(listOf(101 to 20, 102 to 20, 103 to 20, 104 to 20, 33 to 10), 30, listOf(1, 10, 20, 25)))
+        // The audit's case: A to D at Lv.25, E and F at Lv.10, now Lv.30, learning at 26 and 28. Two since, rank 3.
+        assertEquals(emptySet(), MoveStars.of(listOf(1 to 25, 2 to 25, 3 to 25, 4 to 25, 5 to 10, 6 to 10), 30, listOf(26, 28)))
+        // Only the four shown can be starred: a fifth, seen long ago, counts in the ranks and is never starred itself.
+        assertEquals(emptySet(), MoveStars.of(listOf(101 to 28, 102 to 28, 103 to 28, 104 to 28, 33 to 2), 30, listOf(5, 10)))
+    }
+
+    @Test
     fun `a move seen at level 1 is never starred`() {
         assertEquals(emptySet(), MoveStars.of(listOf(33 to 1), 30, listOf(1, 5, 10, 15, 20)))
     }

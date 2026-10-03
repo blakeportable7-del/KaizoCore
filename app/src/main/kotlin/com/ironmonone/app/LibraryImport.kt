@@ -113,7 +113,8 @@ internal class LibraryImport(
                 else -> {
                     val p = store.library.importPatch(name, bytes)
                     added++
-                    "Added patch ${stripKnownExt(p.name)} for ${p.forName?.let(::stripKnownExt) ?: "a game you have not added yet"}."
+                    "Added patch ${stripKnownExt(p.name)} for ${p.forName?.let(::stripKnownExt) ?: "a game you have not added yet"}." +
+                        (if (MaxDexInfo.isPatch(p)) " " + MaxDexInfo.PATCH_ADDED else "")
                 }
             }
         }

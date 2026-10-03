@@ -54,7 +54,7 @@ class SaveTroubleTest {
         fun src(name: String) = File("src/main/kotlin/com/ironmonone/app/$name").readText().replace("\r\n", "\n")
         val play = src("PlayScreen.kt")
         val persist = play.substring(play.indexOf("    fun persistSram() {"), play.indexOf("    fun newRun() {"))
-        assertTrue("StateSlots.writeAtomic(sramFile(), bytes)?.let { SaveTrouble.report(SaveTrouble.BATTERY, it) }" in persist)
+        assertTrue("StateSlots.writeSram(sramFile(), bytes)?.let { SaveTrouble.report(SaveTrouble.BATTERY, it) }" in persist)
         assertFalse("renameTo" in persist, "the battery save no longer renames by hand")
         assertTrue("write(bytes, capturedAt, stamp, leaving)?.let { SaveTrouble.report(SaveTrouble.AUTO, it) }" in src("AutoSave.kt"))
         assertTrue("SaveTrouble.report(SaveTrouble.LEDGER, SaveTrouble.LEDGER_FAILED)" in src("NuzlockeStore.kt"))

@@ -84,6 +84,27 @@ class StreamServerTest {
         } finally { s.stop() }
     }
 
+    /**
+     * RC35-NOTICED N #7: once the run was over the data was still being built for a moment, and /dex.json refused it as it
+     * does during a run, so the page said it could not load the data. Over and not built yet is a wait now.
+     */
+    @Test
+    fun `the randomized data still being built after the run is a wait, not a refusal`() {
+        var dex: String? = null
+        var over = false
+        val s = StreamServer("abcd", { "" }, { "{}" }, { 1L }, { "0" }, { dex }, runOver = { over })
+        val port = s.start(0)
+        try {
+            assertEquals(403 to "The randomized data opens when the run is over.", get(port, "/dex.json?k=abcd"), "the run is going")
+            over = true
+            assertEquals(503 to StreamServer.DEX_BUILDING, get(port, "/dex.json?k=abcd"), "over, and the data is being built")
+            dex = "[]"
+            assertEquals(200 to "[]", get(port, "/dex.json?k=abcd"))
+            assertEquals(403, get(port, "/dex.json").first, "and never without the key")
+        } finally { s.stop() }
+        assertContains(java.io.File("src/main/kotlin/com/ironmonone/app/stream/StreamHub.kt").readText(), "runOver = { ended != null }")
+    }
+
     @Test
     fun `the hub serves the data only once the run has latched its end`() {
         val src = java.io.File("src/main/kotlin/com/ironmonone/app/stream/StreamHub.kt").readText()
@@ -154,8 +175,12 @@ class StreamServerTest {
         try {
             WsTestClient(port, "/game.ws?k=wrong").use { }
             WsTestClient(port, "/game.ws").use { }
-            Thread.sleep(150)
-            assertEquals(emptyList(), feed.captureLog)
+            // A socket with the key as a barrier, not a sleep (rc32 audit P3 #83): once its capture is on, the log holds
+            // that one switch and nothing the refused sockets did before it.
+            WsTestClient(port, "/game.ws?k=abcd").use {
+                assertTrue(waitFor { feed.capturing }, "the socket with the key turns the capture on")
+                assertEquals(listOf(true), feed.captureLog.toList())
+            }
         } finally { s.stop() }
     }
 
@@ -197,7 +222,7 @@ class StreamServerTest {
         try {
             val a = raw(port, "/obs-scene.json?k=abcd", mapOf("Host" to "192.168.1.50:8642"))
             val urls = Regex("\"url\":\"([^\"]+)\"").findAll(a.body).map { it.groupValues[1] }.toList()
-            assertEquals(3, urls.size)
+            assertEquals(3 + StreamFavorites.SLOTS, urls.size, "the game, the tracker, the attempts and each favorite")
             assertTrue(urls.all { it.startsWith("http://192.168.1.50:8642/") && it.contains("k=abcd") }, urls.toString())
 
             val named = raw(port, "/obs-scene.json?k=abcd", mapOf("Host" to "pixel-7.local:8642"))
@@ -277,7 +302,7 @@ class StreamServerTest {
         try {
             // The guide is asked for from a PC and from the phone itself: they differ (the downloads), so both are read.
             val pages = listOf("/?k=abcd" to "127.0.0.1:$port", "/?k=abcd" to "192.168.1.50:$port", "/game?k=abcd" to "127.0.0.1:$port",
-                "/attempts.html?k=abcd" to "127.0.0.1:$port", "/obs-scene.json?k=abcd" to "127.0.0.1:$port")
+                "/attempts.html?k=abcd" to "127.0.0.1:$port", "/obs-scene.json?k=abcd" to "127.0.0.1:$port", "/favorite/1?k=abcd" to "127.0.0.1:$port")
             for ((path, host) in pages) {
                 val body = raw(port, path, mapOf("Host" to host)).body
                 assertFalse(body.contains(0x2014.toChar()), "no em dash on $path at $host")
@@ -601,5 +626,101 @@ class StreamServerTest {
             repeat(6) { opcodes += ServerFrame.read(input)!!.opcode }
             assertTrue(WebSocket.OP_PING in opcodes, "pings on a timer: $opcodes")
         } finally { client.close(); serverSide.close(); sock.close(); runner.join(2000); gs.shutdown() }
+    }
+
+    // ------------------------------------------------------------------ a thread is spent only on this network, and not for long (rc33 audit P1 #58, #59)
+
+    @Test
+    fun `only a peer on this network is served`() {
+        fun a(s: String) = java.net.InetAddress.getByName(s)
+        for (ok in listOf("127.0.0.1", "192.168.1.5", "10.0.0.2", "172.16.4.1", "169.254.3.3", "100.101.102.103", "::1", "fe80::1", "fd12:3456::1"))
+            assertTrue(StreamServer.local(a(ok)), ok)
+        for (no in listOf("8.8.8.8", "100.128.0.1", "2001:4860::8888", "203.0.113.9"))
+            assertFalse(StreamServer.local(a(no)), no)
+        assertFalse(StreamServer.local(null))
+    }
+
+    /** A connection the server has given up on: its read ends (-1) or is reset, well before [ms]. */
+    private fun closedWithin(s: Socket, ms: Int): Boolean {
+        s.soTimeout = ms
+        return try { s.getInputStream().read() == -1 } catch (e: java.net.SocketException) { true } catch (e: java.net.SocketTimeoutException) { false }
+    }
+
+    @Test
+    fun `a request that trickles in is dropped at its deadline, however steady the trickle`() {
+        val srv = StreamServer("abcd", { "" }, { "{}" }, { 1L }, { "0" }, { "[]" }, requestMs = 600)
+        val port = srv.start(0)
+        try {
+            Socket("127.0.0.1", port).use { c ->
+                val out = c.getOutputStream()
+                out.write("GET /state.json?k=abcd HTTP/1.1\r\n".toByteArray()); out.flush()
+                val began = System.currentTimeMillis()
+                // A header byte every 100 ms for 8 s: each read is answered long before any per-read timeout. The bounds
+                // sit well above the 600 ms deadline, for a busy machine, and well below the trickle (rc32 audit P3 #83).
+                val t = Thread { runCatching { repeat(80) { out.write('x'.code); out.flush(); Thread.sleep(100) } } }.apply { isDaemon = true; start() }
+                assertTrue(closedWithin(c, 6000), "the server let go")
+                assertTrue(System.currentTimeMillis() - began < 5000, "at the deadline, not after the trickle")
+                t.interrupt()
+            }
+        } finally { srv.stop() }
+    }
+
+    @Test
+    fun `every header line counts toward the hundred, repeated names and all`() {
+        val srv = server()
+        val port = srv.start(0)
+        try {
+            Socket("127.0.0.1", port).use { c ->
+                val req = StringBuilder("GET /state.json?k=abcd HTTP/1.1\r\n")
+                repeat(150) { req.append("X: 1\r\n") }
+                req.append("\r\n")
+                c.getOutputStream().write(req.toString().toByteArray()); c.getOutputStream().flush()
+                c.soTimeout = 3000
+                val first = BufferedReader(InputStreamReader(c.getInputStream())).readLine()
+                assertNull(first, "no answer: the request was dropped")
+            }
+        } finally { srv.stop() }
+    }
+
+    /** The connections the server counts as open now (its private count, read for the test). */
+    private fun openNow(srv: StreamServer): Int =
+        (StreamServer::class.java.getDeclaredField("open").apply { isAccessible = true }.get(srv) as java.util.concurrent.atomic.AtomicInteger).get()
+
+    /**
+     * rc32 audit P3 #82: a page's request still arriving as STREAM is turned off is in no list stop() walks. It was upgraded
+     * after the stop, switched the taps back on and ran a pump on the stopped stream; it is dropped now.
+     */
+    @Test
+    fun `a game socket whose request finishes after the stream stopped is dropped, and the taps stay off`() {
+        val feed = FakeGameFeed()
+        val srv = server(feed)
+        val port = srv.start(0)
+        Socket("127.0.0.1", port).use { c ->
+            val out = c.getOutputStream()
+            out.write(("GET /game.ws?k=abcd HTTP/1.1\r\nHost: 127.0.0.1:$port\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n" +
+                "Sec-WebSocket-Key: ${WsTestClient.KEY}\r\nSec-WebSocket-Version: 13\r\n").toByteArray()); out.flush()
+            Thread.sleep(300)
+            srv.stop()
+            out.write("\r\n".toByteArray()); out.flush()
+            assertTrue(closedWithin(c, 3000), "dropped, not upgraded")
+        }
+        Thread.sleep(200)
+        assertFalse(feed.capturing, "the taps stay off")
+        assertTrue(feed.captureLog.none { it }, "and were never switched back on: ${feed.captureLog}")
+    }
+
+    @Test
+    fun `past the cap a connection is closed at once, and the server still answers once one goes`() {
+        val srv = StreamServer("abcd", { "" }, { "{}" }, { 1L }, { "0" }, { "[]" }, maxOpen = 2, requestMs = 5_000)
+        val port = srv.start(0)
+        try {
+            val idle = List(2) { Socket("127.0.0.1", port) }
+            // Waited for, not slept on (rc32 audit P3 #83): the server has counted both before the third comes.
+            assertTrue(waitFor { openNow(srv) == 2 })
+            Socket("127.0.0.1", port).use { extra -> assertTrue(closedWithin(extra, 2000), "the third is refused") }
+            idle.forEach { it.close() }
+            assertTrue(waitFor { openNow(srv) < 2 })
+            assertEquals(200, get(port, "/state.json?k=abcd").first, "room again")
+        } finally { srv.stop() }
     }
 }

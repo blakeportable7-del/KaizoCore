@@ -33,12 +33,11 @@ class Gen1MethodTest {
 
     @Test
     fun `a patched build takes PART 1 only and keeps the patch's curve, a vanilla one takes both passes`() {
-        val roms = System.getenv("IRONMON_ROMS")?.let(::File)?.takeIf { it.isDirectory }
-            ?: return println("Gen1MethodTest skipped: set IRONMON_ROMS")
+        val roms = Dumps.romsDir() ?: return println("Gen1MethodTest skipped: set IRONMON_ROMS")
         val part1 = File(presets, "RBY Kaizo.rnqs")
         var checked = 0
         for (base in listOf(RomKind.RED_U, RomKind.BLUE_U, RomKind.YELLOW_U)) {
-            val clean = File(roms, base.id + "." + base.fileExtension).takeIf { it.isFile } ?: continue
+            val clean = Dumps.file(roms, base.id + "." + base.fileExtension) ?: continue
             val pf = RomKind.allPatched.first { it.baseId == base.id && it.patchTag == "pseudofluct" }
             val built = File.createTempFile("pfbuild", ".gbc")
             val patchedRun = File.createTempFile("pfrun", ".gbc")

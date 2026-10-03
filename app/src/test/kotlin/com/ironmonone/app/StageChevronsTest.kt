@@ -36,6 +36,7 @@ class StageChevronsTest {
         assertEquals(2, Regex("if \\(StageChevrons\\.accEvaReplacesBst\\((inBattle|true), acc, eva\\)\\) PcAccEvaRow\\(acc, eva\\)").findAll(src).count())
         assertTrue("val stages = if (hidden) emptyMap<String, Int>() else p.statStages" in src)
         assertFalse("p.statStages[" in src, "your card's rows read the stages through the hidden rule")
-        assertTrue("inBattle = state.inBattle)" in src)
+        // The party card's call: its last argument has been the BST mark since 2026-10-02.
+        assertTrue("inBattle = state.inBattle,\n                        runScoped = runScoped," in src)
     }
 }

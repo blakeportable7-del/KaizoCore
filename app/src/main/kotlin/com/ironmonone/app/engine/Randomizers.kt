@@ -1,9 +1,12 @@
 package com.ironmonone.app.engine
 
+import com.ironmonone.app.RunSetupProblem
 import com.ironmonone.core.Engine
 import com.ironmonone.core.Generation
+import com.ironmonone.core.Platform
 import com.ironmonone.core.RomKind
 import java.io.File
+import java.util.Locale
 
 /**
  * The one place a ROM is handed to a randomizer.
@@ -58,14 +61,17 @@ object Randomizers {
         /** The 60% levels pre-pass to run first (ExtraPasses.prePassFor), or null for none. Not for Gen 1. */
         prePass: File? = null,
     ): NatDexEngine.Outcome = synchronized(engineLock) {
-        val engine: (File, File, File, Long) -> NatDexEngine.Outcome = when (kind.engine) {
+        val engine: (File, File, File, Long) -> NatDexEngine.Outcome = whole(kind, when (kind.engine) {
             Engine.NATDEX -> { src, st, d, sd -> NatDexEngine.randomize(src, st, d, sd) }
+            Engine.MAXDEX -> { src, st, d, sd -> MaxDexEngine.randomize(src, st, d, sd) }
             Engine.ZX -> { src, st, d, sd -> ZxEngine.randomize(src, st, d, sd, kind.generation) }
-        }
-        val outcome = when {
-            kind.generation == Generation.GB1 -> gen1(sourceRom, settingsFile, secondPass, dest, seed, engine)
-            prePass != null -> withPrePass(sourceRom, prePass, settingsFile, dest, seed, engine)
-            else -> engine(sourceRom, settingsFile, dest, seed)
+        })
+        val outcome = inEngineLocale {
+            when {
+                kind.generation == Generation.GB1 -> gen1(sourceRom, settingsFile, secondPass, dest, seed, engine)
+                prePass != null -> withPrePass(sourceRom, prePass, settingsFile, dest, seed, engine)
+                else -> engine(sourceRom, settingsFile, dest, seed)
+            }
         }
         // The randomizer's own log, kept beside the ROM it describes so the
         // game-over screen's "Inspect the log" has something to open. Both
@@ -73,6 +79,59 @@ object Randomizers {
         runCatching { logFor(dest).writeText(outcome.logText) }
         outcome
     }
+
+    /**
+     * Runs [block] with the JVM's default locale set to Locale.ROOT, and puts the phone's back after (rc32 audit P2
+     * #118). Both engines case-convert and format with the default locale: on a Turkish phone "FIRE" lower-cased to
+     * "fıre" and a HeartGold starter's text lost a letter, so a seed made other ROM bytes than on any other phone and a
+     * run code no longer matched; on a phone with Arabic or Persian digits the log's numbers were written in them.
+     * The default is the whole process's, so the rest of the app formats in ROOT for the seconds a randomize takes;
+     * the app's own text names its locale where it matters. Every caller holds [engineLock], so two never meet here.
+     */
+    internal fun <T> inEngineLocale(block: () -> T): T {
+        val default = Locale.getDefault()
+        val display = Locale.getDefault(Locale.Category.DISPLAY)
+        val format = Locale.getDefault(Locale.Category.FORMAT)
+        Locale.setDefault(Locale.ROOT)
+        try {
+            return block()
+        } finally {
+            Locale.setDefault(default)
+            Locale.setDefault(Locale.Category.DISPLAY, display)
+            Locale.setDefault(Locale.Category.FORMAT, format)
+        }
+    }
+
+    /**
+     * [engine], refusing a Game Boy or GBA ROM that is not whole (rc32 audit P2 #119). Those handlers write back the
+     * array they loaded, so a whole build is the source's size; a shorter one is a write cut off, which the vendored
+     * engines swallow (AbstractGBRomHandler.saveRomFile returns false and Randomizer.randomize carries on), and the
+     * app took any file that was not empty. The cut file is deleted. A DS handler throws on a failed write itself, and
+     * its output need not be the source's size.
+     */
+    internal fun whole(
+        kind: RomKind, engine: (File, File, File, Long) -> NatDexEngine.Outcome,
+        /** The free bytes beside the output; the test's to replace. */
+        free: (File) -> Long = { it.usableSpace },
+    ): (File, File, File, Long) -> NatDexEngine.Outcome =
+        if (kind.platform == Platform.NDS) engine else { src, st, d, sd ->
+            val out = engine(src, st, d, sd)
+            val want = src.length()
+            if (d.length() != want) {
+                // Read before the cut file goes: a volume with less room than the missing part is why it stopped.
+                val full = free(d.absoluteFile.parentFile) < want - d.length()
+                d.delete()
+                if (full) throw RunSetupProblem(NO_ROOM)
+                throw NatDexEngine.EngineException("The randomizer stopped partway through. Try again, or pick another settings file.")
+            }
+            out
+        }
+
+    /** What a new game that did not fit says, on Play and on the Run tab alike. */
+    const val NO_ROOM = "The phone ran out of space while the new game was being made. Free some space and try again."
+
+    /** The same, said before anything is made (RunStart). */
+    const val NO_ROOM_BEFORE = "Not enough free space on this phone to make a new game. Free some space and try again."
 
     /** Where [randomize] keeps the log for the ROM it wrote: `<rom>.log`, the same name the PC randomizer uses. */
     fun logFor(dest: File): File = File(dest.parentFile, dest.name + ".log")
@@ -87,7 +146,15 @@ object Randomizers {
     /** The engine that randomizes [kind], by its version id: part of what a run made ahead was made with (NextRun). */
     fun engineId(kind: RomKind): String = when (kind.engine) {
         Engine.NATDEX -> NatDexEngine.ID
+        Engine.MAXDEX -> MaxDexEngine.ID
         Engine.ZX -> ZxEngine.ID
+    }
+
+    /** The engine that randomizes [kind], by the name a player reads (the Kaizo IronMON screen's settings line). */
+    fun engineName(kind: RomKind): String = when (kind.engine) {
+        Engine.NATDEX -> NatDexEngine.DISPLAY_NAME
+        Engine.MAXDEX -> MaxDexEngine.DISPLAY_NAME
+        Engine.ZX -> ZxEngine.DISPLAY_NAME
     }
 
     /** PART 2's seed: derived from the run's so one seed reproduces both passes. */
@@ -135,10 +202,13 @@ object Randomizers {
      * The 60% levels: [prePass] (trainer and wild +6%, nothing else) over the
      * prepared ROM, then [preset] over that, with the run's own seed, so the
      * seed the player sees is the mode's. The log is the preset's, first line
-     * untouched (RandomizerLog reads the seed and settings string from lines
-     * 2 and 3, and every section from its first occurrence); the pre-pass is
-     * named in one line at the end. Its own log would repeat the vanilla
-     * trainers at +6%, which the log viewer must never mistake for the run's.
+     * untouched (RandomizerLog finds the seed and settings string in its
+     * header, and every section from its first occurrence); the pre-pass
+     * follows at the end: a "== PRE-PASS ==" line, its seed and its settings
+     * string, which a Premade Seed needs to build this run again (rc32 audit
+     * P2 #69: they were not kept), and one line that says what it did. Its own
+     * log would repeat the vanilla trainers at +6%, which the log viewer must
+     * never mistake for the run's.
      */
     internal fun withPrePass(
         sourceRom: File, prePass: File, preset: File, dest: File, seed: Long,
@@ -149,12 +219,16 @@ object Randomizers {
         )
         val mid = File(dest.parentFile, dest.name + ".prepass.tmp")
         try {
-            engine(sourceRom, prePass, mid, preSeed(seed))
+            val pre = engine(sourceRom, prePass, mid, preSeed(seed))
             if (!mid.isFile || mid.length() == 0L) throw NatDexEngine.EngineException("The 60% levels pre-pass wrote no ROM.")
             val main = engine(mid, preset, dest, seed)
+            val bom = Char(0xFEFF).toString()
+            val preSettings = pre.logText.lineSequence().map { it.trimEnd('\r').removePrefix(bom) }.firstOrNull { it.startsWith("Settings String:") }
             return NatDexEngine.Outcome(
                 seed,
                 main.logText.trimEnd() + "\n------------------------------------------------------------------\n" +
+                    "== PRE-PASS: ${prePass.name} (seed ${"%016x".format(preSeed(seed))}) ==\n" +
+                    "Random Seed: ${preSeed(seed)}\n" + (preSettings?.let { it + "\n" } ?: "") +
                     "60% levels: \"${prePass.name}\" raised trainer and wild levels 6% first (seed ${"%016x".format(preSeed(seed))}), " +
                     "then \"${preset.name}\" ran over its output.\n",
             )

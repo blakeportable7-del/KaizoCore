@@ -709,7 +709,8 @@ class UpdateCheckTest {
         serve(route(PATH) { w -> w.reply(200, padded(8_000_000)) }) { host ->
             val t0 = System.nanoTime()
             assertNull(UpdateCheck.fetch(host + PATH), "8 MB")
-            assertTrue((System.nanoTime() - t0) / 1_000_000 < 5000)
+            // Only that it does not hang: loose, for a busy machine (rc32 audit P3 #83).
+            assertTrue((System.nanoTime() - t0) / 1_000_000 < 15_000)
         }
     }
 
@@ -722,7 +723,8 @@ class UpdateCheckTest {
             val ms = (System.nanoTime() - t0) / 1_000_000
             release.countDown()
             assertNull(m)
-            assertTrue(ms < 3000, "gave up after $ms ms, with a 300 ms timeout")
+            // Well above the 300 ms timeout, for a busy machine, and below the server's 15 s hold (rc32 audit P3 #83).
+            assertTrue(ms < 10_000, "gave up after $ms ms, with a 300 ms timeout")
         }
     }
 
@@ -740,7 +742,8 @@ class UpdateCheckTest {
             val m = UpdateCheck.fetch(host + PATH, timeoutMs = 500)
             val ms = (System.nanoTime() - t0) / 1_000_000
             assertNull(m, "the trickled manifest is not accepted")
-            assertTrue(ms < 3000, "gave up after $ms ms, with a 500 ms budget")
+            // Above the 500 ms budget with room, below the whole trickle's 7 s or so (rc32 audit P3 #83).
+            assertTrue(ms < 5000, "gave up after $ms ms, with a 500 ms budget")
         }
     }
 
@@ -843,7 +846,7 @@ class UpdateCheckTest {
     @Test
     fun `the prompt and the card are wired in where they belong`() {
         val main = read("MainActivity.kt")
-        val call = "UpdatePrompt(show = tab != Tab.PLAY && launchCrash == null)"
+        val call = "UpdatePrompt(show = tab != Tab.PLAY && crashChecked && launchCrash == null)"
         assertEquals(1, Regex(Regex.escape(call)).findAll(main).count(), "one prompt, never over a game and never over the crash dialog")
         assertTrue("    $call\n    // The preset being edited, with the generation of the ROM it targets." in main, "in App(), before the editor state")
         val about = read("AboutScreen.kt")

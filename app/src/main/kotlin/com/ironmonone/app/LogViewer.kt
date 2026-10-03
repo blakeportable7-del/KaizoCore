@@ -23,6 +23,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -35,6 +36,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
 
 /**
@@ -75,7 +78,6 @@ fun LogViewer(
     ndsParty: List<com.ironmonone.tracker.nds.NdsTrackedMon>? = null,
 ) {
     if (nds != null) { DsLogViewer(file, nds, ndsParty, onClose); return }
-    val log = remember(file) { RandomizerLog.parse(file) }
     var tab by remember { mutableStateOf(LogTab.POKEMON) }
     var query by remember { mutableStateOf("") }
     var detail by remember { mutableStateOf<RandomizerLog.Pokemon?>(null) }
@@ -86,31 +88,42 @@ fun LogViewer(
     var searchSort by remember { mutableStateOf<LogSort?>(null) }
     var searchFilter by remember { mutableStateOf<LogFilter?>(null) }
     var sortPicked by remember { mutableStateOf(false) }
+    // By species id: keyed by the tracker's name, MaxDex's "MewtwoX" never found its "Mewtwo-X" (rc34).
     val team = remember(party) {
-        party?.associate { tm -> tm.speciesName.uppercase() to (LogSearch.refOrder(tm.mon.ivs) to LogSearch.refOrder(tm.mon.evs)) } ?: emptyMap()
+        party?.associate { tm -> tm.mon.species to (LogSearch.refOrder(tm.mon.ivs) to LogSearch.refOrder(tm.mon.evs)) } ?: emptyMap()
     }
     var trainerFilter by remember { mutableStateOf(LogTrainerFilter.GYM) }
     val rules = remember(tracker, badgeSet) {
         if (tracker != null && (badgeSet == "RSE" || badgeSet == "FRLG")) LogTrainerRules(tracker, badgeSet == "FRLG") else null
     }
-    // Move types for the same-type colouring, and the game's species ids for the icons: the log
-    // numbers Pokemon by National Dex, which parts from the game's own numbering after 251.
-    val moveTypes = remember(rules) {
-        val t = tracker
-        if (rules == null || t == null) emptyMap()
-        else (1..354).mapNotNull { id -> t.moveRowFor(id)?.let { r -> r.type?.let { ty -> r.name.uppercase() to ty } } }.toMap()
+    // The log, its routes, the move types and the species ids, read off the main thread: the first composition
+    // parsed the whole log and read the ROM's tables on it, and the screen froze after the tap (rc32 audit P2 #27).
+    // Null until it lands, and the dialog says it is reading.
+    val loaded by produceState<LogViewData?>(null, file, rules) {
+        value = withContext(Dispatchers.Default) { loadLogView(file, tracker, rules) }
     }
-    val speciesByName = remember(rules) {
-        val t = tracker
-        if (rules == null || t == null) emptyMap()
-        else (1..(if (t.expandedSpeciesIds) 1300 else 411)).associateBy { t.speciesName(it).uppercase() }
-    }
-    val logRoutes = remember(rules, log) {
-        val t = tracker
-        if (rules == null || t == null || log == null) emptyList() else LogRoutes.build(log, rules, t)
-    }
+    val log = loaded?.log
+    val moveTypes = loaded?.moveTypes ?: emptyMap()
+    val names = loaded?.names ?: LogNames.PLAIN
+    val logRoutes = loaded?.routes ?: emptyList()
     val logSprite: ((RandomizerLog.Pokemon) -> androidx.compose.ui.graphics.ImageBitmap?)? =
-        spriteFor?.let { sf -> { p: RandomizerLog.Pokemon -> speciesByName[p.name.uppercase()]?.let(sf) } }
+        spriteFor?.let { sf -> { p: RandomizerLog.Pokemon -> names.speciesId(p.name)?.let(sf) } }
+    // The pictures (LogPictures): Walking Pals standing idle where the PC tracker animates its icons, numbered the tracker's
+    // way (none with Animated sprites off), the trainers' portraits and the tabs' small pictures.
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val palIndex = WalkingPals.ready(ctx)
+    val palDex = remember(tracker) { tracker?.let { WalkingPals.trackerDex(3, if (it.expandedSpeciesIds) 1283 else 411, it.nameSet == "maxdex") } }
+    val logPal: ((RandomizerLog.Pokemon) -> WalkingPals.Pal?)? =
+        if (palIndex == null || palDex == null || !TrackerOptions.animatedSprites) null
+        else { p -> names.speciesId(p.name)?.let { palIndex.find(it, palDex) } }
+    val portraitImages = remember(loaded) { HashMap<Int, androidx.compose.ui.graphics.ImageBitmap>() }
+    val portraitOf: (RandomizerLog.Trainer) -> androidx.compose.ui.graphics.ImageBitmap? = { t ->
+        portraitImages[t.number] ?: loaded?.portraits?.get(t.number)?.let { px -> argbImage(px, 64, 64).also { portraitImages[t.number] = it } }
+    }
+    val tabPals = remember(palIndex) {
+        palIndex?.let { ix -> LogPictures.TAB_POKEMON.shuffled().mapNotNull { ix.find(it, WalkingPals.Dex.GEN3) }.take(LogPictures.TAB_POKEMON_SHOWN) }.orEmpty()
+    }
+    val playerHead = remember(loaded) { loaded?.playerHead?.let { argbImage(it, 24, 22) } }
     // System Back closes the open detail page first, in the order the pages stack
     // (a Pokemon over a trainer over a route), as DsLogViewer does; it used to close
     // the whole viewer from a detail page (2026-09-27, audit).
@@ -134,41 +147,53 @@ fun LogViewer(
                 ) { DialogText("X", 15, Pc.Text) }
             }
             Spacer(Modifier.height(6.dp))
-            // The tabs share the width, each a full touch target, the open one gold and underlined.
+            // The tabs share the width, each a full touch target, the open one gold and underlined, its small picture
+            // above its name as the PC tracker draws one beside it (each LogTab*.lua's TabIcons).
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 LogTab.entries.forEach { t ->
                     val on = t == tab
-                    Box(
+                    Column(
                         Modifier.weight(1f).heightIn(min = PcMin.DIALOG_TOUCH_DP.dp).background(if (on) Pc.Page else Pc.Ground)
                             .border(if (on) 2.dp else 1.dp, if (on) Pc.Gold else Pc.Border)
-                            .clickable { tab = t; detail = null; trainerDetail = null; routeDetail = null; query = ""; searchSort = null; searchFilter = null; sortPicked = false },
-                        contentAlignment = Alignment.Center,
-                    ) { DialogText(t.label, 12, if (on) Pc.Gold else Pc.Text, underline = on) }
+                            .clickable { tab = t; detail = null; trainerDetail = null; routeDetail = null; query = ""; searchSort = null; searchFilter = null; sortPicked = false }
+                            .padding(vertical = 3.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
+                    ) {
+                        LogTabIcon(t, tabPals, playerHead, if (on) Pc.Gold else Pc.Text)
+                        DialogText(t.label, 12, if (on) Pc.Gold else Pc.Text, underline = on)
+                    }
                 }
             }
             Spacer(Modifier.height(8.dp))
+            if (loaded == null) {
+                DialogText("Reading the log.", 13, Pc.Dim)
+                return@Column
+            }
             if (log == null) {
                 DialogText("The log could not be read.", 13, Pc.Negative)
                 return@Column
             }
             val d = detail
             if (d != null) {
-                if (rules != null) LogPokemonDetail(d, log, badgeSet == "FRLG", logSprite, moveTypes, team, onPokemon = { detail = it }, onBack = { detail = null },
+                if (rules != null) LogPokemonDetail(d, log, badgeSet == "FRLG", logSprite, moveTypes, names.speciesId(d.name)?.let { team[it] }, names,
+                    onPokemon = { detail = it }, onBack = { detail = null },
                     // The same PokemonData evolution the info screen reads, in its short words.
-                    evoMethodsOf = tracker?.let { t -> { lp -> speciesByName[lp.name.uppercase()]?.let { com.ironmonone.tracker.EvoText.short(t.evolution(it)) } ?: emptyList() } })
+                    evoMethodsOf = tracker?.let { t -> { lp -> names.speciesId(lp.name)?.let { com.ironmonone.tracker.EvoText.short(t.evolution(it)) } ?: emptyList() } },
+                    palOf = logPal)
                 else PokemonDetail(d, log, onBack = { detail = null })
                 return@Column
             }
             val td = trainerDetail
             if (td != null && rules != null) {
                 LogTrainerDetail(td, log, rules, TrackerOptions.logCustomTrainerNames, badgeSet, logSprite, moveTypes,
-                    onPokemon = { detail = it }, onBack = { trainerDetail = null })
+                    onPokemon = { detail = it }, onBack = { trainerDetail = null }, names = names, portrait = portraitOf(td), palOf = logPal)
                 return@Column
             }
             val rd = routeDetail
             if (rd != null && rules != null) {
                 LogRouteDetail(rd, rules, TrackerOptions.logCustomTrainerNames, logSprite,
-                    onTrainer = { trainerDetail = it }, onPokemon = { detail = it }, onBack = { routeDetail = null })
+                    onTrainer = { trainerDetail = it }, onPokemon = { detail = it }, onBack = { routeDetail = null }, names = names,
+                    portraitOf = portraitOf)
                 return@Column
             }
             val curSort = searchSort ?: LogSearch.defaultSort(tab)
@@ -176,9 +201,9 @@ fun LogViewer(
             // What the search suggests while it is typed: Pokemon by name (a tap opens one on the Pokemon tab, and
             // filters by it on the others), or the words the chosen filter searches.
             val suggestFor = curFilter ?: LogFilter.NAME
-            val suggestions = remember(log, query, suggestFor, logRoutes) {
+            val suggestions = remember(log, query, suggestFor, logRoutes, names) {
                 when (suggestFor) {
-                    LogFilter.NAME -> LogSuggest.pokemon(log, query).map { LogSuggestion(it.name, it) }
+                    LogFilter.NAME -> LogSuggest.pokemon(log, query, names = names).map { LogSuggestion(names.speciesAsWritten(it.name), it, names.species(it.name)) }
                     LogFilter.ABILITY -> LogSuggest.words(log.pokemon.flatMap { it.abilities }, query).map { LogSuggestion(it) }
                     LogFilter.MOVE -> LogSuggest.words(log.pokemon.flatMap { p -> p.moves.map { it.second } + p.evoMoves }, query).map { LogSuggestion(it) }
                     LogFilter.ROUTE -> LogSuggest.words(if (logRoutes.isNotEmpty()) logRoutes.map { it.name } else log.routes.map { it.name }, query).map { LogSuggestion(it) }
@@ -201,9 +226,12 @@ fun LogViewer(
             }
             val q = query.trim()
             when (tab) {
-                LogTab.POKEMON -> if (rules != null) {
-                    val rows = remember(log, q, curFilter, curSort) { LogSearch.pokemonRows(log, q, curFilter ?: LogFilter.NAME, curSort ?: LogSort.POKEDEX) }
-                    LogPokemonTab(rows, logSprite, onPokemon = { detail = it })
+                // A log with no Pokemon list says why rather than "(No results)" (rc32 audit P2 #71).
+                LogTab.POKEMON -> if (log.pokemon.isEmpty() && log.statsUnchanged) {
+                    DialogText(NO_POKEMON_IN_LOG, 13, Pc.Dim)
+                } else if (rules != null) {
+                    val rows = remember(log, q, curFilter, curSort, names) { LogSearch.pokemonRows(log, q, curFilter ?: LogFilter.NAME, curSort ?: LogSort.POKEDEX, names) }
+                    LogPokemonTab(rows, logSprite, onPokemon = { detail = it }, names = names, palOf = logPal)
                 } else {
                     val rows = log.pokemon.filter { q.isEmpty() || it.name.contains(q, true) || it.types.any { t -> t.contains(q, true) } || it.abilities.any { a -> a.contains(q, true) } }
                     LazyColumn(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -220,7 +248,7 @@ fun LogViewer(
                 LogTab.TRAINERS -> if (rules != null) {
                     LogTrainersTab(log, rules, q, trainerFilter, TrackerOptions.logCustomTrainerNames,
                         onFilter = { trainerFilter = it; query = ""; sortPicked = false }, onTrainer = { trainerDetail = it },
-                        searchBy = curFilter ?: LogFilter.TRAINER, sortBy = if (sortPicked) curSort else null)
+                        searchBy = curFilter ?: LogFilter.TRAINER, sortBy = if (sortPicked) curSort else null, names = names, portraitOf = portraitOf)
                 } else {
                     val rows = log.trainers.filter { q.isEmpty() || it.fullName.contains(q, true) || it.originalName.contains(q, true) || it.party.any { m -> m.name.contains(q, true) } }
                     LazyColumn(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -244,7 +272,7 @@ fun LogViewer(
                     }
                 }
                 LogTab.ROUTES -> if (rules != null) {
-                    val rows = remember(logRoutes, q, curFilter, curSort) { LogSearch.routeRows(logRoutes, log, q, curFilter ?: LogFilter.ROUTE, curSort ?: LogSort.WILD) }
+                    val rows = remember(logRoutes, q, curFilter, curSort, names) { LogSearch.routeRows(logRoutes, log, q, curFilter ?: LogFilter.ROUTE, curSort ?: LogSort.WILD, names) }
                     LogRoutesTab(rows, "", onRoute = { routeDetail = it })
                 } else {
                     val rows = log.routes.filter { q.isEmpty() || it.name.contains(q, true) || it.encounters.any { e -> e.name.contains(q, true) } }
@@ -270,7 +298,7 @@ fun LogViewer(
                 }
                 LogTab.TMS -> if (rules != null) {
                     LogTmsTab(log, rules, badgeSet == "FRLG", TrackerOptions.logCustomTrainerNames, badgeSet, tmFilter,
-                        onFilter = { tmFilter = it }, onTrainer = { trainerDetail = it })
+                        onFilter = { tmFilter = it }, onTrainer = { trainerDetail = it }, names = names)
                 } else {
                     LazyColumn(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         items(log.tms, key = { it.number }) { t ->
@@ -281,13 +309,57 @@ fun LogViewer(
                         }
                     }
                 }
-                LogTab.MISC -> LogMiscTab(log)
+                LogTab.MISC -> LogMiscTab(log, names)
             }
         }
     }
 }
 
 enum class LogTab(val label: String) { POKEMON("POKEMON"), TRAINERS("TRAINERS"), ROUTES("ROUTES"), TMS("TMS"), MISC("MISC") }
+
+/** What the Pokemon tab says for a log that lists no Pokemon because the randomizer did not change them. */
+internal const val NO_POKEMON_IN_LOG = "The randomizer left the Pokémon as the game has them, so this log does not list them."
+
+/** What the Gen 3 log viewer draws from, read off the main thread (rc32 audit P2 #27). */
+internal class LogViewData(
+    val log: RandomizerLog?,
+    val moveTypes: Map<String, Int>,
+    /** The game's names and species ids for the log's names (LogNames); LogNames.PLAIN with no tracker. */
+    val names: LogNames,
+    val routes: List<LogRoute>,
+    /** Each trainer's portrait by its number, 64x64 ARGB from the ROM (GbaTracker.trainerPicture); none where the build has none. */
+    val portraits: Map<Int, IntArray> = emptyMap(),
+    /** The Trainers tab's head, cut from the player's own picture (TrainerPictures.head), 24x22 ARGB; null where there is none. */
+    val playerHead: IntArray? = null,
+)
+
+/**
+ * The log (shared with Play's Open Book through RandomizerLog's cache), and on a Gen 3 run with its tracker the move
+ * types for the same-type coloring, the game's names and species ids for the log's names (the log numbers Pokemon by
+ * National Dex, which parts from the game's own numbering after 251, and MaxDex's log cuts names to ten letters) and
+ * the routes.
+ */
+internal fun loadLogView(file: File, tracker: com.ironmonone.tracker.GbaTracker?, rules: LogTrainerRules?): LogViewData {
+    val log = RandomizerLog.parse(file)
+    if (rules == null || tracker == null) return LogViewData(log, emptyMap(), LogNames.PLAIN, emptyList())
+    return LogViewData(
+        log, logMoveTypes(tracker),
+        // MaxDex's log names Pokemon as its ROM does, cut to ten letters: LogNames finds those through GbaTracker.logSpeciesIds.
+        LogNames.of(tracker),
+        if (log == null) emptyList() else LogRoutes.build(log, rules, tracker),
+        // The portraits of the trainers in play, each picture decoded once (the tracker keeps them).
+        portraits = log?.trainers.orEmpty().filter { rules.use(it.number) }
+            .mapNotNull { t -> tracker.trainerPicture(t.number)?.let { t.number to it } }.toMap(),
+        playerHead = log?.let { tracker.playerPicture(LogPictures.girlFor(it.seed)) }?.let { com.ironmonone.tracker.TrainerPictures.head(it) },
+    )
+}
+
+/**
+ * Every move of the game by upper-case name to its type: up to the game's own last move, which on the Nat. Dex builds
+ * is 847 (rc32 audit P2 #28: it stopped at 354, so Roost or Dragon Pulse were never drawn as same-type).
+ */
+internal fun logMoveTypes(t: com.ironmonone.tracker.GbaTracker): Map<String, Int> =
+    (1..t.lastMoveId).mapNotNull { id -> t.moveRowFor(id)?.let { r -> r.type?.let { ty -> r.name.uppercase() to ty } } }.toMap()
 
 /** The reference's LogTabPokemonDetails: one species from the log. */
 @Composable

@@ -13,6 +13,11 @@
 -keep class zxpptxt.** { *; }
 -keep class zxthenewpoketext.** { *; }
 -keep class zxlauncher.** { *; }
+-keep class mdcompressors.** { *; }
+-keep class mdcuecompressors.** { *; }
+-keep class mdpptxt.** { *; }
+-keep class mdthenewpoketext.** { *; }
+-keep class mdlauncher.** { *; }
 
 # Native code resolves these by JNI name; renaming breaks the emulator host.
 -keep class com.swordfish.libretrodroid.** { *; }

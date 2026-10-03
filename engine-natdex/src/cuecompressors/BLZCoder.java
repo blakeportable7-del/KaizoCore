@@ -121,9 +121,15 @@ public class BLZCoder {
         System.out.print("\n");
     }
 
+    // LOCAL MODIFICATION (KaizoCore), 2026-10-03: a bad BLZ header throws
+    // instead of System.exit(0), as engine-zx's copy has since 2026-10-02.
+    // Inside the app that would end the whole process, the game being played
+    // included, with no crash report; every caller already handles a thrown
+    // randomizer error (RC35-NOTICED N #38). Unreachable while this engine
+    // randomizes Gen 3 only. The output is unchanged for every file that decodes.
     private void EXIT(String text) {
         System.out.print(text);
-        System.exit(0);
+        throw new com.dabomstew.pkrandom.exceptions.RandomizerIOException(text.trim());
     }
 
     private void Save(String filename, int[] buffer, int length) {

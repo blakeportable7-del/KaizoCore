@@ -47,8 +47,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawWithContent
@@ -160,6 +158,8 @@ fun PlayScreen(
     // on every attempt meant re-muting and re-pressing turbo each time.
     // Per-game settings (GameSettings): speed, mute, DS screen mode, pane width.
     val prefs0 = remember(session.id) { store.gameSettings(session) }
+    // The run's attempt and seed, read once per run, never in composition (RunIds, rc32 audit P2 #56, P3 #55).
+    val runNow = rememberRunIds(store, gameKeyForRom)
     var speed by remember(session.id) { mutableStateOf(prefs0.speed) }
     // Slow motion divisor (1, 2, 4) and the rewind history. Both are session
     // state; rewind is refused on a tracked game (RewindBuffer.allowed).
@@ -176,7 +176,12 @@ fun PlayScreen(
     // native create: skipping that is the SIGSEGV family this app was born with
     // (loadGameFromPath fault 0x28, step() fault 0x48, and the release-build crash
     // on 2026-08-30 - all the same race).
-    var gameActive by remember { mutableStateOf(true) }
+    // Off, too, for a Play screen opened while a new run is still being made (Play's own NEW RUN goes on after the screen
+    // that started it is left): it waits for the run instead of booting the one being replaced (rc33 audit P1 #22).
+    var gameActive by remember { mutableStateOf(!NewRunGuard.inProgress) }
+    LaunchedEffect(Unit) {
+        if (!gameActive && NewRunGuard.inProgress) { status = NewRunGuard.BUSY; NewRunGuard.awaitDone(); gameKeyForRom++; gameActive = true }
+    }
 
     // The status line is a NOTIFICATION, not a label: it clears itself.
     //
@@ -339,7 +344,9 @@ fun PlayScreen(
     // LAYOUT EDITOR. One layout per orientation and console; the pad renders
     // from it (FreePad) and the editor changes it in place, saved on DONE.
     val layoutKey = PadLayout.key(landscape, platform)
-    var padLayout by remember(layoutKey) { mutableStateOf(store.layouts.load(layoutKey, landscape)) }
+    // Each orientation's layout, kept through a rotation, and the editor's edit over them (PadLayouts, rc32 audit P3 #48).
+    val padLayouts = remember { PadLayouts(store.layouts) }
+    var padLayout by padLayouts.at(layoutKey, landscape)
     var editingLayout by remember { mutableStateOf(false) }
     var selectedElement by remember { mutableStateOf<PadLayout.Element?>(null) }
     var padSkin by remember { mutableStateOf(store.padSkin()) }
@@ -356,28 +363,17 @@ fun PlayScreen(
     }
     // Core variables from the settings: every option except the filter, which is the view's.
     fun coreVariables(): List<com.swordfish.libretrodroid.Variable> =
-        coreValues.filterKeys { k ->
-            k !in CoreOptions.APP_KEYS &&
-                // DSi file paths only when DSi mode is on; a plain DS must not be told about files it lacks.
-                (DsiMode.isOn(coreValues) || CoreOptions.forPlatform(platform).firstOrNull { it.key == k }?.group != CoreOptions.DSI_GROUP)
-        }.map { (k, v) -> com.swordfish.libretrodroid.Variable(k, v) }
-    var importSystemFileName by remember { mutableStateOf<String?>(null) }
+        CoreOptions.coreVariables(platform, coreValues).map { (k, v) -> com.swordfish.libretrodroid.Variable(k, v) }
+    // Saved with the activity: a DSi system file picked while Android ended the app behind the picker was dropped (N #11).
+    var importSystemFileName by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf<String?>(null) }
     val systemFilePicker = androidx.activity.compose.rememberLauncherForActivityResult(
         androidx.activity.result.contract.ActivityResultContracts.OpenDocument()
     ) { uri ->
         val name = importSystemFileName ?: return@rememberLauncherForActivityResult
         importSystemFileName = null
         if (uri == null) return@rememberLauncherForActivityResult
-        scope.launch {
-            val ok = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                runCatching {
-                    val bytes = context.contentResolver.openInputStream(uri)!!.use { it.readBytes() }
-                    // systemDirectory is filesDir: the cores look for these names there.
-                    File(context.filesDir, name).writeBytes(bytes); bytes.size
-                }.getOrNull()
-            }
-            status = if (ok != null) "$name imported (%,d bytes). Takes effect on the next boot.".format(ok) else "Could not read that file."
-        }
+        // systemDirectory is filesDir: the cores look for these names there. Streamed and checked (SystemFiles).
+        scope.launch { status = SystemFiles.import(context.filesDir, name) { context.contentResolver.openInputStream(uri) } }
     }
     var menuOpen by remember { mutableStateOf(false) }
     // Confirmations, pickers and the toast's action live in one holder, off this method's registers.
@@ -388,18 +384,13 @@ fun PlayScreen(
     // restores what was there on entry, Back asks when anything changed, and
     // nothing reaches disk before DONE.
     fun startLayoutEdit() {
-        ui.layoutBefore = padLayout; ui.skinBefore = padSkin
+        padLayouts.startEdit(layoutKey, landscape); ui.skinBefore = padSkin
         selectedElement = null; menuOpen = false; editingLayout = true
     }
     fun finishLayoutEdit(keep: Boolean) {
-        if (keep) {
-            // A layout put back to the default is stored as no file, as RESET used to leave it.
-            if (padLayout == PadLayout.default(landscape, nds = platform == com.ironmonone.core.Platform.NDS, gb = platform == com.ironmonone.core.Platform.GBC)) store.layouts.reset(layoutKey)
-            else store.layouts.save(layoutKey, padLayout)
-        } else {
-            ui.layoutBefore?.let { padLayout = it }
-            ui.skinBefore?.let { if (it != padSkin) { padSkin = it; store.setPadSkin(it) } }
-        }
+        // Every orientation the edit reached: saved (a default as no file), or put back as it was.
+        padLayouts.finishEdit(keep)
+        if (!keep) ui.skinBefore?.let { if (it != padSkin) { padSkin = it; store.setPadSkin(it) } }
         ui.confirmKeepLayout = false; editingLayout = false; selectedElement = null
     }
     // Back closes the FILE menu before it leaves anything (2026-09-27, audit).
@@ -407,7 +398,7 @@ fun PlayScreen(
     androidx.activity.compose.BackHandler(enabled = menuOpen) { menuOpen = false }
     LaunchedEffect(menuOpen) { if (!menuOpen) ui.moreOpen = false }
     androidx.activity.compose.BackHandler(enabled = editingLayout) {
-        if (padLayout != ui.layoutBefore || padSkin != ui.skinBefore) ui.confirmKeepLayout = true
+        if (padLayouts.changed() || padSkin != ui.skinBefore) ui.confirmKeepLayout = true
         else finishLayoutEdit(false)
     }
     val layoutToolbar: @Composable (Modifier) -> Unit = { m ->
@@ -416,7 +407,7 @@ fun PlayScreen(
             isDs = platform == com.ironmonone.core.Platform.NDS,
             onEdit = { padLayout = it },
             onReset = { padLayout = PadLayout.default(landscape, nds = platform == com.ironmonone.core.Platform.NDS, gb = platform == com.ironmonone.core.Platform.GBC); selectedElement = null },
-            onDone = { finishLayoutEdit(true) },
+            onDone = { finishLayoutEdit(true) }, gb = platform == com.ironmonone.core.Platform.GBC,
             skin = padSkin, onSkin = { padSkin = it; store.setPadSkin(it) },
             onCancel = { finishLayoutEdit(false) },
             barAtBottom = ui.layoutBarBottom,
@@ -424,31 +415,19 @@ fun PlayScreen(
             modifier = m,
         )
     }
-    fun applyCheats() {
-        val r = retro ?: return
-        runCatching {
-            r.resetCheat()
-            if (!cheatsAllowed) return
-            var i = 0
-            for (c in cheats) {
-                val code = CheatStore.normalise(c.code, platform) ?: continue
-                r.setCheat(i++, c.enabled, code)
-            }
-        }
-    }
+    // Reset, then every code in order, in one emulation-thread job (rc32 audit P3 #49); none unless allowed.
+    fun applyCheats() { retro?.let { r -> runCatching { r.setCheats(CheatStore.forCore(cheats, platform, cheatsAllowed)) } } }
     // Again whenever they become allowed or not: hardcore switched on mid-game re-applied them with the allowance of
     // the moment before, so cheats ran on under hardcore while the button said CHEATS OFF (rc33 audit P1).
     // Only once the core is up (its first frame): the core-up block below makes the first application itself.
     LaunchedEffect(cheatsAllowed) { if (retro != null && ui.coreUp === retro) applyCheats() }
-    // A game the core refuses says so, instead of a black screen (CoreLoadErrors, rc33 audit P1).
-    CoreLoadErrors(retro) { status = it }
     var saveSlot by remember { mutableStateOf(1) }
     var slotsVersion by remember { mutableStateOf(0) }
     var statesDialog by remember { mutableStateOf(false) }
 
     // Per-species stat notes, the tracker's core mechanic. Reset per run, since a
-    // new seed re-randomizes every base stat and old notes would mislead.
-    val statMarks = remember(session.id) { StatMarks(store.marksFile(session)) }
+    // new seed re-randomizes every base stat and old notes would mislead. Read off the main thread (PlayMarks).
+    val statMarks = rememberStatMarks(store, session) ?: return
     // Auto Pokemon Themes (AutoThemes.lua afterProgramDataUpdate): Gen 3 and Game Boy leads.
     // A DS game follows the DS tracker's own (PokemonThemeManager.lua): its playerPokemon.
     val autoThemeParty = trackerState?.party?.map { it.mon.species to it.mon.isEgg }
@@ -457,30 +436,12 @@ fun PlayScreen(
         if (autoThemeDs != null) AutoTheme.onDs(autoThemeDs, TrackerOptions.autoPokemonThemes)
         else AutoTheme.onGba(autoThemeParty ?: emptyList(), TrackerOptions.autoPokemonThemes)
     }
-    androidx.compose.runtime.DisposableEffect(Unit) { onDispose { AutoTheme.release(); dsView.clear() } }
+    androidx.compose.runtime.DisposableEffect(Unit) { onDispose { AutoTheme.release(); dsView.clear(); gbaView.clear() } }
     SpriteIsMeHost(retro, platform)   // Play as your Pokemon: the one line the Play screen knows of it (SpriteIsMe.kt)
 
     // ---- Route info (InfoScreen ROUTE_INFO) and the carousel's route line ----
-    // Open Book: RandomizerLog.Data.Routes, parsed from this run's log once and kept.
-    var logRouteCache by remember(session.id) { mutableStateOf<Map<Int, LogRoute>?>(null) }
-    fun logRoutesByMap(): Map<Int, LogRoute> {
-        logRouteCache?.let { return it }
-        val t = trackerRef ?: return emptyMap()
-        val k = session.kind ?: return emptyMap()
-        val set = trackerState?.badgeSet ?: return emptyMap()
-        if (set != "RSE" && set != "FRLG") return emptyMap()
-        val built = runCatching {
-            val f = store.currentRunLogFor(k) ?: return@runCatching emptyMap()
-            val log = RandomizerLog.parse(f) ?: return@runCatching emptyMap()
-            LogRoutes.build(log, LogTrainerRules(t, set == "FRLG"), t).associateBy { it.mapId }
-        }.getOrDefault(emptyMap())
-        logRouteCache = built
-        return built
-    }
-    val areaToLog = mapOf(
-        "Walking" to LogEncType.GRASS, "Surfing" to LogEncType.SURFING, "RockSmash" to LogEncType.ROCKSMASH,
-        "Old Rod" to LogEncType.OLDROD, "Good Rod" to LogEncType.GOODROD, "Super Rod" to LogEncType.SUPERROD,
-    )
+    // Open Book: RandomizerLog.Data.Routes from this run's log, read off the main thread and kept for the run (OpenBookRoutes).
+    val openBook = remember(session.id, gameKeyForRom) { OpenBookRoutes() }
     /** The route info screen's data: [raw] is a RouteData key (the look-up lists those), or null for where the player is. */
     fun routeSource(raw: Int?): RouteInfoSource? {
         val t = trackerRef ?: return null
@@ -490,18 +451,12 @@ fun PlayScreen(
         val vanilla = t.routeEncountersRaw(rawId)
         val name = t.routeNameRaw(rawId) ?: trackerState?.routeName ?: ""
         if (vanilla.isEmpty() && name.isBlank()) return null
+        val set = trackerState?.badgeSet
         return RouteInfoSource(
             mapId = mapId, name = name, vanilla = vanilla,
             safari = if (t.isSafariMap(mapId)) statMarks.safariSeen(mapId) else emptyList(),
             tracked = { area -> statMarks.seenOnRouteArea(mapId, area) },
-            logged = { area ->
-                val type = areaToLog[area] ?: return@RouteInfoSource null
-                val byName = (1..(if (t.expandedSpeciesIds) 1300 else 411)).associateBy { t.speciesName(it).uppercase() }
-                logRoutesByMap()[mapId]?.areas?.get(type)
-                    ?.map { w -> RouteIcon(byName[w.name.uppercase()], w.rate, w.levelMin, w.levelMax) }
-                    // "table.sort ... rate desc, then pokemonID"
-                    ?.sortedWith(compareByDescending<RouteIcon> { it.rate ?: 0.0 }.thenBy { it.species ?: 0 })
-            },
+            logged = { area -> openBook.icons(t, store, session.kind, set, mapId, area) },
         )
     }
     // TrackerScreen CarouselItems ROUTE_INFO: in a wild battle the battle's area when RouteData has
@@ -519,14 +474,12 @@ fun PlayScreen(
     var marksVersion by remember { mutableStateOf(0) }   // bump to redraw cells
     // Encounter counts and last-seen levels are the run's (StatMarks), written by the
     // reference's rules (EncounterBook). They used to live here and died with the screen.
-    val encounterBook = remember(session.id) { EncounterBook.of(session.id) }
+    val encounterBook = remember(session.id, gameKeyForRom) { EncounterBook.of(if (session.isRun) "run/" + store.lastSeedText() else session.id) }
     LaunchedEffect(trackerState) {
         if (encounterBook.onGba(statMarks, EncounterBook.gbaUpdate(trackerState), save = Demo.mode == null)) marksVersion++
-        if (session.isRun && trackerState != null) session.kind?.let { k -> RunClock.observe(RunClock.key(k.id, store.attempt()), android.os.SystemClock.elapsedRealtime()) }
     }
     LaunchedEffect(ndsState) {
         if (encounterBook.onDs(statMarks, EncounterBook.dsUpdate(ndsState), save = Demo.mode == null)) marksVersion++
-        if (session.isRun && ndsState != null) session.kind?.let { k -> RunClock.observe(RunClock.key(k.id, store.attempt()), android.os.SystemClock.elapsedRealtime()) }
         if (session.isRun) ndsState?.let { s -> if (PcHeals.observeDsSurvival(statMarks, Integer.bitCount(s.badges), PcHeals.limitForLastRunCached(), s.leagueBeaten)) marksVersion++ }
     }
     // The DS main screen's pause on move effectiveness after each new opponent.
@@ -548,70 +501,20 @@ fun PlayScreen(
         }
     }
     var dsTopOnly by remember(session.id) { mutableStateOf(prefs0.dsTopOnly) }
-    // Tracker pane width, dragged by the divider. Narrower pane = bigger game.
+    // Tracker pane width, dragged by the tracker's left edge. Narrower pane = bigger game.
     val windowWidthDp = androidx.compose.ui.platform.LocalConfiguration
         .current.screenWidthDp.toFloat()
     val windowHeightDp = androidx.compose.ui.platform.LocalConfiguration
         .current.screenHeightDp.toFloat()
 
-    // The column starts as a FRACTION of the window, matching the reference
-    // streaming layout, rather than a fixed 340dp that ate 40% of a phone in
-    // landscape and letterboxed the game. Still draggable from there; keyed on
-    // the window so a rotation re-derives a sensible default.
-    // 2.2: the floating window's frame, per game, defaulting to where the dock would be.
-    var floatFrame by remember(windowWidthDp, windowHeightDp, session.id) {
-        mutableStateOf(prefs0.floatFrame?.let { FloatFrame(it[0], it[1], it[2], it[3]).clamped(windowWidthDp, windowHeightDp) } ?: FloatFrame.default(windowWidthDp, windowHeightDp))
-    }
-    var trackerWidth by remember(windowWidthDp, session.id) {
-        mutableStateOf(windowWidthDp * (prefs0.trackerFraction ?: TRACKER_FRACTION))
-    }
-    // One writer for all four, so no toggle can forget to persist. Debounced
-    // because the pane width changes on every drag event.
-    LaunchedEffect(speed, muted, dsTopOnly, trackerWidth, floatFrame, session.id) {
-        kotlinx.coroutines.delay(300)
-        val fraction = (trackerWidth / windowWidthDp).takeIf { windowWidthDp > 0 && it in 0.1f..0.9f }
-        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-            store.saveGameSettings(session, GameSettings.Values(speed, muted, dsTopOnly, fraction, listOf(floatFrame.x, floatFrame.y, floatFrame.w, floatFrame.h)))
-        }
-    }
-
-    // The notes for whoever is on screen right now. Keyed on both the species and
-    // a version counter so a tap redraws the cell immediately.
-    // Every change the panel would redraw for is a new snapshot for the
-    // stream page. Built off the main thread; the hub dedupes identical
-    // JSON so SSE only fires on a real change.
-    LaunchedEffect(trackerState, ndsState, marksVersion, session.id) {
-        val notes = com.ironmonone.app.stream.StreamSnapshot.Notes(
-            marksOf = { statMarks.of(it) }, noteOf = { statMarks.noteFor(it) },
-            movesSeenOf = { statMarks.movesSeenFor(it).map { m -> m.name } }, abilityOf = { statMarks.abilityFor(it) },
-            encountersOf = { statMarks.totalEncounters(it) }, lastSeenLevelOf = { statMarks.lastLevelSeen(it) },
-            routeSeenOf = { statMarks.seenOnRoute(it).size },
-        )
-        val run = com.ironmonone.app.stream.StreamSnapshot.Run(
-            session.title, platform.name, store.attempt(), session.tracked,
-            if (session.isRun) store.lastSeed() else null, session.isRun, session.kind?.generation?.number ?: 3)
-        val gba = trackerState; val nds = ndsState; val ref = trackerRef
-        // Built here, on the main thread, where StatMarks is written: built off it, it read the move lists while a
-        // battle changed them, a rare crash (rc33 audit P0-10). Only the JSON is written off it.
-        val snap = com.ironmonone.app.stream.StreamSnapshot.build(run, gba, nds, notes, ref)
-        val json = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) { com.ironmonone.app.stream.Json.write(snap) }
-        com.ironmonone.app.stream.StreamHub.publish(json, run.attempt)
-    }
-    // The post-game browser's data: every species as randomized. Once per
-    // tracker, since it reads ROM tables for the whole dex.
-    LaunchedEffect(trackerRef, ndsTrackerRef) {
-        val ref = trackerRef; val nref = ndsTrackerRef
-        if (ref == null && nref == null) return@LaunchedEffect
-        com.ironmonone.app.stream.StreamHub.dex = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
-            runCatching {
-                com.ironmonone.app.stream.Json.write(com.ironmonone.app.stream.StreamSnapshot.dex(
-                    ref, nref, if (ref != null) (if (ref.expandedSpeciesIds) 1284 else 412) else 650))
-            }.getOrDefault("[]")
-        }
-    }
+    // The tracker column's share of the window and the floating window's frame: kept through a rotation, and saved
+    // with no read of them here, so a drag recomposes the pane alone (PaneSizes, rc32 audit P2 #46, #56). One writer
+    // for every per-game setting, so no toggle can forget to persist.
+    val panes = remember(session.id) { PaneSizes(prefs0.trackerFraction, prefs0.floatFrame) }
+    LaunchedEffect(speed, muted, dsTopOnly, session.id) { panes.saveWith(speed, muted, dsTopOnly) { store.saveGameSettings(session, it) } }
     val enemySpecies = view?.enemySpeciesId ?: -1
     // The opponent's notebook: a locked DS opponent's while one is locked (DsViewState); counting stays live.
-    val notebookSpecies = dsView.locked?.mon?.species ?: enemySpecies
+    val notebookSpecies = viewedFoeSpecies(ndsState, trackerState, enemySpecies)
     val enemyMarks = remember(notebookSpecies, marksVersion) {
         if (notebookSpecies > 0) statMarks.of(notebookSpecies) else IntArray(StatMarks.COUNT)
     }
@@ -666,38 +569,38 @@ fun PlayScreen(
     // game-over screen can offer "Retry the battle". Held in memory only, for
     // the current battle; a new battle replaces it, a new run drops it.
     var battleStartState by remember(session.id) { mutableStateOf<ByteArray?>(null) }
-    val gameOverLatch = remember(session.id) { GameOverLatch(gameOverFamily(platform)) }
+    // A DS run's latch starts fired when its end is already on record (GameOverLatch.forPlay, rc32 audit P2 #41).
+    val gameOverLatch = remember(session.id) { GameOverLatch.forPlay(platform, store, session) }
     // TimeMachineScreen: a restore point every four minutes on a map, out of battle; five on a Game Boy game.
-    val timeMachine = remember(session.id) {
-        TimeMachine(if (platform == com.ironmonone.core.Platform.GBC) TimeMachine.GB_WAIT_MS else TimeMachine.WAIT_MS)
-    }
-    // SeedLogger: the DS tracker's past runs, per game (SeedLogger.lua:233), and when this run began for its playtime.
+    val timeMachine = remember(session.id) { TimeMachine.forPlatform(platform) }
+    // SeedLogger: the DS tracker's past runs, per game (SeedLogger.lua:233).
     val pastRunStore = remember(ndsState?.gameName, ndsState?.badgeSet) { ndsState?.let { pastRunStoreFor(it, store::pastRunsFile) } }
-    val runStartedAt = remember(session.id) { System.currentTimeMillis() }
-    val runTimer = remember(session.id) { RunTimer(runStartedAt) }
+    // The run's, not the session id's: that is "run" for every run, so NEW RUN kept the last seed's (rc33 audit P1 #29).
+    // From the time the run has been played (RunTimer.forRun, rc32 audit P2 #48).
+    val runTimer = remember(session.id, gameKeyForRom) { RunTimer.forRun(session, runNow.attempt) }
     // TourneyTracker, HeartGold / SoulSilver only, keyed on the seed as the reference keys on the ROM hash.
     val tourney = remember { TourneyTracker(store.tourneyFile()) }
     LaunchedEffect(ndsState?.inBattle, ndsState?.badgeSet, ndsState?.mapId) {
-        val nds = ndsTrackerRef
-        if (TrackerOptions.tourneyTracker && ndsState?.badgeSet == "HGSS" && nds != null && Demo.mode == null) {
-            val done = tourney.update(store.lastSeedText().ifEmpty { session.id }, nds.defeatedTrainers, ndsState?.mapId ?: 0)
-            if (done.isNotEmpty()) status = "Milestone: ${done.joinToString(", ") { it.name }}. New total: ${tourney.points(tourney.scoreFor(store.lastSeedText().ifEmpty { session.id }))} points"
-        }
+        tourney.onRead(ndsState, ndsTrackerRef?.defeatedTrainers, gameOverLatch, runNow.seed.ifEmpty { session.id })?.let { status = it }
     }
+    // What the stream page shows, only while the stream is on (StreamFeed, rc32 audit P3 #50, #51).
+    com.ironmonone.app.stream.StreamFeed(streamOn, session, platform, runNow, statMarks, marksVersion, trackerState, ndsState, trackerRef, ndsTrackerRef, gameOverLatch)
     LaunchedEffect(session.id) {
         while (true) {
             kotlinx.coroutines.delay(15_000)
             if (Demo.mode != null) continue
             val inBattle = trackerState?.inBattle == true || ndsState?.inBattle == true
             val mapKnown = trackerState?.mapId != null || ndsState != null
-            timeMachine.tick(System.currentTimeMillis(), TrackerOptions.restorePoints, inBattle, mapKnown, trackerState?.routeName) { runCatching { retro?.serializeState() }.getOrNull() }
+            // The state is taken off the main thread (rc32 audit P2 #52).
+            timeMachine.tick(System.currentTimeMillis(), TrackerOptions.restorePoints, inBattle, mapKnown, trackerState?.routeName, retro)
         }
     }
     LaunchedEffect(inBattleNow) {
         if (!inBattleNow) battleEndedAt = android.os.SystemClock.uptimeMillis()
         else {
-            battleStartState = runCatching { retro?.serializeState() }.getOrNull()?.takeIf { it.isNotEmpty() }
+            battleStartState = null   // never the last battle's while this one's is taken
             gameOverLatch.onBattleBegan()   // Battle.beginNewBattle: GameOverScreen.isDisplayed = false
+            battleStartState = AutoSave.battleStart(retro)   // off the main thread (rc32 audit P2 #52)
             // The same snapshot keeps the auto slot fresh (AutoSave), so a crash mid-battle resumes at its start.
             val now = System.currentTimeMillis()
             battleStartState?.let { s -> AutoSave.of(context.filesDir, session).takeIf { Demo.mode == null && it.battleDue(now) }?.save(s, now, store.stateStamp(session)) }
@@ -708,14 +611,14 @@ fun PlayScreen(
     // Count an encounter once per arrival, not once per poll tick.
     // Persist what this enemy uses as it uses it, so the next encounter with
     // the species starts informed - the reference's Tracker.TrackMove.
-    // The DS enemy's moves are already used-only (NdsTracker.usedOnly), so every one is a sighting.
-    LaunchedEffect(ndsState?.enemy?.moves) {
-        val e = ndsState?.enemy
-        if (e != null && statMarks.addMovesSeen(e.mon.species, e.moves.map { it.id to it.name }, e.mon.level)) marksVersion++
+    // The DS enemy's moves are already used-only (NdsTracker.usedOnly), so every one is a sighting; every opponent's on
+    // the field, a double or triple battle's others too (DsFoeMoves).
+    LaunchedEffect(DsFoeMoves.key(ndsState)) {
+        if (DsFoeMoves.record(statMarks, ndsState)) marksVersion++
     }
-    LaunchedEffect(trackerState?.enemy?.movesSeen) {
-        val e = trackerState?.enemy
-        if (e != null && statMarks.addMovesSeen(e.species, e.moveRows.map { it.id to it.name }, e.level)) marksVersion++
+    // Every opposing Pokemon's, the doubles partner's too (rc33 audit P1 #72).
+    LaunchedEffect(trackerState?.enemyMovesThisBattle) {
+        if (statMarks.addBattleMoves(trackerState?.enemyMovesThisBattle)) marksVersion++
     }
 
     // A battle script revealing an ability is the ONLY thing that unlocks
@@ -755,10 +658,7 @@ fun PlayScreen(
             // map and the encounter area it was met in (Tracker.TrackRouteEncounter),
             // only where RouteData has that area. Trainer Pokemon used to be recorded
             // too, which the reference never does (2026-09-28).
-            // DS: Tracker.updateEncounterData for a new wild enemy (enemyTrainerID 0), by area name.
-            ndsState?.takeIf { it.isWildBattle && it.enemyTrainerId == 0 && Demo.mode == null }?.let { st ->
-                st.enemy?.mon?.level?.let { lv -> if (statMarks.seeDsEncounter(st.areaName, enemySpecies, lv)) marksVersion++ }
-            }
+            // DS: Tracker.updateEncounterData is EncounterBook.onDs's, with the encounter count (rc33 audit P1 #80).
             // Never from a staged screenshot battle (Demo), which would write into this save's records.
             // Gen 3 only: the Game Boy references record no route encounters (Gen 2 reference
             // Battle.lua:522-525 has TrackRouteEncounter commented out), though their map is read now.
@@ -799,7 +699,7 @@ fun PlayScreen(
             // the same pack with nothing added.
             val packed = if (platform == com.ironmonone.core.Platform.GBC ||
                 trackerRef?.expandedSpeciesIds == true)
-                PcAssets.gbaSprite(context, sp) else null
+                PcAssets.gbaSprite(context, sp, trackerRef?.nameSet) else null
             packed ?: trackerRef?.sprite(sp)?.let { px ->
                 android.graphics.Bitmap.createBitmap(
                     px, 64, 64, android.graphics.Bitmap.Config.ARGB_8888
@@ -864,6 +764,9 @@ fun PlayScreen(
                 Demo.mode?.takeIf { it.startsWith("nds") }?.let { m -> ndsState = runCatching { Demo.nds(t, m) }.getOrNull() ?: ndsState }
                 // The Nuzlocke ledger follows every poll here too, not only the ones a tracker panel draws (2026-09-30).
                 NuzlockeTracking.observeNds(context.applicationContext.filesDir, ndsState)
+                ndsState?.let { statMarks.noteDsProgress(it.progress) }
+                KeptSave.observe(store, session, ndsState, runNow.attempt)
+                if (ndsState != null) RunClock.tick(session.kind?.id?.takeIf { session.isRun }, { runNow.attempt }, gameActive && Demo.mode == null && lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED))
             }
         }
     }
@@ -898,6 +801,8 @@ fun PlayScreen(
                     trackerState = runCatching { if (gbc != null) Demo.gb2(gbc, m) else Demo.gb1(gb1!!, m) }.getOrNull() ?: trackerState
                 }
                 NuzlockeTracking.observe(context.applicationContext.filesDir, trackerState)
+                KeptSave.observe(store, session, trackerState, runNow.attempt)
+                if (trackerState != null) RunClock.tick(session.kind?.id?.takeIf { session.isRun }, { runNow.attempt }, gameActive && Demo.mode == null && lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED))
             }
         }
         var tracker: com.ironmonone.tracker.GbaTracker? = null
@@ -948,6 +853,8 @@ fun PlayScreen(
                 Demo.mode?.takeIf { it.startsWith("gba") }?.let { m -> trackerState = runCatching { Demo.gba(t, m) }.getOrNull() ?: trackerState }
                 // The Nuzlocke ledger follows every poll, not only the ones a tracker panel draws (hidden, clean view).
                 NuzlockeTracking.observe(context.applicationContext.filesDir, trackerState)
+                KeptSave.observe(store, session, trackerState, runNow.attempt)
+                if (trackerState != null) RunClock.tick(session.kind?.id?.takeIf { session.isRun }, { runNow.attempt }, gameActive && Demo.mode == null && lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED))
             }
         }
     }
@@ -1002,7 +909,8 @@ fun PlayScreen(
      * memory and died with the process. The NEW RUN dialog promised the
      * in-game save was kept; on GBA that was false every time.
      *
-     * Written on pause, on leaving the tab, and before a reboot; loaded into
+     * Written on pause, on leaving the tab, before a reboot, and while the game
+     * runs once it has saved (AutoSave.keepFresh, rc32 audit P2 #51); loaded into
      * the core at view creation via saveRAMState. A new seed keeps it, in every
      * game: Continue on its title screen opens it (RunSaves, 2026-09-30).
      */
@@ -1019,12 +927,11 @@ fun PlayScreen(
             // GLRetroView.serializeSRAM). Reading the SRAM buffer directly
             // trades a theoretical torn read for never freezing the app.
             val bytes = retro?.serializeSRAM(useEmulationThread = false) ?: return
-            // Never clobber a good save with an empty buffer from a core that
-            // is mid-teardown or not yet running.
-            if (bytes.isEmpty()) return
-            // The slot writer: flushed, an atomic replace that never deletes the save first, the .tmp gone on a
-            // failure, and the failure said (rc33 audit P0-8: a full phone lost every in-game save in silence).
-            StateSlots.writeAtomic(sramFile(), bytes)?.let { SaveTrouble.report(SaveTrouble.BATTERY, it) }
+            // The battery save's one writer (rc32 audit P3 #54): it writes nothing for the empty buffer of a core
+            // mid-teardown or not yet running, and never lets an older read win (the flush while playing, P2 #51).
+            // Flushed, an atomic replace that never deletes the save first, the .tmp gone on a failure, and the
+            // failure said (rc33 audit P0-8: a full phone lost every in-game save in silence).
+            StateSlots.writeSram(sramFile(), bytes)?.let { SaveTrouble.report(SaveTrouble.BATTERY, it) }
         }
     }
 
@@ -1069,6 +976,8 @@ fun PlayScreen(
                         prePass = ExtraPasses.prePassFor(context, store, k, settings),
                         secondPass = ExtraPasses.secondPassFor(context, store, k, settings), countAttempt = nuzlocke == null)
                     nuzlocke?.let { NuzlockeStore(context.applicationContext.filesDir).startNextRandomized(it, k, started.seed, System.currentTimeMillis()) }
+                    // Here, not after the reboot: if the player left Play meanwhile, the rest of this job never runs.
+                    TrackerOptions.startRunWith(settings.name)
                     started.seed to settings.name
                 }
             }
@@ -1084,7 +993,6 @@ fun PlayScreen(
                 encounterBook.reset()
                 lastCountedSpecies = -1
                 marksVersion++
-                TrackerOptions.startRunWith(settingsName)
                 gameKeyForRom++
                 gameKey++
                 gameActive = true
@@ -1157,7 +1065,7 @@ fun PlayScreen(
             // It used to overwrite the slot with whatever came back and say
             // "Saved" - or say nothing at all on null - so a bad serialize
             // could destroy the previous good state while claiming success.
-            status = "Save failed - game not running."
+            status = "Could not save: the game is not running."
             return
         }
         captureFrame { frame ->
@@ -1207,24 +1115,11 @@ fun PlayScreen(
 
     fun loadState(which: Int = saveSlot, keepUndo: Boolean = false) {
         val f = slotFile(which)
-        if (!f.exists()) { status = "Slot $which is empty."; return }
+        if (!f.exists()) { status = StateSlots.emptyLine(which); return }
         if (raHardcore) { status = "Loading a state is off in RetroAchievements hardcore."; return }
-        // A save state restores the whole of RAM. Loaded against a DIFFERENT
-        // randomization it puts one game's memory under another game's data
-        // tables, and the tracker then reads a party that cannot exist -
-        // species past the end of the dex, impossible levels, ids that change
-        // between reads. It looks like a tracker bug and is not one.
-        val want = store.stateStamp(session)
-        val got = runCatching { slotStamp(which).readText().trim() }.getOrNull()
-        // A run with no seed on disk (a NEW RUN cut off halfway) matches nothing, not even another unknown.
-        if (got != null && (got != want || !PrepStore.stampKnown(want))) {
-            status = "Slot $which belongs to a different run - not loaded."
-            return
-        }
-        if (got == null) {
-            status = "Slot $which is from an older version. Not loaded."
-            return
-        }
+        // Another randomization's state, or one with no stamp, is refused (StateSlots.loadRefusal, rc32 audit P3 #54):
+        // a save state restores the whole of RAM, and the tracker would read a party that cannot exist.
+        StateSlots.loadRefusal(which, runCatching { slotStamp(which).readText().trim() }.getOrNull(), store.stateStamp(session))?.let { status = it; return }
         val slot = which
         if (which != StateSlots.AUTO) saveSlot = which
         scope.launch(kotlinx.coroutines.Dispatchers.IO) {
@@ -1232,7 +1127,7 @@ fun PlayScreen(
             // the UI for seconds per tap.
             val bytes = StateSlots.readOrNull(f)
             kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
-                if (bytes == null) { status = "Could not read slot $slot."; return@withContext }
+                if (bytes == null) { status = "Could not read ${StateSlots.named(slot, capital = false)}."; return@withContext }
                 // A controller's quick load asks nothing, so it keeps the moment
                 // it replaced and the toast offers it back (2026-09-27, audit).
                 val before = if (keepUndo) runCatching { retro?.serializeState() }.getOrNull()?.takeIf { it.isNotEmpty() } else null
@@ -1241,7 +1136,7 @@ fun PlayScreen(
                 // idea the rewind never happened.
                 val ok = retro?.unserializeState(bytes) == true
                 val msg = if (ok) (if (slot == StateSlots.AUTO) "Resumed from the auto-save." else "Loaded slot $slot.")
-                else "Could not load slot $slot. The save may be damaged."
+                else "Could not load ${StateSlots.named(slot, capital = false)}. The save may be damaged."
                 status = msg
                 // In the run's events (RunEvents): which slot, and when that state was saved.
                 val slotName = if (slot == StateSlots.AUTO) "auto" else "$slot"
@@ -1291,12 +1186,13 @@ fun PlayScreen(
 
     // RUMBLE. The core's rumble state changes arrive as events; the phone's
     // motor follows: any strength above zero buzzes at that amplitude until
-    // the core sets zero. Off with the SETTINGS row.
+    // the core sets zero, and stops when Play pauses or leaves (PhoneHardware.follow,
+    // rc32 audit P3 #47). Off with the SETTINGS row.
     LaunchedEffect(retro, coreValues[CoreOptions.RUMBLE_KEY]) {
         val r = retro ?: return@LaunchedEffect
         if (coreValues[CoreOptions.RUMBLE_KEY] == "off") return@LaunchedEffect
         val vib = PhoneHardware.vibrator(context) ?: return@LaunchedEffect
-        r.getRumbleEvents().collect { ev -> PhoneHardware.rumble(vib, ev.strengthWeak, ev.strengthStrong) }
+        PhoneHardware.follow(vib, r.getRumbleEvents(), lifecycleOwner.lifecycle)
     }
     // SENSORS. Listeners exist only while the core has asked for that sensor,
     // read from its mask every half second; values are fed in libretro's
@@ -1315,8 +1211,7 @@ fun PlayScreen(
 
     // REWIND. Record a state every interval while the game runs at 1x and
     // nothing is rewinding; hold REWIND to pop them back, newest first.
-    // Direct serialize (no emulation-thread hop) for the same reason as
-    // persistSram: this runs on the main thread on a timer.
+    // Recorded between frames from a background thread (RewindBuffer.record).
     fun startRewind() {
         if (!rewindAllowed) { status = "Rewind is off in a Kaizo IronMON run and in a Nuzlocke."; return }
         if (raHardcore) { status = "Rewind is off in RetroAchievements hardcore."; return }
@@ -1335,22 +1230,18 @@ fun PlayScreen(
     fun stopRewind() { rewinding = false }
     // Crash insurance: the auto slot every three minutes of play (AutoSave),
     // snapshotted on the emulation thread and written off the main one.
+    // The battery save too, once the game has saved, on a console whose core leaves saves to the app (rc32 audit P2 #51).
     LaunchedEffect(retro, session.id) {
         val r = retro ?: return@LaunchedEffect
         AutoSave.of(context.filesDir, session).keepFresh(r, stamp = { store.stateStamp(session) }, playing = {
             gameActive && ui.coreUp === r && Demo.mode == null && lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
-        })
+        }, sram = if (platform.coreOwnsSaves) null else sramFile())
     }
     LaunchedEffect(retro, rewindAllowed, session.id) {
         val r = retro ?: return@LaunchedEffect
         if (!rewindAllowed) return@LaunchedEffect
-        val (_, interval) = RewindBuffer.policy(platform)
-        while (true) {
-            kotlinx.coroutines.delay(interval)
-            if (rewinding || speed != 1 || slow != 1 || !gameActive) continue
-            if (!lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) continue
-            val st = runCatching { r.serializeState(useEmulationThread = false) }.getOrNull() ?: continue
-            rewind.push(st)
+        rewind.record(r, RewindBuffer.policy(platform).second) {
+            !rewinding && speed == 1 && slow == 1 && gameActive && lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)
         }
     }
 
@@ -1380,6 +1271,7 @@ fun PlayScreen(
             .filter { it is GLRetroView.GLRetroEvents.FrameRendered }
             .first()
         ui.coreUp = r   // the view may take its real size now (holdSizeWhileLoading)
+        SramGuard.check(r, store.sramFile(session))
         // melonDS dies above 4x (see speedOptions). Persistence made it possible
         // to carry a GBA run's 16x into a DS core, which is that same crash.
         val capped = speed.coerceAtMost(platform.maxTurbo)
@@ -1400,7 +1292,7 @@ fun PlayScreen(
         // The app closed with this game open (a crash, a call, a kill): back where it was, from
         // its own auto slot only (CrashResume). Otherwise the slot is offered, as it always was.
         CrashResume.atCoreUp(store.playMarker, session, StateSlots.auto(context.filesDir, session), store.stateStamp(session),
-            loadsAllowed = !(raStore.hardcore && !session.isRun), events = store.runEvents(session),
+            loadsAllowed = !(raStore.hardcoreSignedIn() && !session.isRun), events = store.runEvents(session),
             why = { CrashResume.lastExit(context) }, load = { bytes -> r.unserializeState(bytes) })?.let { status = it }
     }
 
@@ -1417,7 +1309,7 @@ fun PlayScreen(
             runCatching { RomSprites.decodeAll(context.filesDir, rom, k, max) }
                 .onFailure { android.util.Log.w("KaizoCore", "RomSprites: ${it}", it) }.getOrDefault(-1)
         }
-        if (n > 0) status = "Sprites read from your ROM: $n."
+        if (n > 0) status = "Sprites read from your game: $n."
     }
 
     // The bar shows FILE only while the Play screen is up, and stops showing it
@@ -1466,12 +1358,11 @@ fun PlayScreen(
             // hand off this line (2026-09-27, audit).
             val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
             Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("Stream: " + com.ironmonone.app.stream.StreamHub.url(),
+                Text(com.ironmonone.app.stream.StreamHub.menuLine(),
                     style = MaterialTheme.typography.bodySmall, color = Shell.hintOnNight,
                     modifier = Modifier.weight(1f))
                 com.ironmonone.app.gen3.Gen3Button("Copy link", onClick = {
-                    clipboard.setText(androidx.compose.ui.text.AnnotatedString(com.ironmonone.app.stream.StreamHub.url()))
-                    status = "Stream link copied."
+                    status = com.ironmonone.app.stream.StreamHub.copyLink { clipboard.setText(androidx.compose.ui.text.AnnotatedString(it)) }
                 })
             }
         }
@@ -1548,7 +1439,7 @@ fun PlayScreen(
                     else {
                         val url = com.ironmonone.app.stream.StreamHub.start(context.filesDir)
                         streamOn = url != null
-                        status = if (url != null) "On your PC, open $url" else "Port ${com.ironmonone.app.stream.StreamHub.PORT} is busy."
+                        status = com.ironmonone.app.stream.StreamHub.startedLine(url)
                     }
                 })
             com.ironmonone.app.gen3.Gen3Button("CLEAN VIEW", onClick = { onClean(true); menuOpen = false })
@@ -1626,7 +1517,7 @@ fun PlayScreen(
 
     // The lead's damaging move types, which is all the coverage walk needs.
     // Keyed on that list so it does not re-walk the whole dex every poll.
-    val leadMoveTypes = trackerState?.party?.firstOrNull()?.moveRows
+    val leadMoveTypes = trackerState?.lead?.moveRows
         ?.mapNotNull { r -> r.type.takeIf { r.category != "STA" } }?.distinct()?.sorted()
         ?: emptyList()
     val coverage = remember(leadMoveTypes, gameKey) {
@@ -1665,38 +1556,23 @@ fun PlayScreen(
                   // it. Docked here it needs no dragging and cannot cover the
                   // game or its own controls, which the floating bubble could.
                   if (facecam) {
-                      FacecamDocked(onDenied = {
-                          facecam = false
-                          status = "Camera permission denied."
-                      })
+                      FacecamDocked(onDenied = { permanent -> facecam = false; status = CameraDenied.note(context, ui, permanent) })
                   }
-                  Row(
-                      Modifier.fillMaxWidth()
-                          .padding(horizontal = 4.dp, vertical = 1.dp),
-                      horizontalArrangement = Arrangement.SpaceBetween,
-                      verticalAlignment = Alignment.CenterVertically,
-                  ) {
-                      // The only attempt counter in the app, and no seed: the
-                      // seed is not something you act on mid-run.
-                      Text(
-                          "ATTEMPT ${store.attempt()}",
-                          fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
-                          fontSize = 12.sp, color = Pc.Text,
+                  // The attempt (the only counter in the app), FILE, the DS's screens and hiding the tracker sit
+                  // under one small arrow at the end of the tracker's first row (TrackerCornerMenu). They were a row
+                  // of chips of their own, which ran off a narrow column (Blake, 2026-10-02). The second display is
+                  // view only: the panel's own ATTEMPT line, a Kaizo IronMON run's only, shows there (rc32 audit P2 #55).
+                  val onSecond = LocalOnSecondScreen.current
+                  val corner: (@Composable () -> Unit)? = if (onSecond || TrackerOptions.landscapeTracker == LandscapeTracker.FLOATING) null else { {
+                      TrackerCornerMenu(
+                          attempt = runNow.attempt, menuOpen = menuOpen, onMenu = { menuOpen = !menuOpen; lastTouch = android.os.SystemClock.uptimeMillis() },
+                          dsTopOnly = dsTopOnly.takeIf { dsScreens }, onScreens = { dsTopOnly = !dsTopOnly },
+                          onHide = { trackerOpen = false; ui.trackerPeek = false },
+                          onFloat = { TrackerOptions.landscapeTracker = LandscapeTracker.FLOATING; TrackerOptions.save() },
                       )
-                      Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                          if (dsScreens) {
-                              OverlayChip(if (dsTopOnly) "2 screens" else "1 screen") {
-                                  dsTopOnly = !dsTopOnly
-                              }
-                          }
-                          // Landscape has no app bar, so its FILE lives here: it shows and hides the
-                          // row of SAVE / LOAD / STATES chips over the game (hidden by default).
-                          OverlayChip(if (menuOpen) "HIDE" else "FILE") { menuOpen = !menuOpen }
-                          OverlayChip("▶", description = "Hide tracker") { trackerOpen = false; ui.trackerPeek = false }
-                      }
-                  }
+                  } }
                   if (dsScreens) NdsTrackerPanel(
-                      state = ndsState, onFlee = { flee() }, onGear = { gearDialog = true }, timer = if (TrackerOptions.showTimer) runTimer else null,
+                      state = ndsState, onFlee = { flee() }, onGear = { gearDialog = true }, headerTrailing = corner, timer = if (TrackerOptions.showTimer) runTimer else null,
                       favoriteLine = favoriteLine,
                       randomBall = ndsTrackerRef?.randomBall?.takeIf { TrackerOptions.ballPickerShows() },
                       onTypeDefenses = { n, a, b -> typeDefenses = n to com.ironmonone.tracker.Gen3Types.defenses(com.ironmonone.tracker.nds.Gen4Types.idOf(a) ?: -1, com.ironmonone.tracker.nds.Gen4Types.idOf(b) ?: (com.ironmonone.tracker.nds.Gen4Types.idOf(a) ?: -1)) },
@@ -1707,7 +1583,7 @@ fun PlayScreen(
                       },
                       enemyNote = enemyNote,
                       onEditNote = { noteDialog = true },
-                      attempt = store.attempt(),
+                      attempt = runNow.attempt,
                       coverage = ndsCoverage,
                         enemyLastLevel = enemyLastSeen,
                         movesSeenRunWide = if (notebookSpecies > 0) statMarks.movesSeenFor(notebookSpecies) else emptyList(),
@@ -1719,22 +1595,22 @@ fun PlayScreen(
                         hiddenPowerType = statMarks.dsHiddenPowerType(), effectivenessReady = dsFxReady,
                         onStepHiddenPower = { f -> statMarks.stepDsHiddenPower(f); marksVersion++ },
                         pokecenterCount = statMarks.dsPokecenterCount(), onPokecenter = { up -> statMarks.bumpDsPokecenter(up); marksVersion++ },
-                        stackBoth = true,
+                        stackBoth = TrackerRoom.stackBoth(LocalTrackerRoom.current),
                   )
                   else TrackerPanel(
                       onTrainerInfo = { trackerState?.opponentTrainerId?.let { id -> trackerRef?.trainer(id)?.let { side.trainerInfo = it } } },
                       onGradeNotes = { side.scoreSheet = true },
                       onRandomEvos = { sp -> side.randomEvos = sp }, hasRandomEvos = { sp -> trackerRef?.hasRandomEvos(sp) == true },
                       onMoveHistory = { sp, n, lv -> side.moveHistory = Triple(sp, n, lv) },
-                      onTypeDefenses = { n, a, b -> typeDefenses = n to com.ironmonone.tracker.Gen3Types.defenses(a, b, gen1 = session.kind?.generation == com.ironmonone.core.Generation.GB1) },
-                      trackerState, onFlee = { flee() }, ballCall = ballCall, onGear = { gearDialog = true },
+                      onTypeDefenses = { n, a, b -> typeDefenses = n to com.ironmonone.tracker.Gen3Types.defenses(a, b, gen1 = session.kind?.generation == com.ironmonone.core.Generation.GB1, natDex = session.kind?.isNatDex == true) },
+                      trackerState, onFlee = { flee() }, ballCall = ballCall, onGear = { gearDialog = true }, headerTrailing = corner,
                 onRerollBall = { ballReroll++ },
-                movesSeenRunWide = trackerState?.enemy
+                movesSeenRunWide = gbaView.foe(trackerState)
                     ?.let { statMarks.movesSeenFor(it.species) } ?: emptyList(),
                 moveRowFor = { id -> trackerRef?.moveRowFor(id) ?: gbLookup?.invoke(id) },
-                revealedEnemyAbility = trackerState?.enemy
+                revealedEnemyAbility = gbaView.foe(trackerState)
                     ?.let { statMarks.abilityFor(it.species) },
-                revealedEnemyAbility2 = trackerState?.enemy
+                revealedEnemyAbility2 = gbaView.foe(trackerState)
                     ?.let { statMarks.secondAbilityFor(it.species) },
                 routeName = trackerState?.routeName,
                 routeSeen = routeCarousel.second,
@@ -1766,27 +1642,30 @@ fun PlayScreen(
                 onTrainersOnRoute = if (trackerRef?.hasTrainerData == true) { { side.trainersDialog = true } } else null,
                 onBattleDetails = if (trackerRef?.hasBattleDetails == true) { { side.battleDetailsDialog = true } } else null,
                 onCalcAtk = { side.openCalcAtk(trackerRef, trackerState) },
-                pcHealsLimit = remember(session.id, store.attempt()) { if (session.isRun) PcHeals.limitForLastRun() else null },
+                pcHealsLimit = remember(session.id, runNow.attempt) { if (session.isRun) PcHeals.limitForLastRun() else null },
                 onSpeciesName = panelLookups::speciesName,
                       favoriteLine = favoriteLine, spriteFor = spriteFor,
                       enemyMarks = enemyMarks, enemyEncounters = enemyEncounters,
                       enemyLastSeenLevel = enemyLastSeen,
                       onCycleMark = { i ->
-                          trackerState?.enemy?.let { statMarks.cycle(it.species, i) }
+                          gbaView.foe(trackerState)?.let { statMarks.cycle(it.species, i) }
                           marksVersion++
                       },
                       enemyNote = enemyNote,
                       onEditNote = { noteDialog = true },
-                      attempt = store.attempt(),
-                      coverage = coverage,
+                      attempt = runNow.attempt,
+                      coverage = coverage, runScoped = session.isRun,
                       // Landscape: your lead and the enemy together.
-                      stackBoth = true,
+                      stackBoth = TrackerRoom.stackBoth(LocalTrackerRoom.current),
                       onCatchRates = { side.catchHpAdjust = 0; side.catchRatesDialog = true },
                       generation = session.kind?.generation?.number ?: 3,
                   )
                   }
     // The tracker on a second display when there is one (SecondScreen.kt); the phone keeps the game.
     val trackerOnSecond = SecondScreenHost(session.tracked && !streamClean && trackerOpen && TrackerOptions.trackerOnSecondScreen) { trackerContent() }
+    // A DS on Hybrid Top with the tracker docked: the tracker fills the black box above the touch screen (DsDock).
+    val dsDock = dsDockIn(retro, ui, landscape && fullscreen && dsScreens && !dsTopOnly && dsLayoutName == "hybrid-top" && session.tracked && !streamClean && !trackerOnSecond,
+        trackerOpen, gameColumn, coreValues)
 
     // The tracker pane, hoisted so it can be laid out two ways: as a
     // full-height column beside the game, or - for DS landscape - as a
@@ -1797,80 +1676,11 @@ fun PlayScreen(
               // Nothing to track: the game takes the whole width.
           } else if (TrackerOptions.landscapeTracker == LandscapeTracker.FLOATING) {
               // 2.2: the window floats over the game; nothing sits in this row.
+          } else if (dsDock != null) {
+              // Over the game's black box above the touch screen instead (DsDockTracker); nothing sits in this row.
           } else if (trackerOpen && (TrackerOptions.landscapeTracker == LandscapeTracker.DOCKED || ui.trackerPeek)) {
-              // Drag handle: pulling it right shrinks the tracker, and the game
-              // column is weighted so it takes back every pixel given up.
-              // 24dp of grab, not 10, with a visible ridge. At 10dp wide
-              // and marked with a single 9sp glyph this was neither findable
-              // nor comfortably draggable - the standard grab strip is 24dp
-              // and the ridge is what says "pull me".
-              Box(
-                  Modifier.width(24.dp)
-                      .fillMaxHeight()
-                      .semantics {
-                          contentDescription =
-                              "Resize tracker. Drag left or right. " +
-                              "Double tap to reset the split."
-                      }
-                      .background(Pc.Ground)
-                      // Double tap restores the default split.
-                      //
-                      // The drag was one-way in practice: trackerWidth only
-                      // changed by dragging and only re-derived on a rotation,
-                      // so a stray pull left the game letterboxed with no way
-                      // back short of rotating the phone twice. A resize
-                      // control with no reset is a trap.
-                      .pointerInput(windowWidthDp) {
-                          detectTapGestures(onDoubleTap = {
-                              trackerWidth = windowWidthDp * TRACKER_FRACTION
-                          })
-                      }
-                      .pointerInput(Unit) {
-                          detectDragGestures { change, drag ->
-                              change.consume()
-                              // Clamped against the ACTUAL window, keeping a
-                              // 160dp minimum for the game. The old fixed
-                              // 150..520 range left 110dp of game on a 640dp
-                              // window and zero on anything under 530dp,
-                              // because the game column is weight(1f) with no
-                              // minimum of its own.
-                              val maxTracker =
-                                  (windowWidthDp - 170f).coerceAtLeast(150f)
-                              trackerWidth = (trackerWidth - drag.x / density)
-                                  .coerceIn(150f, maxTracker)
-                          }
-                      },
-                  contentAlignment = Alignment.Center,
-              ) {
-                  // Three short bars: a grip, readable at a glance, rather
-                  // than a text glyph that looked like a stray character.
-                  Column(
-                      verticalArrangement = Arrangement.spacedBy(3.dp),
-                      horizontalAlignment = Alignment.CenterHorizontally,
-                  ) {
-                      repeat(3) {
-                          Box(
-                              Modifier.width(10.dp).height(2.dp)
-                                  .background(Color.White.copy(alpha = 0.75f)),
-                          )
-                      }
-                  }
-              }
-              Column(
-                  // A fraction of the window, not a dragged pixel width, so
-                  // the split matches the reference layout on any screen.
-                  Modifier.width(trackerWidth.dp)
-                      // DS landscape anchors this to the top and lets it wrap,
-                      // so its opaque background stops where the content stops
-                      // and the core's bottom screen shows BELOW it. Filling
-                      // the height painted over exactly the area meant to
-                      // display it.
-                      .fillMaxHeight()
-                      .background(Pc.Page)
-                      .verticalScroll(rememberScrollState())
-              ) {
-                  trackerContent()
-              }
+              // No bar: the game meets the tracker, and the tracker's left edge resizes it (TrackerEdge.kt, rc34).
+              DockedTracker(panes, windowWidthDp, trackerContent)
           } else {
               // Collapsed: a tab on the right edge, tap to bring it back.
               // 48dp wide and named for a screen reader; it was 26dp with a
@@ -2055,19 +1865,20 @@ fun PlayScreen(
                         }
                         GLRetroView(ctx, data).also { view ->
                             retro = view
+                            view.setOnTouchListener(ScreenTap.listener(ui, ctx)) // a tap on bare screen, for ScreenTapMenu
                             view.stateLoadListener = SaveGuard.listener(platform, File(ctx.filesDir, "saves"), rom)   // loading a state keeps the in-game save
                             view.cheevosListener = RetroAchievements.listener(
-                                mainPost = { r -> view.post(r) },
                                 onEvent = { type, title, desc, points, badge, result ->
                                     view.post {
                                         when (type) {
                                             RetroAchievements.EV_LOGIN_DONE -> {
-                                                raBusy = null
+                                                if (result != RetroAchievements.SIGN_IN_IN_FLIGHT) raBusy = null
                                                 if (result == 0) { if (badge.isNotBlank()) raStore.save(title, badge); status = "RetroAchievements: signed in as $title." }
-                                                else { raStore.clear(); raError = desc.ifBlank { "Sign-in failed (error $result)." }; status = "RetroAchievements: $raError" }
+                                                else if (result != RetroAchievements.SIGN_IN_IN_FLIGHT) { if (RetroAchievements.tokenRefused(result)) raStore.clear(); raError = desc.ifBlank { "Sign-in failed (error $result)." }; status = "RetroAchievements: $raError" }
                                                 raRefresh()
                                                 if (result == 0 && !session.isRun) { raBusy = "Looking up this game..."; com.swordfish.libretrodroid.LibretroDroid.cheevosLoadGame(rom.absolutePath, RetroAchievements.consoleId(platform)) }
                                             }
+                                            RetroAchievements.EV_RESET -> { RetroAchievements.restartGame(view); raRefresh(); status = "RetroAchievements: hardcore starts the game over, from its last in-game save." }
                                             RetroAchievements.EV_GAME_LOADED -> {
                                                 raBusy = null; raRefresh()
                                                 status = if (result == 0) "RetroAchievements: $title, ${raSummary.unlocked}/${raSummary.total} unlocked." else "RetroAchievements: " + desc.ifBlank { "no set for this game" }
@@ -2090,15 +1901,13 @@ fun PlayScreen(
                 )
             }
 
-            // The floating bubble is only for layouts with no tracker column
-            // to dock into - portrait, or landscape with the tracker collapsed.
-            // With the column open the camera lives in it (see below).
-            if (facecam && !streamClean && !(landscape && trackerOpen)) {
+            // The floating bubble is only for layouts with no tracker drawn to
+            // dock into: portrait, or landscape with no column, window or dock.
+            // Where the tracker is drawn, a second display included, the camera
+            // lives in it, and never in both (FacecamPlace, rc32 audit P2 #59).
+            if (FacecamPlace.of(facecam, streamClean, landscape, session.tracked, trackerOnSecond, TrackerOptions.landscapeTracker, trackerOpen, ui.trackerPeek) == FacecamPlace.BUBBLE) {
                 Box(Modifier.align(Alignment.BottomStart).padding(8.dp)) {
-                    FacecamBubble(onDenied = {
-                        facecam = false
-                        status = "Camera permission denied."
-                    })
+                    FacecamBubble(onDenied = { permanent -> facecam = false; status = CameraDenied.note(context, ui, permanent) })
                 }
             }
 
@@ -2164,7 +1973,7 @@ fun PlayScreen(
                         translucent = true, skin = padSkin, editing = editingLayout, selected = selectedElement,
                         onSelect = { selectedElement = it }, onEdit = { padLayout = it },
                         modifier = Modifier.fillMaxSize()
-                            .then(Modifier.alpha(if (editingLayout) 1f else controlAlpha)),
+                            .then(Modifier.alpha(if (editingLayout) 1f else controlAlpha)).clearOfDsDock(dsDock),
                     )
                 }
                 // Swallow the wake-up touch while the strip is faded.
@@ -2207,11 +2016,11 @@ fun PlayScreen(
                 if (editingLayout) layoutToolbar(Modifier.align(if (ui.layoutBarBottom) Alignment.BottomCenter else Alignment.TopCenter))
                 if (!session.tracked && !menuOpen && !streamClean && !editingLayout)
                     LandscapeMenuChip(Modifier.align(Alignment.TopCenter)) { menuOpen = true }
-                if (menuOpen && !ui.moreOpen && !streamClean && !editingLayout) Row(
-                    Modifier.align(Alignment.TopStart).fillMaxWidth().systemGestureExclusion().padding(6.dp)
-                        .horizontalScroll(rememberScrollState())
+                // Centred, with arrows while it scrolls and an X that closes it (LandscapeMenuBand, 2026-10-02).
+                if (menuOpen && !ui.moreOpen && !streamClean && !editingLayout) LandscapeMenuBand(
+                    Modifier.align(Alignment.TopCenter).fillMaxWidth().systemGestureExclusion().padding(6.dp)
                         .alpha(chipAlpha),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    onClose = { menuOpen = false },
                 ) {
                     // Two groups, separated by a rule: the ones that act on
                     // the RUN first, then the ones that act on the APP. Nine
@@ -2232,7 +2041,7 @@ fun PlayScreen(
                     OverlayChip(if (muted) "MUTED" else "SOUND") {
                         muted = !muted; applyAudio()
                     }
-                    OverlayChip("CAM") { facecam = !facecam }
+                    OverlayChip(if (facecam) "CAM ON" else "CAM") { facecam = !facecam }
                     // Both close the menu: it stayed open over the capture and the editor.
                     OverlayChip("CLEAN") { menuOpen = false; onClean(true) }
                     OverlayChip("LAYOUT") { startLayoutEdit() }
@@ -2252,8 +2061,20 @@ fun PlayScreen(
                     // only way back to the rest of the app was to rotate the
                     // phone - impossible with rotation locked.
                     OverlayChip("MENU") { onExitFullscreen() }
-                    if (!session.tracked) OverlayChip("HIDE") { menuOpen = false }
                 }
+                // Over the faded strip's guard, so a first tap on the docked DS tracker reaches it.
+                dsDock?.let { DsDockTracker(it, Modifier.align(Alignment.TopEnd)) { trackerContent() } }
+                // Last, so it sits over the faded strip's guard: the tracker's menu while the tracker is off screen.
+                ScreenTapMenu(
+                    ui, pad = padLayout.takeIf { showPad }, padSkin = padSkin,
+                    allowed = session.tracked && !menuOpen && !streamClean && !editingLayout,
+                    trackerOpen = trackerOpen, trackerOnSecond = trackerOnSecond,
+                    dsLayout = if (dsScreens && !dsTopOnly) ScreenTap.DsLayout(dsLayoutName, padLayout.dsGap, coreValues["melonds_hybrid_ratio"]?.toIntOrNull() ?: 2) else null,
+                    attempt = runNow.attempt, dsTopOnly = dsTopOnly.takeIf { dsScreens }, onScreens = { dsTopOnly = !dsTopOnly },
+                    // A pick in the dropdown (its own window) never reaches the idle clock, so the band came up faded.
+                    onFile = { menuOpen = true; lastTouch = android.os.SystemClock.uptimeMillis() },
+                    onShow = { trackerOpen = true; if (TrackerOptions.landscapeTracker != LandscapeTracker.DOCKED) ui.trackerPeek = true },
+                )
             }
 
         }
@@ -2312,10 +2133,7 @@ fun PlayScreen(
             } else if (dsScreens) {
                 // Whatever height is left under the pad, scrolled: a full
                 // party of six is taller than any phone screen.
-                Box(
-                    Modifier.weight(1f)
-                        .verticalScroll(rememberScrollState())
-                ) {
+                TrackerScroll(Modifier.weight(1f), background = null) {
                     NdsTrackerPanel(
                         state = ndsState, onFlee = { flee() }, onGear = { gearDialog = true }, timer = if (TrackerOptions.showTimer) runTimer else null,
                         favoriteLine = favoriteLine,
@@ -2328,7 +2146,7 @@ fun PlayScreen(
                         },
                         enemyNote = enemyNote,
                         onEditNote = { noteDialog = true },
-                        attempt = store.attempt(),
+                        attempt = runNow.attempt,
                         coverage = ndsCoverage,
                         enemyLastLevel = enemyLastSeen,
                         movesSeenRunWide = if (notebookSpecies > 0) statMarks.movesSeenFor(notebookSpecies) else emptyList(),
@@ -2342,28 +2160,28 @@ fun PlayScreen(
                         pokecenterCount = statMarks.dsPokecenterCount(), onPokecenter = { up -> statMarks.bumpDsPokecenter(up); marksVersion++ },
                     )
                 }
-            } else Box(
+            } else TrackerScroll(
                 // Bounded and scrollable: a full card is taller than a phone
                 // screen, which was silently cutting off the fourth move.
                 // weight(1f), not a fixed cap: the tracker is the flexible
                 // one now. Safe because the parent column no longer scrolls -
                 // a weighted child inside a scrolling column is a crash, which
                 // is why `scrollable` had to go first.
-                Modifier.weight(1f).verticalScroll(rememberScrollState())
+                Modifier.weight(1f), background = null,
             ) { TrackerPanel(
                 onTrainerInfo = { trackerState?.opponentTrainerId?.let { id -> trackerRef?.trainer(id)?.let { side.trainerInfo = it } } },
                       onGradeNotes = { side.scoreSheet = true },
                       onRandomEvos = { sp -> side.randomEvos = sp }, hasRandomEvos = { sp -> trackerRef?.hasRandomEvos(sp) == true },
                 onMoveHistory = { sp, n, lv -> side.moveHistory = Triple(sp, n, lv) },
-                onTypeDefenses = { n, a, b -> typeDefenses = n to com.ironmonone.tracker.Gen3Types.defenses(a, b, gen1 = session.kind?.generation == com.ironmonone.core.Generation.GB1) },
+                onTypeDefenses = { n, a, b -> typeDefenses = n to com.ironmonone.tracker.Gen3Types.defenses(a, b, gen1 = session.kind?.generation == com.ironmonone.core.Generation.GB1, natDex = session.kind?.isNatDex == true) },
                 trackerState, onFlee = { flee() }, ballCall = ballCall, onGear = { gearDialog = true },
                 onRerollBall = { ballReroll++ },
-                movesSeenRunWide = trackerState?.enemy
+                movesSeenRunWide = gbaView.foe(trackerState)
                     ?.let { statMarks.movesSeenFor(it.species) } ?: emptyList(),
                 moveRowFor = { id -> trackerRef?.moveRowFor(id) ?: gbLookup?.invoke(id) },
-                revealedEnemyAbility = trackerState?.enemy
+                revealedEnemyAbility = gbaView.foe(trackerState)
                     ?.let { statMarks.abilityFor(it.species) },
-                revealedEnemyAbility2 = trackerState?.enemy
+                revealedEnemyAbility2 = gbaView.foe(trackerState)
                     ?.let { statMarks.secondAbilityFor(it.species) },
                 routeName = trackerState?.routeName,
                 routeSeen = routeCarousel.second,
@@ -2395,19 +2213,19 @@ fun PlayScreen(
                 onTrainersOnRoute = if (trackerRef?.hasTrainerData == true) { { side.trainersDialog = true } } else null,
                 onBattleDetails = if (trackerRef?.hasBattleDetails == true) { { side.battleDetailsDialog = true } } else null,
                 onCalcAtk = { side.openCalcAtk(trackerRef, trackerState) },
-                pcHealsLimit = remember(session.id, store.attempt()) { if (session.isRun) PcHeals.limitForLastRun() else null },
+                pcHealsLimit = remember(session.id, runNow.attempt) { if (session.isRun) PcHeals.limitForLastRun() else null },
                 onSpeciesName = panelLookups::speciesName,
                 favoriteLine = favoriteLine, spriteFor = spriteFor,
                 enemyMarks = enemyMarks, enemyEncounters = enemyEncounters,
                 enemyLastSeenLevel = enemyLastSeen,
                 onCycleMark = { i ->
-                    trackerState?.enemy?.let { statMarks.cycle(it.species, i) }
+                    gbaView.foe(trackerState)?.let { statMarks.cycle(it.species, i) }
                     marksVersion++
                 },
                 enemyNote = enemyNote,
                 onEditNote = { noteDialog = true },
-                attempt = store.attempt(),
-                coverage = coverage,
+                attempt = runNow.attempt,
+                coverage = coverage, runScoped = session.isRun,
                 onCatchRates = { side.catchHpAdjust = 0; side.catchRatesDialog = true },
                 generation = session.kind?.generation?.number ?: 3,
             ) }
@@ -2422,9 +2240,16 @@ fun PlayScreen(
     }
     if (landscape && !streamClean && session.tracked && !trackerOnSecond && TrackerOptions.landscapeTracker == LandscapeTracker.FLOATING) {
         FloatingTracker(
-            frame = floatFrame, windowW = windowWidthDp, windowH = windowHeightDp,
-            onFrame = { floatFrame = it },
+            panes = panes, windowW = windowWidthDp, windowH = windowHeightDp,
             onDock = { TrackerOptions.landscapeTracker = LandscapeTracker.DOCKED; TrackerOptions.save(); trackerOpen = true },
+            menu = { dock ->
+                TrackerCornerMenu(
+                    attempt = runNow.attempt, menuOpen = menuOpen, onMenu = { menuOpen = !menuOpen; lastTouch = android.os.SystemClock.uptimeMillis() },
+                    dsTopOnly = dsTopOnly.takeIf { dsScreens }, onScreens = { dsTopOnly = !dsTopOnly },
+                    onHide = null, onDock = dock,
+                )
+            },
+            attempt = runNow.attempt,
         ) { trackerContent() }
     }
     // One place for status messages in both orientations, menu open or not
@@ -2436,6 +2261,8 @@ fun PlayScreen(
             .padding(top = if (landscape) 56.dp else 0.dp),
     )
     if (streamClean) CleanViewExit(onExit = { onClean(false) })
+    // A game the core refuses says so, and stays said, over a black screen (CoreLoadErrors, rc32 audit P2 #53).
+    CoreLoadErrors(retro, session.isRun, Modifier.align(Alignment.Center))
     }
 
     androidx.compose.runtime.SideEffect {
@@ -2465,22 +2292,21 @@ fun PlayScreen(
                 retro?.let { r -> r.shader = com.swordfish.libretrodroid.ShaderConfig.Default; r.updateVariables(*coreVariables().toTypedArray()) }
                 status = "Settings reset; restart-marked ones apply on the next boot."
             },
-            systemFilePresent = { File(context.filesDir, it).let { f -> f.exists() && f.length() > 0 } },
+            systemFilePresent = { SystemFiles.present(context.filesDir, it) },
             onImportSystemFile = { name -> importSystemFileName = name; systemFilePicker.launch(arrayOf("*/*")) },
             onDismiss = { settingsDialog = false },
         )
     }
     if (statesDialog) {
-        val slots = remember(session.id, slotsVersion) { StateSlots.list(context.filesDir, session) }
-        val auto = remember(session.id, slotsVersion) { StateSlots.auto(context.filesDir, session) }
         SaveStatesDialog(
-            auto = auto, slots = slots, current = saveSlot, version = slotsVersion,
+            context.filesDir, session, runStamp = { store.stateStamp(session) }, current = saveSlot, version = slotsVersion,
             onPick = { saveSlot = it },
             onSave = { saveState(it) },
             // Asks first, like the menu's LOAD (2026-09-27, audit).
             onLoad = { askLoad(it); statesDialog = false },
             onLock = { s, on -> s.setLocked(on); slotsVersion++ },
-            onUndo = { s -> status = if (s.restoreBackup()) "Slot ${s.n}: previous state restored." else "Nothing to undo."; slotsVersion++ },
+            // The swap is off the main thread (StateSlots.undo, rc32 audit P2 #62).
+            onUndo = { s -> scope.launch { status = StateSlots.undo(s); slotsVersion++ } },
             onDismiss = { statesDialog = false },
         )
     }
@@ -2497,7 +2323,7 @@ fun PlayScreen(
                 com.swordfish.libretrodroid.LibretroDroid.cheevosSetHardcore(on)
                 if (on) { if (slow != 1) { slow = 1; retro?.slowMotion = 1 }; if (rewinding) stopRewind() }
                 raRefresh(); applyCheats()
-                status = if (on) "Hardcore on: rcheevos reset the game's achievements; cheats, rewind, slow motion and state loads are off." else "Hardcore off."
+                status = if (on) "Hardcore on: the game restarts from its last in-game save; cheats, rewind, slow motion and state loads are off." else "Hardcore off."
             },
             onDismiss = { raDialog = false },
         )
@@ -2521,15 +2347,9 @@ fun PlayScreen(
     // 2.3: the game-over popup, latched the way each reference latches it
     // (GameOverLatch.kt). Blake, 2026-09-10: it used to follow the live outcome,
     // so the heal after a whiteout closed it. The dialog is in GameOverHost.kt.
+    // Filed and logged once per run, the timer following the latch (GameOverLatch.read, rc32 audit P2 #41, #48).
     LaunchedEffect(view?.outcome, ndsState?.runOver, gameOverLatch.armed) {
-        if (gameOverLatch.onRead(view?.outcome, ndsState?.runOver)) {
-            runTimer.stop()
-            RunHistoryHook.recordRunEnd(store, session, trackerRef, trackerState, ndsState, gameOverLatch.outcome == com.ironmonone.tracker.RunOutcome.WON)
-            // Program.onRunEnded: log the run once, from the DS state that ended it.
-            val nds = ndsState; val ps = pastRunStore
-            if (nds != null && ps != null && Demo.mode == null)
-                PastRun.fromDs(nds, gameOverLatch.outcome == com.ironmonone.tracker.RunOutcome.WON, ((System.currentTimeMillis() - runStartedAt) / 1000).toInt())?.let { ps.log(it) }
-        }
+        gameOverLatch.read(view?.outcome, ndsState?.runOver, runTimer, store, session, trackerRef, trackerState, ndsState, pastRunStore) { statMarks.dsProgress() }
     }
     GameOverHost(
         gameOverLatch, gameOverFamily(platform), hidden = streamClean,
@@ -2544,7 +2364,7 @@ fun PlayScreen(
 
     typeDefenses?.let { (n, b) -> TypeDefensesDialog(n, b, onClose = { typeDefenses = null }) }
 
-    SideScreenDialogs(side, trackerRef, ndsTrackerRef, trackerState, statMarks, enemySpecies, gbNames, spriteFor, store.attempt(),
+    SideScreenDialogs(side, trackerRef, ndsTrackerRef, trackerState, statMarks, enemySpecies, gbNames, spriteFor, runNow.attempt,
         timeMachine = timeMachine, snapshot = { runCatching { retro?.serializeState() }.getOrNull() },
         onRestore = { rp ->
             if (raHardcore) status = "Loading a state is off in RetroAchievements hardcore."
@@ -2555,7 +2375,7 @@ fun PlayScreen(
             }
         },
         pastRunStore = pastRunStore,
-        tourney = tourney, currentSeed = store.lastSeedText().ifEmpty { session.id },
+        tourney = tourney, currentSeed = runNow.seed.ifEmpty { session.id },
         dsSpriteOf = { sp -> val c = androidx.compose.ui.platform.LocalContext.current; remember(sp) { PcAssets.dsSprite(c, sp, false) } })
     if (coverageCalc) {
         val ctx = androidx.compose.ui.platform.LocalContext.current
@@ -2569,13 +2389,13 @@ fun PlayScreen(
                 name = { nds.speciesName(it) }, bst = { nds.speciesBst(it) },
                 sprite = { id -> remember(id) { PcAssets.dsSprite(ctx, id, false) } },
                 fullyEvolvedSupported = false, sortByBst = true,
-                noDataNote = if (nds.hasSpeciesData()) null else "No species data for this ROM yet. Randomize it in Kaizo IronMON and the buckets fill in.",
+                noDataNote = if (nds.hasSpeciesData()) null else "No species data for this game yet. Randomize it in Kaizo IronMON and the buckets fill in.",
                 onClose = { coverageCalc = false },
             )
         } else if (gba != null) {
             CoverageCalcDialog(
-                seed = CoverageCalc.seedTypes(trackerState?.party?.firstOrNull()?.moveRows?.map { Triple(it.id, it.category ?: "", it.type?.let { t -> com.ironmonone.tracker.Gen3Types.name(t) } ?: "") } ?: emptyList()),
-                allTypes = com.ironmonone.tracker.Gen3Types.ALL.map { com.ironmonone.tracker.Gen3Types.name(it) },
+                seed = CoverageCalc.gen3Seed(trackerState?.lead),
+                allTypes = gba.typeNames,
                 compute = { types, fe -> gba.coverage(types.mapNotNull { com.ironmonone.tracker.Gen3Types.idOf(it) }, fe) },
                 name = { gba.speciesName(it) }, bst = { gba.baseStats(it)?.bst ?: 0 },
                 sprite = { id -> spriteFor(id) },
@@ -2629,7 +2449,7 @@ fun PlayScreen(
     }
     PlayDialogs(
         ui,
-        onRestart = { retro?.reset() },
+        onRestart = { RetroAchievements.restartGame(retro) },
         onLoad = { loadState(it) },
         speeds = speedOptions(),
         speedNow = speedLabel,
@@ -2710,16 +2530,6 @@ fun PlayScreen(
 // never draining (multiple GLRetroView instances across tab visits), so key events
 // queued forever. LibretroDroid.onKeyEvent is a static native on a singleton;
 // Input::onKeyEvent just mutates a key set, safe to call off the GL thread.
-/**
- * How much of the window the tracker column takes in landscape, by default.
- *
- * From the reference streaming layout: about a quarter of the width for the
- * camera / tracker stack, leaving roughly three quarters for the game. The old
- * fixed 340dp took ~40% of a landscape phone, which both squeezed the game and
- * letterboxed it.
- */
-private const val TRACKER_FRACTION = 0.26f
-
 /**
  * Every core key this app is currently holding down.
  *
@@ -3018,6 +2828,11 @@ private fun MenuRule() {
 private fun HoldChip(label: String, onDown: () -> Unit, onUp: () -> Unit, big: Boolean = false) {
     val g = com.ironmonone.app.gen3.Gen3
     var held by remember { mutableStateOf(false) }
+    // The press handler outlives a recomposition (pointerInput(Unit)), so it reads the callbacks of the composition
+    // now, as PadButton does: it kept the first ones, and hardcore turned on with the FILE menu open left REWIND
+    // rewinding with the check of the moment the menu opened (rc32 audit P3 #56).
+    val down by androidx.compose.runtime.rememberUpdatedState(onDown)
+    val up by androidx.compose.runtime.rememberUpdatedState(onUp)
     Box(
         Modifier
             .background(if (held) Pc.Gold.copy(alpha = 0.6f) else g.FrameDark.copy(alpha = if (big) 1f else 0.45f))
@@ -3025,7 +2840,7 @@ private fun HoldChip(label: String, onDown: () -> Unit, onUp: () -> Unit, big: B
             .background(g.Paper.copy(alpha = if (big) 1f else 0.25f))
             .heightIn(min = Shell.touchTarget)
             .padding(horizontal = 10.dp)
-            .holdUnlessScrolled({ held = true; onDown() }, { held = false; onUp() }),
+            .holdUnlessScrolled({ held = true; down() }, { held = false; up() }),
         contentAlignment = Alignment.Center,
     ) {
         Text("\u25C0\u25C0 " + com.ironmonone.app.Shell.label(label), fontWeight = androidx.compose.ui.text.font.FontWeight.Medium, fontSize = 13.sp,

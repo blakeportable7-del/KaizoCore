@@ -20,6 +20,11 @@ class BattleSummaryTest {
         assertEquals("Encore (TACKLE)", BattleSummary.line(s, viewingOwn = false))
         assertNull(BattleSummary.line(listOf("", ""), viewingOwn = false))
         assertNull(BattleSummary.line(emptyList(), viewingOwn = true), "outside a battle, or no battle addresses")
+        // A double battle's right-hand battlers, 2 and 3 (Battle.getViewedIndex).
+        val d = listOf("", "", "Taunt (3 Turns)", "Leech Seed")
+        assertEquals("Taunt (3 Turns)", BattleSummary.line(d, 2))
+        assertEquals("Leech Seed", BattleSummary.line(d, 3))
+        assertNull(BattleSummary.line(d, 0))
     }
 
     @Test
@@ -29,6 +34,6 @@ class BattleSummaryTest {
         assertTrue("\"battleDetails\" -> PcBattleSummaryLine(battleDetailsSummary ?: \"\", onBattleDetailsTap)" in pc)
         assertFalse("encounters > 1" in pc, "the seen count is not a battle detail")
         val panel = File("src/main/kotlin/com/ironmonone/app/TrackerPanel.kt").readText().replace("\r\n", "\n")
-        assertTrue("battleDetailsSummary = BattleSummary.line(state.battleSummaries, viewingOwn = !state.inBattle || viewingOwn)" in panel)
+        assertTrue("battleDetailsSummary = BattleSummary.line(state.battleSummaries, view.viewedBattler(state))" in panel)
     }
 }

@@ -8,7 +8,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
- * No DS dump exists on this machine, so the decoders are proven on files
+ * The decoders are proven here on files
  * built to the formats the randomizer reads: a Gen 4 sprite encrypted with
  * the game's LCG (both directions), a Gen 5 sprite stored as an LZ10 stream
  * of literals, and palettes laid out as the NCLR files are. The archive
@@ -109,6 +109,11 @@ class RomSpritesTest {
         assertEquals(graphics(gen5, "Black (U)"), RomSprites.narcPath(RomKind.BLACK_U))
         assertEquals(graphics(gen5, "Black 2 (U)"), RomSprites.narcPath(RomKind.BLACK2_U))
         assertNull(RomSprites.narcPath(RomKind.EMERALD_U), "GBA decodes its own way")
+        // A patched build reads its base game's archive (found 2026-10-03: Super Kaizo Platinum and HeartGold had none).
+        val byId = (RomKind.allV1 + RomKind.allNatDex + RomKind.allPatched).associateBy { it.id }
+        val dsPatched = RomKind.allPatched.filter { k -> k.baseId?.let { RomSprites.narcPath(byId.getValue(it)) } != null }
+        assertTrue(dsPatched.map { it.id }.containsAll(listOf(RomKind.HEARTGOLD_SUPERKAIZO.id, RomKind.PLATINUM_SUPERKAIZO.id)), dsPatched.map { it.id }.toString())
+        for (k in dsPatched) assertEquals(RomSprites.narcPath(byId.getValue(k.baseId!!)), RomSprites.narcPath(k), k.id)
         assertTrue(RomSprites.isGen5(RomKind.WHITE2_U)); assertTrue(!RomSprites.isGen5(RomKind.SOULSILVER_U))
     }
 

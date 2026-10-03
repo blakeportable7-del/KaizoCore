@@ -21,12 +21,16 @@ object MoveMatchup {
         val noEffectOn: List<String>,
     )
 
-    /** [gen1]: the Gen 1 tracker's chart, where Ghost cannot touch Psychic and Poison and Bug hit each other hard. */
-    fun general(moveType: Int?, gen1: Boolean = false): General? {
-        if (moveType == null || moveType !in Gen3Types.ALL) return null
+    /**
+     * [gen1]: the Gen 1 tracker's chart, where Ghost cannot touch Psychic and Poison and Bug hit each other hard.
+     * [natDex]: the Nat. Dex expansion's, with Fairy moves and Fairy targets, and no Steel resist to Ghost or Dark.
+     */
+    fun general(moveType: Int?, gen1: Boolean = false, natDex: Boolean = false): General? {
+        val types = Gen3Types.typesFor(natDex)
+        if (moveType == null || moveType !in types) return null
         val strong = ArrayList<String>(); val weak = ArrayList<String>(); val none = ArrayList<String>()
-        for (t in Gen3Types.ALL) {
-            val m = Gen3Types.effect(moveType, t, gen1)
+        for (t in types) {
+            val m = Gen3Types.effect(moveType, t, gen1, natDex)
             when {
                 m == 0.0 -> none += Gen3Types.name(t)
                 m > 1.0 -> strong += Gen3Types.name(t)

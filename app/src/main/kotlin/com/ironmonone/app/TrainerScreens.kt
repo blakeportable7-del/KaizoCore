@@ -11,9 +11,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
@@ -22,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.ironmonone.tracker.GbaTracker
@@ -29,7 +32,10 @@ import com.ironmonone.tracker.GbaTracker
 /**
  * TrainersOnRouteScreen.lua: the trainers stationed on the current map, one
  * row each with class and name, party size and a check when defeated, and the
- * "N of M defeated" line; tapping a row opens Trainer Info.
+ * "N of M defeated" line; tapping a row opens Trainer Info. Both screens draw
+ * their words in DialogText, which follows the phone's font size, and close
+ * with a 48dp X that says Close (rc32 audit P2 #19, #102, P3 #74): they were
+ * fixed 7 to 10dp text and a 17 by 13dp X that a screen reader read as "X".
  */
 @Composable
 fun TrainersOnRouteDialog(
@@ -46,20 +52,20 @@ fun TrainersOnRouteDialog(
     Dialog(onDismissRequest = onClose) {
         Column(Modifier.width(300.dp).background(Pc.Page).border(1.dp, Pc.Border).padding(8.dp).verticalScroll(rememberScrollState())) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                PixText(routeName.uppercase(), 10, Pc.Text, Modifier.weight(1f))
+                DialogText(routeName.uppercase(), 16, Pc.Text, Modifier.weight(1f), heading = true)
                 FrlgMapMark(pictures)
-                PixText("X", 9, Pc.Dim, Modifier.clickable { onClose() }.padding(horizontal = 6.dp, vertical = 2.dp))
+                PcTap("X", 9, Pc.Dim, "Close") { onClose() }
             }
             Spacer(Modifier.height(4.dp))
-            PixText("Trainers: $defeated / ${trainers.size} defeated, Pokemon: $monsDefeated / $monsTotal", 7, Pc.Dim)
+            DialogText("Trainers: $defeated / ${trainers.size} defeated, Pokemon: $monsDefeated / $monsTotal", 12, Pc.Dim)
             Spacer(Modifier.height(6.dp))
-            if (trainers.isEmpty()) PixText("No trainers here.", 8, Pc.Text)
+            if (trainers.isEmpty()) DialogText("No trainers here.", 13, Pc.Text)
             trainers.forEach { t ->
-                Row(Modifier.fillMaxWidth().clickable { onTrainer(t) }.padding(vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
-                    PixText(if (t.defeated) "\u2713" else " ", 8, Pc.Positive, Modifier.width(14.dp))
+                Row(Modifier.fillMaxWidth().heightIn(min = PcMin.DIALOG_TOUCH_DP.dp).clickable { onTrainer(t) }.padding(vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
+                    DialogText(if (t.defeated) "\u2713" else " ", 13, Pc.Positive, Modifier.widthIn(min = 20.dp))
                     Column(Modifier.weight(1f)) {
-                        PixText((t.className + " " + t.name).trim(), 8, Pc.Text)
-                        PixText("${t.party.size} Pokemon, Lv.${t.minLevel}" + (if (t.maxLevel != t.minLevel) "-${t.maxLevel}" else ""), 7, Pc.Dim)
+                        DialogText((t.className + " " + t.name).trim(), 13, Pc.Text)
+                        DialogText("${t.party.size} Pokemon, Lv.${t.minLevel}" + (if (t.maxLevel != t.minLevel) "-${t.maxLevel}" else ""), 12, Pc.Dim)
                     }
                 }
             }
@@ -145,17 +151,17 @@ fun TrainerInfoDialog(
     Dialog(onDismissRequest = onClose) {
         Column(Modifier.width(300.dp).background(Pc.Page).border(1.dp, Pc.Border).padding(8.dp).verticalScroll(rememberScrollState())) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                PixText((t.className + " " + t.name).trim().uppercase(), 10, Pc.Text, Modifier.weight(1f))
-                PixText("X", 9, Pc.Dim, Modifier.clickable { onClose() }.padding(horizontal = 6.dp, vertical = 2.dp))
+                DialogText((t.className + " " + t.name).trim().uppercase(), 16, Pc.Text, Modifier.weight(1f), heading = true)
+                PcTap("X", 9, Pc.Dim, "Close") { onClose() }
             }
             Spacer(Modifier.height(4.dp))
             @Composable fun row(label: String, value: String, color: androidx.compose.ui.graphics.Color = Pc.Text) {
-                Row(Modifier.fillMaxWidth()) { PixText(label, 8, Pc.Dim, Modifier.width(96.dp)); PixText(value, 8, color) }
+                Row(Modifier.fillMaxWidth()) { DialogText(label, 12, Pc.Dim, Modifier.width(96.dp)); DialogText(value, 13, color, Modifier.weight(1f)) }
             }
             if (routePictures == null) row("Route", routeName ?: "???")
             else Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                PixText("Route", 8, Pc.Dim, Modifier.width(96.dp))
-                PixText(routeName ?: "???", 8, Pc.Text)
+                DialogText("Route", 12, Pc.Dim, Modifier.width(96.dp))
+                DialogText(routeName ?: "???", 13, Pc.Text, Modifier.weight(1f, fill = false))
                 FrlgMapMark(routePictures)
             }
             val lvRange = if (t.minLevel == t.maxLevel) "${t.minLevel}" else "${t.minLevel}-${t.maxLevel}"
@@ -165,8 +171,8 @@ fun TrainerInfoDialog(
             if (t.defeated) row("Status", "Defeated", Pc.Positive)
             TrainerInfoView.usableItems(t.items, itemName)?.let {
                 Spacer(Modifier.height(2.dp))
-                PixText("Usable Items:", 8, Pc.Dim)
-                PixText(it, 8, Pc.Positive, Modifier.padding(start = 8.dp), wrap = true)
+                DialogText("Usable Items:", 12, Pc.Dim)
+                DialogText(it, 13, Pc.Positive, Modifier.padding(start = 8.dp))
             }
             Spacer(Modifier.height(6.dp))
             TrainerInfoView.party(t, canShowTeams, faintedSlots).chunked(6).forEach { line ->
@@ -178,17 +184,23 @@ fun TrainerInfoDialog(
     }
 }
 
-/** One party box (TrainerInfoScreen.lua:346-366): the icon or a Poke Ball, the level, the held-item mark. */
+/**
+ * One party box (TrainerInfoScreen.lua:346-366): the icon or a Poke Ball, the level, the held-item mark. The level
+ * sits under the picture in the dialog's text size, so a big font makes the box taller instead of running the words
+ * over the picture.
+ */
 @Composable
 private fun TrainerPartyBox(slot: TrainerInfoView.Slot, giovanni: Boolean, spriteFor: (Int) -> ImageBitmap?) {
-    Box(Modifier.size(44.dp).border(1.dp, Pc.Border)) {
-        val art = slot.species?.let(spriteFor)
-        if (slot.species != null && art != null)
-            Image(art, null, Modifier.align(Alignment.TopCenter).size(32.dp), filterQuality = FilterQuality.None)
-        else if (slot.species == null)
-            PcPixelImageColors(if (giovanni) MASTERBALL else POKEBALL, if (giovanni) MASTERBALL_COLORS else POKEBALL_COLORS,
-                Modifier.align(Alignment.TopCenter).padding(top = 6.dp).size(20.dp))
-        if (slot.holdsItem) PcPixelImageColors(HELD_ITEM, HELD_ITEM_COLORS, Modifier.align(Alignment.TopEnd).padding(2.dp).size(9.dp))
-        PixText("Lv.${slot.level}", 8, Pc.Text, Modifier.align(Alignment.BottomCenter))
+    Column(Modifier.width(44.dp).heightIn(min = 44.dp).border(1.dp, Pc.Border), horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(Modifier.fillMaxWidth().height(32.dp)) {
+            val art = slot.species?.let(spriteFor)
+            if (slot.species != null && art != null)
+                Image(art, null, Modifier.align(Alignment.TopCenter).size(32.dp), filterQuality = FilterQuality.None)
+            else if (slot.species == null)
+                PcPixelImageColors(if (giovanni) MASTERBALL else POKEBALL, if (giovanni) MASTERBALL_COLORS else POKEBALL_COLORS,
+                    Modifier.align(Alignment.TopCenter).padding(top = 6.dp).size(20.dp))
+            if (slot.holdsItem) PcPixelImageColors(HELD_ITEM, HELD_ITEM_COLORS, Modifier.align(Alignment.TopEnd).padding(2.dp).size(9.dp))
+        }
+        DialogText("Lv.${slot.level}", 12, Pc.Text, align = TextAlign.Center)
     }
 }

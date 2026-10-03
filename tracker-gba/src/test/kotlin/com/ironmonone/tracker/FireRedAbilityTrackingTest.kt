@@ -42,7 +42,10 @@ class FireRedAbilityTrackingTest {
         mem.put32(m.scriptCurrInstr, 0x081D9317)   // BATTLER trigger for ability 36 in FR 1.1's table
         mem.put8(m.scriptingBattler, 1)
         mon(mem, 0, species = 25, liveAbility = 9)
-        mon(mem, 1, species = 64, liveAbility = 36)
+        // A Trace Kadabra whose live byte already holds the traced Static, as the game leaves it (rc32 audit P2 #132).
+        baseAbilities(mem, 64, a1 = 36, a2 = 0)
+        mon(mem, 1, species = 64, liveAbility = 9)
+        mem.put8(m.battleTextBuff1 + 2, 0)
         val t = GbaTracker(mem.reader(), m)
         // Trace in a single battle reveals the other side, as in the reference.
         assertEquals(25, t.readAbilityTrigger()?.first)

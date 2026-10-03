@@ -124,6 +124,24 @@ class GLRetroView(
             getDeviceLanguage()
         )
         LibretroDroid.setRumbleEnabled(data.rumbleEventsEnabled)
+        // KaizoCore (rc32 audit P2 #123): the rate given above is the one at this moment; a mode change or a move to the
+        // other screen re-paces the game (DisplayListener and Renderer.onSurfaceChanged).
+        runCatching {
+            (context.getSystemService(Context.DISPLAY_SERVICE) as android.hardware.display.DisplayManager)
+                .registerDisplayListener(displayListener, null)
+        }
+    }
+
+    private val displayListener = object : android.hardware.display.DisplayManager.DisplayListener {
+        override fun onDisplayAdded(displayId: Int) {}
+        override fun onDisplayRemoved(displayId: Int) {}
+        override fun onDisplayChanged(displayId: Int) {
+            val d = display ?: return
+            if (d.displayId == displayId) {
+                val rate = d.refreshRate
+                queueEvent { LibretroDroid.setScreenRefreshRate(rate) }
+            }
+        }
     }
 
     @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
@@ -131,6 +149,10 @@ class GLRetroView(
         // KaizoCore (rc33 audit P1): torn down even after an aborted load. catchExceptions does nothing once isAborted,
         // so a core whose game failed to load was never destroyed.
         try {
+            runCatching {
+                (context.getSystemService(Context.DISPLAY_SERVICE) as android.hardware.display.DisplayManager)
+                    .unregisterDisplayListener(displayListener)
+            }
             renderObserver?.let { lifecycle?.removeObserver(it) }
             renderObserver = null
             LibretroDroid.destroy()
@@ -154,23 +176,31 @@ class GLRetroView(
         queueEvent { LibretroDroid.onMotionEvent(port, source, xAxis, yAxis) }
     }
 
+    /** The pointer the stylus follows, from its ACTION_DOWN; -1 when none is down. */
+    private var stylusPointer = -1
+
+    // KaizoCore (rc32 audit P2 #126): ACTION_CANCEL (a back swipe the system takes from the bottom screen) sent nothing,
+    // so the DS stylus stayed pressed where it was; and with two fingers down the stylus jumped to the other one when the
+    // first lifted. StylusTouch says what each action does.
     override fun onTouchEvent(event: MotionEvent?): Boolean {
-        val position = when (event?.actionMasked) {
-            MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
-                normalizeTouchCoordinates(event.x, event.y)
+        val e = event ?: return true
+        val action = e.actionMasked
+        if (action == MotionEvent.ACTION_DOWN) stylusPointer = e.getPointerId(0)
+        val trackedUp = action == MotionEvent.ACTION_POINTER_UP && e.getPointerId(e.actionIndex) == stylusPointer
+        when (StylusTouch.act(action, trackedUp)) {
+            StylusTouch.Act.PRESS -> {
+                val i = e.findPointerIndex(stylusPointer)
+                if (i >= 0) {
+                    val p = normalizeTouchCoordinates(e.getX(i), e.getY(i))
+                    LibretroDroid.onTouchEvent(p.x, p.y)
+                }
             }
-
-            MotionEvent.ACTION_UP -> {
-                TOUCH_EVENT_OUTSIDE
+            StylusTouch.Act.LIFT -> {
+                stylusPointer = -1
+                LibretroDroid.onTouchEvent(TOUCH_EVENT_OUTSIDE.x, TOUCH_EVENT_OUTSIDE.y)
             }
-
-            else -> null
+            StylusTouch.Act.NONE -> Unit
         }
-
-        if (position != null) {
-            LibretroDroid.onTouchEvent(position.x, position.y)
-        }
-
         return true
     }
 
@@ -208,6 +238,18 @@ class GLRetroView(
     fun setCheat(index: Int, enable: Boolean, code: String, useEmulationThread: Boolean = true) {
         runOnEmulationThread(useEmulationThread, Unit) {
             LibretroDroid.setCheat(index, enable, code)
+        }
+    }
+
+    /**
+     * KaizoCore patch (rc32 audit P3 #49): the core's cheats replaced by [cheats] (enabled, code), indexed in order, in
+     * one emulation-thread job. A reset and a set per code each waited on that thread, so with it stalled three codes
+     * kept the main thread past Android's five seconds; one job waits once, whatever the number of codes.
+     */
+    fun setCheats(cheats: List<Pair<Boolean, String>>, useEmulationThread: Boolean = true) {
+        runOnEmulationThread(useEmulationThread, Unit) {
+            LibretroDroid.resetCheat()
+            cheats.forEachIndexed { i, (enabled, code) -> LibretroDroid.setCheat(i, enabled, code) }
         }
     }
 
@@ -375,13 +417,27 @@ class GLRetroView(
         }
     }
 
+    @Volatile private var frameRenderedSent = false
+
+    /**
+     * KaizoCore (rc32 audit P3 #100): the core refused the in-game save it was handed at load (too big, or no save RAM).
+     * The app keeps a copy before its next flush writes the core's blank save over it (SramGuard).
+     */
+    @Volatile var sramLoadRefused: Boolean = false
+        private set
+
     inner class Renderer : GLSurfaceView.Renderer {
         override fun onDrawFrame(gl: GL10) = catchExceptions {
             if (isEmulationReady) {
                 if (!holdSteps) LibretroDroid.step(this@GLRetroView)
                 if (stepHooks.isNotEmpty()) for (hook in stepHooks) runCatching { hook.afterStep(this@GLRetroView) }
-                lifecycle?.coroutineScope?.launch {
-                    retroGLEventsSubject.emit(GLRetroEvents.FrameRendered)
+                // KaizoCore (rc32 audit P3 #102): once a surface. It was posted to the main thread on every frame, for an
+                // event the app awaits once (the core-up effect). Emitted, not tryEmit: losing it would hold that effect.
+                if (!frameRenderedSent) {
+                    frameRenderedSent = true
+                    lifecycle?.coroutineScope?.launch {
+                        retroGLEventsSubject.emit(GLRetroEvents.FrameRendered)
+                    }
                 }
             }
         }
@@ -389,11 +445,14 @@ class GLRetroView(
         override fun onSurfaceChanged(gl: GL10, width: Int, height: Int) = catchExceptions {
             Thread.currentThread().priority = Thread.MAX_PRIORITY
             LibretroDroid.onSurfaceChanged(width, height)
+            // KaizoCore (rc32 audit P2 #123): the surface changes when the view moves to another display.
+            display?.refreshRate?.let { LibretroDroid.setScreenRefreshRate(it) }
         }
 
 
         override fun onSurfaceCreated(gl: GL10, config: EGLConfig) = catchExceptions {
             Thread.currentThread().priority = Thread.MAX_PRIORITY
+            frameRenderedSent = false
             initializeCore()
             lifecycle?.coroutineScope?.launch {
                 retroGLEventsSubject.emit(GLRetroEvents.SurfaceCreated)
@@ -410,7 +469,7 @@ class GLRetroView(
             data.gameVirtualFiles.isNotEmpty() -> loadGameFromVirtualFiles(data.gameVirtualFiles)
         }
         data.saveRAMState?.let {
-            LibretroDroid.unserializeSRAM(data.saveRAMState)
+            sramLoadRefused = !LibretroDroid.unserializeSRAM(data.saveRAMState)
             data.saveRAMState = null
         }
         LibretroDroid.onSurfaceCreated()

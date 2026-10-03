@@ -72,7 +72,7 @@ class LibraryStore(private val root: File, private val savesDir: File? = savesDi
     ) {
         val sizeBytes: Long get() = file.length()
         val verified: Boolean get() = kind != null && kind.expectedCrc != RomKind.CRC_UNKNOWN && kind.expectedCrc == crc
-        /** Header says a supported game but the CRC is not pinned yet: shelved as clean, labelled unverified. */
+        /** Header says a supported game but the CRC is not pinned yet: shelved with Other versions, labelled unverified. */
         val unverified: Boolean get() = kind != null && kind.expectedCrc == RomKind.CRC_UNKNOWN
         /** The tracker reads this file: the same test GameSession.trackerKind makes. */
         val tracked: Boolean get() = verified
@@ -81,7 +81,11 @@ class LibraryStore(private val root: File, private val savesDir: File? = savesDi
             // Made by a patch and not a known build: a hack, even if the header
             // still names a game whose CRC is not pinned.
             patchName != null -> if (platform != null) Category.HACK else Category.OTHER
-            verified || unverified -> Category.CLEAN
+            verified -> Category.CLEAN
+            // A real game whose copy KaizoCore cannot check yet (Black): the tracker, the randomizer and the built-in
+            // patches all refuse it, so it is not shelved under "Verified dumps. The tracker and the randomizer start
+            // here." (rc32 audit P2 #25). Once its checksum is pinned an exact copy moves to Clean ROMs by itself.
+            unverified -> Category.OTHER_VERSIONS
             // The verdict, not the words of the summary: what shows a file was changed is its size, and nothing else does.
             else -> when (verdict) {
                 RomIdentity.Verdict.OTHER_LANGUAGE, RomIdentity.Verdict.OTHER_VERSION -> Category.OTHER_VERSIONS
@@ -130,7 +134,9 @@ class LibraryStore(private val root: File, private val savesDir: File? = savesDi
         val base = wanted.replace(ILLEGAL_IN_NAME, "_").trim().trimStart('.').ifBlank { "rom" }
         var target = File(dir, base)
         var n = 2
-        while (target.exists()) {
+        // "current" is the run's name: the DS run's in-game save is saves/current.sav, which a library game of that
+        // name would share (rc33 audit P1 #20's aside).
+        while (target.exists() || target.nameWithoutExtension.equals("current", ignoreCase = true)) {
             val dot = base.lastIndexOf('.')
             val stem = if (dot > 0) base.substring(0, dot) else base
             val ext = if (dot > 0) base.substring(dot) else ""
@@ -203,23 +209,32 @@ class LibraryStore(private val root: File, private val savesDir: File? = savesDi
 
     /**
      * Sidecar format version. Bumped when identification changes its mind
-     * about a file (v2: DS header checksum, v3: the verdict and its words, 2026-09-30), so entries written under an
+     * about a file (v2: DS header checksum, v3: the verdict and its words, 2026-09-30, v4: the table's fingerprint
+     * beside it, 2026-10-02), so entries written under an
      * older rule are re-identified on the next list() instead of keeping a
-     * verdict that is now wrong. A v2 sidecar is re-read from the file's header and the checksum it already
+     * verdict that is now wrong. An older sidecar is re-read from the file's header and the checksum it already
      * holds, not hashed again: a 512 MB DS game is seconds, and every screen that lists the library would do it at once.
      */
-    private val SIDECAR_VERSION = "v3"
+    private val SIDECAR_VERSION = "v4"
+
+    /**
+     * A sidecar's first line: the version, then the fingerprint of the games identification knows ([tableFingerprint]).
+     * A sidecar written under another table is re-identified as an older version is. Pinning a checksum (Black's, or a
+     * new build such as FireRed 1.1's Smart AI) used to need a hand bump of the version, and one forgotten left a Black
+     * dump under Other games with "not checked yet" for good (rc32 audit P3 #28).
+     */
+    private val sidecarHead = "$SIDECAR_VERSION ${tableFingerprint()}"
 
     private fun write(e: Entry) = runCatching {
         // A full disk must not take the library down with it.
         sidecar(e.file).writeText(
-            listOf(SIDECAR_VERSION, "%08x".format(e.crc), e.kind?.id ?: "-", e.platform?.name ?: "-",
+            listOf(sidecarHead, "%08x".format(e.crc), e.kind?.id ?: "-", e.platform?.name ?: "-",
                 e.baseName ?: "-", e.patchName ?: "-", e.verdict?.name ?: "-", e.summary).joinToString("\n"))
     }.let { }
 
     private fun read(f: File): Entry? {
         val all = runCatching { sidecar(f).readLines() }.getOrNull() ?: return null
-        if (all.firstOrNull() != SIDECAR_VERSION) return null
+        if (all.firstOrNull() != sidecarHead) return null
         val lines = all.drop(1)
         if (lines.size < 7) return null
         val crc = lines[0].toLongOrNull(16) ?: return null
@@ -230,10 +245,15 @@ class LibraryStore(private val root: File, private val savesDir: File? = savesDi
             lines[3].takeIf { it != "-" }, lines[4].takeIf { it != "-" }, verdict)
     }
 
-    /** A v2 sidecar's file identified again from its header, keeping the checksum, base and patch it recorded; null when there is none. */
+    /**
+     * A sidecar from an older rule (v2, v3) or another table (a v4 with another fingerprint): its file identified again
+     * from its header, keeping the checksum, base and patch it recorded; null when there is none. Every version keeps
+     * those three on the same lines.
+     */
     private fun migrate(f: File): Entry? {
         val all = runCatching { sidecar(f).readLines() }.getOrNull() ?: return null
-        if (all.firstOrNull() != "v2") return null
+        val head = all.firstOrNull() ?: return null
+        if (head != "v2" && head != "v3" && !head.startsWith("$SIDECAR_VERSION ")) return null
         val lines = all.drop(1)
         if (lines.size < 6) return null
         val crc = lines[0].toLongOrNull(16) ?: return null
@@ -283,16 +303,51 @@ class LibraryStore(private val root: File, private val savesDir: File? = savesDi
      */
     private fun dsMarker(crc: Long): File? = savesDir?.let { File(it, "lib/lib-%08x/ds-save-name.txt".format(crc)) }
 
+    /**
+     * Where a deleted DS game's in-game save waits for it, beside its save states. Left under the game's file name, it
+     * was taken by the next game added under that name and then written over (rc33 audit P1 #20).
+     */
+    private fun parkedDsSave(crc: Long): File? = savesDir?.let { File(it, "lib/lib-%08x/ds-save.sav".format(crc)) }
+
+    /** Move a save and its .before-load copy from [from] to [to], setting aside anything already at [to]. */
+    private fun moveSaveFile(from: File, to: File) {
+        for ((src, dst) in listOf(from to to, SaveGuard.DsWatch(from).backup to SaveGuard.DsWatch(to).backup)) {
+            if (!src.isFile) continue
+            dst.parentFile?.mkdirs()
+            if (dst.exists()) setAside(dst)
+            if (!src.renameTo(dst)) { src.copyTo(dst, overwrite = true); src.delete() }
+        }
+    }
+
     private fun noteDsSave(crc: Long, rom: File) {
         val marker = dsMarker(crc) ?: return
         SafeWrite.text(marker, rom.nameWithoutExtension)
     }
 
-    /** Every DS game in [entries] that has no marker yet gets one, so a game added before this existed is covered too. */
+    /**
+     * Every DS game in [entries] that has no marker yet gets one, so a game added before this existed is covered too. Not
+     * one whose name another game's marker already claims: that name's save may be the other game's, and a marker written
+     * here would make the new game look like its owner before adoptDsSave can sort it out (rc33 audit P1 #20).
+     */
     private fun noteDsSaves(entries: List<Entry>) {
         if (savesDir == null) return
         synchronized(SAVES_LOCK) {
-            for (e in entries) if (isDs(e) && dsMarker(e.crc)?.exists() == false) noteDsSave(e.crc, e.file)
+            val claimed by lazy { stemClaims() }
+            for (e in entries) if (isDs(e) && dsMarker(e.crc)?.exists() == false &&
+                claimed[e.file.nameWithoutExtension].orEmpty().none { it != e.crc }) noteDsSave(e.crc, e.file)
+        }
+    }
+
+    /** Every marker's file name, with the games (by CRC) that name it and when each marker was written. */
+    private fun stemClaims(): Map<String, List<Long>> = stemMarkers().groupBy({ it.first }, { it.second })
+
+    private fun stemMarkers(): List<Triple<String, Long, Long>> {
+        val dir = savesDir ?: return emptyList()
+        return (File(dir, "lib").listFiles() ?: emptyArray()).mapNotNull { d ->
+            val m = File(d, "ds-save-name.txt").takeIf { it.isFile } ?: return@mapNotNull null
+            val stem = runCatching { m.readText().trim() }.getOrNull()?.takeIf { it.isNotEmpty() } ?: return@mapNotNull null
+            val crc = d.name.removePrefix("lib-").toLongOrNull(16) ?: return@mapNotNull null
+            Triple(stem, crc, m.lastModified())
         }
     }
 
@@ -338,11 +393,30 @@ class LibraryStore(private val root: File, private val savesDir: File? = savesDi
         synchronized(SAVES_LOCK) {
             val was = runCatching { marker.takeIf { it.isFile }?.readText()?.trim() }.getOrNull()?.takeIf { it.isNotEmpty() }
             val now = e.file.nameWithoutExtension
-            if (was != null && was != now && !stemInUse(was, except = e.file) &&
-                !SaveGuard.dsSaveFile(savesDir, e.file).exists()
+            val target = SaveGuard.dsSaveFile(savesDir, e.file)
+            // A save left under this name by a game deleted before saves were parked is that game's, not this one's: it
+            // waits with that game now, so this one starts clean (rc33 audit P1 #20). Never when this game's own marker
+            // already names the name: then the save is its own.
+            if (was != now && target.exists()) parkOrphan(now, except = e.crc, save = target)
+            // This game's own save, parked when it was deleted, comes back under its new name.
+            parkedDsSave(e.crc)?.takeIf { it.isFile && !target.exists() }?.let { moveSaveFile(it, target) }
+            if (was != null && was != now && !stemInUse(was, except = e.file) && !target.exists()
             ) moveDsSave(File(root, "$was.nds"), e.file)
             noteDsSave(e.crc, e.file)
         }
+    }
+
+    /**
+     * [save], under the name [stem], when another game that is not in the library left it there: the game whose marker
+     * names [stem] most recently. It is parked with that game, never overwriting a save already parked there.
+     */
+    private fun parkOrphan(stem: String, except: Long, save: File) {
+        val inLibrary = list().map { it.crc }.toSet()
+        val owner = stemMarkers().filter { (s, crc, _) -> s == stem && crc != except && crc !in inLibrary }
+            .maxByOrNull { it.third }?.second ?: return
+        val parked = parkedDsSave(owner) ?: return
+        if (parked.exists()) setAside(parked)
+        moveSaveFile(save, parked)
     }
 
     /**
@@ -371,6 +445,12 @@ class LibraryStore(private val root: File, private val savesDir: File? = savesDi
     }
 
     fun delete(e: Entry) {
+        // A DS game's in-game save is kept, with the game's states, until it comes back (adoptDsSave); under its file name
+        // the next game added with that name took it and wrote over it (rc33 audit P1 #20).
+        if (savesDir != null && isDs(e)) synchronized(SAVES_LOCK) {
+            val save = SaveGuard.dsSaveFile(savesDir, e.file)
+            if (save.isFile && !stemInUse(e.file.nameWithoutExtension, except = e.file)) parkedDsSave(e.crc)?.let { moveSaveFile(save, it) }
+        }
         e.file.delete(); sidecar(e.file).delete()
         if (selectedLibraryName() == e.name) selectRun()
     }
@@ -480,7 +560,8 @@ class LibraryStore(private val root: File, private val savesDir: File? = savesDi
         val tmp = File(root, ".patching-" + System.nanoTime() + ".tmp")
         try {
             Patcher.applyFiles(patch.file, base.file, tmp, base.name, onProgress)
-            return importFile(if (ext.isEmpty()) stem else "$stem.$ext", tmp, baseName = base.name, patchName = patch.name)
+            // A hack named like a DS game deleted before saves were parked must not take that game's save (rc33 audit P1 #20).
+            return importFile(if (ext.isEmpty()) stem else "$stem.$ext", tmp, baseName = base.name, patchName = patch.name).also { adoptDsSave(it) }
         } finally {
             tmp.delete()
         }
@@ -540,6 +621,13 @@ class LibraryStore(private val root: File, private val savesDir: File? = savesDi
                 it.endsWith(".bps") || it.endsWith(".ips") || it.endsWith(".ups") ||
                     it.endsWith(".xdelta") || it.endsWith(".vcdiff")
             }
+
+        /**
+         * Eight hex digits that change whenever the table of games identification reads changes: a checksum pinned,
+         * a build added, a name or header changed (every field of every RomKind). The sidecars carry it.
+         */
+        internal fun tableFingerprint(kinds: List<RomKind> = RomKind.all): String =
+            "%08x".format(Crc32.of(kinds.joinToString("\n") { it.toString() }.toByteArray(Charsets.UTF_8)))
 
         @Suppress("unused")
         private val crcOf = Crc32

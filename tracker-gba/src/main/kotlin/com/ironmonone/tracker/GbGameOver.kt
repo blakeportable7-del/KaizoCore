@@ -39,3 +39,53 @@ internal object GbGameOver {
         return condition.lostMons(party.map { LossMon(it.mon.level, it.mon.curHp) })
     }
 }
+
+/**
+ * When a Game Boy run is won (rc32 audit P2 #135). Neither Game Boy reference has a working win check (the Gen 2
+ * one's IsInHallOfFame is Emerald's table, Ironmon-gen-2-tracker RouteData.lua:513-517), so a won run never latched
+ * YOU WON and was later filed as ended by a new run. Read as the GBA tracker reads its own (GbaTracker.readGameOver:
+ * a won battle against the final trainer), and given from that battle's end until the next battle begins, as the
+ * GBA's battle outcome byte holds it, so the app's latch takes it once.
+ *
+ * - Gold, Silver and Crystal: "To win Ironmon you must defeat Red at the top of Mt. Silver" (rulesets/GSC). A
+ *   trainer battle against class RED, 0x3F (pokecrystal constants/trainer_constants.asm:686, pokegold :637), that
+ *   ends with wBattleResult's low two bits at WIN, 0 (constants/battle_constants.asm:263-265). The class is kept
+ *   while the battle is on: CleanUpBattleRAM clears wOtherTrainerClass with wBattleMode (engine/battle/core.asm:8298-8302).
+ * - Red, Blue and Yellow: the Champion, class RIVAL3, 0x2B (pokered and pokeyellow constants/trainer_constants.asm:60),
+ *   beaten. wTrainerClass stays set after the battle, but a blackout zeroes wBattleResult as it heals the party
+ *   (engine/events/black_out.asm:3-4), so the result is read on the first read after the battle and only counts with
+ *   the Champion's last Pokemon at 0 HP in wEnemyMon and the player still in CHAMPIONS_ROOM, 0x78 (map_constants.asm:198),
+ *   which a blackout leaves at once. The Hall of Fame is no test of its own: the main menu loads a won game's save
+ *   with wCurMap on HALL_OF_FAME before Continue is chosen (engine/menus/main_menu.asm:11, :118).
+ */
+internal class GbWin private constructor(private val finalClass: Int, private val finalMap: Int?) {
+    private var vsFinal = false
+    private var won = false
+
+    /**
+     * One read. [battleByte] is wIsInBattle or wBattleMode, [trainerClass] wTrainerClass or wOtherTrainerClass and [result]
+     * wBattleResult, -1 when unread. Gen 1 also gives [enemyHp], the HP in wEnemyMon, and [mapId], wCurMap. True while won.
+     */
+    fun read(battleByte: Int, trainerClass: Int, result: Int, enemyHp: Int? = null, mapId: Int? = null): Boolean {
+        if (battleByte != 0) {
+            // A battle is on, or Gen 1's lost-battle mark (which is never the final trainer's win).
+            won = false
+            vsFinal = battleByte == 2 && trainerClass == finalClass
+            return false
+        }
+        if (vsFinal) {
+            vsFinal = false
+            won = result >= 0 && (result and 3) == 0 && (enemyHp == null || enemyHp == 0) && (finalMap == null || mapId == finalMap)
+        }
+        return won
+    }
+
+    companion object {
+        const val RIVAL3 = 0x2B
+        const val CHAMPIONS_ROOM = 0x78
+        const val RED = 0x3F
+
+        fun gen1() = GbWin(RIVAL3, CHAMPIONS_ROOM)
+        fun gen2() = GbWin(RED, null)
+    }
+}

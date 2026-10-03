@@ -115,8 +115,8 @@ fun InfoTypeTag(typeName: String, color: Color) {
     if (icon != null) {
         Image(icon, typeName, Modifier.width(45.dp).height(18.dp), filterQuality = FilterQuality.None)
     } else {
-        Box(Modifier.width(45.dp).height(18.dp).background(color), contentAlignment = Alignment.Center) {
-            PixText(typeName.uppercase(), 9, Color.White)
+        Box(Modifier.widthIn(min = 45.dp).heightIn(min = 18.dp).background(color).padding(horizontal = 3.dp), contentAlignment = Alignment.Center) {
+            DialogText(typeName.uppercase(), 12, Color.White)
         }
     }
 }
@@ -129,16 +129,19 @@ fun InfoTag(label: String, color: Color) {
     }
 }
 
-/** One figure of a strip: the value large, its label under it. */
+/**
+ * One figure of a strip: the value large, its label under it. Every word on these cards is DialogText, in sp, so it
+ * follows the phone's font size (rc32 audit P2 #19); they were drawn at fixed sizes.
+ */
 @Composable
 fun RowScope.InfoStat(label: String, value: String, valueColor: Color = Pc.Text) {
     Column(
         Modifier.weight(1f).background(Pc.Page).border(1.dp, Pc.Border.copy(alpha = 0.6f)).padding(vertical = 7.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        PixText(value, 16, valueColor)
+        DialogText(value, 16, valueColor, align = androidx.compose.ui.text.style.TextAlign.Center)
         Spacer(Modifier.height(4.dp))
-        PixText(label, 10, Pc.Dim)
+        DialogText(label, 12, Pc.Dim, align = androidx.compose.ui.text.style.TextAlign.Center)
     }
 }
 
@@ -146,8 +149,8 @@ fun RowScope.InfoStat(label: String, value: String, valueColor: Color = Pc.Text)
 @Composable
 fun InfoParagraph(label: String?, text: String, textColor: Color = Pc.Text) {
     if (label != null) {
-        PixText(label, 11, Pc.Gold)
+        DialogText(label, 12, Pc.Gold, heading = true)
         Spacer(Modifier.height(4.dp))
     }
-    PixText(text, 13, textColor, wrap = true)
+    DialogText(text, 13, textColor)
 }

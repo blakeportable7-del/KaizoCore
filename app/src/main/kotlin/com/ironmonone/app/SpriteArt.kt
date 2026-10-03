@@ -204,6 +204,17 @@ object SheetSet {
 
     fun isPng(b: ByteArray): Boolean = b.size > 24 && b[0] == 0x89.toByte() && b[1] == 'P'.code.toByte() && b[2] == 'N'.code.toByte() && b[3] == 'G'.code.toByte()
 
+    /**
+     * The biggest sheet that is kept and read: eight rows of the biggest frame (all [rowFor] reads), sixteen frames of it
+     * across, 8 MB once decoded. Every Walking Pals sheet of Gen 1 to 3 fits. A PNG may say 8192 x 8192, a 256 MB
+     * decode, which froze the game for seconds or got the app closed (rc32 audit P2 #88, P3 #66).
+     */
+    const val MAX_SHEET_W = 16 * SpriteArt.MAX_FRAME
+    const val MAX_SHEET_H = 8 * SpriteArt.MAX_FRAME
+
+    /** A sheet of [size] (width, height) is within the bound. */
+    fun fits(size: Pair<Int, Int>): Boolean = size.first <= MAX_SHEET_W && size.second <= MAX_SHEET_H
+
     /** A PNG's width and height from its header, or null when it is not one. */
     fun pngSize(b: ByteArray): Pair<Int, Int>? {
         if (!isPng(b)) return null

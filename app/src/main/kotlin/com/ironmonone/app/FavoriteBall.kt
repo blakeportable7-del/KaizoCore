@@ -3,8 +3,11 @@ package com.ironmonone.app
 import com.ironmonone.tracker.GbaTracker
 import java.io.File
 
-/** The no-party card's favorites: the list, as the PC tracker shows it, and in the lab each ball holding one to take. */
-data class FavoritesShown(val list: String?, val balls: List<String> = emptyList())
+/**
+ * The no-party card's favorites: the list, as the PC tracker shows it, and in the lab each ball holding one to take.
+ * The card draws [icons], each favorite's picture (FavoriteIcons).
+ */
+data class FavoritesShown(val list: String?, val balls: List<String> = emptyList(), val icons: List<FavoriteIcon> = emptyList())
 
 /**
  * The favorite in a starter ball (Blake, 2026-10-01: "The note is on the tracker, I believe. As long as it fits in the
@@ -32,24 +35,30 @@ internal object FavoriteBall {
         val favorites = Favorites.slots(store, session.kind?.id, Favorites.slotCount(session.kind)).filter { it.isNotBlank() }
         val balls = runCatching {
             if (tracker == null || favorites.isEmpty() || PlayRules.kind(session, filesDir) != PlayRules.Kind.IRONMON) emptyList()
-            else lines(favorites, modeOf(store), session.kind?.isNatDex == true, tracker.starters()) { tracker.baseStats(it)?.bst }
+            else lines(favorites, modeOf(store), session.kind?.isNatDex == true, tracker.starters(), maxDex = session.kind?.isMaxDex == true) { tracker.baseStats(it)?.bst }
         }.getOrDefault(emptyList())
-        return FavoritesShown(Favorites.line(favorites), balls)
+        return FavoritesShown(Favorites.line(favorites), balls, FavoriteIcons.of(favorites, session.kind))
     }
 
     /** The run's mode ("kaizo", "survival"), from its settings file and sidecar; null when neither names one. */
     fun modeOf(store: PrepStore): String? =
         store.loadLastRun()?.second?.let { RnqsInfo.of(store.settingsFile(it)).ruleset }
 
-    /** "FAVORITE! GENGAR IN THE LEFT BALL" for each ball, left to right, that holds a favorite [mode] lets you take. */
-    fun lines(favorites: List<String>, mode: String?, natDex: Boolean, balls: List<GbaTracker.BallOption>, bst: (Int) -> Int?): List<String> {
+    /**
+     * "FAVORITE! GENGAR IN THE LEFT BALL" for each ball, left to right, that holds a favorite [mode] lets you take.
+     * [maxDex]: MaxDex 1.0, held to the Nat. Dex 1.1.3 limits ([takeable]).
+     */
+    fun lines(
+        favorites: List<String>, mode: String?, natDex: Boolean, balls: List<GbaTracker.BallOption>, maxDex: Boolean = false, bst: (Int) -> Int?,
+    ): List<String> {
         val legendaries = favorites.count { FavoriteRules.isLegendary(it) }
         return balls.mapNotNull { b ->
-            // By the game's own id: a Nat. Dex favourite counts for its own form only, as those books say.
-            val favorite = favorites.firstOrNull { Favorites.idOf(it) == b.species } ?: return@mapNotNull null
+            // By the game's own id: a Nat. Dex favourite counts for its own form only, as those books say. MaxDex's ids are
+            // its own past 1235 (its Z-A Megas), so its names are read from its own table.
+            val favorite = favorites.firstOrNull { Favorites.idOf(it, maxDex) == b.species } ?: return@mapNotNull null
             val stats = bst(b.species) ?: return@mapNotNull null
             val c = Candidate(stats, FavoriteRules.isLegendary(favorite), FavoriteRules.isStrongOrMythical(favorite), FavoriteRules.nationalOfName(favorite))
-            if (takeable(mode, natDex, c, legendaries)) "FAVORITE! ${favorite.trim().uppercase()} IN THE ${b.ball} BALL" else null
+            if (takeable(mode, natDex, c, legendaries, maxDex)) "FAVORITE! ${favorite.trim().uppercase()} IN THE ${b.ball} BALL" else null
         }
     }
 
@@ -69,12 +78,18 @@ internal object FavoriteBall {
      * every mode (its older line named Survival among the 600 ones); no Cosmoem starter outside Standard; Evo Kaizo no
      * Strong Legendary or Mythical starter.
      *
+     * MaxDex ([maxDex]) is held to the same page's "v1.0.0 to v1.1.3 only" lines, the version it is built on (Blake,
+     * 2026-10-03: "Max dex is allowed a bst 600 pokemon"): "Your favourites can be up to 600 BST in Kaizo, Survival and
+     * Super Kaizo, or 640 BST in Standard and Ultimate". That section has no Cosmoem rule and no Evo Kaizo part, so Evo
+     * Kaizo takes Kaizo's 600 there.
+     *
      * A run whose mode nothing names (a build of your own) has no Favorites Clause to apply, and Journey needs none.
      */
-    fun takeable(mode: String?, natDex: Boolean, c: Candidate, legendariesInList: Int): Boolean {
+    fun takeable(mode: String?, natDex: Boolean, c: Candidate, legendariesInList: Int, maxDex: Boolean = false): Boolean {
         if (mode == null || mode == JOURNEY || c.bst <= 0) return false
         if (c.legendary && (legendariesInList > 1 || mode in FavoriteRules.NO_LEGENDARY_MODES)) return false
         val plain = mode == "standard" || mode == "ultimate"
+        if (maxDex) return c.bst <= if (plain) 640 else 600
         return if (natDex) when {
             c.national == FavoriteRules.COSMOEM && mode != "standard" -> false
             mode == "evokaizo" -> c.bst <= 600 && !c.strongOrMythical

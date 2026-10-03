@@ -21,8 +21,9 @@ class NuzlockeFairTest {
 
     @AfterTest fun cleanUp() { dirs.forEach { it.deleteRecursively() }; dirs.clear() }
 
+    // No fallback to an empty bundle: with none, the "no hidden pass" check below passed whatever the file was (rc32 audit P3 #84).
     private val bundled: Map<String, ByteArray> by lazy {
-        (File("src/main/assets/presets").listFiles { f -> f.name.endsWith(".rnqs") } ?: emptyArray()).associate { it.name to it.readBytes() }
+        File("src/main/assets/presets").listFiles { f -> f.name.endsWith(".rnqs") }!!.associate { it.name to it.readBytes() }
     }
 
     private fun field(kind: RomKind, f: File, name: String): String {
@@ -57,7 +58,12 @@ class NuzlockeFairTest {
         assertNull(RnqsInfo.of(a).ruleset, "no IronMON mode behind it")
         assertFalse(RulesetCatalog.forRom(RomKind.EMERALD_U, store.listSettings()).any { m -> m.preset == a || a in m.alternatives },
             "the Kaizo IronMON screen never shows it as a mode")
-        // No hidden pass: the official level pass is for the official files only.
+        // No hidden pass: the official level pass is for the official files only. What a run decides is prePassOn, with
+        // the player's choices as they stand (none here), and the official Kaizo file shows the check can go red.
+        assertTrue(bundled.isNotEmpty())
+        val choices = ExtraPasses.Choices(File(store.cacheDirFor(), "choices.txt"))
+        assertTrue(ExtraPasses.prePassOn(RomKind.EMERALD_U, "RSE Kaizo.rnqs", bundled.getValue("RSE Kaizo.rnqs"), bundled, choices), "control")
+        assertFalse(ExtraPasses.prePassOn(RomKind.EMERALD_U, a.name, a.readBytes(), bundled, choices))
         assertFalse(ExtraPasses.prePassByDefault(RomKind.EMERALD_U, a.name, a.readBytes(), bundled))
     }
 

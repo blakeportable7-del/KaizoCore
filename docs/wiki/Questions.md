@@ -9,7 +9,7 @@ The tracker reads the US versions. Other languages, other versions and changed g
 Pokémon Black is not read yet: it needs one check against a real dump first.
 
 **DS games are slow, or the app closes.**
-DS games want a phone with 3 GB of RAM, and Black 2 and White 2 use about 1 GB on their own. Close other apps. DS
+DS games want a phone with 3 GB of RAM, and Black 2 and White 2 use about 750 MB on their own. Close other apps. DS
 speed stops at 4x.
 
 **Can I update without losing everything?**

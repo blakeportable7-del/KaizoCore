@@ -69,7 +69,7 @@ class StreamGuideTest {
         val step2 = at("2 Add it to OBS")
         val already = at(
             "Already use OBS scenes? Do not import. In your gameplay scene choose Sources, +, Browser, and add the three addresses " +
-                "from the table below, one source each. On the game source tick Control audio via OBS and Use custom frame rate, 60.", step2)
+                "from the table below, one source each. On the game source, check Control audio via OBS and Use custom frame rate, 60.", step2)
         val new = at("New to OBS? Download the scene in step 1, then:", already)
         val menu = at("Scene Collection menu and choose Import Scene Collection.", new)
         val browse = at("Click Browse..., pick the file from your Downloads folder, then click Import.", menu)
@@ -138,7 +138,7 @@ class StreamGuideTest {
         assertTrue(error < at("Same Wi-Fi.", head), "the error box is the first thing listed")
         val changed = at(
             "Address changed? Open this page again at the new address. In OBS, right-click each KaizoCore source, choose Properties and paste " +
-                "its new address from the table below: game, tracker, attempts. You do not need to import again.", head)
+                "its new address from the table below: game, tracker, attempts, favorites. You do not need to import again.", head)
         at("give the phone a fixed address in your router's settings (often called an address reservation)", changed)
         at("Add &debug=1 to the game address.", head)
         assertTrue(at("The links, one at a time") > changed, "the table it sends you to is below it")
@@ -149,9 +149,19 @@ class StreamGuideTest {
 
     @Test
     fun `the guide says when the attempt counter shows and when it stays blank`() {
-        at("The attempt counter shows in a Kaizo IronMON run and in a Nuzlocke on a randomized game. " +
-            "In a standard Nuzlocke, a ROM hack or any other game it stays blank: there is no attempt number.")
+        // A Nuzlocke counts no attempt, a randomized one included (788fb97f): the page blanks every one (rc32 audit P2 #109).
+        at("The attempt counter shows in a Kaizo IronMON run. " +
+            "In a Nuzlocke, a ROM hack or any other game it stays blank: there is no attempt number.")
         assertFalse(text.contains("appears in Kaizo IronMON and Nuzlocke runs"), "the old sentence promised it in every Nuzlocke")
+        assertFalse(text.contains("Nuzlocke on a randomized game"), "nor in a randomized one")
+    }
+
+    @Test
+    fun `the wiki says the attempt counter shows in a Kaizo IronMON run only`() {
+        val wiki = File("../docs/wiki/Streaming-to-OBS.md").readText()
+        val line = wiki.lines().single { it.startsWith("- **Attempts**") }
+        assertFalse("randomized Nuzlocke" in line, line)
+        assertTrue("during a Kaizo IronMON run, and blank otherwise. A Nuzlocke counts no attempt." in line, line)
     }
 
     @Test
@@ -159,7 +169,7 @@ class StreamGuideTest {
         val urls = ObsScene.urls(base, "abcd")
         assertContains(guide, "value=\"" + urls.getValue(ObsScene.GAME).replace("&", "&amp;") + "\"")
         assertContains(guide, "game?k=abcd&amp;int=1")
-        assertContains(text, "1500 x 1080. Tick Control audio via OBS and Use custom frame rate, 60.")
+        assertContains(text, "1500 x 1080. Check Control audio via OBS and Use custom frame rate, 60.")
         assertContains(text, "The game address ends in &int=1, which keeps every pixel the same size.")
         assertContains(text, "&smooth=1 softens the picture instead of keeping hard pixel edges")
         assertContains(text, "&top=1 shows only the top DS screen")
@@ -201,6 +211,7 @@ class StreamGuideTest {
             "attempts" to StreamPages.attempts(),
             "tracker" to File("src/main/assets/stream/tracker.html").readText(),
             "scene" to ObsScene.json(base, "abcd"),
+            "favorite" to StreamFavorites.page(),
         )
         val emoji = Regex("[\\u2600-\\u27BF\\uFE0F]|[\\uD83C-\\uD83E][\\uDC00-\\uDFFF]")
         for ((name, body) in pages) {

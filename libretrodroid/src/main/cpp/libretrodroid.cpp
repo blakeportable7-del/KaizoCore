@@ -26,6 +26,7 @@
 #include <unordered_set>
 
 #include "libretrodroid.h"
+#include "memrange.h"
 #include "cheevos.h"
 #include "utils/libretrodroidexception.h"
 #include "log.h"
@@ -208,33 +209,35 @@ JNIEXPORT jboolean JNICALL LibretroDroid::unserializeSRAM(int8_t* data, size_t s
 
 // IronMON One patch: see the header. Descriptors first, then SYSTEM_RAM.
 size_t LibretroDroid::readMemory(uint64_t address, size_t length, unsigned char* output) {
+    // KaizoCore (rc32 audit P2 #122): one hold of coreLock for the whole read. The descriptor read below used to run
+    // with the lock let go, so destroy() could unload the game and free the memory a tracker read was copying from.
+    // Lock order everywhere: coreLock, then the environment's descriptor lock.
+    std::lock_guard<std::mutex> lock(coreLock);
+    // Not merely "is there a core": the core must have a game loaded, or its
+    // own memory accessors dereference state it has not built yet.
+    if (core == nullptr || !gameLoaded) return 0;
+
     // The core's LIVE system RAM first (2026-09-08). melonDS DS publishes memory
     // descriptors at load time and then rebuilds its console, so the descriptor
     // pointers go stale: a 4 MB dump read through them carried the cartridge
     // header and the ROM's static data but no trainer name and no Pokemon,
     // while the game was in a battle. retro_get_memory_data is asked each time
     // and always points at the console that is running.
-    {
-        std::lock_guard<std::mutex> lock(coreLock);
-        if (core != nullptr && gameLoaded && framesRun >= 120) {
-            const uint64_t systemRamBase = 0x02000000;
-            size_t ramSize = core->retro_get_memory_size(RETRO_MEMORY_SYSTEM_RAM);
-            auto* ram = static_cast<unsigned char*>(core->retro_get_memory_data(RETRO_MEMORY_SYSTEM_RAM));
-            if (ram != nullptr && ramSize > 0 && address >= systemRamBase && address + length <= systemRamBase + ramSize) {
-                memcpy(output, ram + (address - systemRamBase), length);
-                return length;
-            }
+    if (framesRun >= 120) {
+        const uint64_t systemRamBase = 0x02000000;
+        size_t ramSize = core->retro_get_memory_size(RETRO_MEMORY_SYSTEM_RAM);
+        auto* ram = static_cast<unsigned char*>(core->retro_get_memory_data(RETRO_MEMORY_SYSTEM_RAM));
+        if (ram != nullptr && ramSize > 0 && rangeInside(address, length, systemRamBase, ramSize)) {
+            memcpy(output, ram + (address - systemRamBase), length);
+            return length;
         }
     }
     size_t read = Environment::getInstance().readMemoryRegion(address, length, output);
     if (read > 0) return read;
 
-    std::lock_guard<std::mutex> lock(coreLock);
-    // Not merely "is there a core": the core must have a game loaded, or its
-    // own memory accessors dereference state it has not built yet.
     // Wait for the core to have actually run: a loaded game is not the same as
     // an initialised core (see framesRun in the header).
-    if (core == nullptr || !gameLoaded || framesRun < 120) return 0;
+    if (framesRun < 120) return 0;
 
     // melonDS publishes no memory-map descriptors, only SYSTEM_RAM. Both the DS
     // (4MB main RAM) and the GBA (256KB EWRAM) map it at 0x02000000.
@@ -256,23 +259,22 @@ size_t LibretroDroid::readMemory(uint64_t address, size_t length, unsigned char*
 // core that publishes no descriptors (melonDS) would otherwise accept writes
 // that silently go nowhere.
 size_t LibretroDroid::writeMemory(uint64_t address, size_t length, const unsigned char* input) {
-    {
-        std::lock_guard<std::mutex> lock(coreLock);
-        if (core != nullptr && gameLoaded && framesRun >= 120) {
-            const uint64_t systemRamBase = 0x02000000;
-            size_t ramSize = core->retro_get_memory_size(RETRO_MEMORY_SYSTEM_RAM);
-            auto* ram = static_cast<unsigned char*>(core->retro_get_memory_data(RETRO_MEMORY_SYSTEM_RAM));
-            if (ram != nullptr && ramSize > 0 && address >= systemRamBase && address + length <= systemRamBase + ramSize) {
-                memcpy(ram + (address - systemRamBase), input, length);
-                return length;
-            }
+    // KaizoCore (rc32 audit P2 #122): one hold of coreLock for the whole write, as readMemory.
+    std::lock_guard<std::mutex> lock(coreLock);
+    if (core == nullptr || !gameLoaded) return 0;
+    if (framesRun >= 120) {
+        const uint64_t systemRamBase = 0x02000000;
+        size_t ramSize = core->retro_get_memory_size(RETRO_MEMORY_SYSTEM_RAM);
+        auto* ram = static_cast<unsigned char*>(core->retro_get_memory_data(RETRO_MEMORY_SYSTEM_RAM));
+        if (ram != nullptr && ramSize > 0 && rangeInside(address, length, systemRamBase, ramSize)) {
+            memcpy(ram + (address - systemRamBase), input, length);
+            return length;
         }
     }
     size_t written = Environment::getInstance().writeMemoryRegion(address, length, input);
     if (written > 0) return written;
 
-    std::lock_guard<std::mutex> lock(coreLock);
-    if (core == nullptr || !gameLoaded || framesRun < 120) return 0;
+    if (framesRun < 120) return 0;
 
     const uint64_t systemRamBase = 0x02000000;
     size_t ramSize = core->retro_get_memory_size(RETRO_MEMORY_SYSTEM_RAM);
@@ -361,9 +363,8 @@ void LibretroDroid::onTouchEvent(float xAxis, float yAxis) {
 }
 
 void LibretroDroid::onKeyEvent(unsigned int port, int action, int keyCode) {
-    // IronMON One debug: LOGI so it shows without VERBOSE_LOGGING.
-    LOGI("IM1 key: action=%d keyCode=%d input=%s", action, keyCode,
-         input ? "alive" : "NULL");
+    // KaizoCore (rc32 audit P3 #94): LOGD, compiled out of release. A LOGI here filled a bug report's log with presses.
+    LOGD("key: action=%d keyCode=%d input=%s", action, keyCode, input ? "alive" : "NULL");
     if (input) {
         input->onKeyEvent(port, action, keyCode);
     }
@@ -428,27 +429,31 @@ void LibretroDroid::create(
     rumble = std::make_unique<Rumble>();
 }
 
+// LOCAL MODIFICATION (KaizoCore, rc34): every loader hands the game over here. What retro_load_game is given lives in
+// this object until destroy() (see the header), and once the core has its own copy the mapped ROM's pages leave this
+// process (gamecontent.h).
+bool LibretroDroid::handOver(const std::string& path, GameContent bytes) {
+    content = std::move(bytes);
+    contentPath = path;
+    contentInfo = {};
+    contentInfo.path = contentPath.empty() ? nullptr : contentPath.c_str();
+    contentInfo.data = content.data();
+    contentInfo.size = content.size();
+    contentInfo.meta = nullptr;
+
+    bool loaded = core->retro_load_game(&contentInfo);
+    content.dropResidentPages();
+    return loaded;
+}
+
 void LibretroDroid::loadGameFromPath(const std::string& gamePath) {
     LOGD("Performing libretrodroid loadGameFromPath");
     struct retro_system_info system_info {};
     core->retro_get_system_info(&system_info);
 
-    struct retro_game_info game_info {};
-    game_info.path = Utils::cloneToCString(gamePath);
-    game_info.meta = nullptr;
-
-    if (system_info.need_fullpath) {
-        game_info.data = nullptr;
-        game_info.size = 0;
-    } else {
-        struct Utils::ReadResult file = Utils::readFileAsBytes(gamePath);
-        gameData.reset(file.data);  // LOCAL MODIFICATION (KaizoCore): freed in destroy(), see the header
-        game_info.data = file.data;
-        game_info.size = file.size;
-    }
-
-    bool result = core->retro_load_game(&game_info);
-    if (!result) {
+    // LOCAL MODIFICATION (KaizoCore): mapped, not read into the heap (gamecontent.h).
+    GameContent bytes = system_info.need_fullpath ? GameContent() : GameContent::fromPath(gamePath);
+    if (!handOver(gamePath, std::move(bytes))) {
         LOGE("Cannot load game. Leaving.");
         throw std::runtime_error("Cannot load game");
     }
@@ -458,26 +463,15 @@ void LibretroDroid::loadGameFromPath(const std::string& gamePath) {
     gameLoaded = true;
 }
 
-void LibretroDroid::loadGameFromBytes(const int8_t *data, size_t size) {
+void LibretroDroid::loadGameFromBytes(std::vector<char> gameBytes) {
     LOGD("Performing libretrodroid loadGameFromBytes");
 
     struct retro_system_info system_info {};
     core->retro_get_system_info(&system_info);
 
-    struct retro_game_info game_info {};
-    game_info.path = nullptr;
-    game_info.meta = nullptr;
-
-    if (system_info.need_fullpath) {
-        game_info.data = nullptr;
-        game_info.size = 0;
-    } else {
-        game_info.data = data;
-        game_info.size = size;
-    }
-
-    bool result = core->retro_load_game(&game_info);
-    if (!result) {
+    // LOCAL MODIFICATION (KaizoCore): owned until destroy() (the JNI copy was never freed before).
+    GameContent bytes = system_info.need_fullpath ? GameContent() : GameContent::fromBytes(std::move(gameBytes));
+    if (!handOver(std::string(), std::move(bytes))) {
         LOGE("Cannot load game. Leaving.");
         throw std::runtime_error("Cannot load game");
     }
@@ -502,32 +496,20 @@ void LibretroDroid::loadGameFromVirtualFiles(std::vector<VFSFile> virtualFiles) 
 
     bool loadUsingVFS = system_info.need_fullpath || virtualFiles.size() > 1;
 
-    struct retro_game_info game_info {};
-    game_info.path = Utils::cloneToCString(firstFilePath);
-    game_info.meta = nullptr;
-
     if (loadUsingVFS) {
         VFS::getInstance().initialize(std::move(virtualFiles));
     }
 
-    if (loadUsingVFS) {
-        game_info.data = nullptr;
-        game_info.size = 0;
-    } else {
-        struct Utils::ReadResult file = Utils::readFileAsBytes(firstFileFD);
-        gameData.reset(file.data);  // LOCAL MODIFICATION (KaizoCore): freed in destroy(), see the header
-        game_info.data = file.data;
-        game_info.size = file.size;
-    }
-
-    bool result = core->retro_load_game(&game_info);
-    if (!result) {
+    // LOCAL MODIFICATION (KaizoCore): mapped as in loadGameFromPath; fromFd closes the descriptor.
+    GameContent bytes = loadUsingVFS ? GameContent() : GameContent::fromFd(firstFileFD);
+    if (!handOver(firstFilePath, std::move(bytes))) {
         LOGE("Cannot load game. Leaving.");
         throw std::runtime_error("Cannot load game");
     }
     coreHasGame = true;   // KaizoCore: destroy() unloads only a game the core took (see there)
 
     afterGameLoad();
+    gameLoaded = true;   // KaizoCore (rc32 audit P3 #96): as the other two loaders; every memory and state path checks it
 }
 
 void LibretroDroid::destroy() {
@@ -556,8 +538,10 @@ void LibretroDroid::destroy() {
 
     if (hadGame) core->retro_unload_game();
     core->retro_deinit();
-    // LOCAL MODIFICATION (KaizoCore): the core is done with the ROM it was given.
-    gameData.reset();
+    // LOCAL MODIFICATION (KaizoCore): the core is done with what retro_load_game was given (see the header).
+    content.release();
+    contentInfo = {};
+    std::string().swap(contentPath);
 
     video = nullptr;
     core = nullptr;
@@ -570,7 +554,7 @@ void LibretroDroid::destroy() {
 }
 
 void LibretroDroid::resume() {
-    LOGI("IM1 resume(): constructing Input");
+    LOGD("resume(): constructing Input");
 
     input = std::make_unique<Input>();
 
@@ -606,7 +590,15 @@ void LibretroDroid::stepBot(unsigned frames) {
 }
 
 void LibretroDroid::step() {
-    std::lock_guard<std::mutex> lock(coreLock);
+    // KaizoCore (rc32 audit P2 #124, P3 #97): the frame runs under coreLock and the pacing sleep after it is let go.
+    // On a 90 or 120 Hz screen the sleep held the lock for most of each frame, so every memory read, save state and
+    // in-game save from another thread waited out the frame and its sleep. fpsSync is not touched once the lock is
+    // let go: destroy() resets it under the lock.
+    std::unique_lock<std::mutex> lock(coreLock);
+
+    // KaizoCore (rc32 audit P3 #92): a sound device that went away is reopened here, between frames, where nothing
+    // else can be writing to the stream it replaces.
+    if (audio) audio->serviceRebuild();
 
     LOGD("Stepping into retro_run()");
 
@@ -628,18 +620,17 @@ void LibretroDroid::step() {
         runCore = slowTick == 0;
     }
     if (runCore) {
-        for (size_t i = 0; i < frames * frameSpeed; i++)
+        // KaizoCore (rc32 audit P2 #125): achievements are evaluated after every emulated frame, fast forward and
+        // catch-up frames included, as rc_client_do_frame expects and stepBot already did. Once a step, a hit count
+        // counted steps and a one-frame condition could be missed.
+        for (size_t i = 0; i < frames * frameSpeed; i++) {
             core->retro_run();
-        // KaizoCore patch: achievements read memory once per emulated frame.
-        if (gameLoaded) Cheevos::getInstance().doFrame();
+            if (gameLoaded) Cheevos::getInstance().doFrame();
+        }
     }
 
     if (video && !video->rendersInVideoCallback()) {
         video->renderFrame();
-    }
-
-    if (fpsSync) {
-        fpsSync->wait();
     }
 
     if (rumble && rumbleEnabled) {
@@ -663,6 +654,11 @@ void LibretroDroid::step() {
 
         video->updateRotation(Environment::getInstance().getScreenRotation());
     }
+
+    TimePoint wakeAt;
+    const bool sleep = fpsSync && fpsSync->sleepTarget(wakeAt);
+    lock.unlock();
+    if (sleep) std::this_thread::sleep_until(wakeAt);
 }
 
 float LibretroDroid::getAspectRatio() {
@@ -777,8 +773,14 @@ uintptr_t LibretroDroid::handleGetCurrentFrameBuffer() {
 
 void LibretroDroid::reset() {
     std::lock_guard<std::mutex> lock(coreLock);
+    // KaizoCore (rc32 audit P2 #53): as serializeState. File > Restart queues this on a view whose core library never
+    // opened (core is null) or whose game never loaded, and the GL thread runs on after the abort.
+    if (core == nullptr || !gameLoaded) return;
 
     core->retro_reset();
+    // KaizoCore (rc34): melonDS's reset loads the ROM again through the retro_game_info it kept, which maps the pages
+    // back in; they leave again, as after the load (gamecontent.h).
+    content.dropResidentPages();
 }
 
 std::pair<int8_t*, size_t> LibretroDroid::serializeState() {
@@ -789,9 +791,16 @@ std::pair<int8_t*, size_t> LibretroDroid::serializeState() {
     if (core == nullptr || !gameLoaded) return { new int8_t[0], 0 };
 
     size_t size = core->retro_serialize_size();
+    // KaizoCore (rc32 audit P3 #99): a core that cannot save a state now answers with nothing, never with
+    // uninitialised bytes the app would keep as a state.
+    if (size == 0) return { new int8_t[0], 0 };
     auto data = new int8_t[size];
 
-    core->retro_serialize(data, size);
+    if (!core->retro_serialize(data, size)) {
+        delete[] data;
+        LOGE("The core refused to save a state");
+        return { new int8_t[0], 0 };
+    }
 
     return std::pair(data, size);
 }
@@ -818,9 +827,26 @@ void LibretroDroid::clearRequiresVideoRefresh() {
     dirtyVideo = false;
 }
 
+void LibretroDroid::setScreenRefreshRate(float refreshRate) {
+    // KaizoCore (rc32 audit P2 #123): the rate was read once, when the view was made, and the view is kept across
+    // screens and display modes. A game paced to a 60 Hz panel then ran at 1.5x or 2x on a 90 or 120 Hz one.
+    std::lock_guard<std::mutex> lock(coreLock);
+    if (refreshRate <= 0 || std::abs(refreshRate - screenRefreshRate) < 0.5f) return;
+    screenRefreshRate = refreshRate;
+    if (core == nullptr || !gameLoaded || !fpsSync || contentFps <= 0) return;
+    LOGI("Screen refresh rate is now %f: pacing the game again", refreshRate);
+    fpsSync = std::make_unique<FPSSync>(contentFps, screenRefreshRate);
+    const double stretch = fpsSync->getTimeStretchFactor();
+    if (audio) audio->setInputSampleRate((int32_t) std::lround(contentSampleRate * stretch));
+    streamBaseRate = contentSampleRate / (stretch > 0 ? stretch : 1.0);
+    updateStreamAudioRate();
+}
+
 void LibretroDroid::afterGameLoad() {
     struct retro_system_av_info system_av_info {};
     core->retro_get_system_av_info(&system_av_info);
+    contentFps = system_av_info.timing.fps;
+    contentSampleRate = system_av_info.timing.sample_rate;
 
     fpsSync = std::make_unique<FPSSync>(system_av_info.timing.fps, screenRefreshRate);
 

@@ -29,8 +29,7 @@ class RomDataTest {
         }
     }
 
-    private fun rom(name: String): File? =
-        System.getenv("IRONMON_ROMS")?.let { File(it, name) }?.takeIf { it.isFile }
+    private fun rom(name: String): File? = Dumps.rom(name)
 
     @Test
     fun `Emerald's trainer table decodes the real gym leaders`() {

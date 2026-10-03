@@ -2,6 +2,66 @@
 
 Newest first. Each build's GitHub release has the same list, with the APK and its checksum.
 
+## 1.0.0-rc34
+
+**New**
+
+- **MaxDex Kaizo IronMON:** Trip's MaxDex on FireRed 1.1, with every Pokémon through Gen 9 and the Legends Z-A Megas, and moves and abilities through Gen 9. The tracker reads all of it, and Play as your Pokémon works on it. It is built in: tap Patch on your FireRed 1.1 in the Library and pick MaxDex.
+- **MaxDex allows a 600 BST starter,** by the Nat. Dex 1.1.3 rules it is built on.
+- **IronMON HGSS for HeartGold:** PyroMike's patch, under Patched versions. It skips the intro, shortens the talking until Goldenrod, and speeds up walking and battles.
+- **Rule breaks get an X on the tracker:** a Pokémon over the BST limit for your mode, and the moves your game and mode ban. Tap one to see the rule.
+- **Favorites show as Pokémon icons** on the card before you get your first Pokémon, as on the PC trackers.
+- **Landscape:**
+  - No bar between the game and the docked tracker: drag the tracker's left edge to resize it.
+  - One menu holds the tracker's extras.
+  - The floating tracker moves, resizes and locks in place.
+  - DS games keep the bottom screen under the docked tracker.
+- **Clearer DS sound:** 16-bit with smoothing by default. The DS's own sound is one tap away in DS settings.
+- **DS forms show their own picture** on Platinum, HeartGold, SoulSilver, Black 2 and White 2: Rotom's appliances, Giratina Origin, Deoxys and the rest.
+- **Megas and forms with no walking sprite** walk as their base Pokémon until one is drawn.
+- **Play as a shiny:** a shiny lead walks as its shiny, Always use has a Shiny switch, and a shiny Pokémon gets a shiny icon on every tracker.
+- **Unown walks as its own letter,** and Deoxys in its game's form.
+- **The tracker's pictures come from your own game** on FireRed, LeafGreen, Emerald, Ruby and Sapphire: a shiny Pokémon shows shiny, Unown its letter and Deoxys its game's form.
+- **The randomizer log has the PC tracker's pictures:** trainer portraits from your own game, the gym badge on a leader's page, moving Pokémon and a picture on each tab. Forms read by their names (Mewtwo-X, Rayquaza-M).
+- **Double battles:** the swap steps through every Pokémon on the field, and the banner says which one you see. Triples on Black 2 and White 2 too. The notebook records every opponent's moves and encounters, and the stream overlay shows the same Pokémon as the tracker.
+- **Streaming keeps going while you use another app.** The game pauses meanwhile, and swiping KaizoCore away ends the stream.
+- **Your favorites in OBS:** one picture each, which changes as soon as you edit your favorites.
+- **The attempt number on the tracker**, Setup as a gear, and an arrow when there is more below.
+- **A Licenses page** under About, with every component's license.
+
+**Fixed**
+
+- **Saves:**
+  - Game Boy and GBA in-game saves reach the phone within seconds, so a crash or a dead battery no longer loses them.
+  - Changing the phone's clock no longer stops auto-saves or Time Machine.
+- **Backups:** a restore checks the file before it changes anything, a backup no longer carries the previous run's game, saving an attempt checks for room first, and a full phone shows a message instead of closing the app.
+- **Runs and stats:** Game Boy wins are recorded, DS past runs and timers belong to the run, a retry counts once, and 60% levels on Standard or Ultimate raise levels by 60%, not 6%.
+- **Tracker:** the Gen 1 Ice weakness, Gold, Silver and Crystal genders and shinies, Ditto's Transform and the moves it copies, Trace, Clear Body and Damp, heals that match the PC tracker, and Nat. Dex Fairy moves.
+- **Nuzlocke:** a Battle Tent loss no longer kills your team or ends the run, gifts and eggs count the right area (Gen 2 eggs too, Crystal's Odd Egg included), and Genlocke offers the next game.
+- **Your choices stay** if Android closes KaizoCore in the background: the settings editor, Build your own and the Nuzlocke screen.
+- **DS:** importing the DSi NAND and exporting a Black 2 or White 2 run no longer run out of memory, the stylus no longer sticks, and keyboards and controllers can press X and Y.
+- **Black 2 and White 2 use about 750 MB, down from about 1.3 GB:** the game was kept in memory twice. Restart on a DS game no longer closes KaizoCore.
+- **Leaving and reopening a DS game no longer uses more memory each time.** Each load used to leave about 0.4 MB and an idle thread behind until KaizoCore was closed.
+- **RetroAchievements:** playing offline no longer signs you out, and fast forward no longer skips achievement checks.
+- **Updates:** the free space check counts what an install needs, and Android's install prompt is no longer lost.
+- **Controllers and accessibility:** the d-pad moves through menus, every tracker window's text follows your font size with larger buttons, and TalkBack reads the controls.
+- **Smoother play:** heavy work moved off the main thread, and 90 and 120 Hz phones no longer stall.
+- **STREAM with no Wi-Fi** says to join the PC's Wi-Fi or turn on the hotspot, instead of showing a link that cannot work.
+- **Restore** says what it replaces: the runs' games and saved attempts, never your library games.
+- **American spelling** on every screen, in the rules pages and in the help.
+- **Play as your Pokémon** comes back by itself after the app restarts, and every sprite walks and turns with you instead of dozing off while you walk.
+
+**Under the hood**
+
+- The emulator library is a sixth of its old size, the app is ready for phones with 16 KB memory pages, and a phone with no camera can install it.
+- The DS core is now built here, from a pinned commit of its source, with melonDS's own later fix for a few 3D edge pixels that were drawn from leftover memory.
+
+**Known issues**
+
+- 46 Pokémon have no walking sprite yet (44 nobody has drawn, plus Mega Falinks and White Squawkabilly); with one in the lead you stay the trainer. 8 have no shiny one (Koraidon among them) and walk in plain colors when shiny.
+- An opponent's Deoxys shows its game's form on the tracker; the battle screen draws it in its Normal form.
+- Gold, Silver and Crystal Survival: the 7 Kanto heals are added by hand.
+
 ## 1.0.0-rc33
 
 **New**
@@ -66,7 +126,7 @@ Newest first. Each build's GitHub release has the same list, with the APK and it
 - **Play as your Pokémon** (Game Boy Advance games): your trainer becomes your lead Pokémon as you walk around. 980 of the 1,025 Pokémon have a sprite: all 386 from Gen 1 to 3 and 594 of the 639 from Gen 4 to 9, plus 164 forms (42 Megas, 18 Alolan, 18 Galarian, 16 Hisuian, 4 Paldean, and more such as Primal, Origin and Therian forms). It walks the way you face, stands idle, dozes off after about a minute without input, and faints at 0 HP. Your lead decides, or **Always use** picks any of them, with names that start with your letters listed first. It is drawn into the game's own picture, so the stream shows it too. After UTDZac's Sprite Is Me.
 - **Your own sprite**: play as your own picture, fitted to 32 x 32, or your own sprite sheet set (idle, walk, sleep and faint sheets, with your own frame size and frame lengths). Backups keep it.
 - **Animated Pokémon on every tracker**: Gen 4 to 9 now animate beside Gen 1 to 3, on Game Boy Advance games, Nat. Dex builds and DS games: the same 980 Pokémon and 164 forms. They stand idle, walk while you walk (a switch), fall asleep after 55 seconds without input, and faint at 0 HP. A Pokémon nobody has drawn yet keeps its still picture. Sprites by the Walking Pals collab's artists.
-- **Tracker themes**: **EDIT COLOR THEME** has the PC tracker's 15 presets on Gen 1 to 3 and the DS tracker's 16 on DS games. Save your own presets under your own names, edit any colour by its code, and export or import a theme. Auto Pokémon Themes keeps the preset you picked when it hands back.
+- **Tracker themes**: **EDIT COLOR THEME** has the PC tracker's 15 presets on Gen 1 to 3 and the DS tracker's 16 on DS games. Save your own presets under your own names, edit any color by its code, and export or import a theme. Auto Pokémon Themes keeps the preset you picked when it hands back.
 - **Image behind the tracker**: your own photo, with Dim, see-through boxes and Fill or Fit.
 - **Game over lines**: up to 100 lines of your own, 120 characters each, for the game-over screen, with or without the built-in ones. After UTDZac's Death Quotes.
 - **Your stats** (Home): runs started and won (a win after state loads, retries or restarts is counted apart), time played in runs, the mode that ended the most runs, your longest winning streak of clean wins, your best run in each game and mode, and your Nuzlockes.

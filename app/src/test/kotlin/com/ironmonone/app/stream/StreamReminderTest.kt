@@ -36,7 +36,7 @@ class StreamReminderTest {
 
     @Test
     fun `the words are plain and the guide says it`() {
-        for (s in listOf(StreamReminder.TITLE, StreamReminder.TEXT, StreamReminder.CHANNEL_NAME))
+        for (s in listOf(StreamReminder.TITLE, StreamReminder.TEXT, StreamReminder.TEXT_ON, StreamReminder.CHANNEL_NAME))
             assertFalse('\u2014' in s || '\u2013' in s || Regex("\\bAI\\b").containsMatchIn(s), s)
         assertTrue("While the stream is on, a notification takes you straight back." in src("src/main/kotlin/com/ironmonone/app/stream/StreamPages.kt"))
     }

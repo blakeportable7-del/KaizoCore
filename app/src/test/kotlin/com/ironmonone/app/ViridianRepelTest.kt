@@ -78,10 +78,10 @@ class ViridianRepelTest {
     /** Real dumps, and the Kaizo builds made from them with the bundled patches. Needs IRONMON_ROMS, as PrepOptionsTest. */
     @Test
     fun `real dumps and their pseudo-fluctuating builds take the Repel at the references' offsets`() {
-        val roms = System.getenv("IRONMON_ROMS")?.let(::File)?.takeIf { it.isDirectory } ?: return
+        val roms = Dumps.romsDir() ?: return
         for ((kind, slot, item) in listOf(Triple(RomKind.RED_U, 0x2445, ViridianRepel.ANTIDOTE),
                 Triple(RomKind.BLUE_U, 0x2445, ViridianRepel.ANTIDOTE), Triple(RomKind.YELLOW_U, 0x233E, ViridianRepel.POTION))) {
-            val clean = File(roms, kind.id + "." + kind.fileExtension).takeIf { it.isFile } ?: continue
+            val clean = Dumps.file(roms, kind.id + "." + kind.fileExtension) ?: continue
             val pf = RomKind.allPatched.first { it.baseId == kind.id && it.patchTag == "pseudofluct" }
             val built = File(dir, pf.id + ".gbc")
             com.ironmonone.patch.Patcher.applyFiles(File("src/main/assets/patches/pseudofluct-${kind.id}.bps"), clean, built)

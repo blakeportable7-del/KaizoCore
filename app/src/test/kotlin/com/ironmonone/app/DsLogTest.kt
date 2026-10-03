@@ -48,9 +48,9 @@ class DsLogTest {
         assertEquals(120, DsLog.estimateStat("ATK", 100, 50, 30))
         // calculateLevelRangeOfMove: kept until the fourth move after it, never ending before it starts.
         val moves = listOf(1 to "A", 5 to "B", 9 to "C", 13 to "D", 17 to "E")
-        assertEquals("Lv. 1 - 16", DsLog.levelRange(0, moves))
-        assertEquals("Lv. 5 - 100", DsLog.levelRange(1, moves))
-        assertEquals("Lv. 1 - 1", DsLog.levelRange(0, List(5) { 1 to "M$it" }))
+        assertEquals("Lv. 1 to 16", DsLog.levelRange(0, moves))
+        assertEquals("Lv. 5 to 100", DsLog.levelRange(1, moves))
+        assertEquals("Lv. 1 to 1", DsLog.levelRange(0, List(5) { 1 to "M$it" }))
         assertEquals("Dark Grass", DsLog.formatPivotType("Route 19", "7", "Doubles Grass"))
         assertEquals("Grass", DsLog.formatPivotType("Route 19", "7", "Grass/Cave"))
         assertEquals("Cave", DsLog.formatPivotType("Dark Cave", "365", "Grass/Cave"))

@@ -13,22 +13,27 @@ data class RnqsInfo(
     val gameTag: String?,   // "RSE", "FRLG", ...
     val ruleset: String?,   // normalised: "kaizo", "superkaizo", ...
     val natDex: Boolean,
+    /**
+     * A MaxDex file ("FRLG MaxDex Kaizo.rnqs", Tripc423/Maxdex): for the MaxDex build only, which is a Nat. Dex build
+     * too, so [natDex] is true as well. Its settings are version 902, which only the MaxDex randomizer reads.
+     */
+    val maxDex: Boolean = false,
 ) {
     val complete: Boolean get() = gameTag != null && ruleset != null
 
     /** The Gen 1 second pass ("RBY PART 2.rnqs"): applied by the app after the chosen preset, never chosen itself. */
-    val secondPass: Boolean get() = fileName.removeSuffix(".rnqs").removeSuffix(".RNQS").lowercase().replace(Regex("[^a-z0-9]"), "").contains("part2")
+    val secondPass: Boolean get() = front(fileName).removeSuffix(".rnqs").removeSuffix(".RNQS").lowercase().replace(Regex("[^a-z0-9]"), "").contains("part2")
 
     /** The 60% levels pre-pass ("RSE PRE-PASS.rnqs"): applied by the app before the chosen preset (ExtraPasses), never chosen itself. */
-    val prePass: Boolean get() = fileName.removeSuffix(".rnqs").removeSuffix(".RNQS").lowercase().replace(Regex("[^a-z0-9]"), "").contains("prepass")
+    val prePass: Boolean get() = front(fileName).removeSuffix(".rnqs").removeSuffix(".RNQS").lowercase().replace(Regex("[^a-z0-9]"), "").contains("prepass")
 
     /** Either of the two: a file the app runs around a preset, so no Mode row or settings list offers it. */
     val appliedByApp: Boolean get() = secondPass || prePass
 
-    /** "RSE Nat. Dex Kaizo" style label for the picker. */
+    /** "RSE Nat. Dex Kaizo" style label for the picker; "FRLG MaxDex Kaizo" for MaxDex's. */
     val label: String get() = buildString {
         append(gameTag ?: "?")
-        if (natDex) append(" Nat. Dex")
+        if (maxDex) append(" MaxDex") else if (natDex) append(" Nat. Dex")
         // A game's file with no ruleset word in it (a build made in Build your own) is just the game, not "FRLG ?" (2026-09-29).
         if (ruleset != null || gameTag == null) {
             append(" ")
@@ -58,6 +63,9 @@ data class RnqsInfo(
             "chaoskaizo" to "Chaos Kaizo", "evokaizo" to "Evo Kaizo",
             "survivalrevival" to "Survival Revival", "ironmonjourney" to "IronMON Journey",
         )
+
+        /** The part of a preset file name the app wrote: everything before the first bracket. */
+        internal fun front(fileName: String): String = fileName.substringBefore('(')
 
         /** "Super Kaizo" for "superkaizo"; the raw key if it has no label yet. */
         fun rulesetLabel(key: String?): String = RULESET_LABELS[key] ?: key ?: "?"
@@ -111,11 +119,12 @@ data class RnqsInfo(
          * Nat. Dex ROM and listed as "? ?" (2026-09-27, audit). Plain key=value
          * lines; a null field is left out.
          */
-        fun writeMeta(preset: java.io.File, gameTag: String?, natDex: Boolean, ruleset: String?) {
+        fun writeMeta(preset: java.io.File, gameTag: String?, natDex: Boolean, ruleset: String?, maxDex: Boolean = false) {
             runCatching {
                 metaFile(preset).writeText(buildString {
                     gameTag?.let { append("family=").append(it).append('\n') }
                     append("natdex=").append(natDex).append('\n')
+                    if (maxDex) append("maxdex=true").append('\n')
                     ruleset?.let { append("ruleset=").append(it).append('\n') }
                 })
             }
@@ -142,40 +151,78 @@ data class RnqsInfo(
             v
         }
 
+        private val maxDexCache = HashMap<String, Pair<Long, Boolean>>()
+
+        /**
+         * True when [f] is read by the MaxDex randomizer and by neither of the other two: a 1.1.x settings file, which
+         * only MaxDex runs on. Asked only for a file with no game in its name and no sidecar, as [readsAsNatDex] is.
+         */
+        private fun readsAsMaxDexOnly(f: java.io.File): Boolean = synchronized(maxDexCache) {
+            val stamp = f.lastModified()
+            maxDexCache[f.absolutePath]?.let { (t, v) -> if (t == stamp) return v }
+            val v = readsAsNatDex(f) == null && com.ironmonone.app.engine.MaxDexEngine.readsSettings(f)
+            maxDexCache[f.absolutePath] = stamp to v
+            v
+        }
+
         /**
          * What a preset FILE is for: its name first, then the sidecar written at
-         * save time ([writeMeta]) fills what the name lacks, and a file with no
-         * game tag and no sidecar is judged by which engine can read it. The
-         * name alone made a Nat. Dex preset renamed "My run" look vanilla.
+         * save time ([writeMeta]) fills what the name lacks, and a file whose
+         * name and sidecar do not say Nat. Dex is judged by which engine can
+         * read it. The name alone made a Nat. Dex preset renamed "My run" look
+         * vanilla, and an imported "FRLG Kaizo mine.rnqs" made by the Nat. Dex
+         * randomizer was offered for standard FireRed, where it fails, and
+         * never for Nat. Dex FireRed (rc32 audit P2 #72): the engine was asked
+         * only when the name had no game tag.
          */
         fun of(file: java.io.File): RnqsInfo {
-            val byName = parse(file.name)
+            val front = parse(file.name)
             val meta = runCatching {
                 metaFile(file).takeIf { it.isFile }?.readLines()
                     ?.mapNotNull { l -> l.split('=', limit = 2).takeIf { it.size == 2 }?.let { it[0].trim() to it[1].trim() } }
                     ?.toMap()
             }.getOrNull()
-            val natDex = when {
-                byName.natDex -> true
-                meta?.get("natdex") != null -> meta["natdex"] == "true"
-                byName.gameTag == null -> readsAsNatDex(file) ?: false
+            val maxDex = when {
+                front.maxDex -> true
+                meta?.get("maxdex") != null -> meta["maxdex"] == "true"
+                meta == null && front.gameTag == null -> readsAsMaxDexOnly(file)
                 else -> false
             }
+            val natDex = when {
+                maxDex || front.natDex -> true
+                meta?.get("natdex") != null -> meta["natdex"] == "true"
+                else -> readsAsNatDex(file) ?: false
+            }
+            // A file from elsewhere with no sidecar may carry its game and mode only in brackets ("My run (FRLG Kaizo)"):
+            // the whole name is read then, and only then.
+            val byName = if (meta == null && front.gameTag == null && front.ruleset == null) parseWhole(file.name) else front
             return byName.copy(
                 gameTag = byName.gameTag ?: meta?.get("family")?.takeIf { it.isNotBlank() },
                 ruleset = byName.ruleset ?: meta?.get("ruleset")?.takeIf { it.isNotBlank() },
                 natDex = natDex,
+                maxDex = maxDex,
             )
         }
 
-        fun parse(fileName: String): RnqsInfo {
-            val n = fileName.removeSuffix(".rnqs").removeSuffix(".RNQS")
+        /**
+         * The game, mode and Nat. Dex flag from the app's own part of a file name, before the first bracket. Build your
+         * own names a build "<game> [NatDex] <mode> (<what the player typed>).rnqs" (GameBuild.fileName, and the editor's
+         * copies the same way), and the typed words used to decide the build: "(standard starters)" made a Kaizo build
+         * Standard, "(horse)" made it a Ruby/Sapphire/Emerald one and "(part 2)" hid it (rc33 audit P1 #48). No bundled
+         * preset name has a bracket.
+         */
+        fun parse(fileName: String): RnqsInfo = parseWhole(fileName, front(fileName))
+
+        private fun parseWhole(fileName: String, text: String = fileName): RnqsInfo {
+            val n = text.removeSuffix(".rnqs").removeSuffix(".RNQS")
                 .lowercase().replace(Regex("[^a-z0-9]"), "")
             return RnqsInfo(
                 fileName = fileName,
                 gameTag = GAME_TAGS.firstOrNull { n.contains(it.first) }?.second,
                 ruleset = RULESETS.firstOrNull { n.contains(it) },
-                natDex = n.contains("natdex"),
+                // A MaxDex file is for a Nat. Dex build too ("FRLG MaxDex Kaizo.rnqs").
+                natDex = n.contains("natdex") || n.contains("maxdex"),
+                maxDex = n.contains("maxdex"),
             )
         }
     }

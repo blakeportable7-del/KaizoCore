@@ -12,6 +12,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
@@ -47,6 +50,9 @@ class PastRun(
     val location: String,
     val badges: Int,
     val progress: Int,
+    /** Which run it was, so a run is logged once (rc32 audit P2 #41); 0 and "" on a line logged before that. */
+    val attempt: Int = 0,
+    val seed: String = "",
 ) {
     class RunMon(val species: Int, val name: String, val level: Int, val bst: Int, val type1: String, val type2: String, val ability: String, val moves: List<String>) {
         fun encode() = listOf(species, name, level, bst, type1, type2, ability, moves.joinToString(",")).joinToString("|")
@@ -67,16 +73,21 @@ class PastRun(
             m.abilityName, m.moves.map { it.name },
         )
 
-        /** Program.onRunEnded: the run that just ended, from the DS tracker's last state. */
-        fun fromDs(state: NdsTrackerState, won: Boolean, seconds: Int): PastRun? {
+        /**
+         * Program.onRunEnded: the run that just ended, from the DS tracker's last state. [progressSoFar] is the run's own
+         * (StatMarks.dsProgress). "Has a party" used to stand in for past the lab, and a run with no party is not logged
+         * at all, so every lost run was filed as past the lab (rc33 audit P1 #25). A badge is past the lab for certain,
+         * which covers a run that was under way before its progress was kept.
+         */
+        fun fromDs(state: NdsTrackerState, won: Boolean, seconds: Int, progressSoFar: Int = 0, attempt: Int = 0, seed: String = ""): PastRun? {
             // Program.onRunEnded logs playerPokemon and enemyPokemon: in battle your Pokemon on
             // the field and the opponent; a win ends the run as its battle ends, when they are
             // still the last battle's.
             val fainted = state.playerActive ?: state.lastBattlePlayer.takeIf { won }
                 ?: state.party.firstOrNull { it.mon.curHp <= 0 } ?: state.party.firstOrNull() ?: return null
             val enemy = state.enemy ?: state.lastBattleEnemy.takeIf { won } ?: fainted
-            val progress = if (won) WON else maxOf(state.progress, if (state.located) PAST_LAB else NOWHERE)
-            return PastRun(System.currentTimeMillis(), seconds, runMon(fainted), runMon(enemy), state.areaName, Integer.bitCount(state.badges), progress)
+            val progress = if (won) WON else maxOf(state.progress, progressSoFar, if (Integer.bitCount(state.badges) > 0) PAST_LAB else NOWHERE)
+            return PastRun(System.currentTimeMillis(), seconds, runMon(fainted), runMon(enemy), state.areaName, Integer.bitCount(state.badges), progress, attempt, seed)
         }
     }
 }
@@ -114,36 +125,57 @@ class PastRunStore(
         runs += read(file)
     }
 
+    /** Read through the writer (DiskWriter.read): a run logged a moment ago and not yet on disk is there. */
     private fun read(f: File): List<PastRun> {
         val out = ArrayList<PastRun>()
-        if (!f.isFile) return out
         runCatching {
-            f.forEachLine { line ->
-                val p = line.split('\t'); if (p.size < 7) return@forEachLine
-                val fm = PastRun.RunMon.decode(p[2]) ?: return@forEachLine
-                val e = PastRun.RunMon.decode(p[3]) ?: return@forEachLine
-                out += PastRun(p[0].toLongOrNull() ?: return@forEachLine, p[1].toIntOrNull() ?: 0, fm, e, p[4], p[5].toIntOrNull() ?: 0, p[6].toIntOrNull() ?: 0)
+            DiskWriter.read(f)?.lineSequence()?.forEach { line ->
+                val p = line.split('\t'); if (p.size < 7) return@forEach
+                val fm = PastRun.RunMon.decode(p[2]) ?: return@forEach
+                val e = PastRun.RunMon.decode(p[3]) ?: return@forEach
+                out += PastRun(p[0].toLongOrNull() ?: return@forEach, p[1].toIntOrNull() ?: 0, fm, e, p[4], p[5].toIntOrNull() ?: 0, p[6].toIntOrNull() ?: 0,
+                    p.getOrNull(7)?.toIntOrNull() ?: 0, p.getOrNull(8).orEmpty())
             }
         }
         return out
     }
 
+    /**
+     * Written whole or not at all (SafeWrite), on the writer's thread (DiskWriter), which says so when it fails. It was
+     * rewritten in place inside a runCatching: a full phone or a kill as a DS run ended left the file empty, and every
+     * earlier DS past run was gone at the next launch (rc32 audit P2 #40, P3 #42).
+     */
     private fun write(f: File, list: List<PastRun>) {
-        f.parentFile?.mkdirs()
-        f.writeText(list.joinToString("") { r ->
-            listOf(r.date, r.seconds, r.fainted.encode(), r.enemy.encode(), r.location, r.badges, r.progress).joinToString("\t") + "\n"
+        DiskWriter.write(f, list.joinToString("") { r ->
+            listOf(r.date, r.seconds, r.fainted.encode(), r.enemy.encode(), r.location, r.badges, r.progress, r.attempt, r.seed).joinToString("\t") + "\n"
         })
     }
 
     private fun save(legacyChanged: Boolean = false) {
-        runCatching {
-            write(file, runs.filter { it !in fromLegacy })
-            if (legacyChanged) legacy?.let { write(it, runs.filter { r -> r in fromLegacy }) }
-        }
+        write(file, runs.filter { it !in fromLegacy })
+        if (legacyChanged) legacy?.let { write(it, runs.filter { r -> r in fromLegacy }) }
         version++
     }
 
     fun log(run: PastRun) { runs += run; save() }
+
+    /**
+     * Program.onRunEnded, once per run (rc32 audit P2 #41). The first end of an attempt and seed stays its line unless
+     * Retry the battle came after it (a RETRY in the run's [events]), as RunHistory files a run's end (fileRunEnd,
+     * retriedAfter); a retried run's next end replaces its line. Retry, or Continue playing and coming back to Play,
+     * logged the same run again, a win included for a run already lost, and Statistics counted every copy. A line
+     * logged before runs were named matches nothing. Returns whether a line was written.
+     */
+    fun logEnd(run: PastRun, events: List<RunEvents.Entry>?): Boolean {
+        val same = runs.lastOrNull { run.attempt > 0 && run.seed.isNotEmpty() && it.attempt == run.attempt && it.seed == run.seed }
+        if (same != null) {
+            if (events?.any { it.kind == RunEvents.Kind.RETRY && it.at > same.date } != true) return false
+            runs.remove(same)
+        }
+        runs += run
+        save()
+        return true
+    }
     fun all(): List<PastRun> = runs.toList()
     fun totalRuns() = runs.size
     fun totalRunsPastLab() = runs.count { it.progress > PastRun.NOWHERE }
@@ -207,7 +239,8 @@ class PastRunStore(
  * Pokemon that fainted and the one that beat it, sort by Newest, Oldest or
  * A-Z, the minimum-badges filter, and Remove no-badge runs behind a
  * confirmation. The run's date and place sit where the notes go; a won run
- * says "You won!".
+ * says "You won!". This, Statistics and Evo Data draw their words in
+ * DialogText, which follows the phone's font size (rc32 audit P2 #19).
  */
 @Composable
 fun PastRunsDialog(store: PastRunStore, spriteOf: @Composable (Int) -> ImageBitmap?, onClose: () -> Unit) {
@@ -222,7 +255,7 @@ fun PastRunsDialog(store: PastRunStore, spriteOf: @Composable (Int) -> ImageBitm
     if (jump) Dialog(onDismissRequest = { jump = false }) {
         Column(Modifier.width(300.dp).background(Pc.Page).border(1.dp, Pc.Border).padding(8.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                PixText("JUMP TO A RUN", 10, Pc.Text, Modifier.weight(1f))
+                DialogText("JUMP TO A RUN", 16, Pc.Text, Modifier.weight(1f), heading = true)
                 PcTap("X", 9, Pc.Dim, "Close") { jump = false }
             }
             androidx.compose.foundation.lazy.LazyColumn(Modifier.heightIn(max = 420.dp)) {
@@ -231,10 +264,10 @@ fun PastRunsDialog(store: PastRunStore, spriteOf: @Composable (Int) -> ImageBitm
                     Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).border(1.dp, if (i == index) Pc.Gold else Pc.Border)
                         .clickable { index = i; showEnemy = false; jump = false }.padding(horizontal = 6.dp),
                         verticalAlignment = Alignment.CenterVertically) {
-                        PixText("${i + 1}", 8, Pc.Gold, Modifier.width(30.dp))
+                        DialogText("${i + 1}", 13, Pc.Gold, Modifier.widthIn(min = 30.dp))
                         Column(Modifier.weight(1f)) {
-                            PixText(r.fainted.name, 8, Pc.Text)
-                            PixText(r.dateText, 7, Pc.Dim)
+                            DialogText(r.fainted.name, 13, Pc.Text)
+                            DialogText(r.dateText, 12, Pc.Dim)
                         }
                     }
                 }
@@ -244,7 +277,7 @@ fun PastRunsDialog(store: PastRunStore, spriteOf: @Composable (Int) -> ImageBitm
     Dialog(onDismissRequest = onClose) {
         Column(Modifier.width(300.dp).background(Pc.Page).border(1.dp, Pc.Border).padding(8.dp).verticalScroll(rememberScrollState())) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                PixText("PAST RUNS", 10, Pc.Text, Modifier.weight(1f))
+                DialogText("PAST RUNS", 16, Pc.Text, Modifier.weight(1f), heading = true)
                 PcTap("X", 9, Pc.Dim, "Close") { onClose() }
             }
             Spacer(Modifier.height(6.dp))
@@ -254,41 +287,46 @@ fun PastRunsDialog(store: PastRunStore, spriteOf: @Composable (Int) -> ImageBitm
                 // meant stepping one run at a time through a long history (2026-09-27, audit).
                 Box(Modifier.weight(1f).heightIn(min = 48.dp).clickable(enabled = runs.size > 1, onClickLabel = "Jump to a run") { jump = true },
                     contentAlignment = Alignment.Center) {
-                    PixText(if (runs.isEmpty()) "0/0" else "${index + 1}/${runs.size}", 9, Pc.Gold, align = TextAlign.Center)
+                    DialogText(if (runs.isEmpty()) "0/0" else "${index + 1}/${runs.size}", 14, Pc.Gold, align = TextAlign.Center)
                 }
                 PcTap(">", 12, Pc.Text, "Next") { if (runs.isNotEmpty()) { index = (index + 1) % runs.size; showEnemy = false } }
             }
             Spacer(Modifier.height(6.dp))
             val run = runs.getOrNull(index)
             if (run == null) {
-                PixText("No data was found.", 8, Pc.Dim)
+                DialogText("No data was found.", 13, Pc.Dim)
             } else {
                 val m = if (showEnemy) run.enemy else run.fainted
                 Row(Modifier.fillMaxWidth().border(1.dp, Pc.Border).padding(6.dp), verticalAlignment = Alignment.CenterVertically) {
                     PcSprite(spriteOf(m.species))
                     Column(Modifier.weight(1f).padding(start = 8.dp)) {
-                        PixText((if (showEnemy) "Lost to " else "") + m.name, 9, Pc.Text)
-                        PixText("Lv.${m.level}  BST ${m.bst}  " + listOf(m.type1, m.type2).filter { it.isNotEmpty() }.distinct().joinToString("/"), 7, Pc.Dim)
-                        PixText(m.ability, 7, Pc.Gold)
-                        PixText(m.moves.joinToString(", "), 7, Pc.Dim, wrap = true)
+                        DialogText((if (showEnemy) "Lost to " else "") + m.name, 14, Pc.Text)
+                        DialogText("Lv.${m.level}  BST ${m.bst}  " + listOf(m.type1, m.type2).filter { it.isNotEmpty() }.distinct().joinToString("/"), 12, Pc.Dim)
+                        DialogText(m.ability, 12, Pc.Gold)
+                        DialogText(m.moves.joinToString(", "), 12, Pc.Dim)
                     }
                 }
                 Spacer(Modifier.height(4.dp))
-                PixText(run.dateText, 8, Pc.Text)
-                PixText(if (run.progress == PastRun.WON) "You won!" else run.location.ifEmpty { "Badges: ${run.badges}" }, 8, if (run.progress == PastRun.WON) Pc.Positive else Pc.Text)
+                DialogText(run.dateText, 13, Pc.Text)
+                DialogText(if (run.progress == PastRun.WON) "You won!" else run.location.ifEmpty { "Badges: ${run.badges}" }, 13, if (run.progress == PastRun.WON) Pc.Positive else Pc.Text)
                 Spacer(Modifier.height(4.dp))
                 Row { com.ironmonone.app.gen3.Gen3Button("SWAP") { showEnemy = !showEnemy } }
             }
             Spacer(Modifier.height(8.dp))
-            PixText("Sort", 8, Pc.Text)
+            DialogText("Sort", 13, Pc.Text)
             listOf("NEWEST" to "Newest", "OLDEST" to "Oldest", "A_TO_Z" to "A-Z").forEach { (k, label) ->
                 GearToggle(label, sort == k, radio = true) { sort = k; index = 0 }
             }
             Spacer(Modifier.height(6.dp))
-            PixText("Minimum badges", 8, Pc.Text)
+            DialogText("Minimum badges", 13, Pc.Text)
             Row(Modifier.fillMaxWidth()) {
                 (0..8).forEach { n ->
-                    PixText("$n", 8, if (minBadges == n) Pc.Gold else Pc.Dim, Modifier.weight(1f).border(1.dp, if (minBadges == n) Pc.Gold else Pc.Border).clickable { minBadges = n; index = 0 }.padding(vertical = 4.dp), TextAlign.Center)
+                    // A choice of one, 48dp tall, and the chosen one underlined and framed heavier (rc32 audit P2 #19).
+                    val on = minBadges == n
+                    Box(Modifier.weight(1f).heightIn(min = PcMin.DIALOG_TOUCH_DP.dp).border(if (on) 2.dp else 1.dp, if (on) Pc.Gold else Pc.Border)
+                        .selectable(selected = on, role = Role.RadioButton) { minBadges = n; index = 0 }, contentAlignment = Alignment.Center) {
+                        DialogText("$n", 13, if (on) Pc.Gold else Pc.Dim, align = TextAlign.Center, underline = on)
+                    }
                 }
             }
             Spacer(Modifier.height(8.dp))
@@ -310,29 +348,29 @@ fun StatisticsDialog(store: PastRunStore, onClose: () -> Unit) {
     Dialog(onDismissRequest = onClose) {
         Column(Modifier.width(300.dp).background(Pc.Page).border(1.dp, Pc.Border).padding(8.dp).verticalScroll(rememberScrollState())) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                PixText("STATISTICS", 10, Pc.Text, Modifier.weight(1f))
+                DialogText("STATISTICS", 16, Pc.Text, Modifier.weight(1f), heading = true)
                 PcTap("X", 9, Pc.Dim, "Close") { onClose() }
             }
             Spacer(Modifier.height(4.dp))
-            PixText("Total runs: $totalRuns", 8, Pc.Text)
-            PixText("Playtime: " + String.format("%.1f hours", store.totalSeconds() / 3600.0), 8, Pc.Text)
+            DialogText("Total runs: $totalRuns", 13, Pc.Text)
+            DialogText("Playtime: " + String.format(Locale.US, "%.1f hours", store.totalSeconds() / 3600.0), 13, Pc.Text)
             Spacer(Modifier.height(6.dp))
             val (name, rows) = sets[index]
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 PcTap("<", 12, Pc.Text, "Previous") { index = (index - 1 + sets.size) % sets.size }
-                PixText(name, 9, Pc.Gold, Modifier.weight(1f), TextAlign.Center)
+                DialogText(name, 14, Pc.Gold, Modifier.weight(1f), TextAlign.Center)
                 PcTap(">", 12, Pc.Text, "Next") { index = (index + 1) % sets.size }
             }
             Spacer(Modifier.height(6.dp))
             val max = maxOf(1, if (name == "Overall Progress") totalRuns else pastLab)
-            if (rows.isEmpty()) PixText("No runs recorded yet.", 8, Pc.Dim)
+            if (rows.isEmpty()) DialogText("No runs recorded yet.", 13, Pc.Dim)
             rows.forEach { (label, count) ->
                 Row(Modifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
-                    PixText(label, 7, Pc.Text, Modifier.width(96.dp))
+                    DialogText(label, 12, Pc.Text, Modifier.width(96.dp).padding(end = 4.dp))
                     Box(Modifier.weight(1f).height(10.dp).border(1.dp, Pc.Border)) {
                         Box(Modifier.fillMaxWidth((count.toFloat() / max).coerceIn(0f, 1f)).height(10.dp).background(Pc.Gold))
                     }
-                    PixText("$count", 7, Pc.Text, Modifier.width(30.dp), TextAlign.End)
+                    DialogText("$count", 12, Pc.Text, Modifier.widthIn(min = 30.dp), TextAlign.End)
                 }
             }
         }
@@ -361,28 +399,32 @@ fun EvoDataDialog(species: Int, tracker: NdsTracker?, spriteOf: @Composable (Int
     Dialog(onDismissRequest = onClose) {
         Column(Modifier.width(300.dp).background(Pc.Page).border(1.dp, Pc.Border).padding(8.dp).verticalScroll(rememberScrollState())) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                PixText("EVO DATA (${tracker?.speciesName(species) ?: "#$species"})", 10, Pc.Text, Modifier.weight(1f))
+                DialogText("EVO DATA (${tracker?.speciesName(species) ?: "#$species"})", 16, Pc.Text, Modifier.weight(1f), heading = true)
                 PcTap("X", 9, Pc.Dim, "Close") { onClose() }
             }
             Spacer(Modifier.height(4.dp))
             if (targets.size > 1) Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 PcTap("<", 12, Pc.Text, "Previous") { target = (target - 1 + targets.size) % targets.size }
-                PixText("Evo ${target + 1}: " + (tracker?.speciesName(targets[target]) ?: ""), 9, Pc.Gold, Modifier.weight(1f), TextAlign.Center)
+                DialogText("Evo ${target + 1}: " + (tracker?.speciesName(targets[target]) ?: ""), 14, Pc.Gold, Modifier.weight(1f), TextAlign.Center)
                 PcTap(">", 12, Pc.Text, "Next") { target = (target + 1) % targets.size }
             }
             Row(Modifier.fillMaxWidth()) {
                 listOf("NAME" to "Name", "BST" to "BST", "PERCENT" to "Percent").forEach { (k, label) ->
-                    PixText(label, 8, if (sort == k) Pc.Gold else Pc.Dim, Modifier.weight(1f).border(1.dp, if (sort == k) Pc.Gold else Pc.Border).clickable { sort = k }.padding(vertical = 4.dp), TextAlign.Center)
+                    val on = sort == k
+                    Box(Modifier.weight(1f).heightIn(min = PcMin.DIALOG_TOUCH_DP.dp).border(if (on) 2.dp else 1.dp, if (on) Pc.Gold else Pc.Border)
+                        .selectable(selected = on, role = Role.RadioButton) { sort = k }, contentAlignment = Alignment.Center) {
+                        DialogText(label, 13, if (on) Pc.Gold else Pc.Dim, align = TextAlign.Center, underline = on)
+                    }
                 }
             }
             Spacer(Modifier.height(6.dp))
-            if (rows.isEmpty()) PixText("No evolution data for this Pokemon.", 8, Pc.Dim)
+            if (rows.isEmpty()) DialogText("No evolution data for this Pokemon.", 13, Pc.Dim)
             rows.forEach { (id, perc) ->
                 Row(Modifier.fillMaxWidth().padding(vertical = 1.dp), verticalAlignment = Alignment.CenterVertically) {
                     PcSprite(spriteOf(id))
-                    PixText(tracker?.speciesName(id) ?: "#$id", 8, Pc.Text, Modifier.weight(1f).padding(start = 6.dp))
-                    PixText("${tracker?.speciesInfoFor(id)?.bst ?: 0}", 8, Pc.Dim, Modifier.width(44.dp), TextAlign.End)
-                    PixText(String.format("%.2f%%", perc), 8, Pc.Text, Modifier.width(60.dp), TextAlign.End)
+                    DialogText(tracker?.speciesName(id) ?: "#$id", 13, Pc.Text, Modifier.weight(1f).padding(start = 6.dp))
+                    DialogText("${tracker?.speciesInfoFor(id)?.bst ?: 0}", 13, Pc.Dim, Modifier.widthIn(min = 44.dp), TextAlign.End)
+                    DialogText(evoShare(perc), 13, Pc.Text, Modifier.widthIn(min = 60.dp), TextAlign.End)
                 }
             }
         }

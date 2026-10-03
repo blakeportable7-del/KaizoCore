@@ -33,6 +33,22 @@ internal object Pedometer {
     var lastResetCount by mutableStateOf(0)
     var goalSteps by mutableStateOf(0)
 
+    /** Which game and run the reset and the goal belong to; see [follow]. */
+    private var owner: Any? = null
+
+    /**
+     * The tracker started on [run] (a game opened, a new run): the reset and the goal start over when it is not the one
+     * they were set on, as the reference's Program.initialize zeroes them on every game it loads (Program.lua:263-270).
+     * They lived for the whole process, so a Reset at 5,000 steps read "Steps: 0" in the next run until it passed
+     * 5,000, and the goal carried over (rc32 audit P3 #46). [run] is compared by equals, so the same run keeps them.
+     */
+    fun follow(run: Any) {
+        if (run == owner) return
+        owner = run
+        lastResetCount = 0
+        goalSteps = 0
+    }
+
     fun current(total: Int): Int = maxOf(total - lastResetCount, 0)
 
     /** PedometerReset: "Reset" while steps are counted since a reset, "Total" to go back to the game's total. */
@@ -66,8 +82,9 @@ internal fun PcPedometerLine(totalSteps: Int) {
     var editing by remember { mutableStateOf(false) }
     val steps = Pedometer.current(totalSteps).coerceAtMost(999999)
     val reached = Pedometer.goalSteps != 0 && steps >= Pedometer.goalSteps
+    // Through boxFill like every other tracker box, so a picture behind the tracker shows through it (rc32 audit P3 #21).
     Row(
-        Modifier.fillMaxWidth().background(Pc.Ground).border(1.dp, Pc.Border)
+        Modifier.fillMaxWidth().background(TrackerBackground.boxFill(Pc.Ground)).border(1.dp, Pc.Border)
             .padding(horizontal = 6.dp, vertical = 3.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -87,19 +104,22 @@ private fun PcBoxButton(label: String, color: androidx.compose.ui.graphics.Color
         Modifier.border(1.dp, Pc.Border).clickable(onClick = onClick).padding(horizontal = 8.dp, vertical = 5.dp))
 }
 
-/** TrackerScreen.openEditStepGoalWindow, in the reference's words. */
+/**
+ * TrackerScreen.openEditStepGoalWindow, in the reference's words, in DialogText: opened from the carousel, its words
+ * took the panel's pixel size, which ignores the phone's font size (rc32 audit P2 #19).
+ */
 @Composable
 private fun StepGoalDialog(onDone: () -> Unit) {
     var text by remember { mutableStateOf(Pedometer.goalSteps.toString()) }
     AlertDialog(
         onDismissRequest = onDone,
         containerColor = Pc.Ground,
-        title = { PixText("Choose a Step Goal", 10, Pc.Gold) },
+        title = { DialogText("Choose a Step Goal", 16, Pc.Gold, heading = true) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                PixText("Pedometer will change color when your goal is reached.", 8, Pc.Text)
-                PixText("[Set to 0 to turn off]", 8, Pc.Dim)
-                PixText("How many steps to reach your goal?", 8, Pc.Text)
+                DialogText("Pedometer will change color when your goal is reached.", 13, Pc.Text)
+                DialogText("[Set to 0 to turn off]", 13, Pc.Dim)
+                DialogText("How many steps to reach your goal?", 13, Pc.Text)
                 OutlinedTextField(
                     value = text,
                     onValueChange = { v -> text = v.filter { it.isDigit() }.take(7) },
@@ -112,8 +132,8 @@ private fun StepGoalDialog(onDone: () -> Unit) {
             TextButton(onClick = {
                 text.toIntOrNull()?.let { Pedometer.goalSteps = it }
                 onDone()
-            }) { PixText("Save", 8, Pc.Text) }
+            }) { DialogText("Save", 13, Pc.Text) }
         },
-        dismissButton = { TextButton(onClick = onDone) { PixText("Cancel", 8, Pc.Text) } },
+        dismissButton = { TextButton(onClick = onDone) { DialogText("Cancel", 13, Pc.Text) } },
     )
 }

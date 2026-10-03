@@ -33,7 +33,9 @@ class NotebookTest {
         val withSevii = t.notebookAreas(includeSevii = true, includeCompleted = true)
         assertTrue(withoutSevii.all { it.routeId < 230 })
         assertTrue(withSevii.size > withoutSevii.size)
-        assertEquals(386, t.notebookSpeciesTotal())
+        // The Notebook's species count is the app's NotebookSpecies, a Game Boy game's own Pokedex included; the tracker's
+        // Gen 3 only count had no caller left and is gone (RC35-NOTICED N #30).
+        assertFalse("fun notebookSpeciesTotal" in java.io.File("src/main/kotlin/com/ironmonone/tracker/GbaTracker.kt").readText())
     }
 
     @Test

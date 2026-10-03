@@ -19,7 +19,7 @@ import com.ironmonone.tracker.nds.NdsTracker
 import com.ironmonone.tracker.nds.NdsTrackerState
 
 /**
- * Screenshot mode for the website. Reached only from adb:
+ * Screenshot mode for the website. Reached from adb, on a debuggable build:
  *
  *   am start -n com.ironmonone.app/.MainActivity --es demo gba-battle
  *
@@ -29,13 +29,22 @@ import com.ironmonone.tracker.nds.NdsTrackerState
  * the emulator's memory says. Names, base stats, types, move power and
  * accuracy still come from the ROM that is running (through the tracker's
  * own lookups), so the card is the real card for those Pokemon; only the
- * fact that they are in the party is staged. Nothing else in the app reads
- * this, and a normal launch never sets it.
+ * fact that they are in the party is staged. A normal launch never sets it,
+ * and nothing staged is written to the player's records: the stat marks,
+ * the auto-saves, the run history and the Nuzlocke ledger each check it.
  */
 object Demo {
     @Volatile var mode: String? = null
     /** The attempt number the overlay and the game-over card show while staged. */
     const val ATTEMPT = 37
+
+    /**
+     * The mode a launch asks for: the "demo" extra, honoured only in a debuggable build. MainActivity is the exported
+     * launcher, so any app on the phone could send the extra to a release build, and the Nuzlocke scripts then wrote
+     * made-up encounters, a catch and a death into the player's ledger (rc32 audit P2 #29). Staging screenshots now
+     * takes a debug build of the same commit.
+     */
+    fun fromLaunch(extra: String?, debuggable: Boolean): String? = extra?.takeIf { debuggable }
 
     /**
      * The death card the staged game-over popup shows, one per family: a trainer loss short of
@@ -294,7 +303,7 @@ object Demo {
         // shows the repel bar.
         if (mode == "gba-walk") return TrackerState(
             partyCount = 1, party = party, inBattle = false, isWildBattle = false, badges = 0b11, badgeSet = "RSE",
-            healPercent = 62, healCount = 4, routeName = "Mauville City", steps = 18422, mapId = 89,
+            healPercent = 62, healCount = 4, healHp = 48, routeName = "Mauville City", steps = 18422, mapId = 89,
             repelSteps = 124, repelDuration = 200,
         )
         if (mode == "gba-over") return TrackerState(
@@ -318,7 +327,7 @@ object Demo {
             return TrackerState(
                 partyCount = 1, party = party, inBattle = true, isWildBattle = true,
                 enemy = geodude, badges = 0b1, badgeSet = "FRLG",
-                healPercent = 62, healCount = 4, routeName = "Mt. Moon 1F", steps = 4180, mapId = 114,
+                healPercent = 62, healCount = 4, healHp = 48, routeName = "Mt. Moon 1F", steps = 4180, mapId = 114,
             )
         }
         // Nuzlocke (2026-09-29): a short scripted run the ledger follows, for a phone with no save that far in.
@@ -343,7 +352,7 @@ object Demo {
                 enemy = geodude, weather = "RAIN", badges = 0b11, badgeSet = "RSE",
                 // Route 111 is map 27; its Rock Smash table is Geodude at 100%, Lv 5-20
                 // (RouteData), so the route info screen has a real area to open on.
-                healPercent = 62, healCount = 4, routeName = "Route 111", steps = 18422, mapId = 27,
+                healPercent = 62, healCount = 4, healHp = 48, routeName = "Route 111", steps = 18422, mapId = 27,
                 encounterArea = "RockSmash",
                 // The real formula (the Catch Rates screen's), with the reference's default ball.
                 catchPercent = t.calcCatchRate(gb?.catchRate ?: 255, 40, 40, 20, 0, 4, false, 0, false, 0),
@@ -366,7 +375,7 @@ object Demo {
         return TrackerState(
             partyCount = 1, party = party, inBattle = true, isWildBattle = false,
             enemyTeam = listOf(false, false, true, true), enemy = enemy,
-            badges = 0b11, badgeSet = "RSE", healPercent = 62, healCount = 4,
+            badges = 0b11, badgeSet = "RSE", healPercent = 62, healCount = 4, healHp = 48,
             routeName = "Mauville City", steps = 18422,
             // Mauville Gym, against Wattson, so the trainer screens read the real ROM.
             mapId = 89, opponentTrainerId = 267,
@@ -398,7 +407,7 @@ object Demo {
         return TrackerState(
             partyCount = 1, party = party, inBattle = true, isWildBattle = false,
             enemyTeam = listOf(false, false, true), enemy = enemy,
-            badges = 0b11, badgeSet = "RBY", healPercent = 44, healCount = 3,
+            badges = 0b11, badgeSet = "RBY", healPercent = 44, healCount = 3, healHp = 31,
         )
     }
 
@@ -422,7 +431,7 @@ object Demo {
         return TrackerState(
             partyCount = 1, party = party, inBattle = true, isWildBattle = false,
             enemyTeam = listOf(false, true), enemy = enemy,
-            badges = 0b11, badgeSet = "GSC", healPercent = 58, healCount = 5,
+            badges = 0b11, badgeSet = "GSC", healPercent = 58, healCount = 5, healHp = 56,
         )
     }
 

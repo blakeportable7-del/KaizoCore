@@ -26,9 +26,13 @@ package com.ironmonone.tracker
  * sit 0x430 lower than FireRed's) and their published address table (ROM 0x08000150 on) has
  * no gMain, no sprites and no player avatar, and GbaTracker says nothing there may be
  * hardcoded. [Overworld.resolve] reads their addresses out of the game's own code instead
- * ([OverworldScan]). A hack of one of the five games with the same layout is served by the
- * base game's addresses; one that moved something is refused by the native side's own checks
- * (callback2 must be this game's overworld callback), which write nothing.
+ * ([OverworldScan]), and MaxDex 1.0's the same way: it is Nat. Dex 1.1.3 grown, its RAM moved
+ * again (IWRAM 0x3D0 lower than FireRed's, the overworld's EWRAM 0x9E0 lower), and it publishes
+ * no table at all. A hack of one of the five games is served by the base game's addresses
+ * when its overworld code is where the base game's is ([OverworldScan.callbacksAt]); one that
+ * moved its code is read out of that code the same way, and refused, with a line that says so,
+ * when that fails (rc32 audit P2 #87). The native side's own checks (callback2 must be this
+ * game's overworld callback) still stand behind both.
  */
 data class OverworldAddresses(
     val name: String,
@@ -117,16 +121,31 @@ object Overworld {
     fun isNatDex(map: GameMap): Boolean = map.expandedSpeciesIds || map.name == "Nat. Dex"
 
     /**
-     * The addresses for the game that is running: the table's for a retail game (the ROM is not read), and for Nat. Dex,
-     * whose layout is in no table and moves between versions, the ones [OverworldScan] reads out of the game's own code
-     * through [read]. Null when the game is neither, or the scan refuses the build.
+     * The addresses for the game that is running. A game the tracker names by its header gets its table when its own
+     * code agrees: CB2_OverworldBasic and CB2_Overworld where the table has them ([OverworldScan.callbacksAt], one small
+     * read). A hack built from the decompilations keeps its base game's header and moves the code; given the table
+     * anyway, the native side never saw its overworld callback and drew nothing, with no word anywhere (rc32 audit
+     * P2 #87). Such a build, and Nat. Dex and MaxDex, whose layouts are in no table and move between versions, are read
+     * out of the game's own code through [read] ([OverworldScan]). Null when the game is none of these, or the scan
+     * refuses it.
      */
-    fun resolve(map: GameMap, read: MemoryReader): OverworldAddresses? =
-        forMap(map) ?: if (isNatDex(map)) OverworldScan.find(read) else null
+    fun resolve(map: GameMap, read: MemoryReader): OverworldAddresses? {
+        val table = forMap(map) ?: return if (isNatDex(map)) OverworldScan.find(read, scanName(map)) else null
+        if (OverworldScan.callbacksAt(read, table)) return table
+        return OverworldScan.find(read, "${table.name}, read from the game")
+    }
+
+    /** What a table read out of an expanded build's code is called: MaxDex by its map's name, any other as Nat. Dex. */
+    private fun scanName(map: GameMap): String = if (map.nameSet == "maxdex") "${map.name} (read from the game)" else OverworldScan.NAME
+
+    /** A game this has a table for: one of the retail games, or a hack that kept one's header. */
+    fun hasTable(map: GameMap): Boolean = forMap(map) != null
 
     /** Why [resolve] has nothing for [map], in a line a player can read. */
     fun whyNot(map: GameMap): String = when {
+        map.nameSet == "maxdex" -> "Play as your Pokemon could not find its way around this MaxDex build."
         isNatDex(map) -> "Play as your Pokemon could not find its way around this Nat. Dex build."
+        hasTable(map) -> "Play as your Pokemon could not find its way around this game, so you stay the trainer."
         else -> "This game is not one Play as your Pokemon knows."
     }
 }

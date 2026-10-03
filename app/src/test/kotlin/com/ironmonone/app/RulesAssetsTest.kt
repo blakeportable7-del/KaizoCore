@@ -24,7 +24,8 @@ class RulesAssetsTest {
             val info = RnqsInfo.parse(p.name)
             val tag = info.gameTag ?: continue; val mode = info.ruleset ?: continue
             if (info.appliedByApp) continue
-            val dir = if (info.natDex) "$tag-NatDex" else tag
+            // MaxDex's file reads MaxDex's own book (the Nat. Dex rules with MaxDex's section).
+            val dir = if (info.maxDex) "$tag-MaxDex" else if (info.natDex) "$tag-NatDex" else tag
             val f = File(assets, "rulesets/$dir/$mode.md")
             if (!f.isFile) { missing += "$dir/$mode (for ${p.name})"; continue }
             val text = f.readText()
@@ -32,6 +33,7 @@ class RulesAssetsTest {
             assertTrue("\u2014" !in text, "${f.name}: em dash")
             assertTrue(text.lineSequence().any { it.startsWith("## ${expectedHeading(mode)}") }, "$dir/${f.name}: no section for its own mode")
             if (info.natDex) assertTrue("## Nat. Dex ruleset changes" in text, "$dir/${f.name}: no Nat. Dex changes")
+            if (info.maxDex) assertTrue("## MaxDex" in text && "Tripc423/Maxdex.wiki.git" in text, "$dir/${f.name}: no MaxDex section")
         }
         assertTrue(missing.isEmpty(), "no rules for: $missing")
     }
@@ -63,7 +65,7 @@ class RulesAssetsTest {
     fun `RULES reads each game's own folder, which has every mode it offers, and says so when the run's mode has none`() {
         val presets = File(assets, "presets").listFiles { f -> f.extension == "rnqs" }!!.toList()
         for (k in com.ironmonone.core.RomKind.all) {
-            val dir = File(assets, "rulesets/" + Rules.dirFor(k.family, k.isNatDex))
+            val dir = File(assets, "rulesets/" + Rules.dirFor(k.family, k.isNatDex, k))
             val have = dir.list()?.map { it.removeSuffix(".md") }?.toSet() ?: emptySet()
             for (m in RulesetCatalog.forRom(k, presets)) assertTrue(m.key in have, "${k.id}: ${m.key} is offered but ${dir.name} has no text for it")
         }

@@ -122,7 +122,9 @@ class LibraryDsSaveTest {
         save("heartgold-u", 1, 2, 3)
         beforeLoad("heartgold-u", 8)
         lib.delete(e)
-        assertTrue(File(saves, "heartgold-u.sav").exists(), "deleting a game keeps its saves")
+        // Kept, with the game's states, not under the name the next game added there would take (rc33 audit P1 #20).
+        assertFalse(File(saves, "heartgold-u.sav").exists(), "not left under the file name")
+        assertContentEquals(byteArrayOf(1, 2, 3), File(saves, "lib/lib-%08x/ds-save.sav".format(e.crc)).readBytes(), "deleting a game keeps its save")
         val again = keep("Pokemon HeartGold (USA).nds", hg())
         assertContentEquals(byteArrayOf(1, 2, 3), File(saves, "Pokemon HeartGold (USA).sav").readBytes())
         assertContentEquals(byteArrayOf(8), File(saves, "Pokemon HeartGold (USA).sav.before-load").readBytes())
@@ -155,15 +157,28 @@ class LibraryDsSaveTest {
     }
 
     @Test
-    fun `a save that another game may own is not moved`() {
+    fun `another game added under a deleted game's name never takes its save, and the game gets it back`() {
+        // rc33 audit P1 #20: SoulSilver added as hg.nds booted HeartGold's save, and wrote over it.
         val a = keep("hg.nds", hg())
         save("hg", 1)
         lib.delete(a)
-        // Another game takes the name, and its file is what the old save sits beside now.
         keep("hg.nds", LibraryRoms.ds("POKEMON SS", "IPGE"))
+        assertFalse(File(saves, "hg.sav").exists(), "SoulSilver starts with no save")
         keep("HG new.nds", hg())
-        assertFalse(File(saves, "HG new.sav").exists(), "the name hg is in use, so the save under it is not this game's to take")
-        assertContentEquals(byteArrayOf(1), File(saves, "hg.sav").readBytes())
+        assertContentEquals(byteArrayOf(1), File(saves, "HG new.sav").readBytes(), "HeartGold has its own back, under its new name")
+    }
+
+    @Test
+    fun `a save a game left under its name before saves were parked waits for that game, not the next one`() {
+        // Phones that deleted a DS game before this fix still have its save under the file name, with its marker.
+        val plat = LibraryRoms.ds("POKEMON PL", "CPUE")
+        val a = keep("Pokemon.nds", plat)
+        a.file.delete(); File(a.file.path + ".meta").delete()   // removed the old way: the save stays behind
+        save("Pokemon", 7)
+        keep("Pokemon.nds", hg())
+        assertFalse(File(saves, "Pokemon.sav").exists(), "HeartGold does not boot Platinum's save")
+        keep("Platinum again.nds", plat)
+        assertContentEquals(byteArrayOf(7), File(saves, "Platinum again.sav").readBytes(), "Platinum gets it back")
     }
 
     @Test
@@ -172,9 +187,9 @@ class LibraryDsSaveTest {
         save("hg", 1)
         lib.delete(a)
         save("X", 2, 2)
-        keep("X.nds", hg())
+        val e = keep("X.nds", hg())
         assertContentEquals(byteArrayOf(2, 2), File(saves, "X.sav").readBytes())
-        assertContentEquals(byteArrayOf(1), File(saves, "hg.sav").readBytes(), "the old one stays where it was")
+        assertContentEquals(byteArrayOf(1), File(saves, "lib/lib-%08x/ds-save.sav".format(e.crc)).readBytes(), "the old one stays parked")
     }
 
     @Test
@@ -205,5 +220,13 @@ class LibraryDsSaveTest {
         bare.adoptDsSave(e)
         assertEquals("Renamed.nds", bare.rename(e, "Renamed").name)
         assertEquals(1, bare.list().size)
+    }
+
+    @Test
+    fun `no library game is named like the run, whose DS save is current_sav`() {
+        val e = lib.import("current.nds", hg())
+        assertEquals("current (2).nds", e.name, "it would share saves/current.sav with the DS run")
+        val other = lib.import("Current.nds", LibraryRoms.ds("POKEMON SS", "IPGE"))
+        assertFalse(other.file.nameWithoutExtension.equals("current", ignoreCase = true), "in any case: ${other.name}")
     }
 }

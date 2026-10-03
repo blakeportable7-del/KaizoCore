@@ -59,7 +59,19 @@ object RulesetCatalog {
     fun isCompatible(kind: RomKind, preset: File): Boolean {
         val i = RnqsInfo.of(preset)
         if (i.appliedByApp) return false   // applied by Randomizers, not picked
-        return i.gameTag == kind.family && i.natDex == kind.isNatDex
+        // MaxDex is a Nat. Dex build with its own randomizer: its file and Nat. Dex 1.2's never cross (version 902 against 908).
+        return i.gameTag == kind.family && i.natDex == kind.isNatDex && i.maxDex == kind.isMaxDex
+    }
+
+    /**
+     * Whether the Kaizo IronMON screen lists [preset] for [kind]: its own family's files, and a file that names no game
+     * (an imported "My run.rnqs") for a game of the file's own engine. The one rule for the list, the file a game opens
+     * on and the snap after a game is picked: the opening file used [isCompatible] alone, so an untagged file the
+     * player picked was never remembered (rc32 audit P2 #78).
+     */
+    fun listedFor(kind: RomKind, preset: File): Boolean {
+        val i = RnqsInfo.of(preset)
+        return (i.gameTag == null && !i.appliedByApp && i.natDex == kind.isNatDex) || isCompatible(kind, preset)
     }
 
     /**
@@ -128,11 +140,11 @@ object RulesetCatalog {
      * Standard, on a screen named Kaizo IronMON. Now: the file the player last picked for this game ([remembered]),
      * else the file of the run last started on it ([lastRun], for a phone with runs from before that was kept), else
      * the game's Kaizo mode, else the first mode in the row. A Nat. Dex game is only ever offered its own Nat. Dex
-     * files ([forRom]), so its Kaizo is its Nat. Dex Kaizo. A file that is gone, or that is not this game's family
-     * and Nat. Dex flag, is skipped, never kept.
+     * files ([forRom]), so its Kaizo is its Nat. Dex Kaizo. A file that is gone, or that the screen does not list for
+     * this game ([listedFor]), is skipped, never kept.
      */
     fun openingFile(kind: RomKind, settings: List<File>, remembered: String?, lastRun: String?): File? {
-        fun usable(name: String?): File? = name?.let { n -> settings.firstOrNull { it.name == n && isCompatible(kind, it) } }
+        fun usable(name: String?): File? = name?.let { n -> settings.firstOrNull { it.name == n && listedFor(kind, it) } }
         return usable(remembered) ?: usable(lastRun) ?: forRom(kind, settings).let { modes ->
             (modes.firstOrNull { it.key == OPENING_MODE } ?: modes.firstOrNull())?.preset
         }

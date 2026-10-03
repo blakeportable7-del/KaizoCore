@@ -57,15 +57,46 @@ class StreamWiringTest {
 
     @Test
     fun `the snapshot is published for every session, not only a run`() {
-        val play = read(File("src/main/kotlin/com/ironmonone/app/PlayScreen.kt"))
-        val at = play.indexOf("StreamHub.publish(json")
+        val feed = read(File(stream, "StreamFeed.kt"))
+        val at = feed.indexOf("StreamHub.publish(json")
         assertTrue(at > 0)
-        // The effect that publishes it is the one above, keyed on the state and the session only.
-        val effect = play.lastIndexOf("LaunchedEffect(", at)
-        assertContains(play.substring(effect, effect + 90), "trackerState, ndsState, marksVersion, session.id")
-        val header = play.substring(effect, at)
-        assertFalse(Regex("\\bif\\s*\\(\\s*session\\.(isRun|tracked)").containsMatchIn(header.substringBefore("val run")), "the publishing effect is not gated on a run")
-        assertContains(header, "session.isRun)", message = "the run flag is passed outright")
+        // The effect that publishes it is the one above, keyed on the stream, the state, the session and the phone's battle views.
+        val effect = feed.lastIndexOf("LaunchedEffect(", at)
+        assertContains(feed.substring(effect, effect + 90), "on, gba, nds, marksVersion, session.id")
+        val header = feed.substring(effect, at)
+        assertFalse(Regex("\\bif\\s*\\(\\s*session\\.(isRun|tracked)").containsMatchIn(header.substringBefore("val shown")), "the publishing effect is not gated on a run")
+        assertContains(header, ", session.isRun, session.kind", message = "the run flag is passed outright")
+        val play = read(File("src/main/kotlin/com/ironmonone/app/PlayScreen.kt"))
+        assertContains(play, "com.ironmonone.app.stream.StreamFeed(streamOn, session, platform, runNow, statMarks, marksVersion, trackerState, ndsState, trackerRef, ndsTrackerRef, gameOverLatch)")
+    }
+
+    /**
+     * rc32 audit P3 #50: the snapshot was built on every tracker change, with file reads on the main thread, for a
+     * server that was not running. Turning the stream on is a change of `on`, so the state goes out at once.
+     */
+    @Test
+    fun `nothing is built while the stream is off`() {
+        val feed = read(File(stream, "StreamFeed.kt"))
+        // The phone's battle views joined the keys in rc34, so a swap goes out at once (StreamDoublesTest).
+        val effect = feed.substring(feed.indexOf("LaunchedEffect(on, gba, nds, marksVersion, session.id, com.ironmonone.app.gbaView.view, com.ironmonone.app.dsView.key) {"), feed.indexOf("StreamHub.publish(json"))
+        assertTrue(effect.indexOf("if (!on) return@LaunchedEffect") in 0 until effect.indexOf("StreamSnapshot.build("))
+        val play = read(File("src/main/kotlin/com/ironmonone/app/PlayScreen.kt"))
+        assertFalse("StreamHub.publish(" in play, "Play publishes nothing of its own")
+    }
+
+    /**
+     * rc32 audit P3 #51: every species was read out of the game at each tracker start, stream on or off, for a page
+     * that serves them only after the run ends. Now only then, and /dex.json refuses until they are built.
+     */
+    @Test
+    fun `the randomized dex is built only once it can be served`() {
+        val feed = read(File(stream, "StreamFeed.kt"))
+        val effect = feed.substring(feed.indexOf("LaunchedEffect(on, ended, ref, nref) {"))
+        val built = effect.indexOf("StreamSnapshot.dex(")
+        assertTrue(effect.indexOf("if (!on || ended == null) return@LaunchedEffect") in 0 until built)
+        assertTrue(effect.indexOf("StreamHub.dex = null") in 0 until built, "a stale dex is dropped, and null refuses")
+        assertContains(feed, "val ended = if (latch.applies) latch.outcome else null")
+        assertContains(read(File(stream, "StreamHub.kt")), "@Volatile var dex: String? = null")
     }
 
     // ------------------------------------------------------------------ the native side
@@ -142,5 +173,20 @@ class StreamWiringTest {
         // And the socket path is the one the server serves.
         assertContains(page, "/game.ws?k=")
         assertNotNull(page.lines().firstOrNull { it.contains("WebSocket(") })
+    }
+
+    @Test
+    fun `a Game Boy run's randomizer data is none, never the last GBA or DS game's`() {
+        // rc33 audit P1 #34: the effect returned early when neither tracker was up, so /dex.json kept the last game's.
+        val feed = File(stream, "StreamFeed.kt").readText()
+        kotlin.test.assertTrue("if (ref == null && nref == null) { StreamHub.dex = \"[]\"; return@LaunchedEffect }" in feed)
+    }
+
+    @Test
+    fun `the stream shows an evolution's words, not the table's key`() {
+        // "L.CORD" on the card and "Linking Cord" in the dex, not LINKING_CORD (rc33 audit P1 #67 made Nat. Dex keys common).
+        val src = File("src/main/kotlin/com/ironmonone/app/stream/StreamSnapshot.kt").readText()
+        kotlin.test.assertTrue("\"evolution\" to com.ironmonone.tracker.EvoText.abbreviation(tracker?.evolution(m.species))," in src)
+        kotlin.test.assertTrue("EvoText.detailed(tracker.evolution(sp), tracker.friendshipRequired()).joinToString(\" / \")" in src)
     }
 }

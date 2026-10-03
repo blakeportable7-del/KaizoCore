@@ -121,9 +121,15 @@ public class BLZCoder {
         System.out.print("\n");
     }
 
+    // LOCAL MODIFICATION (KaizoCore), 2026-10-02: a bad BLZ header throws
+    // instead of System.exit(0). Inside the app that ended the whole process
+    // (the game being played included, with no crash report) when a DS ROM's
+    // ARM9 or an overlay could not be decoded; every caller already handles a
+    // thrown randomizer error (rc32 audit P3 #91). The output is unchanged for
+    // every file that decodes.
     private void EXIT(String text) {
         System.out.print(text);
-        System.exit(0);
+        throw new com.dabomstew.pkrandomzx.exceptions.RandomizerIOException(text.trim());
     }
 
     private void Save(String filename, int[] buffer, int length) {

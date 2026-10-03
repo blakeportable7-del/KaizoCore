@@ -48,6 +48,23 @@ class SecondScreenTest {
         assertTrue("PixText(\"No Pokemon yet. The tracker fills in when you get your first one.\", 8, Pc.Dim, wrap = true)" in src("NdsTrackerPanel.kt"), "DS")
     }
 
+    /**
+     * rc32 audit P2 #83: the second display was any presentation display but the phone's own, so with the app on a
+     * dual-screen handheld's second panel the tracker covered the game on that same panel and took every touch.
+     */
+    @Test fun `the tracker never goes to the display the app is on`() {
+        assertEquals(null, pickPresentationDisplay(listOf(1 to true), ownId = 1), "the app is on the only one")
+        assertEquals(1, pickPresentationDisplay(listOf(1 to true), ownId = 0))
+        assertEquals(2, pickPresentationDisplay(listOf(1 to true, 2 to true), ownId = 1), "the other one")
+        assertEquals(2, pickPresentationDisplay(listOf(1 to false, 2 to true), ownId = 0), "an invalid one is skipped")
+        assertEquals(null, pickPresentationDisplay(emptyList(), ownId = 0))
+        val host = src("SecondScreen.kt")
+        assertTrue("presentationDisplay(it, ownDisplayId(context))" in host, "the host leaves out its own display")
+        assertTrue("override fun onDisplayChanged(id: Int) { displayId = pick() }" in host, "and checks again when one changes")
+        assertTrue("LaunchedEffect(configuration) { displayId = pick() }" in host, "or the app moves")
+        assertTrue("presentationDisplay(it, ownDisplayId(ctx))" in src("TrackerGearDialog.kt"), "the switch is offered by the same rule")
+    }
+
     @Test fun `the column fits the display`() {
         assertEquals(405.dp, secondScreenColumnWidth(960.dp, 540.dp), "a 16:9 screen: three quarters of its height")
         assertEquals(360.dp, secondScreenColumnWidth(360.dp, 800.dp), "a tall screen: its width")

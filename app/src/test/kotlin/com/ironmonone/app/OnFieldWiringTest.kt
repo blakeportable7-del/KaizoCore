@@ -15,12 +15,17 @@ class OnFieldWiringTest {
 
     @Test
     fun `every battle view reads the Pokemon on the field`() {
+        // Since rc34 through GbaViewState, which is TrackerState.onField unless a double battle's right-hand one is viewed.
         val panel = src("src/main/kotlin/com/ironmonone/app/TrackerPanel.kt")
-        assertTrue("listOfNotNull(state.onField).take(" in panel, "the own card")
-        assertTrue("enemyMoveContext(enemy, state.onField," in panel, "the enemy's matchups")
-        assertTrue("LastAttack.lethal(state.lastAttackDamage, state.onField?.mon?.curHp)" in panel, "the lethal sword")
-        assertTrue("val own = s.onField ?: return null" in src("src/main/kotlin/com/ironmonone/app/CalcAtkScreen.kt"), "Calc Atk")
-        assertTrue("enemyMoveContext(e, s.onField," in src("src/main/kotlin/com/ironmonone/app/stream/StreamSnapshot.kt"), "the stream")
+        val view = src("src/main/kotlin/com/ironmonone/app/DoublesView.kt")
+        assertTrue("fun own(state: TrackerState?): TrackedMon? = state?.let { if (ownBattler(it) == 2) it.ownRight else it.onField }" in view)
+        assertTrue("listOfNotNull(view.own(state)).take(" in panel, "the own card")
+        assertTrue("enemyMoveContext(enemy, view.foeTarget(state)," in panel, "the enemy's matchups")
+        assertTrue("LastAttack.lethal(state.lastAttackDamage, view.own(state)?.mon?.curHp)" in panel, "the lethal sword")
+        assertTrue("val own = gbaView.own(s) ?: return null" in src("src/main/kotlin/com/ironmonone/app/CalcAtkScreen.kt"), "Calc Atk")
+        // The stream: the Pokemon on the field by default, the one the phone shows in a double battle (rc34).
+        val stream = src("src/main/kotlin/com/ironmonone/app/stream/StreamSnapshot.kt")
+        assertTrue("target: TrackedMon? = s.onField," in stream && "enemyMoveContext(e, target," in stream, "the stream")
         assertFalse("enemyMoveContext(enemy, state.party.firstOrNull()" in panel)
     }
 }

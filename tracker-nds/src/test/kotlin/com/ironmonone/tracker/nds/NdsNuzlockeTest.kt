@@ -150,10 +150,11 @@ class NdsNuzlockeTest {
     private fun state(
         game: String = "Pokemon Platinum", party: List<NdsTrackedMon> = listOf(tracked(mon(387), "TURTWIG")), inBattle: Boolean = false, wild: Boolean = false,
         enemy: NdsTrackedMon? = null, area: String = "Route 201", badges: Int = 0, trainer: Int = 0, runOver: NdsRunOver? = null,
-        lastEnemy: NdsTrackedMon? = null, located: Boolean = true,
+        lastEnemy: NdsTrackedMon? = null, located: Boolean = true, fetched: Boolean = inBattle,
     ) = NdsTrackerState(
         partyCount = party.size, party = party, located = located, inBattle = inBattle, isWildBattle = wild, enemy = enemy, badges = badges,
         areaName = area, mapId = 339, gameName = game, enemyTrainerId = trainer, runOver = runOver, lastBattleEnemy = lastEnemy,
+        battleFetched = fetched,
     )
 
     @Test
@@ -388,5 +389,30 @@ class NdsNuzlockeTest {
         run.poll(NdsNuzlocke.snapshot(state(party = listOf(hero, starly(5)), area = "Route 202", inBattle = true, wild = true, enemy = bidoof(0), lastEnemy = bidoof(0))))
         run.poll(NdsNuzlocke.snapshot(state(party = listOf(hero, starly(5)), area = "Route 202", lastEnemy = bidoof(0))))
         assertEquals(Outcome.FAINTED, run.ledger.areas.getValue("Route 202").encounter!!.outcome)
+    }
+
+    @Test
+    fun `a battle the tracker has not fetched is no battle to the rules`() {
+        // rc33 audit P1 #80: Platinum's catching demonstration on Route 202 is never fetched (the battle's party is not
+        // yours), and it took the route's first encounter. #82: a Gen 5 read before the fetch reported a trainer battle.
+        val bidoof = tracked(mon(399, pid = 0x202L, level = 2), "BIDOOF")
+        val demo = assertNotNull(NdsNuzlocke.snapshot(state(inBattle = true, wild = true, enemy = bidoof, area = "Route 202", fetched = false)))
+        assertFalse(demo.inBattle); assertFalse(demo.wild); assertNull(demo.enemy); assertNull(demo.opponent)
+        val gen5 = assertNotNull(NdsNuzlocke.snapshot(state(game = "Pokemon Black 2", inBattle = true, wild = false, trainer = 161, fetched = false)))
+        assertFalse(gen5.inBattle); assertNull(gen5.opponent)
+        // Through the engine: the demonstration, then the player's own first battle on the route.
+        val ledger = com.ironmonone.tracker.nuzlocke.NuzlockeLedger(com.ironmonone.tracker.nuzlocke.RunMeta("nz", "lib", "Platinum",
+            com.ironmonone.tracker.nuzlocke.NuzlockeRules.forPreset(com.ironmonone.tracker.nuzlocke.NuzlockePreset.STANDARD), 1_000L)
+            .also { it.system = com.ironmonone.tracker.nuzlocke.NuzlockeSystem.GEN4 })
+        val engine = com.ironmonone.tracker.nuzlocke.NuzlockeEngine(ledger)
+        var at = 10_000L
+        fun feed(s: NdsTrackerState) { engine.update(assertNotNull(NdsNuzlocke.snapshot(s)), at); at += 700 }
+        feed(state(area = "Route 202"))
+        feed(state(inBattle = true, wild = true, enemy = bidoof, area = "Route 202", fetched = false))
+        feed(state(area = "Route 202"))
+        val starly = tracked(mon(396, pid = 0x396L, level = 3), "STARLY")
+        feed(state(inBattle = true, wild = true, enemy = starly, area = "Route 202"))
+        feed(state(area = "Route 202", lastEnemy = tracked(mon(396, pid = 0x396L, level = 3, hp = 0), "STARLY")))
+        assertEquals("STARLY", ledger.areas.values.single().encounter?.speciesName?.uppercase(), "the player's own battle is the first encounter")
     }
 }

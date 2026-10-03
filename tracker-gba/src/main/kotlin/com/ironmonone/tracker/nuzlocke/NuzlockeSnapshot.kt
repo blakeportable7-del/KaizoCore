@@ -71,8 +71,12 @@ data class NzOpponent(
  * Where the player is: the map's name as the game's route data gives it, and its id. On the Game Boy games the name is
  * the place (every floor of a cave shares it) and [detail] is the specific map ("Mt. Moon B1F"), which the switch that
  * keeps floors apart uses; a Gen 3 or DS name has none and is grouped by NuzlockeAreas.
+ *
+ * Gen 3 also gives the map's section ([section], the game's own "met at" place: Route 4 for the Pokemon Center on
+ * Route 4) and whether the map is a building ([indoor]). Every Pokemon Center shares one layout and so one name, and a
+ * gift in one counts for the town or route the building is in (rc32 audit P2 #140). Null and false elsewhere.
  */
-data class NzArea(val name: String?, val mapId: Int?, val detail: String? = null)
+data class NzArea(val name: String?, val mapId: Int?, val detail: String? = null, val section: Int? = null, val indoor: Boolean = false)
 
 class Snapshot(
     /** False when the tracker could not read the game this poll; the engine ignores such a poll. */
@@ -103,4 +107,9 @@ class Snapshot(
     val caps: LevelCapTable? = null,
     /** Keys of the caps table's bosses that are beaten. */
     val beaten: Set<String> = emptySet(),
+    /**
+     * The party is one the game lends for a Battle Tent, Battle Frontier or Battle Tower battle, and gives back
+     * afterwards: nothing it shows is the run's, so the engine leaves the poll alone (rc32 audit P2 #141).
+     */
+    val facility: Boolean = false,
 )

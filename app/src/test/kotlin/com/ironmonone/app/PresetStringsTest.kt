@@ -83,4 +83,34 @@ class PresetStringsTest {
             dir.deleteRecursively()
         }
     }
+
+    @Test
+    fun `a file named for a game but made by the Nat Dex randomizer is judged by the engine that reads it`() {
+        // rc32 audit P2 #72: "FRLG Kaizo mine.rnqs" from the Nat. Dex randomizer was offered for standard FireRed and
+        // never for Nat. Dex FireRed, because the engine was asked only when the name had no game tag.
+        val dir = kotlin.io.path.createTempDirectory("rnqs").toFile()
+        try {
+            val nd = File(dir, "FRLG Kaizo mine.rnqs").also { File(presets, "FRLG NatDex v1.2 Kaizo.rnqs").copyTo(it) }
+            val zx = File(dir, "FRLG Kaizo yours.rnqs").also { File(presets, "FRLG Kaizo.rnqs").copyTo(it) }
+            assertTrue(RnqsInfo.of(nd).natDex)
+            assertEquals("FRLG", RnqsInfo.of(nd).gameTag)
+            assertTrue(RulesetCatalog.isCompatible(RomKind.FIRERED_NATDEX_121, nd))
+            assertFalse(RulesetCatalog.isCompatible(RomKind.FIRERED_U_V11, nd))
+            assertFalse(RnqsInfo.of(zx).natDex)
+            assertTrue(RulesetCatalog.isCompatible(RomKind.FIRERED_U_V11, zx))
+            // The refusal a player reads has no dash and no "vanilla".
+            val e = kotlin.test.assertFailsWith<NatDexEngine.EngineException> { ZxEngine.randomize(nd, nd, File(dir, "out.gba"), 1L) }
+            assertTrue(" - " !in e.message!! && "vanilla" !in e.message!! && "is a mode for the Nat. Dex version" in e.message!!, e.message)
+            val back = kotlin.test.assertFailsWith<NatDexEngine.EngineException> { NatDexEngine.randomize(zx, zx, File(dir, "out.gba"), 1L) }
+            assertTrue("vanilla" !in back.message!! && "is a mode for the standard version" in back.message!!, back.message)
+        } finally {
+            dir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `every bundled preset is the kind its name says, asked of the engines`() {
+        // What the engine check now decides for every name: it must agree with the names the app ships.
+        for (f in presets.listFiles { f -> f.name.endsWith(".rnqs") }!!) assertEquals(RnqsInfo.parse(f.name).natDex, RnqsInfo.of(f).natDex, f.name)
+    }
 }

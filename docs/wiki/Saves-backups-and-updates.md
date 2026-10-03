@@ -10,21 +10,24 @@
 ## Backups
 
 **More**, **Backup and info**, **Back up** writes everything to one file: save states and their screenshots, in-game
-saves, the auto-save, locks, notes and favorites, the current and previous run, saved attempts, attempt counts,
-settings files, keys and layouts, skins, cheats, emulator settings, tracker themes and the background image, run
-history and Nuzlocke ledgers.
+saves, the auto-save, locks, notes and favorites, the current run, the previous run's log, saved attempts, attempt
+counts, settings files, keys and layouts, skins, cheats, emulator settings, tracker themes and the background image,
+the Play as your Pokemon picture or sheets, run history and Nuzlocke ledgers.
 
-Never in it: your library games and patches, prepared base games, BIOS and firmware, your RetroAchievements sign-in,
-the stream's code, the cloud link, and the current run's randomizer log until that run is over. The current run's
-randomized game is in it, so a restored run comes back whole.
+Never in it: your library games and patches, prepared base games, the previous run's game, BIOS and firmware, your
+RetroAchievements sign-in, the stream's code, the cloud link, and the current run's randomizer log until that run is
+over. The current run's randomized game is in it, so a restored run comes back whole, and so is the game of every
+attempt you saved: a DS game is up to 512 MB each.
 
-**Restore** asks first, then restarts the app.
+**Restore** asks first, then puts the backup's files in place and restarts the app by itself. The run's game and the
+saved attempts' games come back from the backup; your library games are left as they are.
 
 ## Cloud sync
 
 **Start a new sync file**, or **Use my file from another phone**, links a file in your own cloud storage through
 Android's file picker. No account and no server of ours. It syncs when you leave a game, if something changed, at most
-every 2 minutes. **Sync now**, **Restore from cloud** and **Unlink** are there too.
+every 2 minutes. **Sync now**, **Restore from cloud** and **Unlink** are there too. **Restore from cloud** asks first and
+restarts the app, as **Restore** does.
 
 ## Updates
 

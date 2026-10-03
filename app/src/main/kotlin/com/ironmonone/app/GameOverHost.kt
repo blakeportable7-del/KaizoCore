@@ -5,6 +5,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.ImageBitmap
 import com.swordfish.libretrodroid.GLRetroView
 
+/** The party in a read as the popup draws it: a member at 0 HP is fallen. */
+internal fun gameOverTeam(
+    ndsState: com.ironmonone.tracker.nds.NdsTrackerState?,
+    trackerState: com.ironmonone.tracker.TrackerState?,
+): List<GameOverMon> =
+    ndsState?.party?.map { GameOverMon(it.mon.species, it.speciesName, it.mon.level, it.mon.curHp == 0, it.mon.shiny) }
+        ?: trackerState?.party?.map { GameOverMon(it.mon.species, it.speciesName, it.mon.level, it.mon.curHp == 0, it.mon.shiny, it.picture) }
+        ?: emptyList()
+
 /**
  * The game-over popup and its actions, moved out of PlayScreen() whole. That
  * method sits at ART's verifier limit, and this was one of its larger blocks.
@@ -37,10 +46,11 @@ internal fun GameOverHost(
     // The stream's run-over view and its randomized data wait for this, not for the tracker's live read.
     val ended = if (latch.applies) latch.outcome else null
     androidx.compose.runtime.SideEffect { com.ironmonone.app.stream.StreamHub.ended = ended }
+    // This read's team, for the latch to keep if this read is the one that fires it: Play's effect that fires it runs
+    // after this, and a later read can already be the whiteout's heal (rc32 audit P3 #27).
+    androidx.compose.runtime.SideEffect { if (latch.armed) latch.teamNow = { gameOverTeam(ndsState, trackerState) } }
     if (!latch.open || hidden) return
-    val team: List<GameOverMon> = ndsState?.party?.map { GameOverMon(it.mon.species, it.speciesName, it.mon.level, it.mon.curHp == 0, it.mon.shiny) }
-        ?: trackerState?.party?.map { GameOverMon(it.mon.species, it.speciesName, it.mon.level, it.mon.curHp == 0, it.mon.shiny) }
-        ?: emptyList()
+    val team: List<GameOverMon> = latch.team
     val ctx = androidx.compose.ui.platform.LocalContext.current
     // The staged screenshot modes have no run and no battle: they read a log
     // from the app's external files dir and offer Retry, so the popup shows
@@ -55,7 +65,7 @@ internal fun GameOverHost(
         won = latch.outcome == com.ironmonone.tracker.RunOutcome.WON,
         attempt = store.attempt(),
         team = team,
-        spriteOf = { m -> if (ndsState != null) remember(m.species, m.shiny) { PcAssets.dsSprite(ctx, m.species, m.shiny) } else spriteFor(m.species) },
+        spriteOf = { m -> if (ndsState != null) remember(m.species, m.shiny) { PcAssets.dsSprite(ctx, m.species, m.shiny) } else romPicture(m.picture) ?: spriteFor(m.species) },
         dsCause = latch.dsCause,
         canRetry = (battleStartState != null || Demo.mode != null) && !raHardcore,
         onInspectLog = logFile?.let { f -> { onInspectLog(f) } },
@@ -72,12 +82,14 @@ internal fun GameOverHost(
         },
         onSaveAttempt = {
             val kind = session.kind
-            if (kind == null || !session.isRun) false
+            if (kind == null || !session.isRun) SaveAttemptStatus.FAILED
             else {
                 // The state is taken where it always was; the copying (a whole ROM) goes off the main thread.
                 val state = runCatching { retro?.serializeState() }.getOrNull()
+                // Named now, on the tap: read on the IO thread they could already be a new run's (rc33 audit P1 #41).
+                val attempt = store.attempt(); val seed = store.lastSeedText()
                 kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                    store.saveAttempt(kind, store.attempt(), store.lastSeedText(), state)
+                    SaveAttemptStatus.of(store.saveAttempt(kind, attempt, seed, state), store.attemptShortOfRoom)
                 }
             }
         },

@@ -28,7 +28,8 @@ import kotlin.test.assertTrue
  */
 class GbNuzReadsTest {
 
-    private class Ram(private val base: Long, size: Int = 0x10000) : MemoryReader {
+    /** 8 KB, a Red or Blue work RAM on the core, unless told: a bigger fake hid raw addresses (rc32 audit P3 #117). */
+    private class Ram(private val base: Long, size: Int = 0x2000) : MemoryReader {
         val bytes = ByteArray(size)
         fun put(off: Long, v: Int) { bytes[off.toInt()] = v.toByte() }
         fun be16(off: Long, v: Int) { put(off, v shr 8); put(off + 1, v and 0xFF) }
@@ -330,19 +331,42 @@ class GbNuzReadsTest {
 
     @Test
     fun `a Generation 1 wild Pokemon that was knocked out, one that ran off, and one the player ran from read differently`() {
+        // The game's own escape: wEscapedFromBattle set while the battle is still on screen, by whoever's move it was.
+        fun escape(w: Ram, enemyMove: Int, playerMove: Int) { w.put(rb.escaped, 1); w.put(rb.enemyMove, enemyMove); w.put(rb.playerMove, playerMove) }
+        val teleport = 0x64; val tackle = 0x21
         val cases = listOf(
-            Triple("knocked out", { w: Ram -> w.put(rb.inBattle, 0); w.put(rb.battleResult, 0) }, Outcome.FAINTED),
-            Triple("the player ran", { w: Ram -> w.put(rb.inBattle, 0); w.put(rb.battleResult, 2) }, Outcome.RAN),
+            Triple("knocked out", { w: Ram -> }, Outcome.FAINTED),
+            Triple("the player ran", { w: Ram -> }, Outcome.RAN),
+            // rc33 audit P1 #75: the wild Abra's Teleport sets the flag as the player's does.
+            Triple("it teleported away", { w: Ram -> escape(w, enemyMove = teleport, playerMove = tackle) }, Outcome.FLED),
+            Triple("the player teleported", { w: Ram -> escape(w, enemyMove = tackle, playerMove = teleport) }, Outcome.RAN),
         )
-        for ((why, end, outcome) in cases) {
+        for ((why, during, outcome) in cases) {
             val w = overworld1()
             val t = Gen1Tracker(w, rom1(rb, "POKEMON RED"))
             val (ledger, engine) = newRun(NuzlockeSystem.GEN1)
             var at = 10_000L
             fun step() { engine.update(assertNotNull(NuzlockeAdapters.snapshot(t.read())), at); at += 700 }
             step(); wild1(w, hp = if (why == "knocked out") 0 else 9); step()
-            end(w); step()
+            during(w); step()
+            w.put(rb.inBattle, 0); w.put(rb.battleResult, if (why == "the player ran") 2 else 0); step()
             assertEquals(outcome, ledger.areas.getValue("Route 1").encounter!!.outcome, why)
+        }
+    }
+
+    @Test
+    fun `the escape clause reopens Route 1 after a wild Pokemon teleported away, and not after the player did`() {
+        for ((enemyMove, playerMove, reopened) in listOf(Triple(0x64, 0x21, true), Triple(0x21, 0x64, false))) {
+            val w = overworld1()
+            val t = Gen1Tracker(w, rom1(rb, "POKEMON RED"))
+            val (ledger, engine) = newRun(NuzlockeSystem.GEN1, NuzlockeRules.forPreset(NuzlockePreset.STANDARD).copy(escapeClause = true))
+            var at = 10_000L
+            fun step() { engine.update(assertNotNull(NuzlockeAdapters.snapshot(t.read())), at); at += 700 }
+            step(); wild1(w, hp = 9); step()
+            w.put(rb.escaped, 1); w.put(rb.enemyMove, enemyMove); w.put(rb.playerMove, playerMove); step()
+            w.put(rb.inBattle, 0); w.put(rb.battleResult, 0); step()
+            val area = ledger.areas.getValue("Route 1")
+            assertEquals(reopened, area.encounter == null, "enemy $enemyMove, you $playerMove: ${area.encounter?.outcome}")
         }
     }
 
@@ -365,6 +389,58 @@ class GbNuzReadsTest {
         w.put(rb.inBattle, 0); w.put(rb.battleResult, 0); w.put(rb.badges, 1)
         step()
         assertEquals(setOf("gym1"), ledger.meta.beatenBosses)
+    }
+
+    /** rc32 audit P3 #106: NIDORAN and the male sign (pokered data/pokemon/names.asm:5) reads NIDORAN; species.tsv says NIDORAN M. */
+    @Test
+    fun `a male Nidoran caught and left with its default name is reminded to be named`() {
+        val w = overworld1()
+        val rom = rom1(rb, "POKEMON RED").also { it[rb.dexOrder + 0x03 - 1] = 32 }     // internal 0x03, NIDORAN_M in pokered too
+        val t = Gen1Tracker(w, rom)
+        val (ledger, engine) = newRun(NuzlockeSystem.GEN1)
+        var at = 10_000L
+        fun step() { engine.update(assertNotNull(NuzlockeAdapters.snapshot(t.read())), at); at += 700 }
+        step()
+        wild1(w); step(); step()
+        w.put(rb.captured, 0x03)
+        w.put(rb.partyCount, 2); mon1(w, rb, 1, 0x03, 4, 12, 18, ot = 0x2B0E, dvs = 0xA5B6); w.put(rb.partySpecies + 2, 0xFF)
+        intArrayOf(0x8D, 0x88, 0x83, 0x8E, 0x91, 0x80, 0x8D, 0xEF, 0x50, 0x50, 0x50).forEachIndexed { i, b -> w.put(rb.nicks + 11 + i, b) }
+        step()
+        endBattle1(w, result = 2); step()
+        val mon = ledger.roster.getValue(Gen12Nuzlocke.id(0x2B0E, 0xA5B6))
+        assertEquals("NIDORAN M", mon.speciesName.uppercase())
+        assertFalse(mon.hasNickname, "its own name is no nickname")
+        assertTrue(ledger.warnings.any { it.kind == com.ironmonone.tracker.nuzlocke.WarnKind.NICKNAME && it.id == "nickname:${mon.id}" },
+            "the reminder to name it")
+    }
+
+    /**
+     * rc32 audit P3 #111: a slot that fails to decode for one read (caught mid-copy) ends the party list there. The snapshot
+     * takes the game's own count, so the engine does not take the short list for the whole party: nobody goes to a box, and
+     * a fainted lead beside it is no whiteout.
+     */
+    @Test
+    fun `a party slot that fails to decode for one read boxes nobody and is no whiteout`() {
+        val w = overworld1()
+        w.put(rb.partyCount, 3)
+        for (slot in 0 until 3) mon1(w, rb, slot, 0xB1, 5 + slot, 20, 20, ot = 0x2B0E, dvs = 0x1111 * (slot + 1))
+        w.put(rb.partySpecies + 3, 0xFF)
+        val t = Gen1Tracker(w, rom1(rb, "POKEMON RED"))
+        val (ledger, engine) = newRun(NuzlockeSystem.GEN1)
+        engine.update(assertNotNull(NuzlockeAdapters.snapshot(t.read())), 10_000L)
+        assertTrue(ledger.meta.started)
+        assertEquals(3, ledger.roster.count { it.value.inParty })
+        // The lead and the third at 0 HP, the second read with level 0, which partyMon refuses.
+        mon1(w, rb, 0, 0xB1, 5, 0, 20, ot = 0x2B0E, dvs = 0x1111)
+        mon1(w, rb, 2, 0xB1, 7, 0, 20, ot = 0x2B0E, dvs = 0x3333)
+        w.put(rb.partyMons + Gen1Tracker.PARTY_STRIDE + 33, 0)
+        val s = t.read()
+        assertEquals(1, s.party.size)
+        val snap = assertNotNull(NuzlockeAdapters.snapshot(s))
+        assertEquals(3, snap.partyCount, "the game's count, not the length of the list")
+        engine.update(snap, 10_700L)
+        assertEquals(3, ledger.roster.count { it.value.inParty }, "nobody went to a box")
+        assertTrue(ledger.events.none { it.kind == "whiteout" })
     }
 
     // =============================================================== Generation 2
@@ -525,6 +601,46 @@ class GbNuzReadsTest {
         val s = GbcTracker(w, rom2("PM_CRYSTAL", 0xC0, crystal)).read()
         assertEquals(listOf(155, 161), s.party.map { it.mon.species })
         assertEquals(listOf("EMBER", "SENTY"), s.nuz!!.gb!!.nicknames, "each Pokemon has the nickname of its own slot")
+    }
+
+    /**
+     * rc32 audit P2 #140, its Game Boy Color part: the tracker's party leaves eggs out, so a Crystal egg was first seen as
+     * it hatched, and with 'Gifts count' on the Pokemon used up the route it hatched on. The eggs reach the engine now,
+     * each with the id its Pokemon will have, since Crystal's Odd Egg carries another trainer's id until it hatches.
+     */
+    @Test
+    fun `a Crystal egg uses up the place it was received, not the route it hatches on`() {
+        val w = overworld2()                                       // Cyndaquil on Route 29, trainer id 0x2B0E
+        val t = GbcTracker(w, rom2("PM_CRYSTAL", 0xC0, crystal))
+        val (ledger, engine) = newRun(NuzlockeSystem.GEN2, NuzlockeRules.forPreset(NuzlockePreset.STANDARD).copy(giftsCount = true))
+        var at = 10_000L
+        fun step() { engine.update(assertNotNull(NuzlockeAdapters.snapshot(t.read())), at); at += 700 }
+        step()
+        assertTrue(ledger.meta.started)
+        // The Day-Care man on Route 34 gives the Odd Egg: a level 5 Pichu with trainer id 2048 and no HP, as the game's
+        // own table has it (pokecrystal data/events/odd_eggs.asm).
+        w.put(GbcTracker.CUR_LANDMARK, 15)
+        w.put(GbcTracker.PARTY_COUNT, 2)
+        mon2(w, 1, 172, 5, 0, 17, ot = 2048, dvs = 0x1234)
+        w.put(GbcTracker.PARTY_SPECIES + 1, 0xFD); w.put(GbcTracker.PARTY_SPECIES + 2, 0xFF)
+        val snap = assertNotNull(NuzlockeAdapters.snapshot(t.read()))
+        assertEquals(listOf(false, true), snap.party.map { it.isEgg })
+        assertEquals(2, snap.partyCount, "the egg's slot is in the count")
+        step()
+        val id = Gen12Nuzlocke.id(0x2B0E, 0x1234)
+        assertEquals("Route 34", ledger.meta.eggs[id]?.areaName, "the egg is followed from where it joined")
+        assertNull(ledger.roster[id], "an egg is nobody on the roster")
+        // It hatches on Route 35: the species list names it, and the game writes the player's id into it.
+        w.put(GbcTracker.CUR_LANDMARK, 18)
+        step(); step()
+        mon2(w, 1, 172, 5, 17, 17, ot = 0x2B0E, dvs = 0x1234)
+        step()
+        val pichu = ledger.roster.getValue(id)
+        assertEquals(Origin.GIFT, pichu.origin)
+        assertEquals("Route 34", pichu.areaName)
+        assertEquals(id, assertNotNull(ledger.areas["Route 34"]?.encounter).monId, "the place it was received is used")
+        assertNull(ledger.areas["Route 35"]?.encounter, "the route it hatched on stays open")
+        assertEquals(2, ledger.roster.size, "the starter and the Pichu, one Pokemon each")
     }
 
     @Test

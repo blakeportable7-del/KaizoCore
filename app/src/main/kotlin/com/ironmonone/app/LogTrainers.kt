@@ -6,12 +6,15 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -142,10 +145,12 @@ class LogTrainerRules(private val tracker: GbaTracker, private val frlg: Boolean
         log: RandomizerLog, filter: LogTrainerFilter, query: String, custom: Boolean,
         /** LogSearchScreen's filter (Trainer Name by default) and, once one is picked, its sort. */
         searchBy: LogFilter = LogFilter.TRAINER, sortBy: LogSort? = null,
+        /** The game's names for the log's, which a search by Pokemon name also finds them by (LogNames). */
+        names: LogNames = LogNames.PLAIN,
     ): List<RandomizerLog.Trainer> {
         val all = log.trainers.filter { use(it.number) }
         val q = query.trim()
-        if (q.isNotEmpty()) return all.filter { matches(log, it, searchBy, q, custom) }.sortedWith(if (sortBy != null) searchOrder(sortBy, custom) else allOrder())
+        if (q.isNotEmpty()) return all.filter { matches(log, it, searchBy, q, custom, names) }.sortedWith(if (sortBy != null) searchOrder(sortBy, custom) else allOrder())
         val base = when (filter) {
             LogTrainerFilter.ALL -> all.sortedWith(allOrder())
             LogTrainerFilter.RIVAL -> all.filter { groupLabel(it.number) == "Rival" }.sortedBy { it.maxLevel }
@@ -157,8 +162,8 @@ class LogTrainerRules(private val tracker: GbaTracker, private val frlg: Boolean
     }
 
     /** LogTabTrainers' includeInGrid per LogSearchScreen filter. */
-    fun matches(log: RandomizerLog, t: RandomizerLog.Trainer, by: LogFilter, q: String, custom: Boolean): Boolean = when (by) {
-        LogFilter.NAME -> t.party.any { it.name.contains(q, ignoreCase = true) }
+    fun matches(log: RandomizerLog, t: RandomizerLog.Trainer, by: LogFilter, q: String, custom: Boolean, names: LogNames = LogNames.PLAIN): Boolean = when (by) {
+        LogFilter.NAME -> t.party.any { names.finds(it.name, q) }
         LogFilter.ABILITY -> t.party.any { m -> log.pokemonNamed(m.name)?.abilities?.any { it.contains(q, ignoreCase = true) } == true }
         LogFilter.MOVE -> t.party.any { m -> log.pokemonNamed(m.name)?.let { p -> log.movesAt(p, m.level).any { it.contains(q, ignoreCase = true) } } == true }
         else -> searchText(t, custom).contains(q, ignoreCase = true)
@@ -198,6 +203,7 @@ class LogTrainerRules(private val tracker: GbaTracker, private val frlg: Boolean
  * no trainer art, so the tile carries the name and the balls.
  */
 @Composable
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 internal fun LogTrainersTab(
     log: RandomizerLog,
     rules: LogTrainerRules,
@@ -208,16 +214,20 @@ internal fun LogTrainersTab(
     searchBy: LogFilter = LogFilter.TRAINER,
     sortBy: LogSort? = null,
     onTrainer: (RandomizerLog.Trainer) -> Unit,
+    names: LogNames = LogNames.PLAIN,
+    /** Each trainer's portrait, read from the ROM (GbaTracker.trainerPicture); null where the build has none. */
+    portraitOf: (RandomizerLog.Trainer) -> ImageBitmap? = { null },
 ) {
     Column(Modifier.fillMaxSize()) {
-        Row(Modifier.fillMaxWidth().padding(bottom = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            DialogText("Filter by:", 12, Pc.Dim)
+        // Five choices of 48dp flow onto a second line on a narrow phone (rc32 audit P2 #26).
+        FlowRow(Modifier.fillMaxWidth().padding(bottom = 6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            DialogText("Filter by:", 12, Pc.Dim, Modifier.align(Alignment.CenterVertically))
             LogTrainerFilter.entries.forEach { f ->
                 val on = if (query.isNotBlank()) f == LogTrainerFilter.ALL else f == filter
-                DialogText(f.label, 12, if (on) Pc.Gold else Pc.Text, Modifier.clickable { onFilter(f) }.padding(vertical = 4.dp))
+                LogChoice(f.label, on) { onFilter(f) }
             }
         }
-        val rows = remember(log, filter, query, custom, searchBy, sortBy) { rules.rows(log, filter, query, custom, searchBy, sortBy) }
+        val rows = remember(log, filter, query, custom, searchBy, sortBy, names) { rules.rows(log, filter, query, custom, searchBy, sortBy, names) }
         if (rows.isEmpty()) {
             DialogText("(No results)", 13, Pc.Dim)
             return@Column
@@ -226,19 +236,23 @@ internal fun LogTrainersTab(
             GridCells.Adaptive(92.dp), Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(4.dp), horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            items(rows, key = { it.number }) { t -> LogTrainerTile(t, rules, custom) { onTrainer(t) } }
+            items(rows, key = { it.number }) { t -> LogTrainerTile(t, rules, custom, portraitOf(t)) { onTrainer(t) } }
         }
     }
 }
 
-/** A trainer on the Trainers tab or a route page (LogTabTrainers.drawTrainerPortraitInfo): the name above, a ball per Pokemon below. */
+/**
+ * A trainer on the Trainers tab or a route page (LogTabTrainers.drawTrainerPortraitInfo): the name above, the trainer's
+ * portrait (TrainerData.getPortraitIcon on PC, the game's own picture of them here) and a ball per Pokemon below.
+ */
 @Composable
-internal fun LogTrainerTile(t: RandomizerLog.Trainer, rules: LogTrainerRules, custom: Boolean, onClick: () -> Unit) {
+internal fun LogTrainerTile(t: RandomizerLog.Trainer, rules: LogTrainerRules, custom: Boolean, portrait: ImageBitmap? = null, onClick: () -> Unit) {
     Column(
         Modifier.background(Pc.Page).border(1.dp, Pc.Border).clickable { onClick() }.padding(6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         DialogText(rules.displayName(t, custom), 12, Pc.Text, Modifier.fillMaxWidth(), TextAlign.Center)
+        if (portrait != null) Image(portrait, null, Modifier.size(56.dp), filterQuality = FilterQuality.None)
         Spacer(Modifier.height(4.dp))
         PokeBalls(t.party.size, rules.isGiovanni(t.number))
     }
@@ -280,11 +294,17 @@ internal fun LogTrainerDetail(
     moveTypes: Map<String, Int>,
     onPokemon: (RandomizerLog.Pokemon) -> Unit,
     onBack: () -> Unit,
+    names: LogNames = LogNames.PLAIN,
+    /** The trainer's portrait from the ROM (LogTabTrainerDetails draws its class's), or null. */
+    portrait: ImageBitmap? = null,
+    /** Walking Pals for the team, which stand idle on PC (SpriteData.Types.Idle). */
+    palOf: ((RandomizerLog.Pokemon) -> WalkingPals.Pal?)? = null,
 ) {
     val ctx = LocalContext.current
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         Row(Modifier.fillMaxWidth().background(Pc.Page).border(1.dp, Pc.Border).padding(6.dp), verticalAlignment = Alignment.CenterVertically) {
             LogBack(onBack)
+            if (portrait != null) Image(portrait, null, Modifier.size(64.dp).padding(end = 6.dp), filterQuality = FilterQuality.None)
             Column(Modifier.weight(1f)) {
                 DialogText(rules.detailClass(t, custom).uppercase(), 13, Pc.Gold)
                 DialogText(rules.detailName(t, custom).uppercase(), 13, Pc.Gold)
@@ -297,15 +317,16 @@ internal fun LogTrainerDetail(
         Spacer(Modifier.height(4.dp))
         t.party.chunked(2).forEach { pair ->
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                pair.forEach { m -> LogPartyCell(m, log, spriteOf, moveTypes, onPokemon, Modifier.weight(1f)) }
+                pair.forEach { m -> LogPartyCell(m, log, spriteOf, moveTypes, onPokemon, names, palOf, Modifier.weight(1f)) }
                 if (pair.size == 1) Spacer(Modifier.weight(1f))
             }
             Spacer(Modifier.height(4.dp))
         }
         Column(Modifier.fillMaxWidth().background(Pc.Page).border(1.dp, Pc.Border).padding(6.dp)) {
             t.party.forEachIndexed { i, m ->
-                DialogText("${i + 1}. ${logTitle(m.name)}", 12, Pc.Text,
-                    Modifier.clickable { log.pokemonNamed(m.name)?.let(onPokemon) }.padding(vertical = 2.dp))
+                Box(Modifier.fillMaxWidth().heightIn(min = PcMin.DIALOG_TOUCH_DP.dp).clickable { log.pokemonNamed(m.name)?.let(onPokemon) }, contentAlignment = Alignment.CenterStart) {
+                    DialogText("${i + 1}. ${names.species(m.name)}", 12, Pc.Text)
+                }
             }
         }
     }
@@ -318,15 +339,16 @@ private fun LogPartyCell(
     spriteOf: ((RandomizerLog.Pokemon) -> ImageBitmap?)?,
     moveTypes: Map<String, Int>,
     onPokemon: (RandomizerLog.Pokemon) -> Unit,
+    names: LogNames,
+    palOf: ((RandomizerLog.Pokemon) -> WalkingPals.Pal?)?,
     modifier: Modifier,
 ) {
     val p = log.pokemonNamed(m.name)
     val monTypes = p?.types?.mapNotNull { Gen3Types.idOf(it) } ?: emptyList()
     Row(modifier.background(Pc.Page).border(1.dp, Pc.Border).clickable(enabled = p != null) { p?.let(onPokemon) }.padding(6.dp)) {
+        // LogTabTrainerDetails: the icon standing idle, its level under it.
         Column(Modifier.width(40.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            val art = p?.let { spriteOf?.invoke(it) }
-            if (art != null) Image(art, m.name, Modifier.size(36.dp), filterQuality = FilterQuality.None)
-            else Spacer(Modifier.size(36.dp))
+            LogMonIcon(p?.let { spriteOf?.invoke(it) }, p?.let { palOf?.invoke(it) }, 36.dp, names.species(m.name))
             DialogText("Lv.${m.level}", 12, Pc.Text)
         }
         Spacer(Modifier.width(4.dp))
@@ -334,7 +356,7 @@ private fun LogPartyCell(
             val moves = p?.let { log.movesAt(it, m.level) } ?: emptyList()
             moves.forEach { mv ->
                 val stab = moveTypes[mv.uppercase()]?.let { it in monTypes } == true
-                DialogText(logTitle(mv), 12, if (stab) Pc.Positive else Pc.Text)
+                DialogText(names.move(mv), 12, if (stab) Pc.Positive else Pc.Text)
             }
             m.item?.let { DialogText(logTitle(it), 12, Pc.Gold) }
         }

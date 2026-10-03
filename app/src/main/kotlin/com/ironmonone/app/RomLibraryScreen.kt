@@ -79,6 +79,7 @@ fun RomLibraryScreen(modifier: Modifier = Modifier, onPlay: () -> Unit = {}) {
     // flashed on every visit, and after an update that re-reads the games it stayed for seconds (2026-09-30).
     var loaded by remember { mutableStateOf(false) }
     val progress = remember { FileProgress() }
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
     var selectedName by remember { mutableStateOf(store.library.selectedLibraryName()) }
 
     // Dialogs. One at a time; each is a small, named state.
@@ -114,6 +115,9 @@ fun RomLibraryScreen(modifier: Modifier = Modifier, onPlay: () -> Unit = {}) {
      * his FireRed 1.1 while the app carries Nat. Dex for it; "this needs applied to all games".
      */
     fun runBuiltIn(base: LibraryStore.Entry, o: PrepOptions.Option) {
+        // One job at a time: a second run of the same patch wrote the same file and both failed, and the first to end
+        // turned busy off under the other (rc32 audit P2 #74). Every row of the Patch and Apply windows comes here.
+        if (busy) return
         val kind = base.kind ?: return
         busy = true
         scope.launch {
@@ -134,6 +138,7 @@ fun RomLibraryScreen(modifier: Modifier = Modifier, onPlay: () -> Unit = {}) {
     }
 
     fun runPatch(base: LibraryStore.Entry, p: LibraryStore.PatchEntry) {
+        if (busy) return
         busy = true
         scope.launch {
             progress.start("Patching ${base.name}", base.sizeBytes)
@@ -158,10 +163,6 @@ fun RomLibraryScreen(modifier: Modifier = Modifier, onPlay: () -> Unit = {}) {
                         picker.launch(arrayOf("*/*"))
                     }
                 }
-                status?.let {
-                    Spacer(Modifier.height(8.dp))
-                    Text(it, style = MaterialTheme.typography.bodySmall, color = Shell.inkOnPaper)
-                }
             }
         }
         Spacer(Modifier.height(8.dp))
@@ -172,7 +173,18 @@ fun RomLibraryScreen(modifier: Modifier = Modifier, onPlay: () -> Unit = {}) {
             EmptyState("Nothing here yet.", emptyLibraryLine())
         }
 
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        // The result of the last action is the list's first item, as on ROM Hacks, and the list takes the height left.
+        // In the fixed card at the top, the result of adding a zip of ten games (a line per file) pushed the list
+        // off the screen until the tab was left (rc32 audit P2 #73). A new result scrolls into view.
+        LaunchedEffect(status) { if (status != null) listState.animateScrollToItem(0) }
+        LazyColumn(Modifier.weight(1f), state = listState, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            status?.let { s ->
+                item(key = "status") {
+                    Gen3Box(Modifier.fillMaxWidth()) {
+                        Text(s, style = MaterialTheme.typography.bodySmall, color = Shell.inkOnPaper)
+                    }
+                }
+            }
             for (cat in LibraryStore.Category.entries) {
                 val here = roms.filter { it.category == cat }
                 if (here.isEmpty()) continue
@@ -180,7 +192,7 @@ fun RomLibraryScreen(modifier: Modifier = Modifier, onPlay: () -> Unit = {}) {
                 items(here, key = { it.name }) { e ->
                     RomCard(
                         e, playing = e.name == selectedName, busy = busy,
-                        patchCount = patches.count { it.matches(e) } + PrepRun.builtIns(e).size,
+                        patchCount = MaxDexInfo.fitting(patches, e).size + PrepRun.builtIns(e).size,
                         onPlay = { store.library.selectLibrary(e); selectedName = e.name; onPlay() },
                         onPatch = { patchFor = e },
                         // The games the Nat. Dex Extension has a patch for (FireRed 1.1 and Emerald), said on the card itself.
@@ -232,7 +244,8 @@ fun RomLibraryScreen(modifier: Modifier = Modifier, onPlay: () -> Unit = {}) {
         }
     }
     patchFor?.let { e ->
-        val fits = patches.filter { it.matches(e) }
+        // Trip's MaxDex patch is offered once, as the MaxDex built-in, where the game has one (MaxDexInfo.fitting).
+        val fits = MaxDexInfo.fitting(patches, e)
         val builtIns = PrepRun.builtIns(e)
         ShellDialog("Patch ${stripKnownExt(e.name)}", onDismiss = { patchFor = null }) {
             if (builtIns.isNotEmpty()) {
@@ -390,7 +403,7 @@ private fun RomCard(
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 Gen3Button("PLAY", accent = true, enabled = playable, onClick = onPlay)
-                Gen3Button(if (patchCount > 0) "PATCH ($patchCount)" else "PATCH", enabled = playable, onClick = onPatch)
+                Gen3Button(if (patchCount > 0) "PATCH ($patchCount)" else "PATCH", enabled = playable && !busy, onClick = onPatch)
                 onNatDex?.let { Gen3Button("NAT. DEX", enabled = !busy, onClick = it) }
                 Gen3Button("RENAME", onClick = onRename)
                 Gen3Button(if (armed) "SURE?" else "DELETE", accent = armed, enabled = !busy,
@@ -425,7 +438,7 @@ private fun PatchCard(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                Gen3Button(if (romCount > 0) "APPLY ($romCount)" else "APPLY", accent = romCount > 0, onClick = onApply)
+                Gen3Button(if (romCount > 0) "APPLY ($romCount)" else "APPLY", accent = romCount > 0, enabled = !busy, onClick = onApply)
                 Gen3Button("RENAME", onClick = onRename)
                 Gen3Button(if (armed) "SURE?" else "DELETE", accent = armed, enabled = !busy,
                     onClick = { if (armed) { armed = false; onDelete() } else armed = true })
@@ -477,7 +490,8 @@ private fun RenameDialog(
  * messages carry checksums and file paths (audit, 2026-09-27).
  */
 internal fun patchFailure(t: Throwable): String = when (t) {
-    is com.ironmonone.patch.WrongSourceRom, is com.ironmonone.patch.WrongSourceSize ->
+    // An xdelta on the wrong copy of its game is SourceMismatch; it read "The patch file is damaged" (rc32 audit P2 #115).
+    is com.ironmonone.patch.WrongSourceRom, is com.ironmonone.patch.WrongSourceSize, is com.ironmonone.patch.SourceMismatch ->
         "This patch was made for a different version of the game. Nothing was changed."
     is com.ironmonone.patch.OutputMismatch ->
         "The patch applied, but the result came out wrong, so it was not kept. The game is probably a different version."

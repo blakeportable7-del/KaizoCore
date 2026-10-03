@@ -12,7 +12,7 @@ import kotlin.test.assertTrue
  * the code that ships, in every module.
  */
 class OldAndroidApiTest {
-    private val modules = listOf("app", "core-api", "core-patch", "core-recipe", "tracker-gba", "tracker-nds", "editor", "engine-zx", "engine-natdex")
+    private val modules = listOf("app", "core-api", "core-patch", "core-recipe", "tracker-gba", "tracker-nds", "editor", "engine-zx", "engine-natdex", "engine-maxdex")
     private val banned = listOf(".readNBytes(", ".readAllBytes(", ".transferTo(")
 
     @Test
@@ -33,6 +33,32 @@ class OldAndroidApiTest {
     }
 
     /**
+     * rc32 audit P3 #35: PackageInfo.longVersionCode is API 28. Called bare, it threw on Android 8.0 and 8.1, and the
+     * runCatching around it made the crash report's version and the next run's app stamp "unknown" on every build there,
+     * so a run made ahead by the old build was taken after an update. It is read in one place, behind the SDK check.
+     */
+    @Test
+    fun `the version code is read in one place, behind the Android 9 check`() {
+        val hits = mutableListOf<String>()
+        for (m in modules) {
+            val root = File("../$m/src/main")
+            if (!root.isDirectory) continue
+            root.walkTopDown().filter { it.isFile && (it.extension == "kt" || it.extension == "java") }.forEach { f ->
+                f.readLines().forEachIndexed { i, line ->
+                    val code = line.trim()
+                    if (code.startsWith("//") || code.startsWith("*") || code.startsWith("/*")) return@forEachIndexed
+                    if (".longVersionCode" in code) hits += "${f.path}:${i + 1}: $code"
+                }
+            }
+        }
+        assertEquals(1, hits.size, "one guarded reader (UpdateCheck.versionCode):\n" + hits.joinToString("\n"))
+        assertTrue("Build.VERSION.SDK_INT >= Build.VERSION_CODES.P" in hits.single() && "versionCode.toLong()" in hits.single(), hits.single())
+        val src = File("src/main/kotlin/com/ironmonone/app")
+        assertTrue("UpdateCheck.versionCode(p)" in File(src, "NextRunJob.kt").readText(), "the next run's app stamp")
+        assertTrue("UpdateCheck.versionCode(p)" in File(src, "CrashLog.kt").readText(), "the crash report's version")
+    }
+
+    /**
      * rc33 audit P1: the README had lost the Nat. Dex Extension link and DrMaple's credit, which Cyan's written grant
      * and NOTICE require ("Credit me (CyanSixFour / CyanSMP64) and link ... in the app About screen and the repo
      * README"; "The credit and link in the About screen and the README must stay").
@@ -44,6 +70,8 @@ class OldAndroidApiTest {
             "https://github.com/CyanSMP64/NatDexExtension", "CyanSixFour", "CyanSMP64",
             "https://github.com/DrMaple/Faster-FireRed", "https://github.com/DrMaple/Faster-Emerald", "DrMaple",
             "https://github.com/SilverstarStream/faster_black2_white2", "SilverstarStream",
+            // IronMON HGSS (2026-10-02), credited as About and NOTICE credit it.
+            "https://github.com/PyroMikeGit/IronMONHGSS", "PyroMikeGit", "Foulton",
         )) assertTrue(must in readme, must)
         assertTrue("64-bit" in readme, "the README says a 32-bit phone cannot install it")
     }

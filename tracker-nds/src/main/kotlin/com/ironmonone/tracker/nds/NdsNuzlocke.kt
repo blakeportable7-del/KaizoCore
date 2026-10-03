@@ -136,8 +136,12 @@ object NdsNuzlocke {
                 types = types(system, p), shiny = m.shiny,
             )
         }
-        val wild = s.inBattle && s.isWildBattle && s.enemyTrainerId == 0
-        val enemy = s.enemy?.let { e ->
+        // A battle the tracker has not fetched is no battle to the rules: the reference reads the opponent only once
+        // _tryToFetchBattleData passes. A catching demonstration (Route 202, Route 29) never does, and took the route's
+        // first encounter; a Gen 5 read taken before the fetch reported the last trainer's battle (rc33 audit P1 #80, #82).
+        val inBattle = s.inBattle && s.battleFetched
+        val wild = inBattle && s.isWildBattle && s.enemyTrainerId == 0
+        val enemy = s.enemy?.takeIf { inBattle }?.let { e ->
             val m = e.mon
             NzEnemy(
                 id = m.pid, species = m.species, speciesName = e.speciesName, level = m.level, hp = m.curHp, maxHp = m.maxHp,
@@ -148,8 +152,8 @@ object NdsNuzlocke {
             )
         }
         val caps = caps(g)
-        val bossKey = if (s.inBattle && !wild) caps.keyOfTrainer(s.enemyTrainerId) else null
-        val opponent = if (s.inBattle && !wild && s.enemyTrainerId != 0) {
+        val bossKey = if (inBattle && !wild) caps.keyOfTrainer(s.enemyTrainerId) else null
+        val opponent = if (inBattle && !wild && s.enemyTrainerId != 0) {
             val (label, group) = label(g, s.enemyTrainerId, caps.byKey(bossKey))
             NzOpponent(s.enemyTrainerId, label, group, bossKey, null)
         } else null
@@ -159,7 +163,7 @@ object NdsNuzlocke {
         return Snapshot(
             readable = true,
             area = NzArea(s.areaName.takeIf { it.isNotBlank() }, s.mapId.takeIf { it != 0 }),
-            inBattle = s.inBattle,
+            inBattle = inBattle,
             wild = wild,
             ghost = false,
             method = method,

@@ -66,4 +66,19 @@ class RunEventsTest {
         assertTrue(r.entries().isEmpty())
         assertTrue(rom.exists())
     }
+
+    @Test
+    fun `a saved attempt is refused once a new run is in place, so its files never go in the old folder`() {
+        // rc33 audit P1 #41: "Save this attempt" then "New game" copied the NEW run's randomizer log into the old folder.
+        store.currentRunFor(RomKind.EMERALD_U).apply { parentFile.mkdirs(); writeBytes(ByteArray(8)) }
+        File(filesDir, "prep/lastseed.txt").writeText("00000000000000bb")
+        assertFalse(store.saveAttempt(RomKind.EMERALD_U, 4, "00000000000000aa", null), "the seed named is not the run in place")
+        assertTrue(File(filesDir, "attempts").listFiles().isNullOrEmpty(), "and nothing was written")
+        assertTrue(store.saveAttempt(RomKind.EMERALD_U, 5, "00000000000000bb", null), "the run in place saves")
+        val src = File("src/main/kotlin/com/ironmonone/app/PrepStore.kt").readText()
+        assertTrue("fun saveAttempt(kind: RomKind, attempt: Int, seed: String, state: ByteArray?): Boolean = synchronized(RUN_FILES)" in src)
+        assertTrue("): Unit = synchronized(RUN_FILES) {" in src, "installRun takes the same lock")
+        val host = File("src/main/kotlin/com/ironmonone/app/GameOverHost.kt").readText()
+        assertTrue("val attempt = store.attempt(); val seed = store.lastSeedText()" in host, "named on the tap, not on the IO thread")
+    }
 }

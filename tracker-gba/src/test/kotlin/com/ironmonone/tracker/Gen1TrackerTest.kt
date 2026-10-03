@@ -16,8 +16,9 @@ import kotlin.test.assertTrue
  */
 class Gen1TrackerTest {
 
+    /** The core's 8 KB work RAM: a 64 KB fake hid raw addresses (rc32 audit P3 #117). */
     private class Wram : MemoryReader {
-        val bytes = ByteArray(0x10000)
+        val bytes = ByteArray(0x2000)
         fun put(off: Long, v: Int) { bytes[off.toInt()] = v.toByte() }
         fun be16(off: Long, v: Int) { put(off, v shr 8); put(off + 1, v and 0xFF) }
         override fun read(address: Long, length: Int): ByteArray {
@@ -74,6 +75,20 @@ class Gen1TrackerTest {
         w.put(map.items + 2, 0x04); w.put(map.items + 3, 5)    // 5 Poke Balls: not heals
         w.put(map.items + 4, 0xFF)
         return w
+    }
+
+    /**
+     * RC35-NOTICED N #22: Gen1Map.forRom cut the header title at a NUL that was written into the source as the raw byte,
+     * so git kept Gen1Tracker.kt as a binary file, with no text diffs and no line end conversion. It is the escape now,
+     * and the title still stops at its padding.
+     */
+    @Test
+    fun `no tracker source holds a raw NUL byte, and the header title still stops at its padding`() {
+        val sources = listOf(java.io.File("src/main/kotlin"), java.io.File("src/test/kotlin"))
+            .flatMap { r -> r.walkTopDown().filter { it.isFile && it.extension == "kt" }.toList() }
+        assertTrue(sources.size > 50, "the sources were found")
+        assertEquals(emptyList(), sources.filter { f -> f.readBytes().any { it == 0.toByte() } }.map { it.name })
+        assertSame(Gen1Map.YELLOW, Gen1Map.forRom(rom(Gen1Map.YELLOW, "POKEMON YELLOW", 0x80)))
     }
 
     @Test
@@ -334,5 +349,56 @@ class Gen1TrackerTest {
         assertTrue(s.party[0].statStages.isEmpty(), "slot 1 is not on the field")
         assertTrue(s.party[1].statStages.isNotEmpty())
         assertTrue(s.healPercent != battle(0).healPercent, "heals are counted against the Pokemon on the field")
+    }
+
+    /**
+     * rc32 audit P2 #135: beating the Champion ends a Red, Blue or Yellow run as a win. A trainer battle against RIVAL3 (0x2B)
+     * that ends with wBattleResult 0, the Champion's Pokemon at 0 HP in wEnemyMon and the player in CHAMPIONS_ROOM (0x78)
+     * reads WON until the next battle begins. A loss does not, nor the blackout after it, which zeroes wBattleResult as it
+     * heals the party; nor a win over anyone else; nor a won game's save at the main menu, which sits on HALL_OF_FAME.
+     */
+    @Test
+    fun `beating the Champion reads as a win until the next battle, and losing to him does not`() {
+        val map = Gen1Map.RED_BLUE
+        val rom = rom(map, "POKEMON RED", 0x00)
+        fun battle(w: Wram, trainerClass: Int, hp: Int) {
+            w.put(map.curMap, 0x78); w.put(map.trainerClass, trainerClass); w.put(map.inBattle, 2)
+            val e = map.enemyMon
+            w.put(e, 0x03); w.be16(e + 1, hp); w.put(e + 5, 23); w.put(e + 6, 23); w.put(e + 14, 60); w.be16(e + 15, 180)
+        }
+        fun won(w: Wram) { w.be16(map.enemyMon + 1, 0); w.put(map.battleResult, 0); w.put(map.inBattle, 0) }
+
+        var w = overworld(map); var t = Gen1Tracker(w, rom)
+        battle(w, 0x2B, 90)
+        assertNull(t.read().gameOver, "not while the battle is on")
+        won(w)
+        assertEquals(GameOver.WON, t.read().gameOver)
+        assertEquals(GameOver.WON, t.read().gameOver, "held, as the GBA's battle outcome byte holds it")
+        w.put(map.inBattle, 1)
+        assertNull(t.read().gameOver, "until the next battle begins")
+        w.put(map.inBattle, 0)
+        assertNull(t.read().gameOver, "and it is not given again")
+
+        // Lost: the battle ends with wBattleResult 1 and every Pokemon down. The blackout then zeroes the result, heals the
+        // party and warps the player, in one routine: whatever read sees it, it is no win.
+        w = overworld(map); t = Gen1Tracker(w, rom)
+        battle(w, 0x2B, 90)
+        t.read()
+        w.put(map.battleResult, 1); w.put(map.inBattle, 0)
+        party(w, map, 0, 0xB1, 12, 0, 40, listOf(52, 10, 0, 0)); party(w, map, 1, 0x03, 5, 0, 18, listOf(84, 0, 0, 0))
+        assertEquals(GameOver.LOST, t.read().gameOver)
+        w = overworld(map); t = Gen1Tracker(w, rom)
+        battle(w, 0x2B, 90)
+        t.read()
+        w.put(map.battleResult, 0); w.put(map.inBattle, 0); w.put(map.curMap, 0xAE)      // the blackout, read only after it
+        assertNull(t.read().gameOver, "the Champion still stands, and the player is out of his room")
+
+        // Beating anyone else is no win, and a won save loaded at the main menu (wCurMap on HALL_OF_FAME) is none either.
+        w = overworld(map); t = Gen1Tracker(w, rom)
+        battle(w, 0x2A, 90); t.read(); won(w)
+        assertNull(t.read().gameOver, "RIVAL2")
+        w = overworld(map); t = Gen1Tracker(w, rom)
+        w.put(map.curMap, 0x76)
+        assertNull(t.read().gameOver, "no battle with the Champion was seen")
     }
 }

@@ -43,4 +43,32 @@ class RnqsLabelTest {
         val titles = RnqsInfo.displayLabels(files).map { it.first }
         assertEquals(titles.size, titles.toSet().size, "duplicate titles: $titles")
     }
+
+    @Test
+    fun `words typed in a build's name never decide its game or mode`() {
+        // rc33 audit P1 #48: the whole name was searched, so a bracket of the player's words picked the mode and even the game.
+        val cases = mapOf(
+            "FRLG Kaizo (standard starters).rnqs" to Triple("FRLG", "kaizo", false),
+            "FRLG Kaizo (doubles practice).rnqs" to Triple("FRLG", "kaizo", false),
+            "FRLG Kaizo (horse).rnqs" to Triple("FRLG", "kaizo", false),
+            "FRLG Kaizo (nurse joy).rnqs" to Triple("FRLG", "kaizo", false),
+            "FRLG Kaizo (natdex test).rnqs" to Triple("FRLG", "kaizo", false),
+            "RSE NatDex Survival (my run).rnqs" to Triple("RSE", "survival", true),
+        )
+        for ((name, want) in cases) {
+            val i = RnqsInfo.parse(name)
+            assertEquals(want, Triple(i.gameTag, i.ruleset, i.natDex), name)
+        }
+        kotlin.test.assertFalse(RnqsInfo.parse("FRLG Kaizo (part 2).rnqs").secondPass, "the build is not the Gen 1 second pass")
+        kotlin.test.assertFalse(RnqsInfo.parse("RSE Kaizo (prepass).rnqs").prePass, "nor the pre-pass")
+        assertTrue(RnqsInfo.parse("RBY PART 2.rnqs").secondPass && RnqsInfo.parse("RSE PRE-PASS.rnqs").prePass, "the real ones still are")
+        // No bundled preset name has a bracket, so every one reads as before.
+        val presets = java.io.File("src/main/assets/presets").list { _, n -> n.endsWith(".rnqs") }!!
+        assertTrue(presets.isNotEmpty() && presets.none { '(' in it })
+        // A file from elsewhere with no sidecar and its game only in brackets is still read, from the whole name.
+        val dir = java.nio.file.Files.createTempDirectory("rnqs").toFile()
+        val imported = java.io.File(dir, "My run (FRLG Kaizo).rnqs").apply { writeBytes(ByteArray(8)) }
+        val info = RnqsInfo.of(imported)
+        assertEquals("FRLG" to "kaizo", info.gameTag to info.ruleset)
+    }
 }

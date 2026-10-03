@@ -71,6 +71,10 @@ class RunCodesTest {
         )
         assertTrue(listOf("Set up a game", "All files").none { it in why(good.text(), prep = emptyList()) }, "the old page names are gone")
         assertTrue("You do not have the settings" in why(good.text(), s = emptyList()))
+        // Randomizer settings is above Run codes, and the footer that says this is below both (rc32 audit P3 #61).
+        val noSettings = why(good.text(), s = emptyList())
+        assertTrue("IMPORT under Randomizer settings (advanced), further up this screen" in noSettings, noSettings)
+        assertTrue(Regex("\\bbelow\\b").find(noSettings) == null, noSettings)
         assertTrue("PART 2" in why(good.copy(passes = RunCode.PART_2).text()), "PART 2 is Red, Blue and Yellow's")
         assertTrue("60% levels" in why(good.copy(game = "red-u", passes = RunCode.PRE_PASS).text()), "Red takes no pre-pass")
     }

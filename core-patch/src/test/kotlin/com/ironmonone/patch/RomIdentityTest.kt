@@ -288,4 +288,20 @@ class RomIdentityTest {
             assertEquals(42L, RomIdentity.identifyWithCrc(f, 42L).crc)
         } finally { f.delete() }
     }
+
+    /**
+     * MaxDex 1.0 is a known build: Blake's FireRed 1.1 patched with Trip's MaxDex.bps is identified by its checksum,
+     * exactly, though its header is still FireRed 1.1's. Read from IRONMON_ROMS (firered-maxdex.gba) or the vendor
+     * folder; skipped without it.
+     */
+    @Test
+    fun `the MaxDex build is identified exactly, by its checksum`() {
+        val dir = System.getenv("IRONMON_ROMS") ?: "C:/Users/bepor/IronMonOne/.vendor/roms"
+        val f = java.io.File(dir, "firered-maxdex.gba")
+        if (!f.isFile) return println("skipped: firered-maxdex.gba not to hand")
+        val id = RomIdentity.identify(f)
+        assertEquals(RomKind.FIRERED_MAXDEX_10, id.kind)
+        assertEquals(0x28C12926L, id.crc)
+        assertTrue(id.exact)
+    }
 }

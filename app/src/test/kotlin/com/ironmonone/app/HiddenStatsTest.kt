@@ -63,7 +63,8 @@ class HiddenStatsTest {
     @Test
     fun `both cards take the same rule`() {
         val src = File("src/main/kotlin/com/ironmonone/app/TrackerPanel.kt").readText().replace("\r\n", "\n")
-        assertEquals(2, Regex("hidden = SummaryChecks\\.hides\\(attempt, state\\.gameDataRandomized, generation\\)").findAll(src).count(), "your card and the opponent's")
+        assertEquals(2, Regex(Regex.escape("hidden = hideStats,")).findAll(src).count(), "your card and the opponent's")
+        assertTrue("val hideStats = if (runScoped) SummaryChecks.hides(attempt, state.gameDataRandomized, generation)" in src)
         assertTrue("status = EnemyView.status(e, hidden)" in src)
         assertTrue("EnemyView.stageRows(e, hidden).forEach" in src)
         assertTrue("EnemyView.moveRows(e, movesSeenRunWide, moveRowFor, actual, hidden)" in src)
@@ -92,6 +93,6 @@ class HiddenStatsTest {
         assertTrue("header = if (p.movesTotal > 0) \"Moves ${'$'}{p.movesLearned}/${'$'}{p.movesTotal}\" else \"Moves\"" in src)
         assertTrue("if (hidden) emptyList() else p.moveRows" in src, "the moves themselves stay hidden")
         // DataHelper.lua:402-406: the blank stand-in's catch rate is 0.
-        assertTrue("if (SummaryChecks.hides(attempt, state.gameDataRandomized, generation)) 0 else pct" in src)
+        assertTrue("if (hideStats) 0 else pct" in src)
     }
 }

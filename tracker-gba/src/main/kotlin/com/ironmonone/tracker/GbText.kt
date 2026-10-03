@@ -14,6 +14,10 @@ object GbText {
         0xBA to "e", 0xBB to "'d", 0xBC to "'l", 0xBD to "'s", 0xBE to "'t", 0xBF to "'v",
         0xE0 to "'", 0xE1 to "PK", 0xE2 to "MN", 0xE3 to "-", 0xE6 to "?", 0xE7 to "!", 0xE8 to ".",
         0xF3 to "/", 0xF4 to ",",
+        // The naming screens' multiply sign and Gen 1's period (<DOT>, pokered constants/charmap.asm:181-182, pokecrystal
+        // :195-196; on the screens at pokered data/text/alphabets.asm:5-6 and pokecrystal data/text/name_input_chars.asm:7).
+        // A name with either was cut short there: DR.X read DR (rc32 audit P3 #107). The sign reads x, as é reads e.
+        0xF1 to "x", 0xF2 to ".",
         // The male and female signs: dropped, so a Nidoran still called by its default name reads as that name.
         0xEF to "", 0xF5 to "",
     )

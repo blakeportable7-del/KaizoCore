@@ -61,6 +61,13 @@ object PokemonDecoder {
         val level: Int = 0x54,
         val curHp: Int = 0x56,
         val maxHp: Int = 0x58,
+        /**
+         * The nickname's bytes at +0x08: 10 in the games, 12 on Nat. Dex (sizeofPokemonNickname, the ROM's byte at
+         * 0x08000176, NatDexExtension.lua:17600, which the reference reads at Program.lua:911). Read as 10 there,
+         * FLETCHINDER came out FLETCHINDE, and the Nuzlocke ledger took the species' own name for a nickname
+         * (rc32 audit P3 #112).
+         */
+        val nickLen: Int = 10,
     ) {
         companion object { val VANILLA = Layout() }
     }
@@ -120,7 +127,7 @@ object PokemonDecoder {
         return Mon(
             pid = pid,
             level = mon.u8(layout.level),
-            nickname = Gen3Text.decode(mon.copyOfRange(NICK, NICK + 10)),
+            nickname = Gen3Text.decode(mon.copyOfRange(NICK, NICK + layout.nickLen)),
             species = plain.u16(g),
             heldItem = plain.u16(g + 2),
             friendship = plain.u8(g + 9),

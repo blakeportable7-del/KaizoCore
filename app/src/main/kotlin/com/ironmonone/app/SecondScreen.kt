@@ -45,22 +45,28 @@ fun SecondScreenHost(enabled: Boolean, content: @Composable () -> Unit): Boolean
     val context = LocalContext.current
     val activity = remember(context) { context.findComponentActivity() }
     val dm = remember(context) { context.getSystemService(DisplayManager::class.java) }
-    var display by remember { mutableStateOf(dm?.let { presentationDisplay(it) }) }
+    // Never the display the game is on, and checked again whenever a display changes or the app moves to another
+    // one: the app on a dual-screen handheld's second panel put the tracker over its own game (rc32 audit P2 #83).
+    // Held by id, so a change that leaves the same display picked does not show the tracker again.
+    fun pick(): Int? = dm?.let { presentationDisplay(it, ownDisplayId(context))?.displayId }
+    var displayId by remember { mutableStateOf(pick()) }
     var showing by remember { mutableStateOf(false) }
     val latest = rememberUpdatedState(content)
+    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    androidx.compose.runtime.LaunchedEffect(configuration) { displayId = pick() }
 
     DisposableEffect(dm) {
         val listener = object : DisplayManager.DisplayListener {
-            override fun onDisplayAdded(id: Int) { display = dm?.let { presentationDisplay(it) } }
-            override fun onDisplayRemoved(id: Int) { display = dm?.let { presentationDisplay(it) } }
-            override fun onDisplayChanged(id: Int) {}
+            override fun onDisplayAdded(id: Int) { displayId = pick() }
+            override fun onDisplayRemoved(id: Int) { displayId = pick() }
+            override fun onDisplayChanged(id: Int) { displayId = pick() }
         }
         dm?.registerDisplayListener(listener, Handler(Looper.getMainLooper()))
         onDispose { dm?.unregisterDisplayListener(listener) }
     }
 
-    DisposableEffect(enabled, display, activity) {
-        val d = display
+    DisposableEffect(enabled, displayId, activity) {
+        val d = displayId?.let { dm?.getDisplay(it) }?.takeIf { it.isValid }
         if (!enabled || d == null || activity == null) {
             showing = false
             return@DisposableEffect onDispose { }
@@ -140,10 +146,30 @@ internal fun SecondScreenFrame(content: @Composable () -> Unit) {
 internal fun secondScreenColumnWidth(width: androidx.compose.ui.unit.Dp, height: androidx.compose.ui.unit.Dp): androidx.compose.ui.unit.Dp =
     minOf(width, height * 0.75f)
 
-/** The first display Android offers for presentations, other than the one the app is on. */
-internal fun presentationDisplay(dm: DisplayManager): Display? =
-    dm.getDisplays(DisplayManager.DISPLAY_CATEGORY_PRESENTATION)
-        .firstOrNull { it.displayId != Display.DEFAULT_DISPLAY && it.isValid }
+/**
+ * The first display Android offers for presentations, other than the one the app is on ([ownId], [ownDisplayId]).
+ * It left out the phone's own display, which is not always the one the app is on (rc32 audit P2 #83).
+ */
+internal fun presentationDisplay(dm: DisplayManager, ownId: Int): Display? {
+    val shown = dm.getDisplays(DisplayManager.DISPLAY_CATEGORY_PRESENTATION)
+    val id = pickPresentationDisplay(shown.map { it.displayId to it.isValid }, ownId) ?: return null
+    return shown.firstOrNull { it.displayId == id }
+}
+
+/** Of [candidates] ((display id, valid) in Android's order), the first valid one that is not [ownId]. */
+internal fun pickPresentationDisplay(candidates: List<Pair<Int, Boolean>>, ownId: Int): Int? =
+    candidates.firstOrNull { (id, valid) -> valid && id != ownId }?.first
+
+/** The display the app's window is on: its activity's, else the phone's own. */
+internal fun ownDisplayId(context: Context): Int {
+    var c: Context? = context
+    while (c != null && c !is Activity) c = (c as? ContextWrapper)?.baseContext
+    val activity = c as? Activity ?: return Display.DEFAULT_DISPLAY
+    return runCatching {
+        if (android.os.Build.VERSION.SDK_INT >= 30) activity.display?.displayId
+        else @Suppress("DEPRECATION") activity.windowManager.defaultDisplay.displayId
+    }.getOrNull() ?: Display.DEFAULT_DISPLAY
+}
 
 private fun Context.findComponentActivity(): ComponentActivity? {
     var c: Context? = this

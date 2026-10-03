@@ -23,6 +23,9 @@ object RunStart {
     /** The run now in place: its seed, and whether it was made ahead. */
     class Started(val seed: Long, val wasStaged: Boolean)
 
+    /** Room kept beyond the new game itself: its log, the DS species file, and the engine's own working files. */
+    private const val SPACE_MARGIN = 16L shl 20
+
     fun start(
         store: PrepStore,
         kind: RomKind,
@@ -49,13 +52,20 @@ object RunStart {
         countAttempt: Boolean = true,
         /** Built from a run code (RunCodeUi): its record says so (R7). */
         fromCode: Boolean = false,
+        /** The free bytes where the run is made; the test's to replace. */
+        freeBytes: (File) -> Long = { it.usableSpace },
     ): Started {
         val recipe = NextRun.recipe(kind, prepared, settings, secondPass, prePass, app)
         val ahead = if (seed == null) take(recipe) else { stop(); null }
-        val staged = ahead ?: run {
-            store.nextRun.make(recipe, seed ?: java.security.SecureRandom().nextLong(), randomize)
-            store.nextRun.claim(recipe) ?: throw java.io.IOException("The new run could not be moved into place.")
+        // Room for the new game (twice over with a second pass, whose first output waits beside it) before it is made:
+        // only the run made ahead looked, and a randomize that ran out of space partway could leave a cut-short game
+        // (rc32 audit P2 #119).
+        if (ahead == null) {
+            val need = prepared.length() * (if (prePass != null || secondPass != null) 2 else 1) + SPACE_MARGIN
+            if (freeBytes(store.nextRun.dir.apply { mkdirs() }) < need) throw RunSetupProblem(Randomizers.NO_ROOM_BEFORE)
         }
+        val staged = ahead ?: store.nextRun.makeAndClaim(recipe, seed ?: java.security.SecureRandom().nextLong(), randomize)
+            ?: throw java.io.IOException("The new run could not be moved into place.")
         // What the official file runs without, for the record (R4): decided on the file's bytes and the passes taken.
         val variant = CustomRuns.bundled?.invoke()?.takeIf { it.isNotEmpty() }?.let { b ->
             ExtraPasses.variant(kind, settings.name, runCatching { settings.readBytes() }.getOrNull(), b, prePass != null, secondPass != null)

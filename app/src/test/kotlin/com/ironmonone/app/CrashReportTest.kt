@@ -732,7 +732,8 @@ class CrashReportTest {
             val r = CrashReport.send("{}", "http://127.0.0.1:${ss.localPort}/api/kaizocore-crash", timeoutMs = 300)
             val ms = (System.nanoTime() - start) / 1_000_000
             assertIs<CrashReport.SendResult.Failed>(r)
-            assertTrue(ms < 5_000, "took $ms ms")
+            // The server never answers, so anything short of forever proves the timeout; loose, for a busy machine (P3 #83).
+            assertTrue(ms < 15_000, "took $ms ms")
         } finally {
             runCatching { ss.close() }
             held.forEach { runCatching { it.close() } }
@@ -1148,14 +1149,192 @@ class CrashReportTest {
         val main = source("MainActivity.kt")
         val launch = "launchCrash?.let { text -> CrashReportLaunch(text, onClose = { launchCrash = null }) }"
         assertEquals(1, Regex(Regex.escape(launch)).findAll(main).count(), "one launch dialog")
-        // The update prompt is told about the crash dialog, so the two never stack.
-        assertTrue("    $launch\n    UpdatePrompt(show = tab != Tab.PLAY && launchCrash == null)" in main, "the crash dialog, then the update prompt that waits for it")
+        // The update prompt is told about the crash dialog, so the two never stack: it waits until the record is read too.
+        assertTrue("    $launch\n    UpdatePrompt(show = tab != Tab.PLAY && crashChecked && launchCrash == null)" in main, "the crash dialog, then the update prompt that waits for it")
         assertEquals(1, Regex(Regex.escape("CrashLog.installHandler(this)")).findAll(main).count(), "the handler is installed once, from onCreate")
         assertTrue(main.indexOf("CrashLog.installHandler(this)") > main.indexOf("override fun onCreate("), "inside onCreate")
         val about = source("AboutScreen.kt")
         assertEquals(1, Regex(Regex.escape("CrashReportsCard()")).findAll(about).count(), "one switch card")
         assertTrue(about.indexOf("CrashReportsCard()") < about.indexOf("// BETA FEEDBACK."), "before the bug report card")
         assertTrue("CrashCardActions(text, onDismiss = { CrashLog.clear(context); crash = null })" in about, "the crash card sends through the site")
+    }
+
+    /** rc32 audit P3 #31: a freeze's trace is megabytes, and reading it in the first composition held the first frame. */
+    @Test
+    fun `the crash record is read off the main thread, at launch and on INFO`() {
+        val main = source("MainActivity.kt")
+        val about = source("AboutScreen.kt")
+        for ((name, src) in listOf("MainActivity.kt" to main, "AboutScreen.kt" to about)) {
+            var at = src.indexOf("CrashLog.collect(")
+            assertTrue(at > 0, name)
+            while (at > 0) {
+                val before = src.substring(maxOf(0, at - 300), at)
+                val io = before.lastIndexOf("withContext(")
+                assertTrue(io >= 0 && "Dispatchers.IO" in before.substring(io), "$name: CrashLog.collect is called on the IO dispatcher")
+                assertTrue(io > before.lastIndexOf("remember {"), "$name: not in a remember initializer, which runs in composition")
+                assertTrue(before.lastIndexOf("LaunchedEffect(") >= 0, "$name: in an effect")
+                at = src.indexOf("CrashLog.collect(", at + 1)
+            }
+        }
+        assertTrue("crashChecked = true" in main, "the update prompt is let go once the record has been read")
+    }
+
+    // ------------------------------------------------------------------------ the protobuf tombstone (rc32 audit P2 #18)
+
+    /** A protobuf message, field by field, as the tombstone's own encoder writes one. */
+    private class Proto {
+        private val out = ByteArrayOutputStream()
+        private fun varint(v: Long) {
+            var x = v
+            while (true) {
+                if (x and 0x7FL.inv() == 0L) { out.write(x.toInt()); return }
+                out.write(((x and 0x7FL) or 0x80L).toInt()); x = x ushr 7
+            }
+        }
+        fun int(field: Int, v: Long) = apply { varint((field shl 3).toLong()); varint(v) }
+        fun fixed64(field: Int, v: Long) = apply { varint(((field shl 3) or 1).toLong()); repeat(8) { out.write(((v ushr (8 * it)) and 0xFFL).toInt()) } }
+        fun bytes(field: Int, b: ByteArray) = apply { varint(((field shl 3) or 2).toLong()); varint(b.size.toLong()); out.write(b) }
+        fun str(field: Int, s: String) = bytes(field, s.toByteArray(Charsets.UTF_8))
+        fun msg(field: Int, m: Proto) = bytes(field, m.toBytes())
+        fun toBytes(): ByteArray = out.toByteArray()
+    }
+
+    private val melon = "/data/app/~~Zx9q==/com.ironmonone.app-Qw3e==/lib/arm64/libmelonds_libretro_android.so"
+
+    /** BacktraceFrame: rel_pc 1, pc 2, sp 3, function_name 4, function_offset 5, file_name 6, build_id 8. */
+    private fun frame(relPc: Long, file: String, function: String = "", offset: Long = 0, buildId: String = "") = Proto().apply {
+        int(1, relPc); int(2, relPc + 0x7a00000000L); int(3, 0x7ffd0000L)
+        if (function.isNotEmpty()) { str(4, function); int(5, offset) }
+        str(6, file)
+        if (buildId.isNotEmpty()) str(8, buildId)
+    }
+
+    /**
+     * A SIGSEGV in melonDS on thread 4242, the way Android 12 and later hands a native crash over: tombstone.proto's
+     * arch 1, pid 5, tid 6, signal_info 10, causes 15, threads 16 (a map: key 1, value 2) and memory_mappings 17,
+     * with another thread first in the map and thirty libraries mapped, whose paths are what the old filter kept.
+     */
+    private fun tombstone(): ByteArray {
+        val t = Proto()
+        t.int(1, 1)
+        t.str(2, "google/panther/panther:14/AP2A.240805.005/12025142:user/release-keys")
+        t.int(5, 4000); t.int(6, 4242); t.int(7, 10234)
+        t.str(9, "com.ironmonone.app")
+        t.int(20, 3600)
+        t.msg(10, Proto().int(1, 11).str(2, "SIGSEGV").int(3, 1).str(4, "SEGV_MAPERR").int(8, 1).int(9, 0x6b))
+        t.msg(15, Proto().str(1, "null pointer dereference"))
+        val other = Proto().int(1, 1000).str(2, "main")
+            .msg(4, frame(0x1000, "/apex/com.android.art/lib64/libart.so", "art::Runtime::Abort", 8))
+        val crashing = Proto().int(1, 4242).str(2, "GLThread 4242")
+            .msg(3, Proto().str(1, "x0").int(2, 0))
+            .msg(4, frame(0x6e2f4, melon, "_ZN3DMA16UnitTimings9_16Ev", 412, "4f2a9c1d"))
+            .msg(4, frame(0x12a90, melon, "retro_run", 96))
+            .msg(4, frame(0x4d5f0, "/apex/com.android.runtime/lib64/bionic/libc.so"))
+            .int(6, 0)
+        t.msg(16, Proto().int(1, 1000).msg(2, other))
+        t.msg(16, Proto().int(1, 4242).msg(2, crashing))
+        repeat(30) { i ->
+            t.msg(17, Proto().int(1, 0x7a00000000L + i * 0x1000L).int(2, 0x7a00001000L + i * 0x1000L).int(4, 1).str(7, "/system/lib64/libmapped$i.so"))
+        }
+        t.fixed64(99, 0x1122334455667788L)   // a field this does not know, stepped over
+        return t.toBytes()
+    }
+
+    @Test
+    fun `a native crash's tombstone says the signal, the cause and where the crashing thread was`() {
+        val f = File(tmp(), "crash-trace-1.bin").apply { writeBytes(tombstone()) }
+        val lines = CrashLog.tombstoneLines(f)
+        assertEquals("signal 11 (SIGSEGV), code 1 (SEGV_MAPERR), fault addr 0x000000000000006b", lines[0])
+        assertTrue("Cause: null pointer dereference" in lines, lines.joinToString("\n"))
+        assertTrue("pid: 4000, tid: 4242, name: GLThread 4242" in lines, lines.joinToString("\n"))
+        assertEquals("#00 pc 000000000006e2f4  $melon (_ZN3DMA16UnitTimings9_16Ev+412) (BuildId: 4f2a9c1d)", lines.first { it.startsWith("#00") })
+        assertEquals("#01 pc 0000000000012a90  $melon (retro_run+96)", lines.first { it.startsWith("#01") })
+        assertEquals("#02 pc 000000000004d5f0  /apex/com.android.runtime/lib64/bionic/libc.so", lines.first { it.startsWith("#02") })
+        assertFalse(lines.any { "libart" in it || "libmapped" in it }, "another thread's frames and the memory map are not where it crashed")
+        // What goes to Blake keeps them: a library frame is not the player's file.
+        for (l in lines) assertEquals(l, CrashReport.scrub(l))
+        // And under its exit in the report, as the text tombstone's lines always were.
+        val text = CrashLog.render("a", "d", listOf(CrashLog.Exit(T0, ApplicationExitInfo.REASON_CRASH_NATIVE, 11, 100, "p", null, 7L,
+            CrashLog.Tombstone(f.name, f.length(), lines))))
+        assertTrue("            #00 pc 000000000006e2f4  $melon (_ZN3DMA16UnitTimings9_16Ev+412) (BuildId: 4f2a9c1d)" in text.lines())
+    }
+
+    @Test
+    fun `an abort says its message, and only the first frames are kept`() {
+        val many = Proto().int(1, 77).str(2, "emu")
+        repeat(40) { i -> many.msg(4, frame(0x100L + i, melon, "f$i", 4)) }
+        val t = Proto().int(1, 1).int(5, 1).int(6, 77)
+            .msg(10, Proto().int(1, 6).str(2, "SIGABRT").int(3, -6).str(4, "SI_TKILL"))
+            .str(14, "Check failed: frame != nullptr\nsecond line")
+            .msg(16, Proto().int(1, 77).msg(2, many))
+        val lines = CrashLog.tombstoneLines(File(tmp(), "crash-trace-2.bin").apply { writeBytes(t.toBytes()) })
+        assertEquals("signal 6 (SIGABRT), code -6 (SI_TKILL), fault addr --------", lines[0], "a negative code is ten bytes of varint")
+        assertEquals("Abort message: 'Check failed: frame != nullptr second line'", lines[1], "one line, whatever it held")
+        assertEquals(TombstoneProto.FRAMES, lines.count { it.startsWith("#") })
+        assertEquals("#11 pc 000000000000010b  $melon (f11+4)", lines.last())
+    }
+
+    @Test
+    fun `a trace that is not a tombstone, or is cut short, still gives its readable lines and never throws`() {
+        val dir = tmp()
+        val text = File(dir, "crash-trace-3.bin").apply { writeBytes("garbage\u0000signal 11 (SIGSEGV) in libmgba_libretro_android.so\u0000".toByteArray()) }
+        assertEquals(listOf("signal 11 (SIGSEGV) in libmgba_libretro_android.so"), CrashLog.tombstoneLines(text))
+        val whole = tombstone()
+        for (cut in listOf(1, 7, 40, whole.size / 2, whole.size - 3)) {
+            val f = File(dir, "crash-trace-cut$cut.bin").apply { writeBytes(whole.copyOf(cut)) }
+            assertNotNull(runCatching { CrashLog.tombstoneLines(f) }.getOrNull(), "cut at $cut")
+        }
+        assertTrue(CrashLog.tombstoneLines(File(dir, "missing.bin")).isEmpty())
+    }
+
+    // ------------------------------------------------------------------------ old traces (rc32 audit P3 #24)
+
+    @Test
+    fun `old traces go, and past the newest three the rest go too, card or no card`() {
+        val dir = tmp()
+        val now = T0
+        val old = File(dir, "crash-trace-${now - 8 * 86_400_000L}.bin").apply { writeText("a week and a day") }
+        val recent = (1..5).map { h -> File(dir, "crash-trace-${now - h * 3_600_000L}.bin").apply { writeText("$h hours") } }
+        File(dir, CrashLog.REPORT).writeText("r")
+        CrashLog.pruneTraces(dir, now)
+        assertFalse(old.exists(), "a week old")
+        assertEquals(recent.take(CrashLog.TRACES_KEPT).map { it.name }.sorted(),
+            dir.listFiles()!!.map { it.name }.filter { it.startsWith("crash-trace-") }.sorted(), "the newest three")
+        assertTrue(File(dir, CrashLog.REPORT).exists(), "only traces")
+        CrashLog.pruneTraces(File(dir, "nothing here"), now)   // and no folder is no error
+    }
+
+    // ------------------------------------------------------------------------ the game (rc32 audit P3 #25)
+
+    @Test
+    fun `the report names the game that was open when the app died, not the last run's`() {
+        val black2 = GameSession(File("b2.nds"), com.ironmonone.core.Platform.NDS, com.ironmonone.core.RomKind.BLACK2_U, "Black 2", "lib-0000beef", isRun = false)
+        assertEquals("B2W2", CrashReport.gameOf("lib-0000beef", black2), "a library DS game, after a FireRed run")
+        val run = GameSession.forRun(File("current.gba"), com.ironmonone.core.RomKind.FIRERED_U_V11)
+        assertEquals("FRLG", CrashReport.gameOf("run", run))
+        assertNull(CrashReport.gameOf(null, run), "no game was open")
+        assertNull(CrashReport.gameOf("lib-0000beef", run), "the marker names another game than the one Play opens")
+        val hack = GameSession(File("hack.gba"), com.ironmonone.core.Platform.GBA, null, "Hack", "lib-00000001", isRun = false)
+        assertEquals("GBA", CrashReport.gameOf("lib-00000001", hack), "a game the tracker does not read is named by its console")
+        assertEquals("Game Boy", CrashReport.gameOf("lib-2", hack.copy(platform = com.ironmonone.core.Platform.GBC, id = "lib-2")))
+        assertEquals("DS", CrashReport.gameOf("lib-3", hack.copy(platform = com.ironmonone.core.Platform.NDS, id = "lib-3")))
+    }
+
+    @Test
+    fun `the game comes from Play's marker, is kept beside the report, and goes with it`() {
+        val dir = tmp()
+        val store = PrepStore(dir)
+        store.saveLastRun(com.ironmonone.core.RomKind.FIRERED_U_V11.id, "FRLG Kaizo.rnqs")
+        assertNull(CrashReport.gameAtExit(store), "the app died on Home: no marker, no game")
+        CrashResume.playing(store.playMarker, GameSession.RUN_ID)
+        assertEquals("FRLG", CrashReport.gameAtExit(store))
+        CrashReport.keepGame(dir, "FRLG")
+        assertEquals("FRLG", CrashReport.keptGame(dir))
+        CrashReport.keepGame(dir, null)
+        assertNull(CrashReport.keptGame(dir), "a crash with no game open names none")
+        CrashReport.keepGame(dir, "B2W2")
+        CrashLog.clearIn(dir)
+        assertNull(CrashReport.keptGame(dir), "dismissed with the report")
     }
 
     @Test

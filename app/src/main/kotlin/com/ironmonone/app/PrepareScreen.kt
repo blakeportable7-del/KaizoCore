@@ -85,12 +85,13 @@ fun PrepareScreen(modifier: Modifier = Modifier, onMyGames: () -> Unit = {}) {
     ) { uri ->
         uri ?: return@rememberLauncherForActivityResult
         busy = true; message = null; needPatchImport = false
+        // This pick's own copy: a failure deletes it and nothing else (rc32 audit P2 #64).
+        val tmp = java.io.File(context.cacheDir, "prep-" + System.nanoTime())
         scope.launch {
             runCatching {
                 withContext(Dispatchers.IO) {
                     // Stream to a temp file; unzip on disk; identify from the file
                     // (RomIdentity.identify(File) reads the header and streams the CRC).
-                    val tmp = java.io.File(context.cacheDir, "prep-" + System.nanoTime())
                     var name = context.displayNameOf(uri)
                     val size = runCatching { context.contentResolver.openAssetFileDescriptor(uri, "r")?.use { it.length } ?: -1L }.getOrDefault(-1L)
                     progress.start("Copying $name", if (size > 0) size else 0L)
@@ -116,7 +117,12 @@ fun PrepareScreen(modifier: Modifier = Modifier, onMyGames: () -> Unit = {}) {
                 romFile?.delete(); romName = n; romFile = f; romId = id
                 // A new file opens on Standard again: a choice made for the last one must not carry over to this game.
                 chosenOption = null
-            }.onFailure { say(readFailure(it), error = true); runCatching { context.cacheDir.listFiles()?.filter { f -> f.name.startsWith("prep-") }?.forEach { f -> f.deleteRecursively() } } }
+            }.onFailure {
+                say(readFailure(it), error = true)
+                // Only this pick's files. Every prep- file went, the earlier pick's copy included, while that game stayed
+                // on screen with Prepare on, and Prepare then deleted the game's prepared copy (rc32 audit P2 #64).
+                runCatching { tmp.delete(); java.io.File(tmp.parentFile, tmp.name + ".d").deleteRecursively() }
+            }
             progress.clear(); busy = false
         }
     }
@@ -167,6 +173,8 @@ fun PrepareScreen(modifier: Modifier = Modifier, onMyGames: () -> Unit = {}) {
         val file = romFile ?: return
         val id = romId ?: return
         val kind = id.kind ?: return
+        // The pick's copy is gone (the cache was cleared, or the app restarted): say so before anything is touched.
+        if (!file.isFile) { say("That copy of the game is gone. Choose the game again.", error = true); romFile = null; romId = null; romName = null; return }
         // Only an exact copy of a known game is stored: the list of prepared games (PrepStore.listPrepared) and the
         // Kaizo screen read a stored file by its checksum, so anything else was stored, called "Ready for Kaizo
         // IronMON" and never listed. A game recognised by its title alone (Pokemon Black, today) or whose checksum
@@ -187,7 +195,7 @@ fun PrepareScreen(modifier: Modifier = Modifier, onMyGames: () -> Unit = {}) {
         progress.clear()
         scope.launch {
             runCatching {
-                withContext(Dispatchers.IO) { PrepRun.run(context, store, file, kind, chosenOption, progress) }
+                withContext(Dispatchers.IO) { PrepRun.run(context, store, file, kind, chosenOption, progress, crc = id.crc) }
             }.onSuccess { msg -> say("$msg Ready for Kaizo IronMON."); romFile = null; romId = null; romName = null }
                 .onFailure {
                     if (it is NeedPatch) {
@@ -301,6 +309,15 @@ fun PrepareScreen(modifier: Modifier = Modifier, onMyGames: () -> Unit = {}) {
                     Text("\u2022 $line", style = MaterialTheme.typography.bodySmall, color = Shell.inkOnPaper, modifier = Modifier.padding(vertical = 1.dp))
                 }
                 Text(NatDexInfo.CREDIT, style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper)
+            }
+            // MaxDex says the same before anything is made, and that its patch is built in.
+            if (picked.mode == PrepOptions.Mode.MAXDEX) {
+                Spacer(Modifier.height(10.dp))
+                Text(MaxDexInfo.WHAT, style = MaterialTheme.typography.titleSmall, color = Gen3.Ink)
+                MaxDexInfo.lines.forEach { line ->
+                    Text("\u2022 $line", style = MaterialTheme.typography.bodySmall, color = Shell.inkOnPaper, modifier = Modifier.padding(vertical = 1.dp))
+                }
+                Text(MaxDexInfo.CREDIT, style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper)
             }
         }
 

@@ -5,6 +5,10 @@ package com.ironmonone.app
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,6 +40,7 @@ import com.ironmonone.tracker.nuzlocke.ClauseGroup
 import com.ironmonone.tracker.nuzlocke.NuzlockeAreas
 import com.ironmonone.tracker.nuzlocke.NuzlockeFamilies
 import com.ironmonone.tracker.nuzlocke.NuzlockeNotes
+import com.ironmonone.tracker.nuzlocke.NuzlockePreset
 import com.ironmonone.tracker.nuzlocke.NuzlockeRules
 import com.ironmonone.tracker.nuzlocke.NuzlockeView
 import com.ironmonone.tracker.nuzlocke.NzArea
@@ -170,7 +175,7 @@ fun NuzlockeLedgerDialog(
 
     InfoSheet("NUZLOCKE  " + rules.preset.label.uppercase(), onClose) {
         FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            for (t in LedgerTab.entries) NzChip(t.label, tab == t) { tab = t }
+            for (t in LedgerTab.entries) NzChip(t.label, tab == t, Role.Tab) { tab = t }
         }
         Spacer(Modifier.height(8.dp))
         when (tab) {
@@ -185,7 +190,7 @@ fun NuzlockeLedgerDialog(
     monEdit?.let { id ->
         val mon = ledger.roster[id]
         if (mon == null) monEdit = null
-        else MonEditor(live, mon, here, rev, onClose = { monEdit = null }, onChanged = { changed() })
+        else MonEditor(live, mon, here, snapshot?.badges, rev, onClose = { monEdit = null }, onChanged = { changed() })
     }
     if (addOpen) AddMonEditor(live, here, rev, onClose = { addOpen = false }, onChanged = { changed() })
     if (noteOpen) TextPrompt("Add a note", "", onDone = { t -> live.edits.addNote(t, System.currentTimeMillis()); changed(); noteOpen = false }, onDismiss = { noteOpen = false })
@@ -197,28 +202,28 @@ private fun AreasTab(live: NuzlockeTracking.Live, here: AreaKey?, @Suppress("UNU
     if (here != null) {
         val rec = ledger.areas[here.key]
         Row(
-            Modifier.fillMaxWidth().clickable { onEdit(here) }.background(Pc.Page).border(1.dp, Pc.Border).padding(8.dp),
+            Modifier.fillMaxWidth().heightIn(min = PcMin.DIALOG_TOUCH_DP.dp).clickable(role = Role.Button) { onEdit(here) }.background(Pc.Page).border(1.dp, Pc.Border).padding(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(Modifier.weight(1f)) {
-                PixText("You are in", 11, Pc.Dim)
-                PixText(here.name, 14, Pc.Gold)
+                DialogText("You are in", 12, Pc.Dim)
+                DialogText(here.name, 14, Pc.Gold)
             }
-            PixText(rec?.encounter?.let { "${it.speciesName} ${it.outcome.label}" } ?: "open", 12, if (rec?.encounter == null) Pc.Text else Pc.Dim)
+            DialogText(rec?.encounter?.let { "${it.speciesName} ${it.outcome.label}" } ?: "open", 12, if (rec?.encounter == null) Pc.Text else Pc.Dim)
         }
         Spacer(Modifier.height(8.dp))
     }
     val areas = ledger.areas.values.toList().asReversed()
-    if (areas.isEmpty()) PixText("No area yet. The first wild battle starts the list.", 12, Pc.Dim, wrap = true)
+    if (areas.isEmpty()) DialogText("No area yet. The first wild battle starts the list.", 12, Pc.Dim)
     for (a in areas) {
         val enc = a.encounter
-        Column(Modifier.fillMaxWidth().clickable { onEdit(AreaKey(a.key, a.name)) }.padding(vertical = 5.dp)) {
+        Column(Modifier.fillMaxWidth().heightIn(min = PcMin.DIALOG_TOUCH_DP.dp).clickable(role = Role.Button) { onEdit(AreaKey(a.key, a.name)) }.padding(vertical = 5.dp)) {
             Row(Modifier.fillMaxWidth()) {
-                PixText(a.name, 13, Pc.Text, Modifier.weight(1f))
-                PixText(enc?.outcome?.label ?: "open", 12, outcomeColor(enc?.outcome))
+                DialogText(a.name, 13, Pc.Text, Modifier.weight(1f))
+                DialogText(enc?.outcome?.label ?: "open", 12, outcomeColor(enc?.outcome))
             }
-            if (enc != null) PixText("${enc.speciesName} Lv ${enc.level}" + (if (enc.manual) ", set by hand" else ""), 12, Pc.Dim, wrap = true)
-            for (x in a.extras) PixText("${x.speciesName} Lv ${x.level}: ${x.kind.label}, ${x.outcome.label}", 11, Pc.Dim, wrap = true)
+            if (enc != null) DialogText("${enc.speciesName} Lv ${enc.level}" + (if (enc.manual) ", set by hand" else ""), 12, Pc.Dim)
+            for (x in a.extras) DialogText("${x.speciesName} Lv ${x.level}: ${x.kind.label}, ${x.outcome.label}", 12, Pc.Dim)
         }
         Box(Modifier.fillMaxWidth().height(1.dp).background(Pc.Border.copy(alpha = 0.4f)))
     }
@@ -236,29 +241,29 @@ private fun TeamTab(live: NuzlockeTracking.Live, @Suppress("UNUSED_PARAMETER") r
     val ledger = live.ledger
     NzSection("In the party")
     val party = ledger.party
-    if (party.isEmpty()) PixText("Nobody yet.", 12, Pc.Dim)
+    if (party.isEmpty()) DialogText("Nobody yet.", 12, Pc.Dim)
     for (m in party) MonRow(m) { onEdit(m.id) }
     NzSection("In a box")
     val boxed = ledger.boxed
-    if (boxed.isEmpty()) PixText("Nobody. The tracker cannot see inside a box, so a Pokemon that is not in the party is listed here.", 11, Pc.Dim, wrap = true)
+    if (boxed.isEmpty()) DialogText("Nobody. The tracker cannot see inside a box, so a Pokemon that is not in the party is listed here.", 12, Pc.Dim)
     for (m in boxed) MonRow(m) { onEdit(m.id) }
     Spacer(Modifier.height(10.dp))
-    PcSmallButton("ADD A POKEMON") { onAdd() }
-    PixText("For one the tracker never saw in the party.", 11, Pc.Dim, wrap = true)
+    GearButton("ADD A POKEMON") { onAdd() }
+    DialogText("For one the tracker never saw in the party.", 12, Pc.Dim)
 }
 
 @Composable
 private fun GraveTab(live: NuzlockeTracking.Live, @Suppress("UNUSED_PARAMETER") rev: Int, onEdit: (Long) -> Unit) {
     val dead = live.ledger.graveyard
-    if (dead.isEmpty()) PixText("Nobody has died.", 12, Pc.Dim)
+    if (dead.isEmpty()) DialogText("Nobody has died.", 12, Pc.Dim)
     for (m in dead) {
         val d = m.death
-        Column(Modifier.fillMaxWidth().clickable { onEdit(m.id) }.padding(vertical = 5.dp)) {
-            PixText(m.label(d?.level ?: m.level), 13, Pc.Negative, wrap = true)
+        Column(Modifier.fillMaxWidth().heightIn(min = PcMin.DIALOG_TOUCH_DP.dp).clickable(role = Role.Button) { onEdit(m.id) }.padding(vertical = 5.dp)) {
+            DialogText(m.label(d?.level ?: m.level), 13, Pc.Negative)
             if (d != null) {
-                PixText("${d.areaName}. ${d.cause}." + (if (d.manual) " Marked by hand." else ""), 11, Pc.Dim, wrap = true)
+                DialogText("${d.areaName}. ${d.cause}." + (if (d.manual) " Marked by hand." else ""), 12, Pc.Dim)
                 val badges = if (d.badges != 0) "${Integer.bitCount(d.badges)} badges" else "no badges"
-                PixText(listOf(badges, whenText(d.at)).filter { it.isNotEmpty() }.joinToString(", "), 11, Pc.Dim)
+                DialogText(listOf(badges, whenText(d.at)).filter { it.isNotEmpty() }.joinToString(", "), 12, Pc.Dim)
             }
         }
         Box(Modifier.fillMaxWidth().height(1.dp).background(Pc.Border.copy(alpha = 0.4f)))
@@ -267,13 +272,13 @@ private fun GraveTab(live: NuzlockeTracking.Live, @Suppress("UNUSED_PARAMETER") 
 
 @Composable
 private fun MonRow(m: RosterMon, onClick: () -> Unit) {
-    Column(Modifier.fillMaxWidth().clickable { onClick() }.padding(vertical = 4.dp)) {
+    Column(Modifier.fillMaxWidth().heightIn(min = PcMin.DIALOG_TOUCH_DP.dp).clickable(role = Role.Button) { onClick() }.padding(vertical = 4.dp)) {
         Row(Modifier.fillMaxWidth()) {
-            PixText((if (m.violation) "! " else "") + m.shownName, 13, if (m.violation) Pc.Gold else Pc.Text, Modifier.weight(1f))
-            PixText("Lv ${m.level}", 12, Pc.Dim)
+            DialogText((if (m.violation) "! " else "") + m.shownName, 13, if (m.violation) Pc.Gold else Pc.Text, Modifier.weight(1f))
+            DialogText("Lv ${m.level}", 12, Pc.Dim)
         }
         val gender = m.gender?.glyph?.let { "  $it" } ?: ""
-        PixText("${m.speciesName}$gender  ${m.origin.label}, ${m.areaName}", 11, Pc.Dim, wrap = true)
+        DialogText("${m.speciesName}$gender  ${m.origin.label}, ${m.areaName}", 12, Pc.Dim)
     }
 }
 
@@ -282,24 +287,24 @@ private fun LogTab(live: NuzlockeTracking.Live, @Suppress("UNUSED_PARAMETER") re
     val ledger = live.ledger
     NzSection("Warnings")
     val open = ledger.openWarnings
-    if (open.isEmpty()) PixText("None.", 12, Pc.Dim)
+    if (open.isEmpty()) DialogText("None.", 12, Pc.Dim)
     for (w in open.asReversed()) {
         Row(Modifier.fillMaxWidth().padding(vertical = 3.dp), verticalAlignment = Alignment.Top) {
             Column(Modifier.weight(1f)) {
-                PixText(w.kind.label + "  " + whenText(w.at), 11, Pc.Gold)
-                PixText(w.text, 12, Pc.Text, wrap = true)
+                DialogText(w.kind.label + "  " + whenText(w.at), 12, Pc.Gold)
+                DialogText(w.text, 12, Pc.Text)
             }
             Spacer(Modifier.width(6.dp))
-            PcSmallButton("OK") { onDismiss(w.id) }
+            GearButton("OK", Modifier) { onDismiss(w.id) }
         }
     }
     NzSection("Notes")
-    for (n in ledger.notes) PixText(n, 12, Pc.Text, wrap = true)
+    for (n in ledger.notes) DialogText(n, 12, Pc.Text)
     Spacer(Modifier.height(4.dp))
-    PcSmallButton("ADD A NOTE") { onNote() }
+    GearButton("ADD A NOTE") { onNote() }
     NzSection("What happened")
     for (e in ledger.events.takeLast(80).asReversed()) {
-        PixText((if (e.manual) "* " else "") + whenText(e.at) + "  " + e.text, 11, if (e.manual) Pc.Gold else Pc.Dim, Modifier.padding(vertical = 1.dp), wrap = true)
+        DialogText((if (e.manual) "* " else "") + whenText(e.at) + "  " + e.text, 12, if (e.manual) Pc.Gold else Pc.Dim, Modifier.padding(vertical = 1.dp))
     }
 }
 
@@ -307,33 +312,37 @@ private fun LogTab(live: NuzlockeTracking.Live, @Suppress("UNUSED_PARAMETER") re
 private fun RulesTab(live: NuzlockeTracking.Live, snapshot: Snapshot?, @Suppress("UNUSED_PARAMETER") rev: Int, onChanged: () -> Unit) {
     val meta = live.ledger.meta
     val rules = meta.rules
-    PixText(meta.game, 13, Pc.Gold, wrap = true)
-    PixText("Started " + whenText(meta.startedAt) + ". " + meta.status.label + (if (meta.endReason.isNotBlank()) ": ${meta.endReason}" else "") + ".", 12, Pc.Dim, wrap = true)
+    DialogText(meta.game, 13, Pc.Gold)
+    DialogText("Started " + whenText(meta.startedAt) + ". " + meta.status.label + (if (meta.endReason.isNotBlank()) ": ${meta.endReason}" else "") + ".", 12, Pc.Dim)
     if (meta.genlockeId.isNotEmpty()) {
-        PixText("Genlocke, game ${meta.leg}. Carried in: " + meta.heirsIn.joinToString(", ") { it.speciesName }.ifEmpty { "nobody" } + ".", 11, Pc.Dim, wrap = true)
+        DialogText("Genlocke, game ${meta.leg}. Carried in: " + meta.heirsIn.joinToString(", ") { it.speciesName }.ifEmpty { "nobody" } + ".", 12, Pc.Dim)
     }
-    if (meta.heirsOut.isNotEmpty()) PixText("Survivors saved for the next game: " + meta.heirsOut.joinToString(", ") { it.speciesName } + ".", 11, Pc.Positive, wrap = true)
-    if (!meta.started) PixText(if (meta.system.readsBalls) "The rules have not begun: they wait for the first Poke Ball." else "The rules have not begun: they wait for your first Pokemon.", 11, Pc.Dim, wrap = true)
+    // Every finished run fills heirsOut; only a Genlocke has a next game to save them for (rc32 audit P2 #39).
+    if (meta.heirsOut.isNotEmpty() && (meta.genlockeId.isNotEmpty() || rules.preset == NuzlockePreset.GENLOCKE))
+        DialogText("Survivors saved for the next game: " + meta.heirsOut.joinToString(", ") { it.speciesName } + ".", 12, Pc.Positive)
+    if (!meta.started) DialogText(if (meta.system.readsBalls) "The rules have not begun: they wait for the first Poke Ball." else "The rules have not begun: they wait for your first Pokemon.", 12, Pc.Dim)
     // What this family of games lets the tracker see, and what stays by hand (Game Boy and DS; Gen 3 has no notes).
     val notes = NuzlockeNotes.forGame(meta.system, meta.gameKey)
     if (!notes.isEmpty) {
         NzSection("What the tracker reads")
-        for (t in notes.automatic) PixText(t, 11, Pc.Text, Modifier.padding(vertical = 2.dp), wrap = true)
+        for (t in notes.automatic) DialogText(t, 12, Pc.Text, Modifier.padding(vertical = 2.dp))
         NzSection("By hand in this game")
-        for (t in notes.byHand) PixText(t, 11, Pc.Gold, Modifier.padding(vertical = 2.dp), wrap = true)
+        for (t in notes.byHand) DialogText(t, 12, Pc.Gold, Modifier.padding(vertical = 2.dp))
     }
     Spacer(Modifier.height(6.dp))
-    rules.monotypeLabel?.let { PixText("Only $it Pokémon.", 12, Pc.Text) }
-    PixText("Tap a rule to change it. It applies from now on, and the log says it was changed.", 11, Pc.Dim, wrap = true)
+    rules.monotypeLabel?.let { DialogText("Only $it Pokémon.", 12, Pc.Text) }
+    DialogText("Tap a rule to change it. It applies from now on, and the log says it was changed.", 12, Pc.Dim)
     for (g in ClauseGroup.entries) {
-        val cs = NuzlockeRules.CLAUSES.filter { it.group == g }
+        // Not the Genlocke switch: only a start reads it, so turning it here changed nothing (rc32 audit P2 #39).
+        val cs = NuzlockeRules.CLAUSES.filter { it.group == g && it.key != "genlocke" }
         if (cs.isEmpty()) continue
         NzSection(g.title)
         for (c in cs) {
             val on = c.get(rules)
-            Row(Modifier.fillMaxWidth().clickable { live.edits.setClause(c.key, !on, System.currentTimeMillis()); onChanged() }.padding(vertical = 5.dp)) {
-                PixText(c.title, 12, if (on) Pc.Text else Pc.Dim, Modifier.weight(1f), wrap = true)
-                PixText(if (on) "ON" else "off", 12, if (on) Pc.Positive else Pc.Dim)
+            Row(Modifier.fillMaxWidth().heightIn(min = PcMin.DIALOG_TOUCH_DP.dp).toggleable(value = on, role = Role.Switch) { live.edits.setClause(c.key, !on, System.currentTimeMillis()); onChanged() }.padding(vertical = 5.dp),
+                verticalAlignment = Alignment.CenterVertically) {
+                DialogText(c.title, 12, if (on) Pc.Text else Pc.Dim, Modifier.weight(1f))
+                DialogText(if (on) "ON" else "off", 12, if (on) Pc.Positive else Pc.Dim)
             }
         }
     }
@@ -348,13 +357,11 @@ private fun RulesTab(live: NuzlockeTracking.Live, snapshot: Snapshot?, @Suppress
             caps.mixed -> "Some level caps come from the game, the rest from the standard table."
             else -> "Level caps come from the standard table for this game. If the game is changed or randomized they can be wrong."
         }
-        PixText(where, 11, Pc.Dim, wrap = true)
+        DialogText(where, 12, Pc.Dim)
     }
     NzSection("The run")
-    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        if (meta.status == RunStatus.ACTIVE) PcSmallButton("END THE RUN") { live.edits.endRun("Ended by hand", System.currentTimeMillis()); onChanged() }
-        if (meta.status == RunStatus.OVER || meta.status == RunStatus.COMPLETE) PcSmallButton("OPEN IT AGAIN") { live.edits.reopen(System.currentTimeMillis()); onChanged() }
-    }
+    if (meta.status == RunStatus.ACTIVE) GearButton("END THE RUN") { live.edits.endRun("Ended by hand", System.currentTimeMillis()); onChanged() }
+    if (meta.status == RunStatus.OVER || meta.status == RunStatus.COMPLETE) GearButton("OPEN IT AGAIN") { live.edits.reopen(System.currentTimeMillis()); onChanged() }
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -371,15 +378,15 @@ private fun AreaEditor(live: NuzlockeTracking.Live, area: AreaKey, @Suppress("UN
     val now = System.currentTimeMillis()
     InfoSheet(area.name, onClose) {
         if (enc != null) {
-            PixText("${enc.speciesName} Lv ${enc.level}, ${enc.outcome.label}" + (if (enc.manual) ". Set by hand." else "."), 13, Pc.Text, wrap = true)
+            DialogText("${enc.speciesName} Lv ${enc.level}, ${enc.outcome.label}" + (if (enc.manual) ". Set by hand." else "."), 13, Pc.Text)
             Spacer(Modifier.height(6.dp))
-            PixText("How it ended", 11, Pc.Dim)
+            DialogText("How it ended", 12, Pc.Dim)
             OutcomeChips(enc.outcome) { o -> live.edits.setEncounter(area, enc.species, enc.speciesName, enc.level, o, now); onChanged() }
             Spacer(Modifier.height(8.dp))
-            PcSmallButton("THIS DOES NOT COUNT") { live.edits.clearEncounter(area.key, now); onChanged(); onClose() }
-            PixText("The area is open again for the next Pokemon.", 11, Pc.Dim, wrap = true)
+            GearButton("THIS DOES NOT COUNT") { live.edits.clearEncounter(area.key, now); onChanged(); onClose() }
+            DialogText("The area is open again for the next Pokemon.", 12, Pc.Dim)
         } else {
-            PixText("Nothing counts here yet. The next wild Pokemon will.", 12, Pc.Dim, wrap = true)
+            DialogText("Nothing counts here yet. The next wild Pokemon will.", 12, Pc.Dim)
         }
         NzSection(if (enc == null) "Say what happened here" else "Change it")
         NzField("Pokemon", species) { species = it }
@@ -387,7 +394,7 @@ private fun AreaEditor(live: NuzlockeTracking.Live, area: AreaKey, @Suppress("UN
         OutcomeChips(outcome) { outcome = it }
         Spacer(Modifier.height(6.dp))
         val lv = level.toIntOrNull()?.takeIf { it in 1..100 }
-        PcSmallButton(if (species.isBlank() || lv == null) "TYPE A NAME AND A LEVEL" else "SAVE") {
+        GearButton(if (species.isBlank() || lv == null) "TYPE A NAME AND A LEVEL" else "SAVE") {
             if (species.isNotBlank() && lv != null) {
                 live.edits.setEncounter(area, NuzlockeFamilies.speciesId(species, ledger.meta.system) ?: 0, species, lv, outcome, now)
                 species = ""; level = ""; onChanged()
@@ -396,11 +403,12 @@ private fun AreaEditor(live: NuzlockeTracking.Live, area: AreaKey, @Suppress("UN
         val mons = ledger.roster.values.toList()
         if (mons.isNotEmpty()) {
             NzSection("Or count one of yours here")
-            PixText("A gift or a static the tracker did not count.", 11, Pc.Dim, wrap = true)
+            DialogText("A gift or a static the tracker did not count.", 12, Pc.Dim)
             for (m in mons) {
-                Row(Modifier.fillMaxWidth().clickable { live.edits.countAsEncounter(m.id, area, now); onChanged(); onClose() }.padding(vertical = 4.dp)) {
-                    PixText(m.shownName, 12, if (m.alive) Pc.Text else Pc.Dim, Modifier.weight(1f))
-                    PixText("${m.speciesName} Lv ${m.level}, ${m.origin.label}", 11, Pc.Dim)
+                Row(Modifier.fillMaxWidth().heightIn(min = PcMin.DIALOG_TOUCH_DP.dp).clickable(role = Role.Button) { live.edits.countAsEncounter(m.id, area, now); onChanged(); onClose() }.padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically) {
+                    DialogText(m.shownName, 12, if (m.alive) Pc.Text else Pc.Dim, Modifier.weight(1f))
+                    DialogText("${m.speciesName} Lv ${m.level}, ${m.origin.label}", 12, Pc.Dim)
                 }
             }
         }
@@ -415,27 +423,34 @@ private fun OutcomeChips(current: Outcome, onPick: (Outcome) -> Unit) {
 }
 
 @Composable
-private fun MonEditor(live: NuzlockeTracking.Live, mon: RosterMon, here: AreaKey?, @Suppress("UNUSED_PARAMETER") rev: Int, onClose: () -> Unit, onChanged: () -> Unit) {
+private fun MonEditor(
+    live: NuzlockeTracking.Live, mon: RosterMon, here: AreaKey?,
+    /** The badges the game shows now, with [here]; null with no game running. */
+    badges: Int?,
+    @Suppress("UNUSED_PARAMETER") rev: Int, onClose: () -> Unit, onChanged: () -> Unit,
+) {
     var cause by remember(mon.id) { mutableStateOf("") }
     var newCause by remember(mon.id) { mutableStateOf(mon.death?.cause ?: "") }
+    var removing by remember(mon.id) { mutableStateOf(false) }
     val now = System.currentTimeMillis()
     InfoSheet(mon.shownName, onClose) {
-        PixText("${mon.speciesName} Lv ${mon.level}" + (mon.gender?.let { "  ${it.glyph}" } ?: ""), 13, Pc.Text)
-        PixText("${mon.origin.label} at ${mon.areaName}", 12, Pc.Dim, wrap = true)
-        if (mon.violation) PixText("The rules did not allow this catch. See the log.", 11, Pc.Gold, wrap = true)
+        DialogText("${mon.speciesName} Lv ${mon.level}" + (mon.gender?.let { "  ${it.glyph}" } ?: ""), 13, Pc.Text)
+        DialogText("${mon.origin.label} at ${mon.areaName}", 12, Pc.Dim)
+        if (mon.violation) DialogText("The rules did not allow this catch. See the log.", 12, Pc.Gold)
         val d = mon.death
-        if (d != null) PixText("Died at ${d.areaName}: ${d.cause}" + (if (d.manual) " (by hand)" else "") + ".", 12, Pc.Negative, wrap = true)
+        if (d != null) DialogText("Died at ${d.areaName}: ${d.cause}" + (if (d.manual) " (by hand)" else "") + ".", 12, Pc.Negative)
         Spacer(Modifier.height(8.dp))
         if (mon.alive) {
             NzField("How it died", cause) { cause = it }
-            PcSmallButton("MARK DEAD") { live.edits.markDead(mon.id, cause.trim(), now); onChanged(); onClose() }
+            // Where the player is and the badges held, as a death the tracker sees records them (rc32 audit P3 #115).
+            GearButton("MARK DEAD") { live.edits.markDead(mon.id, cause.trim(), now, here?.name, badges); onChanged(); onClose() }
         } else {
             // The tracker names what was on the field when it fainted, which is not always what did it.
             NzField("What killed it", newCause) { newCause = it }
-            PcSmallButton("SAVE THE CAUSE") { if (live.edits.setCause(mon.id, newCause, now)) onChanged() }
+            GearButton("SAVE THE CAUSE") { if (live.edits.setCause(mon.id, newCause, now)) onChanged() }
             Spacer(Modifier.height(8.dp))
-            PcSmallButton("THE DEATH DOES NOT COUNT") { live.edits.markAlive(mon.id, now); onChanged(); onClose() }
-            PixText("It stays alive here even while the game shows it at 0 HP, until it has been healthy once.", 11, Pc.Dim, wrap = true)
+            GearButton("THE DEATH DOES NOT COUNT") { live.edits.markAlive(mon.id, now); onChanged(); onClose() }
+            DialogText("It stays alive here even while the game shows it at 0 HP, until it has been healthy once.", 12, Pc.Dim)
         }
         NzSection("What it is")
         FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -445,7 +460,22 @@ private fun MonEditor(live: NuzlockeTracking.Live, mon: RosterMon, here: AreaKey
         }
         if (here != null) {
             NzSection("Its area")
-            PcSmallButton("COUNT IT AS THE ENCOUNTER OF " + here.name.uppercase()) { live.edits.countAsEncounter(mon.id, here, now); onChanged(); onClose() }
+            GearButton("Count it as the encounter of " + here.name) { live.edits.countAsEncounter(mon.id, here, now); onChanged(); onClose() }
+        }
+        // A Pokemon added by hand or made for an area that never was: off the roster, with a second tap to be sure
+        // (rc32 audit P2 #139). One the tracker saw is in the game and has no such button.
+        if (mon.id < 0 && !mon.inParty) {
+            NzSection("You never had it")
+            if (!removing) {
+                GearButton("TAKE IT OFF THE ROSTER") { removing = true }
+                DialogText("For a Pokemon added by hand, or made when an area was set to caught, that you never had.", 12, Pc.Dim)
+            } else {
+                DialogText("${mon.shownName} goes off the roster for good.", 12, Pc.Gold)
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    GearButton("TAKE IT OFF", Modifier.weight(1f)) { live.edits.removeMon(mon.id, now); onChanged(); onClose() }
+                    GearButton("KEEP IT", Modifier.weight(1f)) { removing = false }
+                }
+            }
         }
     }
 }
@@ -464,9 +494,9 @@ private fun AddMonEditor(live: NuzlockeTracking.Live, here: AreaKey?, @Suppress(
     val id = NuzlockeFamilies.speciesId(species, live.ledger.meta.system)
     val lv = level.toIntOrNull()?.takeIf { it in 1..100 }
     InfoSheet("Add a Pokemon", onClose) {
-        PixText("It goes on the roster, out of the party. To make it an area's encounter, open it after and count it there.", 11, Pc.Dim, wrap = true)
+        DialogText("It goes on the roster, out of the party. To make it an area's encounter, open it after and count it there.", 12, Pc.Dim)
         NzField("Pokemon", species) { species = it }
-        if (species.isNotBlank() && id == null) PixText("No Pokemon has that name, so it is added with no species and the dupes clause cannot see it.", 11, Pc.Dim, wrap = true)
+        if (species.isNotBlank() && id == null) DialogText("No Pokemon has that name, so it is added with no species and the dupes clause cannot see it.", 12, Pc.Dim)
         NzField("Level", level, numbers = true) { level = it.filter { c -> c.isDigit() }.take(3) }
         NzField("Where it came from", place) { place = it }
         Spacer(Modifier.height(6.dp))
@@ -474,7 +504,7 @@ private fun AddMonEditor(live: NuzlockeTracking.Live, here: AreaKey?, @Suppress(
             for (o in listOf(Origin.CAUGHT, Origin.GIFT, Origin.STATIC, Origin.EXTRA)) NzChip(o.label, origin == o) { origin = o }
         }
         Spacer(Modifier.height(8.dp))
-        PcSmallButton(if (species.isBlank() || lv == null) "TYPE A NAME AND A LEVEL" else "ADD IT") {
+        GearButton(if (species.isBlank() || lv == null) "TYPE A NAME AND A LEVEL" else "ADD IT") {
             if (species.isNotBlank() && lv != null) {
                 val area = place.trim().takeIf { it.isNotEmpty() }
                     ?.let { NuzlockeAreas.of(NzArea(it, null), null, live.ledger.meta.rules, live.ledger.meta.system) }
@@ -493,16 +523,21 @@ private fun AddMonEditor(live: NuzlockeTracking.Live, here: AreaKey?, @Suppress(
 @Composable
 private fun NzSection(text: String) {
     Spacer(Modifier.height(10.dp))
-    PixText(text.uppercase(), 12, Pc.Gold)
+    DialogText(text.uppercase(), 13, Pc.Gold, heading = true)
     Box(Modifier.fillMaxWidth().padding(vertical = 3.dp).height(1.dp).background(Pc.Border.copy(alpha = 0.5f)))
 }
 
+/**
+ * One of a set of choices (the ledger's tabs, an outcome, an origin, the Safari rule): 48dp tall, selectable, the chosen
+ * one marked by its fill and an underline, its label in sp (rc32 audit P2 #19, rc35 follow-up N #29).
+ */
 @Composable
-private fun NzChip(label: String, on: Boolean, onClick: () -> Unit) {
+private fun NzChip(label: String, on: Boolean, role: Role = Role.RadioButton, onClick: () -> Unit) {
     Box(
-        Modifier.background(if (on) Pc.Border else Color(0xFF303030)).clickable { onClick() }.padding(horizontal = 8.dp, vertical = 6.dp),
+        Modifier.heightIn(min = PcMin.DIALOG_TOUCH_DP.dp).background(if (on) Pc.Border else Color(0xFF303030))
+            .selectable(selected = on, role = role) { onClick() }.padding(horizontal = 10.dp, vertical = 6.dp),
         contentAlignment = Alignment.Center,
-    ) { PixText(label, 11, if (on) Pc.Page else Pc.Text) }
+    ) { DialogText(label, 12, if (on) Pc.Page else Pc.Text, underline = on) }
 }
 
 @Composable
@@ -510,7 +545,7 @@ private fun NzField(label: String, value: String, numbers: Boolean = false, onCh
     Spacer(Modifier.height(4.dp))
     androidx.compose.material3.OutlinedTextField(
         value = value, onValueChange = onChange, singleLine = true,
-        label = { PixText(label, 11, Pc.Dim) },
+        label = { DialogText(label, 12, Pc.Dim) },
         textStyle = androidx.compose.ui.text.TextStyle(color = Pc.Text),
         keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
             keyboardType = if (numbers) androidx.compose.ui.text.input.KeyboardType.Number else androidx.compose.ui.text.input.KeyboardType.Text,
@@ -527,8 +562,8 @@ private fun TextPrompt(title: String, initial: String, onDone: (String) -> Unit,
         NzField("", text) { text = it }
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            PcSmallButton("SAVE") { onDone(text) }
-            PcSmallButton("CANCEL") { onDismiss() }
+            GearButton("SAVE", Modifier.weight(1f)) { onDone(text) }
+            GearButton("CANCEL", Modifier.weight(1f)) { onDismiss() }
         }
     }
 }

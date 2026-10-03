@@ -1,0 +1,101 @@
+KaizoCore patch to libretro/melonDS 66b5d2634cd0a79030562811e6e05f5532f800ba (GPL-3.0, as melonDS is).
+
+The core leaked two things each time a frontend unloaded a game and loaded the core again, which KaizoCore does
+every time Play is left or a new run starts (measured on the emulator, 2026-10-03: one thread and 388 KB a load):
+
+- retro_unload_game() only called NDS::DeInit(). The 3D software renderer's thread is stopped and joined, and its
+  three semaphores freed, by SoftRenderer::DeInit() alone, which only GPU::DeInitRenderer() calls, and nothing
+  called that. Each game's render thread stayed blocked on its semaphore after the library was unloaded.
+- update_screenlayout() mallocs screen_layout_data.buffer_ptr, nothing frees it, and retro_init() sets the pointer
+  to null, so each load lost the screen buffer (256 x 384 x 4 bytes in the stacked layout).
+
+Calling GPU::DeInitRenderer() also reaches a third bug, which is why nothing could call it: the libretro platform's
+Thread_Wait joins with sthread_join, which frees the thread, and Thread_Free then detaches the freed thread. Bionic
+aborts on that ("invalid pthread_t passed to pthread_detach", seen on the emulator the first time Play was left with
+only the first two changes). A Thread is now a handle that remembers it was joined, and Thread_Free only detaches a
+thread nobody joined.
+
+Applied by tools/cores/build_core.py melonds; libretrodroid/cores/melonds/PINNED.txt records the result.
+
+diff --git a/src/libretro/libretro.cpp b/src/libretro/libretro.cpp
+index 2207849..7679bf3 100644
+--- a/src/libretro/libretro.cpp
++++ b/src/libretro/libretro.cpp
+@@ -1,4 +1,5 @@
+ #include <ctime>
++#include <cstdlib>
+ #include <string>
+ #include <vector>
+ 
+@@ -99,6 +100,10 @@ void retro_init(void)
+ 
+ void retro_deinit(void)
+ {
++   // KaizoCore: the screen buffer update_screenlayout() allocates was never freed, and retro_init() sets the
++   // pointer to null, so a frontend that loads the core again lost one buffer per game (256x384x4 bytes stacked).
++   free(screen_layout_data.buffer_ptr);
++   screen_layout_data.buffer_ptr = nullptr;
+    libretro_supports_bitmasks = false;
+    libretro_supports_option_categories = false;
+ }
+@@ -927,6 +932,10 @@ bool retro_load_game(const struct retro_game_info *info)
+ 
+ void retro_unload_game(void)
+ {
++   // KaizoCore: stop and join the 3D render thread and free its semaphores before the console goes. Only
++   // GPU::DeInitRenderer() does that and nothing called it, so every game left its render thread waiting forever.
++   if (GPU3D::CurrentRenderer)
++      GPU::DeInitRenderer();
+    NDS::DeInit();
+ }
+ 
+diff --git a/src/libretro/platform.cpp b/src/libretro/platform.cpp
+index 3a4f6f6..020b0eb 100644
+--- a/src/libretro/platform.cpp
++++ b/src/libretro/platform.cpp
+@@ -189,10 +189,23 @@ namespace Platform
+       return true;
+    }
+ 
++   // KaizoCore: a Thread is a handle that remembers whether it was joined. Thread_Wait joined with sthread_join, which
++   // also frees the thread, and Thread_Free then detached that freed thread, which bionic refuses ("invalid pthread_t
++   // passed to pthread_detach", an abort). GPU3D_Soft's StopRenderThread does exactly Wait then Free, so nothing could
++   // stop the render thread until now; Free only detaches a thread nobody joined.
++   struct ThreadHandle
++   {
++      sthread_t* thread;
++      bool joined;
++   };
++
+    void Thread_Free(Thread *thread)
+    {
+    #if HAVE_THREADS
+-      sthread_detach((sthread_t*)thread);
++      ThreadHandle* handle = (ThreadHandle*)thread;
++      if (!handle) return;
++      if (!handle->joined) sthread_detach(handle->thread);
++      delete handle;
+    #endif
+    }
+ 
+@@ -210,14 +223,18 @@ namespace Platform
+    Thread *Thread_Create(std::function<void()> func)
+    {
+    #if HAVE_THREADS
+-      return (Thread*) sthread_create(function_trampoline, new ThreadData{func});
++      sthread_t* thread = sthread_create(function_trampoline, new ThreadData{func});
++      return thread ? (Thread*) new ThreadHandle{thread, false} : nullptr;
+    #endif
+    }
+ 
+    void Thread_Wait(Thread *thread)
+    {
+    #if HAVE_THREADS
+-      sthread_join((sthread_t*)thread);
++      ThreadHandle* handle = (ThreadHandle*)thread;
++      if (!handle || handle->joined) return;
++      sthread_join(handle->thread);
++      handle->joined = true;
+    #endif
+    }
+ 

@@ -23,8 +23,18 @@ object SpriteIsMeStore {
     fun sheetDir(filesDir: File) = File(dir(filesDir), "sheet")
     fun sheetFile(filesDir: File, a: WalkingPals.Anim) = File(sheetDir(filesDir), a.key + ".png")
 
-    /** The sheets on disk with their pixel sizes, read from the PNG headers. */
-    fun sheetSizes(filesDir: File): Map<WalkingPals.Anim, Pair<Int, Int>> {
+    /** The sheets on disk that can be drawn, with their pixel sizes: a sheet past SheetSet's bound is left out (rc32 audit P3 #66). */
+    fun sheetSizes(filesDir: File): Map<WalkingPals.Anim, Pair<Int, Int>> = headerSizes(filesDir).filterValues { SheetSet.fits(it) }
+
+    /** A sheet on disk is past the bound: one imported before there was one, or put there by hand. */
+    fun oversized(filesDir: File): Boolean = headerSizes(filesDir).values.any { !SheetSet.fits(it) }
+
+    /** A picked sheet that saveSheets leaves out for its size, so the import can say why. */
+    fun tooBig(sheets: Map<WalkingPals.Anim, ByteArray>): Boolean = sheets.values.any { b -> SheetSet.pngSize(b)?.let { !SheetSet.fits(it) } == true }
+
+    /** Every sheet on disk with its pixel size, read from the PNG headers. */
+    private fun headerSizes(filesDir: File): Map<WalkingPals.Anim, Pair<Int, Int>> {
+        recover(filesDir)
         val out = LinkedHashMap<WalkingPals.Anim, Pair<Int, Int>>()
         for (a in SheetSet.ANIMS) {
             val f = sheetFile(filesDir, a)
@@ -60,22 +70,40 @@ object SpriteIsMeStore {
         return true
     }
 
+    /** [saveSheets]' answer for sheets that were read and could not be written: the set in use stays as it was. */
+    const val NOT_SAVED = -1
+
     /**
      * Keep these sheets (one PNG per animation) as the player's set and drop the picture. Refuses a set whose
-     * sheets are not readable PNGs, or that has none. Returns how many sheets were kept.
+     * sheets are not readable PNGs, or that has none (0), and a sheet past SheetSet's bound ([tooBig] says so).
+     * Returns how many sheets were kept, or [NOT_SAVED].
+     *
+     * The new set is written into a folder beside the one in use and swapped in only once every sheet is written. The
+     * set in use was deleted first: on a full phone every write then failed, the old sheets were gone, and the screen
+     * said no sheets were found (rc32 audit P3 #67). [write] is SafeWrite's; a test hands in one that refuses.
      */
-    fun saveSheets(filesDir: File, sheets: Map<WalkingPals.Anim, ByteArray>): Int {
-        val ok = sheets.filter { (_, b) -> b.size <= MAX_FILE && SheetSet.pngSize(b) != null }
+    fun saveSheets(filesDir: File, sheets: Map<WalkingPals.Anim, ByteArray>, write: (File, ByteArray) -> Boolean = SafeWrite::bytes): Int {
+        val ok = sheets.filter { (_, b) -> b.size <= MAX_FILE && SheetSet.pngSize(b)?.let { SheetSet.fits(it) } == true }
         if (ok.isEmpty()) return 0
+        recover(filesDir)
         val dir = sheetDir(filesDir)
-        dir.deleteRecursively()
-        var kept = 0
-        for ((a, b) in ok) if (SafeWrite.bytes(sheetFile(filesDir, a), b)) kept++
-        if (kept == 0) return 0
+        val fresh = File(dir.parentFile, dir.name + ".new").apply { deleteRecursively() }
+        for ((a, b) in ok) if (!write(File(fresh, a.key + ".png"), b)) { fresh.deleteRecursively(); return NOT_SAVED }
+        val old = File(dir.parentFile, dir.name + ".old").apply { deleteRecursively() }
+        if (dir.exists() && !dir.renameTo(old)) { fresh.deleteRecursively(); return NOT_SAVED }
+        if (!fresh.renameTo(dir)) { old.renameTo(dir); fresh.deleteRecursively(); return NOT_SAVED }
+        old.deleteRecursively()
         pictureFile(filesDir).delete()
         SpriteIsMeSettings.own = SpriteIsMeSettings.Own.SHEET
         finish()
-        return kept
+        return ok.size
+    }
+
+    /** A swap a kill cut between its two renames left the old set beside none: it is the set again. */
+    private fun recover(filesDir: File) {
+        val dir = sheetDir(filesDir)
+        val old = File(dir.parentFile, dir.name + ".old")
+        if (old.isDirectory && !dir.exists()) old.renameTo(dir)
     }
 
     /** Take the imported sprite away: the picture, the sheets, and the setting that named them. */

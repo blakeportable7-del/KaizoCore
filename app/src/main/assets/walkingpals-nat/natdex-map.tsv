@@ -1,6 +1,7 @@
 # The Nat. Dex Extension's species ids 412-1283 (tracker-gba/src/main/resources/natdex/species.tsv) to a
 # Walking Pals sheet. set walkingpals-nat: key is <national>[-<form>] in this folder; set walkingpals: key is
-# the Gen 3 internal id in walkingpals/. Blank set and key: no sheet, and the note says why.
+# the Gen 3 internal id in walkingpals/. Blank set and key: no sheet, and the note says why. A Mega or form
+# with no sheet of its own has its base species' set and key until its own is drawn, and the note says so.
 # Ids 1-411 are Gen 3's own internal ids and walkingpals/ already covers them.
 # natdex	name	national	form	set	key	note
 412	Turtwig	387		walkingpals-nat	387	
@@ -642,34 +643,34 @@
 1048	Iron Crown	1023				no sheet: SpriteCollab has no Iron Crown sprite yet
 1049	Terapagos	1024		walkingpals-nat	1024	
 1050	Pecharunt	1025		walkingpals-nat	1025	
-1051	Venusaur-M	3	mega			no sheet: SpriteCollab's Venusaur Mega slot is empty
+1051	Venusaur-M	3	mega	walkingpals	3	SpriteCollab's Venusaur Mega slot is empty; Venusaur's sheet stands in until its own is drawn
 1052	Charizard-X	6	mega-x	walkingpals-nat	6-mega-x	
-1053	Charizard-Y	6	mega-y			no sheet: SpriteCollab's Charizard Mega Y slot is empty
-1054	Blastoise-M	9	mega			no sheet: SpriteCollab's Blastoise Mega slot is empty
-1055	Beedrill-M	15	mega			no sheet: SpriteCollab's Beedrill Mega slot is empty
-1056	Pidgeot-M	18	mega			no sheet: SpriteCollab's Pidgeot Mega slot is empty
+1053	Charizard-Y	6	mega-y	walkingpals	6	SpriteCollab's Charizard Mega Y slot is empty; Charizard's sheet stands in until its own is drawn
+1054	Blastoise-M	9	mega	walkingpals	9	SpriteCollab's Blastoise Mega slot is empty; Blastoise's sheet stands in until its own is drawn
+1055	Beedrill-M	15	mega	walkingpals	15	SpriteCollab's Beedrill Mega slot is empty; Beedrill's sheet stands in until its own is drawn
+1056	Pidgeot-M	18	mega	walkingpals	18	SpriteCollab's Pidgeot Mega slot is empty; Pidgeot's sheet stands in until its own is drawn
 1057	Alakazam-M	65	mega	walkingpals-nat	65-mega	
 1058	Slowbro-M	80	mega	walkingpals-nat	80-mega	
 1059	Gengar-M	94	mega	walkingpals-nat	94-mega	
 1060	Kangaskhan-M	115	mega	walkingpals-nat	115-mega	
-1061	Pinsir-M	127	mega			no sheet: SpriteCollab's Pinsir Mega slot is empty
-1062	Gyarados-M	130	mega			no sheet: SpriteCollab's Gyarados Mega slot is empty
+1061	Pinsir-M	127	mega	walkingpals	127	SpriteCollab's Pinsir Mega slot is empty; Pinsir's sheet stands in until its own is drawn
+1062	Gyarados-M	130	mega	walkingpals	130	SpriteCollab's Gyarados Mega slot is empty; Gyarados's sheet stands in until its own is drawn
 1063	Aerodactyl-M	142	mega	walkingpals-nat	142-mega	
-1064	Mewtwo-X	150	mega-x			no sheet: SpriteCollab's Mewtwo Mega X slot is empty
+1064	Mewtwo-X	150	mega-x	walkingpals	150	SpriteCollab's Mewtwo Mega X slot is empty; Mewtwo's sheet stands in until its own is drawn
 1065	Mewtwo-Y	150	mega-y	walkingpals-nat	150-mega-y	
-1066	Ampharos-M	181	mega			no sheet: SpriteCollab's Ampharos Mega slot is empty
+1066	Ampharos-M	181	mega	walkingpals	181	SpriteCollab's Ampharos Mega slot is empty; Ampharos's sheet stands in until its own is drawn
 1067	Steelix-M	208	mega	walkingpals-nat	208-mega	
-1068	Scizor-M	212	mega			no sheet: SpriteCollab's Scizor Mega slot is empty
-1069	Heracross-M	214	mega			no sheet: SpriteCollab's Heracross Mega slot is empty
+1068	Scizor-M	212	mega	walkingpals	212	SpriteCollab's Scizor Mega slot is empty; Scizor's sheet stands in until its own is drawn
+1069	Heracross-M	214	mega	walkingpals	214	SpriteCollab's Heracross Mega slot is empty; Heracross's sheet stands in until its own is drawn
 1070	Houndoom-M	229	mega	walkingpals-nat	229-mega	
 1071	Tyranitar-M	248	mega	walkingpals-nat	248-mega	
 1072	Sceptile-M	254	mega	walkingpals-nat	254-mega	
-1073	Blaziken-M	257	mega			no sheet: SpriteCollab's Blaziken Mega slot is empty
-1074	Swampert-M	260	mega			no sheet: SpriteCollab's Swampert Mega slot is empty
+1073	Blaziken-M	257	mega	walkingpals	282	SpriteCollab's Blaziken Mega slot is empty; Blaziken's sheet stands in until its own is drawn
+1074	Swampert-M	260	mega	walkingpals	285	SpriteCollab's Swampert Mega slot is empty; Swampert's sheet stands in until its own is drawn
 1075	Gardevoir-M	282	mega	walkingpals-nat	282-mega	
 1076	Sableye-M	302	mega	walkingpals-nat	302-mega	
 1077	Mawile-M	303	mega	walkingpals-nat	303-mega	
-1078	Aggron-M	306	mega			no sheet: SpriteCollab's Aggron Mega slot is empty
+1078	Aggron-M	306	mega	walkingpals	384	SpriteCollab's Aggron Mega slot is empty; Aggron's sheet stands in until its own is drawn
 1079	Medicham-M	308	mega	walkingpals-nat	308-mega	
 1080	Manectric-M	310	mega	walkingpals-nat	310-mega	
 1081	Sharpedo-M	319	mega	walkingpals-nat	319-mega	
@@ -678,16 +679,16 @@
 1084	Banette-M	354	mega	walkingpals-nat	354-mega	
 1085	Absol-M	359	mega	walkingpals-nat	359-mega	
 1086	Glalie-M	362	mega	walkingpals-nat	362-mega	
-1087	Salamence-M	373	mega			no sheet: SpriteCollab's Salamence Mega slot is empty
-1088	Metagross-M	376	mega			no sheet: SpriteCollab's Metagross Mega slot is empty
+1087	Salamence-M	373	mega	walkingpals	397	SpriteCollab's Salamence Mega slot is empty; Salamence's sheet stands in until its own is drawn
+1088	Metagross-M	376	mega	walkingpals	400	SpriteCollab's Metagross Mega slot is empty; Metagross's sheet stands in until its own is drawn
 1089	Latias-M	380	mega	walkingpals-nat	380-mega	
 1090	Latios-M	381	mega	walkingpals-nat	381-mega	
 1091	Lopunny-M	428	mega	walkingpals-nat	428-mega	
-1092	Garchomp-M	445	mega			no sheet: SpriteCollab's Garchomp Mega slot is empty
+1092	Garchomp-M	445	mega	walkingpals-nat	445	SpriteCollab's Garchomp Mega slot is empty; Garchomp's sheet stands in until its own is drawn
 1093	Lucario-M	448	mega	walkingpals-nat	448-mega	
-1094	Abomasnow-M	460	mega			no sheet: SpriteCollab's Abomasnow Mega slot is empty
+1094	Abomasnow-M	460	mega	walkingpals-nat	460	SpriteCollab's Abomasnow Mega slot is empty; Abomasnow's sheet stands in until its own is drawn
 1095	Gallade-M	475	mega	walkingpals-nat	475-mega	
-1096	Audino-M	531	mega			no sheet: SpriteCollab's Audino Mega slot is empty
+1096	Audino-M	531	mega	walkingpals-nat	531	SpriteCollab's Audino Mega slot is empty; Audino's sheet stands in until its own is drawn
 1097	Diancie-M	719	mega	walkingpals-nat	719-mega	
 1098	Rayquaza-M	384	mega	walkingpals-nat	384-mega	
 1099	Kyogre-P	382	primal	walkingpals-nat	382-primal	
@@ -728,7 +729,7 @@
 1134	Darumaka-G	554	galar	walkingpals-nat	554-galar	
 1135	Darmanitan-G	555	galar	walkingpals-nat	555-galar	
 1136	Yamask-G	562	galar	walkingpals-nat	562-galar	
-1137	Stunfisk-G	618	galar			no sheet: SpriteCollab's Stunfisk Galar slot is empty
+1137	Stunfisk-G	618	galar	walkingpals-nat	618	SpriteCollab's Stunfisk Galar slot is empty; Stunfisk's sheet stands in until its own is drawn
 1138	Growlithe-H	58	hisui	walkingpals-nat	58-hisui	
 1139	Arcanine-H	59	hisui	walkingpals-nat	59-hisui	
 1140	Voltorb-H	100	hisui	walkingpals-nat	100-hisui	
@@ -776,35 +777,35 @@
 1182	Basculin-B	550	blue	walkingpals-nat	550-blue	
 1183	Basculin-W	550	white	walkingpals-nat	550-white	
 1184	Darmanitan-Z	555	zen	walkingpals-nat	555-zen	
-1185	Darmanitan-GZ	555	galar-zen			no sheet: SpriteCollab's Darmanitan Galar Zen slot is empty
-1186	Tornadus-T	641	therian			no sheet: SpriteCollab's Tornadus Therian slot is empty
-1187	Thundurus-T	642	therian			no sheet: SpriteCollab's Thundurus Therian slot is empty
+1185	Darmanitan-GZ	555	galar-zen	walkingpals-nat	555	SpriteCollab's Darmanitan Galar Zen slot is empty; Darmanitan's sheet stands in until its own is drawn
+1186	Tornadus-T	641	therian	walkingpals-nat	641	SpriteCollab's Tornadus Therian slot is empty; Tornadus's sheet stands in until its own is drawn
+1187	Thundurus-T	642	therian	walkingpals-nat	642	SpriteCollab's Thundurus Therian slot is empty; Thundurus's sheet stands in until its own is drawn
 1188	Landorus-T	645	therian	walkingpals-nat	645-therian	
 1189	Kyurem-W	646	white	walkingpals-nat	646-white	
 1190	Kyurem-B	646	black	walkingpals-nat	646-black	
 1191	Meloetta-P	648	pirouette	walkingpals-nat	648-pirouette	
-1192	Greninja-A	658	ash			no sheet: SpriteCollab's Greninja Ash slot is empty
+1192	Greninja-A	658	ash	walkingpals-nat	658	SpriteCollab's Greninja Ash slot is empty; Greninja's sheet stands in until its own is drawn
 1193	Floette-E	670	eternal	walkingpals-nat	670-eternal	
 1194	Meowstic-F	678	female	walkingpals-nat	678-female	
 1195	Aegislash-B	681	blade	walkingpals-nat	681-blade	
 1196	Pumpkaboo-S	710	small	walkingpals-nat	710-small	
 1197	Pumpkaboo-L	710	large	walkingpals-nat	710-large	
 1198	Pumpkaboo-J	710	super	walkingpals-nat	710-super	
-1199	Gourgeist-S	711	small			no sheet: SpriteCollab's Gourgeist Small slot is empty
-1200	Gourgeist-L	711	large			no sheet: SpriteCollab's Gourgeist Large slot is empty
+1199	Gourgeist-S	711	small	walkingpals-nat	711	SpriteCollab's Gourgeist Small slot is empty; Gourgeist's sheet stands in until its own is drawn
+1200	Gourgeist-L	711	large	walkingpals-nat	711	SpriteCollab's Gourgeist Large slot is empty; Gourgeist's sheet stands in until its own is drawn
 1201	Gourgeist-J	711	super	walkingpals-nat	711-super	
 1202	Zygarde-10	718	10	walkingpals-nat	718-10	
 1203	Zygarde-C	718	complete	walkingpals-nat	718-complete	
 1204	Hoopa-U	720	unbound	walkingpals-nat	720-unbound	
 1205	Oricorio-E	741	pom-pom	walkingpals-nat	741-pom-pom	
 1206	Oricorio-P	741	pa-u	walkingpals-nat	741-pa-u	
-1207	Oricorio-G	741	sensu			no sheet: SpriteCollab's Oricorio Sensu slot is empty
+1207	Oricorio-G	741	sensu	walkingpals-nat	741	SpriteCollab's Oricorio Sensu slot is empty; Oricorio's sheet stands in until its own is drawn
 1208	Lycanroc-M	745	midnight	walkingpals-nat	745-midnight	
 1209	Lycanroc-D	745	dusk	walkingpals-nat	745-dusk	
 1210	Wishiwashi-S	746	school	walkingpals-nat	746-school	
 1211	Minior-C	774	red	walkingpals-nat	774-red	the Red Core stands in for every core colour
-1212	Necrozma-DM	800	dusk-mane			no sheet: SpriteCollab's Necrozma Dusk Mane slot is empty
-1213	Necrozma-DW	800	dawn-wings			no sheet: SpriteCollab's Necrozma Dawn Wings slot is empty
+1212	Necrozma-DM	800	dusk-mane	walkingpals-nat	800	SpriteCollab's Necrozma Dusk Mane slot is empty; Necrozma's sheet stands in until its own is drawn
+1213	Necrozma-DW	800	dawn-wings	walkingpals-nat	800	SpriteCollab's Necrozma Dawn Wings slot is empty; Necrozma's sheet stands in until its own is drawn
 1214	Necrozma-U	800	ultra	walkingpals-nat	800-ultra	
 1215	Toxtricity-L	849	lowkey	walkingpals-nat	849-lowkey	
 1216	Eiscue-N	875	noice	walkingpals-nat	875-noice	
@@ -814,64 +815,64 @@
 1220	Zamazenta-C	889	crowned-shield	walkingpals-nat	889-crowned-shield	
 1221	Eternatus-E	890	eternamax	walkingpals-nat	890-eternamax	
 1222	Urshifu-R	892	rapid-strike	walkingpals-nat	892-rapid-strike	
-1223	Calyrex-I	898	ice-rider			no sheet: SpriteCollab's Calyrex Ice Rider slot is empty
-1224	Calyrex-S	898	shadow-rider			no sheet: SpriteCollab's Calyrex Shadow Rider slot is empty
+1223	Calyrex-I	898	ice-rider	walkingpals-nat	898	SpriteCollab's Calyrex Ice Rider slot is empty; Calyrex's sheet stands in until its own is drawn
+1224	Calyrex-S	898	shadow-rider	walkingpals-nat	898	SpriteCollab's Calyrex Shadow Rider slot is empty; Calyrex's sheet stands in until its own is drawn
 1225	Ursaluna-B	901	bloodmoon	walkingpals-nat	901-bloodmoon	
 1226	Basculegion-F	902	female	walkingpals-nat	902-female	
 1227	Enamorus-T	905	therian	walkingpals-nat	905-therian	
-1228	Oinkologne-F	916	female			no sheet: SpriteCollab's Oinkologne female slot is empty
+1228	Oinkologne-F	916	female	walkingpals-nat	916	SpriteCollab's Oinkologne female slot is empty; Oinkologne's sheet stands in until its own is drawn
 1229	Palafin-H	964	hero	walkingpals-nat	964-hero	
 1230	Gimmighoul-R	999	roaming	walkingpals-nat	999-roaming	
 1231	Ogerpon-W	1017	wellspring	walkingpals-nat	1017-wellspring	
 1232	Ogerpon-F	1017	hearthflame	walkingpals-nat	1017-hearthflame	
 1233	Ogerpon-R	1017	cornerstone	walkingpals-nat	1017-cornerstone	
 1234	Terapagos-T	1024	terastal	walkingpals-nat	1024-terastal	
-1235	Terapagos-S	1024	stellar			no sheet: SpriteCollab's Terapagos Stellar slot is empty
+1235	Terapagos-S	1024	stellar	walkingpals-nat	1024	SpriteCollab's Terapagos Stellar slot is empty; Terapagos's sheet stands in until its own is drawn
 1236	Greninja-B	658		walkingpals-nat	658	Battle Bond Greninja looks like Greninja until it transforms
 1237	Squawkabilly-W	931	white			no sheet: SpriteCollab's Squawkabilly White slot is empty
-1238	Clefable-M	36	mega			no sheet: SpriteCollab's Clefable Mega slot is empty
-1239	Victreebel-M	71	mega			no sheet: SpriteCollab's Victreebel Mega slot is empty
-1240	Starmie-M	121	mega			no sheet: SpriteCollab's Starmie Mega slot is empty
-1241	Dragonite-M	149	mega			no sheet: SpriteCollab's Dragonite Mega slot is empty
-1242	Meganium-M	154	mega			no sheet: SpriteCollab's Meganium Mega slot is empty
-1243	Feraligatr-M	160	mega			no sheet: SpriteCollab's Feraligatr Mega slot is empty
+1238	Clefable-M	36	mega	walkingpals	36	SpriteCollab's Clefable Mega slot is empty; Clefable's sheet stands in until its own is drawn
+1239	Victreebel-M	71	mega	walkingpals	71	SpriteCollab's Victreebel Mega slot is empty; Victreebel's sheet stands in until its own is drawn
+1240	Starmie-M	121	mega	walkingpals	121	SpriteCollab's Starmie Mega slot is empty; Starmie's sheet stands in until its own is drawn
+1241	Dragonite-M	149	mega	walkingpals	149	SpriteCollab's Dragonite Mega slot is empty; Dragonite's sheet stands in until its own is drawn
+1242	Meganium-M	154	mega	walkingpals	154	SpriteCollab's Meganium Mega slot is empty; Meganium's sheet stands in until its own is drawn
+1243	Feraligatr-M	160	mega	walkingpals	160	SpriteCollab's Feraligatr Mega slot is empty; Feraligatr's sheet stands in until its own is drawn
 1244	Skarmory-M	227	mega	walkingpals-nat	227-mega	
-1245	Froslass-M	478	mega			no sheet: SpriteCollab's Froslass Mega slot is empty
-1246	Emboar-M	500	mega			no sheet: SpriteCollab's Emboar Mega slot is empty
+1245	Froslass-M	478	mega	walkingpals-nat	478	SpriteCollab's Froslass Mega slot is empty; Froslass's sheet stands in until its own is drawn
+1246	Emboar-M	500	mega	walkingpals-nat	500	SpriteCollab's Emboar Mega slot is empty; Emboar's sheet stands in until its own is drawn
 1247	Excadrill-M	530	mega	walkingpals-nat	530-mega	
-1248	Scolipede-M	545	mega			no sheet: SpriteCollab's Scolipede Mega slot is empty
+1248	Scolipede-M	545	mega	walkingpals-nat	545	SpriteCollab's Scolipede Mega slot is empty; Scolipede's sheet stands in until its own is drawn
 1249	Scrafty-M	560	mega	walkingpals-nat	560-mega	
 1250	Eelektross-M	604	mega	walkingpals-nat	604-mega	
-1251	Chandelure-M	609	mega			no sheet: SpriteCollab's Chandelure Mega slot is empty
-1252	Chesnaught-M	652	mega			no sheet: SpriteCollab's Chesnaught Mega slot is empty
-1253	Delphox-M	655	mega			no sheet: SpriteCollab's Delphox Mega slot is empty
-1254	Greninja-M	658	mega			no sheet: SpriteCollab's Greninja Mega slot is empty
-1255	Pyroar-M	668	mega			no sheet: SpriteCollab's Pyroar Mega slot is empty
+1251	Chandelure-M	609	mega	walkingpals-nat	609	SpriteCollab's Chandelure Mega slot is empty; Chandelure's sheet stands in until its own is drawn
+1252	Chesnaught-M	652	mega	walkingpals-nat	652	SpriteCollab's Chesnaught Mega slot is empty; Chesnaught's sheet stands in until its own is drawn
+1253	Delphox-M	655	mega	walkingpals-nat	655	SpriteCollab's Delphox Mega slot is empty; Delphox's sheet stands in until its own is drawn
+1254	Greninja-M	658	mega	walkingpals-nat	658	SpriteCollab's Greninja Mega slot is empty; Greninja's sheet stands in until its own is drawn
+1255	Pyroar-M	668	mega	walkingpals-nat	668-female	SpriteCollab's Pyroar Mega slot is empty; Pyroar's sheet stands in until its own is drawn
 1256	Floette-M	670	mega	walkingpals-nat	670-mega	
-1257	Malamar-M	687	mega			no sheet: SpriteCollab's Malamar Mega slot is empty
-1258	Barbaracle-M	689	mega			no sheet: SpriteCollab's Barbaracle Mega slot is empty
+1257	Malamar-M	687	mega	walkingpals-nat	687	SpriteCollab's Malamar Mega slot is empty; Malamar's sheet stands in until its own is drawn
+1258	Barbaracle-M	689	mega	walkingpals-nat	689	SpriteCollab's Barbaracle Mega slot is empty; Barbaracle's sheet stands in until its own is drawn
 1259	Dragalge-M	691	mega	walkingpals-nat	691-mega	
 1260	Hawlucha-M	701	mega	walkingpals-nat	701-mega	
 1261	Zygarde-M	718	mega	walkingpals-nat	718-mega	
 1262	Drampa-M	780	mega	walkingpals-nat	780-mega	
 1263	Falinks-M	870	mega			no sheet: SpriteCollab's Falinks Mega slot is empty
-1264	Raichu-X	26	mega-x			no sheet: SpriteCollab's Raichu Mega X slot is empty
-1265	Raichu-Y	26	mega-y			no sheet: SpriteCollab's Raichu Mega Y slot is empty
+1264	Raichu-X	26	mega-x	walkingpals	26	SpriteCollab's Raichu Mega X slot is empty; Raichu's sheet stands in until its own is drawn
+1265	Raichu-Y	26	mega-y	walkingpals	26	SpriteCollab's Raichu Mega Y slot is empty; Raichu's sheet stands in until its own is drawn
 1266	Chimecho-M	358	mega	walkingpals-nat	358-mega	
-1267	Absol-Z	359	mega-z			no sheet: SpriteCollab's Absol Mega Z slot is empty
-1268	Staraptor-M	398	mega			no sheet: SpriteCollab's Staraptor Mega slot is empty
-1269	Garchomp-Z	445	mega-z			no sheet: SpriteCollab's Garchomp Mega Z slot is empty
-1270	Lucario-Z	448	mega-z			no sheet: SpriteCollab's Lucario Mega Z slot is empty
-1271	Heatran-M	485	mega			no sheet: SpriteCollab's Heatran Mega slot is empty
+1267	Absol-Z	359	mega-z	walkingpals	376	SpriteCollab's Absol Mega Z slot is empty; Absol's sheet stands in until its own is drawn
+1268	Staraptor-M	398	mega	walkingpals-nat	398	SpriteCollab's Staraptor Mega slot is empty; Staraptor's sheet stands in until its own is drawn
+1269	Garchomp-Z	445	mega-z	walkingpals-nat	445	SpriteCollab's Garchomp Mega Z slot is empty; Garchomp's sheet stands in until its own is drawn
+1270	Lucario-Z	448	mega-z	walkingpals-nat	448	SpriteCollab's Lucario Mega Z slot is empty; Lucario's sheet stands in until its own is drawn
+1271	Heatran-M	485	mega	walkingpals-nat	485	SpriteCollab's Heatran Mega slot is empty; Heatran's sheet stands in until its own is drawn
 1272	Darkrai-M	491	mega	walkingpals-nat	491-mega	
-1273	Golurk-M	623	mega			no sheet: SpriteCollab's Golurk Mega slot is empty
-1274	Meowstic-M	678	mega			no sheet: SpriteCollab's Meowstic Mega slot is empty
-1275	Crabominable-M	740	mega			no sheet: SpriteCollab's Crabominable Mega slot is empty
-1276	Golisopod-M	768	mega			no sheet: SpriteCollab's Golisopod Mega slot is empty
-1277	Magearna-M	801	mega			no sheet: SpriteCollab's Magearna Mega slot is empty
+1273	Golurk-M	623	mega	walkingpals-nat	623	SpriteCollab's Golurk Mega slot is empty; Golurk's sheet stands in until its own is drawn
+1274	Meowstic-M	678	mega	walkingpals-nat	678	SpriteCollab's Meowstic Mega slot is empty; Meowstic's sheet stands in until its own is drawn
+1275	Crabominable-M	740	mega	walkingpals-nat	740	SpriteCollab's Crabominable Mega slot is empty; Crabominable's sheet stands in until its own is drawn
+1276	Golisopod-M	768	mega	walkingpals-nat	768	SpriteCollab's Golisopod Mega slot is empty; Golisopod's sheet stands in until its own is drawn
+1277	Magearna-M	801	mega	walkingpals-nat	801	SpriteCollab's Magearna Mega slot is empty; Magearna's sheet stands in until its own is drawn
 1278	Zeraora-M	807	mega	walkingpals-nat	807-mega	
-1279	Scovillain-M	952	mega			no sheet: SpriteCollab's Scovillain Mega slot is empty
-1280	Glimmora-M	970	mega			no sheet: SpriteCollab's Glimmora Mega slot is empty
+1279	Scovillain-M	952	mega	walkingpals-nat	952	SpriteCollab's Scovillain Mega slot is empty; Scovillain's sheet stands in until its own is drawn
+1280	Glimmora-M	970	mega	walkingpals-nat	970	SpriteCollab's Glimmora Mega slot is empty; Glimmora's sheet stands in until its own is drawn
 1281	Tatsugiri-M	978	mega	walkingpals-nat	978-mega	
-1282	Baxcalibur-M	998	mega			no sheet: SpriteCollab's Baxcalibur Mega slot is empty
-1283	Meowstic-F-M	678	mega			no sheet: SpriteCollab's Meowstic Mega slot is empty
+1282	Baxcalibur-M	998	mega	walkingpals-nat	998	SpriteCollab's Baxcalibur Mega slot is empty; Baxcalibur's sheet stands in until its own is drawn
+1283	Meowstic-F-M	678	mega	walkingpals-nat	678	SpriteCollab's Meowstic Mega slot is empty; Meowstic's sheet stands in until its own is drawn

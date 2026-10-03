@@ -1,6 +1,8 @@
 package com.ironmonone.app
 
 import com.ironmonone.tracker.nds.Gen4
+import com.ironmonone.tracker.nds.NdsExperience
+import com.ironmonone.tracker.nds.NdsSpeciesInfo
 import com.ironmonone.tracker.nds.NdsTrackedMon
 import com.ironmonone.tracker.nds.NdsTrackerState
 import java.io.File
@@ -58,12 +60,37 @@ class NdsHealsViewTest {
     @Test
     fun `the EXP bar is your own Pokemon's, with its setting`() {
         val m = Gen4.decodeParty(Gen4.encodeParty(0x77L, 25, 5, 20, 20, listOf(84, 0, 0, 0), experience = 89))!!
-        assertEquals(0.5, ndsExpFraction(m, on = true))
-        assertNull(ndsExpFraction(m, on = false))
+        // A sidecar from before the growth rate was written: the reference's Fluctuating, as it always was.
+        val p = NdsTrackedMon(m, "Pikachu", NdsSpeciesInfo("Pikachu", "ELECTRIC", "ELECTRIC", 320, "", ""), "-", "-", emptyList())
+        assertEquals(0.5, ndsExpFraction(p, on = true))
+        assertNull(ndsExpFraction(p, on = false))
         val panel = File("src/main/kotlin/com/ironmonone/app/NdsTrackerPanel.kt").readText()
         assertEquals(1, Regex("holdExpFraction = ").findAll(panel).count(), "the party card holds the bar, the opponent's card does not")
-        assertTrue("holdExpFraction = ndsExpFraction(m, TrackerOptions.dsExpBar)" in panel)
-        assertTrue("pokecenterCount, TrackerOptions.tourneyTracker, TrackerOptions.dsAccEva)" in panel, "the panel reads the DS ACC and EVA setting")
+        assertTrue("holdExpFraction = ndsExpFraction(p, TrackerOptions.dsExpBar)" in panel)
+        assertTrue("pokecenterCount, TrackerOptions.tourneyTracker, TrackerOptions.dsAccEva, shownCarrier = p)" in panel, "the panel reads the DS ACC and EVA setting")
+    }
+
+    /**
+     * rc32 audit P3 #118: the bar assumed Fluctuating for every Pokemon in every mode. A Medium Fast Pokemon at level 30 with
+     * 27,000 EXP has just reached it, and read 1.06, a full bar. It follows the species' rate from the run's sidecar now.
+     */
+    @Test
+    fun `the EXP bar follows the species' growth rate, and a game with no sidecar has none`() {
+        val m = Gen4.decodeParty(Gen4.encodeParty(0x78L, 25, 30, 60, 60, listOf(84, 0, 0, 0), experience = 27_000))!!
+        fun card(rate: Int?) = NdsTrackedMon(m, "Pikachu",
+            rate?.let { NdsSpeciesInfo("Pikachu", "ELECTRIC", "ELECTRIC", 320, "", "", growthRate = it) }, "-", "-", emptyList())
+        assertEquals(0.0, ndsExpFraction(card(NdsExperience.MEDIUM_FAST), on = true))
+        assertEquals(3_240.0 / 3_051.0, ndsExpFraction(card(NdsExperience.FLUCTUATING), on = true)!!, 1e-9, "the old full bar")
+        assertNull(ndsExpFraction(card(null), on = true), "no sidecar: a game not randomized here, whose curves are unknown")
+    }
+
+    @Test
+    fun `the engine writes the growth rate as the ROM numbers it, last on the species' sidecar line`() {
+        val zubat = com.dabomstew.pkrandomzx.pokemon.Pokemon().apply {
+            number = 41; name = "Zubat"; hp = 40; attack = 45; defense = 35; spatk = 30; spdef = 40; speed = 55
+            growthCurve = com.dabomstew.pkrandomzx.pokemon.ExpCurve.MEDIUM_SLOW
+        }
+        assertEquals("41\tZubat\t\t\t245\t\t\t3", com.ironmonone.app.engine.ZxEngine.sidecarLine(zubat) { "" })
     }
 
     @Test

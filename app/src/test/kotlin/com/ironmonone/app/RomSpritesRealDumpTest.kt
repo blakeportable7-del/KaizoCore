@@ -12,20 +12,18 @@ import kotlin.test.Test
 import kotlin.test.assertTrue
 
 /**
- * The decoder against a REAL dump, when one is present. Gated on the
- * KAIZOCORE_B2_ROM environment variable (a path to Blake's own Black 2
- * .nds); without it the test passes trivially and says so. Writes a sample
- * of species to <rom dir>/sprites-b2/<id>.png and a montage beside them, so
- * the result can be looked at, not just counted. Android unit tests have no
+ * The decoder against a REAL dump, when one is present: KAIZOCORE_B2_ROM or KAIZOCORE_HG_ROM if set, else Blake's own
+ * dumps in IRONMON_ROMS (C:/Users/bepor/IronMonOne/.vendor/roms by default), where the other real-ROM tests find them.
+ * Without one the test passes trivially and says so. Writes a sample of species and a montage to a temporary folder,
+ * never beside the dumps, so the result can be looked at, not just counted. Android unit tests have no
  * AWT, so the PNGs are written by the small encoder at the bottom.
  */
 class RomSpritesRealDumpTest {
     @Test
     fun `Black 2 decodes every species out of the dump`() {
-        val path = System.getenv("KAIZOCORE_B2_ROM") ?: run { println("KAIZOCORE_B2_ROM not set; skipped"); return }
-        val rom = File(path); assertTrue(rom.isFile, path)
+        val rom = dump("KAIZOCORE_B2_ROM", "black2-u.nds") ?: run { println("no Black 2 dump; skipped"); return }
         val narc = NARCArchive(NDSRom(rom.absolutePath).getFile(RomSprites.narcPath(RomKind.BLACK2_U)!!))
-        val out = File(rom.parentFile, "sprites-b2").apply { mkdirs() }
+        val out = kotlin.io.path.createTempDirectory("sprites-b2").toFile()
         var decoded = 0; var blank = 0
         val sample = listOf(1, 4, 7, 25, 150, 151, 152, 386, 493, 494, 495, 498, 501, 570, 635, 649)
         val tiles = HashMap<Int, RomSprites.Decoded>()
@@ -45,10 +43,9 @@ class RomSpritesRealDumpTest {
 
     @Test
     fun `HeartGold decodes every species out of the dump`() {
-        val path = System.getenv("KAIZOCORE_HG_ROM") ?: run { println("KAIZOCORE_HG_ROM not set; skipped"); return }
-        val rom = File(path); assertTrue(rom.isFile, path)
+        val rom = dump("KAIZOCORE_HG_ROM", "heartgold-u.nds") ?: run { println("no HeartGold dump; skipped"); return }
         val narc = NARCArchive(NDSRom(rom.absolutePath).getFile(RomSprites.narcPath(RomKind.HEARTGOLD_U)!!))
-        val out = File(rom.parentFile, "sprites-hg").apply { mkdirs() }
+        val out = kotlin.io.path.createTempDirectory("sprites-hg").toFile()
         var decoded = 0; var blank = 0
         val sample = listOf(1, 4, 7, 25, 150, 152, 155, 158, 249, 250, 386, 448, 483, 487, 491, 493)
         val tiles = HashMap<Int, RomSprites.Decoded>()
@@ -67,6 +64,13 @@ class RomSpritesRealDumpTest {
         File(out, "montage.png").writeBytes(png(cols * cell, rows * cell, m))
         println("decoded=$decoded blank=$blank montage=${File(out, "montage.png").absolutePath}")
         assertTrue(decoded >= 485, "expected nearly all 493 species to decode, got $decoded (blank $blank)")
+    }
+
+    /** [env]'s path when set (it must exist), else [name] in IRONMON_ROMS or the vendored folder, else null. */
+    private fun dump(env: String, name: String): File? {
+        System.getenv(env)?.let { p -> return File(p).also { assertTrue(it.isFile, p) } }
+        val dir = System.getenv("IRONMON_ROMS")?.let(::File) ?: File("C:/Users/bepor/IronMonOne/.vendor/roms")
+        return File(dir, name).takeIf { it.isFile }
     }
 
     /** Minimal PNG: 8-bit RGBA, no filtering, one IDAT. */

@@ -23,14 +23,21 @@ class EngineStopTest {
         com.dabomstew.pkrandom.RandomSource.seed(42L)
         val n = com.dabomstew.pkrandom.RandomSource.instance()
         assertEquals(want, List(12) { listOf(n.nextInt(1000), n.nextDouble(), n.nextBoolean(), n.nextLong()) }, natdex.name)
+        // MaxDex's engine carries the same change (engine-maxdex, 2026-10-02).
+        com.dabomstew.pkrandommd.RandomSource.seed(42L)
+        val m = com.dabomstew.pkrandommd.RandomSource.instance()
+        assertEquals(want, List(12) { listOf(m.nextInt(1000), m.nextDouble(), m.nextBoolean(), m.nextLong()) }, "pkrandommd")
     }
 
     @Test
     fun `a randomize on an interrupted thread stops at its next draw, and only there`() {
         com.dabomstew.pkrandomzx.RandomSource.seed(1L)
         com.dabomstew.pkrandom.RandomSource.seed(1L)
+        com.dabomstew.pkrandommd.RandomSource.seed(1L)
         Thread.currentThread().interrupt()
         try {
+            assertFailsWith<CancellationException> { com.dabomstew.pkrandommd.RandomSource.nextInt(10) }
+            assertFailsWith<CancellationException> { com.dabomstew.pkrandommd.RandomSource.cosmeticInstance().nextInt(10) }
             assertFailsWith<CancellationException> { com.dabomstew.pkrandomzx.RandomSource.nextInt(10) }
             assertFailsWith<CancellationException> { com.dabomstew.pkrandomzx.RandomSource.instance().nextDouble() }
             assertFailsWith<CancellationException> { com.dabomstew.pkrandom.RandomSource.nextInt(10) }
@@ -41,5 +48,6 @@ class EngineStopTest {
         // An uninterrupted thread, the foreground randomize's, draws as ever.
         com.dabomstew.pkrandomzx.RandomSource.nextInt(10)
         com.dabomstew.pkrandom.RandomSource.nextInt(10)
+        com.dabomstew.pkrandommd.RandomSource.nextInt(10)
     }
 }

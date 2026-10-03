@@ -91,6 +91,25 @@ class AttemptsPerFileTest {
         assertEquals(3, history()[1].badges)
     }
 
+    /** rc32 audit P2 #29: a staged demo shows attempt 37, and a run replaced in its process was filed under 37. */
+    @Test
+    fun `a staged demo's attempt number is for the screens, never for what is filed`() {
+        val kaizo = settings("RSE Kaizo.rnqs")
+        roll(kaizo)
+        val firstSeed = store.lastSeedText()
+        try {
+            Demo.mode = "gba-battle"
+            assertEquals(Demo.ATTEMPT, store.attempt(emerald.id), "what the overlay and the card show")
+            roll(kaizo)
+        } finally {
+            Demo.mode = null
+        }
+        val filed = history().single()
+        assertEquals(1, filed.attempt, "the run it replaced is filed under its own number")
+        assertEquals(firstSeed, filed.seed)
+        assertEquals(2, store.attempt(emerald.id))
+    }
+
     @Test
     fun `what was kept under a number starts over for the run that takes it`() {
         val kaizo = settings("RSE Kaizo.rnqs"); val standard = settings("RSE Standard.rnqs")

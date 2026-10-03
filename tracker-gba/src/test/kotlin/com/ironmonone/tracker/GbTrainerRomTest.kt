@@ -82,8 +82,8 @@ class GbTrainerRomTest {
     private val roms: File = System.getenv("IRONMON_ROMS")?.let(::File)?.takeIf { it.isDirectory } ?: File("C:/Users/bepor/IronMonOne/.vendor/roms")
 
     private fun rom(file: String): ByteArray? {
-        val f = File(roms, file)
-        if (!f.isFile) { println("SKIP: $file is not on this machine"); return null }
+        val f = Dumps.file(roms, file)
+        if (f == null) { println("SKIP: $file is not on this machine"); return null }
         return f.readBytes()
     }
 
@@ -128,14 +128,15 @@ class GbTrainerRomTest {
         return make(rom).nuz?.gb?.caps
     }
 
-    private class Blank(private val base: Long) : MemoryReader {
-        override fun read(address: Long, length: Int): ByteArray = if (address >= base && address - base + length <= 0x10000) ByteArray(length) else ByteArray(0)
+    /** Zeros over the core's work RAM, 8 KB for Gen 1 and 32 KB for Gen 2 (rc32 audit P3 #117). */
+    private class Blank(private val base: Long, private val size: Int) : MemoryReader {
+        override fun read(address: Long, length: Int): ByteArray = if (address >= base && address - base + length <= size) ByteArray(length) else ByteArray(0)
     }
 
     @Test
     fun `the Generation 1 tracker reads every boss's level out of the ROM`() {
         for ((file, game) in listOf("red-u.gbc" to "rb", "blue-u.gbc" to "rb", "yellow-u.gbc" to "y")) {
-            val caps = trackerCaps(file) { Gen1Tracker(Blank(Gen1Tracker.RAM), it).read() } ?: continue
+            val caps = trackerCaps(file) { Gen1Tracker(Blank(Gen1Tracker.RAM, 0x2000), it).read() } ?: continue
             assertTrue(caps.fromRom, "$file: some team did not read: " + caps.bosses.filter { !it.fromRom }.map { it.key })
             val table = LevelCapTable.standard(game, NuzlockeSystem.GEN1)
             assertEquals(table.bosses.map { it.cap }, caps.bosses.map { it.cap }, file)
@@ -144,7 +145,7 @@ class GbTrainerRomTest {
 
     @Test
     fun `the Crystal tracker reads every boss's level out of the ROM`() {
-        val caps = trackerCaps("crystal-u.gbc") { GbcTracker(Blank(GbcTracker.RAM), it).read() } ?: return
+        val caps = trackerCaps("crystal-u.gbc") { GbcTracker(Blank(GbcTracker.RAM, 0x8000), it).read() } ?: return
         assertTrue(caps.fromRom, "some team did not read: " + caps.bosses.filter { !it.fromRom }.map { it.key })
         assertEquals(LevelCapTable.standard("c", NuzlockeSystem.GEN2).bosses.map { it.cap }, caps.bosses.map { it.cap })
     }

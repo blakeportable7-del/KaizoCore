@@ -1,0 +1,34 @@
+CyanSMP64/universal-pokemon-randomizer-zx, branch natdex, commit d53e08242f8609062ffc17375806365a68f31e60 'release v1.1.3', vendored 2026-10-02, renamed to com.dabomstew.pkrandommd
+
+Trip's changes, ported by hand 2026-10-02 from MaxDex-Randomizer.jar (Tripc423/Maxdex, commit 73bb022, built 2026-06-25):
+  MaxDex-Randomizer.jar     SHA-256 b39836b01f668d1b31502741e62fbb64448f2e38df1eeb970f6b3c9762d0357b, 1,275,529 bytes. Never run.
+  its gen3_offsets.ini      SHA-256 bf8a35f4f49c068de0f91f887b12d2094a20612e0c35b0d9476a2ebe1f1a6b3f (config/gen3_offsets.ini below its notice)
+  official 1.1.3 jar        SHA-256 0dbbbe8653a52d1637b67260c032a09f955d12da9b6486c397f9bc11fbf94a57 (randomizer-1.1.3.jar, NatDexExtension 461acb8f)
+  Every change is marked "LOCAL MODIFICATION (KaizoCore, MaxDex)". Version 904 / "4.6.0-END112", what both jars report.
+
+The MaxDex 1.0 build this engine is for:
+  MaxDex.bps                SHA-256 65d70b582f14b493863d2c31d1f668301dc370bf46ece9f40ecaf28e94b15057, CRC 84EE4776 (FireRed USA 1.1) to 28C12926
+  FRLG MaxDex Kaizo.rnqs    SHA-256 af51837c44942be36cb1b407be1fe4bebd6c5d08f0cc95f9325aa1fa7491ec9e, settings version 902
+
+How the port was checked against the jar, 2026-10-02 (javap only; python tools/maxdex/compare_jar.py repeats it):
+  - This tree before the changes (the vendoring commit), compiled with javac --release 8, is the upstream tree method
+    for method once the package names are normalised: 262 classes, 0 differing.
+  - compare_jar.py compiles upstream and this tree, normalises what a compiler or a decompile round trip changes on
+    its own (local slots, branch layout, List and ArrayList call sites, synthetic accessor numbers, switch offsets,
+    the package rename), and sets each difference from Trip's jar beside the one between the official 1.1.3 jar and
+    the upstream build. Of 262 classes, Trip changed seven (AbstractRomHandler, Gen3RomHandler and its five inner
+    classes). Every method matches but eleven, read by eye:
+      RandomSource.reset            KaizoCore's own change (Stoppable), in every engine
+      Gen3RomHandler$StaticPokemon  a synthetic constructor his decompile added
+      Gen3RomHandler, nine methods  rewrites by his decompiler of code neither side changed: a ternary for an
+                                    if/else (saveBasicPokeStats' second type), hoisted temporaries
+                                    (preprocessMaps, loadPokemonStats, savePokemonStats, basicBPRE10HackSupport,
+                                    patchForNationalDex), a dropped catch-and-rethrow (readWildArea), string-switch
+                                    order (parseStaticPokemon, translateString)
+    The ported methods (detectRomInner, loadedRom, loadMoves, saveMoves, loadBasicPokeStats, loadPokedex,
+    highestAbilityIndex, loadAbilityNames, bannedForWildEncounters, setPokemonPool) match his exactly.
+
+Golden runs of this port on the patched test ROM (28C12926) with the preset, checked by MaxDexRandomizeTest:
+  seed 12345     output CRC FC3D321B  SHA-256 8a8d5302a95e492fb584050661037edc293b3f32726cdbff1429e7666d4bf10a
+  seed 20261002  output CRC B9880C08  SHA-256 531071a98011aa4e1c298828d10d2da5abeb2de4ff86b0b81f0cd9b8a1f1d279
+  Not compared with the jar's own output: the jar is not run here.

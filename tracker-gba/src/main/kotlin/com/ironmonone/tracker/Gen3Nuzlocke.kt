@@ -7,6 +7,8 @@ import com.ironmonone.tracker.nuzlocke.NzArea
 import com.ironmonone.tracker.nuzlocke.NzEnemy
 import com.ironmonone.tracker.nuzlocke.NzItem
 import com.ironmonone.tracker.nuzlocke.NzMon
+import com.ironmonone.tracker.nuzlocke.NuzlockeStatics
+import com.ironmonone.tracker.nuzlocke.NuzlockeSystem
 import com.ironmonone.tracker.nuzlocke.NzOpponent
 import com.ironmonone.tracker.nuzlocke.Snapshot
 
@@ -39,6 +41,21 @@ object Gen3Nuzlocke {
         else -> Method.WALK
     }
 
+    /**
+     * The battle's [method], and a set battle the game gives no sign of: Ruby, Sapphire and Emerald start Kecleon, New
+     * Mauville's item-ball Voltorb and the hideout's Electrode with dowildbattle, whose battle type is any wild battle's,
+     * so they read as walking and took the area's first encounter with statics free (rc33 audit P1 #76). They are found
+     * by place and level in nuzlocke/statics-gen3.tsv, as the Game Boy and DS adapters find theirs.
+     */
+    internal fun method(s: TrackerState, n: NuzlockeReads): Method {
+        val m = method(s.encounterArea)
+        val e = s.enemy ?: return m
+        if (m != Method.WALK || !s.inBattle || !s.isWildBattle) return m
+        // Gen 3's own species ids are the national dex numbers up to Celebi, the only ones a row names.
+        return if (NuzlockeStatics.isStatic(NuzlockeSystem.GEN3, listOf(n.staticsGame), s.routeName, e.level, e.species.takeIf { it in 1..251 }))
+            Method.STATIC else m
+    }
+
     private fun gender(ratio: Int?, pid: Long): Gender? = when (Gender3.of(ratio ?: 255, pid)) {
         Gender3.MALE -> Gender.MALE
         Gender3.FEMALE -> Gender.FEMALE
@@ -68,12 +85,14 @@ object Gen3Nuzlocke {
         }
         return Snapshot(
             readable = true,
-            area = NzArea(s.routeName, s.mapId),
+            // The map section and whether it is a building (MAP_TYPE_INDOOR, 8): a gift there counts for its town or route.
+            area = NzArea(s.routeName, s.mapId, section = n.mapSection.takeIf { it >= 0 }, indoor = n.mapType == 8),
             inBattle = s.inBattle,
             wild = s.isWildBattle,
             // A lesson is nobody's encounter, like a ghost: no area used up, no catch (2026-09-30, UX audit P0-9).
             ghost = s.isGhostBattle || n.lesson,
-            method = method(s.encounterArea),
+            facility = n.facility,
+            method = method(s, n),
             enemy = enemy,
             opponent = n.opponent?.let { NzOpponent(it.trainerId, it.label, it.group, it.bossKey, it.maxLevel) },
             end = if (s.inBattle) BattleEnd.UNKNOWN else battleEnd(n.battleOutcome),

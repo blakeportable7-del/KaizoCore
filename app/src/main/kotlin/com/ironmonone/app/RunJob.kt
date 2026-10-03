@@ -77,7 +77,9 @@ object RunJob {
         /** A run code's own passes, for this one build: the player's switches are left as they are (R4). */
         prePassOn: Boolean? = null, part2On: Boolean? = null,
     ): Boolean {
-        if (busy) return false
+        // One new run at a time across the app: Play's NEW RUN holds the same guard, and two RunStarts at once deleted or
+        // swapped each other's stage (rc33 audit P1 #22).
+        if (busy || !NewRunGuard.claim()) return false
         val app = context.applicationContext
         // The engine has no progress callback, so the phases are the steps the
         // caller performs. RANDOMIZING covers taking a run made ahead too:
@@ -103,9 +105,13 @@ object RunJob {
                 main { TrackerOptions.startRunWith(settings.name) }
                 // A run built from a code (RunCodes): the same game as the sharer's, or not.
                 val built = expect?.let { runCatching { withContext(Dispatchers.IO) { RunCode.crc32(store.currentRunFor(rom.first)) } }.getOrDefault(0L) }
+                // What the app wrote into the run's log (ZxEngine.withNote): a setting the engine did not apply (rc32 audit P3 #90).
+                val notes = withContext(Dispatchers.IO) {
+                    RandomizerLog.notesOf(com.ironmonone.app.engine.Randomizers.logFor(store.currentRunFor(rom.first)))
+                }.joinToString("") { " $it" }
                 main {
                     val verdict = if (expect != null && built != null) " " + RunCodes.verdict(expect, built) else ""
-                    say("Your new game is ready (seed ${seedText(outcome.seed)}).$verdict",
+                    say("Your new game is ready (seed ${seedText(outcome.seed)}).$verdict$notes",
                         isError = expect != null && expect.romCrc != 0L && expect.romCrc != built)
                     generation++
                     busy = false
@@ -116,6 +122,8 @@ object RunJob {
                 throw e
             } catch (e: Throwable) {
                 main { say(randomizeFailure(e), true); busy = false; generation++ }
+            } finally {
+                NewRunGuard.release()
             }
         }
         return true
@@ -148,15 +156,19 @@ object RunJob {
 
     /**
      * An engine failure as a sentence. The engine's own refusals ("is a
-     * vanilla-era settings file", "is not a GBA Pokémon ROM") already read as
+     * standard settings file", "is not a GBA Pokémon ROM") already read as
      * sentences and are kept; a wrapped exception ("Randomization failed:
      * null", "Could not read x: Malformed input") is replaced, and the
-     * detail goes to the log (2026-09-27, audit).
+     * detail goes to the log (2026-09-27, audit). A full phone says so, first:
+     * it read as "The engine finished but wrote no output." (rc32 audit P2 #119).
      */
-    private fun randomizeFailure(e: Throwable): String {
+    internal fun randomizeFailure(e: Throwable): String {
         runCatching { android.util.Log.w("IronMonOne", "randomize failed", e) }
         val m = e.message.orEmpty()
         return when {
+            // Already plain copy: the new run's name or seed could not be saved (PrepStore.installRun, rc32 audit P2 #65).
+            e is RunSetupProblem && m.isNotBlank() -> m
+            isNoSpace(e) -> com.ironmonone.app.engine.Randomizers.NO_ROOM
             e is NatDexEngine.EngineException && m.startsWith("Randomization failed") ->
                 "The randomizer stopped partway through. Try again, or pick another settings file."
             e is NatDexEngine.EngineException && m.startsWith("Could not read") ->

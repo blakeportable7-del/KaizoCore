@@ -1,7 +1,8 @@
 package com.ironmonone.tracker
 
 /**
- * Finds "Play as your Pokemon"'s addresses in a game's own code, for a build that is in no table: Nat. Dex.
+ * Finds "Play as your Pokemon"'s addresses in a game's own code, for a build that is in no table: Nat. Dex, and MaxDex
+ * 1.0, which is Nat. Dex 1.1.3 grown and is read the same way.
  *
  * Nat. Dex publishes an address table in its ROM (0x08000150 on) but not the eleven this needs, and its RAM moves
  * between versions, which is why nothing about it may be hardcoded (GbaTracker). It is compiled from the same
@@ -16,8 +17,9 @@ package com.ironmonone.tracker
  *
  * It is proven three ways (OverworldScanTest): on the six retail dumps it returns exactly the tables in [Overworld],
  * which were read from the pret symbol files and are checked against those same dumps separately
- * (OverworldAddressTest); on both Nat. Dex dumps it finds every function once and every function that names
- * gPlayerAvatar agrees on it; and each rule below refuses, on a made-up ROM, with the reason named.
+ * (OverworldAddressTest); on both Nat. Dex dumps and the MaxDex 1.0 build it finds every function once and every
+ * function that names gPlayerAvatar agrees on it (on MaxDex, also with the RAM its tracker extension hardcodes); and
+ * each rule below refuses, on a made-up ROM, with the reason named.
  *
  * It is a refusal when anything is off, never a guess: a function missing or in two places, functions that disagree
  * about an address, a pool word that is not in RAM. A wrong table is not harmless (it would hide the wrong sprite), and
@@ -30,6 +32,12 @@ object OverworldScan {
      * highest, Emerald Nat. Dex's GetPlayerAvatarObjectId, is at 0x96D84); 2 MiB leaves room for a build that moves them.
      */
     const val WINDOW = 0x200000
+    /**
+     * The most the emulator side hands back for one read: libretrodroidjni.cpp's readMemory returns nothing for a
+     * length over 0x100000. The window was asked for in one read, which on the phone always came back empty, so only
+     * the first 1 MiB was ever searched (rc32 audit P3 #114); it is read in pieces this size.
+     */
+    const val READ_MAX = 0x100000
     const val ROM_BASE = 0x08000000L
     const val NAME = "Nat. Dex (read from the game)"
 
@@ -115,19 +123,41 @@ object OverworldScan {
         return out
     }
 
+    /**
+     * Whether the running game has CB2_OverworldBasic's and CB2_Overworld's code at [table]'s two callbacks: that a game
+     * named by its header has that game's overworld where the table says (rc32 audit P2 #87). One read through [read],
+     * of the few bytes from the one callback to the end of the other. False for anything it cannot read.
+     */
+    fun callbacksAt(read: MemoryReader, table: OverworldAddresses): Boolean {
+        val basic = table.cb2OverworldBasic - 1
+        val gap = (table.cb2Overworld - 1 - basic).toInt()
+        if (gap < 0 || gap > 0x100) return false
+        val len = gap + CB2_OVERWORLD.size
+        val bytes = runCatching { read.read(basic, len) }.getOrNull() ?: return false
+        return bytes.size == len && CB2_OVERWORLD_BASIC.matchesAt(bytes, 0) && CB2_OVERWORLD.matchesAt(bytes, gap)
+    }
+
     /** The addresses in the ROM whose first bytes are [rom], or null (see [scan] for why not). */
     fun find(rom: ByteArray, name: String = NAME): OverworldAddresses? = scan(rom, name).addresses
 
     /**
-     * The addresses in the running game's ROM, read through [reader] (the first [WINDOW] bytes, once). Null when the ROM
-     * cannot be read or is not one this understands.
+     * The addresses in the running game's ROM, read through [reader]: the first [WINDOW] bytes, [READ_MAX] at a time and
+     * joined before the search, so a function across the join is found as well. A ROM that ends inside the window (a read
+     * past it comes back short) is searched as far as its last whole piece, as the 1 MiB read before this was. Null when
+     * the ROM cannot be read or is not one this understands.
      */
     fun find(reader: MemoryReader, name: String = NAME): OverworldAddresses? {
-        for (size in intArrayOf(WINDOW, WINDOW / 2)) {
-            val bytes = runCatching { reader.read(ROM_BASE, size) }.getOrNull()
-            if (bytes != null && bytes.size == size) return find(bytes, name)
+        val out = ByteArray(WINDOW)
+        var got = 0
+        while (got < WINDOW) {
+            val n = minOf(READ_MAX, WINDOW - got)
+            val part = runCatching { reader.read(ROM_BASE + got, n) }.getOrNull()
+            if (part == null || part.size != n) break
+            part.copyInto(out, got)
+            got += n
         }
-        return null
+        if (got == 0) return null
+        return find(if (got == WINDOW) out else out.copyOf(got), name)
     }
 
     fun scan(rom: ByteArray, name: String = NAME): Outcome {
@@ -195,16 +225,19 @@ object OverworldScan {
         val faded = u32(blend + 0x9C)
         if (faded - unfaded != 0x400L) return refuse("BlendPalette: the two palette buffers are not 0x400 bytes apart")
 
-        // Where things can be: gMain in IWRAM, everything else in IWRAM or EWRAM, each block wholly in one of them. These
-        // are the emulator side's own limits (configPlausible in sprite_core.h), so what is accepted here is accepted there.
-        fun inside(a: Long, len: Long): Boolean =
-            (a >= 0x03000000L && a + len <= 0x03008000L) || (a >= 0x02000000L && a + len <= 0x02040000L)
+        // Where things can be, each block on its own: exactly the emulator side's limits (configPlausible in sprite_core.h),
+        // so what is accepted here is accepted there. gMain in IWRAM; gPlayerAvatar, gSprites and both palette buffers in
+        // EWRAM only; the camera offsets and gObjectEvents in either. Every block took IWRAM or EWRAM here, so a build with
+        // gSprites in IWRAM passed the scan and was refused there (rc32 audit P3 #114).
+        fun ewram(a: Long, hi: Long) = a in 0x02000000L..hi
+        fun iwram(a: Long, hi: Long) = a in 0x03000000L..hi
         if (main !in 0x03000000L..0x03007000L || main % 4 != 0L) return refuse("gMain is not in IWRAM")
-        if (!inside(sprites, 64L * 0x44) || sprites % 4 != 0L) return refuse("gSprites is not in RAM")
-        if (!inside(objectEvents, 16L * 0x24) || objectEvents % 4 != 0L) return refuse("gObjectEvents is not in RAM")
-        if (!inside(avatar, 0x20) || avatar % 4 != 0L) return refuse("gPlayerAvatar is not in RAM")
-        if (!inside(coordX, 4) || !inside(coordY, 4) || coordX % 2 != 0L || coordY % 2 != 0L) return refuse("the camera offsets are not in RAM")
-        if (!inside(unfaded, 0x400) || !inside(faded, 0x400) || unfaded % 4 != 0L) return refuse("the palette buffers are not in RAM")
+        if (!ewram(sprites, 0x0203FFFFL - 64L * 0x44) || sprites % 4 != 0L) return refuse("gSprites is not in EWRAM")
+        if (!(ewram(objectEvents, 0x0203FDBFL) || iwram(objectEvents, 0x03007DBFL)) || objectEvents % 4 != 0L) return refuse("gObjectEvents is not in RAM")
+        if (!ewram(avatar, 0x0203FFE0L) || avatar % 4 != 0L) return refuse("gPlayerAvatar is not in EWRAM")
+        fun camera(a: Long) = ewram(a, 0x0203FFFCL) || iwram(a, 0x03007FFCL)
+        if (!camera(coordX) || !camera(coordY) || coordX % 2 != 0L || coordY % 2 != 0L) return refuse("the camera offsets are not in RAM")
+        if (!ewram(unfaded, 0x0203FBFFL) || !ewram(faded, 0x0203FBFFL) || unfaded % 4 != 0L) return refuse("the palette buffers are not in EWRAM")
 
         return Outcome(
             OverworldAddresses(

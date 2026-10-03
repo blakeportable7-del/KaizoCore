@@ -46,7 +46,8 @@ class SaveCheckTest {
     @Test
     fun `the Nuzlocke screen warns only about a real save, not about an auto-save or a blank file`() {
         val screen = File("src/main/kotlin/com/ironmonone/app/NuzlockeScreen.kt").readText()
-        assertTrue("SaveCheck.hasProgress(store.sramFile(s), s.platform)" in screen)
+        // A DS game's save is melonDS's own .sav, not the .srm (rc32 audit P2 #37, NuzlockeStartsTest).
+        assertTrue("SaveCheck.hasProgress(NuzlockeStarts.inGameSave(filesDir, s, store.sramFile(s)), s.platform)" in screen)
         assertFalse("store.slotFile(s, 0).isFile" in screen, "the auto-save is written whenever a game is left, title screen included")
     }
 }

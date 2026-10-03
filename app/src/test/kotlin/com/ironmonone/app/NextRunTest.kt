@@ -189,4 +189,66 @@ class NextRunTest {
         assertFalse(Randomizers.logFor(cur).exists(), "the old run's log would describe the wrong seed")
         assertFalse(Randomizers.sidecarFor(cur).exists(), "the old run's species would be read for the new one")
     }
+
+    @Test
+    fun `nothing can clear a stage between its making and its claiming`() {
+        // rc33 audit P1 #22: make and claim were two holds of the lock, and the background worker's ready() or clear()
+        // could land between them and delete the stage just made.
+        val inEngine = java.util.concurrent.CountDownLatch(1)
+        val letGo = java.util.concurrent.CountDownLatch(1)
+        var claimed: NextRun.Staged? = null
+        val maker = Thread {
+            claimed = stage.makeAndClaim(recipe, 0x77L) { dest, seed -> inEngine.countDown(); letGo.await(); engine()(dest, seed) }
+        }.apply { start() }
+        assertTrue(inEngine.await(10, java.util.concurrent.TimeUnit.SECONDS))
+        val cleared = java.util.concurrent.atomic.AtomicBoolean(false)
+        val worker = Thread { stage.clear(); cleared.set(true) }.apply { start() }
+        Thread.sleep(300)
+        assertFalse(cleared.get(), "the worker waits for the claim")
+        letGo.countDown()
+        maker.join(10_000); worker.join(10_000)
+        val s = assertNotNull(claimed, "the stage was claimed")
+        assertEquals(0x77L, s.seed)
+        assertEquals(64L, s.rom.length(), "with its bytes, which the clear after it could not reach")
+        assertTrue(cleared.get())
+    }
+
+    // ---------------------------------------------------------------- the stage's job (NextRunJob)
+
+    /**
+     * rc32 audit P3 #33: a stage started with 64 MB of heap free, described as twice what a GBA stage needs, but a Nat. Dex
+     * build is a 32 MB ROM that the engine holds twice before any table (rom and originalRom): no margin at all.
+     */
+    @Test
+    fun `the heap a stage needs grows with its ROM, two copies and room to spare`() {
+        val mb = 1L shl 20
+        val natDex = NextRunJob.heapNeed(com.ironmonone.core.Platform.GBA, 32 * mb)
+        assertTrue(natDex >= 2 * 32 * mb + 32 * mb, "a Nat. Dex build: ${natDex / mb} MB")
+        assertEquals(64 * mb, NextRunJob.heapNeed(com.ironmonone.core.Platform.GBA, 16 * mb), "a retail GBA game keeps the floor")
+        assertEquals(64 * mb, NextRunJob.heapNeed(com.ironmonone.core.Platform.GBC, 2 * mb))
+        assertEquals(160 * mb, NextRunJob.heapNeed(com.ironmonone.core.Platform.NDS, 512 * mb), "a DS stage is White 2's measured peak, twice")
+        val job = File("src/main/kotlin/com/ironmonone/app/NextRunJob.kt").readText()
+        assertTrue("val needHeap = heapNeed(kind.platform, prepared.length())" in job)
+    }
+
+    /**
+     * rc32 audit P3 #34: only a worker making the stage wanted was raised to normal priority; one being stopped stayed in
+     * the background until its next random draw, which a DS game's load and final write do not have, while NEW RUN waited
+     * on its lock.
+     */
+    @Test
+    fun `a worker being stopped is raised to normal priority too, so it gets out of the way at full speed`() {
+        val raised = ArrayList<Int>()
+        var stopped = 0
+        fun release(keep: String?, making: String?, tid: Int = 42) =
+            NextRunJob.released(keep, making, tid, raise = { raised += it }, interrupt = { stopped++ })
+        release(keep = "this run", making = "this run")
+        assertEquals(listOf(42), raised); assertEquals(0, stopped, "the stage wanted finishes")
+        release(keep = "another run", making = "this run")
+        assertEquals(listOf(42, 42), raised); assertEquals(1, stopped, "another recipe's stage is stopped, at normal priority")
+        release(keep = null, making = "this run")
+        assertEquals(listOf(42, 42, 42), raised); assertEquals(2, stopped, "and so is one stop() lets go of")
+        release(keep = "this run", making = null, tid = 0)
+        assertEquals(3, raised.size, "a worker with no thread id yet has nothing to raise"); assertEquals(3, stopped)
+    }
 }

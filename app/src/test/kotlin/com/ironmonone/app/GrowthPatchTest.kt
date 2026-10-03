@@ -46,10 +46,10 @@ class GrowthPatchTest {
     /** The bundled patch on a real dump gives the pinned build. Needs IRONMON_ROMS with crystal-u.gbc (or gold, silver). */
     @Test
     fun `the patch made from the stored copy is the pinned build`() {
-        val dir = System.getenv("IRONMON_ROMS")?.let { File(it) }?.takeIf { it.isDirectory } ?: return
+        val dir = Dumps.romsDir() ?: return
         var checked = 0
         for (k in listOf(RomKind.GOLD_U, RomKind.SILVER_U, RomKind.CRYSTAL_U)) {
-            val rom = File(dir, k.id + "." + k.fileExtension).takeIf { it.isFile } ?: continue
+            val rom = Dumps.file(dir, k.id + "." + k.fileExtension) ?: continue
             val out = GrowthPatch.buildFor(k)!!
             val asset = PrepOptions.forKind(k).first { it.out?.id == out.id }.asset!!
             val tmp = File.createTempFile("growth", "." + out.fileExtension).apply { deleteOnExit() }

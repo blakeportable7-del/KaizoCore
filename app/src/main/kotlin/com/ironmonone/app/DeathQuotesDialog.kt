@@ -37,7 +37,8 @@ import com.ironmonone.app.gen3.Gen3Button
  * The game over lines, from the tracker's gear (2026-09-30): the switch, whether the built-in lines stay in, and the
  * player's own list to add to, edit and remove from. Every change is kept as it is made (DeathQuotes), so there is no
  * Save to forget. It is drawn as the tracker's own screens are, in the tracker's palette, and says nothing that
- * DeathQuotesCopy does not hold. It lives in its own file because PlayScreen has no room for it.
+ * DeathQuotesCopy does not hold. It lives in its own file because PlayScreen has no room for it. Its words are
+ * DialogText, as Tracker Setup's are, so they follow the phone's font size (rc32 audit P2 #19): they were 7dp.
  */
 @Composable
 fun DeathQuotesDialog(onDismiss: () -> Unit) {
@@ -60,19 +61,19 @@ fun DeathQuotesDialog(onDismiss: () -> Unit) {
                 .verticalScroll(rememberScrollState()).padding(10.dp),
         ) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                PixText(DeathQuotesCopy.TITLE, 10, Pc.Gold, Modifier.weight(1f))
+                DialogText(DeathQuotesCopy.TITLE, 16, Pc.Gold, Modifier.weight(1f), heading = true)
                 PcTap(DeathQuotesCopy.CLOSE_MARK, 9, Pc.Dim, DeathQuotesCopy.CLOSE) { onDismiss() }
             }
             Spacer(Modifier.height(4.dp))
-            PixText(DeathQuotesCopy.INTRO, 7, Pc.Dim, wrap = true)
+            DialogText(DeathQuotesCopy.INTRO, 12, Pc.Dim)
             Spacer(Modifier.height(3.dp))
-            PixText(DeathQuotesCopy.LOSSES_ONLY, 7, Pc.Dim, wrap = true)
+            DialogText(DeathQuotesCopy.LOSSES_ONLY, 12, Pc.Dim)
             Spacer(Modifier.height(6.dp))
             GearToggle(DeathQuotesCopy.USE_MINE, DeathQuotes.enabled) { DeathQuotes.useOwn(it) }
             GearToggle(DeathQuotesCopy.KEEP_BUILT_IN, DeathQuotes.keepBuiltIn) { DeathQuotes.useBuiltIn(it) }
             DeathQuotesCopy.poolNote(DeathQuotes.enabled, DeathQuotes.keepBuiltIn, own.size)?.let {
                 Spacer(Modifier.height(2.dp))
-                PixText(it, 7, Pc.Gold, wrap = true)
+                DialogText(it, 12, Pc.Gold)
             }
             Spacer(Modifier.height(8.dp))
             androidx.compose.material3.OutlinedTextField(
@@ -80,13 +81,13 @@ fun DeathQuotesDialog(onDismiss: () -> Unit) {
                 onValueChange = { draft = it.take(DeathQuotes.MAX_LENGTH); message = null },
                 singleLine = true,
                 textStyle = TextStyle(color = Pc.Text),
-                label = { PixText(DeathQuotesCopy.TYPE_A_LINE, 7, Pc.Dim) },
+                label = { DialogText(DeathQuotesCopy.TYPE_A_LINE, 12, Pc.Dim) },
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = { submit() }),
                 modifier = Modifier.fillMaxWidth(),
             )
             Spacer(Modifier.height(2.dp))
-            PixText(DeathQuotesCopy.LIMIT, 7, Pc.Dim)
+            DialogText(DeathQuotesCopy.LIMIT, 12, Pc.Dim)
             Spacer(Modifier.height(4.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Gen3Button(if (editing == null) DeathQuotesCopy.ADD else DeathQuotesCopy.SAVE, accent = true) { submit() }
@@ -94,14 +95,14 @@ fun DeathQuotesDialog(onDismiss: () -> Unit) {
             }
             message?.let {
                 Spacer(Modifier.height(4.dp))
-                PixText(it, 7, Pc.Negative, wrap = true)
+                DialogText(it, 12, Pc.Negative)
             }
             Spacer(Modifier.height(8.dp))
-            PixText(DeathQuotesCopy.count(own.size), 8, Pc.Text, wrap = true)
+            DialogText(DeathQuotesCopy.count(own.size), 13, Pc.Text)
             Spacer(Modifier.height(2.dp))
             own.forEachIndexed { i, line ->
                 Row(Modifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
-                    PixText(line, 7, if (editing == i) Pc.Gold else Pc.Text, Modifier.weight(1f), wrap = true)
+                    DialogText(line, 12, if (editing == i) Pc.Gold else Pc.Text, Modifier.weight(1f))
                     LineAction(DeathQuotesCopy.EDIT, DeathQuotesCopy.spoken(DeathQuotesCopy.EDIT, line)) {
                         editing = i; draft = line; message = null
                     }
@@ -129,5 +130,5 @@ private fun LineAction(text: String, spoken: String, onClick: () -> Unit) {
             .semantics { contentDescription = spoken }
             .padding(horizontal = 4.dp),
         contentAlignment = Alignment.Center,
-    ) { PixText(text, 7, Pc.Gold) }
+    ) { DialogText(text, 12, Pc.Gold) }
 }

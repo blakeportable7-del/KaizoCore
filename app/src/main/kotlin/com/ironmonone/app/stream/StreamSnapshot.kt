@@ -36,13 +36,14 @@ object StreamSnapshot {
     )
 
     /**
-     * What the Play screen is playing. [isRun] is true for a run (Kaizo IronMON, and a
-     * Nuzlocke on a randomized game, which is a run too): attempts exist only there. In
-     * Play any game, ROM Hacks and a standard Nuzlocke the attempt number would be the
-     * last run's, so the stream must not show it (2026-09-29). The tracker page reads
-     * this as the snapshot's "run" and prints the attempt only when it is true
-     * (2026-09-30, UX audit P0-17). It defaults to "has a seed", which is what the Play
-     * screen passes for a run, and the Play screen passes it outright.
+     * What the Play screen is playing. [isRun] is true for a randomized run: a Kaizo IronMON
+     * run, or a Nuzlocke on a randomized game. Only the Kaizo IronMON run counts attempts: a
+     * randomized Nuzlocke counts none ([nuzlocke], PrepStore.installRun), and in Play any
+     * game, ROM Hacks and a standard Nuzlocke the attempt number would be the last run's,
+     * so the stream must not show it (2026-09-29). The tracker page reads the snapshot's
+     * "run", a run that is no Nuzlocke, and prints the attempt only when it is true
+     * (2026-09-30, UX audit P0-17; rc32 audit P2 #109). [isRun] defaults to "has a seed",
+     * which is what the Play screen passes for a run, and the Play screen passes it outright.
      */
     class Run(
         val title: String,
@@ -62,18 +63,38 @@ object StreamSnapshot {
     /** True for a snapshot built for a run. The hub reads it from the JSON it was handed. */
     fun isRun(json: String): Boolean = json.contains("\"run\":true")
 
-    fun build(
+    /**
+     * [gbaView] and [dsView] are the phone's battle views (the panels' own, as Play hands them): in a double or triple
+     * battle the page shows the Pokemon the phone's swap shows, yours and the opponent's, and where each stands
+     * ("own", "enemy" and "sides"). A single battle keeps the page as it was: the party's first and the one opponent.
+     */
+    internal fun build(
         run: Run,
         gba: TrackerState?,
         nds: NdsTrackerState?,
         notes: Notes,
         tracker: GbaTracker? = null,
+        gbaView: com.ironmonone.app.GbaViewState? = null,
+        dsView: com.ironmonone.app.DsViewState? = null,
     ): Map<String, Any?> {
         val view = gba ?: nds
         // "Hide stats until summary shown", as the phone's cards apply it (SummaryChecks.hides): yours and the opponent's.
         val hidden = gba != null && com.ironmonone.app.SummaryChecks.hides(run.attempt, gba.gameDataRandomized, run.generation)
         // The latched end of a Kaizo IronMON run, never the tracker's live read, which fires in any game (2026-09-30).
         val outcome: RunOutcome? = run.ended
+        // A double or triple battle, as the phone's swap shows it: the Pokemon on its cards and where they stand.
+        val gbaSpots = gba?.let { s -> gbaView?.shownSpots(s) }
+        val dsSpots = nds?.let { s -> dsView?.shownSpots(s) }
+        val gbaOwn = if (gbaSpots != null) gbaView?.own(gba) else null
+        val dsOwn = if (dsSpots != null) dsView?.shownPlayer(nds!!) else null
+        // The heals are a share of the Pokemon on the card (Program.recalcLeadPokemonHealingInfo): in a double battle the one shown.
+        val (shownPercent, shownCount) = when {
+            gbaOwn != null -> gbaView!!.heals(gba!!).let { it.percent to it.count }
+            dsOwn != null -> com.ironmonone.tracker.nds.NdsHeals.totals(nds!!.healingItems, dsOwn.mon.maxHp, showHp = false)
+            else -> (gba?.healPercent ?: nds?.healPercent ?: 0) to (gba?.healCount ?: nds?.healCount ?: 0)
+        }
+        // Hidden, the heals are 0 and 0, as the phone's strip and the reference's (HiddenCard, rc32 audit P2 #98).
+        val (healPercent, healCount, _) = com.ironmonone.app.HiddenCard.heals(hidden, shownPercent, shownCount, 0)
         return linkedMapOf(
             "app" to "KaizoCore",
             "title" to run.title,
@@ -87,8 +108,7 @@ object StreamSnapshot {
             "outcome" to outcome?.name,
             "badges" to (gba?.badges ?: nds?.badges ?: 0),
             "badgeSet" to (gba?.badgeSet ?: nds?.badgeSet),
-            "heals" to mapOf("percent" to (gba?.healPercent ?: nds?.healPercent ?: 0),
-                "count" to (gba?.healCount ?: nds?.healCount ?: 0)),
+            "heals" to mapOf("percent" to healPercent, "count" to healCount),
             "route" to gba?.let { s ->
                 s.routeName?.let { name ->
                     mapOf("name" to name, "total" to s.routeSpecies.size,
@@ -100,10 +120,23 @@ object StreamSnapshot {
             "weather" to gba?.weather,
             "party" to (gba?.party?.map { own(it, notes, tracker, gba, run.generation, hidden = hidden) }
                 ?: nds?.party?.map { ownNds(it, notes) } ?: emptyList<Any>()),
+            // In a double or triple battle, your Pokemon the phone shows, its moves against the opponent shown; the page
+            // draws the party's first otherwise.
+            "own" to when {
+                gbaOwn != null -> own(gbaOwn, notes, tracker, gba, run.generation, hidden = hidden, target = gbaView!!.ownTarget(gba!!))
+                dsOwn != null -> ownNds(dsOwn, notes)
+                else -> null
+            },
             "enemy" to when {
+                gbaSpots != null -> gbaView!!.foe(gba)?.let { enemy(it, gba!!, notes, tracker, run.generation, hidden, target = gbaView.foeTarget(gba)) }
+                dsSpots != null -> dsView!!.shownEnemy(nds!!)?.let { enemyNds(it, notes) }
                 gba?.enemy != null && gba.inBattle -> enemy(gba.enemy!!, gba, notes, tracker, run.generation, hidden)
                 nds?.enemy != null && nds.inBattle -> enemyNds(nds.enemy!!, notes)
                 else -> null
+            },
+            // Where each card's Pokemon stands on the game's screen, as the phone's banner says it (BattleSideWords).
+            "sides" to (gbaSpots ?: dsSpots)?.let { (mine, theirs) ->
+                mapOf("own" to com.ironmonone.app.BattleSideWords.one(mine).full, "foe" to com.ironmonone.app.BattleSideWords.one(theirs).full)
             },
             "enemyTeam" to (gba?.enemyTeam ?: emptyList<Boolean>()),
         )
@@ -135,8 +168,12 @@ object StreamSnapshot {
      * opened a summary): the reference's stand-in keeps the species, its types, BST and evolution, and nothing else,
      * so HP, ability, item, stats, stages and moves stay on the phone too (TrackerPanel's own card).
      */
-    private fun own(p: TrackedMon, notes: Notes, tracker: GbaTracker?, s: TrackerState? = null, generation: Int = 3, hidden: Boolean = false): Map<String, Any?> {
-        val ctx = com.ironmonone.app.ownMoveContext(p, s?.enemy?.takeIf { s.inBattle }, s?.weather, weightOf(tracker))
+    private fun own(
+        p: TrackedMon, notes: Notes, tracker: GbaTracker?, s: TrackerState? = null, generation: Int = 3, hidden: Boolean = false,
+        /** The opponent its moves are matched against: the one on the field, or in a double battle the one shown. */
+        target: EnemyInfo? = s?.enemy?.takeIf { s.inBattle },
+    ): Map<String, Any?> {
+        val ctx = com.ironmonone.app.ownMoveContext(p, target, s?.weather, weightOf(tracker))
             .copy(generation = generation)
         val m = p.mon
         return linkedMapOf(
@@ -152,13 +189,18 @@ object StreamSnapshot {
             "moves" to if (hidden) emptyList() else p.moveRows.map { moveRow(it, ctx) },
             "movesLearned" to p.movesLearned, "movesTotal" to p.movesTotal,
             "nextMoveLevel" to p.nextMoveLevel,
-            "evolution" to tracker?.evolution(m.species),
+            // The card's words, not the table's key: "L.CORD", not LINKING_CORD (rc33 audit P1 #67 made Nat. Dex keys common).
+            "evolution" to com.ironmonone.tracker.EvoText.abbreviation(tracker?.evolution(m.species)),
             "note" to notes.noteOf(m.species),
         )
     }
 
-    private fun enemy(e: EnemyInfo, s: TrackerState, notes: Notes, tracker: GbaTracker? = null, generation: Int = 3, hidden: Boolean = false): Map<String, Any?> {
-      val ctx = com.ironmonone.app.enemyMoveContext(e, s.onField, s.weather, weightOf(tracker))
+    private fun enemy(
+        e: EnemyInfo, s: TrackerState, notes: Notes, tracker: GbaTracker? = null, generation: Int = 3, hidden: Boolean = false,
+        /** Your Pokemon its moves are matched against: the one on the field (TrackerState.onField), in a double battle the one shown. */
+        target: TrackedMon? = s.onField,
+    ): Map<String, Any?> {
+      val ctx = com.ironmonone.app.enemyMoveContext(e, target, s.weather, weightOf(tracker))
           .copy(hide = com.ironmonone.app.InfoRules.hiddenMoveInfo(s.randomized), generation = generation)
       return linkedMapOf(
         "species" to e.species, "name" to e.speciesName, "level" to e.level,
@@ -244,7 +286,7 @@ object StreamSnapshot {
                     "abilities" to listOfNotNull(tracker.abilityName(b.ability1),
                         tracker.abilityName(b.ability2).takeIf { b.ability2 != 0 && b.ability2 != b.ability1 }),
                     "learnset" to tracker.learnset(sp).map { (lv, mv) -> mapOf("level" to lv, "move" to tracker.moveName(mv)) },
-                    "evolution" to tracker.evolution(sp),
+                    "evolution" to com.ironmonone.tracker.EvoText.detailed(tracker.evolution(sp), tracker.friendshipRequired()).joinToString(" / "),
                     "weight" to tracker.weight(sp),
                 )
             }

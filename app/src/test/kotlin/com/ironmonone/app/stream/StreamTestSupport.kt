@@ -20,6 +20,9 @@ class FakeGameFeed : GameFeed {
 
     @Volatile private var latest: Pic? = null
     private var counter = 0L
+    /** The newest picture the pump has taken, by its counter: a test waits on it instead of sleeping (rc32 audit P3 #83). */
+    @Volatile var served = 0L
+        private set
     private val sound = ConcurrentLinkedQueue<Pair<ByteArray, Int>>()
 
     override fun setCapture(on: Boolean) {
@@ -27,10 +30,15 @@ class FakeGameFeed : GameFeed {
         captureLog += on
     }
 
-    @Synchronized fun push(w: Int, h: Int, rgb: ByteArray) {
+    /** Hands the pump a picture; returns its counter. */
+    @Synchronized fun push(w: Int, h: Int, rgb: ByteArray): Long {
         require(rgb.size == w * h * 3)
         latest = Pic(++counter, w, h, rgb.copyOf())
+        return counter
     }
+
+    /** Waits until the pump has taken the picture [counter] (or a newer one). */
+    fun awaitServed(counter: Long): Boolean = waitFor { served >= counter }
 
     fun pushSound(pcm: ByteArray, rate: Int) { sound.add(pcm.copyOf() to rate) }
 
@@ -39,6 +47,7 @@ class FakeGameFeed : GameFeed {
         if (f.counter <= afterCounter) return false
         System.arraycopy(f.rgb, 0, into.prepare(f.w, f.h), 0, f.rgb.size)
         into.counter = f.counter
+        served = f.counter
         return true
     }
 

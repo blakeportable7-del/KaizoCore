@@ -72,18 +72,19 @@ class FrlgPicturesWiringTest {
     @Test
     fun `the route info screen puts the mark after the name of the map it shows`() {
         val s = src("RouteInfoScreen.kt")
-        val name = s.indexOf("PixText(src.name.ifBlank { \"---\" }, 10, Pc.Text, Modifier.weight(1f))")
+        // The name in sp since rc34 (rc32 audit P2 #19), and SEARCH, which looks up a route, says so.
+        val name = s.indexOf("DialogText(src.name.ifBlank { \"---\" }, 14, Pc.Text, Modifier.weight(1f), heading = true)")
         val mark = s.indexOf("picturesFor?.let { FrlgMapMark(it(src.mapId)) }")
-        val search = s.indexOf("PixText(\"SEARCH\", 8, Pc.Gold)")
+        val search = s.indexOf("PcTap(\"SEARCH\", 8, Pc.Gold, \"Look up a route\")")
         assertTrue(name in 0 until mark && mark < search, "name, then the mark, then SEARCH")
     }
 
     @Test
     fun `Trainers on Route and Trainer Info put the mark after the place`() {
         val s = src("TrainerScreens.kt")
-        val head = s.indexOf("PixText(routeName.uppercase(), 10, Pc.Text, Modifier.weight(1f))")
+        val head = s.indexOf("DialogText(routeName.uppercase(), 16, Pc.Text, Modifier.weight(1f), heading = true)")
         assertTrue(head > 0 && s.indexOf("FrlgMapMark(pictures)") > head, "after the header's name")
-        val route = s.indexOf("PixText(routeName ?: \"???\", 8, Pc.Text)")
+        val route = s.indexOf("DialogText(routeName ?: \"???\", 13, Pc.Text, Modifier.weight(1f, fill = false))")
         assertTrue(route > 0 && s.indexOf("FrlgMapMark(routePictures)") > route, "after the Route line's name")
         assertTrue("if (routePictures == null) row(\"Route\", routeName ?: \"???\")" in s, "the Route line is as before without pictures")
     }

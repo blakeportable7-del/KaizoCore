@@ -148,6 +148,25 @@ class GameStreamTest {
         assertNull(o.take(0))
     }
 
+    /** rc32 audit P3 #77: a page that pings and never reads. RFC 6455 5.5.3 lets the answer go to the most recent ping only. */
+    @Test
+    fun `a flood of pings leaves one pong waiting, the newest, after the control frames`() {
+        val o = Outbox(1000)
+        o.putControl(byteArrayOf(1))
+        repeat(50_000) { i -> o.putPong(byteArrayOf(2, i.toByte())) }
+        o.putAudio(byteArrayOf(3))
+        assertContentEquals(byteArrayOf(1), o.take(0), "control first")
+        assertContentEquals(byteArrayOf(2, 49_999.toByte()), o.take(0), "then the newest pong, once")
+        assertContentEquals(byteArrayOf(3), o.take(0))
+        assertNull(o.take(0))
+    }
+
+    @Test
+    fun `the page's pings are answered through the one pong slot`() {
+        val socket = java.io.File("src/main/kotlin/com/ironmonone/app/stream/GameSocket.kt").readText()
+        assertTrue("WebSocket.OP_PING -> outbox.putPong(" in socket, "the reader answers a ping through the one slot")
+    }
+
     // ------------------------------------------------------------------ the engine
 
     private fun stream(feed: GameFeed = FakeGameFeed(), max: Int = GameStream.MAX_VIEWERS) = GameStream(feed, max)
@@ -228,11 +247,14 @@ class GameStreamTest {
         gs.add(v)
         feed.push(24, 16, pixels(1))
         assertNotNull(v.video.poll(5, TimeUnit.SECONDS))
-        feed.push(24, 16, pixels(1)); feed.push(24, 16, pixels(1))
-        Thread.sleep(250)
-        assertTrue(v.video.isEmpty(), "the same picture three times is one message")
+        feed.push(24, 16, pixels(1)); val same = feed.push(24, 16, pixels(1))
+        // The pump has taken the same picture before a different one is pushed: a barrier, not a sleep, so a duplicate
+        // sent late cannot pass for the different picture below (rc32 audit P3 #83).
+        assertTrue(feed.awaitServed(same))
         feed.push(24, 16, pixels(2))
-        assertNotNull(v.video.poll(5, TimeUnit.SECONDS), "a different picture goes")
+        val next = payloadOf(assertNotNull(v.video.poll(5, TimeUnit.SECONDS), "a different picture goes"))
+        assertContentEquals(pixels(2), TestPics.decode(next.copyOfRange(GameWire.HEADER, next.size)).third,
+            "the same picture three times is one message: the next one sent is the different picture")
         gs.shutdown()
     }
 
@@ -298,6 +320,37 @@ class GameStreamTest {
         assertEquals(65536L, le32(msg, 4))
         assertContentEquals(pcm, msg.copyOfRange(GameWire.HEADER, msg.size))
         gs.shutdown()
+    }
+
+    /** rc32 audit P3 #78: with the game paused or in the background, a connected OBS kept the pump at 250 passes a second. */
+    @Test
+    fun `with no picture and no sound the pump's sleep doubles to a tenth of a second`() {
+        assertEquals(listOf(4L, 4L, 8L, 16L, 64L, 100L, 100L), listOf(1, 8, 9, 10, 12, 13, 10_000).map { GameStream.idleSleepMs(it) })
+    }
+
+    @Test
+    fun `a pump with nothing to send asks the feed a few times a second, not hundreds`() {
+        val asked = java.util.concurrent.atomic.AtomicInteger()
+        val idle = object : GameFeed by FakeGameFeed() {
+            override fun audio(into: ByteArray, rate: IntArray): Int { asked.incrementAndGet(); return 0 }
+        }
+        val gs = stream(idle)
+        gs.add(RecordingViewer())
+        Thread.sleep(1000)
+        gs.shutdown()
+        assertTrue(asked.get() < 30, "the feed was asked ${asked.get()} times in a second")
+    }
+
+    /** rc32 audit P3 #82: once shut down a stream takes no page, so nothing switches the taps back on. */
+    @Test
+    fun `after shutdown no page is added and the taps stay off`() {
+        val feed = FakeGameFeed()
+        val gs = stream(feed)
+        gs.shutdown()
+        assertFalse(gs.add(RecordingViewer()))
+        assertFalse(feed.capturing)
+        assertTrue(feed.captureLog.none { it }, "never switched on: ${feed.captureLog}")
+        assertEquals(0, gs.viewerCount)
     }
 
     @Test

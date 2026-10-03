@@ -44,6 +44,47 @@ private const val IRONMON_EMU_URL = "https://github.com/billgreenwald/ironmon_em
 internal object CloudSyncCopy {
     const val RESTORE_FIRST = "Linked to your file from another phone. Press Restore from cloud to bring your saves over. " +
         "Nothing is written to that file until you do."
+
+    /**
+     * What goes up, plainly (rc32 audit P2 #2, #94): the whole backup, the randomized games and the pictures included.
+     * It said only that library games never go up.
+     */
+    const val WHAT_GOES_UP = "When you leave a game, your whole backup goes to that file: the randomized games of the run " +
+        "and of your saved attempts, and your pictures, included. Your library games never go up."
+
+    /**
+     * The cloud restore's question, as Backup.read and the button do it (rc32 audit P3 #88): it said "ROMs are
+     * untouched" while the run's and the saved attempts' randomized games are replaced, and the app restarts at once.
+     */
+    const val RESTORE = "Overwrites the save states, battery saves, runs and their games, saved attempts, notes and settings " +
+        "on this phone with the synced copy, then KaizoCore restarts. Your library games are untouched."
+}
+
+/** The Backup card's words (rc32 audit P2 #2, #94). It named neither the saved attempts' games nor the pictures. */
+internal object BackupCopy {
+    const val CARD = "One zip of your save states and screenshots, battery saves, the current run and its notes " +
+        "(its randomizer log once the run is over), saved attempts, presets, key bindings, layouts, cheats, settings, " +
+        "and the pictures you chose for the tracker and for Play as your Pokemon. Your library games are never in it; " +
+        "add them again in Library, My games. The randomized game of the current run and of each saved attempt is, so a " +
+        "restored run comes back whole: up to 512 MB each for a DS game. Restoring overwrites what is here."
+
+    const val NO_ROOM = "Not enough free space on this phone to restore. Nothing was changed."
+
+    /** The file restore's question (rc32 audit P3 #88), in the card's terms: the run's games go back, library games stay. */
+    const val RESTORE = "Your save states, battery saves, runs and their games, saved attempts, notes and settings on this " +
+        "phone are replaced with the ones in the file, then KaizoCore restarts. Your library games are untouched."
+}
+
+/**
+ * A restore's line: [waited] when it never started (RestoreGate.settle), else by [n], Backup.read's answer: null when
+ * the file could not be read, -1 when it is not a backup, Backup.NO_ROOM for a phone short of space.
+ */
+internal fun restoreStatus(waited: String?, n: Int?, unreadable: String, notBackup: String, done: String): String = when {
+    waited != null -> waited
+    n == null -> unreadable
+    n == Backup.NO_ROOM -> BackupCopy.NO_ROOM
+    n < 0 -> notBackup
+    else -> done
 }
 
 /**
@@ -69,8 +110,13 @@ fun AboutScreen(modifier: Modifier = Modifier, onStats: () -> Unit = {}) {
     // A native crash leaves nothing behind in the app itself, so this is the
     // only way to see one without plugging the phone into a computer. Only
     // crashes and freezes from the last 7 days (CrashLog), not Android freeing
-    // memory, which kept this card up for good (audit, 2026-09-27).
-    var crash by remember { mutableStateOf(CrashLog.collect(context) ?: CrashLog.existing(context)) }
+    // memory, which kept this card up for good (audit, 2026-09-27). Read off the main thread (rc32 audit P3 #31).
+    var crash by remember { mutableStateOf<String?>(null) }
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        crash = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            runCatching { CrashLog.collect(context) ?: CrashLog.existing(context) }.getOrNull()
+        }
+    }
 
     Column(
         modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(10.dp)
@@ -82,15 +128,16 @@ fun AboutScreen(modifier: Modifier = Modifier, onStats: () -> Unit = {}) {
             Column {
                 Text("How it works", fontWeight = androidx.compose.ui.text.font.FontWeight.Medium, fontSize = 16.sp, color = Shell.inkOnPaper)
                 Spacer(Modifier.height(6.dp))
-                Text("KaizoCore plays IronMON on your phone: a randomized Pokemon game with a tracker beside it. " +
-                    "Lose the run and you start again with a brand new game.",
-                    style = MaterialTheme.typography.bodyMedium, color = Shell.inkOnPaper)
+                // The welcome's own sentence, then Home's four modes in their own words (HowItWorksCopy, rc32 audit P3 #15).
+                Text(HowItWorksCopy.INTRO, style = MaterialTheme.typography.bodyMedium, color = Shell.inkOnPaper)
                 Spacer(Modifier.height(8.dp))
-                for ((n, line) in listOf(
-                    "1" to "Library: add your own game file. KaizoCore never downloads games.",
-                    "2" to "Home, Kaizo IronMON: pick a mode and start a new run. Every run is a new game.",
-                    "3" to "Play: play it. The tracker fills in as you go. When a run ends, start the next one in Kaizo IronMON.",
-                )) {
+                Text(HowItWorksCopy.MODES_HEAD, style = MaterialTheme.typography.bodyMedium, color = Shell.inkOnPaper)
+                for (mode in HomeMode.entries) {
+                    Text("${mode.title}: ${mode.line}", style = MaterialTheme.typography.bodyMedium, color = Shell.inkOnPaper,
+                        modifier = Modifier.padding(start = 22.dp, top = 3.dp))
+                }
+                Spacer(Modifier.height(8.dp))
+                for ((n, line) in HowItWorksCopy.STEPS) {
                     Row(Modifier.padding(vertical = 3.dp)) {
                         Text(n, fontWeight = androidx.compose.ui.text.font.FontWeight.Medium, fontSize = 14.sp, color = Shell.inkOnPaper,
                             modifier = Modifier.width(22.dp))
@@ -98,9 +145,7 @@ fun AboutScreen(modifier: Modifier = Modifier, onStats: () -> Unit = {}) {
                     }
                 }
                 Spacer(Modifier.height(6.dp))
-                Text("Library also keeps all your files. ROM Hacks on Home turns a game you own into a ROM hack. " +
-                    "More, Controls sets up a controller or keyboard.",
-                    style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper)
+                Text(HowItWorksCopy.MORE, style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper)
             }
         }
         Spacer(Modifier.height(10.dp))
@@ -176,11 +221,16 @@ fun AboutScreen(modifier: Modifier = Modifier, onStats: () -> Unit = {}) {
                     colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(unfocusedBorderColor = Shell.hintOnPaper),
                 )
                 Spacer(Modifier.height(10.dp))
+                // One report for both buttons, the last crash in it as this card promises. Share instead, where a phone with
+                // no mail app is sent, built its own and left the crash out (rc32 audit P3 #16).
+                fun report(device: Feedback.Device): String = Feedback.compose(
+                    device, Feedback.gameInPlay(store),
+                    feedbackWords, Feedback.logTail(), CrashLog.existing(context),
+                )
                 androidx.compose.foundation.layout.FlowRow(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp), verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
                     com.ironmonone.app.gen3.Gen3Button("Email Blake", accent = true) {
-                        val family = store.loadLastRun()?.first?.let { com.ironmonone.core.RomKind.byId(it)?.family }
                         val device = Feedback.device(context)
-                        val text = Feedback.compose(device, family, feedbackWords, Feedback.logTail(), CrashLog.existing(context))
+                        val text = report(device)
                         runCatching {
                             context.startActivity(Feedback.emailIntent("KaizoCore bug (${device.appVersion})", text))
                             feedbackStatus = "Mail composed to ${Feedback.Links.EMAIL} (${text.lines().size} lines). Send it from your mail app."
@@ -188,8 +238,7 @@ fun AboutScreen(modifier: Modifier = Modifier, onStats: () -> Unit = {}) {
                         }.onFailure { feedbackStatus = "No mail app on this phone. Use Share instead and pick anything that reaches ${Feedback.Links.EMAIL}."; feedbackError = true }
                     }
                     com.ironmonone.app.gen3.Gen3Button("Share instead") {
-                        val family = store.loadLastRun()?.first?.let { com.ironmonone.core.RomKind.byId(it)?.family }
-                        val text = Feedback.compose(Feedback.device(context), family, feedbackWords, Feedback.logTail())
+                        val text = report(Feedback.device(context))
                         runCatching {
                             val send = Intent(Intent.ACTION_SEND).apply {
                                 type = "text/plain"
@@ -245,7 +294,7 @@ fun AboutScreen(modifier: Modifier = Modifier, onStats: () -> Unit = {}) {
         restoreFrom?.let { uri ->
             ShellDialog("Restore from this file?", onDismiss = { restoreFrom = null }) {
                 Column {
-                    Text("Your save states, battery saves, runs, notes and settings on this phone are replaced with the ones in the file. ROMs are untouched.",
+                    Text(BackupCopy.RESTORE,
                         style = MaterialTheme.typography.bodyMedium, color = com.ironmonone.app.gen3.Gen3.Ink)
                     Spacer(Modifier.height(10.dp))
                     androidx.compose.foundation.layout.FlowRow(
@@ -254,21 +303,22 @@ fun AboutScreen(modifier: Modifier = Modifier, onStats: () -> Unit = {}) {
                     ) {
                         com.ironmonone.app.gen3.Gen3Button("Restore", accent = true, enabled = !backupBusy) {
                             restoreFrom = null
+                            // Nothing else writes while the files go back: no new run, no cloud sync, no queued save (rc32 audit P2 #9).
+                            RestoreGate.open()?.let { why -> backupStatus = why; backupError = true; return@Gen3Button }
                             backupBusy = true
+                            if (CloudSync.syncing) { backupStatus = RestoreGate.WAITING; backupError = false }
                             scope.launch {
-                                val n = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                val waited = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { RestoreGate.settle() }
+                                val n = if (waited != null) null else kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                                     runCatching { context.contentResolver.openInputStream(uri)!!.use { Backup.read(context.filesDir, it) } }.getOrNull()
                                 }
                                 backupBusy = false
                                 backupError = n == null || n < 0
-                                backupStatus = when {
-                                    n == null -> "Could not read that file."
-                                    n < 0 -> "That is not a KaizoCore backup. Nothing was changed."
-                                    else -> "Restored $n files. Restart KaizoCore to finish."
-                                }
+                                backupStatus = restoreStatus(waited, n, "Could not read that file.", "That is not a KaizoCore backup. Nothing was changed.", "Restored $n files. Restart KaizoCore to finish.")
                                 // Restarted at once: the app's copies in memory of what was just restored were written back over
                                 // it before a restart, and the prompt went when the page was left (rc33 audit P1).
                                 if (n != null && n >= 0) { needsRestart = true; restartApp(context) }
+                                else RestoreGate.close()
                             }
                         }
                         com.ironmonone.app.gen3.Gen3Button("Cancel") { restoreFrom = null }
@@ -291,11 +341,7 @@ fun AboutScreen(modifier: Modifier = Modifier, onStats: () -> Unit = {}) {
             Column {
                 Text("Backup", fontWeight = androidx.compose.ui.text.font.FontWeight.Medium, fontSize = 16.sp, color = Shell.inkOnPaper)
                 Spacer(Modifier.height(6.dp))
-                Text("One zip of your save states and screenshots, battery saves, the current run and its notes " +
-                    "(its randomizer log once the run is over), attempts, presets, key bindings, layouts, cheats and settings. " +
-                    "Your library games are never in it; add them again in Library, My games. The current run's " +
-                    "randomized game is, so a restored run comes back whole. Restoring overwrites what is here.",
-                    style = MaterialTheme.typography.bodyMedium, color = Shell.inkOnPaper)
+                Text(BackupCopy.CARD, style = MaterialTheme.typography.bodyMedium, color = Shell.inkOnPaper)
                 Spacer(Modifier.height(10.dp))
                 androidx.compose.foundation.layout.FlowRow(
                     horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
@@ -376,7 +422,7 @@ fun AboutScreen(modifier: Modifier = Modifier, onStats: () -> Unit = {}) {
                     }
                 } else {
                     Text(if (l.restorePending) CloudSyncCopy.RESTORE_FIRST
-                        else "Linked to ${l.provider}. Last synced: ${CloudSync.whenLabel(l.lastSync)}. Syncs when you leave a game; your library games never go up.",
+                        else "Linked to ${l.provider}. Last synced: ${CloudSync.whenLabel(l.lastSync)}. " + CloudSyncCopy.WHAT_GOES_UP,
                         style = MaterialTheme.typography.bodyMedium, color = Shell.inkOnPaper)
                     Spacer(Modifier.height(10.dp))
                     androidx.compose.foundation.layout.FlowRow(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp), verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
@@ -413,7 +459,7 @@ fun AboutScreen(modifier: Modifier = Modifier, onStats: () -> Unit = {}) {
         if (confirmCloudRestore) {
             ShellDialog("Restore from cloud?", onDismiss = { cancelCloudRestore() }) {
                 Column {
-                    Text("Overwrites the saves, states, runs and settings on this phone with the synced copy. ROMs are untouched.",
+                    Text(CloudSyncCopy.RESTORE,
                         style = MaterialTheme.typography.bodyMedium, color = com.ironmonone.app.gen3.Gen3.Ink)
                     Spacer(Modifier.height(10.dp))
                     androidx.compose.foundation.layout.FlowRow(
@@ -421,14 +467,20 @@ fun AboutScreen(modifier: Modifier = Modifier, onStats: () -> Unit = {}) {
                         verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
                     ) {
                         com.ironmonone.app.gen3.Gen3Button("Restore", accent = true, enabled = !cloudBusy) {
-                            confirmCloudRestore = false; cloudBusy = true
+                            confirmCloudRestore = false
+                            // As the file restore: nothing else writes while the files go back (rc32 audit P2 #9).
+                            RestoreGate.open()?.let { why -> cloudStatus = why; cloudError = true; return@Gen3Button }
+                            cloudBusy = true
+                            if (CloudSync.syncing) { cloudStatus = RestoreGate.WAITING; cloudError = false }
                             scope.launch {
-                                val n = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { CloudSync.restore(context) }
+                                val waited = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { RestoreGate.settle() }
+                                val n = if (waited != null) null else kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { CloudSync.restore(context) }
                                 cloudBusy = false
                                 cloudError = n == null || n < 0
-                                cloudStatus = when { n == null -> "Could not read the synced file."; n < 0 -> "The synced file is not a KaizoCore backup."; else -> "Restored $n files from the cloud. Restart KaizoCore to finish." }
+                                cloudStatus = restoreStatus(waited, n, "Could not read the synced file.", "The synced file is not a KaizoCore backup.", "Restored $n files from the cloud. Restart KaizoCore to finish.")
                                 if (n != null && n >= 0) { CloudSync.restoreDone(context.filesDir); needsRestart = true; linkedToRestore = false; restartApp(context) }
                                 else if (restoreOnlyLink()) { CloudSync.unlink(context); cloudLink = null; linkedToRestore = false }
+                                if (n == null || n < 0) RestoreGate.close()
                             }
                         }
                         com.ironmonone.app.gen3.Gen3Button("Cancel") { cancelCloudRestore() }
@@ -470,13 +522,15 @@ fun AboutScreen(modifier: Modifier = Modifier, onStats: () -> Unit = {}) {
 
         Text(
             "The quality-of-life patches are Faster FireRed and Faster Emerald by DrMaple, " +
-                "and Faster Black 2 / White 2 by SilverstarStream. " +
+                "Faster Black 2 / White 2 by SilverstarStream, and IronMON HGSS by PyroMikeGit, " +
+                "built on the intro skip patch by SilverstarStream and Foulton. " +
                 "They are bundled so a run can be prepared without hunting for the files.",
             style = MaterialTheme.typography.bodyMedium,
         )
         CreditLink(FASTER_URL) { openOrSay(it) }
         CreditLink("https://github.com/DrMaple/Faster-Emerald") { openOrSay(it) }
         CreditLink("https://github.com/SilverstarStream/faster_black2_white2") { openOrSay(it) }
+        CreditLink("https://github.com/PyroMikeGit/IronMONHGSS") { openOrSay(it) }
 
         Spacer(Modifier.height(12.dp))
 
@@ -511,11 +565,24 @@ fun AboutScreen(modifier: Modifier = Modifier, onStats: () -> Unit = {}) {
         CreditLink("https://github.com/CyanSMP64/Emerald_Smart_AI") { openOrSay(it) }
         CreditLink("https://github.com/SentorG/PlatinumSuperKaizo") { openOrSay(it) }
 
+        Spacer(Modifier.height(12.dp))
+
+        // MaxDex Kaizo IronMON (MaxDexInfo, NOTICE): the wiki's Credits page, and what of Trip's ships.
+        Text(
+            "MaxDex Kaizo IronMON is by Trip (Tripc423), on CyanSixFour's Nat. Dex, with moves, abilities and " +
+                "animations from pokeemerald-expansion by rh-hideout. Its settings file, icons and tracker data " +
+                "are Trip's, and MaxDex runs use his changes to the Nat. Dex randomizer, under the GPL-3.0 license. " +
+                "Its patch is Trip's too, and is in the app unchanged. Tested by Annadrol, Ehmtae, Micro Mouse, Frankie, Philanthropist, ColeB, Johnnyonthemove, Himmy, ValyaLoona, Demon_Quingar, Pokemon Tabletop Game, xxYungSmurfxx and Yitious.",
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        CreditLink("https://github.com/Tripc423/Maxdex") { openOrSay(it) }
+        CreditLink("https://github.com/rh-hideout/pokeemerald-expansion") { openOrSay(it) }
+
         Spacer(Modifier.height(16.dp))
 
         Text(
-            "Tracker behaviour derives from the IronMON Tracker by besteon and " +
-                "contributors, used under the MIT licence.",
+            "Tracker behavior derives from the IronMON Tracker by besteon and " +
+                "contributors, used under the MIT license.",
             style = MaterialTheme.typography.bodyMedium,
         )
         CreditLink(TRACKER_URL) { openOrSay(it) }
@@ -525,7 +592,7 @@ fun AboutScreen(modifier: Modifier = Modifier, onStats: () -> Unit = {}) {
         Text(
             "The Game Boy trackers follow the Gen 1 IronMON Tracker by Sannji (mollo010) and " +
                 "the Gen 2 IronMON Tracker by seadogstingray, forks of besteon's, used under " +
-                "the MIT licence.",
+                "the MIT license.",
             style = MaterialTheme.typography.bodyMedium,
         )
         CreditLink(GEN1_TRACKER_URL) { openOrSay(it) }
@@ -544,9 +611,12 @@ fun AboutScreen(modifier: Modifier = Modifier, onStats: () -> Unit = {}) {
 
         Spacer(Modifier.height(16.dp))
 
+        // As NOTICE words it (rc32 audit P3 #17): the collab's sheets are each under the terms its artist gave, and
+        // some, most of the Gen 1 to 3 set among them, are Spike Chunsoft's own, outside the collab's licence.
         Text(
             "The animated Pok\u00e9mon (the Walking Pals icon set) are sprites from the PMD Sprite " +
-                "Collab, by its artists, used under the Creative Commons BY-NC 4.0 licence.",
+                "Collab, by its artists, under the terms each artist gave, most of them the Creative Commons " +
+                "BY-NC 4.0 license. Some are Spike Chunsoft's own sprites from the Pok\u00e9mon Mystery Dungeon games.",
             style = MaterialTheme.typography.bodyMedium,
         )
         CreditLink("https://sprites.pmdcollab.org") { openOrSay(it) }
@@ -556,7 +626,7 @@ fun AboutScreen(modifier: Modifier = Modifier, onStats: () -> Unit = {}) {
         // Play as your Pokemon (2026-09-29): UTDZac's Sprite Is Me, drawing the sprites above.
         Text(
             "Play as your Pok\u00e9mon follows Sprite Is Me, the Ironmon Tracker extension by UTDZac, used under " +
-                "the MIT licence, and draws the Walking Pals sprites above.",
+                "the MIT license, and draws the Walking Pals sprites above.",
             style = MaterialTheme.typography.bodyMedium,
         )
         CreditLink("https://github.com/UTDZac/SpriteIsMe-IronmonExtension") { openOrSay(it) }
@@ -567,8 +637,8 @@ fun AboutScreen(modifier: Modifier = Modifier, onStats: () -> Unit = {}) {
         // ported, the randomizer, the cores and the font, which were in NOTICE or nowhere.
         Text(
             "The DS trackers follow the NDS IronMON Tracker by Brian0255, used under the GPL-3.0 " +
-                "licence. The damage calculator is Calc Atk by UTDZac and the Auto Pokémon Themes " +
-                "are Fellshadow's, both used under the MIT licence.",
+                "license. The damage calculator is Calc Atk by UTDZac and the Auto Pokémon Themes " +
+                "are Fellshadow's, both used under the MIT license.",
             style = MaterialTheme.typography.bodyMedium,
         )
         CreditLink("https://github.com/Brian0255/NDS-Ironmon-Tracker") { openOrSay(it) }
@@ -580,7 +650,7 @@ fun AboutScreen(modifier: Modifier = Modifier, onStats: () -> Unit = {}) {
         Text(
             "Runs are randomized with the Universal Pokémon Randomizer ZX by Ajarmar, built on " +
                 "Dabomstew's Universal Pokémon Randomizer, and Nat. Dex runs with CyanSixFour's fork " +
-                "of it, all used under the GPL-3.0 licence.",
+                "of it, all used under the GPL-3.0 license.",
             style = MaterialTheme.typography.bodyMedium,
         )
         CreditLink("https://github.com/Ajarmar/universal-pokemon-randomizer-zx") { openOrSay(it) }
@@ -588,15 +658,16 @@ fun AboutScreen(modifier: Modifier = Modifier, onStats: () -> Unit = {}) {
 
         Spacer(Modifier.height(12.dp))
 
+        // The on-screen controls are KaizoCore's own (FreePad, PadSkin): the controls library credited here once is in
+        // no build (rc32 audit P3 #17).
         Text(
-            "Games run on the mGBA, melonDS and Gambatte cores through LibretroDroid, and the " +
-                "on-screen controls are RadialGamePad, both by Swordfish90. RetroAchievements " +
-                "uses rcheevos by RetroAchievements.org, under the MIT licence. The pixel font is " +
-                "Press Start 2P by CodeMan38, under the SIL Open Font Licence.",
+            "Games run on the mGBA, melonDS and Gambatte cores through LibretroDroid by " +
+                "Swordfish90. RetroAchievements " +
+                "uses rcheevos by RetroAchievements.org, under the MIT license. The pixel font is " +
+                "Press Start 2P by CodeMan38, under the SIL Open Font License.",
             style = MaterialTheme.typography.bodyMedium,
         )
         CreditLink("https://github.com/Swordfish90/LibretroDroid") { openOrSay(it) }
-        CreditLink("https://github.com/Swordfish90/RadialGamePad") { openOrSay(it) }
         CreditLink("https://github.com/RetroAchievements/rcheevos") { openOrSay(it) }
 
         Spacer(Modifier.height(12.dp))
@@ -604,15 +675,31 @@ fun AboutScreen(modifier: Modifier = Modifier, onStats: () -> Unit = {}) {
         // Added 2026-09-30 with the game over lines (NOTICE): the idea is the Death Quotes extension's.
         Text(
             "Your own game over lines follow the Death Quotes extension by UTDZac, used under the " +
-                "MIT licence.",
+                "MIT license.",
             style = MaterialTheme.typography.bodyMedium,
         )
         CreditLink("https://github.com/UTDZac/DeathQuotes-IronmonExtension") { openOrSay(it) }
+
+        Spacer(Modifier.height(12.dp))
+
+        // Added 2026-10-03 with the stream's favorite pictures (StreamFavorites, NOTICE): the idea is this extension's.
+        Text(
+            "Your favorites as pictures for OBS follow the Favorites As Sources extension by UTDZac, " +
+                "used under the MIT license.",
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        CreditLink("https://github.com/UTDZac/FavoritesAsSources-IronmonExtension") { openOrSay(it) }
 
         linkStatus?.let {
             Spacer(Modifier.height(8.dp))
             Text(it, style = MaterialTheme.typography.bodySmall, color = Shell.dangerOnPaper)
         }
+
+        Spacer(Modifier.height(16.dp))
+        // The licences of what the APK carries, each text whole (rc32 audit P3 #4): the font's was the only one shipped.
+        var licencesOpen by remember { mutableStateOf(false) }
+        com.ironmonone.app.gen3.Gen3Button("Licenses", Modifier.fillMaxWidth()) { licencesOpen = true }
+        if (licencesOpen) LicencesDialog { licencesOpen = false }
 
         Spacer(Modifier.height(20.dp))
         ShellDivider()

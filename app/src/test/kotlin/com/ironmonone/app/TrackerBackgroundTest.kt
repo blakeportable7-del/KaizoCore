@@ -57,6 +57,7 @@ class TrackerBackgroundTest {
         val settings = File(dir, Bg.SETTINGS_FILE)
         Bg.load(dir)
         Bg.changeDim(65); Bg.changeFit(Bg.Fit.FIT); Bg.save()
+        DiskWriter.drain()   // written on the writer's thread (rc32 audit P3 #69)
         assertEquals("dim=65\nfit=fit\nsee=35\n", settings.readText())
         Bg.applySettings("")
         assertEquals(40, Bg.dim)
@@ -357,7 +358,7 @@ class TrackerBackgroundTest {
     @Test
     fun `the dialog says the stream page keeps its own colours, and what an auto theme does to a preset`() {
         val ui = src("ThemePicker.kt")
-        assertTrue("The OBS stream page has its own colours and does not show the image." in ui)
+        assertTrue("The OBS stream page has its own colors and does not show the image." in ui)
         assertTrue("if (TrackerOptions.autoPokemonThemes)" in ui)
         assertTrue("Turn it off in the tracker's setup to keep the preset you pick." in ui)
         assertFalse(ui.contains(0x2014.toChar()), "no em dash in what the player reads")
@@ -392,5 +393,28 @@ class TrackerBackgroundTest {
         assertTrue(lookup.length < 4000)
         assertFalse("boxFill" in lookup, "and so does the name lookup")
         assertTrue("TrackerBackground.changeSeeThrough(" in src("ThemePicker.kt"), "the picker has the slider")
+    }
+
+    /**
+     * rc32 audit P3 #21: the Team View, the step counter, the battle summary line and the last attack line drew their
+     * own solid fill, so with a picture behind the tracker those four stayed opaque while every other box let it through,
+     * and the picker still said the boxes keep their own colours.
+     */
+    @Test
+    fun `the carousel's own lines and the Team View let the picture through too`() {
+        val summary = src("BattleSummary.kt").substringAfter("fun PcBattleSummaryLine(").substringBefore("\n}\n")
+        assertTrue("background(TrackerBackground.boxFill(Pc.LowerGroundX ?: Pc.Ground))" in summary)
+        val steps = src("Pedometer.kt").substringAfter("fun PcPedometerLine(").substringBefore("\n}\n")
+        assertTrue("background(TrackerBackground.boxFill(Pc.Ground))" in steps)
+        val team = src("TeamView.kt")
+        assertTrue("Modifier.width(boxW.rp).background(TrackerBackground.boxFill(Pc.Ground))" in team)
+        val attack = src("MoveDecor.kt").substringAfter("fun PcLastAttackLine(").substringBefore("\n}\n")
+        assertTrue("background(TrackerBackground.boxFill(Pc.Ground))" in attack)
+        for ((name, body) in listOf("summary" to summary, "steps" to steps, "attack" to attack)) {
+            assertFalse(Regex("\\.background\\(Pc\\.(Ground|LowerGroundX)").containsMatchIn(body), "$name draws no solid fill")
+        }
+        val ui = src("ThemePicker.kt")
+        assertFalse("keep their own colors" in ui, "the picker's help line is the slider's now")
+        assertTrue("See-through boxes sets how much of it shows through the tracker's boxes." in ui)
     }
 }

@@ -55,18 +55,26 @@ object Xdelta {
 
     /**
      * Applies [patch] to [source], writing [target]. Throws [CorruptPatch] on a
-     * malformed or unsupported patch and [OutputMismatch]-style failures as
-     * [CorruptPatch] when a window's Adler-32 does not match.
+     * malformed or unsupported patch, or on a window that fails its Adler-32
+     * without reading the source; [SourceMismatch] when a window that copied
+     * from the source fails it, or the source is too short for a window: the
+     * patch is for another version of the game. A failed apply leaves no
+     * [target] behind.
      */
     fun apply(patch: File, source: File, target: File, onProgress: ((Long, Long) -> Unit)? = null) {
-        patch.inputStream().buffered(1 shl 16).use { p ->
-            RandomAccessFile(source, "r").use { src ->
-                target.parentFile?.mkdirs()
-                RandomAccessFile(target, "rw").use { out ->
-                    out.setLength(0)
-                    apply(Reader(p), src, out, patch.length(), onProgress)
+        try {
+            patch.inputStream().buffered(1 shl 16).use { p ->
+                RandomAccessFile(source, "r").use { src ->
+                    target.parentFile?.mkdirs()
+                    RandomAccessFile(target, "rw").use { out ->
+                        out.setLength(0)
+                        apply(Reader(p), src, out, patch.length(), onProgress)
+                    }
                 }
             }
+        } catch (t: Throwable) {
+            target.delete()
+            throw t
         }
     }
 
@@ -140,11 +148,18 @@ object Xdelta {
             }
             val data = Section(r.bytes(dataLen)); val inst = Section(r.bytes(instLen)); val addr = Section(r.bytes(addrLen))
 
+            val fromSource = win and VCD_SOURCE != 0
             val seg = when {
-                win and VCD_SOURCE != 0 -> ByteArray(segLen.toInt()).also { src.seek(segPos); src.readFully(it) }
+                // A source shorter than the window's segment is a trimmed or other dump, not a short patch (rc32 audit P2 #115).
+                fromSource -> ByteArray(segLen.toInt()).also {
+                    if (segPos + segLen > src.length()) throw SourceMismatch()
+                    src.seek(segPos); src.readFully(it)
+                }
                 win and VCD_TARGET != 0 -> ByteArray(segLen.toInt()).also { out.seek(segPos); out.readFully(it); out.seek(out.length()) }
                 else -> ByteArray(0)
             }
+            // Whether a COPY read the source: then a failed checksum is the wrong game, otherwise a damaged patch.
+            var readSource = false
             val target = ByteArray(targetLen)
             var tp = 0
             val near = LongArray(NEAR); var nearNext = 0
@@ -170,6 +185,7 @@ object Xdelta {
                     RUN -> { val b = data.byte().toByte(); repeat(size) { target[tp++] = b } }
                     COPY -> {
                         var a = decodeAddr(segLen + tp, mode)
+                        if (fromSource && a < segLen) readSource = true
                         repeat(size) {
                             val v = if (a < segLen) seg[a.toInt()] else {
                                 val t = (a - segLen).toInt()
@@ -189,7 +205,9 @@ object Xdelta {
             if (tp != targetLen) throw CorruptPatch("an xdelta window decoded ${tp} of $targetLen bytes")
             if (adler >= 0) {
                 val check = Adler32().apply { update(target, 0, targetLen) }.value
-                if (check != adler) throw CorruptPatch("an xdelta window failed its checksum (the source dump may be the wrong revision)")
+                // The player read "The patch file is damaged ... (the source dump may be the wrong revision)" for a patch
+                // put on the wrong game, and fetched a good patch again (rc32 audit P2 #115).
+                if (check != adler) throw if (readSource) SourceMismatch() else CorruptPatch("an xdelta window failed its checksum")
             }
             out.write(target, 0, targetLen)
             written += targetLen

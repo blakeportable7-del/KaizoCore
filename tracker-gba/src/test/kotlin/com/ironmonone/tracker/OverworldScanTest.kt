@@ -3,6 +3,7 @@ package com.ironmonone.tracker
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -13,18 +14,19 @@ import kotlin.test.assertTrue
  *
  *  - on the six retail dumps the scan returns EXACTLY the tables in [Overworld], which were read from the pret symbol
  *    files (independent of the scan) and are checked against the same dumps a different way by OverworldAddressTest;
- *  - on both Nat. Dex 1.2.1 dumps it finds every function once, and every function that names gPlayerAvatar agrees;
+ *  - on both Nat. Dex 1.2.1 dumps and the MaxDex 1.0 build it finds every function once, and every function that names
+ *    gPlayerAvatar agrees (on MaxDex, so does the RAM its tracker extension hardcodes);
  *  - on a made-up ROM each rule refuses with its reason named, so a test that goes red is red for that rule.
  *
  * The ROM tests need IRONMON_ROMS (a folder of dumps, never copied anywhere) and skip cleanly, saying so, without it.
  */
 class OverworldScanTest {
-    private val dir: File? = System.getenv("IRONMON_ROMS")?.let(::File)?.takeIf { it.isDirectory }
+    private val dir: File? = Dumps.romsDir()
 
     private fun rom(name: String): ByteArray? {
         if (dir == null) { println("OverworldScanTest skipped: set IRONMON_ROMS"); return null }
-        val f = File(dir, name)
-        if (!f.isFile) { println("OverworldScanTest: $name missing, that game is skipped"); return null }
+        val f = Dumps.file(dir, name)
+        if (f == null) { println("OverworldScanTest: $name missing, that game is skipped"); return null }
         return f.readBytes()
     }
 
@@ -55,17 +57,35 @@ class OverworldScanTest {
         if (dir != null) println("OverworldScanTest: the scan matched the table on $checked retail dumps")
     }
 
+    /** The emulator side's reader: nothing at all for a read over 1 MiB (libretrodroidjni.cpp readMemory). */
+    private fun phoneReader(bytes: ByteArray, count: () -> Unit = {}) = MemoryReader { a, n ->
+        count()
+        val off = (a - 0x08000000L).toInt()
+        if (n > OverworldScan.READ_MAX || off < 0 || off + n > bytes.size) ByteArray(0) else bytes.copyOfRange(off, off + n)
+    }
+
     @Test
     fun `reading the ROM through the memory reader gives what reading the bytes gives`() {
         val bytes = rom("firered-u-v11.gba") ?: return
         var reads = 0
-        val reader = MemoryReader { a, n ->
-            reads++
-            val off = (a - 0x08000000L).toInt()
-            if (off < 0 || off + n > bytes.size) ByteArray(0) else bytes.copyOfRange(off, off + n)
+        sameAddresses(Overworld.FIRERED_U_V11, OverworldScan.find(phoneReader(bytes) { reads++ }), "through the reader")
+        assertEquals(2, reads, "the 2 MiB window in two reads, the most the phone hands back at once")
+    }
+
+    @Test
+    fun `on the phone the whole window is searched, in pieces the emulator side hands back`() {
+        // rc32 audit P3 #114: one 2 MiB read always came back empty on the phone, so only the first 1 MiB was searched,
+        // and a build that moved a function past it was refused. BlendPalette here sits across the 1 MiB join.
+        val f = Fake.fireRedLike(size = OverworldScan.WINDOW).apply {
+            for (i in 0 until OverworldScan.BLEND_PALETTE.size) rom[Fake.BLEND + i] = 0
+            val at = OverworldScan.READ_MAX - 0x40
+            place(OverworldScan.BLEND_PALETTE, at); u32(at + 0x98, 0x020371F8); u32(at + 0x9C, 0x020375F8)
         }
-        sameAddresses(Overworld.FIRERED_U_V11, OverworldScan.find(reader), "through the reader")
-        assertEquals(1, reads, "the window is read once")
+        assertEquals("found", f.scan().why)
+        val found = assertNotNull(OverworldScan.find(phoneReader(f.rom)), "through the phone's reader")
+        assertEquals(0x020371F8L, found.plttUnfaded)
+        // A ROM that ends inside the window is searched as far as its last whole piece.
+        assertNotNull(OverworldScan.find(phoneReader(Fake.fireRedLike(size = 0x180000).rom)))
     }
 
     // ------------------------------------------------------------------ Nat. Dex
@@ -119,15 +139,109 @@ class OverworldScanTest {
         if (dir != null) println("OverworldScanTest: the scan read $checked Nat. Dex dumps")
     }
 
+    // ------------------------------------------------------------------ MaxDex 1.0
+
+    /**
+     * MaxDex 1.0 (Trip's FireRed 1.1 build on Nat. Dex 1.1.3) is in no table either and publishes no address table at all,
+     * so its overworld is read out of its own code as Nat. Dex's is (Blake, 2026-10-03, wanted a MaxDex run played as a
+     * Gen 9 Pokemon). Checked on Blake's own dump with Trip's patch applied (firered-maxdex.gba, skipped when it is not in
+     * IRONMON_ROMS). The numbers are the scan's, a record of what was found; what makes them believable is that every
+     * block sits where MaxDex's tracker extension, a source that never saw this code, puts the RAM around it. Its map
+     * header, special var and trainer opponent (GameMap.MAXDEX_FR_10, copied from the extension) are 0x9E0 below
+     * FireRed's, and so is each overworld block the scan read; its battle function and save block pointer are 0x3D0 below
+     * FireRed's, and so is gMain.
+     */
     @Test
-    fun `resolve reads the ROM for Nat Dex only, and never for a retail game`() {
+    fun `MaxDex 1_0's overworld is read out of its own code, and sits where its tracker extension's RAM says`() {
+        val bytes = rom("firered-maxdex.gba") ?: return
+        val out = OverworldScan.scan(bytes)
+        val a = assertNotNull(out.addresses, "firered-maxdex.gba: ${out.why}")
+        assertTrue(out.gMainConfirmed, "SetMainCallback2 confirms gMain")
+        assertEquals(
+            OverworldAddresses(
+                name = OverworldScan.NAME, main = 0x03002D20, oamBufferOffset = 0x38,
+                cb2Overworld = 0x0805CDE9, cb2OverworldBasic = 0x0805CDDD,
+                playerAvatar = 0x02036698, sprites = 0x0202063C, coordOffsetX = 0x02021BC8, coordOffsetY = 0x02021BCA,
+                plttUnfaded = 0x02036818, plttFaded = 0x02036C18, objectEvents = 0x02036458,
+            ), a)
+        // The game's own layout: 16 object events of 0x24 bytes end where gPlayerAvatar starts.
+        assertEquals(0x240L, a.playerAvatar - a.objectEvents)
+
+        // The extension's RAM against FireRed's, and the scan's against FireRed's: the same two moves.
+        val fr = GameMap.FIRERED_U_V11
+        val md = GameMap.MAXDEX_FR_10
+        val retail = Overworld.FIRERED_U_V11
+        val ewram = md.mapHeader - fr.mapHeader
+        assertEquals(-0x9E0L, ewram)
+        assertEquals(ewram, md.specialVarResult - fr.specialVarResult)
+        assertEquals(ewram, md.trainerOpponent - fr.trainerOpponent)
+        for ((what, found, theirs) in listOf(
+            Triple("gObjectEvents", a.objectEvents, retail.objectEvents), Triple("gPlayerAvatar", a.playerAvatar, retail.playerAvatar),
+            Triple("gPlttBufferUnfaded", a.plttUnfaded, retail.plttUnfaded), Triple("gPlttBufferFaded", a.plttFaded, retail.plttFaded),
+        )) assertEquals(ewram, found - theirs, "$what moved with the extension's EWRAM")
+        val iwram = md.battleMainFunc - fr.battleMainFunc
+        assertEquals(-0x3D0L, iwram)
+        assertEquals(iwram, md.saveBlock1Ptr - fr.saveBlock1Ptr)
+        assertEquals(iwram, a.main - retail.main, "gMain moved with the extension's IWRAM")
+        // What sits before the part of RAM that moved is where FireRed has it, as on Nat. Dex.
+        assertEquals(retail.sprites, a.sprites)
+        assertEquals(retail.coordOffsetX, a.coordOffsetX)
+        assertEquals(retail.coordOffsetY, a.coordOffsetY)
+
+        // As the phone gets there: the header names MaxDex, and resolve reads the window through the emulator's reader.
+        var reads = 0
+        val reader = phoneReader(bytes) { reads++ }
+        val map = GameMap.resolve(reader)
+        assertEquals(GameMap.MAXDEX_FR_10, map)
+        reads = 0
+        assertEquals(a.copy(name = "MaxDex 1.0 (read from the game)"), Overworld.resolve(map, reader))
+        assertEquals(2, reads, "the 2 MiB window in two reads")
+        println("OverworldScanTest: the scan read MaxDex 1.0's overworld")
+    }
+
+    /**
+     * Without the dump: the MaxDex map is read out of the game's code as Nat. Dex is, under its own name. Its first version
+     * returned nothing here, so the player stayed the trainer on every MaxDex game.
+     */
+    @Test
+    fun `resolve reads a MaxDex game out of its own code, and says so in MaxDex's words when it cannot`() {
+        val found = assertNotNull(Overworld.resolve(GameMap.MAXDEX_FR_10, RomReader(Fake.fireRedLike(size = OverworldScan.WINDOW).rom)))
+        assertEquals("MaxDex 1.0 (read from the game)", found.name)
+        assertEquals(0x030030F0L, found.main)
+        assertEquals(0x08000000L + Fake.CB2 + 1, found.cb2Overworld)
+        // One whose code cannot be read is refused, and the line names MaxDex, not Nat. Dex.
+        assertNull(Overworld.resolve(GameMap.MAXDEX_FR_10, RomReader(Fake(OverworldScan.WINDOW).rom)))
+        assertEquals("Play as your Pokemon could not find its way around this MaxDex build.", Overworld.whyNot(GameMap.MAXDEX_FR_10))
+        // Nat. Dex keeps its own name and line.
         val natdexMap = GameMap.FIRERED_U_V10.copy(name = "Nat. Dex", expandedSpeciesIds = true)
+        assertEquals(OverworldScan.NAME, assertNotNull(Overworld.resolve(natdexMap, RomReader(Fake.fireRedLike(size = OverworldScan.WINDOW).rom))).name)
+        assertTrue("Nat. Dex" in Overworld.whyNot(natdexMap))
+    }
+
+    /** [rom] as the running game's memory: the ROM at 0x08000000, nothing anywhere else. Each read counted, with its length. */
+    private class RomReader(private val rom: ByteArray) : MemoryReader {
+        val reads = ArrayList<Int>()
+        override fun read(address: Long, length: Int): ByteArray {
+            reads += length
+            val off = address - 0x08000000L
+            return if (off < 0 || off + length > rom.size) ByteArray(0) else rom.copyOfRange(off.toInt(), off.toInt() + length)
+        }
+    }
+
+    @Test
+    fun `resolve reads a retail game's two callbacks, and the whole window only for Nat Dex or a build that moved them`() {
+        val natdexMap = GameMap.FIRERED_U_V10.copy(name = "Nat. Dex", expandedSpeciesIds = true)
+        // A retail game whose code is where its table says: the table, after one small read of its two callbacks.
+        val retail = Fake(0x60000).apply {
+            place(OverworldScan.CB2_OVERWORLD_BASIC, (Overworld.FIRERED_U_V11.cb2OverworldBasic - 1 - 0x08000000L).toInt())
+            place(OverworldScan.CB2_OVERWORLD, (Overworld.FIRERED_U_V11.cb2Overworld - 1 - 0x08000000L).toInt())
+        }
+        val r = RomReader(retail.rom)
+        assertEquals(Overworld.FIRERED_U_V11, Overworld.resolve(GameMap.FIRERED_U_V11, r))
+        assertEquals(1, r.reads.size, "one read")
+        assertTrue(r.reads.single() < 0x100, "of the two callbacks, not the window")
         var reads = 0
         val nothing = MemoryReader { _, _ -> reads++; ByteArray(0) }
-        // A retail game: the table, without one read.
-        assertEquals(Overworld.FIRERED_U_V11, Overworld.resolve(GameMap.FIRERED_U_V11, nothing))
-        assertEquals(Overworld.EMERALD_U, Overworld.resolve(GameMap.EMERALD_U, nothing))
-        assertEquals(0, reads, "a retail game's ROM is not read")
         // Nat. Dex with a ROM that cannot be read: nothing, after trying.
         assertNull(Overworld.resolve(natdexMap, nothing))
         assertTrue(reads > 0)
@@ -275,8 +389,8 @@ class OverworldScanTest {
         refused(Fake.fireRedLike().apply { gMain(0x08000000) }, "gMain is not in IWRAM")
         refused(Fake.fireRedLike().apply { gMain(0x03007F00) }, "gMain is not in IWRAM")   // the buffer would run past the end of IWRAM
         refused(Fake.fireRedLike().apply { gMain(0x030030F2) }, "gMain is not in IWRAM")   // not word aligned
-        refused(Fake.fireRedLike().apply { u32(Fake.UPDATE + 0x6C, 0x08000000) }, "gSprites is not in RAM")
-        refused(Fake.fireRedLike().apply { u32(Fake.UPDATE + 0x6C, 0x0203F000) }, "gSprites is not in RAM")   // 64 sprites run past the end of EWRAM
+        refused(Fake.fireRedLike().apply { u32(Fake.UPDATE + 0x6C, 0x08000000) }, "gSprites is not in EWRAM")
+        refused(Fake.fireRedLike().apply { u32(Fake.UPDATE + 0x6C, 0x0203F000) }, "gSprites is not in EWRAM")   // 64 sprites run past the end of EWRAM
         refused(Fake.fireRedLike().apply { u32(Fake.UPDATE + 0x78, 0x02021BC9) }, "the camera offsets")
         refused(Fake.fireRedLike().apply { u32(Fake.UPDATE + 0x7C, 0x0) }, "the camera offsets")
         refused(Fake.fireRedLike().apply { u32(Fake.FACING + 0x18, 0x0) }, "gObjectEvents is not in RAM")
@@ -284,8 +398,26 @@ class OverworldScanTest {
         refused(Fake.fireRedLike().apply {
             val bad = 0x0800000CL
             u32(Fake.FACING + 0x1C, bad); u32(Fake.AVATAR + 8, bad); for (o in listOf(0x14, 0x30, 0x40)) u32(Fake.CHECK + o, bad); u32(Fake.TRANSITION + 0x2C, bad)
-        }, "gPlayerAvatar is not in RAM")
-        refused(Fake.fireRedLike().apply { u32(Fake.BLEND + 0x98, 0x0203FC00); u32(Fake.BLEND + 0x9C, 0x02040000) }, "the palette buffers are not in RAM")
+        }, "gPlayerAvatar is not in EWRAM")
+        refused(Fake.fireRedLike().apply { u32(Fake.BLEND + 0x98, 0x0203FC00); u32(Fake.BLEND + 0x9C, 0x02040000) }, "the palette buffers are not in EWRAM")
+    }
+
+    @Test
+    fun `each block takes only the RAM the emulator side takes it in`() {
+        // configPlausible (sprite_core.h:130-143) takes gPlayerAvatar, gSprites and both palette buffers in EWRAM only,
+        // the camera offsets and gObjectEvents in either. The scan took IWRAM for every block, so a build with gSprites
+        // in IWRAM passed it and was refused there (rc32 audit P3 #114).
+        refused(Fake.fireRedLike().apply { u32(Fake.UPDATE + 0x6C, 0x03001000) }, "gSprites is not in EWRAM")
+        refused(Fake.fireRedLike().apply {
+            val iw = 0x03004000L
+            u32(Fake.FACING + 0x1C, iw); u32(Fake.AVATAR + 8, iw); for (o in listOf(0x14, 0x30, 0x40)) u32(Fake.CHECK + o, iw); u32(Fake.TRANSITION + 0x2C, iw)
+        }, "gPlayerAvatar is not in EWRAM")
+        refused(Fake.fireRedLike().apply { u32(Fake.BLEND + 0x98, 0x03001000); u32(Fake.BLEND + 0x9C, 0x03001400) }, "the palette buffers are not in EWRAM")
+        // Its exact top ends, as configPlausible's: one word further is refused.
+        refused(Fake.fireRedLike().apply { u32(Fake.FACING + 0x18, 0x0203FDC0) }, "gObjectEvents is not in RAM")
+        assertEquals("found", Fake.fireRedLike().apply { u32(Fake.FACING + 0x18, 0x0203FDBC) }.scan().why)
+        // The camera offsets and gObjectEvents may sit in IWRAM, as Ruby's do.
+        assertEquals("found", Fake.fireRedLike().apply { u32(Fake.FACING + 0x18, 0x030048A0) }.scan().why)
     }
 
     @Test
@@ -297,6 +429,65 @@ class OverworldScanTest {
         repeat(5) { assertNotNull(f.scan().addresses) }
         val ms = (System.nanoTime() - t0) / 1_000_000 / 5
         println("OverworldScanTest: a scan with everything at the far end of the window took $ms ms")
-        assertTrue(ms < 2000, "one scan took $ms ms")
+        // Loose, for a busy machine (rc32 audit P3 #83): a scan that went quadratic would still be far past it.
+        assertTrue(ms < 8000, "one scan took $ms ms")
+    }
+
+    // ------------------------------------------------------------------ a hack that kept the header (rc32 audit P2 #87)
+
+    /**
+     * A decomp-built hack keeps its base game's header (BPEE, BPRE), so GameMap names it as the retail game, and its
+     * code moves. Given the retail table anyway, the native side never saw its overworld callback and drew nothing, with
+     * no word anywhere. Its own code is read now, and a build that cannot be read is refused, so the player is told.
+     */
+    @Test
+    fun `a build that kept a retail header but moved its code is read out of its own code`() {
+        // FireRed's eight functions, at places of their own: nowhere near the retail table's callbacks.
+        val hack = Fake.fireRedLike(size = OverworldScan.WINDOW)
+        assertFalse(OverworldScan.callbacksAt(RomReader(hack.rom), Overworld.FIRERED_U_V11), "the table's callback is not this build's")
+        val found = assertNotNull(Overworld.resolve(GameMap.FIRERED_U_V11, RomReader(hack.rom)))
+        assertEquals(0x08000000L + Fake.CB2 + 1, found.cb2Overworld, "the callback the native side checks is the one in this build")
+        assertEquals(0x08000000L + Fake.CB2 - 0xC + 1, found.cb2OverworldBasic)
+        assertEquals(0x030030F0L, found.main)
+        assertTrue("FireRed" in found.name, found.name)
+        // The same build with the retail callbacks' code where the table has them is the table, as a retail dump is.
+        hack.place(OverworldScan.CB2_OVERWORLD_BASIC, (Overworld.FIRERED_U_V11.cb2OverworldBasic - 1 - 0x08000000L).toInt())
+        hack.place(OverworldScan.CB2_OVERWORLD, (Overworld.FIRERED_U_V11.cb2Overworld - 1 - 0x08000000L).toInt())
+        assertEquals(Overworld.FIRERED_U_V11, Overworld.resolve(GameMap.FIRERED_U_V11, RomReader(hack.rom)))
+    }
+
+    @Test
+    fun `a build that moved its code and cannot be read is refused, and says so in its own words`() {
+        val moved = Fake(OverworldScan.WINDOW).apply { place(OverworldScan.LOAD_OAM, 0x1000) }   // one function, not eight
+        assertNull(Overworld.resolve(GameMap.EMERALD_U, RomReader(moved.rom)))
+        assertTrue(Overworld.hasTable(GameMap.EMERALD_U) && !Overworld.hasTable(GameMap.EMERALD_U.copy(name = "Some hack")))
+        assertEquals("Play as your Pokemon could not find its way around this game, so you stay the trainer.", Overworld.whyNot(GameMap.EMERALD_U))
+        assertEquals("This game is not one Play as your Pokemon knows.", Overworld.whyNot(GameMap.EMERALD_U.copy(name = "Some hack")))
+        // Only the callbacks' code counts: one byte off and the table is not taken.
+        val near = Fake(0x90000).apply {
+            place(OverworldScan.CB2_OVERWORLD_BASIC, (Overworld.EMERALD_U.cb2OverworldBasic - 1 - 0x08000000L).toInt())
+            place(OverworldScan.CB2_OVERWORLD, (Overworld.EMERALD_U.cb2Overworld - 1 - 0x08000000L).toInt())
+        }
+        assertTrue(OverworldScan.callbacksAt(RomReader(near.rom), Overworld.EMERALD_U))
+        near.rom[(Overworld.EMERALD_U.cb2Overworld - 1 - 0x08000000L).toInt()] = 0x11
+        assertFalse(OverworldScan.callbacksAt(RomReader(near.rom), Overworld.EMERALD_U))
+    }
+
+    @Test
+    fun `every retail dump's callbacks are where its table says`() {
+        var checked = 0
+        for ((file, table) in listOf(
+            "firered-u-v10.gba" to Overworld.FIRERED_U_V10, "firered-u-v11.gba" to Overworld.FIRERED_U_V11,
+            "leafgreen-u.gba" to Overworld.LEAFGREEN_U, "emerald-u.gba" to Overworld.EMERALD_U,
+            "ruby-u.gba" to Overworld.RUBY_U, "sapphire-u.gba" to Overworld.SAPPHIRE_U,
+        )) {
+            val bytes = rom(file) ?: continue
+            val r = RomReader(bytes)
+            assertTrue(OverworldScan.callbacksAt(r, table), "$file: the table's callbacks are this dump's")
+            val map = GameMap.resolve(r)
+            assertEquals(table, Overworld.resolve(map, r), "$file: resolve keeps the table")
+            checked++
+        }
+        if (dir != null) assertEquals(6, checked, "a retail dump is missing from IRONMON_ROMS")
     }
 }

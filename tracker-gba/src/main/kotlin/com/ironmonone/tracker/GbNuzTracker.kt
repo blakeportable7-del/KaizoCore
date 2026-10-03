@@ -42,13 +42,21 @@ internal class GbNuzTracker(
         private set
     var captured = false
         private set
+    /** The escape was the wild Pokemon's own doing: decided by [look]'s enemyLeft when the escape flag first reads set. */
+    var enemyFled = false
+        private set
 
-    /** One look at the game. [escapedNow] and [capturedNow] are the game's flags at this moment; they are held for the rest of the battle. */
-    fun look(inBattle: Boolean, wild: Boolean, enemyHp: Int?, escapedNow: Boolean, capturedNow: Boolean) {
+    /**
+     * One look at the game. [escapedNow] and [capturedNow] are the game's flags at this moment; they are held for the
+     * rest of the battle. [enemyLeft] is asked once, when the escape flag first reads set, whether the wild Pokemon left
+     * by its own move (Gen12Nuzlocke.enemyLeft).
+     */
+    fun look(inBattle: Boolean, wild: Boolean, enemyHp: Int?, escapedNow: Boolean, capturedNow: Boolean, enemyLeft: () -> Boolean = { false }) {
         if (inBattle) {
-            if (!battling) { escaped = false; captured = false }
+            if (!battling) { escaped = false; captured = false; enemyFled = false }
             lastWild = wild
             if (enemyHp != null) lastEnemyHp = enemyHp
+            if (escapedNow && !escaped) enemyFled = enemyLeft()
             escaped = escaped || escapedNow
             captured = captured || capturedNow
         }

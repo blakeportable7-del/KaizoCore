@@ -50,8 +50,12 @@ class SettingsRoundTripTest {
     @Test
     fun `every shipped preset survives a save`() {
         assertTrue(presets.isDirectory, "presets not found at ${presets.absolutePath}")
-        val files = presets.listFiles { f: File -> f.name.endsWith(".rnqs") }
+        val all = presets.listFiles { f: File -> f.name.endsWith(".rnqs") }
             ?.sortedBy { it.name } ?: emptyList()
+        // MaxDex's settings file is read by MaxDex's own randomizer only (engine-maxdex), and the editor leaves it as
+        // Trip made it (EditorScreen), so neither engine here takes it. Exactly that one file is left out.
+        val files = all.filterNot { "MaxDex" in it.name }
+        assertTrue(all.size - files.size == 1, "expected one MaxDex preset left to its own randomizer, found ${all.size - files.size}")
         assertTrue(files.size >= 5, "expected the 5 shipped presets, found ${files.size}")
 
         for (f in files) {

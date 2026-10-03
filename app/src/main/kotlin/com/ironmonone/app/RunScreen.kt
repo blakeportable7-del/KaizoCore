@@ -52,6 +52,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ironmonone.app.engine.NatDexEngine
 import com.ironmonone.app.engine.ZxEngine
+import com.ironmonone.app.engine.Randomizers
 import com.ironmonone.app.gen3.Gen3Box
 import com.ironmonone.app.gen3.Gen3Button
 import com.ironmonone.core.RomKind
@@ -88,15 +89,24 @@ fun RunScreen(
     // A job that finished while this tab was away re-reads the lists too.
     val jobGeneration = RunJob.generation
     LaunchedEffect(jobGeneration) { if (jobGeneration > 0) refresh++ }
-    val preparedList = remember(refresh) { store.listPrepared() }
-    val settingsList = remember(refresh) { store.listSettings() }
+    // The lists are read off the main thread (RC35-NOTICED N #16, the rest of rc32 audit P2 #63): listPrepared reads a
+    // build whose checksum is not in its memo whole, seconds for a DS game. Until the first read lands the screen is
+    // empty, and a later one keeps the lists shown until it has new ones. [listed] is the refresh they were read for,
+    // and everything picked from them follows it.
+    val lists by androidx.compose.runtime.produceState<RunLists?>(null, refresh) {
+        value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { RunLists(refresh, store.listPrepared(), store.listSettings()) }
+    }
+    val shown = lists ?: run { Box(modifier.fillMaxSize()); return }
+    val listed = shown.refresh
+    val preparedList = shown.prepared
+    val settingsList = shown.settings
 
     // The selection follows the game you are actually playing. It used to
     // default to "first Nat. Dex ROM + Nat. Dex Kaizo" on EVERY visit to this
     // tab, so tabbing to Play and back silently re-pointed NEW RUN at a
     // different game - caught in the audit when a FireRed re-roll rotated the
     // Emerald Nat. Dex run instead.
-    val lastRun = remember(refresh) { store.loadLastRun() }
+    val lastRun = remember(listed) { store.loadLastRun() }
     // The mode follows the game (2026-09-30, UX audit P0-12): the file the player last picked for it, else the file
     // of the run last started on it, else Kaizo (RulesetCatalog.openingFile). It used to be the first mode in the
     // row, which was Standard, on a screen named Kaizo IronMON.
@@ -106,15 +116,23 @@ fun RunScreen(
     val firstRom = preparedList.firstOrNull { it.first.id == lastRun?.first }
         ?: preparedList.firstOrNull { it.first.isNatDex }
         ?: preparedList.firstOrNull()
-    var selectedRom by remember(refresh) { mutableStateOf(firstRom) }
-    var selectedSettings by remember(refresh) {
+    // The pick survives the lists being read again (rc32 audit P2 #78): every job's end (an export, an import, a
+    // failed start) re-reads them, and the game and mode went back to the last run's each time. A run started since
+    // the pick (a friend's code, NEW RUN on Play) is followed, as before.
+    val kept = remember { RunPickMemory() }
+    val keepPick = kept.lastRun == lastRun
+    var selectedRom by remember(listed) { mutableStateOf(RunPick.game(preparedList, kept.game.takeIf { keepPick }, firstRom)) }
+    var selectedSettings by remember(listed) {
         mutableStateOf(
-            firstRom?.let { openingFor(it.first) }
-                ?: settingsList.firstOrNull { it.name == lastRun?.second }
-                ?: settingsList.firstOrNull {
-                    val i = RnqsInfo.of(it); i.ruleset == "kaizo" && i.natDex
-                } ?: settingsList.firstOrNull())
+            RunPick.settings(settingsList, selectedRom?.first, kept.settings.takeIf { keepPick }) {
+                selectedRom?.let { openingFor(it.first) }
+                    ?: settingsList.firstOrNull { it.name == lastRun?.second }
+                    ?: settingsList.firstOrNull {
+                        val i = RnqsInfo.of(it); i.ruleset == "kaizo" && i.natDex
+                    } ?: settingsList.firstOrNull()
+            })
     }
+    androidx.compose.runtime.SideEffect { kept.note(selectedRom?.first?.id, selectedSettings?.name, lastRun) }
     // Every pick is kept for its game, so switching games and back brings each one's mode back.
     fun pickSettings(f: File, game: RomKind? = selectedRom?.first) {
         selectedSettings = f
@@ -129,9 +147,13 @@ fun RunScreen(
     // Build your own (2026-09-29): the guided builder (BuildYourGame.kt) takes this tab while it is open, for
     // the game that was picked when it opened (a save re-reads the lists, which re-derives the pick above).
     // builtName is the file it just saved: game and file are picked here once the lists are read again.
-    var buildGame by remember { mutableStateOf<Pair<RomKind, File>?>(null) }
+    // Kept with the activity, with the builder's own pages (RC35-NOTICED N #13): Android ending the app in the background
+    // brought it back on the Kaizo screen with every choice gone.
+    var buildGame by androidx.compose.runtime.saveable.rememberSaveable(stateSaver = RunLists.BuildGameSaver) {
+        mutableStateOf<Pair<RomKind, File>?>(null)
+    }
     var builtName by remember { mutableStateOf<String?>(null) }
-    LaunchedEffect(refresh) {
+    LaunchedEffect(listed) {
         val n = builtName ?: return@LaunchedEffect
         builtName = null
         val (rom, file) = GameBuild.selectionAfterSave(preparedList, settingsList, buildGame?.first, n)
@@ -142,7 +164,7 @@ fun RunScreen(
     // Gold, Silver and Crystal without the growth patch (GrowthPatch): once the patched copy is made, it is picked,
     // with the mode that was picked, when the lists are read again.
     var pickAfterPatch by remember { mutableStateOf<Pair<String, String?>?>(null) }
-    LaunchedEffect(refresh) {
+    LaunchedEffect(listed) {
         val (id, mode) = pickAfterPatch ?: return@LaunchedEffect
         val made = preparedList.firstOrNull { it.first.id == id } ?: return@LaunchedEffect
         pickAfterPatch = null
@@ -195,8 +217,7 @@ fun RunScreen(
     ) { uri ->
         uri ?: return@rememberLauncherForActivityResult
         RunJob.run(RunPhase.EXPORTING, "Could not export the run") {
-            context.contentResolver.openOutputStream(uri)!!
-                .use { it.write(store.currentRun.readBytes()) }
+            context.contentResolver.openOutputStream(uri)!!.use { RunExport.copy(store.currentRun, it) }
             "Exported. Open it in another emulator to play it there." to false
         }
     }
@@ -214,7 +235,7 @@ fun RunScreen(
         modeMemory.set(rom.first.id, s.name)
         // No seed given: a new one, or the run made ahead for this game and
         // mode when there is one (NextRun), which is seconds instead of 40.
-        RunJob.randomize(context, rom, s, seed = null)
+        if (!RunJob.randomize(context, rom, s, seed = null)) RunJob.say(NewRunGuard.BUSY, true)
     }
 
     /**
@@ -245,8 +266,8 @@ fun RunScreen(
     // A file that is not one KaizoCore comes with is a custom game, said wherever the mode is named (CustomRuns, R2).
     val customPicked = remember(selectedSettings) { selectedSettings?.let { CustomRuns.isCustom(context, it) } == true }
     val modeName = selectedSettings?.let { CustomRuns.label(RunCopy.modeName(RulesetCatalog.modeOf(modes, it)?.label, it), customPicked) }
-    val gamesShown = remember(refresh) { RunGames.selectedFirst(preparedList, firstRom?.first?.id) }
-    val libraryFiles = remember(refresh) {
+    val gamesShown = remember(listed) { RunGames.selectedFirst(preparedList, firstRom?.first?.id) }
+    val libraryFiles = remember(listed) {
         if (preparedList.isEmpty()) runCatching { store.library.list().size }.getOrDefault(0) else 0
     }
 
@@ -258,12 +279,8 @@ fun RunScreen(
           Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp),
       ) {
         // The engine follows the game (Randomizers.randomize): the Nat. Dex fork for a
-        // Nat. Dex build, ZX for everything else. With no game picked there is no engine to name.
-        val engineName = when (selectedRom?.first?.isNatDex) {
-            null -> "chosen by the game you pick"
-            true -> NatDexEngine.DISPLAY_NAME
-            false -> ZxEngine.DISPLAY_NAME
-        }
+        // Nat. Dex build, MaxDex's for MaxDex, ZX for everything else. With no game picked there is no engine to name.
+        val engineName = selectedRom?.first?.let { Randomizers.engineName(it) } ?: "chosen by the game you pick"
         Box(Modifier.fillMaxWidth()) {
             Column {
         // The attempt count is the emotional core of IronMON and lived only
@@ -348,7 +365,7 @@ fun RunScreen(
         LaunchedEffect(selectedRom) {
             val rom = selectedRom?.first ?: return@LaunchedEffect
             val cur = selectedSettings
-            if (cur == null || !RulesetCatalog.isCompatible(rom, cur)) {
+            if (cur == null || !RulesetCatalog.listedFor(rom, cur)) {
                 openingFor(rom)?.let { selectedSettings = it }
             }
         }
@@ -401,7 +418,7 @@ fun RunScreen(
             if (natDex != null && preparedList.none { it.first.id == natDex.id }) {
                 NatDexNotice(busy) {
                     pickAfterPatch = natDex.id to null
-                    RunJob.run(RunPhase.PATCHING, "Could not make the Nat. Dex version.") {
+                    RunJob.run(RunPhase.PATCHING, "Could not make the Nat. Dex version") {
                         val tmp = java.io.File(context.cacheDir, "prep-" + System.nanoTime())
                         try {
                             base.copyTo(tmp, overwrite = true)
@@ -414,7 +431,8 @@ fun RunScreen(
             }
         }
         // Build your own (2026-09-29): starters and plain-word choices, saved as a settings file (BuildYourGame.kt).
-        selectedRom?.let { rom -> BuildYourGameEntry { buildGame = rom } }
+        // Not on MaxDex in its first version: the builder reads and writes the Nat. Dex 1.2 and ZX settings formats only.
+        selectedRom?.takeUnless { it.first.isMaxDex }?.let { rom -> BuildYourGameEntry { buildGame = rom } }
         // RUN used to open on three empty favourite boxes, the engine's name and
         // a list of raw settings file names, before the game and mode: the
         // choices every run needs came last (audit, 2026-09-27). The optional
@@ -433,6 +451,8 @@ fun RunScreen(
             // As many boxes as the game's PC tracker keeps, and only that game's dex in the list.
             val favCount = Favorites.slotCount(selectedRom?.first)
             val favMax = Favorites.maxDex(selectedRom?.first)
+            // The game's own names: MaxDex's on MaxDex 1.0, whose Z-A Megas have ids of their own (Favorites.idOf with a game).
+            val favKind = selectedRom?.first
             val favRomId = selectedRom?.first?.id
             var favSlots by remember(favCount, favRomId) { mutableStateOf(Favorites.slots(store, favRomId, favCount)) }
             // Which box is being typed in: its suggestions show under the row.
@@ -442,7 +462,7 @@ fun RunScreen(
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 favSlots.forEachIndexed { i, v ->
                     // Known FOR THIS GAME: a name past its dex (a Gen 5 species on a standard Emerald) is as wrong as a typo.
-                    val known = v.isBlank() || Favorites.inGame(v, favMax)
+                    val known = v.isBlank() || Favorites.inGame(v, favMax, favKind)
                     androidx.compose.material3.OutlinedTextField(
                         value = v,
                         onValueChange = { t ->
@@ -460,7 +480,7 @@ fun RunScreen(
             }
             // The names that start with what is typed in the active box, narrowing
             // with every letter; a tap fills the box. Dex order, eight at most.
-            val favHints = if (favActive in favSlots.indices) Favorites.suggest(favSlots[favActive], maxId = favMax) else emptyList()
+            val favHints = if (favActive in favSlots.indices) Favorites.suggest(favSlots[favActive], maxId = favMax, kind = favKind) else emptyList()
             if (favHints.isNotEmpty()) {
                 Row(
                     Modifier.fillMaxWidth().padding(top = 6.dp).horizontalScroll(rememberScrollState()),
@@ -483,7 +503,7 @@ fun RunScreen(
             val favBall = selectedRom?.first?.platform == com.ironmonone.core.Platform.GBA && favMode != null && favMode != FavoriteBall.JOURNEY
             Text(
                 // The NDS tracker's title screen shows four: a Gen 5 game's five take turns, a Gen 4 game's four stand still.
-                if (favSlots.all { it.isBlank() || Favorites.inGame(it, favMax) }) (when {
+                if (favSlots.all { it.isBlank() || Favorites.inGame(it, favMax, favKind) }) (when {
                     favDs && favCount > 4 -> "The DS tracker keeps $favCount and shows four at a time on its title screen, in turn."
                     favDs -> "The DS tracker keeps four and shows them on its title screen."
                     favCount > 3 -> "A Nat. Dex game allows $favCount. The tracker shows them all before your first Pokémon."
@@ -493,10 +513,11 @@ fun RunScreen(
                 style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper,
             )
             // The run's own rules for favorites, from the book for this game and mode (Blake, 2026-10-01: "base it on
-            // whatever game is doing a run because different kaizo's have different rules").
+            // whatever game is doing a run because different kaizo's have different rules"). MaxDex's is its own book,
+            // with the Nat. Dex 1.1.3 lines; it was reading the Nat. Dex 1.2.1 book.
             val favBook = remember(selectedRom?.first?.id, favMode) {
                 val k = selectedRom?.first
-                if (k == null || favMode == null) null else Rules.text(context, Rules.dirFor(k.family, k.isNatDex), favMode)
+                if (k == null || favMode == null) null else Rules.text(context, Rules.dirFor(k.family, k.isNatDex, k), favMode)
             }
             FavoriteRulesBlock(favBook, favMode, favSlots)
             Spacer(Modifier.height(12.dp))
@@ -542,11 +563,8 @@ fun RunScreen(
                 val rom = selectedRom?.first
                 // Blake, 2026-09-07: only the loaded game's files, never all of them.
                 if (rom == null) emptyList()
-                else settingsList.filter { f ->
-                    val i = RnqsInfo.of(f)
-                    // Untagged files show only for a game of their own engine.
-                    (i.gameTag == null && !i.appliedByApp && i.natDex == rom.isNatDex) || RulesetCatalog.isCompatible(rom, f)
-                }
+                // Untagged files show only for a game of their own engine.
+                else settingsList.filter { f -> RulesetCatalog.listedFor(rom, f) }
             }
             if (selectedRom == null) Text("Pick a game above to see its settings files.", style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper)
             visibleSettings.forEach { f ->
@@ -618,6 +636,13 @@ fun RunScreen(
                           style = MaterialTheme.typography.bodyMedium,
                           color = Shell.inkOnPaper,
                       )
+                      // What the new seed opens with, as Play's NEW RUN says it: a save holding a team comes along on
+                      // Continue (rc33 audit P1 #42).
+                      val savePlan = remember(selectedRom) {
+                          selectedRom?.first?.let { k -> runCatching { RunSaves.planForNewRun(context.filesDir, k, store.currentRunFor(k)) }.getOrNull() }
+                      }
+                      Spacer(Modifier.height(4.dp))
+                      Text(NewRunCopy.save(savePlan), style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper)
                       Spacer(Modifier.height(8.dp))
                       Row {
                           // Named for what it starts, and quiet while Continue is the red one (2026-09-30, UX audit P1, P2).
@@ -700,12 +725,8 @@ private fun ExtraPassRows(rom: RomKind, settings: File) {
     var version by remember { mutableIntStateOf(0) }
     val on = remember(rom.id, settings.absolutePath, settings.lastModified(), version) { ExtraPasses.prePassOn(context, rom, settings) }
     val official = remember(settings.absolutePath, settings.lastModified()) { ExtraPasses.isOfficial(context, settings) }
-    val game = if (rom.family == "GSC") "Gold, Silver and Crystal Kaizo and Survival" else "Emerald Kaizo and every mode built on it"
-    PassSwitch(
-        "Official 60% levels", on,
-        "$game: trainer and wild levels +6% first, then the mode's +50%, as the official settings do." +
-            if (official) "" else " This settings file is custom or edited, so it runs exactly as saved unless you switch this on.",
-    ) { ExtraPasses.choosePrePass(context, rom, settings, !on); version++ }
+    val ruleset = remember(settings.absolutePath, settings.lastModified()) { RnqsInfo.of(settings).ruleset }
+    PassSwitch("Official 60% levels", on, ExtraPasses.prePassLine(rom, ruleset, official)) { ExtraPasses.choosePrePass(context, rom, settings, !on); version++ }
 }
 
 /** One switch row: a check box, a title and one plain line, the whole row the target. */
@@ -769,6 +790,7 @@ private fun GameCard(kind: com.ironmonone.core.RomKind, selected: Boolean, onCli
             Text(
                 when {
                     kind in com.ironmonone.core.RomKind.allPatched -> "Patched game"
+                    kind.isMaxDex -> "MaxDex build"
                     kind.isNatDex -> "Nat. Dex build"
                     else -> "Original game"
                 },
@@ -913,6 +935,9 @@ internal object RunPairing {
     const val NO_MODE = "Pick a mode first."
     const val NAT_DEX_GAME = "That mode is for the standard Pok\u00e9dex, and this game is the Nat. Dex version. Pick a Nat. Dex mode."
     const val STANDARD_GAME = "That mode needs the Nat. Dex version of this game. Pick a standard mode, or make the Nat. Dex version in Library, Patched versions."
+    /** MaxDex is a Nat. Dex build with its own randomizer and its own Kaizo file, which no other game takes. */
+    const val MAXDEX_GAME = "That mode is not for MaxDex, and this game is the MaxDex version. Pick MaxDex's own Kaizo mode."
+    const val NOT_MAXDEX_GAME = "That mode is for the MaxDex version of FireRed. Pick a mode for this game, or make the MaxDex version in Library, Patched versions."
 
     fun problem(rom: Pair<RomKind, File>?, settings: File?): String? {
         val game = rom?.first ?: return NO_GAME
@@ -920,10 +945,54 @@ internal object RunPairing {
         // The file's sidecar counts too: a preset saved under a plain name
         // keeps its Nat. Dex flag there (2026-09-27, audit).
         return when {
+            RnqsInfo.of(file).maxDex != game.isMaxDex -> if (game.isMaxDex) MAXDEX_GAME else NOT_MAXDEX_GAME
             RnqsInfo.of(file).natDex == game.isNatDex -> null
             game.isNatDex -> NAT_DEX_GAME
             else -> STANDARD_GAME
         }
+    }
+}
+
+/**
+ * The game and settings file the Kaizo IronMON screen shows after its lists are read again (rc32 audit P2 #78): the
+ * ones picked, found again in the new lists by game id and file name. Only a game or a file that is gone, or a file
+ * the screen no longer lists for that game, falls back to the screen's opening pick.
+ */
+internal object RunPick {
+    fun game(prepared: List<Pair<RomKind, File>>, pickedId: String?, opening: Pair<RomKind, File>?): Pair<RomKind, File>? =
+        pickedId?.let { id -> prepared.firstOrNull { it.first.id == id } } ?: opening
+
+    fun settings(settings: List<File>, game: RomKind?, pickedName: String?, opening: () -> File?): File? =
+        pickedName?.let { n -> settings.firstOrNull { it.name == n && (game == null || RulesetCatalog.listedFor(game, it)) } }
+            ?: opening()
+}
+
+/**
+ * What the screen had picked when it last drew, and the run that was the last one then. Plain fields, written after
+ * each draw: keeping them recomposes nothing.
+ */
+internal class RunPickMemory {
+    var game: String? = null
+        private set
+    var settings: String? = null
+        private set
+    var lastRun: Pair<String, String>? = null
+        private set
+
+    fun note(game: String?, settings: String?, lastRun: Pair<String, String>?) {
+        this.game = game; this.settings = settings; this.lastRun = lastRun
+    }
+}
+
+/**
+ * EXPORT CURRENT RUN's copy, a megabyte at a time. It read the whole run into one array, and a Black 2 or White 2 run
+ * is 512 MB, past what the heap allows, so the export failed every time (rc32 audit P2 #79).
+ */
+internal object RunExport {
+    const val CHUNK = 1 shl 20
+
+    fun copy(run: File, out: java.io.OutputStream) {
+        run.inputStream().use { it.copyTo(out, CHUNK) }
     }
 }
 
@@ -974,5 +1043,26 @@ internal class RunModeMemory(private val file: File) {
         const val FILE = "run-modes.txt"
 
         fun of(filesDir: File) = RunModeMemory(File(filesDir, FILE))
+    }
+}
+
+/**
+ * The Kaizo IronMON screen's lists, read together on the IO thread (RC35-NOTICED N #16): the games to randomize
+ * (PrepStore.listPrepared reads a build whose checksum is not in its memo whole) and the settings files. [refresh] is the
+ * screen's count they were read for.
+ */
+internal class RunLists(val refresh: Int, val prepared: List<Pair<RomKind, File>>, val settings: List<File>) {
+    companion object {
+        /** Build your own's game as text for the saved state (RC35-NOTICED N #13): a game gone since is nothing open. */
+        val BuildGameSaver = androidx.compose.runtime.saveable.Saver<Pair<RomKind, File>?, String>(
+            save = { it?.let { (kind, file) -> kind.id + "\n" + file.path } },
+            restore = { s -> buildGameOf(s) },
+        )
+
+        fun buildGameOf(s: String): Pair<RomKind, File>? {
+            val kind = RomKind.byId(s.substringBefore('\n')) ?: return null
+            val file = File(s.substringAfter('\n', "")).takeIf { it.path.isNotEmpty() && it.isFile } ?: return null
+            return kind to file
+        }
     }
 }

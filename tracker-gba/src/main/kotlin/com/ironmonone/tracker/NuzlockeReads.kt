@@ -34,7 +34,10 @@ data class NuzlockeReads(
     val bag: Map<Int, BagItem>? = null,
     /** gBattleResults' turn counter during a battle, 0 at its start; -1 outside one. */
     val turn: Int = -1,
-    /** The game's battle style: true is Set. Null where the option's place is not known (Ruby, Sapphire, Nat. Dex). */
+    /**
+     * The game's battle style: true is Set. Read on all five Gen 3 games and the Nat. Dex builds (SaveBlock2 + 0x14,
+     * bit 9); null only when SaveBlock2 could not be read (rc32 audit P3 #113).
+     */
     val battleStyleSet: Boolean? = null,
     /** The wild Pokemon on the field is shiny, judged from its personality value and the player's trainer id. */
     val enemyShiny: Boolean = false,
@@ -44,6 +47,20 @@ data class NuzlockeReads(
     val beaten: Set<String> = emptySet(),
     /** The battle on screen is a catching lesson (Wally's Ralts, the Old Man's Weedle, the Teachy TV): never an encounter. */
     val lesson: Boolean = false,
+    /**
+     * A Battle Tent, Battle Frontier or Battle Tower battle is on, or has just ended with a Pokemon still down: the party
+     * is the one the game lends for it, not the run's (GbaTracker.isFacilityBattle, rc32 audit P2 #141).
+     */
+    val facility: Boolean = false,
+    /** The game's key in nuzlocke/statics-gen3.tsv: rs for Ruby and Sapphire, e for Emerald, frlg for FireRed and LeafGreen. */
+    val staticsGame: String = "",
+    /**
+     * gMapHeader's regionMapSectionId and mapType for the map the tracker's map id names, read with that id: the map
+     * section is the game's own "met at" place, and type 8 is a building. -1 when not read, or while the map is changing
+     * (rc32 audit P2 #140).
+     */
+    val mapSection: Int = -1,
+    val mapType: Int = -1,
     /** Set by the Game Boy trackers instead of the Gen 3 fields above; Gen12Nuzlocke reads it. Null on a Gen 3 game. */
     val gb: GbNuzReads? = null,
 )
@@ -74,6 +91,8 @@ data class GbNuzReads(
     val battleResult: Int = -1,
     /** Gen 1: wEscapedFromBattle was set at some look during the battle (Teleport, Roar, Whirlwind or a Poke Doll). */
     val escaped: Boolean = false,
+    /** Generation 1: the escape was the wild Pokemon's own Teleport, Roar or Whirlwind (Gen12Nuzlocke.enemyLeft). */
+    val enemyFled: Boolean = false,
     /** Gen 1: wCapturedMonSpecies, Gen 2: wWildMon, was set at some look during the battle: a ball caught the Pokemon. */
     val captured: Boolean = false,
     /** wBattleType. Gen 1: 1 the Old Man's lesson, 2 Safari. Gen 2: see Gen12Nuzlocke.method. */
@@ -94,4 +113,20 @@ data class GbNuzReads(
     val caps: LevelCapTable? = null,
     /** The party's nicknames, in the order of [TrackerState.party]. */
     val nicknames: List<String> = emptyList(),
+    /**
+     * The game's own count of Pokemon in the party (wPartyCount, eggs left out as [TrackerState.party] leaves them), -1 when
+     * the byte is not a count (0, or a save not loaded yet). The party list stops at a slot that does not decode, and the
+     * engine takes a party as long as this as a whole read (rc32 audit P3 #111).
+     */
+    val partyCount: Int = -1,
+    /**
+     * Generation 2: the eggs in the party, which [TrackerState.party] leaves out, read from their party structs, and how
+     * many slots of the species list say EGG. The engine follows an egg from the place it joined the party (rc32 audit
+     * P2 #140): Crystal's eggs used to be first seen as they hatched, and with 'Gifts count' on they used up the route.
+     */
+    val eggs: List<GbEgg> = emptyList(),
+    val eggSlots: Int = 0,
 )
+
+/** An egg in a Generation 2 party: its party slot, its party struct's trainer id, DVs, species and level. */
+data class GbEgg(val slot: Int, val otId: Int, val dvs: Int, val species: Int, val level: Int)

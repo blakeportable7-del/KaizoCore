@@ -94,6 +94,8 @@ object CrashLog {
     fun collect(context: Context): String? = runCatching {
         // A stack no exit record claimed in a week never will be, and API 26 to 29 have no exit records at all.
         pruneJava(context.filesDir)
+        // Raw traces go after a week, card or no card (rc32 audit P3 #24).
+        pruneTraces(context.filesDir)
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return@runCatching null
         val am = context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
             ?: return@runCatching null
@@ -117,14 +119,14 @@ object CrashLog {
                 val out = File(context.filesDir, "crash-trace-${info.timestamp}.bin")
                 runCatching {
                     trace.use { input -> out.outputStream().use { input.copyTo(it) } }
-                    // Any printable runs in the tombstone are usually enough to
-                    // name the signal and the top frames. A freeze is different: its
+                    // A native crash's trace is the protobuf tombstone, read for its signal, cause and the
+                    // crashing thread's frames (tombstoneLines). A freeze is different: its
                     // trace is text, every thread's stack, and the one that matters
                     // is the stuck main thread (2026-09-30: an AYN Thor's report kept
                     // only the dump thread's native frames and said nothing).
                     val lines = if (info.reason == ApplicationExitInfo.REASON_ANR) {
                         anrThreads(runCatching { out.readText() }.getOrDefault("")).ifEmpty { printableRuns(out).take(12) }
-                    } else printableRuns(out).take(12)
+                    } else tombstoneLines(out)
                     Tombstone(out.name, out.length(), lines)
                 }.getOrNull()
             }
@@ -138,8 +140,11 @@ object CrashLog {
         val text = render(BuildConfigish.version(context), device, exits, saved)
         reportFile(context).writeText(text)
         marker.writeText(fresh.maxOf { it.timestamp }.toString())
+        // The game Play had open when the app died, while its marker still names it (rc32 audit P3 #25).
+        CrashReport.keepGame(context.filesDir, runCatching { CrashReport.gameAtExit(PrepStore(context)) }.getOrNull())
         // It is in the report now, so the file has done its job.
         if (saved != null && javaOwner(exits, saved) != null) File(context.filesDir, JAVA_FILE).delete()
+        pruneTraces(context.filesDir)
         text
     }.getOrNull()
 
@@ -324,11 +329,17 @@ object CrashLog {
     private const val ANR_LINES = 30
 
     /**
-     * Readable strings inside a binary tombstone.
-     *
-     * The protobuf holds the signal name and the frame descriptors as plain
-     * UTF-8, so pulling runs of printable bytes recovers the useful lines
-     * without a protobuf parser on the phone.
+     * What a native crash's trace says, in the text tombstone's lines: the signal, the cause and the crashing thread's
+     * frames, read out of the protobuf (TombstoneProto, rc32 audit P2 #18). The printable runs that used to be all the
+     * report kept were the memory map's library paths; they are what is left when the trace cannot be read.
+     */
+    internal fun tombstoneLines(f: File): List<String> =
+        runCatching { TombstoneProto.lines(f.readBytes()) }.getOrNull()?.takeIf { it.isNotEmpty() }
+            ?: printableRuns(f).take(12)
+
+    /**
+     * Readable strings inside a binary tombstone: runs of printable bytes that name a signal or a library. What a
+     * trace [TombstoneProto] cannot read still gives.
      */
     private fun printableRuns(f: File, min: Int = 8): List<String> = runCatching {
         val bytes = f.readBytes()
@@ -359,6 +370,24 @@ object CrashLog {
                 ?.forEach { it.delete() }
         }
         runCatching { File(dir, JAVA_FILE).delete() }
+        runCatching { File(dir, CrashReport.GAME_FILE).delete() }
+    }
+
+    /** Raw traces kept: the newest few, for a tester who is asked for one. */
+    const val TRACES_KEPT = 3
+
+    /**
+     * Every crash and freeze copies its whole trace into filesDir, hundreds of KB to MBs, and only INFO's Dismiss
+     * deleted them, so once the card had gone after a week nothing ever did (rc32 audit P3 #24). Nothing reads a trace
+     * after [collect]: a week old goes, and past the newest [TRACES_KEPT] they go too. The time is the one in the name.
+     */
+    internal fun pruneTraces(dir: File, now: Long = System.currentTimeMillis()) {
+        runCatching {
+            val traces = (dir.listFiles { f -> f.isFile && f.name.startsWith("crash-trace-") } ?: emptyArray())
+                .map { f -> f to (f.name.removePrefix("crash-trace-").substringBefore('.').toLongOrNull() ?: f.lastModified()) }
+                .sortedByDescending { it.second }
+            traces.forEachIndexed { i, (f, at) -> if (i >= TRACES_KEPT || now - at > MAX_AGE_MS) f.delete() }
+        }
     }
 
     /** The stored report, if it is a real crash from the last 7 days. */
@@ -395,6 +424,6 @@ object CrashLog {
 internal object BuildConfigish {
     fun version(context: Context): String = runCatching {
         val p = context.packageManager.getPackageInfo(context.packageName, 0)
-        "${p.versionName} (${p.longVersionCode})"
+        "${p.versionName} (${UpdateCheck.versionCode(p)})"
     }.getOrNull() ?: "unknown"
 }

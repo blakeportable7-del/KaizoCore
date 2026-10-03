@@ -47,8 +47,10 @@ import com.ironmonone.app.gen3.Gen3Button
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun SaveStatesDialog(
-    auto: StateSlots.Slot,
-    slots: List<StateSlots.Slot>,
+    filesDir: java.io.File,
+    session: GameSession,
+    /** This run's identity (PrepStore.stateStamp), asked for when the slots are read. */
+    runStamp: () -> String,
     current: Int,
     version: Int,
     onPick: (Int) -> Unit,
@@ -58,6 +60,12 @@ fun SaveStatesDialog(
     onUndo: (StateSlots.Slot) -> Unit,
     onDismiss: () -> Unit,
 ) {
+    // Read here, not in PlayScreen, which sits at the verifier's limit.
+    val slots = remember(session.id, version) { StateSlots.list(filesDir, session) }
+    val auto = remember(session.id, version) { StateSlots.auto(filesDir, session) }
+    // RESUME only for this run's own auto-save (rc32 audit P3 #63): after a new run the slot holds the last run's until
+    // the first auto-save, and RESUME offered it, then refused it as "Slot 0".
+    val autoUsable = remember(session.id, version) { CrashResume.usable(auto, runStamp()) }
     val picked = slots.firstOrNull { it.n == current } ?: slots.first()
     // Landscape puts all eight slots in one row, so the grid is half as tall there.
     val across = if (LocalConfiguration.current.screenWidthDp > LocalConfiguration.current.screenHeightDp) 8 else 4
@@ -72,10 +80,15 @@ fun SaveStatesDialog(
                 Spacer(Modifier.width(8.dp))
                 Column(Modifier.weight(1f)) {
                     Text(auto.title(), style = MaterialTheme.typography.bodyMedium, color = Gen3.Ink)
-                    Text(if (auto.exists) auto.savedLabel() + " · kept up to date as you play and when you leave" else "none yet",
+                    Text(
+                        when {
+                            !auto.exists -> "none yet"
+                            autoUsable -> auto.savedLabel() + " · kept up to date as you play and when you leave"
+                            else -> auto.savedLabel() + " · from another run"
+                        },
                         style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper)
                 }
-                Gen3Button("RESUME", accent = auto.exists, enabled = auto.exists) { onLoad(StateSlots.AUTO) }
+                Gen3Button("RESUME", accent = autoUsable, enabled = autoUsable) { onLoad(StateSlots.AUTO) }
             }
             ShellDivider()
             Spacer(Modifier.height(6.dp))

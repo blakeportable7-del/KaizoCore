@@ -26,16 +26,17 @@ class SpriteIsMeSettingsTest {
         assertFalse(S.on)
         assertEquals(SpriteIsMeSettings.Who.LEAD, S.who)
         assertEquals(0, S.always)
+        assertFalse(S.alwaysShiny)
         assertEquals(SpriteIsMeSettings.Own.NONE, S.own)
         assertEquals(0, S.sheetWidth); assertEquals(0, S.sheetHeight)
         assertEquals("", S.idleLengths + S.walkLengths + S.sleepLengths + S.faintLengths)
-        assertEquals("on=false\nwho=lead\nalways=0\nown=none\nsheetWidth=0\nsheetHeight=0\nidle=\nwalk=\nsleep=\nfaint=\n", S.text())
+        assertEquals("on=false\nwho=lead\nalways=0\nalwaysShiny=false\nown=none\nsheetWidth=0\nsheetHeight=0\nidle=\nwalk=\nsleep=\nfaint=\n", S.text())
     }
 
     @Test
     fun `every setting survives a save and a load`() {
         S.load(file)
-        S.on = true; S.who = SpriteIsMeSettings.Who.ALWAYS; S.always = 94
+        S.on = true; S.who = SpriteIsMeSettings.Who.ALWAYS; S.always = 94; S.alwaysShiny = true
         S.own = SpriteIsMeSettings.Own.SHEET; S.sheetWidth = 48; S.sheetHeight = 40
         S.idleLengths = "40,6,6"; S.walkLengths = "8, 10"; S.sleepLengths = "30"; S.faintLengths = "12"
         S.save()
@@ -44,7 +45,7 @@ class SpriteIsMeSettingsTest {
         assertFalse(S.on)
         S.load(file)
         assertTrue(S.on)
-        assertEquals(SpriteIsMeSettings.Who.ALWAYS, S.who); assertEquals(94, S.always)
+        assertEquals(SpriteIsMeSettings.Who.ALWAYS, S.who); assertEquals(94, S.always); assertTrue(S.alwaysShiny)
         assertEquals(SpriteIsMeSettings.Own.SHEET, S.own); assertEquals(48, S.sheetWidth); assertEquals(40, S.sheetHeight)
         assertEquals("40,6,6", S.idleLengths); assertEquals("8, 10", S.walkLengths); assertEquals("30", S.sleepLengths); assertEquals("12", S.faintLengths)
         val spec = S.spec
@@ -65,11 +66,12 @@ class SpriteIsMeSettingsTest {
     @Test
     fun `a damaged file cannot put anything odd on screen`() {
         file.parentFile.mkdirs()
-        file.writeText("on=maybe\nwho=teleport\nalways=99999\nfallback=-4\nown=hologram\nsheetWidth=500\nsheetHeight=abc\nidle=ab40,\u0007 6<b>\nwalk=" + "9".repeat(500) + "\nnonsense\n=x\nsleep=\n")
+        file.writeText("on=maybe\nwho=teleport\nalways=99999\nalwaysShiny=yes\nfallback=-4\nown=hologram\nsheetWidth=500\nsheetHeight=abc\nidle=ab40,\u0007 6<b>\nwalk=" + "9".repeat(500) + "\nnonsense\n=x\nsleep=\n")
         S.load(file)
         assertFalse(S.on, "anything but true is off")
         assertEquals(SpriteIsMeSettings.Who.LEAD, S.who)
         assertEquals(0, S.always)
+        assertFalse(S.alwaysShiny, "anything but true is off")
         assertEquals(SpriteIsMeSettings.Own.NONE, S.own)
         assertEquals(0, S.sheetWidth); assertEquals(0, S.sheetHeight)
         assertEquals("40, 6", S.idleLengths, "digits, commas and spaces only")
@@ -129,7 +131,7 @@ class SpriteIsMeSettingsTest {
             assertFalse("!" in line, "dry, not excited: $line")
         }
         // The one-line notes for games it cannot work on are plain sentences.
-        for (note in listOf(SpriteIsMeCopy.NOT_GBA, SpriteIsMeCopy.NOT_KNOWN, SpriteIsMeCopy.NAT_DEX)) assertTrue(note.endsWith("."), note)
+        for (note in listOf(SpriteIsMeCopy.NOT_GBA, SpriteIsMeCopy.NOT_KNOWN, SpriteIsMeCopy.NAT_DEX, SpriteIsMeCopy.MAX_DEX)) assertTrue(note.endsWith("."), note)
         assertEquals("Found 1 sheet.", SpriteIsMeCopy.sheetsFound(1)); assertEquals("Found 4 sheets.", SpriteIsMeCopy.sheetsFound(4))
     }
 }

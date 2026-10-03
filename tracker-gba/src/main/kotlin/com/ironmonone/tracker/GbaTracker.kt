@@ -27,6 +27,8 @@ data class TrainerLayout(
     val monDefaultSize: Int = 8,
     val monCustomSize: Int = 16,
     val moveSize: Int = 0x02,
+    /** trainerPic, the trainer's slot in gTrainerFrontPicTable (GameMap.trainerPics). */
+    val picOffset: Int = 0x03,
 ) {
     companion object { val VANILLA = TrainerLayout() }
 }
@@ -56,6 +58,11 @@ data class GameMap(
     val scriptingBattler: Long = 0,
     val battlerAttacker: Long = 0,
     val battlerTarget: Long = 0,
+    /**
+     * gBattleTextBuff1, from the reference's GameAddresses JSONs (Nat. Dex: its slot at 0x08000208, NatDexExtension.lua:17661).
+     * Trace's message names the traced Pokemon's battler at +2 (Battle.lua:648). 0 = unknown.
+     */
+    val battleTextBuff1: Long = 0,
     /** Which abilityscripts-*.tsv this game uses; "" = feature off. */
     val abilityScriptTable: String = "",
     val baseStats: Long,
@@ -110,6 +117,16 @@ data class GameMap(
     val actionCursor: Long = 0,
     /** gBattleResults; lastUsedMoveOpponent lives at +0x24 (pret BattleResults). */
     val battleResults: Long = 0,
+    /**
+     * The move tracking's reads (EnemyMoveWatch, Battle.lua:379-407): gCurrentTurnActionNumber, gActionsByTurnOrder
+     * and gHitMarker, from the reference's GameAddresses; Nat. Dex publishes them (0x08000224, 0x08000220, 0x08000244).
+     * 0 where unknown, which leaves the opponent's moves untracked rather than guessed.
+     */
+    val currentTurnActionNumber: Long = 0,
+    val actionsByTurnOrder: Long = 0,
+    val hitMarker: Long = 0,
+    /** The battle scripts the move tracking watches (MoveScripts). */
+    val moveScripts: MoveScripts? = null,
     /** gSaveBlock1Ptr — SaveBlock1 begins with the player's x,y (u16 each). */
     val saveBlock1Ptr: Long = 0,
     /** gSaveBlock2Ptr. The bag's security key lives here, not in SaveBlock1. */
@@ -202,6 +219,16 @@ data class GameMap(
      *  game. 0 = no sprites. spriteCount bounds the species index. */
     val frontPics: Long = 0,
     val palettes: Long = 0,
+    /**
+     * pret's gTrainerFrontPicTable and gTrainerFrontPicPaletteTable ({LZ77 data, size, tag} and {LZ77 data, tag} entries,
+     * each tagged with its slot) and how many pictures they hold, for the log viewer's trainer portraits (TrainerPictures).
+     * Found on each vendored dump and checked by eye (rc34); 0 on a build whose tables are not proven: it draws none.
+     */
+    val trainerPics: Long = 0,
+    val trainerPicPalettes: Long = 0,
+    val trainerPicCount: Int = 0,
+    /** The player's own picture in that table, the boy's, the girl's the next: FireRed's Red, Emerald's Brendan. -1: none. */
+    val playerPic: Int = -1,
     /** Badge flags inside SaveBlock1. FireRed stores a byte at 0xFE4; Emerald a
      *  word at 0x137C whose 8 badge bits start at bit 7. Offsets from the
      *  reference tracker's GameAddresses JSONs. */
@@ -387,6 +414,26 @@ data class GameMap(
     /** Vanilla species ceiling. Entries past a table's real end fail the LZ77
      *  sanity checks and decode to null rather than garbage. */
     val spriteCount: Int = 412,
+    /**
+     * The bundled name lists and data a build reads instead of its ROM's: "" for none (the Nat. Dex lists come through
+     * [namesFromLists]), "maxdex" for MaxDex 1.0 (maxdex/species.tsv, moves.tsv and abilities.tsv, its own evolutions,
+     * random evolutions and icons). Also how the app tells a MaxDex game (GbaTracker.nameSet).
+     */
+    val nameSet: String = "",
+    /** Level-up learnsets in Jambo's format, 3-byte {u16 move, u8 level} entries ending 00 00 FF (MaxDex). */
+    val learnsetJambo: Boolean = false,
+    /**
+     * gBattleMoves carries each move's own physical, special or status byte (MaxDex: u16 effect, power +2, type +3,
+     * category +4, accuracy +5, PP +6, priority +9, flags +10). Without it Gen 3's rule holds: the type decides.
+     */
+    val moveCategoryByte: Boolean = false,
+    /**
+     * Where gBattleMons keeps types, PP and HP (level 2 bytes on, max HP 4). Vanilla 0x21, 0x24 and 0x28; MaxDex's u16
+     * ability moves them to 0x22, 0x25 and 0x2A, which its code's own reads show (hp 0x2A, max HP 0x2E, item 0x30).
+     */
+    val battleMonTypes: Int = 0x21,
+    val battleMonPp: Int = 0x24,
+    val battleMonHp: Int = 0x28,
 ) {
     companion object {
         val EMERALD_U = GameMap(
@@ -402,7 +449,10 @@ data class GameMap(
             scriptCurrInstr = 0x02024214,
             scriptingBattler = 0x0202448B,
             battlerAttacker = 0x0202420B,
+            currentTurnActionNumber = 0x02024082, actionsByTurnOrder = 0x0202407A, hitMarker = 0x02024280,
+            moveScripts = MoveScripts.EMERALD,
             battlerTarget = 0x0202420C,
+            battleTextBuff1 = 0x02022F58,
             abilityScriptTable = "emerald",
             baseStats = 0x083203CC,
             expTables = 0x0831F72C,
@@ -428,6 +478,7 @@ data class GameMap(
             paydayMoney = 0x0202432E,
             frontPics = 0x08301418,
             palettes = 0x08303678,
+            trainerPics = 0x08305654, trainerPicPalettes = 0x0830593C, trainerPicCount = 93, playerPic = 71,
             badgeOffset = 0x137C,
             badgeIsWord = true,
             badgeSet = "RSE",
@@ -481,7 +532,10 @@ data class GameMap(
             scriptCurrInstr = 0x02023D74,
             scriptingBattler = 0x02023FDB,
             battlerAttacker = 0x02023D6B,
+            currentTurnActionNumber = 0x02023BE2, actionsByTurnOrder = 0x02023BDA, hitMarker = 0x02023DD0,
+            moveScripts = MoveScripts.FIRERED_V10,
             battlerTarget = 0x02023D6C,
+            battleTextBuff1 = 0x02022AB8,
             abilityScriptTable = "firered",
             baseStats = 0x08254784,
             expTables = 0x08253AE4,
@@ -507,6 +561,7 @@ data class GameMap(
             lockedMoves = 0x02023DB8, wishFutureKnock = 0x02023F20, paydayMoney = 0x02023E7E,
             frontPics = 0x082350AC,   // == pret gMonFrontPicTable
             palettes = 0x0823730C,    // == pret gMonPaletteTable
+            trainerPics = 0x0823957C, trainerPicPalettes = 0x08239A1C, trainerPicCount = 148, playerPic = 135,
             badgeOffset = 0xFE4,
             badgeIsWord = false,
             badgeSet = "FRLG",
@@ -561,7 +616,10 @@ data class GameMap(
             scriptCurrInstr = 0x02024C10,
             scriptingBattler = 0x02016003,
             battlerAttacker = 0x02024C07,
+            currentTurnActionNumber = 0x02024A7E, actionsByTurnOrder = 0x02024A76, hitMarker = 0x02024C6C,
+            moveScripts = MoveScripts.RUBY_V10,
             battlerTarget = 0x02024C08,
+            battleTextBuff1 = 0x030041C0,
             abilityScriptTable = "ruby",
             baseStats = 0x081FEC18,
             expTables = 0x081FDF78,
@@ -583,6 +641,7 @@ data class GameMap(
             lockedMoves = 0x02024C54, wishFutureKnock = 0x02024DBC, paydayMoney = 0x02024D1A,
             frontPics = 0x081E8354,
             palettes = 0x081EA5B4,
+            trainerPics = 0x081EC53C, trainerPicPalettes = 0x081EC7D4, trainerPicCount = 83, playerPic = 0,
             badgeOffset = 0x1320,
             badgeIsWord = true,
             badgeSet = "RSE",
@@ -622,6 +681,7 @@ data class GameMap(
             name = "Sapphire (U) v1.0",
             routeVersion = "sapphire",
             abilityScriptTable = "sapphire",
+            moveScripts = MoveScripts.SAPPHIRE_V10,
             baseStats = 0x081FEBA8,
             expTables = 0x081FDF08,
             speciesNames = 0x081F70FC,
@@ -631,6 +691,7 @@ data class GameMap(
             battleMoves = 0x081FB0BC,
             frontPics = 0x081E82E4,
             palettes = 0x081EA544,
+            trainerPics = 0x081EC4CC, trainerPicPalettes = 0x081EC764,
             levelUpLearnsets = 0x08207B58,
             gTrainers = 0x081F048C, gTrainerClassNames = 0x081F0198,
             startersBase = 0x083F771C,
@@ -645,6 +706,7 @@ data class GameMap(
             name = "LeafGreen (U) v1.0",
             routeVersion = "leafgreen",
             abilityScriptTable = "leafgreen",
+            moveScripts = MoveScripts.LEAFGREEN_V10,
             baseStats = 0x08254760,
             expTables = 0x08253AC0,
             speciesNames = 0x08245EBC,
@@ -654,6 +716,7 @@ data class GameMap(
             battleMoves = 0x08250BE0,
             frontPics = 0x08235088,
             palettes = 0x082372E8,
+            trainerPics = 0x08239558, trainerPicPalettes = 0x082399F8,
             levelUpLearnsets = 0x0825D794,
             gTrainers = 0x0823EAA4, gTrainerClassNames = 0x0823E534,
             // Switched off (0) until 2026-09-19. FireRed's starter code sits 0x24
@@ -745,12 +808,135 @@ data class GameMap(
             itemNames = 0x083DB098,
             frontPics = 0x0823511C,
             palettes = 0x0823737C,
+            trainerPics = 0x082395EC, trainerPicPalettes = 0x08239A8C,
             // Code, not data: verified at +0x78, NOT the +0x70 the tables take.
             startersBase = 0x08169C2D,
             // Code, like startersBase: +0x14, the battle functions' shift.
             friendshipRequiredAddr = 0x08043016,
             abilityScriptTable = "firered11",
+            moveScripts = MoveScripts.FIRERED_V11,
         )
+
+        /** What the MaxDex map is called, and how Overworld and the app know it. */
+        const val MAXDEX_NAME = "MaxDex 1.0"
+        /** MaxDex keeps its species count where Nat. Dex keeps 1258 ([NATDEX_MAGIC_ADDR]). */
+        const val MAXDEX_SPECIES = 1255L
+
+        /**
+         * MaxDex 1.0 (Trip, Tripc423/Maxdex): FireRed 1.1 patched to CRC 28C12926, Nat. Dex 1.1.3 grown to 1255 species.
+         * It publishes no slot table: its addresses are the ones its tracker extension hardcodes for this build
+         * (MaxDexExtension.lua 1.0, updateGameSettings' FireRed block, "These are this build's values (resync if the ROM
+         * is rebuilt)", and updateProgramAddresses), the ROM tables also as the Game Freak header at 0x100 names them.
+         * What the extension leaves alone (battle type flags, battler count, battle mons, party indexes, turn order) is
+         * FireRed 1.1's, as on the PC tracker. Unconfirmed until a run shows them: the scripting battler (0x02024023, its
+         * Emerald block's gBattleScripting + 0x17) and the Balls and Berries pockets (its pocket formula on FireRed's
+         * sizes). The rival's name and the Pokedex-owned bits keep FireRed's offsets, which the extension does too.
+         */
+        val MAXDEX_FR_10 = FIRERED_U_V11.copy(
+            name = MAXDEX_NAME,
+            nameSet = "maxdex",
+            partyCount = 0x02024075,
+            party = 0x020242D0,
+            enemyParty = 0x02024078,
+            scriptCurrInstr = 0x02023D84,
+            scriptingBattler = 0x02024023,
+            battlerAttacker = 0x02023D7C,
+            battlerTarget = 0x02023D7D,
+            hitMarker = 0x02023DE0,
+            moveScripts = MoveScripts.MAXDEX_FR_10,
+            abilityScriptTable = "maxdex",
+            // gSpeciesInfo, 0x20 per species: u16 abilities at 0x16 and 0x18, growth 0x13, gender 0x10, friendship 0x12.
+            baseStats = 0x08270988,
+            baseStatsStride = 0x20,
+            abilitiesAreU16 = true,
+            expTables = 0x0826FCE8,
+            // Names come from the lists (nameSet); the ROM's own are cut to ten letters and its abilities past 77 shout.
+            speciesNames = 0,
+            moveNames = 0,
+            abilityNames = 0x082A4134,
+            abilityStride = 17,
+            itemNames = 0x084275D8,
+            itemStride = 44,
+            battleMoves = 0x08268000,
+            moveCategoryByte = true,
+            levelUpLearnsets = 0x0829E474,
+            learnsetJambo = true,
+            gTrainers = 0x0823EC00,
+            gTrainerClassNames = 0x0823E690,
+            frontPics = 0x0824E5D4,
+            palettes = 0x08255D78,
+            trainerPics = 0x0825C548, trainerPicPalettes = 0x0825C9E8,
+            spriteCount = 1281,
+            expandedSpeciesIds = true,
+            // The lab's balls: Bulbasaur's script word here, Charmander's 503 on, Squirtle's 449 (the 1.1.3 randomizer's own).
+            startersBase = 0x08A0A6A1,
+            starter2Off = 503,
+            starter3Off = 449,
+            friendshipRequiredAddr = 0x081CD74A,   // GetEvolutionTargetSpecies + 0x13E
+            battleResults = 0x03004BC0,
+            saveBlock1Ptr = 0x03004C38,
+            saveBlock2Ptr = 0x03004C3C,
+            gameFlagsOffset = 0x1078,
+            gameVarsOffset = 0x1198,
+            gameStatsOffset = 0x1398,
+            badgeOffset = 0x1078 + 0x104,
+            encryptionKeyOffset = 0x40C,
+            repelStepsOffset = 0x1198 + 0x40,
+            // The Items pocket holds 120; the pockets after it follow on (Key Items 30, Balls 13, TMs 58, Berries 43).
+            bagItemsOffset = 0x310,
+            bagItemsSlots = 120,
+            bagBallsOffset = 0x568,
+            bagBallsSlots = 13,
+            bagBerriesOffset = 0x684,
+            bagBerriesSlots = 43,
+            takenDmg = 0x02023D68,
+            weather = 0x02023F64,
+            battleTerrain = 0x02022B51,
+            battleStructPtr = 0x02024034,
+            statuses3 = 0x02023E24,
+            sideStatuses = 0x02023DEE,
+            sideTimers = 0x02023E04,
+            disableStructs = 0x02023E34,
+            lockedMoves = 0x02023DC8,
+            wishFutureKnock = 0x02023F68,
+            paydayMoney = 0x02023EC6,
+            battleCommunication = 0x02023ECA,
+            battleOutcome = 0x02023ED2,
+            mapHeader = 0x0203641C,
+            specialVarResult = 0x020366F0,
+            specialVarResultAny = 0x020366F0,
+            specialFlags = 0x02036700,
+            trainerOpponent = 0x02037CCE,
+            specialVarItemId = 0x0203BB60,
+            monSummaryScreen = 0x0203BF6C,
+            battleMainFunc = 0x03004BB4,
+            introDrawPartySummary = 0x08014011,
+            introOpponentSendsOut = 0x0801427D,
+            handleTurnAction = 0x08014DE1,
+            returnToOverworld = 0x08017039,
+            // BattlePokemon is 0x5C (the doubles partner 0xB8 on), its u16 ability moving the rest along.
+            battleMonSize = 0x5C,
+            battleMonTypes = 0x22,
+            battleMonPp = 0x25,
+            battleMonHp = 0x2A,
+            status2Offset = 0x54,
+        )
+
+        /**
+         * The MaxDex map when the ROM is MaxDex 1.0, by the Game Freak header it carries (all literal in the patch,
+         * none moved by randomizing): FireRed 1.1's code and version, 1255 species, and the species, base stats and
+         * moves tables where this build has them. Anything else that claims 1255 species is refused, never read
+         * with these addresses.
+         */
+        private fun maxDex(memory: MemoryReader): GameMap {
+            fun u32(addr: Long): Long { val b = memory.read(addr, 4); return if (b.size == 4) b.u32(0) else -1L }
+            val code = memory.read(0x080000AC, 4)
+            val version = memory.read(0x080000BC, 1)
+            val header = code.size == 4 && String(code, Charsets.US_ASCII) == "BPRE" && version.size == 1 && version[0].toInt() == 1
+            val tables = u32(0x08000144) == 0x08246018L && u32(0x080001BC) == 0x08270988L && u32(0x080001CC) == 0x08268000L
+            require(header && tables) { "A ROM with 1255 species that is not MaxDex 1.0: this build's addresses would read the wrong memory." }
+            return MAXDEX_FR_10
+        }
 
         fun resolveOrNull(memory: MemoryReader): GameMap? =
             runCatching { resolve(memory) }.getOrNull()
@@ -790,6 +976,7 @@ data class GameMap(
                 return if (v in ok) v else fallback
             }
             val magic = ptr(NATDEX_MAGIC_ADDR)
+            if (magic == MAXDEX_SPECIES) return maxDex(memory)
             if (magic != NATDEX_MAGIC) {
                 // Vanilla: pick the map by the header game code. An
                 // UNRECOGNISED header is a refusal, not an Emerald default.
@@ -819,7 +1006,7 @@ data class GameMap(
                     "AXV" -> if (ver == 0) RUBY_U else error("Ruby v1.$ver is not supported yet; v1.0 is")
                     "AXP" -> if (ver == 0) SAPPHIRE_U else error("Sapphire v1.$ver is not supported yet; v1.0 is")
                     "BPG" -> if (ver == 0) LEAFGREEN_U else error("LeafGreen v1.$ver is not supported yet; v1.0 is")
-                    else -> error("Unrecognised ROM header \"" + id + "\"")
+                    else -> error("Unrecognized ROM header \"" + id + "\"")
                 }
             }
 
@@ -861,7 +1048,11 @@ data class GameMap(
                 monDefaultSize = slot16(0x080004B0, 4..0x40, lay.monDefaultSize),
                 monCustomSize = slot16(0x080004B2, 4..0x40, lay.monCustomSize),
                 moveSize = slot16(0x080004B6, 1..4, lay.moveSize),
+                // Between the class (0x494) and the name (0x49A): the music and gender byte's offset, then the picture's.
+                picOffset = slot16(0x08000498, 0..0x7F, lay.picOffset),
             )
+            // The trainer pictures' tables of Nat. Dex 1.2.1, found in both vendored builds (rc34): another version draws none.
+            val v121 = memory.read(NATDEX_VERSION_ADDR, 3).let { it.size == 3 && it.u8(0) == 1 && it.u8(1) == 2 && it.u8(2) == 1 }
 
             val map = GameMap(
                 name = "Nat. Dex",
@@ -899,7 +1090,13 @@ data class GameMap(
                     if (it != 0L) it + 0x17 else 0L  // gBattleScripting.battler
                 },
                 battlerAttacker = ewramPtr(ptr(0x08000230)),
+                // NatDexExtension.lua:17667-17676 and 17749-17761: the move tracking's reads and scripts.
+                currentTurnActionNumber = ewramPtr(ptr(0x08000224)),
+                actionsByTurnOrder = ewramPtr(ptr(0x08000220)),
+                hitMarker = ewramPtr(ptr(0x08000244)),
+                moveScripts = MoveScripts.natDex { ptr(it) },
                 battlerTarget = ewramPtr(ptr(0x08000234)),
+                battleTextBuff1 = ewramPtr(ptr(0x08000208)),
                 battlerPartyIndexes = ewramPtr(ptr(0x0800021C)),   // GS.gBattlerPartyIndexes
                 abilityScriptTable = "natdex",
                 baseStats = ptr(0x080001BC),
@@ -976,6 +1173,10 @@ data class GameMap(
                 // (tools/natdex_palette_lock.py, plus fifteen color anchors).
                 frontPics = if (isEmeraldHeader(memory)) 0x08369C2C else 0L,
                 palettes = if (isEmeraldHeader(memory)) 0x08360FA8 else 0L,
+                trainerPics = if (!v121) 0L else if (em) 0x08367694L else 0x082313F8L,
+                trainerPicPalettes = if (!v121) 0L else if (em) 0x0836797CL else 0x08231898L,
+                trainerPicCount = if (em) 93 else 148,
+                playerPic = if (em) 71 else 135,
                 spriteCount = 1284,
                 // Published by the ROM at 0x08000436, the same slot table the
                 // reference extension reads it from
@@ -1050,12 +1251,14 @@ data class GameMap(
                     val status = u16(0x08000416)
                     val lvl = u16(0x08000418)
                     val maxHp = u16(0x0800041A)
+                    // sizeofPokemonNickname (NatDexExtension.lua:17600): 12 on both 1.2.1 builds, bounded to 10..12.
+                    val nick = memory.read(0x08000176, 1).let { if (it.isEmpty()) 0 else it.u8(0) }.takeIf { it in 10..12 } ?: 10
                     // Refuse nonsense rather than decode against garbage: an
                     // unreadable table falls back to the vanilla layout.
                     if (size in 100..160 && enc in 0x10..0x40 && lvl in 0x40..0x80)
                         PokemonDecoder.Layout(
                             size = size, enc = enc, status = status,
-                            level = lvl, curHp = lvl + 2, maxHp = maxHp)
+                            level = lvl, curHp = lvl + 2, maxHp = maxHp, nickLen = nick)
                     else PokemonDecoder.Layout.VANILLA
                 },
                 gameStatsOffset = slotOffset(0x080002B4,
@@ -1182,13 +1385,15 @@ data class TrackedMon(
     val expTotal: Int = 0,
     /** The evolution in brackets after the level (EvoText). Null when it does not evolve. */
     val evo: EvoText.Label? = null,
+    /** The game's picture of it where that is not its species' plain one: shiny, Unown's letter, Deoxys's form (GbaTracker.picture). */
+    val picture: Gen3Pictures.Picture? = null,
 )
 
 /**
  * The opponent, read from gBattleMons battler 1 (unencrypted BattlePokemon, pret
  * layout: species@0, moves@0xC, ability@0x20, types@0x21/0x22, hp@0x28 u16,
  * level@0x2A, maxHP@0x2C u16). Only [movesSeen] is revealed — moves the enemy has
- * actually used this encounter, via gBattleResults.lastUsedMoveOpponent (+0x24) —
+ * actually used this battle, as the reference tracks them (EnemyMoveWatch) —
  * never its full moveset. That is the IronMON tracker's information rule.
  */
 data class EnemyInfo(
@@ -1216,7 +1421,7 @@ data class EnemyInfo(
     val abilityGuess: String = "?",
     /** The same evolution text, in the default colour: the reference gives an opponent no readiness. */
     val evo: EvoText.Label? = null,
-    /** Its personality value (BattlePokemon +0x48), for its gender. */
+    /** Its personality value (BattlePokemon +0x48, +0x4C on Nat. Dex), for its gender, and Unown's letter on the Walking Pals icon. */
     val pid: Long = 0,
     /**
      * Its actual four moves and their PP (BattlePokemon +0x0C, +0x24), in slot
@@ -1241,9 +1446,19 @@ data class EnemyInfo(
      * about the real Pokemon is carried (Tracker.lua:121, 542).
      */
     val isGhost: Boolean = false,
+    /**
+     * Gold, Silver and Crystal: its DVs as the battle struct holds them (wEnemyMon +6, Attack and Defense then Speed and
+     * Special), for whether it is shiny and Unown's letter on the Walking Pals icon (PalForms); -1 elsewhere.
+     */
+    val dvs: Int = -1,
+    /** The game's picture of it where that is not its species' plain one: shiny, Unown's letter, Deoxys's form (GbaTracker.picture). */
+    val picture: Gen3Pictures.Picture? = null,
 )
 
 /** One Pokemon of the opposing party: its party slot, species, level and whether it still has HP. */
+/** An opposing Pokemon's moves seen this battle, in the order it used them (TrackerState.enemyMovesThisBattle). */
+data class EnemyMovesSeen(val species: Int, val level: Int, val moves: List<Pair<Int, String>>)
+
 data class EnemyPartyMon(
     val slot: Int, val species: Int, val level: Int, val alive: Boolean,
     /** Its personality value, and whether it is shiny for the player's ids (the Nuzlocke shiny clause). */
@@ -1263,8 +1478,15 @@ internal val PP_ITEMS: Set<Int> = setOf(34, 35, 36, 37, 138)
  */
 internal val RS_KEYED_AS_EMERALD: Set<Int> = setOf(108, 109, 110, 111, 112, 113, 114, 115, 274)
 
-/** MiscData.BattleItems: Guard Spec., Dire Hit, X Attack. */
-internal val BATTLE_ITEMS: Set<Int> = setOf(39, 40, 41)
+/**
+ * MiscData.BattleItems (MiscData.lua:530-549): the Blue, Yellow and Red Flute (39 to 41), then Guard Spec., Dire Hit and
+ * the X items (73 to 79). Only the flutes were here, under the X items' names, so Heals in Bag's Battle tab listed only
+ * flutes and filed the X items under Other (rc32 audit P2 #129).
+ */
+internal val BATTLE_ITEMS: Set<Int> = setOf(39, 40, 41) + (73..79)
+
+/** X Sp. Def, which the Nat. Dex expansion adds to MiscData.BattleItems (NatDexExtension.lua:4765-4771, addNewBattleItems). */
+internal const val NATDEX_X_SP_DEF = 82
 
 /** MiscData.StatusItems: item id to the status it cures, "All" for the cure-alls. */
 internal val STATUS_ITEMS: Map<Int, String> = mapOf(
@@ -1355,6 +1577,13 @@ object Gen3Types {
     /** The 17 real types, in tracker display order. Excludes the unused slot 9. */
     val ALL = listOf(0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17)
 
+    /**
+     * The types a game has, attacking and defending: [ALL], then Fairy on the Nat. Dex expansion, last, as its
+     * tracker adds it (NatDexExtension.lua addNewTypes: CoverageCalcScreen.OrderedTypeKeys gains FAIRY). Every walk
+     * of the chart used [ALL] alone, so there Fairy was never counted as an attacker (rc33 audit P1 #70).
+     */
+    fun typesFor(natDex: Boolean): List<Int> = if (natDex) ALL + 18 else ALL
+
     // Every non-neutral matchup in the Gen 3 chart, as attacker to
     // (defender -> multiplier). Anything absent is 1x.
     //
@@ -1396,24 +1625,43 @@ object Gen3Types {
     fun effect(attack: Int, defend: Int): Double =
         chart[attack]?.get(defend) ?: 1.0
 
-    /** Multiplier against a possibly dual-typed defender. */
-    fun effect(attack: Int, t1: Int, t2: Int): Double =
-        effect(attack, t1) * (if (t2 == t1) 1.0 else effect(attack, t2))
+    /** Multiplier against a possibly dual-typed defender; [natDex], the Nat. Dex expansion's chart. */
+    fun effect(attack: Int, t1: Int, t2: Int, natDex: Boolean = false): Double =
+        effect(attack, t1, false, natDex) * (if (t2 == t1) 1.0 else effect(attack, t2, false, natDex))
 
     /**
      * The Gen 1 tracker's chart (Ironmon-gen-tracker data/MoveData.lua,
      * TypeToEffectiveness, read 2026-09-08) is this chart with three Gen 1
      * rules kept: Poison hits Bug for 2x, Bug hits Poison for 2x, Ghost does
      * nothing to Psychic. Everything else in that file matches Gen 3.
+     *
+     * One cell follows the game instead of that file: Ice on Fire is 1x. Red, Blue and Yellow have no ICE, FIRE row
+     * (pokered and pokeyellow data/types/type_matchups.asm, Ice rows at :13, :33-36 and :83), so Charizard and
+     * Moltres take 2x from Ice; the Gen 1 reference copies Gen 2's 0.5 (MoveData.lua:69 `ice = { fire = 0.5 }`;
+     * pokecrystal type_matchups.asm:42 is where it begins). Blake's "correct values" ruling on reference bugs,
+     * 2026-09-29 (rc32 audit P2 #128). With it the whole chart matches the two disassemblies cell for cell.
      */
     private val gen1Overrides: Map<Int, Map<Int, Double>> = mapOf(
         3 to mapOf(6 to 2.0),    // POISON -> BUG
         6 to mapOf(3 to 2.0),    // BUG -> POISON
         7 to mapOf(14 to 0.0),   // GHOST -> PSYCHIC
+        15 to mapOf(10 to 1.0),  // ICE -> FIRE
     )
 
-    fun effect(attack: Int, defend: Int, gen1: Boolean): Double =
-        if (gen1) gen1Overrides[attack]?.get(defend) ?: effect(attack, defend) else effect(attack, defend)
+    /**
+     * The Nat. Dex expansion's chart (NatDexExtension.lua updateMoveData, read 2026-10-02) is Gen 6's: Steel no
+     * longer resists Ghost or Dark. Its Fairy cells are already in [chart], which no other Gen 3 game reaches.
+     */
+    private val natDexOverrides: Map<Int, Map<Int, Double>> = mapOf(
+        7 to mapOf(8 to 1.0),    // GHOST -> STEEL
+        17 to mapOf(8 to 1.0),   // DARK -> STEEL
+    )
+
+    fun effect(attack: Int, defend: Int, gen1: Boolean, natDex: Boolean = false): Double = when {
+        gen1 -> gen1Overrides[attack]?.get(defend) ?: effect(attack, defend)
+        natDex -> natDexOverrides[attack]?.get(defend) ?: effect(attack, defend)
+        else -> effect(attack, defend)
+    }
 
     /**
      * TypeDefensesScreen's buckets (PokemonData.getEffectiveness): every
@@ -1421,10 +1669,10 @@ object Gen3Types {
      * by multiplier, in the screen's order 0x, 1/4x, 1/2x, 2x, 4x. Type names
      * as the chips show them.
      */
-    fun defenses(t1: Int, t2: Int, gen1: Boolean = false): Map<Double, List<String>> {
+    fun defenses(t1: Int, t2: Int, gen1: Boolean = false, natDex: Boolean = false): Map<Double, List<String>> {
         val out = linkedMapOf(0.0 to ArrayList<String>(), 0.25 to ArrayList(), 0.5 to ArrayList(), 2.0 to ArrayList(), 4.0 to ArrayList())
-        for (atk in ALL) {
-            val e = effect(atk, t1, gen1) * (if (t2 == t1) 1.0 else effect(atk, t2, gen1))
+        for (atk in typesFor(natDex)) {
+            val e = effect(atk, t1, gen1, natDex) * (if (t2 == t1) 1.0 else effect(atk, t2, gen1, natDex))
             out[e]?.add(name(atk))
         }
         return out.filterValues { it.isNotEmpty() }
@@ -1447,6 +1695,11 @@ data class TrackerState(
      */
     val enemyTeam: List<Boolean> = emptyList(),
     val enemy: EnemyInfo? = null,
+    /**
+     * Every opposing Pokemon's moves seen this battle, the doubles partner's too, for the run's tracked moves: the
+     * reference's Tracker.TrackMove runs for whichever opposing battler used the move (Battle.lua:432-438).
+     */
+    val enemyMovesThisBattle: List<EnemyMovesSeen> = emptyList(),
     /**
      * Program.GameData.EnemyTeam: every Pokemon of gEnemyParty while a battle is
      * on, wild or trainer, with its party slot. Tracker.recordLastLevelsSeen
@@ -1494,6 +1747,11 @@ data class TrackerState(
     /** Gym badges as 8 bits, badge 1 in bit 0. */
     val badges: Int = 0,
     val badgeSet: String = "FRLG",
+    /**
+     * The game, as GameMap.routeVersion names it ("firered", "leafgreen", "emerald", "ruby", "sapphire"; a Nat. Dex build's
+     * base game; empty where unknown), for the form a retail game draws Deoxys in on the Walking Pals icon (PalForms).
+     */
+    val routeVersion: String = "",
     /** Steps left on the active repel, 0 when none is running, and the length it was (Program.ActiveRepel). */
     val repelSteps: Int = 0,
     val repelDuration: Int = 100,
@@ -1503,6 +1761,8 @@ data class TrackerState(
      *  the PC tracker's "Heals: 44% HP (7)" line. */
     val healPercent: Int = 0,
     val healCount: Int = 0,
+    /** The HP that healing adds up to, rounded per item as the reference does: "Show heals as whole number" (HealTotals). */
+    val healHp: Int = 0,
     /** Current map id, or null when it cannot be read. */
     val mapId: Int? = null,
     /** The map's name, from the reference's RouteData. */
@@ -1571,9 +1831,39 @@ data class TrackerState(
      * lead was fainted at the start (rc33 audit P1). The reference views this one (Battle.getViewedPokemon).
      */
     val ownOnField: Int = 0,
+    /**
+     * A double battle (gBattlersCount 4, Battle.numBattlers): a right-hand battler of each side is on the field too,
+     * battler 2 yours and battler 3 the opponent's (Combatants.RightOwn and RightOther, Battle.lua:288-297).
+     */
+    val doubles: Boolean = false,
+    /**
+     * In a double battle, the index in [party] of your right-hand battler (gBattlerPartyIndexes[2]), its stat stages read
+     * in; -1 otherwise, or when its party slot is not one of [party] (a partner's Pokemon past the party's size).
+     */
+    val ownRightOnField: Int = -1,
+    /** The heals as a share of [ownRight]'s max HP: what the strip shows while it is the one viewed (Program.recalcLeadPokemonHealingInfo). */
+    val ownRightHeals: HealTotals = HealTotals.NONE,
+    /** The opponent's right-hand battler in a double battle (battler 3); null otherwise. */
+    val enemyRight: EnemyInfo? = null,
+    /**
+     * Battle.EnemyTrainersToHideAlly (Battle.lua:68-75): a double battle beside a partner whose Pokemon the tracker never
+     * shows, Emerald's Space Center fight with Steven against Tabitha (514) and Maxie (734).
+     */
+    val allyHidden: Boolean = false,
 ) : RunView {
     /** The player's Pokemon on the field in a battle, the lead otherwise: the own card, Calc Atk and the matchups use it. */
-    val onField: TrackedMon? get() = party.getOrNull(ownOnField) ?: party.firstOrNull()
+    val onField: TrackedMon? get() = fieldMonOf(party, ownOnField)
+
+    /** Your right-hand battler in a double battle, never an Egg; null in a single battle or where it is not in [party]. */
+    val ownRight: TrackedMon? get() = party.getOrNull(ownRightOnField)?.takeIf { !it.mon.isEgg }
+
+    /**
+     * The lead: slot 1, or the first Pokemon after it that is not an Egg, in a battle too. Tracker.getPokemon(1, true)
+     * (Tracker.lua:105-140), which the carousel's early route encounters and Trainer Info's level colour read
+     * (TrackerScreen.lua:664, TrainerInfoScreen.lua:251). Those took slot 1 as it was, an Egg's level included
+     * (RC35-NOTICED N #34).
+     */
+    val lead: TrackedMon? get() = fieldMonOf(party, 0)
 
     /**
      * Program.ActiveRepel.shouldDisplay (Program.lua:249): a repel is running,
@@ -1587,6 +1877,15 @@ data class TrackerState(
         GameOver.WON -> RunOutcome.WON; GameOver.LOST -> RunOutcome.LOST; null -> null
     }
 }
+
+/**
+ * The Pokemon at [ownOnField] in [party], or the lead: never an Egg. Tracker.getPokemon(slot, true) skips eggs to the first
+ * Pokemon that is not one (Tracker.lua:105-140, excludeEggs defaults to true), so with an Egg in slot 1 the PC tracker's
+ * lead is slot 2. The card drew the Egg's species, moves and ability, which the game keeps hidden, and the heals were
+ * worked out on its HP (rc32 audit P2 #136). An Egg is never sent out, so one at [ownOnField] is not on the field either.
+ */
+internal fun fieldMonOf(party: List<TrackedMon>, ownOnField: Int): TrackedMon? =
+    party.getOrNull(ownOnField)?.takeIf { !it.mon.isEgg } ?: party.firstOrNull { !it.mon.isEgg } ?: party.firstOrNull()
 
 /** How a run ended, matching the PC tracker's own two outcomes. */
 enum class GameOver { LOST, WON }
@@ -1609,8 +1908,20 @@ class GbaTracker(
         const val GHOST_NAME = "Ghost"
         /** Gen 3's "???" type, PokemonData.Types.UNKNOWN in the reference's TypeIndexMap. */
         const val UNKNOWN_TYPE = 9
+        /** status2's bit for a battler that used Transform (CFRU include/constants/battle.h:121, as pokeemerald's). */
+        internal const val STATUS2_TRANSFORMED = 0x00200000L
+        /** Trace's ability id (AbilityData.Values.TraceId). */
+        internal const val TRACE = 36
+        /** Psycho Boost, the last of the five games' 354 moves. */
+        const val VANILLA_LAST_MOVE = 354
         /** A starter ball's place, on FireRed's lab table or Hoenn's starter screen, from the left. */
         val BALL_NAMES = listOf("LEFT", "MIDDLE", "RIGHT")
+        /**
+         * Battle.EnemyTrainersToHideAlly (Battle.lua:68-75), by the reference's game number: the opponents whose double
+         * battle hides your partner's Pokemon. Only Emerald's Space Center fight beside Steven, Tabitha (514) and
+         * Maxie (734).
+         */
+        internal val ENEMY_TRAINERS_TO_HIDE_ALLY: Map<Int, Set<Int>> = mapOf(1 to emptySet(), 2 to setOf(514, 734), 3 to emptySet())
         /** The Hoenn starter screen's three ball places, x and y, left to right (sPokeballCoordinates). */
         internal val HOENN_BALL_PLACES = byteArrayOf(60, 64, 120, 88, 180.toByte(), 64)
     }
@@ -1631,27 +1942,71 @@ class GbaTracker(
      */
     val expandedSpeciesIds: Boolean get() = map.expandedSpeciesIds
 
-    private val speciesNameCache = HashMap<Int, String>()
-    private val moveNameCache = HashMap<Int, String>()
-    private val baseStatsCache = HashMap<Int, BaseStats>()
-    private val abilityNameCache = HashMap<Int, String>()
-    private val itemNameCache = HashMap<Int, String>()
-    private val moveDataCache = HashMap<Int, IntArray>()
-    private val learnsetCache = HashMap<Int, List<Pair<Int, Int>>>()
+    /** GameMap.nameSet: "maxdex" on MaxDex 1.0, whose icons and data the app picks by it; "" otherwise. */
+    val nameSet: String get() = map.nameSet
+
+    /**
+     * Species ids by the names a randomizer log prints, upper case, where the log's names are not the lists': MaxDex's
+     * log names Pokemon as its ROM does, cut to ten letters ("DragoniteM", "Flechinder"), from the table its Game Freak
+     * header names at 0x144. Empty on every other build, whose log names are the ones the tracker shows.
+     */
+    fun logSpeciesIds(): Map<String, Int> {
+        if (map.nameSet != "maxdex") return emptyMap()
+        val ptr = memory.read(0x08000144L, 4)
+        val table = if (ptr.size == 4) ptr.u32(0) else return emptyMap()
+        if (table !in 0x08000000L..0x09FFFFFFL) return emptyMap()
+        val out = HashMap<String, Int>()
+        for (id in 1 until map.spriteCount) {
+            val b = memory.read(table + id * 11L, 11)
+            val name = if (b.isEmpty()) "" else Gen3Text.decode(b).trim().uppercase()
+            if (name.isNotEmpty() && name != "?") out.putIfAbsent(name, id)
+        }
+        return out
+    }
+
+    /** This game's types by name, Fairy last on the Nat. Dex expansion (Gen3Types.typesFor): the Coverage Calculator's. */
+    val typeNames: List<String> get() = Gen3Types.typesFor(map.expandedSpeciesIds).map(Gen3Types::name)
+
+    // Filled from more than one thread: the poll and the stream's dex walk on background threads, the panel's lookups on
+    // the main one. Plain HashMaps filled with getOrPut there could lose or corrupt entries (rc32 audit P3 #51); the
+    // concurrent map's getOrPut is safe across threads. Their values are never null (spriteCache holds nulls and stays).
+    private val speciesNameCache = java.util.concurrent.ConcurrentHashMap<Int, String>()
+    private val moveNameCache = java.util.concurrent.ConcurrentHashMap<Int, String>()
+    private val baseStatsCache = java.util.concurrent.ConcurrentHashMap<Int, BaseStats>()
+    private val abilityNameCache = java.util.concurrent.ConcurrentHashMap<Int, String>()
+    private val itemNameCache = java.util.concurrent.ConcurrentHashMap<Int, String>()
+    private val moveDataCache = java.util.concurrent.ConcurrentHashMap<Int, IntArray>()
+    private val learnsetCache = java.util.concurrent.ConcurrentHashMap<Int, List<Pair<Int, Int>>>()
 
     // Enemy moves revealed this encounter; keyed off the enemy species so a new
     // encounter (or a switch) starts a fresh page.
-    private var seenForSpecies = -1
-    private val movesSeen = LinkedHashSet<Int>()
+    // The opponent's moves seen this battle (pollMoves, rc33 audit P1 #72), per opposing party slot, in the order used.
+    private val moveWatch = EnemyMoveWatch()
+    private val battleMoves = HashMap<Int, LinkedHashSet<Int>>()
 
     init {
         if (map.namesFromLists) {
             loadList("/natdex/species.tsv", speciesNameCache)
             loadList("/natdex/moves.tsv", moveNameCache)
         }
+        // MaxDex 1.0: its own species, moves and abilities (tools/trainer-data/convert_maxdex.py).
+        if (map.nameSet == "maxdex") {
+            loadList("/maxdex/species.tsv", speciesNameCache)
+            loadList("/maxdex/moves.tsv", moveNameCache)
+            loadList("/maxdex/abilities.tsv", abilityNameCache)
+        }
     }
 
-    private fun loadList(resource: String, into: HashMap<Int, String>) {
+    /**
+     * The highest move id the game has: Psycho Boost's 354 on the five games, the last line of natdex/moves.tsv (847)
+     * on the Nat. Dex builds and of maxdex/moves.tsv (841) on MaxDex. The log viewer stopped at 354 on every build, so a
+     * Nat. Dex run's newer moves (Roost, Dragon Pulse) were never drawn as same-type (rc32 audit P2 #28); MaxDex, whose
+     * list comes through its name set, still stopped there, and its log's U-turn read "U-Turn" (rc34).
+     */
+    val lastMoveId: Int =
+        if (map.namesFromLists || map.nameSet == "maxdex") moveNameCache.keys.maxOrNull() ?: VANILLA_LAST_MOVE else VANILLA_LAST_MOVE
+
+    private fun loadList(resource: String, into: MutableMap<Int, String>) {
         javaClass.getResourceAsStream(resource)?.bufferedReader(Charsets.UTF_8)?.useLines { lines ->
             lines.forEach { line ->
                 val tab = line.indexOf('\t')
@@ -1695,6 +2050,7 @@ class GbaTracker(
     /** [power, type, accuracy, basePP] from the ROM move table, or null. */
     private fun moveData(move: Int): IntArray? {
         if (map.battleMoves == 0L || move == 0) return null
+        if (map.moveCategoryByte) return splitMoveData(move)
         return moveDataCache.getOrPut(move) {
             // gBattleMoves entry (pret BattleMove, 12-byte stride): effect,
             // power, type, accuracy, pp, secondaryEffectChance, target,
@@ -1709,6 +2065,24 @@ class GbaTracker(
         }.takeIf { it[0] >= 0 }
     }
 
+    /**
+     * MaxDex's 12-byte move entry ([GameMap.moveCategoryByte]): u16 effect, power +2, type +3, category +4, accuracy +5,
+     * PP +6, priority +9, flags +10. The same [power, type, accuracy, PP, priority, flags] as [moveData], and the
+     * category byte seventh (0 physical, 1 special, 2 status), which [categoryOf] reads.
+     */
+    private fun splitMoveData(move: Int): IntArray? = moveDataCache.getOrPut(move) {
+        val b = memory.read(map.battleMoves + move.toLong() * 12, 11)
+        if (b.size < 11) intArrayOf(-1, -1, -1, -1, 0, 0, 0)
+        else intArrayOf(b.u8(2), b.u8(3), b.u8(5), b.u8(6), b.u8(9).let { if (it >= 128) it - 256 else it }, b.u8(10), b.u8(4))
+    }.takeIf { it[0] >= 0 }
+
+    /** A move row's category: the ROM's own byte where the build has one, else Gen 3's rule (the type decides). */
+    private fun categoryOf(d: IntArray): String = if (d.size > 6) when (d[6]) {
+        0 -> "PHY"
+        1 -> "SPE"
+        else -> "STA"
+    } else gen3Category(d[1], d[0])
+
     /** The panel's four move rows for any mon, from the ROM's move table. Public for the screenshot demo. */
     fun moveRowsOf(mon: PokemonDecoder.Mon): List<MoveRow> = moveRows(mon)
     /** The ability the mon's slot resolves to. Public for the screenshot demo. */
@@ -1720,7 +2094,7 @@ class GbaTracker(
         val d = moveData(id) ?: return null
         return MoveRow(
             id = id, name = moveName(id), pp = d[3], ppMax = null, power = d[0], acc = d[2], type = d[1],
-            category = gen3Category(d[1], d[0]), priority = d[4].takeIf { it in -7..7 }, contact = (d[5] and 1) != 0,
+            category = categoryOf(d), priority = d[4].takeIf { it in -7..7 }, contact = (d[5] and 1) != 0,
         )
     }
 
@@ -1741,7 +2115,7 @@ class GbaTracker(
                     power = d?.get(0),
                     acc = d?.get(2),
                     type = d?.get(1),
-                    category = d?.let { gen3Category(it[1], it[0]) },
+                    category = d?.let { categoryOf(it) },
                     priority = d?.get(4)?.takeIf { it in -7..7 },
                     contact = d?.let { (it[5] and 1) != 0 },
                 )
@@ -1792,6 +2166,32 @@ class GbaTracker(
     /** 64x64 ARGB front sprite from the ROM, or null. Cached per species. */
     fun sprite(species: Int): IntArray? = spriteCache.getOrPut(species) {
         runCatching { SpriteDecoder.frontSprite(memory, map, species) }.getOrNull()
+    }
+
+    /**
+     * Where this game keeps its pictures (Gen3Pictures), read once. None on the builds whose card draws the shipped
+     * menu icons (expandedSpeciesIds: Nat. Dex and MaxDex), since a Gen 3 game keeps no shiny icon.
+     */
+    private val pictureTables: Gen3Pictures.Tables? by lazy {
+        if (map.expandedSpeciesIds) null else runCatching { Gen3Pictures.tables(memory, map) }.getOrNull()
+    }
+    private val pictureCache = HashMap<Long, Gen3Pictures.Picture?>()
+
+    /**
+     * The card's picture of a Pokemon where the game draws it otherwise than its species' plain picture (Gen3Pictures):
+     * shiny, Unown's letter, Deoxys's form where [gameForm]. Both cards ask for the form, as the Walking Pals icon shows it
+     * (PalForms), though the battle itself draws an opponent's Deoxys in its Normal form.
+     * Null for every other Pokemon, and wherever the ROM gives none: the card then draws what it always has. Cached per
+     * species, letter, shininess and form.
+     */
+    fun picture(species: Int, shiny: Boolean, personality: Long, gameForm: Boolean): Gen3Pictures.Picture? {
+        val t = pictureTables ?: return null
+        val letter = if (species == Gen3Pictures.UNOWN) Gen3Pictures.unownLetter(personality) else 0
+        val key = (species.toLong() shl 8) or (letter.toLong() shl 2) or (if (gameForm) 2L else 0L) or (if (shiny) 1L else 0L)
+        // A null is kept too (getOrPut would read the ROM again on every poll for a picture it cannot give).
+        if (key in pictureCache) return pictureCache[key]
+        return runCatching { Gen3Pictures.picture(memory, t, species, shiny, personality, gameForm) }.getOrNull()
+            .also { pictureCache[key] = it }
     }
 
     data class BallOption(val ball: String, val species: Int, val name: String)
@@ -1908,16 +2308,18 @@ class GbaTracker(
                             mon.friendship, base?.baseFriendship ?: EvoText.DEFAULT_BASE, friendshipRequired(),
                             TrackerPrefs.determineFriendship,
                         ),
+                        picture = if (mon.isEgg) null else picture(mon.species, mon.shiny, mon.pid, gameForm = true),
                     )
                     slots += i
                 }
             }
         }
 
-        val rawMapId = if (map.mapHeader == 0L) null else {
-            val m = memory.read(map.mapHeader + 0x12, 2)
-            if (m.size < 2) null else m.u16(0)
-        }
+        // The layout id (+0x12), and with it regionMapSectionId (+0x14) and mapType (+0x17) of struct MapHeader
+        // (pokeemerald and pokefirered global.fieldmap.h): the Nuzlocke ledger counts a gift in a building for the town
+        // or route it stands in (rc32 audit P2 #140).
+        val header = if (map.mapHeader == 0L) null else memory.read(map.mapHeader + 0x12, 6)
+        val rawMapId = if (header == null || header.size < 2) null else header.u16(0)
         // A map id must be seen on TWO consecutive polls before it is adopted.
         //
         // The header pointer is read mid-transition during map loads, and a
@@ -1932,6 +2334,8 @@ class GbaTracker(
                 stableMapId = rawMapId
             } else candidateMapId = rawMapId
         }
+        // Only from a read whose layout id is the adopted one, so one map's name is never paired with the next map's section.
+        stableMapSection = if (header != null && header.size >= 6 && rawMapId != null && rawMapId == stableMapId) header.u8(2) to header.u8(5) else null
         // Ruby and Sapphire: ids above the empty Lilycove layout (108) come down one onto the rse table.
         val mapId = stableMapId?.let { if (map.rsMapShift && it > 108) it - 1 else it }
 
@@ -1939,7 +2343,28 @@ class GbaTracker(
         // The player's Pokemon on the field (Battle.lua:276, Combatants.LeftOwn): its heals, its stat stages, and the
         // card, Calc Atk and the matchups through TrackerState.onField. Slot 1 is not it after a switch (rc33 audit P1).
         val ownOnField = if (inBattle) readOwnOnField()?.let { s -> slots.indexOf(s).takeIf { it >= 0 } } ?: 0 else 0
-        val heals = readHeals(party.getOrNull(ownOnField)?.mon?.maxHp ?: 0)
+        // A double battle: your right-hand battler too (Battle.lua:288-292, Combatants.RightOwn), which the swap shows and
+        // whose card, stages and heals are its own. Never the left one's entry, and not a slot past [party].
+        val doubles = inBattle && map.battlersCount != 0L && rb(map.battlersCount) == 4
+        val ownRightOnField = if (doubles) readOwnOnField(2)?.let { s -> slots.indexOf(s).takeIf { it >= 0 && it != ownOnField } } ?: -1 else -1
+        // The heals are a share of the Pokemon the card shows, never an Egg's (fieldMonOf, rc32 audit P2 #136).
+        val heals = readHeals(fieldMonOf(party, ownOnField)?.mon?.maxHp ?: 0)
+        val rightHeals = party.getOrNull(ownRightOnField)?.takeIf { !it.mon.isEgg }?.let { readHeals(it.mon.maxHp) } ?: HealTotals.NONE
+        // Tracker.resetData (Tracker.lua:550-558) takes the fishing and Rock Smash counts from the save when the tracker
+        // starts. Taken at the first wild battle instead, they already held that battle's own bite, which the game counts
+        // before the battle begins (CFRU wild_encounter.c:752-753), so the first rod or Rock Smash battle of every Play
+        // visit was filed as Surfing or Walking (rc32 audit P3 #109). Only once the save is in: the party has a Pokemon,
+        // and readGameStat reads 0 without SaveBlock1, which would make the save's own count look like a new bite.
+        if (fishingStat < 0 && !inBattleScreen && party.isNotEmpty()) { fishingStat = readGameStat(12); rockSmashStat = readGameStat(19) }
+        // A facility battle's hold (isFacilityBattle): the lent party as the battle shows it, then, outside the battle, held
+        // until the game hands back another party (the real one) or nobody is at 0 HP, so it never outlasts the lent party.
+        if (facilityHeld) {
+            val ids = party.map { it.mon.pid }.toSet()
+            if (inBattleScreen) facilityParty = ids
+            else if (party.none { it.mon.curHp == 0 && !it.mon.isEgg } || (facilityParty != null && ids != facilityParty)) {
+                facilityHeld = false; facilityParty = null
+            }
+        }
         if (inBattle && !lastInBattle) damageWatch.reset()
         lastInBattle = inBattle
         if (inBattle && map.takenDmg != 0L && map.battleResults != 0L && map.battlerAttacker != 0L) {
@@ -1949,6 +2374,8 @@ class GbaTracker(
         // mon; the panel shows chevrons on both sides like the reference.
         if (inBattle && party.isNotEmpty()) {
             party[ownOnField] = party[ownOnField].copy(statStages = readStatStages(0))
+            // Battle.updateStatStages(ownRightPokemon, true, false) (Battle.lua:494-502): battler 2's block is the right-hand one's.
+            if (ownRightOnField >= 0) party[ownRightOnField] = party[ownRightOnField].copy(statStages = readStatStages(2))
         }
         val trainer = !isWildEncounter
         // Battle.updateTrackedInfo reads it fresh on every update while data is ready (Battle.lua:371).
@@ -1960,17 +2387,31 @@ class GbaTracker(
             if (pos.size == 4) { px = pos.u16(0); py = pos.u16(2) }
         }
 
-        val enemy = if (inBattle) { if (ghost) ghostEnemy() else readEnemy() } else run { seenForSpecies = -1; movesSeen.clear(); null }
+        if (inBattle && !ghost) runCatching { pollMoves() }
+        val enemy = if (inBattle) { if (ghost) ghostEnemy() else readEnemy() } else null
+        // The opponent's right-hand battler in a double battle (Combatants.RightOther). A ghost battle is a single one.
+        val enemyRight = if (doubles && !ghost) readEnemy(3) else null
         // Battle.incrementEnemyEncounter is never reached for a ghost (Battle.lua:505), so
         // the battle has no encounter area and no route details.
         val encounterArea = if (inBattle && !trainer && !ghost) battleEncounterArea() else { currentArea = null; null }
         if (enemy != null && encounterArea != null && mapId != null) trackSafariEncounter(mapId, enemy, encounterArea)
         val enemyParty = if (inBattle) readEnemyParty() else emptyList()
+        // The opponent: shiny by its own party entry, found by its personality, Unown's letter, Deoxys's form (PalForms.ofEnemy too).
+        val enemyCard = enemy?.let { e ->
+            if (e.isGhost) e
+            else e.copy(picture = picture(e.species, enemyParty.firstOrNull { it.pid != 0L && it.pid == e.pid }?.shiny == true, e.pid, gameForm = true))
+        }
 
         return TrackerState(
             partyCount = count,
             party = party,
             ownOnField = ownOnField,
+            doubles = doubles,
+            ownRightOnField = ownRightOnField,
+            ownRightHeals = rightHeals,
+            enemyRight = enemyRight,
+            // Battle.lua:228: the opponent is gTrainerBattleOpponent_A, read at the battle's start in the reference.
+            allyHidden = doubles && trainer && readOpponentTrainerId()?.let { it in ENEMY_TRAINERS_TO_HIDE_ALLY[refGame].orEmpty() } == true,
             inBattle = inBattle,
             isWildBattle = inBattle && !trainer,
             // data.x.catchrate: PokemonData.calcCatchRate with its default ball, the Poke Ball.
@@ -1985,7 +2426,8 @@ class GbaTracker(
             enemyTeam = if (inBattle && trainer) enemyParty.map { it.alive } else emptyList(),
             enemyParty = enemyParty,
             enemyOnField = if (inBattle) readEnemyOnField() else emptyList(),
-            enemy = enemy,
+            enemy = enemyCard,
+            enemyMovesThisBattle = if (inBattle && !ghost) enemyMovesThisBattle(enemyParty) else emptyList(),
             abilityRevealed = if (inBattle) readAbilityTrigger() else null,
             encounterArea = encounterArea,
             abilitiesRevealed = if (inBattle && !ghost) drainReveals() else { pendingReveals.clear(); emptyList() },
@@ -2000,11 +2442,13 @@ class GbaTracker(
             battleSummaries = if (inBattle) runCatching { battleDetails()?.let { d -> (0..3).map { d.summary(it).trim() } } }.getOrNull() ?: emptyList() else emptyList(),
             badges = readBadges(),
             badgeSet = map.badgeSet,
+            routeVersion = map.routeVersion,
             repelSteps = readRepelSteps().also { repelDuration = RepelRules.duration(it, repelDuration) },
             repelDuration = repelDuration,
             inHallOfFame = mapId != null && rawMapId(mapId) in map.hallOfFameMapIds,
-            healPercent = heals.first,
-            healCount = heals.second,
+            healPercent = heals.percent,
+            healCount = heals.count,
+            healHp = heals.hp,
             mapId = mapId,
             inLab = mapId != null && mapId in map.labMapIds,
             starterOffered = if (count == 0 && mapId != null && mapId in map.labMapIds) starterOffered() else null,
@@ -2013,7 +2457,7 @@ class GbaTracker(
             routeSpecies = mapId?.let { routeInfo(it)?.second } ?: emptyList(),
             routeTrainers = mapId?.let { trainersOnRoute(it) } ?: emptyList(),
             routeTrainersDefeated = mapId?.let { m -> trainersOnRoute(m).count { trainerDefeated(it) } } ?: 0,
-            opponentTrainerId = if (inBattle && trainer) readOpponentTrainerId()?.also { id -> whichRival(id)?.let { rivalChoice = it } } else null,
+            opponentTrainerId = if (inBattle && trainer) readOpponentTrainerId()?.also { id -> learnRival(id) } else null,
             routeBosses = mapId?.let { m ->
                 trainersOnRoute(m).count { trainerGroup(it) in BOSS_GROUPS }
             } ?: 0,
@@ -2348,9 +2792,30 @@ class GbaTracker(
      * Tracker.Data.whichRival: which of the three rivals this run has, learned
      * from the first rival battle. Until then every rival is listed, as the
      * reference does (TrainerData.shouldUseTrainer).
+     *
+     * The reference keeps it with the run's tracked data (Tracker.saveData and loadData, Tracker.lua:612, :632), and
+     * this tracker is made again on every visit to Play, so the app keeps it too (StatMarks, TrackerRival): a rival
+     * learned is handed over through [takeLearnedRival], and given back through [restoreRival] (rc32 audit P2 #130).
      */
-    var rivalChoice: String? = null
+    @Volatile var rivalChoice: String? = null
         private set
+
+    /** A rival learned in a battle and not yet handed to the app; a restored one never lands here. */
+    private val learnedRival = java.util.concurrent.atomic.AtomicReference<String?>(null)
+
+    /** Tracker.tryTrackWhichRival (Tracker.lua:362-371): a rival trainer's battle says which rival this run has. */
+    private fun learnRival(trainerId: Int) {
+        val r = whichRival(trainerId) ?: return
+        if (r != rivalChoice) { rivalChoice = r; learnedRival.set(r) }
+    }
+
+    /** The run's rival from its tracked data, into a tracker that has not learned one: only a value this game's table has. */
+    fun restoreRival(choice: String?) {
+        if (rivalChoice == null && choice != null && choice in rivalOf.values) rivalChoice = choice
+    }
+
+    /** The rival a battle taught this tracker since the last call, once: what the app saves with the run. */
+    fun takeLearnedRival(): String? = learnedRival.getAndSet(null)
 
     /** TrainersOnRouteScreen's list for a map: the route's trainers, minus the rivals that are not this run's. */
     fun trainersForRoute(mapId: Int): List<Int> =
@@ -2439,6 +2904,28 @@ class GbaTracker(
         return TrainerInfo(trainerId, className, name, party, aiFlags, doubleBattle, trainerDefeated(trainerId), items)
     }
 
+    /**
+     * The picture the game draws [trainerId] with, 64x64 ARGB (TrainerPictures): its gTrainers entry's picture slot, read
+     * out of the ROM. Null on a build whose picture tables are not proven (GameMap.trainerPics), or where a read fails.
+     */
+    fun trainerPicture(trainerId: Int): IntArray? {
+        if (map.gTrainers == 0L || trainerId <= 0) return null
+        val lay = map.trainerLayout
+        val b = memory.read(map.gTrainers + trainerId.toLong() * lay.size + lay.picOffset, 1)
+        return if (b.isEmpty()) null else trainerPictureIn(b.u8(0))
+    }
+
+    /** The player's own picture, the boy's or [girl]'s (GameMap.playerPic): the log viewer's Trainers tab cuts its head. */
+    fun playerPicture(girl: Boolean): IntArray? = if (map.playerPic < 0) null else trainerPictureIn(map.playerPic + if (girl) 1 else 0)
+
+    /** Each picture decoded once: a log has hundreds of trainers and a game 83 to 148 pictures. Nulls are kept too. */
+    private val trainerPictures = HashMap<Int, IntArray?>()
+
+    private fun trainerPictureIn(slot: Int): IntArray? = synchronized(trainerPictures) {
+        if (slot in trainerPictures) return trainerPictures[slot]
+        runCatching { TrainerPictures.picture(memory, map, slot) }.getOrNull().also { trainerPictures[slot] = it }
+    }
+
     private var trainerTeamsCache: Boolean? = null
 
     /**
@@ -2471,7 +2958,7 @@ class GbaTracker(
     /** revos.tsv: base id -> (target id, or 0 for a single evolution) -> (evo id, percent) in the reference's order. */
     private val revos: Map<Int, Map<Int, List<Pair<Int, Double>>>> by lazy {
         val out = HashMap<Int, LinkedHashMap<Int, List<Pair<Int, Double>>>>()
-        javaClass.getResourceAsStream("/gen3/revos.tsv")?.bufferedReader(Charsets.UTF_8)?.useLines { lines ->
+        javaClass.getResourceAsStream(if (map.nameSet == "maxdex") "/gen3/revos-maxdex.tsv" else "/gen3/revos.tsv")?.bufferedReader(Charsets.UTF_8)?.useLines { lines ->
             lines.forEach { line ->
                 if (line.startsWith("#")) return@forEach
                 val p = line.split('\t'); if (p.size < 3) return@forEach
@@ -2556,7 +3043,7 @@ class GbaTracker(
                     sort = 40000 + (if (statusKind == "All") 2 else 1)
                 }
                 id in PP_ITEMS -> { category = "PP"; helpful = ppEmpty; sort = 30000 }
-                id in BATTLE_ITEMS -> { category = "Battle"; sort = 20000 }
+                id in BATTLE_ITEMS || (map.expandedSpeciesIds && id == NATDEX_X_SP_DEF) -> { category = "Battle"; sort = 20000 }
                 // calcSortValue gives balls, stones and everything else 0 (HealsInBagScreen.lua:182-204).
                 id in 1..12 -> { category = "Balls"; sort = 0 }
                 id in 93..98 -> { category = "Evo"; sort = 0 }
@@ -2631,9 +3118,6 @@ class GbaTracker(
             .values.flatten().distinct().filter { trainerCounts(it) }
         return ids.count { trainerDefeated(it) } to ids.size
     }
-
-    /** NotebookIndexScreen's denominator: every species id but the 252-276 placeholders, 386 in Gen 3. */
-    fun notebookSpeciesTotal(): Int = (1 until 412).count { it !in 252..276 }
 
     /** The species' two possible abilities from the base stats table, for the note view. */
     fun possibleAbilities(species: Int): List<String> {
@@ -2733,7 +3217,7 @@ class GbaTracker(
         if (b.size < 0x50) return null
         val species = b.u16(0)
         if (!speciesIsValid(species)) return null
-        val hpMax = b.u16(0x2C); val hpCur = b.u16(0x28); val level = b.u8(0x2A)
+        val hpMax = b.u16(map.battleMonHp + 4); val hpCur = b.u16(map.battleMonHp); val level = b.u8(map.battleMonHp + 2)
         // The reference's status is the party struct's (Tracker.getPokemon(1, false)), as
         // on the enemy card: gBattleMons + 0x4C is not the status in Nat. Dex's grown struct.
         val status = enemyPartyStatus(species, level, hpCur) ?: 0L
@@ -2986,14 +3470,19 @@ class GbaTracker(
     /**
      * Evolution method and weight per species, from PokemonData.lua - 411
      * entries, Gen 3's internal species count, indexed the same way this
-     * tracker indexes everything else.
+     * tracker indexes everything else. On Nat. Dex, the extension's table
+     * (tools/trainer-data/convert_natdex_species.py): its own evolutions for
+     * the base game's species, Kadabra's Linking Cord and Eevee's eight stones
+     * among them, and the 872 species it adds, to 1283. The base game's table
+     * was used there, wrong for dozens of species and blank past 411
+     * (rc33 audit P1 #67).
      *
      * Evolution is the reference's own string: a bare number means "at that
      * level", anything else names the method (STONE, FRIENDSHIP, TRADE...).
      */
     private val speciesExtra: Map<Int, Triple<String, String, String>> by lazy {
         val out = HashMap<Int, Triple<String, String, String>>()
-        javaClass.getResourceAsStream("/gen3/species-extra.tsv")
+        javaClass.getResourceAsStream(if (map.nameSet == "maxdex") "/gen3/species-extra-maxdex.tsv" else if (map.expandedSpeciesIds) "/gen3/species-extra-natdex.tsv" else "/gen3/species-extra.tsv")
             ?.bufferedReader(Charsets.UTF_8)?.useLines { lines ->
                 lines.forEach { line ->
                     val p = line.split('	')
@@ -3066,8 +3555,9 @@ class GbaTracker(
     fun effectivenessAgainst(species: Int): Map<Double, List<String>> {
         val b = baseStats(species) ?: return emptyMap()
         val out = sortedMapOf<Double, MutableList<String>>(compareByDescending { it })
-        for (atk in Gen3Types.ALL) {
-            val e = Gen3Types.effect(atk, b.type1, b.type2)
+        val natDex = map.expandedSpeciesIds
+        for (atk in Gen3Types.typesFor(natDex)) {
+            val e = Gen3Types.effect(atk, b.type1, b.type2, natDex)
             if (e != 1.0) out.getOrPut(e) { mutableListOf() }.add(Gen3Types.name(atk))
         }
         return out
@@ -3130,7 +3620,7 @@ class GbaTracker(
             if (fullyEvolvedOnly && evolution(id) != null) continue
             var best = 0.0
             for (t in moveTypes) {
-                val e = Gen3Types.effect(t, b.type1, b.type2)
+                val e = Gen3Types.effect(t, b.type1, b.type2, map.expandedSpeciesIds)
                 if (e > best) best = e
             }
             // Shedinja: Wonder Guard blocks anything under 2x, so unless a
@@ -3248,6 +3738,7 @@ class GbaTracker(
         if (ptrBytes.size < 4) return@getOrPut emptyList()
         val addr = ptrBytes.u32(0)
         if (addr !in 0x08000000L..0x09FFFFFFL) return@getOrPut emptyList()
+        if (map.learnsetJambo) return@getOrPut jamboLearnset(addr)
         val out = ArrayList<Pair<Int, Int>>(24)
         if (map.learnsetWide) {
             // Expansion format: {u16 move, u16 level} per entry, 0xFFFF ends.
@@ -3277,16 +3768,35 @@ class GbaTracker(
     }
 
     /**
-     * Healing carried in the Items pocket, as a percentage of [maxHp].
+     * Jambo's learnset format ([GameMap.learnsetJambo], MaxDex): 3-byte {u16 move, u8 level} entries, the list ending at
+     * 00 00 FF, read as the randomizer reads it (Gen3RomHandler.getMovesLearnt). An entry with move 0 is a slot the
+     * build left empty, filled when the randomizer runs; it is skipped, not taken for the end.
+     */
+    private fun jamboLearnset(addr: Long): List<Pair<Int, Int>> {
+        val out = ArrayList<Pair<Int, Int>>(24)
+        for (i in 0 until 64) {
+            val e = memory.read(addr + i * 3L, 3)
+            if (e.size < 3) break
+            val move = e.u16(0)
+            val level = e.u8(2)
+            if (move == 0 && level == 0xFF) break
+            if (move == 0 || level > 100) continue
+            out += level to move
+        }
+        return out
+    }
+
+    /**
+     * Healing carried in the Items and Berries pockets, for a Pokemon with [maxHp] (HealTotals).
      *
      * Gen 3 XORs item quantities with a security key held in SaveBlock2, which is
      * why a naive read shows nonsense counts. Percentage-healing items (Full
      * Restore, berries) contribute their share of max HP; constant ones their
      * flat value, capped at a full heal each.
      */
-    private fun readHeals(maxHp: Int): Pair<Int, Int> {
-        if (map.bagItemsOffset == 0L || maxHp <= 0) return 0 to 0
-        val sb1 = saveBlock1() ?: return 0 to 0
+    private fun readHeals(maxHp: Int): HealTotals {
+        if (map.bagItemsOffset == 0L || maxHp <= 0) return HealTotals.NONE
+        val sb1 = saveBlock1() ?: return HealTotals.NONE
 
         // The security key is in SaveBlock2 in both games (FireRed +0xF20,
         // Emerald +0xAC), NOT in SaveBlock1 where the bag itself lives. Reading
@@ -3295,8 +3805,8 @@ class GbaTracker(
         // asserted below rather than eyeballed.
         val key = readSecurityKey()
 
-        var total = 0.0
-        var count = 0
+        // Item id to quantity: the reference works per item (Program.lua:1669), and two stacks of one item are one.
+        val items = LinkedHashMap<Int, Int>()
         // Items and Berries are two different pockets; both hold healing.
         val pockets = listOf(
             map.bagItemsOffset to map.bagItemsSlots,
@@ -3311,14 +3821,10 @@ class GbaTracker(
                 if (id == 0) continue
                 val qty = b.u16(2) xor key
                 if (qty <= 0 || qty > 999) continue
-                val heal = HEAL_ITEMS[id] ?: continue
-                val perItem = if (heal.second) maxHp * heal.first / 100.0 else heal.first
-                total += minOf(perItem, maxHp.toDouble()) * qty
-                count += qty
+                if (id in HEAL_ITEMS) items[id] = (items[id] ?: 0) + qty
             }
         }
-        val pct = ((total / maxHp) * 100).toInt().coerceIn(0, 9999)
-        return pct to count
+        return HealTotals.of(items, maxHp) { HEAL_ITEMS[it] }
     }
 
     /**
@@ -3378,6 +3884,8 @@ class GbaTracker(
     // route panel without adb: the last 300 adopted ids, with timestamps.
     private var stableMapId: Int? = null
     private var candidateMapId: Int? = null
+    /** The map section and map type of the map [stableMapId] names, from the same header read; null mid-transition. */
+    private var stableMapSection: Pair<Int, Int>? = null
     private val routeLog = ArrayDeque<String>()
     private fun logRoute(id: Int?) {
         // [id] is the raw id the game reports; routeInfo takes the tracker's (Ruby and Sapphire
@@ -3397,6 +3905,33 @@ class GbaTracker(
     private var isWildEncounter = false
     /** The battle on screen is a catching lesson (Wally, the Old Man, the Teachy TV): nobody's encounter. */
     private var lessonBattle = false
+    /**
+     * The battle on screen is a Battle Tent or Battle Frontier battle (Emerald) or a Battle Tower one (Ruby and Sapphire,
+     * Emerald): the game lends a reduced or rental party for it and gives the real one back afterwards (pokeemerald
+     * ReducePlayerPartyToSelectedMons and LoadPlayerParty), so nothing that happens to that party is a Nuzlocke event
+     * (rc32 audit P2 #141). Held after such a battle until, outside a battle, the party reads with nobody at 0 HP or is
+     * another party than the battle's, or a battle that is not one begins: a lost facility battle leaves the entrants
+     * down until the game hands the real party back.
+     */
+    private var facilityHeld = false
+    /** The personality values of the party a facility battle showed: another party out of the battle is the real one back. */
+    private var facilityParty: Set<Long>? = null
+    /** gPlayerPartyCount when the battle began (Battle.partySize): a battler at a party slot past it is a partner's. */
+    private var battlePartySize = 6
+
+    /**
+     * gBattleTypeFlags' facility bits, as each game numbers them. Emerald: BATTLE_TYPE_BATTLE_TOWER (bit 8), DOME,
+     * PALACE, ARENA, FACTORY, PIKE and PYRAMID (bits 16 to 21; the Battle Tents fight as Palace, Arena and Factory).
+     * Ruby and Sapphire: the Battle Tower, bit 8, their only facility. FireRed and LeafGreen use bits 16 to 19 for
+     * other battles (Pokedude, scripted wild, legendary, Trainer Tower: RouteData.lua:244, :253-256), so none there,
+     * and none on Nat. Dex, whose flags are not the vanilla game's.
+     */
+    internal fun isFacilityBattle(flags: Long): Boolean = when {
+        map.expandedSpeciesIds -> false
+        map.routeVersion == "emerald" -> (flags and (0x100L or 0x3F0000L)) != 0L
+        map.routeVersion == "ruby" || map.routeVersion == "sapphire" -> (flags and 0x100L) != 0L
+        else -> false
+    }
     /** This battle began as a Safari Zone encounter (see updateBattleStatus). */
     private var safariBattle = false
 
@@ -3457,14 +3992,16 @@ class GbaTracker(
 
     // ---- Battle.CurrentRoute.encounterArea (Battle.incrementEnemyEncounter) ----
     private var currentArea: String? = null
-    // Tracker.Data.gameStatsFishing / gameStatsRockSmash: taken when the game is
-    // first read (Tracker.lua resets them from the save), then compared at each
-    // battle start, so the first battle after loading is not taken for fishing.
+    // Tracker.Data.gameStatsFishing / gameStatsRockSmash: taken on the first read
+    // outside a battle with the save in (readNow; Tracker.lua resets them from the
+    // save), then compared at each battle start, so the first battle after loading
+    // is not taken for fishing.
     private var fishingStat = -1
     private var rockSmashStat = -1
 
     private fun battleEncounterArea(): String? {
         currentArea?.let { return it }
+        // Only when the tracker started in the middle of a battle: there was no read outside one to take them from.
         if (fishingStat < 0) { fishingStat = readGameStat(12); rockSmashStat = readGameStat(19) }
         val terrain = if (map.battleTerrain != 0L) rw(map.battleTerrain) else 0
         val flags = rd(map.battleTypeFlags)
@@ -3588,12 +4125,15 @@ class GbaTracker(
             // BATTLE_TYPE_WALLY_TUTORIAL / OLD_MAN_TUTORIAL is bit 9 in every Gen 3 game; FireRed and LeafGreen's
             // Teachy TV battles are BATTLE_TYPE_POKEDUDE, bit 16 (pokeemerald and pokefirered constants/battle.h).
             lessonBattle = (flags and 0x200L) != 0L || (isFrlg && (flags and 0x10000L) != 0L)
+            facilityHeld = isFacilityBattle(flags)
+            facilityParty = null
+            // Battle.beginNewBattle (Battle.lua:764-769) reads gPlayerPartyCount once, here: a slot past it is a partner's.
+            battlePartySize = rb(map.partyCount).takeIf { it in 1..6 } ?: 6
             inBattleScreen = true
             battleDataReady = false
             safariBattle = fakeBattle
             safariSeenSpecies = -1
-            seenForSpecies = -1
-            movesSeen.clear()
+            clearBattleMoves()
         } else if (inBattleScreen && !battleDataReady && atDataStart) {
             battleDataReady = true
         } else if (inBattleScreen && !statusActive && atDataEnd) {
@@ -3602,8 +4142,8 @@ class GbaTracker(
             safariBattle = false
             isWildEncounter = false
             lessonBattle = false
-            seenForSpecies = -1
-            movesSeen.clear()
+            battlePartySize = 6
+            clearBattleMoves()
         }
         return inBattleScreen && battleDataReady
     }
@@ -3630,10 +4170,13 @@ class GbaTracker(
         return out
     }
 
-    /** Battle.lua:276: the player's battler 0, its party slot; null where gBattlerPartyIndexes is unknown. */
-    private fun readOwnOnField(): Int? {
+    /**
+     * Battle.lua:276 and :289: a player's battler, 0 or (in a double battle) 2, its party slot; null where
+     * gBattlerPartyIndexes is unknown or holds no party slot.
+     */
+    private fun readOwnOnField(battler: Int = 0): Int? {
         if (map.battlerPartyIndexes == 0L) return null
-        val idx = memory.read(map.battlerPartyIndexes, 2)
+        val idx = memory.read(map.battlerPartyIndexes + battler * 2L, 2)
         return if (idx.size == 2) idx.u16(0).takeIf { it in 0..5 } else null
     }
 
@@ -3685,9 +4228,9 @@ class GbaTracker(
         return EnemyInfo(
             species = ghostSpeciesId,
             speciesName = GHOST_NAME,
-            level = b.u8(0x2A),
-            curHp = b.u16(0x28),
-            maxHp = b.u16(0x2C),
+            level = b.u8(map.battleMonHp + 2),
+            curHp = b.u16(map.battleMonHp),
+            maxHp = b.u16(map.battleMonHp + 4),
             type1 = UNKNOWN_TYPE,
             type2 = UNKNOWN_TYPE,
             base = null,
@@ -3697,24 +4240,61 @@ class GbaTracker(
         )
     }
 
-    private fun readEnemy(): EnemyInfo? {
+    /**
+     * The species of the party Pokemon a battler that used Transform is, or null when it has not used it (or its party
+     * slot cannot be read, when the battle struct stands). Transform copies every byte of the battle struct below pp:
+     * species, stats, moves, the IV word with the ability bit, stages, ability and types (pokeemerald
+     * Cmd_transformdataexecution; CFRU general_bs_commands.c:3446-3471), and sets STATUS2_TRANSFORMED. The reference reads
+     * a battler as the party Pokemon it is (Battle.lua:276), so a wild Ditto that copied your Pokemon stayed a Ditto
+     * there, while here it took your Pokemon's name and card and was logged as seen on the route (rc32 audit P2 #131).
+     */
+    private fun transformedSpecies(battler: Int, struct: ByteArray): Int? = transformedMon(battler, struct)?.species
+
+    /** The Pokemon in [battler]'s party slot when its battle struct has used Transform; null otherwise or when unreadable. */
+    private fun transformedMon(battler: Int, struct: ByteArray): PokemonDecoder.Mon? {
+        if (struct.size < map.status2Offset + 4 || (struct.u32(map.status2Offset) and STATUS2_TRANSFORMED) == 0L) return null
+        return partyMonOf(battler)
+    }
+
+    /** gBattlerPartyIndexes[battler] into the player's party (even battlers) or the enemy's (odd), decoded; null when unreadable. */
+    private fun partyMonOf(battler: Int): PokemonDecoder.Mon? {
+        if (map.battlerPartyIndexes == 0L) return null
+        val idxB = memory.read(map.battlerPartyIndexes + battler * 2L, 2)
+        val idx = if (idxB.size == 2) idxB.u16(0) else return null
+        val party = if (battler % 2 == 0) map.party else map.enemyParty
+        val size = map.monLayout.size
+        if (idx !in 0..5 || party == 0L) return null
+        val bytes = memory.read(party + idx.toLong() * size, size)
+        if (bytes.size < size || PokemonDecoder.isEmpty(bytes)) return null
+        return PokemonDecoder.decode(bytes, map.monLayout).takeIf { sane(it) }
+    }
+
+    /**
+     * An opposing [battler]'s card: 1, or 3 for the right-hand one of a double battle (Combatants.LeftOther and
+     * RightOther), everything read from that battler's own struct, party slot and stage block.
+     */
+    private fun readEnemy(battler: Int = 1): EnemyInfo? {
         val stride = map.battleMonSize
-        val b = memory.read(map.battleMons + stride, stride)
+        val b = memory.read(map.battleMons + stride.toLong() * battler, stride)
         if (b.size < stride) return null
-        val species = b.u16(0x00)
         // Not just "not zero": a stale battle struct holds values far outside
         // any species range, and rendering one puts an impossible number and
         // an impossible HP on the card.
-        if (!speciesIsValid(species)) return null
+        if (!speciesIsValid(b.u16(0x00))) return null
+        // A transformed opponent is the Pokemon in its party slot; its level, HP, stages and the types it took stay the
+        // battle struct's, as the reference keeps them (Program.getPokemonTypes reads gBattleMons, Program.lua:1355-1363).
+        val own = transformedMon(battler, b)
+        val species = own?.species ?: b.u16(0x00)
+        // Its moves and their PP too: the reference's card is Tracker.getPokemon(slot, false), the Pokemon in gEnemyParty
+        // (Program.lua:855-871), its moves and PP read from the party struct (Program.lua:999-1003, DataHelper.lua:268-331),
+        // which Transform does not touch. The battle struct holds the copied moves at 5 PP, and those were shown as its
+        // own (RC35-NOTICED N #35).
+        val moveIds = own?.moves ?: List(4) { b.u16(0x0C + it * 2) }
+        val pps = own?.pp ?: List(4) { b.u8(map.battleMonPp + it) }
 
-        if (species != seenForSpecies) { seenForSpecies = species; movesSeen.clear() }
-        if (map.battleResults != 0L) {
-            val lu = memory.read(map.battleResults + 0x24, 2)
-            if (lu.size == 2) {
-                val move = lu.u16(0)
-                if (move in 1..2000) movesSeen.add(move)
-            }
-        }
+        // What this Pokemon has been seen to use this battle (pollMoves), by its party slot: a foe that switches out and
+        // back keeps its moves, and nothing another foe used lands on it.
+        val movesSeen = enemySlotOf(battler)?.let { s -> synchronized(battleMoves) { battleMoves[s]?.toList() } } ?: emptyList()
 
         val base = baseStats(species)
         // 0x20 is the ability the enemy ACTUALLY has. It is kept internal:
@@ -3730,14 +4310,16 @@ class GbaTracker(
             species = species,
             speciesName = speciesName(species),
             evo = EvoText.forEnemy(evolution(species)),
-            pid = b.u32(0x48),
-            moves = List(4) { b.u16(0x0C + it * 2) },
-            movePps = List(4) { b.u8(0x24 + it) },
-            level = b.u8(0x2A),
-            curHp = b.u16(0x28),
-            maxHp = b.u16(0x2C),
-            type1 = b.u8(0x21),
-            type2 = b.u8(0x22),
+            // Personality sits just below status1 and status2: +0x48 vanilla, +0x4C on Nat. Dex, whose 12-letter nickname
+            // moves everything after it up 4 (rc33 audit P1 #73: +0x48 there is the experience).
+            pid = b.u32(map.status2Offset - 8),
+            moves = moveIds,
+            movePps = pps,
+            level = b.u8(map.battleMonHp + 2),
+            curHp = b.u16(map.battleMonHp),
+            maxHp = b.u16(map.battleMonHp + 4),
+            type1 = b.u8(map.battleMonTypes),
+            type2 = b.u8(map.battleMonTypes + 1),
             base = base,
             movesSeen = movesSeen.map { moveName(it) },
             moveRows = movesSeen.map { id ->
@@ -3747,22 +4329,23 @@ class GbaTracker(
                     name = moveName(id),
                     // "Count enemy PP usage", on by default: the opponent's real
                     // remaining PP from its battle struct (moves at 0x0C, PP at
-                    // 0x24) for a move in its moveset now; base PP otherwise.
-                    pp = (0 until 4).firstOrNull { TrackerPrefs.countEnemyPp && b.u16(0x0C + it * 2) == id }?.let { b.u8(0x24 + it) } ?: d?.get(3) ?: 0,
+                    // 0x24), or its party slot's after Transform, for a move in its
+                    // moveset now; base PP otherwise.
+                    pp = (0 until 4).firstOrNull { TrackerPrefs.countEnemyPp && moveIds.getOrNull(it) == id }?.let { pps.getOrNull(it) } ?: d?.get(3) ?: 0,
                     ppMax = null,          // an enemy's used PP is not readable
                     power = d?.get(0),
                     acc = d?.get(2),
                     type = d?.get(1),
-                    category = d?.let { gen3Category(it[1], it[0]) },
+                    category = d?.let { categoryOf(it) },
                     priority = d?.get(4)?.takeIf { it in -7..7 },
                     contact = d?.let { (it[5] and 1) != 0 },
                 )
             },
             abilityGuess = possible,
             abilityId = abilityId,
-            statStages = readStatStages(1),
+            statStages = readStatStages(battler),
             // From the enemy PARTY slot, not from gBattleMons. See enemyPartyStatus.
-            statusCondition = enemyPartyStatus(species, b.u8(0x2A), b.u16(0x28))
+            statusCondition = enemyPartyStatus(species, b.u8(map.battleMonHp + 2), b.u16(map.battleMonHp))
                 ?.let(::statusName) ?: "",
         )
     }
@@ -3883,7 +4466,7 @@ class GbaTracker(
      */
     /**
      * The player's side in battle: battler 0, and battler 2 in a double. The
-     * ability is the mon's own (the slot bit in the IV word, +0x14 bit 31,
+     * ability is the mon's own (its party Pokemon's species and ability slot,
      * against its base stats), as the reference's PokemonData.getAbilityId(id,
      * abilityNum) reads it, not the live +0x20 byte that Trace or Skill Swap
      * change.
@@ -3894,11 +4477,20 @@ class GbaTracker(
         val n = if (nB.isEmpty()) 2 else (nB[0].toInt() and 0xFF)
         val out = ArrayList<Pair<Int, String>>(2)
         for (i in if (n >= 4) listOf(0, 2) else listOf(0)) {
-            val b = memory.read(map.battleMons + i.toLong() * map.battleMonSize, 0x18)
+            // The party Pokemon the battler is (Battle.lua:485-500: Tracker.getPokemon and PokemonData.getAbilityId),
+            // not its battle struct: after your Transform that holds the foe's species and ability bit, and the foe's
+            // real ability was recorded with no message in the game. A battler past the party's size when the battle
+            // began is a partner's, Steven's in Emerald's multi battle, and is not yours to record (Battle.lua:486, :496;
+            // rc32 audit P2 #131). The battle struct stands only where the party slot cannot be read.
+            val idxB = if (map.battlerPartyIndexes == 0L) ByteArray(0) else memory.read(map.battlerPartyIndexes + i * 2L, 2)
+            if (idxB.size == 2 && idxB.u16(0) >= battlePartySize) continue
+            val b = memory.read(map.battleMons + i.toLong() * map.battleMonSize, map.battleMonSize)
             if (b.size < 0x18) continue
-            val sp = b.u16(0)
+            val own = partyMonOf(i)
+            if (own == null && b.size >= map.status2Offset + 4 && (b.u32(map.status2Offset) and STATUS2_TRANSFORMED) != 0L) continue
+            val sp = own?.species ?: b.u16(0)
             val base = baseStats(sp) ?: continue
-            val slot = ((b.u32(0x14) ushr 31) and 1L).toInt()
+            val slot = own?.abilitySlot ?: ((b.u32(0x14) ushr 31) and 1L).toInt()
             val id = if (slot == 1 && base.ability2 != 0) base.ability2 else base.ability1
             if (sp != 0 && id != 0) out += sp to abilityName(id)
         }
@@ -3917,16 +4509,74 @@ class GbaTracker(
     private val pendingReveals = ArrayList<Pair<Int, String>>()
 
     fun pollAbilityTrigger() {
-        val r = runCatching { readAbilityTrigger() }.getOrNull() ?: return
+        // The move tracking wants the same fast polls: a move action can be over in a quarter second at 4x.
+        if (inBattleScreen && battleDataReady) runCatching { pollMoves() }
+        val r = runCatching { readAbilityTriggers() }.getOrNull() ?: return
         synchronized(pendingReveals) {
-            // The same message stays up across several polls; record it once.
-            if (pendingReveals.lastOrNull() != r) pendingReveals += r
+            // The same message stays up across several polls, and one message can reveal two: each once.
+            for (p in r) if (p !in pendingReveals) pendingReveals += p
+        }
+    }
+
+    /**
+     * One poll of the move tracking (EnemyMoveWatch, Battle.lua:376-445), from the fast battle poll and from read(): a
+     * move it records is filed under the opposing party slot that used it. Off in a ghost battle (Battle.lua:390) and
+     * on a map without the reads.
+     */
+    private fun pollMoves() {
+        if (map.currentTurnActionNumber == 0L || map.actionsByTurnOrder == 0L || map.hitMarker == 0L || map.battleResults == 0L ||
+            map.battlerAttacker == 0L || map.battlersCount == 0L || map.battleCommunication == 0L) return
+        if (isGhostBattle()) return
+        val n = rb(map.battlersCount).coerceIn(2, 4)
+        val actionNumber = rb(map.currentTurnActionNumber)
+        val last = memory.read(map.battleResults + 0x22, 4)
+        if (last.size < 4) return
+        val frame = EnemyMoveWatch.Frame(
+            battlers = n,
+            attacker = rb(map.battlerAttacker),
+            scriptingBattler = if (map.scriptingBattler != 0L) rb(map.scriptingBattler) % n else 0,
+            actionNumber = actionNumber,
+            action = rb(map.actionsByTurnOrder + actionNumber),
+            confirmedCount = rb(map.battleCommunication + 4),
+            hitMarker = rd(map.hitMarker),
+            script = if (map.scriptCurrInstr != 0L) rd(map.scriptCurrInstr) else 0L,
+            lastMovePlayer = last.u16(0),
+            lastMoveOpponent = last.u16(2),
+        )
+        val (battler, move) = moveWatch.tick(frame, map.moveScripts, if (map.expandedSpeciesIds) 2000 else 354, ::partyMovesOf) ?: return
+        val slot = enemySlotOf(battler) ?: return
+        synchronized(battleMoves) { battleMoves.getOrPut(slot) { LinkedHashSet() }.add(move) }
+    }
+
+    private fun clearBattleMoves() {
+        synchronized(battleMoves) { battleMoves.clear() }
+        moveWatch.reset()
+    }
+
+    /** gBattlerPartyIndexes: the enemy party slot an opposing [battler] is; null for your side or when unknown. */
+    private fun enemySlotOf(battler: Int): Int? {
+        if (battler % 2 == 0 || map.battlerPartyIndexes == 0L || map.enemyParty == 0L) return null
+        val idx = memory.read(map.battlerPartyIndexes + battler * 2L, 2)
+        return if (idx.size == 2) idx.u16(0).takeIf { it in 0..5 } else null
+    }
+
+    /** An opposing [battler]'s four moves as its Pokemon has them in its party (Battle.lua:432); empty when unreadable. */
+    private fun partyMovesOf(battler: Int): List<Int> {
+        val slot = enemySlotOf(battler) ?: return emptyList()
+        val size = map.monLayout.size
+        val bytes = memory.read(map.enemyParty + slot.toLong() * size, size)
+        if (bytes.size < size || PokemonDecoder.isEmpty(bytes)) return emptyList()
+        return PokemonDecoder.decode(bytes, map.monLayout).moves
+    }
+
+    private fun enemyMovesThisBattle(team: List<EnemyPartyMon>): List<EnemyMovesSeen> = synchronized(battleMoves) {
+        battleMoves.entries.sortedBy { it.key }.mapNotNull { (slot, ids) ->
+            team.firstOrNull { it.slot == slot }?.let { m -> EnemyMovesSeen(m.species, m.level, ids.map { it to moveName(it) }) }
         }
     }
 
     private fun drainReveals(): List<Pair<Int, String>> = synchronized(pendingReveals) {
-        val now = readAbilityTrigger()
-        if (now != null && pendingReveals.lastOrNull() != now) pendingReveals += now
+        for (p in readAbilityTriggers()) if (p !in pendingReveals) pendingReveals += p
         val out = pendingReveals.toList(); pendingReveals.clear(); out
     }
 
@@ -3959,13 +4609,23 @@ class GbaTracker(
         return if (slot == 1 && base.ability2 != 0) base.ability2 else base.ability1
     }
 
-    internal fun readAbilityTrigger(): Pair<Int, String>? {
-        if (map.scriptCurrInstr == 0L || abilityScripts.isEmpty()) return null
+    /** The first of [readAbilityTriggers], or null. */
+    internal fun readAbilityTrigger(): Pair<Int, String>? = readAbilityTriggers().firstOrNull()
+
+    /**
+     * Every ability the battle script on screen reveals. The reference runs each kind of row as a check of its own and
+     * tracks every battler that matches (Battle.checkAbilitiesToTrack, Battle.lua:616-726), so one message can reveal
+     * two: Clear Body, Hyper Cutter or White Smoke stopping Intimidate has a BATTLER row (the Intimidate) and a
+     * REVERSE_BATTLER row (what stopped it) at the same address, the one address in any table with two. Returning at
+     * the first match kept your Intimidate and dropped the foe's ability (rc32 audit P2 #132).
+     */
+    internal fun readAbilityTriggers(): List<Pair<Int, String>> {
+        if (map.scriptCurrInstr == 0L || abilityScripts.isEmpty()) return emptyList()
         // Battle.lua:505: checkAbilitiesToTrack is skipped in a ghost battle.
-        if (isGhostBattle()) return null
+        if (isGhostBattle()) return emptyList()
         val msgB = memory.read(map.scriptCurrInstr, 4)
-        if (msgB.size < 4) return null
-        val rows = abilityScripts[msgB.u32(0)] ?: return null
+        if (msgB.size < 4) return emptyList()
+        val rows = abilityScripts[msgB.u32(0)] ?: return emptyList()
 
         val nB = memory.read(map.battlersCount, 1)
         val n = (if (nB.isEmpty()) 0 else nB[0].toInt() and 0xFF)
@@ -3996,33 +4656,47 @@ class GbaTracker(
             val b = memory.read(map.battleMons + i * map.battleMonSize.toLong(), 2)
             return if (b.size < 2) 0 else b.u16(0)
         }
-        fun reveal(i: Int): Pair<Int, String>? {
+        val out = LinkedHashSet<Pair<Int, String>>()
+        fun reveal(i: Int) {
             val sp = speciesOf(i); val ab = abilityOf(i)
-            return if (sp != 0 && ab != 0) sp to abilityName(ab) else null
+            if (sp != 0 && ab != 0) out += sp to abilityName(ab)
+        }
+        // Trace: the game writes the traced ability into the holder's live byte before it runs this script (CFRU
+        // ability_battle_effects.c:760-766, as pokeemerald's ABILITYEFFECT_TRACE), so that byte never read Trace here and
+        // the reveal never fired. The reference tests its own record of the holder, still Trace (Battle.lua:637), and
+        // reveals the Pokemon named in gBattleTextBuff1 + 2 (:646-649); without that address, the other side in a single.
+        fun traced(holder: Int): Int? {
+            if (map.battleTextBuff1 != 0L) memory.read(map.battleTextBuff1 + 2, 1).takeIf { it.size == 1 }?.let { b ->
+                val t = b[0].toInt() and 0xFF
+                if (t < n && t != holder) return t
+            }
+            return if (n == 2) 1 - holder else null
         }
 
         for ((trigger, ids, scope) in rows) {
             when (trigger) {
-                "BATTLER" -> if (abilityOf(battler) in ids) {
-                    // Trace: the traced ability belongs to the OTHER side.
-                    return if (abilityOf(battler) == 36 && n == 2)
-                        reveal(1 - battler) else reveal(battler)
+                "BATTLER" -> when {
+                    TRACE in ids && partyAbility(battler) == TRACE -> traced(battler)?.let { reveal(it) }
+                    abilityOf(battler) in ids -> reveal(battler)
                 }
-                "REVERSE_BATTLER" -> if (abilityOf(target) in ids) return reveal(target)
-                "ATTACKER" -> if (abilityOf(target) in ids) return reveal(target)
-                "REVERSE_ATTACKER" -> if (abilityOf(attacker) in ids) return reveal(attacker)
+                // Battle.lua:656-663: the target's ability stopped the battler's, and both are tracked.
+                "REVERSE_BATTLER" -> if (abilityOf(target) in ids) { reveal(target); reveal(battler) }
+                "ATTACKER" -> if (abilityOf(target) in ids) reveal(target)
+                "REVERSE_ATTACKER" -> if (abilityOf(attacker) in ids) reveal(attacker)
                 "STATUS_INFLICT" -> if (abilityOf(battler) in ids &&
-                    battler == target) return reveal(battler)
+                    battler == target) reveal(battler)
                 "BATTLE_TARGET" -> when (scope) {
-                    "other" -> if (abilityOf(attacker) in ids) return reveal(attacker)
-                    "both" -> for (i in 0 until minOf(n, 2)) {
-                        if (abilityOf(i) in ids) return reveal(i)
+                    "other" -> if (abilityOf(attacker) in ids) reveal(attacker)
+                    // Battle.lua:713-724: the Damp check walks every battler, 0 to numBattlers - 1. It stopped at the first
+                    // two, so a doubles partner's Damp, battler 2 or 3, was never revealed (RC35-NOTICED N #36).
+                    "both" -> for (i in 0 until n) {
+                        if (abilityOf(i) in ids) reveal(i)
                     }
-                    else -> if (abilityOf(target) in ids) return reveal(target)
+                    else -> if (abilityOf(target) in ids) reveal(target)
                 }
             }
         }
-        return null
+        return out.toList()
     }
 
     // ---- The Nuzlocke reads (2026-09-29): the rules engine's extra facts, all cheap or cached ----
@@ -4030,6 +4704,8 @@ class GbaTracker(
     private var nuzPrevInBattle = false
     private var nuzCaps: com.ironmonone.tracker.nuzlocke.LevelCapTable? = null
     private var nuzCapTries = 0
+    /** The rival [nuzCaps] was worked out for. */
+    private var nuzCapsRival: String? = null
     private val nuzOpponents = HashMap<Int, OpponentInfo>()
 
     /**
@@ -4039,6 +4715,11 @@ class GbaTracker(
      * (BossCap.fromRom). A read that fell short is tried again on later polls, a few times, and then left.
      */
     internal fun levelCaps(): com.ironmonone.tracker.nuzlocke.LevelCapTable? {
+        // A rival learned (or restored) after the table was read changes FireRed and LeafGreen's Champion: the table is
+        // read again for it. It was cached for good on the first poll, so the Champion's cap stayed the highest of all
+        // three teams for the whole run (rc32 audit P2 #130).
+        val rival = rivalChoice
+        if (rival != nuzCapsRival) { nuzCaps = null; nuzCapTries = 0; nuzCapsRival = rival }
         nuzCaps?.let { if (it.fromRom || nuzCapTries >= 20 || !hasTrainerData) return it }
         val key = com.ironmonone.tracker.nuzlocke.LevelCapTable.gameKey(map.routeVersion) ?: return null
         val standard = com.ironmonone.tracker.nuzlocke.LevelCapTable.standard(key)
@@ -4048,8 +4729,8 @@ class GbaTracker(
         val levels = HashMap<String, Int>()
         for (b in standard.bosses) {
             // FireRed and LeafGreen's Champion has one entry per rival starter: the player's own once the rival is known.
-            val ids = if (b.trainerIds.size > 1 && rivalChoice != null)
-                b.trainerIds.filter { whichRival(it) == rivalChoice }.ifEmpty { b.trainerIds } else b.trainerIds
+            val ids = if (b.trainerIds.size > 1 && rival != null)
+                b.trainerIds.filter { whichRival(it) == rival }.ifEmpty { b.trainerIds } else b.trainerIds
             val level = ids.mapNotNull { id -> trainer(id)?.party?.maxOfOrNull { it.level }?.takeIf { it in 1..100 } }.maxOrNull()
             if (level != null) levels[b.key] = level
         }
@@ -4134,6 +4815,10 @@ class GbaTracker(
                 caps = levelCaps(),
                 beaten = nuzBeaten(badges),
                 lesson = inBattle && lessonBattle,
+                facility = facilityHeld,
+                staticsGame = when (map.routeVersion) { "ruby", "sapphire" -> "rs"; "emerald" -> "e"; else -> "frlg" },
+                mapSection = stableMapSection?.first ?: -1,
+                mapType = stableMapSection?.second ?: -1,
             )
         }.getOrNull()
     }

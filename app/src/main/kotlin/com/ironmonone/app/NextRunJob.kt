@@ -43,10 +43,19 @@ object NextRunJob {
      * Java heap a stage needs beyond what the app already uses: White 2, the
      * largest, peaked near 80 MB above the app's own on the emulator, and a
      * GBA game far below that. Twice that, so a stage never pushes the app
-     * to its heap limit.
+     * to its heap limit. A GBA or Game Boy stage holds its ROM twice before
+     * any table (the engine's rom and originalRom), and a Nat. Dex build is
+     * 32 MB: the flat 64 MB was those two copies with nothing to spare, so the
+     * need grows with the ROM ([heapNeed], rc32 audit P3 #33).
      */
     private const val HEAP_DS = 160L shl 20
     private const val HEAP_OTHER = 64L shl 20
+    /** Beyond a GBA ROM's two copies: the tables, the log and the rest of a stage. */
+    private const val HEAP_MARGIN = 32L shl 20
+
+    /** The heap a stage of a [platform] game needs, from the size of the ROM it randomizes. */
+    internal fun heapNeed(platform: Platform, romBytes: Long): Long =
+        if (platform == Platform.NDS) HEAP_DS else maxOf(HEAP_OTHER, 2 * romBytes + HEAP_MARGIN)
 
     /** Free space left after a stage: at least this much, and at least two runs' worth. */
     private const val SPACE_FLOOR = 512L shl 20
@@ -113,25 +122,33 @@ object NextRunJob {
     }
 
     /**
-     * The worker told what is wanted of it. One making a stage for [keep] is
-     * raised to normal priority to finish sooner. Any other is interrupted:
-     * asleep it wakes and leaves, and randomizing it stops at its next random
-     * draw (RandomSource), so a stage nobody will take is never waited for.
+     * The worker told what is wanted of it, raised to normal priority either
+     * way ([released]). One making a stage for [keep] finishes sooner. Any
+     * other is interrupted: asleep it wakes and leaves, and randomizing it
+     * stops at its next random draw (RandomSource), so a stage nobody will
+     * take is never waited for longer than it must be.
      */
     private fun release(keep: NextRun.Recipe?) {
         val w = synchronized(lock) { worker } ?: return
         if (!w.isAlive) return
-        if (keep != null && making == keep) {
-            workerTid.takeIf { it != 0 }?.let { tid ->
-                runCatching { Process.setThreadPriority(tid, Process.THREAD_PRIORITY_DEFAULT) }
-            }
-        } else w.interrupt()
+        released(keep, making, workerTid, raise = { tid -> runCatching { Process.setThreadPriority(tid, Process.THREAD_PRIORITY_DEFAULT) } }, interrupt = { w.interrupt() })
+    }
+
+    /**
+     * What [release] does to a live worker: raised to normal priority whatever it makes, and interrupted unless it makes
+     * the stage wanted. A stage nobody will take stops only at its next random draw, and a DS game's load and final
+     * write have none: left at background priority it ran on in the background while NEW RUN waited on its lock
+     * (rc32 audit P3 #34).
+     */
+    internal fun <R> released(keep: R?, making: R?, tid: Int, raise: (Int) -> Unit, interrupt: () -> Unit) {
+        if (tid != 0) raise(tid)
+        if (keep == null || making != keep) interrupt()
     }
 
     /** The app build, part of every recipe: a reinstall can randomize differently with the same engine. */
     fun appStamp(context: Context): String = runCatching {
         val p = context.packageManager.getPackageInfo(context.packageName, 0)
-        "${p.versionName} ${p.longVersionCode} ${p.lastUpdateTime}"
+        "${p.versionName} ${UpdateCheck.versionCode(p)} ${p.lastUpdateTime}"
     }.getOrDefault("unknown")
 
     /**
@@ -166,7 +183,7 @@ object NextRunJob {
             }
             val rt = Runtime.getRuntime()
             val used = rt.totalMemory() - rt.freeMemory()
-            val needHeap = if (kind.platform == Platform.NDS) HEAP_DS else HEAP_OTHER
+            val needHeap = heapNeed(kind.platform, prepared.length())
             val mem = ActivityManager.MemoryInfo()
             runCatching { (app.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager).getMemoryInfo(mem) }
             if (rt.maxMemory() - used < needHeap || mem.lowMemory || mem.availMem < mem.threshold + needHeap) {

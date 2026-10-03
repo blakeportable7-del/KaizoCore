@@ -11,16 +11,21 @@ import java.io.FileOutputStream
  * untouched.
  */
 object SafeWrite {
-    fun bytes(file: File, bytes: ByteArray): Boolean {
+    fun bytes(file: File, bytes: ByteArray): Boolean = write(file, bytes) { replace -> replace(); true }
+
+    /**
+     * [bytes] with its last step, the rename, handed to [commit], which runs it or declines it (and returns false):
+     * DiskWriter declines a write that was forgotten while it was being synced. True only when the file was replaced.
+     */
+    internal fun write(file: File, bytes: ByteArray, commit: (replace: () -> Unit) -> Boolean): Boolean {
         val tmp = File(file.parentFile, file.name + ".tmp")
         return runCatching {
             file.parentFile?.mkdirs()
             FileOutputStream(tmp).use { it.write(bytes); it.fd.sync() }
             // One atomic replace, on Android and on a desktop JVM alike. It used to delete the file and rename again
             // when the first rename failed, and a full phone left the .tmp behind (rc33 audit P0-8).
-            StateSlots.replace(tmp, file)
-            true
-        }.getOrElse { if (tmp.isFile) tmp.delete(); false }
+            commit { StateSlots.replace(tmp, file) }
+        }.getOrElse { false }.also { done -> if (!done && tmp.isFile) tmp.delete() }
     }
 
     fun text(file: File, text: String): Boolean = bytes(file, text.toByteArray(Charsets.UTF_8))

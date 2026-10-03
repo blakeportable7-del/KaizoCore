@@ -1,0 +1,16 @@
+# The DS core, app/src/main/jniLibs/<abi>/libmelonds_libretro_android.so, built here from source (rc34, 2026-10-03).
+# Rebuild: python tools/cores/build_core.py melonds (it checks the result against the hashes below).
+# Until rc34 it was the libretro buildbot's nightly of 2026-09-07 (built with NDK r29), from the commit below unpatched.
+repo: https://github.com/libretro/melonDS.git
+commit: 66b5d2634cd0a79030562811e6e05f5532f800ba
+commit-date: 2026-07-19 'Merge pull request #214 from cscd98/bind-dix'
+version: melonDS 0.9.3 (MELONDS_VERSION in Makefile.common)
+license: GPL-3.0 (the repository's LICENSE)
+patch: 0001-unload-stops-the-render-thread-and-frees-the-screen-buffer.patch sha256=e6dcd864c0d6cc2f7c4e2b3a96d3f3f1820264795525d9894dc865377b4c895e
+patch: 0002-3d-depth-no-longer-reads-a-value-it-never-set.patch sha256=60e3260c20618ebb57907216c2076c6fd4183a78162112737743bd40a20b3929
+ndk: 26.1.10909125
+build: -C jni APP_PLATFORM=android-21 APP_LDFLAGS=-Wl,-z,max-page-size=16384
+module: libretro.so
+ship-as: libmelonds_libretro_android.so
+arm64-v8a: sha256=ae7291d2e2a8b02728cf8e9dd12f7f4f9cbb94f778ee58c49108df19c7b7402e build-id=67d7bced4153607873c7ab53750dd59ab909b73f symbols-sha256=dbbc76001efe8f640569933db1987ddcd56ee92c2cf35c7afafbeb904d593f66
+x86_64: sha256=cb3b942d02ef17865b9b208bc73cecf5520f747920e69af8f90b181882b5c2fc build-id=843dc4c495d41166456eee8912d61b4a2ca976f0 symbols-sha256=9c28955eb2503c959c9860d16f0952fabca6a8183fbd8af94afeef96e69c2c02

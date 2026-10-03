@@ -64,6 +64,114 @@ class NuzlockeEditsTest {
     }
 
     @Test
+    fun `caught tapped by mistake and set back takes the Pokemon it made off the roster`() {
+        // rc32 audit P2 #139: the made-up Pidgey stayed alive in a box for good, a dupe of its line.
+        val s = Sim().starter()
+        s.wildEncounter(foe(100, Sp.PIDGEY, "PIDGEY", 4), BattleEnd.WON)
+        assertEquals(Outcome.FAINTED, s.enc("Route 3")!!.outcome)
+        assertNull(s.enc("Route 3")!!.monId)
+        edits(s).setEncounter(route3, Sp.PIDGEY, "PIDGEY", 4, Outcome.CAUGHT, s.now)
+        val made = assertNotNull(s.enc("Route 3")!!.monId)
+        assertTrue(made < 0 && s.ledger.roster.getValue(made).alive)
+        edits(s).setEncounter(route3, Sp.PIDGEY, "PIDGEY", 4, Outcome.FAINTED, s.now)
+        assertTrue(s.ledger.roster.keys.none { it < 0 }, "the Pokemon made for the area is gone")
+        assertNull(s.enc("Route 3")!!.monId)
+        assertEquals(Outcome.FAINTED, s.enc("Route 3")!!.outcome)
+        assertEquals(listOf(1L), s.ledger.alive.map { it.id }, "only the starter is alive")
+        // Its line is no dupe now: a Pidgeotto on Route 4 is that area's first encounter.
+        s.moveTo("Route 4")
+        s.wildEncounter(foe(110, Sp.PIDGEOTTO, "PIDGEOTTO", 18), BattleEnd.WON)
+        assertEquals("Pidgeotto", s.enc("Route 4")!!.speciesName)
+    }
+
+    /**
+     * RC35-NOTICED N #37: a caught area set to another Pokemon kept the old one's link, so its roster entry stayed the old
+     * species, and the dupes clause went on blocking the old line and letting the new one through.
+     */
+    @Test
+    fun `a caught encounter set to another Pokemon changes the Pokemon behind it`() {
+        val s = Sim().starter()
+        edits(s).setEncounter(route3, Sp.PIDGEY, "PIDGEY", 4, Outcome.CAUGHT, s.now)
+        val made = assertNotNull(s.enc("Route 3")!!.monId)
+        edits(s).setEncounter(route3, Sp.SPEAROW, "SPEAROW", 6, Outcome.CAUGHT, s.now)
+        assertEquals(made, s.enc("Route 3")!!.monId, "the Pokemon made for the area stands for the new catch")
+        val mon = s.ledger.roster.getValue(made)
+        assertEquals(listOf(Sp.SPEAROW.toLong(), 6L), listOf(mon.species.toLong(), mon.level.toLong()))
+        assertEquals("Spearow", mon.speciesName)
+        assertEquals(1, s.ledger.roster.keys.count { it < 0 }, "no second Pokemon made")
+        // Pidgey's line is open again, and Spearow's is the one taken.
+        s.moveTo("Route 4")
+        s.wildEncounter(foe(110, Sp.PIDGEOTTO, "PIDGEOTTO", 18), BattleEnd.WON)
+        assertEquals("Pidgeotto", s.enc("Route 4")!!.speciesName)
+        s.moveTo("Route 5")
+        s.wildEncounter(foe(111, Sp.SPEAROW, "SPEAROW", 7), BattleEnd.WON)
+        assertNull(s.enc("Route 5"), "a Spearow is a dupe now")
+
+        // A Pokemon the tracker saw: its own line keeps it, as an evolution or a level put right is still that Pokemon.
+        val route6 = AreaKey("Route 6", "Route 6")
+        s.moveTo("Route 6")
+        s.catchIt(foe(120, Sp.RATTATA, "RATTATA", 5), mon(120, Sp.RATTATA, "RATTATA", 5))
+        assertEquals(120L, s.enc("Route 6")!!.monId)
+        edits(s).setEncounter(route6, Sp.RATICATE, "RATICATE", 20, Outcome.CAUGHT, s.now)
+        assertEquals(120L, s.enc("Route 6")!!.monId)
+        // Another line lets it go, and the area's catch gets a Pokemon of its own; the one the tracker saw is untouched.
+        edits(s).setEncounter(route6, Sp.MAGIKARP, "MAGIKARP", 9, Outcome.CAUGHT, s.now)
+        val linked = assertNotNull(s.enc("Route 6")!!.monId)
+        assertTrue(linked < 0)
+        assertEquals(Sp.MAGIKARP, s.ledger.roster.getValue(linked).species)
+        assertEquals(Sp.RATTATA, s.ledger.roster.getValue(120L).species)
+        assertTrue(s.ledger.events.any { it.manual && "is no longer this area's encounter" in it.text })
+    }
+
+    @Test
+    fun `a Pokemon added by hand and counted for an area stays when the area's outcome changes`() {
+        val s = Sim().starter()
+        val id = edits(s).addMon("ODDISH", 43, 7, Origin.CAUGHT, route3, s.now)
+        assertTrue(edits(s).countAsEncounter(id, route3, s.now))
+        edits(s).setEncounter(route3, 43, "ODDISH", 7, Outcome.FAINTED, s.now)
+        assertTrue(s.ledger.roster.containsKey(id), "ADD A POKEMON made it, not the area")
+        // A Pokemon the tracker saw is never taken off when its area's outcome changes either.
+        s.moveTo("Route 4")
+        s.catchIt(foe(120, Sp.SPEAROW, "SPEAROW", 5), mon(120, Sp.SPEAROW, "SPEAROW", 5))
+        edits(s).setEncounter(AreaKey("Route 4", "Route 4"), Sp.SPEAROW, "SPEAROW", 5, Outcome.FLED, s.now)
+        assertTrue(s.ledger.roster.containsKey(120L))
+    }
+
+    @Test
+    fun `a Pokemon that never was can be taken off the roster, and one the tracker saw cannot`() {
+        val s = Sim(rules(NuzlockePreset.WEDLOCKE)).starter()
+        val id = edits(s).addMon("ODDISH", 43, 7, Origin.CAUGHT, route3, s.now)
+        assertTrue(edits(s).countAsEncounter(id, route3, s.now))
+        val partner = s.ledger.roster.getValue(1L)
+        partner.partner = id; s.ledger.roster.getValue(id).partner = 1L
+        assertTrue(edits(s).removeMon(id, s.now))
+        assertFalse(s.ledger.roster.containsKey(id))
+        assertNull(partner.partner, "its partner lets go")
+        assertNull(s.enc("Route 3")!!.monId, "the area that named it lets go")
+        assertTrue(s.ledger.events.any { it.manual && "taken off the roster" in it.text })
+        assertFalse(edits(s).removeMon(id, s.now), "nothing left to take off")
+        assertFalse(edits(s).removeMon(1L, s.now), "the starter is in the game")
+        assertTrue(s.ledger.roster.containsKey(1L))
+    }
+
+    @Test
+    fun `a death marked by hand records where the player is and the badges held`() {
+        // rc32 audit P3 #115: it recorded the catch area and no badges.
+        val s = Sim().starter()
+        s.catchIt(foe(100), mon(100))
+        assertTrue(edits(s).markDead(100L, "", s.now, "Route 110", 0b1111111))
+        val d = s.ledger.roster.getValue(100L).death!!
+        assertEquals("Route 110", d.areaName)
+        assertEquals(0b1111111, d.badges)
+        assertTrue(d.manual)
+        // With no game running there is neither: the catch area and no badges stand in.
+        s.catchIt(foe(101, Sp.SPEAROW, "SPEAROW", 4), mon(101, Sp.SPEAROW, "SPEAROW", 4))
+        assertTrue(edits(s).markDead(101L, "poison", s.now))
+        assertEquals("Route 3", s.ledger.roster.getValue(101L).death!!.areaName)
+        assertEquals(0, s.ledger.roster.getValue(101L).death!!.badges)
+    }
+
+    @Test
     fun `a manual encounter is left alone by the tracker's next poll`() {
         val s = Sim().starter()
         edits(s).setEncounter(route3, Sp.PIDGEY, "PIDGEY", 4, Outcome.FLED, s.now)

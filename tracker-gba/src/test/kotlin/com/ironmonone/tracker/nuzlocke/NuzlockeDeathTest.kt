@@ -55,6 +55,43 @@ class NuzlockeDeathTest {
         assertEquals("YOUNGSTER JOEY (Rattata Lv 9)", s.ledger.roster.getValue(100L).death!!.cause)
     }
 
+    /**
+     * rc32 audit P2 #141: Emerald's Battle Tents and the Battle Frontier lend a party for their battles (three of yours, or
+     * Slateport's rentals) and give the real one back afterwards. Their faints are no deaths, losing is no whiteout, and a
+     * rental is nobody's gift; when the real party comes back nothing has changed, so no revive warning follows either.
+     */
+    @Test
+    fun `nothing a facility's lent party does is the run's`() {
+        val s = team()
+        val real = s.party
+        val events = s.ledger.events.size
+        // Verdanturf: two of yours enter, and lose.
+        s.facility = true
+        s.party = real.take(2)
+        s.poll()
+        s.trainerBattle(NzOpponent(950, "TENT TRAINER", "Other", null, 30))
+        s.party = s.party.map { it.copy(hp = 0) }
+        s.poll()
+        s.finish(BattleEnd.LOST)
+        // Slateport: three rentals, new to the ledger.
+        s.party = listOf(mon(700, Sp.EEVEE, "EEVEE"), mon(701, Sp.MAGIKARP, "MAGIKARP"), mon(702, Sp.RATTATA, "RATTATA"))
+        s.poll()
+        s.trainerBattle(NzOpponent(951, "TENT TRAINER", "Other", null, 30))
+        s.party = s.party.map { it.copy(hp = 0) }
+        s.poll()
+        s.finish(BattleEnd.LOST)
+        // The real party back, as it was.
+        s.facility = false
+        s.party = real
+        s.idle()
+        assertEquals(RunStatus.ACTIVE, s.ledger.meta.status, "no whiteout ended the run")
+        assertTrue(s.ledger.graveyard.isEmpty(), "no deaths")
+        assertTrue(s.ledger.roster.keys.none { it >= 700L }, "the rentals are nobody's")
+        assertTrue(s.warnings(WarnKind.REVIVED).isEmpty())
+        assertEquals(events, s.ledger.events.size, "the ledger did not move")
+        assertTrue(s.ledger.roster.getValue(1L).inParty && s.ledger.roster.getValue(100L).inParty)
+    }
+
     @Test
     fun `a faint outside a battle, poison for one, is a death too`() {
         val s = Sim().starter()
@@ -193,4 +230,38 @@ class NuzlockeDeathTest {
     }
 
     private fun rules(tweak: (NuzlockeRules) -> NuzlockeRules) = com.ironmonone.tracker.nuzlocke.rules(NuzlockePreset.STANDARD, tweak)
+
+    @Test
+    fun `Shedinja shares Ninjask's game id and is still a Pokemon of its own`() {
+        // rc33 audit P1 #78: Shedinja is a copy of the Nincada that made it, personality value and all.
+        val nincada = 301; val ninjask = 302; val shedinja = 303
+        val s = Sim().starter()
+        s.catchIt(foe(500, nincada, "NINCADA", 15), mon(500, nincada, "NINCADA", 15, nickname = "Bug"))
+        s.idle()
+        // It evolves at 20 with a free slot: Ninjask where Nincada was, Shedinja at the end, the same id.
+        s.party = listOf(s.party[0], mon(500, ninjask, "NINJASK", 20, nickname = "Bug"), mon(500, shedinja, "SHEDINJA", 20, hp = 1, maxHp = 1, nickname = "SHEDINJA", gender = null))
+        s.poll()
+        val jask = s.ledger.roster.getValue(500L)
+        assertEquals(ninjask, jask.species)
+        val twin = s.ledger.roster.values.single { it.species == shedinja }
+        assertTrue(twin.id != 500L, "a record of its own")
+        assertEquals(Origin.EXTRA, twin.origin, "no encounter, no catch, no gift: a free extra")
+        assertEquals(3, s.ledger.alive.size)
+        assertFalse(s.poll(), "and nothing changes on the next poll: the two no longer take turns at one record")
+        // Reordered, each keeps its own record.
+        s.party = listOf(s.party[2], s.party[1], s.party[0])
+        s.poll()
+        assertEquals(ninjask, s.ledger.roster.getValue(500L).species)
+        assertEquals(shedinja, s.ledger.roster.getValue(twin.id).species)
+        // Shedinja faints: it dies, and Ninjask is not called revived.
+        s.party = listOf(s.party[0].copy(hp = 0), s.party[1], s.party[2])
+        s.poll(); s.poll()
+        assertFalse(s.ledger.roster.getValue(twin.id).alive)
+        assertTrue(s.ledger.roster.getValue(500L).alive)
+        assertTrue(s.warnings(WarnKind.REVIVED).isEmpty(), "nobody was revived")
+        // Then Ninjask faints, and that is recorded too.
+        s.party = listOf(s.party[0], s.party[1].copy(hp = 0), s.party[2])
+        s.poll()
+        assertFalse(s.ledger.roster.getValue(500L).alive)
+    }
 }

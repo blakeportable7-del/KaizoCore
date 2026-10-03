@@ -172,6 +172,25 @@ class NuzlockeEncounterTest {
     }
 
     @Test
+    fun `a shiny is free in an area already used, as the clause says`() {
+        // rc33 audit P1 #79: the used-area return came first, so a shiny there was a second catch with a violation.
+        val s = Sim().starter()
+        s.wildEncounter(foe(101, Sp.RATTATA, "RATTATA", 4), BattleEnd.WON)
+        assertEquals("Rattata", s.enc("Route 3")!!.speciesName)
+        s.catchIt(foe(100, Sp.PIDGEY, "PIDGEY", 3, shiny = true), mon(100, Sp.PIDGEY, "PIDGEY", 3, shiny = true))
+        val pidgey = s.ledger.roster.getValue(100L)
+        assertEquals(Origin.EXTRA, pidgey.origin)
+        assertFalse(pidgey.violation)
+        assertEquals("Rattata", s.enc("Route 3")!!.speciesName, "the area's first encounter is still the Rattata")
+        assertTrue(s.ledger.areas.getValue("Route 3").extras.any { it.kind == ExtraKind.SHINY })
+        // With the clause off the same catch is a second one.
+        val off = Sim(rules { it.copy(shinyClause = false) }).starter()
+        off.wildEncounter(foe(101, Sp.RATTATA, "RATTATA", 4), BattleEnd.WON)
+        off.catchIt(foe(100, Sp.PIDGEY, "PIDGEY", 3, shiny = true), mon(100, Sp.PIDGEY, "PIDGEY", 3, shiny = true))
+        assertTrue(off.ledger.roster.getValue(100L).violation)
+    }
+
+    @Test
     fun `with the shiny clause off a shiny is the first encounter like any other`() {
         val s = Sim(rules { it.copy(shinyClause = false) }).starter()
         s.wildBattle(foe(100, Sp.PIDGEY, "PIDGEY", 3, shiny = true))
@@ -322,6 +341,101 @@ class NuzlockeEncounterTest {
         assertFalse(s.ledger.roster.getValue(1L).alive)
         assertNull(s.ledger.roster.getValue(100L).partner)
         assertTrue(s.ledger.events.any { it.kind == "widow" })
+    }
+
+    @Test
+    fun `with gifts counting, an egg uses up the place it was received, not the route it hatches on`() {
+        // rc32 audit P2 #140: Emerald's Lavaridge egg used up Route 117, where it hatched.
+        val s = Sim(rules { it.copy(giftsCount = true) }).starter()
+        s.moveTo("Lavaridge Town")
+        s.party = s.party + mon(70, 360, "WYNAUT", 0, hp = 0, maxHp = 0, egg = true)
+        s.idle()
+        assertNull(s.ledger.roster[70L], "an egg is nobody on the roster")
+        s.moveTo("Route 117")
+        s.idle(3)
+        s.party = listOf(s.party[0], mon(70, 360, "WYNAUT", 5))
+        s.idle()
+        val wynaut = s.ledger.roster.getValue(70L)
+        assertEquals(Origin.GIFT, wynaut.origin)
+        assertEquals("Lavaridge Town", wynaut.areaName)
+        assertEquals(70L, assertNotNull(s.enc("Lavaridge Town")).monId, "the egg's place is used")
+        assertNull(s.enc("Route 117"), "the route it hatched on stays open")
+        s.wildEncounter(foe(100, Sp.PIDGEY, "PIDGEY", 15), BattleEnd.WON)
+        assertEquals("Pidgey", s.enc("Route 117")!!.speciesName)
+        // The egg's place survives the file, so a restart before it hatches changes nothing.
+        val t = Sim(rules { it.copy(giftsCount = true) }).starter()
+        t.moveTo("Lavaridge Town")
+        t.party = t.party + mon(71, 360, "WYNAUT", 0, hp = 0, maxHp = 0, egg = true)
+        t.idle()
+        val back = assertNotNull(NuzlockeText.parse(NuzlockeText.format(t.ledger)))
+        assertEquals("Lavaridge Town", back.meta.eggs.getValue(71L).areaName)
+        assertTrue(back.meta.eggs.getValue(71L).counts)
+    }
+
+    @Test
+    fun `an egg the party held when the ledger began hatches free`() {
+        val s = Sim(rules { it.copy(giftsCount = true) })
+        s.moveTo("Lavaridge Town")
+        // The ledger's first look finds the egg beside the starter.
+        s.party = listOf(mon(1, Sp.SQUIRTLE, "SQUIRTLE", 5, nickname = "Shell", types = listOf(WATER)), mon(70, 360, "WYNAUT", 0, hp = 0, maxHp = 0, egg = true))
+        s.idle()
+        assertEquals(Origin.STARTER, s.ledger.roster.getValue(1L).origin)
+        s.party = listOf(s.party[0], mon(70, 360, "WYNAUT", 5))
+        s.idle()
+        assertEquals(Origin.GIFT, s.ledger.roster.getValue(70L).origin)
+        assertNull(s.enc("Lavaridge Town"), "it was the party's before the rules began, so no area is used")
+    }
+
+    @Test
+    fun `a gift in a building counts for the town or route the building stands in`() {
+        // rc32 audit P2 #140: every Pokemon Center shares one layout, so FireRed's Route 4 Magikarp used up one
+        // "Pokemon Center" area for the whole game while Route 4 stayed open.
+        val s = Sim(rules { it.copy(giftsCount = true) }).starter()
+        s.area = NzArea("Route 4", 107, section = 0x66)
+        s.idle()
+        s.area = NzArea("Pokémon Center", 8, section = 0x66, indoor = true)
+        s.party = s.party + mon(60, Sp.MAGIKARP, "MAGIKARP", 5, types = listOf(WATER))
+        s.idle()
+        assertEquals("Route 4", s.ledger.roster.getValue(60L).areaName)
+        assertEquals(60L, assertNotNull(s.enc("Route 4")).monId)
+        assertNull(s.ledger.areas["Pokémon Center"], "no area is made for the shared building")
+        // A building whose section was never seen outdoors keeps its own name, as before.
+        s.area = NzArea(null, 300, section = 0x77, indoor = true)
+        s.party = s.party + mon(61, Sp.EEVEE, "EEVEE", 25)
+        s.idle()
+        assertEquals("Map 300", s.ledger.roster.getValue(61L).areaName)
+        // What the player stood in outdoors is kept in the file.
+        assertEquals("Route 4", assertNotNull(NuzlockeText.parse(NuzlockeText.format(s.ledger))).meta.sections[0x66])
+    }
+
+    @Test
+    fun `a battle cut off by the app closing is settled at the next engine's first look`() {
+        // rc32 audit P3 #116: the area said "in battle" for the rest of the run.
+        val s = Sim().starter()
+        s.wildBattle(foe(100, Sp.PIDGEY, "PIDGEY", 3))
+        assertEquals(Outcome.IN_PROGRESS, s.enc("Route 3")!!.outcome)
+        // The app closes; the game goes on from before that battle, and a new engine reads the saved ledger.
+        val reloaded = assertNotNull(NuzlockeText.parse(NuzlockeText.format(s.ledger)))
+        val s2 = Sim()
+        s2.engine = NuzlockeEngine(reloaded)
+        s2.party = s.party
+        s2.idle()
+        val enc = reloaded.areas.getValue("Route 3").encounter!!
+        assertEquals(Outcome.UNKNOWN, enc.outcome)
+        assertNull(enc.monId)
+        assertTrue(reloaded.events.any { it.kind == "outcome" && "app closed" in it.text })
+        // A Pokemon caught before the app closed is settled as caught.
+        val c = Sim().starter()
+        c.wildBattle(foe(101, Sp.SPEAROW, "SPEAROW", 4))
+        c.party = c.party + mon(101, Sp.SPEAROW, "SPEAROW", 4)
+        c.poll()
+        val caught = assertNotNull(NuzlockeText.parse(NuzlockeText.format(c.ledger)))
+        val c2 = Sim()
+        c2.engine = NuzlockeEngine(caught)
+        c2.party = c.party
+        c2.idle()
+        assertEquals(Outcome.CAUGHT, caught.areas.getValue("Route 3").encounter!!.outcome)
+        assertEquals(101L, caught.areas.getValue("Route 3").encounter!!.monId)
     }
 
     @Test

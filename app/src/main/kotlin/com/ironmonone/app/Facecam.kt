@@ -40,13 +40,85 @@ import androidx.core.content.ContextCompat
 import kotlin.math.roundToInt
 
 /**
+ * Where the camera is drawn while CAM is on (rc32 audit P2 #59). DOCKED is the top of the tracker's column, wherever
+ * the tracker is drawn: beside the game, in the floating window, over the DS's black box, or on a second display.
+ * Anywhere else it is the BUBBLE over the game. Never both: each preview takes the camera from the other, so one
+ * went black, and a game with no tracker (or one set to Hidden) got no camera at all in landscape.
+ */
+enum class FacecamPlace {
+    NONE, BUBBLE, DOCKED;
+
+    companion object {
+        /**
+         * [setting], [open] and [peek] are the landscape tracker's (TrackerOptions.landscapeTracker, Play's trackerOpen,
+         * PlayUiState.trackerPeek); [onSecond] is the tracker showing on a second display.
+         */
+        fun of(on: Boolean, clean: Boolean, landscape: Boolean, tracked: Boolean, onSecond: Boolean,
+               setting: LandscapeTracker, open: Boolean, peek: Boolean): FacecamPlace = when {
+            !on -> NONE
+            // The tracker, and the camera at the top of it, are on the other display: none on the phone.
+            onSecond -> DOCKED
+            clean -> NONE
+            landscape && tracked && (setting == LandscapeTracker.FLOATING || (open && (setting == LandscapeTracker.DOCKED || peek))) -> DOCKED
+            else -> BUBBLE
+        }
+    }
+}
+
+/**
+ * What CAM says when the camera is refused (rc32 audit P2 #21). After a second no (Android 11 and newer) or "Don't
+ * ask again", Android answers no at once with no dialog, so every CAM tap only said the permission was denied and
+ * nothing in KaizoCore led back to it. A denial for good now says where to turn the camera on, and the status line
+ * carries a Settings button that opens KaizoCore's own page there.
+ */
+internal object CameraDenied {
+    const val DENIED = "Camera permission denied."
+    const val OFF = "The camera is off for KaizoCore. Turn it on in Settings, Permissions."
+    const val SETTINGS = "Settings"
+
+    /**
+     * Whether a denial just answered is for good. Android says it will explain no more only once it has stopped asking;
+     * before the first ask the same flag is false too, so this is read in the denial's callback only.
+     */
+    fun permanent(activity: android.app.Activity?): Boolean =
+        activity != null && runCatching { !activity.shouldShowRequestPermissionRationale(Manifest.permission.CAMERA) }.getOrDefault(false)
+
+    /** Play's status line for a denial; one for good also puts the Settings button on it ([PlayUiState.toastAction]). */
+    fun note(context: android.content.Context, ui: PlayUiState, permanent: Boolean): String = note(ui, permanent) { openSettings(context) }
+
+    internal fun note(ui: PlayUiState, permanent: Boolean, open: () -> Unit): String {
+        if (!permanent) return DENIED
+        ui.toastAction = Triple(OFF, SETTINGS, open)
+        return OFF
+    }
+
+    /** KaizoCore's page in the system settings, where its permissions are. */
+    fun openSettings(context: android.content.Context) {
+        runCatching {
+            context.startActivity(
+                android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                    android.net.Uri.fromParts("package", context.packageName, null))
+                    .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+            )
+        }
+    }
+}
+
+/** The activity behind a Compose context, or null. */
+private fun android.content.Context.activity(): android.app.Activity? {
+    var c: android.content.Context? = this
+    while (c != null && c !is android.app.Activity) c = (c as? android.content.ContextWrapper)?.baseContext
+    return c as? android.app.Activity
+}
+
+/**
  * The camera DOCKED into the tracker column, the streaming layout: game on the
  * left, and a right column of camera over tracker. Fills the width it is given
  * at 16:9 - no dragging, no floating over the game, because in this layout it
  * has a slot of its own.
  */
 @Composable
-fun FacecamDocked(onDenied: () -> Unit) {
+fun FacecamDocked(onDenied: (permanent: Boolean) -> Unit) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     var granted by remember {
@@ -55,9 +127,11 @@ fun FacecamDocked(onDenied: () -> Unit) {
                 == PackageManager.PERMISSION_GRANTED
         )
     }
+    // Whether Android will ask again, read in the denial's own callback (CameraDenied, rc32 audit P2 #21).
+    val activity = remember(context) { context.activity() }
     val ask = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { ok -> granted = ok; if (!ok) onDenied() }
+    ) { ok -> granted = ok; if (!ok) onDenied(CameraDenied.permanent(activity)) }
     LaunchedEffect(Unit) { if (!granted) ask.launch(Manifest.permission.CAMERA) }
     if (!granted) return
 
@@ -80,7 +154,7 @@ fun FacecamDocked(onDenied: () -> Unit) {
  * Tap the bubble to flip front/back.
  */
 @Composable
-fun FacecamBubble(onDenied: () -> Unit) {
+fun FacecamBubble(onDenied: (permanent: Boolean) -> Unit) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
@@ -90,9 +164,10 @@ fun FacecamBubble(onDenied: () -> Unit) {
                 == PackageManager.PERMISSION_GRANTED
         )
     }
+    val activity = remember(context) { context.activity() }
     val ask = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { ok -> granted = ok; if (!ok) onDenied() }
+    ) { ok -> granted = ok; if (!ok) onDenied(CameraDenied.permanent(activity)) }
 
     LaunchedEffect(Unit) { if (!granted) ask.launch(Manifest.permission.CAMERA) }
     if (!granted) return

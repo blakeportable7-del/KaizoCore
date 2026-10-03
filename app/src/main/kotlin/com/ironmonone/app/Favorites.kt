@@ -4,57 +4,98 @@ package com.ironmonone.app
  * The PC tracker's "Startup favorites" (StreamerScreen.lua: three Pokemon,
  * shown on the new-game screen; Options.lua defaults them to 1,4,7). Here
  * they are three names on the RUN screen, kept in PrepStore's favorites file
- * as a comma list, and shown on the tracker's no-party card for the
+ * as a comma list, and shown as icons on the tracker's no-party card for the
  * generations whose reference tracker has the feature: Gen 1, 2 and 3; the DS
- * panel shows them under its random ball row, as the NDS tracker keeps its
- * favorites frame beside the ball picker until the first Pokemon. No PC
+ * panel shows them beside its random ball row, as the NDS tracker keeps its
+ * favorites frame beside the ball picker until the first Pokemon (FavoriteIcons). No PC
  * tracker says when a favorite is in a ball (read 2026-09-30); this one does
  * in a Kaizo IronMON run's lab since 2026-10-01, on Blake's word (FavoriteBall).
  */
 object Favorites {
     const val SLOTS = 3
 
-    /** The tracker's own species table as it is written: id and name, in file order. */
-    private val table: List<Pair<Int, String>> by lazy {
-        val rows = ArrayList<Pair<Int, String>>()
-        com.ironmonone.tracker.GbaTracker::class.java.getResourceAsStream("/natdex/species.tsv")
-            ?.bufferedReader()?.useLines { lines ->
-                for (line in lines) {
-                    val tab = line.indexOf('\t'); if (tab < 0) continue
-                    val id = line.substring(0, tab).toIntOrNull() ?: continue
-                    rows += id to line.substring(tab + 1).trim()
+    /**
+     * One of the tracker's species tables (tracker-gba resources) as it is written: id and name, in file order. [skip]
+     * names rows that are no Pokemon.
+     */
+    private class SpeciesTable(resource: String, skip: Set<String> = emptySet()) {
+        val rows: List<Pair<Int, String>> = ArrayList<Pair<Int, String>>().also { rows ->
+            com.ironmonone.tracker.GbaTracker::class.java.getResourceAsStream(resource)
+                ?.bufferedReader()?.useLines { lines ->
+                    for (line in lines) {
+                        val tab = line.indexOf('\t'); if (tab < 0) continue
+                        val id = line.substring(0, tab).toIntOrNull() ?: continue
+                        val name = line.substring(tab + 1).trim()
+                        if (name.lowercase() !in skip) rows += id to name
+                    }
                 }
+        }
+
+        /** Name -> id (the Gen 3 build's internal ids past 251, which is what the sprite packs are keyed by). */
+        val idByName: Map<String, Int> = rows.associate { (id, name) -> name.lowercase() to id }
+
+        /** Every name in dex order, spelled as the table spells it; a name the table writes in lower case gets capitals. */
+        val namesInOrder: List<Pair<Int, String>> by lazy {
+            val spelled = rows.toMap()
+            idByName.entries.sortedBy { it.value }.map { e ->
+                e.value to (spelled[e.value]?.takeIf { it != it.lowercase() } ?: e.key.split(' ').joinToString(" ") { w -> w.replaceFirstChar { it.uppercase() } })
             }
-        rows
+        }
+
+        val spelledById: Map<Int, String> by lazy { namesInOrder.toMap() }
     }
 
-    /** Name -> id from the tracker's own species table (the Gen 3 build's internal ids past 251, which is what the sprite pack is keyed by). */
-    val idByName: Map<String, Int> by lazy { table.associate { (id, name) -> name.lowercase() to id } }
+    /**
+     * The tracker's own species table, the Nat. Dex build's: every game but MaxDex names its favorites from it. Its 25
+     * "none" rows, the Gen 3 ids 252 to 276, are no Pokemon either: typing "No" offered "None" (found 2026-10-03).
+     */
+    private val natDexTable by lazy { SpeciesTable("/natdex/species.tsv", skip = setOf("none")) }
+
+    /**
+     * MaxDex 1.0's own table (maxdex/species.tsv, GbaTracker.nameSet "maxdex"): its ids are Nat. Dex 1.2.1's up to
+     * 1235 and part ways after. The 45 Legends Z-A Megas sit at 1236 to 1280 in another order (Dragonite-M is 1236
+     * here and 1241 in Nat. Dex 1.2.1), and Greninja-B, Squawkabilly-W and Meowstic-F-M are not in it. Read from the
+     * Nat. Dex table, a MaxDex favorite of those names drew another Pokemon's picture and matched another Pokemon's
+     * ball (found 2026-10-03). Its 25 "none" rows, the Gen 3 ids 252 to 276, are no Pokemon to offer.
+     */
+    private val maxDexTable by lazy { SpeciesTable("/maxdex/species.tsv", skip = setOf("none")) }
+
+    private fun tableOf(maxDex: Boolean) = if (maxDex) maxDexTable else natDexTable
+
+    /** Name -> id from the Nat. Dex table, the one every game but MaxDex uses (see [idOf] with a game). */
+    val idByName: Map<String, Int> get() = natDexTable.idByName
 
     fun idOf(name: String): Int? = idByName[name.trim().lowercase()]
+
+    /** The id [name] has in the game [kind]: MaxDex's own numbering on MaxDex 1.0, the Nat. Dex table's otherwise. */
+    fun idOf(name: String, kind: com.ironmonone.core.RomKind?): Int? = idOf(name, maxDex = kind?.isMaxDex == true)
+
+    fun idOf(name: String, maxDex: Boolean): Int? = tableOf(maxDex).idByName[name.trim().lowercase()]
 
     /**
      * Every known name in dex order, spelled for display as the table spells it (Bulbasaur, Mr. Mime, Ho-Oh, and the
      * Nat. Dex forms the Play as your Pokemon list shows: Charizard-X, Rotom-Heat); a name the table writes in lower
      * case gets capitals.
      */
-    val namesInOrder: List<Pair<Int, String>> by lazy {
-        val spelled = table.toMap()
-        idByName.entries.sortedBy { it.value }.map { e ->
-            e.value to (spelled[e.value]?.takeIf { it != it.lowercase() } ?: e.key.split(' ').joinToString(" ") { w -> w.replaceFirstChar { it.uppercase() } })
-        }
-    }
+    val namesInOrder: List<Pair<Int, String>> get() = natDexTable.namesInOrder
+
+    /** The same for the game [kind]: MaxDex's own names and ids on MaxDex 1.0. */
+    fun namesInOrder(kind: com.ironmonone.core.RomKind?): List<Pair<Int, String>> = tableOf(kind?.isMaxDex == true).namesInOrder
+
+    /** How the game [kind] spells the species [id], or null when it has no such id. */
+    fun nameOf(id: Int, kind: com.ironmonone.core.RomKind?): String? = tableOf(kind?.isMaxDex == true).spelledById[id]
 
     /**
      * Blake, 2026-09-07: "as you type the first letter, the name of the pokemon
      * comes up, and the list narrows as you type more." Names that START with
      * what was typed, in dex order, at most [limit]; nothing for an empty box
-     * or an exact match already typed.
+     * or an exact match already typed. [kind]: the game's own names (MaxDex's
+     * on MaxDex 1.0), the Nat. Dex table's when none is given.
      */
-    fun suggest(typed: String, limit: Int = 8, maxId: Int = Int.MAX_VALUE): List<String> {
+    fun suggest(typed: String, limit: Int = 8, maxId: Int = Int.MAX_VALUE, kind: com.ironmonone.core.RomKind? = null): List<String> {
         val q = typed.trim().lowercase()
         if (q.isEmpty()) return emptyList()
-        val hits = namesInOrder.filter { (id, n) -> fits(id, maxId) && n.lowercase().startsWith(q) }.map { it.second }
+        val hits = namesInOrder(kind).filter { (id, n) -> fits(id, maxId) && n.lowercase().startsWith(q) }.map { it.second }
         if (hits.size == 1 && hits[0].lowercase() == q) return emptyList()
         return hits.take(limit)
     }
@@ -120,6 +161,10 @@ object Favorites {
 
     /** Whether [name] is a Pokemon that a game whose dex ends at [maxDex] has: any name in the table with no cap. */
     fun inGame(name: String, maxDex: Int): Boolean = idOf(name)?.let { fits(it, maxDex) } == true
+
+    /** The same, by the game [kind]'s own table: on MaxDex 1.0 a name MaxDex has (no Greninja-B, no Squawkabilly-W). */
+    fun inGame(name: String, maxDex: Int, kind: com.ironmonone.core.RomKind?): Boolean =
+        idOf(name, kind)?.let { fits(it, maxDex) } == true
 
     private fun fits(id: Int, maxDex: Int): Boolean = maxDex == Int.MAX_VALUE || nationalOf(id)?.let { it <= maxDex } == true
 

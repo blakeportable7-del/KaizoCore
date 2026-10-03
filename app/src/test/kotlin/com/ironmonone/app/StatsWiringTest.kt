@@ -140,4 +140,19 @@ class StatsWiringTest {
             assertFalse(writes in stats, "CareerStats.kt must not write: $writes")
         assertFalse(Regex("\"prep/[A-Za-z0-9_./-]+\"").containsMatchIn(stats), "no new file under prep/ for BackupCoverageTest to account for")
     }
+
+    /**
+     * rc32 audit P2 #15: a long Runs won value ("3, 1 after state loads, retries or restarts") took the row and left
+     * "Runs won" a sliver or nothing at a large font. A value takes at most half the row, and the wins that went back
+     * in time are a line of their own under it.
+     */
+    @Test
+    fun `a value never takes the label's room, and the rewound wins are a line of their own`() {
+        val row = code(read("CareerStatsScreen.kt")).substringAfter("private fun StatRow(").substringBefore("\n}\n")
+        assertTrue("val half = maxWidth / 2" in row && "Text(value, Modifier.widthIn(max = half)" in row, "the value wraps inside its half")
+        assertTrue("Text(label, Modifier.weight(1f)" in row, "the label takes what is left")
+        assertTrue("note?.let {" in row, "the note under them")
+        assertTrue("StatRow(StatsCopy.RUNS_WON, StatsCopy.wins(s.wins), StatsCopy.winsNote(s.winsAfterRewinds))" in read("CareerStatsScreen.kt"))
+        assertTrue(StatsCopy.winsNote(1)!! in StatsCopy.all, "the copy rules read the note too")
+    }
 }

@@ -130,9 +130,9 @@ Super Kaizo Specific Rules do not apply! No Safari Pivot.
 - Swift Beginnings: ALL banned moves may be used while labbing and pivoting. The normal restrictions on moves apply once you begin the first non-rival battle.
     - Note: This allows the use of moves like Spore to speed up catches.
 - Put That Down!: Any items acquired via the pickup ability must be thrown away asap
-- Limited Healthcare: After receiving your first Gym badge you MUST immediately use the Pokémon Centre. You may now only use the Pokémon Centre up to 5 times for the remainder of the run.
+- Limited Healthcare: After receiving your first Gym badge you MUST immediately use the Pokémon Center. You may now only use the Pokémon Center up to 5 times for the remainder of the run.
     - Note: You may use beds, Doctors, the Healing Circle and other PC substitutes, these still count towards your usages
-- Final Frontier: After Acquiring your 8th Gym badge, you gain one Bonus Pokémon Centre usage.
+- Final Frontier: After Acquiring your 8th Gym badge, you gain one Bonus Pokémon Center usage.
     - Note: Changed as of 21/11/25 - Battle Items are now usable for the entire run
 - Power Limiter: Moves that boost stats without dealing damage are banned against Gym Leader, Elite Four and Champion fights.
     - Note: Secondary boosts like charge beam & Field effects like light screen, mist and rain dance are allowed.
@@ -202,10 +202,10 @@ Read the official IronMON Rules first (http://ironmon.gg/), as well as the versi
         - Any Pokémon can be chosen as a starter unless it is categorized as a Strong Legendary or Mythical by Serebii's Legendary Pokémon list (https://www.serebii.net/pokemon/legendary.shtml). Sub-Legendaries are fine.
         - Pivots are banned, no exceptions.
         - The Move Reminder is banned.
-- You may have up to 9 favourites. However, because the Tracker only shows 3 favourites, you may use the Welcome Message (or other means, such as a stream overlay) to show the rest.
+- You may have up to 9 favorites. However, because the Tracker only shows 3 favorites, you may use the Welcome Message (or other means, such as a stream overlay) to show the rest.
     - Example:
-    - (v1.2.0+ only) Your favourites can be up to 600 BST, and if you are playing Standard or Ultimate, any Pokémon above 600 BST that is not categorized as Strong Legendary or Mythical by Serebii's Legendary Pokémon list (https://www.serebii.net/pokemon/legendary.shtml) is also allowed
-    - NOTE: Having a Pokémon as a favourite only counts for that specific form. For example, if you have Arcanine as a favourite, this only applies to Kantonian Arcanine, not Hisuian Arcanine. You may have multiple forms as favourites.
+    - (v1.2.0+ only) Your favorites can be up to 600 BST, and if you are playing Standard or Ultimate, any Pokémon above 600 BST that is not categorized as Strong Legendary or Mythical by Serebii's Legendary Pokémon list (https://www.serebii.net/pokemon/legendary.shtml) is also allowed
+    - NOTE: Having a Pokémon as a favorite only counts for that specific form. For example, if you have Arcanine as a favorite, this only applies to Kantonian Arcanine, not Hisuian Arcanine. You may have multiple forms as favorites.
 - Ultimate and harder: HM moves are allowed to be used in battle, as long as the moves are not taught with the HM items.
 - Kaizo and harder: Changing Deoxys and Shaymin forms is allowed. However, the Move Reminder may only be used if they are in the form they started as.
 - Changing Hoopa's form into Hoopa Unbound is not allowed in any ruleset.

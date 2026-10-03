@@ -60,6 +60,60 @@ class NuzlockeLedgerTextTest {
     }
 
     @Test
+    fun `a Pokemon made for an area, the party's eggs and the sections seen come back out of the file`() {
+        val s = richRun()
+        NuzlockeEdits(s.ledger).setEncounter(AreaKey("Route 6", "Route 6"), Sp.PIDGEY, "PIDGEY", 9, Outcome.CAUGHT, s.now)
+        s.ledger.meta.eggs[70L] = EggSeen("Lavaridge Town", "Lavaridge Town", true)
+        s.ledger.meta.sections[0x66] = "Route 4"
+        val back = assertNotNull(NuzlockeText.parse(NuzlockeText.format(s.ledger)))
+        val made = back.roster.values.single { it.madeFor != null }
+        assertEquals("Route 6", made.madeFor)
+        assertEquals("Lavaridge Town", back.meta.eggs.getValue(70L).areaKey)
+        assertTrue(back.meta.eggs.getValue(70L).counts)
+        assertEquals("Route 4", back.meta.sections[0x66])
+        // A ledger written before the twentieth field reads as made by nobody.
+        val old = NuzlockeText.format(s.ledger).lines().joinToString("\n") { l ->
+            if (l.startsWith("mon\t")) l.split('\t').take(19).joinToString("\t") else l
+        }
+        assertTrue(assertNotNull(NuzlockeText.parse(old)).roster.values.all { it.madeFor == null })
+    }
+
+    @Test
+    fun `a detached copy writes the same file, and nothing the run does after it reaches the copy`() {
+        // rc32 audit P3 #39: the ledger is formatted on the writer thread from this copy, never from the live one.
+        val s = richRun()
+        NuzlockeEdits(s.ledger).setEncounter(AreaKey("Route 6", "Route 6"), Sp.PIDGEY, "PIDGEY", 9, Outcome.CAUGHT, s.now)
+        s.ledger.meta.eggs[70L] = EggSeen("Lavaridge Town", "Lavaridge Town", true)
+        s.ledger.meta.sections[0x66] = "Route 4"
+        s.ledger.meta.beatenBosses += "gym1"
+        s.ledger.meta.endReason = "x"; s.ledger.meta.styleShift = true; s.ledger.meta.whiteoutLatched = true
+        val copy = s.ledger.detached()
+        val text = NuzlockeText.format(s.ledger)
+        assertEquals(text, NuzlockeText.format(copy))
+        // Every part the engine and the edits change, changed after the copy was made.
+        val m = s.ledger.meta
+        m.status = RunStatus.OVER; m.endedAt = 99; m.endReason = "y"; m.started = false; m.partySeen = false
+        m.whiteoutLatched = false; m.styleShift = false; m.genlockeId = "gl-2"; m.leg = 3; m.carriedFrom = "z"; m.gameKey = "k"
+        m.beatenBosses += "gym2"; m.heirsIn.clear(); m.heirsOut.clear(); m.eggs.clear(); m.sections.clear()
+        m.rules = m.rules.copy(dupes = !m.rules.dupes)
+        for (a in s.ledger.areas.values) {
+            a.name = a.name + "!"
+            a.encounter?.let { e -> e.outcome = Outcome.LOST; e.monId = 5L; e.level = 77; e.speciesName = "Q"; e.manual = !e.manual }
+            a.extras.forEach { it.outcome = Outcome.LOST; it.monId = 6L }
+            a.extras.clear()
+        }
+        for (r in s.ledger.roster.values) {
+            r.level = 88; r.nickname = "N"; r.inParty = !r.inParty; r.alive = !r.alive; r.death = null; r.partner = 7L
+            r.types = listOf(1); r.highestLevel = 99; r.forgiven = true; r.madeFor = "elsewhere"; r.violation = !r.violation; r.origin = Origin.STATIC
+        }
+        s.ledger.areas.clear(); s.ledger.roster.clear()
+        s.ledger.event(s.now, "edit", "after the copy")
+        s.ledger.warnings.forEach { it.dismissed = !it.dismissed }
+        s.ledger.notes += "a later note"
+        assertEquals(text, NuzlockeText.format(copy), "the copy is the ledger as it was")
+    }
+
+    @Test
     fun `text with tabs and line breaks in it cannot break the file`() {
         val s = Sim().starter()
         s.ledger.warn("x", 5, WarnKind.OTHER, "one\ttwo\nthree\r\nfour")

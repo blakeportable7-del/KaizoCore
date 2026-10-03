@@ -9,6 +9,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.captureToImage
@@ -66,7 +68,14 @@ class TrackerLookTest {
     private fun shoot(
         name: String, widthDp: Int, state: TrackerState,
         stackBoth: Boolean = false,
+        bstLines: BstRule.Lines? = null,
+        joined: JoinedForms? = null,
+        // Handed in, never read from the device's own run, so no other shot here picks up its rules.
+        moveRules: MoveRule.Rules? = null,
     ) {
+        // The carousel's clock ticks every 100 ms (PcCarousel), so on a running clock Compose is never idle
+        // (2026-10-02: every shot here timed out). The test drives the clock instead.
+        compose.mainClock.autoAdvance = false
         compose.setContent {
             Box(Modifier.background(Color.Black)) {
                 Box(Modifier.width(widthDp.dp).fillMaxHeight()) {
@@ -80,11 +89,12 @@ class TrackerLookTest {
                         // actually loads and lands in the sprite box.
                         spriteFor = { sp -> PcAssets.gbaSprite(ctx, sp) },
                         stackBoth = stackBoth,
+                        bstLines = bstLines, joinedForms = joined, moveRules = moveRules,
                     )
                 }
             }
         }
-        compose.waitForIdle()
+        compose.mainClock.advanceTimeBy(1_000)
         val bmp = compose.onRoot().captureToImage().asAndroidBitmap()
         // filesDir, not external storage: getExternalFilesDir can return null
         // on an emulator with no mounted media, and File(null, name) then
@@ -358,15 +368,20 @@ class TrackerLookTest {
             movesLearned = 4, movesTotal = 16, nextMoveLevel = 13,
         )
 
-    private fun shootNds(name: String, widthDp: Int, state: com.ironmonone.tracker.nds.NdsTrackerState) {
+    private fun shootNds(
+        name: String, widthDp: Int, state: com.ironmonone.tracker.nds.NdsTrackerState,
+        bstLines: BstRule.Lines? = null, joined: JoinedForms? = null, stackBoth: Boolean = false,
+        moveRules: MoveRule.Rules? = null,
+    ) {
+        compose.mainClock.autoAdvance = false
         compose.setContent {
             Box(Modifier.background(Color.Black)) {
                 Box(Modifier.width(widthDp.dp).fillMaxHeight()) {
-                    NdsTrackerPanel(state = state, attempt = 2)
+                    NdsTrackerPanel(state = state, attempt = 2, stackBoth = stackBoth, bstLines = bstLines, joinedForms = joined, moveRules = moveRules)
                 }
             }
         }
-        compose.waitForIdle()
+        compose.mainClock.advanceTimeBy(1_000)
         val bmp = compose.onRoot().captureToImage().asAndroidBitmap()
         val dir = InstrumentationRegistry.getInstrumentation().targetContext.filesDir
         val out = File(dir, name)
@@ -374,6 +389,95 @@ class TrackerLookTest {
             bmp.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it)
         }
         check(out.length() > 0) { "no image written to " + out.absolutePath }
+    }
+
+    /** A fresh record of what each Pokemon joined as, in the app's cache. */
+    private fun joinedFresh(): JoinedForms {
+        val f = File(InstrumentationRegistry.getInstrumentation().targetContext.cacheDir, "look-joined.txt")
+        f.delete()
+        return JoinedForms(f, attempt = 2)
+    }
+
+    /**
+     * Kaizo's BST line (Blake, 2026-10-02: a Zekrom of 679 from the Black 2 lab, "no indication that this is against
+     * the rules"): your Pokemon past it, as it joined, and a wild one past it, both with the X and a red number.
+     */
+    @Test
+    fun bst_over_the_line() {
+        // 406 is Rayquaza's index inside the Gen 3 games, which the sprite pack follows; 384 there is Aggron.
+        val ray = tracked("Rayquaza", 406, 5).copy(
+            base = BaseStats(105, 150, 90, 95, 150, 90, 16, 2, 1, 2),
+            abilityName = "Air Lock", itemName = "-",
+            moveNames = listOf("Twister", "Leer"),
+            moveRows = listOf(
+                MoveRow(239, "Twister", 20, 20, 40, 100, 16, "SPE"),
+                MoveRow(43, "Leer", 30, 30, 0, 100, 0, "STA"),
+            ),
+        )
+        shoot("look-bst.png", paneDp, TrackerState(
+            partyCount = 1, party = listOf(ray),
+            inBattle = true, isWildBattle = true,
+            enemy = com.ironmonone.tracker.EnemyInfo(
+                species = 150, speciesName = "Mewtwo", level = 4,
+                curHp = 20, maxHp = 20, type1 = 14, type2 = 14,
+                base = BaseStats(106, 110, 90, 130, 154, 90, 14, 14, 1, 2),
+                movesSeen = emptyList(), abilityGuess = "Pressure",
+            ),
+            healPercent = 0, healCount = 0, enemyTeam = emptyList(), routeName = "Route 1",
+        ), stackBoth = true, bstLines = BstRule.Lines(599, 599), joined = joinedFresh())
+        assert(compose.onAllNodesWithContentDescription("Over this run's BST limit", useUnmergedTree = true)
+            .fetchSemanticsNodes().size == 2) { "the X on yours and on the wild one" }
+    }
+
+    /**
+     * Banned moves (Blake, 2026-10-02: "just like the x on bst of 600+"): FireRed Kaizo in a wild battle, where Giga
+     * Drain, Recover and Surf (an HM) are banned and Tackle is not. Each banned name goes red with the X after it.
+     */
+    @Test
+    fun banned_moves() {
+        val mon = tracked("Bulbasaur", 1, 12).copy(
+            moveNames = listOf("Giga Drain", "Recover", "Surf", "Tackle"),
+            moveRows = listOf(
+                MoveRow(202, "Giga Drain", 5, 5, 60, 100, 12, "SPE"),
+                MoveRow(105, "Recover", 20, 20, 0, 0, 0, "STA"),
+                MoveRow(57, "Surf", 15, 15, 95, 100, 11, "SPE"),
+                MoveRow(33, "Tackle", 35, 35, 35, 95, 0, "PHY"),
+            ),
+        )
+        shoot("look-banned.png", paneDp, TrackerState(
+            partyCount = 1, party = listOf(mon), inBattle = true, isWildBattle = true,
+            healPercent = 0, healCount = 0, enemyTeam = emptyList(), routeName = "Route 1",
+        ), moveRules = MoveRule.rules("kaizo", "FRLG", natDex = false, kindId = "firered-u-v10"))
+        assert(compose.onAllNodesWithContentDescription("Banned in this run", useUnmergedTree = true)
+            .fetchSemanticsNodes().size == 3) { "Giga Drain, Recover and Surf, not Tackle" }
+    }
+
+    /** Platinum Kaizo: Roost, U-turn and Defog (Platinum's HM) banned, Brave Bird not. */
+    @Test
+    fun ds_banned_moves() {
+        val bird = ndsTracked("Staraptor", 398, 40).copy(moves = listOf(
+            com.ironmonone.tracker.nds.NdsMoveInfo("Roost", 0, 0, "FLYING", 10, "STA"),
+            com.ironmonone.tracker.nds.NdsMoveInfo("U-turn", 70, 100, "BUG", 20, "PHY"),
+            com.ironmonone.tracker.nds.NdsMoveInfo("Brave Bird", 120, 100, "FLYING", 15, "PHY"),
+            com.ironmonone.tracker.nds.NdsMoveInfo("Defog", 0, 0, "FLYING", 15, "STA"),
+        ))
+        shootNds("look-ds-banned.png", paneDp, com.ironmonone.tracker.nds.NdsTrackerState(
+            partyCount = 1, party = listOf(bird), located = true, healPercent = 0, healCount = 0,
+        ), moveRules = MoveRule.rules("kaizo", "DPPt", natDex = false, kindId = "platinum-u"))
+        assert(compose.onAllNodesWithContentDescription("Banned in this run", useUnmergedTree = true)
+            .fetchSemanticsNodes().size == 3) { "Roost, U-turn and Defog, not Brave Bird" }
+    }
+
+    @Test
+    fun ds_bst_over_the_line() {
+        val zek = ndsTracked("Zekrom", 644, 5).let { t ->
+            t.copy(info = t.info?.copy(type1 = "DRAGON", type2 = "ELECTRIC", bst = 680, ability1 = "Teravolt", ability2 = "Teravolt"),
+                abilityName = "Teravolt", itemName = "---") }
+        shootNds("look-ds-bst.png", paneDp, com.ironmonone.tracker.nds.NdsTrackerState(
+            partyCount = 1, party = listOf(zek), located = true,
+            healPercent = 0, healCount = 0,
+        ), bstLines = BstRule.Lines(599, 599), joined = joinedFresh())
+        compose.onNodeWithContentDescription("Over this run's BST limit", useUnmergedTree = true).assertExists()
     }
 
     @Test
@@ -384,5 +488,79 @@ class TrackerLookTest {
             located = true,
             healPercent = 30, healCount = 4,
         ))
+    }
+
+    // ---- Double battles (rc34) ----------------------------------------------
+    //
+    // Blake, 2026-10-03: "on doubles how do you cycle through your party pokemon in the tracker?" The swap walks every
+    // Pokemon on the field, and the banner says which one the card is, by where it stands on the game's screen.
+
+    private fun doublesState() = TrackerState(
+        partyCount = 3,
+        party = listOf(tracked("Golisopod", 793, 6), tracked("Bulbasaur", 1, 5), tracked("Charmander", 4, 7)),
+        inBattle = true, isWildBattle = false,
+        enemy = com.ironmonone.tracker.EnemyInfo(
+            species = 245, speciesName = "Suicune", level = 42, curHp = 118, maxHp = 155, type1 = 11, type2 = 11,
+            base = BaseStats(100, 75, 115, 85, 90, 115, 11, 11, 1, 2), movesSeen = emptyList(), abilityGuess = "Pressure / Inner Focus",
+        ),
+        enemyRight = com.ironmonone.tracker.EnemyInfo(
+            species = 16, speciesName = "Pidgey", level = 40, curHp = 90, maxHp = 90, type1 = 0, type2 = 2,
+            base = BaseStats(40, 45, 40, 56, 35, 35, 0, 2, 1, 2), movesSeen = emptyList(), abilityGuess = "Keen Eye",
+        ),
+        enemyOnField = listOf(0, 1), doubles = true, ownOnField = 0, ownRightOnField = 2,
+        healPercent = 44, healCount = 7, ownRightHeals = com.ironmonone.tracker.HealTotals(61, 20, 7),
+        enemyTeam = listOf(true, true, true, true), routeName = "Route 24",
+    )
+
+    /** The shared view as a battle leaves it after [swaps] taps of the swap ([stacked]: both cards on screen). */
+    private fun primeGba(s: TrackerState, swaps: Int, stacked: Boolean) {
+        gbaView.clear()
+        gbaView.onRead(s.copy(inBattle = false), autoSwap = false)
+        gbaView.onRead(s, autoSwap = false)
+        repeat(swaps) { gbaView.swap(s, stacked) }
+    }
+
+    /** Portrait, one card: two taps from your left are your right-hand Charmander, its heals its own. */
+    @Test
+    fun doubles_banner_your_right_hand_pokemon() {
+        val s = doublesState()
+        primeGba(s, swaps = 2, stacked = false)
+        shoot("look-doubles-mine-right.png", portraitDp, s)
+        compose.onNodeWithText("MINE ON THE RIGHT").assertIsDisplayed()
+        compose.onNodeWithText("Charmander").assertIsDisplayed()
+        compose.onNodeWithText("SEE FOE").assertIsDisplayed()
+        gbaView.clear()
+    }
+
+    /**
+     * Landscape, both cards: the first tap puts your right-hand Charmander up, the second your Golisopod again beside the
+     * opponent's right-hand Pidgey, which stands on the left of the game's screen.
+     */
+    @Test
+    fun doubles_banner_stacked_landscape() {
+        val s = doublesState()
+        primeGba(s, swaps = 2, stacked = true)
+        shoot("look-doubles-stacked.png", paneDp, s, stackBoth = true)
+        compose.onNodeWithText("MINE LEFT, FOE LEFT").assertIsDisplayed()
+        compose.onNodeWithText("Pidgey").assertIsDisplayed()
+        compose.onNodeWithText("Golisopod").assertIsDisplayed()
+        gbaView.clear()
+    }
+
+    /** DS, one card: Platinum's double battle, one tap from your left is your right-hand Pokemon. */
+    @Test
+    fun ds_doubles_banner() {
+        val left = ndsTracked("Turtwig", 387, 12)
+        val right = ndsTracked("Chimchar", 390, 11).let { it.copy(mon = it.mon.copy(pid = 0x2222_2222)) }
+        val foes = listOf(ndsTracked("Starly", 396, 10), ndsTracked("Bidoof", 399, 9))
+        val s = com.ironmonone.tracker.nds.NdsTrackerState(
+            partyCount = 2, party = listOf(left, right), located = true, inBattle = true, enemy = foes[0],
+            healsPid = left.mon.pid, playerBattlers = listOf(left, right), enemyBattlers = foes,
+        )
+        dsView.clear(); dsView.forAttempt(2); dsView.onRead(s); dsView.swap(s, allowed = true)
+        shootNds("look-ds-doubles.png", portraitDp, s)
+        compose.onNodeWithText("MINE ON THE RIGHT").assertIsDisplayed()
+        compose.onNodeWithText("SEE FOE").assertIsDisplayed()
+        dsView.clear()
     }
 }

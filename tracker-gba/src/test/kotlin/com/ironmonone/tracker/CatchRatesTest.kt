@@ -58,7 +58,7 @@ class CatchRatesTest {
         assertEquals(9, toxic(GameMap.FIRERED_U_V10)); assertEquals(9, toxic(GameMap.LEAFGREEN_U))
         // The Nat. Dex builds count as their base game (IRONMON_ROMS; skipped without the dumps).
         for ((file, want) in listOf("emerald-natdex-121.gba" to 5, "firered-natdex-121.gba" to 9)) {
-            val f = System.getenv("IRONMON_ROMS")?.let { java.io.File(it, file) }?.takeIf { it.isFile } ?: continue
+            val f = Dumps.rom(file) ?: continue
             val rom = f.readBytes()
             val mem = MemoryReader { a, n ->
                 val o = a - 0x08000000L

@@ -43,4 +43,18 @@ class MoveMatchupTest {
         assertNull(MoveMatchup.general(9))      // the unused Mystery slot
         assertNull(MoveMatchup.general(99))
     }
+
+    @Test
+    fun `on the Nat Dex expansion Fairy moves have a chart, and Steel takes Ghost and Dark at 1x`() {
+        // rc33 audit P1 #70: a Fairy move's info had no chart lines at all, and Ghost and Dark read as resisted by Steel.
+        val fairy = MoveMatchup.general(18, natDex = true)!!
+        assertEquals(listOf("Dark", "Dragon", "Fighting"), fairy.strongAgainst)
+        assertEquals(listOf("Fire", "Poison", "Steel"), fairy.resistedBy)
+        assertNull(MoveMatchup.general(18), "no Fairy outside the expansion")
+        assertTrue("Fairy" in MoveMatchup.general(16, natDex = true)!!.noEffectOn)
+        assertTrue("Fairy" in MoveMatchup.general(3, natDex = true)!!.strongAgainst)
+        kotlin.test.assertFalse("Steel" in MoveMatchup.general(7, natDex = true)!!.resistedBy)
+        kotlin.test.assertFalse("Steel" in MoveMatchup.general(17, natDex = true)!!.resistedBy)
+        assertTrue("Steel" in MoveMatchup.general(7)!!.resistedBy)
+    }
 }

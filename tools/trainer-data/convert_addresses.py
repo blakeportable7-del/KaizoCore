@@ -23,7 +23,12 @@ WANT = ["gBattleTerrain", "gBattleWeather", "gBattleStructPtr", "gStatuses3", "g
         "gBattleOutcome", "gBattleMainFunc", "gMapHeader", "gLevelUpLearnsets", "gSaveBlock1ptr", "gSaveBlock2ptr",
         "bagPocket_Items_offset", "bagPocket_Berries_offset", "bagPocket_Balls_offset", "bagPocket_Balls_Size",
         "HandleTurnActionSelectionState", "ReturnFromBattleToOverworld",
-        "gSpecialVar_Result", "gameVarsOffset", "gTasks", "Task_HandleConfirmStarterInput", "gBattlerPartyIndexes", "sSpecialFlags"]
+        "gSpecialVar_Result", "gameVarsOffset", "gTasks", "Task_HandleConfirmStarterInput", "gBattlerPartyIndexes", "sSpecialFlags",
+        "gBattlerAttacker", "gBattleCommunication", "gCurrentTurnActionNumber", "gActionsByTurnOrder", "gHitMarker",
+        "BattleScript_FocusPunchSetUp", "BattleScript_SnatchedMove", "BattleScript_MoveUsedIsConfused", "BattleScript_MoveUsedIsConfused2",
+        "BattleScript_MoveUsedIsConfusedNoMore", "BattleScript_MoveUsedWokeUp", "BattleScript_MoveUsedIsInLove", "BattleScript_MoveUsedIsInLove2",
+        "BattleScript_MoveUsedIsFrozen", "BattleScript_MoveUsedIsFrozen2", "BattleScript_MoveUsedIsFrozen3", "BattleScript_MoveUsedUnfroze",
+        "BattleScript_MoveUsedUnfroze2", "gBattleTextBuff1", "gTrainerBattleOpponent_A"]
 out = root / "tracker-gba/src/test/resources/gen3/addresses.tsv"
 out.parent.mkdir(parents=True, exist_ok=True)
 n = 0

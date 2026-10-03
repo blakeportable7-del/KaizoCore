@@ -20,4 +20,7 @@ object NewRunGuard {
     fun release() { busy.set(false) }
 
     val inProgress: Boolean get() = busy.get()
+
+    /** Returns once no new run is being made. */
+    suspend fun awaitDone() { while (inProgress) kotlinx.coroutines.delay(300) }
 }

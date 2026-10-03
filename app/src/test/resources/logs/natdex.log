@@ -1,0 +1,23 @@
+Randomizer Version: 4.6.1-END121
+Random Seed: 23011520740611
+Settings String: 908WBIkEjL8AP8AAgGRAAKeBhsECQEAFAAyCQBuUgAAG/8AQRAA5ATkAoZICTIGhAIyAAUYVwIAAAAAAAAAAAAAABBGaXJlIFJlZCAoVSkgMS4x3np7NePDOIo=
+
+--Pokemon Base Stats & Types--
+NUM|NAME      |TYPE             |  HP| ATK| DEF|SATK|SDEF| SPD|ABILITY1    |ABILITY2    |ITEM
+  1|Bulbasaur    |GRASS/POISON     | 113|  14|  21|  83|  41|  45|Levitate    |Insomnia    |TM15 (common), Awakening (rare)
+ 29|Nidoran♀     |POISON           |  76|  24|  30|  50|  32|  63|Serene Grace|-------     |
+ 83|Farfetch’d   |NORMAL/FLYING    |  30|  28|  85|  98| 100|  36|Volt Absorb |Stench      |
+150|Mewtwo       |PSYCHIC          | 108|  59|  46| 177|  80| 210|Color Change|Levitate    |Dubious Disc (common)
+782|Jangmo-o     |DRAGON           |  33|  15|  88|  24|  64|  76|Static      |Plus        |
+783|Hakamo-o     |DRAGON/FIGHTING  |  22|  94| 123|  63|  50|  67|Guts        |Levitate    |Ether (common), Choice Band (rare)
+784|Kommo-o      |DRAGON/FIGHTING  | 113| 144| 177|  30|  20| 117|Blaze       |-------     |
+1045|Mewtwo-X     |PSYCHIC/FIGHTING | 108| 122| 194|  91| 184|  80|Swarm       |Clear Body  |
+1145|Farfetch’d-G |FIGHTING         |  74|  33|  42|  58|  73|  98|Liquid Ooze |Early Bird  |
+1179|Tauros-PF    |FIGHTING/FIRE    |  90|  24| 127| 129|  55|  65|Intimidate  |-------     |
+1180|Tauros-PW    |FIGHTING/WATER   | 120|  83|  40| 101| 106|  40|Early Bird  |Flame Body  |
+1194|Rotom-Heat   |ELECTRIC/FIRE    | 116|  92| 100|  67|  60|  86|Natural Cure|-------     |
+1206|Darmanitan-GZ|ICE/FIRE         | 108|  31| 158|  36|  99| 107|Natural Cure|-------     |
+1220|Pumpkaboo-J  |GHOST/GRASS      |  71|  67|  37|  62|  40|  58|Water Absorb|Flame Body  |TM21 (rare)
+1234|Necrozma-DM  |PSYCHIC/STEEL    |  93| 126|  94| 131| 190|  46|Stench      |-------     |
+1235|Necrozma-DW  |PSYCHIC/GHOST    |  93|  21| 212| 130| 100| 125|Stench      |-------     |Rare Candy (common)
+

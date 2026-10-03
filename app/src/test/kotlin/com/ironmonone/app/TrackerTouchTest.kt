@@ -136,7 +136,8 @@ class TrackerTouchTest {
     @Test
     fun `SETUP is a tracker button in both panels, so it gets the same 44dp box`() {
         for (f in listOf("TrackerPanel.kt", "NdsTrackerPanel.kt")) {
-            assertTrue("PcSmallButton(\"SETUP\") { g() }" in read(f), "$f draws SETUP as a tracker button")
+            // A gear since 2026-10-02 ("the setup button needs to be differential to other buttons maybe a gear icon").
+            assertTrue("TrackerGearButton { g() }" in read(f), "$f draws SETUP as the gear")
             // In a battle SETUP ends the battle banner instead of taking a row of its own (2026-10-02, "wasted space").
             assertTrue("onGear = onGear" in read(f), "$f hands SETUP to the battle banner")
         }
@@ -144,7 +145,10 @@ class TrackerTouchTest {
         assertTrue("fun PcSmallButton(label: String, onClick: () -> Unit) = PcButton(label, onClick = onClick)" in pc,
             "and every tracker button takes the box")
         val banner = pc.substringAfter("fun PcBattleBanner(").substringBefore("\n}\n")
-        assertTrue("PcButton(\"SETUP\", spoken = \"Tracker Setup\", onClick = it)" in banner, "the banner's SETUP is a tracker button too")
+        assertTrue("TrackerGearButton(onClick = it)" in banner, "the banner's SETUP is the gear too")
+        val gear = read("TrackerLook.kt").substringAfter("internal fun TrackerGearButton(").substringBefore("\n}\n")
+        assertTrue("sizeIn(minWidth = PcMin.TOUCH_DP.dp, minHeight = PcMin.TOUCH_DP.dp)" in gear, "the gear has the 44dp box")
+        assertTrue("contentDescription = \"Tracker Setup\"" in gear, "and a screen reader hears what it is")
         assertTrue("buttons = onSwapView != null || isWild || onGear != null" in banner, "and its band is 44dp tall for it")
     }
 

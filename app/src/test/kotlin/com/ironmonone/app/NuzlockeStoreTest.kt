@@ -13,6 +13,7 @@ import com.ironmonone.tracker.nds.NdsTrackerState
 import com.ironmonone.tracker.nuzlocke.Gender
 import com.ironmonone.tracker.nuzlocke.Heir
 import com.ironmonone.tracker.nuzlocke.NuzlockeEdits
+import com.ironmonone.tracker.nuzlocke.NuzlockeLedger
 import com.ironmonone.tracker.nuzlocke.NuzlockePreset
 import com.ironmonone.tracker.nuzlocke.NuzlockeRules
 import com.ironmonone.tracker.nuzlocke.NuzlockeSystem
@@ -21,6 +22,7 @@ import com.ironmonone.tracker.nuzlocke.NzArea
 import com.ironmonone.tracker.nuzlocke.NzMon
 import com.ironmonone.tracker.nuzlocke.Origin
 import com.ironmonone.tracker.nuzlocke.RosterMon
+import com.ironmonone.tracker.nuzlocke.RunMeta
 import com.ironmonone.tracker.nuzlocke.RunStatus
 import com.ironmonone.tracker.nuzlocke.Snapshot
 import java.io.ByteArrayOutputStream
@@ -341,6 +343,51 @@ class NuzlockeStoreTest {
         assertFalse(NuzlockeTracking.observe(filesDir, state, at = 2_100L), "the same state again changes nothing")
     }
 
+    // ---------------------------------------------------------------- a staged demo (rc32 audit P2 #29, P3 #29)
+
+    @Test
+    fun `a staged demo's encounters never reach the player's ledger`() {
+        val prep = PrepStore(filesDir)
+        val kind = RomKind.EMERALD_U
+        prep.saveLastRun(kind.id, "RSE Kaizo.rnqs")
+        prep.saveLastSeed(0xabL)
+        val made = store.start(NuzlockeStore.bindOfRun(kind.id, 0xabL), "Emerald", standard, t0)
+        val file = store.fileFor(made.meta.id)
+        val before = file.readBytes()
+        try {
+            Demo.mode = "gba-nuz"
+            assertTrue(NuzlockeTracking.observe(filesDir, trackerState(), at = 2_000L), "the demo's panel still shows the ledger at work")
+            val staged = assertNotNull(NuzlockeTracking.current(filesDir, now = 2_001L))
+            assertTrue(staged.staged)
+            assertEquals(listOf("Treecko"), staged.ledger.roster.values.map { it.speciesName })
+            staged.edited()
+            assertTrue(staged.saveNow())
+            assertTrue(NuzlockeTracking.write(File(filesDir, "flush.txt"), "after", wait = true), "everything queued before this is on disk")
+            assertTrue(before.contentEquals(file.readBytes()), "the run on disk is as it was")
+            assertNull(NuzlockeTracking.loaded(made.meta.id), "the copy the other screens read was never fed")
+        } finally {
+            Demo.mode = null
+        }
+        // Out of the demo the same poll reaches the player's run, which starts from what is on disk.
+        NuzlockeTracking.reset()
+        assertTrue(NuzlockeTracking.observe(filesDir, trackerState(), at = 3_000L))
+        val live = assertNotNull(NuzlockeTracking.current(filesDir, now = 3_001L))
+        assertFalse(live.staged)
+        assertTrue(live.saveNow())
+        assertEquals(listOf("Treecko"), assertNotNull(store.load(made.meta.id)).roster.values.map { it.speciesName })
+    }
+
+    @Test
+    fun `only a debuggable build takes the demo extra, since any app can start the launcher`() {
+        assertNull(Demo.fromLaunch("gba-nuz", debuggable = false))
+        assertNull(Demo.fromLaunch("crash", debuggable = false))
+        assertEquals("gba-nuz", Demo.fromLaunch("gba-nuz", debuggable = true))
+        assertNull(Demo.fromLaunch(null, debuggable = true))
+        val main = File("src/main/kotlin/com/ironmonone/app/MainActivity.kt").readText().replace("\r\n", "\n")
+        assertTrue("Demo.mode = Demo.fromLaunch(intent?.getStringExtra(\"demo\"), (applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0)" in main)
+        assertEquals(1, Regex("Demo\\.mode = ").findAll(main).count(), "set in one place")
+    }
+
     @Test
     fun `a state with nothing to feed, or no run to feed it to, is left alone`() {
         val prep = PrepStore(filesDir)
@@ -473,6 +520,63 @@ class NuzlockeStoreTest {
         assertEquals(0, back.meta.leg)
     }
 
+    @Test
+    fun `a run on any preset started with the Genlocke switch offers its next game once finished`() {
+        // rc32 audit P2 #39: the run list asked the preset, so Hardcore with the switch on never offered the next game.
+        val hardcore = NuzlockeRules.forPreset(NuzlockePreset.HARDCORE).copy(genlocke = true)
+        val run = store.start("lib-1", "Pokémon FireRed", hardcore, t0)
+        val plain = store.start("lib-2", "Pokémon Emerald", standard, t0 + 1)
+        run.meta.status = RunStatus.COMPLETE; store.save(run)
+        plain.meta.status = RunStatus.COMPLETE; store.save(plain)
+        val listed = store.list().associateBy { it.header.id }
+        val h = listed.getValue(run.meta.id).header
+        assertEquals(NuzlockePreset.HARDCORE, h.preset)
+        assertEquals(run.meta.genlockeId, h.genlockeId)
+        assertTrue(NuzlockeStarts.canContinue(h, h.status))
+        assertFalse(NuzlockeStarts.canContinue(listed.getValue(plain.meta.id).header, RunStatus.COMPLETE))
+    }
+
+    // ---------------------------------------------------------------- the work done on the Play loop's thread (rc32 audit P3 #39)
+
+    @Test
+    fun `the run in play is looked up again only when something changed, not every two seconds`() {
+        val prep = PrepStore(filesDir)
+        val kind = RomKind.EMERALD_U
+        prep.saveLastRun(kind.id, "RSE Kaizo.rnqs")
+        prep.saveLastSeed(0xabL)
+        store.dir.mkdirs()
+        for (i in 0 until 100) NuzlockeLedger(RunMeta("nz-other-$i", "lib-other-$i", "Game $i", standard, t0 + i)).let {
+            store.fileFor(it.meta.id).writeText(NuzlockeText.format(it))
+        }
+        store.start(NuzlockeStore.bindOfRun(kind.id, 0xabL), "Emerald", standard, t0 + 200)
+        val live = assertNotNull(NuzlockeTracking.current(filesDir, now = 10_000L))
+        val before = NuzlockeStore.lists
+        for (i in 1..30) assertSame(live, NuzlockeTracking.current(filesDir, now = 10_000L + i * NuzlockeTracking.RECHECK_MS))
+        assertEquals(before, NuzlockeStore.lists, "nothing changed, so the 101 ledgers were not read again")
+        // A ledger put in the folder by anything else (a restore) is seen at the next look.
+        prep.saveLastSeed(0xcdL)
+        assertNull(NuzlockeTracking.current(filesDir, now = 100_000L))
+        val other = NuzlockeLedger(RunMeta("nz-restored", NuzlockeStore.bindOfRun(kind.id, 0xcdL), "Restored", standard, t0 + 300))
+        Thread.sleep(20)
+        store.fileFor(other.meta.id).writeText(NuzlockeText.format(other))
+        assertEquals("nz-restored", assertNotNull(NuzlockeTracking.current(filesDir, now = 100_000L + NuzlockeTracking.RECHECK_MS)).ledger.meta.id)
+    }
+
+    @Test
+    fun `a change is written from a copy made on the caller's thread, and formatted on the writer`() {
+        val src = File("src/main/kotlin/com/ironmonone/app/NuzlockeStore.kt").readText().replace("\r\n", "\n")
+        val saveSoon = src.substringAfter("private fun saveSoon() {").substringBefore("\n        }")
+        assertTrue("ledger.detached()" in saveSoon, saveSoon)
+        assertFalse("NuzlockeText.format(ledger)" in saveSoon, "the live ledger is never formatted here")
+        assertTrue("NuzlockeText.format(copy)" in saveSoon)
+        // And what reaches the disk is the ledger as it was when the change was fed.
+        val made = store.start("lib-1", "Emerald", standard, t0)
+        val live = assertNotNull(NuzlockeTracking.liveFor(store, "lib-1"))
+        assertTrue(live.feed(Snapshot(area = NzArea("Route 101", 16), party = listOf(treecko()), ballCount = 5), t0 + 1))
+        assertTrue(live.saveNow())
+        assertEquals(listOf("Treecko"), assertNotNull(store.load(made.meta.id)).roster.values.map { it.speciesName })
+    }
+
     // ---------------------------------------------------------------- a randomized run's ledger, after the randomizer
 
     @Test
@@ -486,12 +590,20 @@ class NuzlockeStoreTest {
         val failed = store.start(NuzlockeStore.bindOfRun(kind, 0x22L), "failed", standard, t0 + 1)
         val current = store.start(NuzlockeStore.bindOfRun(kind, 0xabL), "current", standard, t0 + 2)
         val otherGame = store.start(NuzlockeStore.bindOfRun(RomKind.FIRERED_U_V11.id, 0x33L), "other game", standard, t0 + 3)
+        val otherPlayed = store.start(NuzlockeStore.bindOfRun(RomKind.FIRERED_U_V11.id, 0x44L), "other game, played", standard, t0 + 3)
+        otherPlayed.meta.started = true
+        store.save(otherPlayed)
         val library = store.start("lib-00000001", "library", standard, t0 + 4)
 
-        assertEquals(2, store.settleRandomized(kind, now, t0 + 10))
+        // One run is in place, so another game's randomized ledger is over too (rc33 audit P1 #23: it said "In progress" for good).
+        assertEquals(4, store.settleRandomized(kind, now, t0 + 10))
         assertEquals(RunStatus.ABANDONED, assertNotNull(store.load(played.meta.id)).meta.status, "a run that was played is kept, marked replaced")
         assertNull(store.load(failed.meta.id), "a run never played is dropped")
-        for ((name, keep) in listOf("current" to current, "other game" to otherGame, "library" to library)) {
+        assertNull(store.load(otherGame.meta.id), "another game's run never played is dropped")
+        val replaced = assertNotNull(store.load(otherPlayed.meta.id))
+        assertEquals(RunStatus.ABANDONED, replaced.meta.status, "another game's played run is kept, marked replaced")
+        assertTrue(replaced.events.any { it.text == "Replaced by a randomized run of another game." }, "and says by what")
+        for ((name, keep) in listOf("current" to current, "library" to library)) {
             assertEquals(RunStatus.ACTIVE, assertNotNull(store.load(keep.meta.id), name).meta.status, name)
         }
         assertEquals(0, store.settleRandomized(kind, now, t0 + 11), "nothing more to do")

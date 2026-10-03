@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -72,10 +73,14 @@ internal data class NdsMoveContext(
  * card of the Pokemon on the field is aimed. Types are the ones the cards show,
  * the randomizer's (the reference reads its static PokemonData instead).
  */
-internal fun ndsMoveContext(state: NdsTrackerState, card: NdsTrackedMon, enemyCard: Boolean, hiddenPowerType: String, show: Boolean, opponent: NdsTrackedMon? = state.enemy): NdsMoveContext? {
+internal fun ndsMoveContext(
+    state: NdsTrackerState, card: NdsTrackedMon, enemyCard: Boolean, hiddenPowerType: String, show: Boolean, opponent: NdsTrackedMon? = state.enemy,
+    /** Your Pokemon on the field the view shows (DsViewState.shownPlayer): in a double battle not always the first. */
+    shownActive: NdsTrackedMon? = null,
+): NdsMoveContext? {
     if (!state.inBattle) return null
     val enemy = opponent ?: return null
-    val active = state.playerActive ?: state.party.firstOrNull() ?: return null
+    val active = shownActive ?: state.playerActive ?: state.party.firstOrNull() ?: return null
     val target = when {
         enemyCard -> active
         card.mon.pid == active.mon.pid -> enemy
@@ -103,7 +108,8 @@ internal fun rememberDsEffectivenessReady(state: NdsTrackerState?): Boolean {
     var ready by remember { mutableStateOf(true) }
     var enemiesThisBattle by remember { mutableStateOf(0) }
     androidx.compose.runtime.LaunchedEffect(state?.inBattle) { if (state?.inBattle != true) enemiesThisBattle = 0 }
-    androidx.compose.runtime.LaunchedEffect(state?.enemy?.mon?.pid) {
+    // A double or triple battle's other opponents count too: each new one is _logNewEnemy's for its own slot.
+    androidx.compose.runtime.LaunchedEffect(state?.enemy?.mon?.pid, state?.enemyBattlers?.drop(1)?.map { it?.mon?.pid }) {
         if (state?.enemy == null) return@LaunchedEffect
         enemiesThisBattle++
         ready = false
@@ -291,8 +297,13 @@ internal data class NdsHealsView(
 internal fun ndsHealsView(
     state: NdsTrackerState, card: NdsTrackedMon, showHp: Boolean,
     pokecenterOn: Boolean, pokecenterCount: Int, tourneyOn: Boolean, accEvaOn: Boolean,
+    /**
+     * Program.getHealingTotals' playerPokemon: the Pokemon of yours the view shows (DsViewState.shownPlayer), which in a
+     * double battle is not always the first on the field. The heals are a share of its max HP.
+     */
+    shownCarrier: NdsTrackedMon? = null,
 ): NdsHealsView? {
-    val carrier = state.playerPokemon
+    val carrier = shownCarrier ?: state.playerPokemon
     if (carrier == null || card.mon.pid != carrier.mon.pid) return null
     val maxHp = card.mon.maxHp
     val stages = carrier.statStages
@@ -308,12 +319,29 @@ internal fun ndsHealsView(
 }
 
 /**
+ * The moves header on both cards, MoveUtils.getMoveHeader (MoveUtils.lua:134-149), which MainScreen.setUpMoves sets for
+ * whichever Pokemon is drawn, the opponent included (lua:524-526): "Moves: 3/12 (14)", the level-up moves learned by its
+ * level, all of them, and the next one's level until every one is learned. The opponent's card said only "Moves", and
+ * your own had the Gen 3 tracker's wording, no colon (rc32 audit P2 #35). The levels are the bundled table both trackers
+ * use, so nothing hidden is shown. "Moves" alone for a species the table lacks.
+ */
+internal fun ndsMovesHeader(m: NdsTrackedMon): String =
+    if (m.movesTotal > 0) "Moves: ${m.movesLearned}/${m.movesTotal}" + (m.nextMoveLevel?.let { " ($it)" } ?: "") else "Moves"
+
+/**
  * MainScreen.onPokemonLevelHover / setUpEXPBar (lua:134-145, 323-334): your own
  * Pokemon's bar fraction while its level is held, when "Experience bar" is on
- * ([on]); the opponent's card never has one.
+ * ([on]); the opponent's card never has one. By the species' growth rate from the
+ * run's sidecar (rc32 audit P3 #118): Fluctuating, the reference's only curve, when a
+ * sidecar from before the rate was written gives none, and no bar where there is no
+ * sidecar at all (a game not randomized here), whose curves this cannot know.
  */
-internal fun ndsExpFraction(m: com.ironmonone.tracker.nds.Gen4.Mon, on: Boolean): Double? =
-    if (on) com.ironmonone.tracker.nds.NdsExperience.fraction(m.level, m.experience) else null
+internal fun ndsExpFraction(p: NdsTrackedMon, on: Boolean): Double? {
+    val info = p.info ?: return null
+    if (!on) return null
+    val rate = info.growthRate.takeIf { it >= 0 } ?: com.ironmonone.tracker.nds.NdsExperience.FLUCTUATING
+    return com.ironmonone.tracker.nds.NdsExperience.fraction(p.mon.level, p.mon.experience, rate)
+}
 
 /** IconDrawer LEFT_ARROW and RIGHT_ARROW (IconDrawer.lua:998-1021), 3 by 5, in top box text. */
 private val DS_LEFT_ARROW = listOf("001", "010", "100", "010", "001")
@@ -373,12 +401,15 @@ private fun NdsPartyCard(
     hiddenPowerJustChanged: Boolean = false,
     /** MainScreen.onChangeHiddenPower: true for ">" (forward). */
     onHiddenPower: ((Boolean) -> Unit)? = null,
+    /** Past the run's BST line, still as it joined (BstRule): the X. */
+    bstBroken: Boolean = false,
+    onBstTap: (() -> Unit)? = null,
+    /** This run's banned moves (MoveRule): the X on a move and the line on its card. */
+    markMove: (PcMove) -> PcMove = { it },
 ) {
     val m = p.mon
     val context = androidx.compose.ui.platform.LocalContext.current
-    val sprite = remember(m.species, m.shiny) {
-        PcAssets.dsSprite(context, m.species, m.shiny)
-    }
+    val sprite = remember(m.species, m.shiny, m.form) { RomFormSprites.sprite(context, m.species, m.form, m.shiny) ?: PcAssets.dsSprite(context, m.species, m.shiny) }
     // MainScreen.lua:860-889: GEN_5_ITEMS[heldItem].name, "---" for no item (entry 0)
     // and blank for an id the table lacks.
     val lines = ndsHeadLines(m, enemy = false, itemName = p.itemName, abilityName = p.abilityName)
@@ -398,12 +429,14 @@ private fun NdsPartyCard(
                 com.ironmonone.tracker.nds.NdsLogData.heldItemDescription(m.heldItem, m.nature)) } },
             evo = ndsEvoLabel(m, own = true),
             levelPrefix = "Lv. ",
-            holdExpFraction = ndsExpFraction(m, TrackerOptions.dsExpBar),
+            holdExpFraction = ndsExpFraction(p, TrackerOptions.dsExpBar),
             sprite = sprite,
             // The Walking Pals icon by its national number, behind the GBA panel's two switches; the still sprite
             // with them off, with no sheet, or for an egg (whose species is what will hatch).
             iconSpecies = if (m.isEgg) 0 else m.species,
             iconDex = WalkingPals.Dex.NATIONAL,
+            // A shiny walks as its shiny (Blake, 2026-10-03).
+            iconLook = WalkingPals.Look(shiny = m.shiny),
             belowHead = heals?.let { v -> { NdsHealsBlock(v, onHealsList, onPokecenter) } },
         ) {
             PcStatRow("HP", "${m.maxHp}", p.statStages["HP"], nature = m.nature)
@@ -412,20 +445,15 @@ private fun NdsPartyCard(
             PcStatRow("SPA", "${m.spAtk}", p.statStages["SPA"], nature = m.nature)
             PcStatRow("SPD", "${m.spDef}", p.statStages["SPD"], nature = m.nature)
             PcStatRow("SPE", "${m.spe}", p.statStages["SPE"], nature = m.nature)
-            PcStatRow("BST", p.info?.bst?.toString() ?: "?")
+            PcStatRow("BST", p.info?.bst?.toString() ?: "?", broken = bstBroken, onBrokenTap = onBstTap)
         }
     }) {
         PcMovesSection(
-            movesOf(p, inBattle, moveCtx, own = true, hiddenPowerType, hiddenPowerJustChanged),
-            header = if (p.movesTotal > 0) {
-                // Reference wording is "Moves 4/16 (13)" - no colon
-                // (Utils.getMovesLearnedHeader). The GBA panel already
-                // matched; this one had drifted.
-                "Moves ${p.movesLearned}/${p.movesTotal}" +
-                    (p.nextMoveLevel?.let { " ($it)" } ?: "")
-            } else "Moves",
+            movesOf(p, inBattle, moveCtx, own = true, hiddenPowerType, hiddenPowerJustChanged).map(markMove),
+            header = ndsMovesHeader(p),
             onHeaderTap = onMoveHistory?.let { cb -> { cb(p.mon.species, p.speciesName, p.mon.level) } },
-            onMoveTap = onInfo?.let { cb -> { r -> ndsMoveDescription(r, gen)?.let { d -> cb(r.name.removeSuffix("*"), "", d) } } },
+            // A banned move's card opens with why (MoveRule), even for a move with no description.
+            onMoveTap = onInfo?.let { cb -> { r -> listOfNotNull(r.banLine, ndsMoveDescription(r, gen)).joinToString("\n\n").ifEmpty { null }?.let { d -> cb(r.name.removeSuffix("*"), "", d) } } },
             onHiddenPower = onHiddenPower,
         )
     }
@@ -456,11 +484,12 @@ private fun NdsEnemyCard(
     /** The lock icon: null hides it ("Enable enemy locking" off), else whether this opponent is locked. */
     lock: Boolean? = null,
     onLock: () -> Unit = {},
+    /** A wild one past the run's BST line (BstRule): the X. */
+    bstBroken: Boolean = false,
+    onBstTap: (() -> Unit)? = null,
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
-    val sprite = remember(e.mon.species) {
-        PcAssets.dsSprite(context, e.mon.species, false)
-    }
+    val sprite = remember(e.mon.species, e.mon.form) { RomFormSprites.sprite(context, e.mon.species, e.mon.form, false) ?: PcAssets.dsSprite(context, e.mon.species, false) }
     // MainScreen.setEnemySpecificControls: no HP row, the item line reads "Total seen"
     // and the ability line "Last level" (an ability it reveals goes into its note,
     // Tracker.trackAbilityNote).
@@ -481,10 +510,11 @@ private fun NdsEnemyCard(
             sprite = sprite,
             iconSpecies = if (e.mon.isEgg) 0 else e.mon.species,
             iconDex = WalkingPals.Dex.NATIONAL,
+            iconLook = WalkingPals.Look(shiny = e.mon.shiny),
         ) {
             // Enemy stats are unknown: this column is the notebook.
             PcMarkColumn(marks, onCycleMark)
-            PcStatRow("BST", e.info?.bst?.toString() ?: "?")
+            PcStatRow("BST", e.info?.bst?.toString() ?: "?", broken = bstBroken, onBrokenTap = onBstTap)
             // Live stage chevrons, the reference's in-battle markers.
             e.statStages.filterKeys { it != "ACC" && it != "EVA" }
                 .filterValues { it != 6 }
@@ -502,7 +532,7 @@ private fun NdsEnemyCard(
         androidx.compose.foundation.layout.Box(
             Modifier.fillMaxWidth().height(1.dp).background(TrackerLook.divider))
         // The reference's tracked moves for this opponent: only what it has used, this run.
-        PcMovesSection(enemyMovesOf(e, movesSeenRunWide, moveInfoFor, inBattle = true, ctx = moveCtx), header = "Moves",
+        PcMovesSection(enemyMovesOf(e, movesSeenRunWide, moveInfoFor, inBattle = true, ctx = moveCtx), header = ndsMovesHeader(e),
             onHeaderTap = onMoveHistory?.let { cb -> { cb(e.mon.species, e.speciesName, e.mon.level) } },
             onMoveTap = onMoveInfo?.let { cb -> { r -> ndsMoveDescription(r, gen)?.let { d -> cb(r.name.removeSuffix("*"), d) } } })
         PcNoteRow(note, onEditNote)
@@ -621,7 +651,7 @@ fun PcNdsRunOver(
 
 @Composable
 fun NdsTrackerPanel(
-    /** The startup favorites line, shown before a party exists, as the DS tracker's title screen shows them. */
+    /** The startup favorites, their icons shown before a party exists, as the DS tracker's title screen shows them. */
     favoriteLine: FavoritesShown? = null,
     /** RandomBallScreen: 1, 2 or 3 for Left, Middle, Right; null hides it (option off, or no tracker yet). */
     randomBall: Int? = null,
@@ -650,6 +680,8 @@ fun NdsTrackerPanel(
     moveInfoFor: (Int) -> NdsMoveInfo? = { null },
     /** Opens the tracker's gear (the reference's SettingsGear). */
     onGear: (() -> Unit)? = null,
+    /** After SETUP in the first row: landscape's corner arrow (TrackerCornerMenu); null in portrait. */
+    headerTrailing: (@Composable () -> Unit)? = null,
     /** TimerScreen: the run clock, when the option is on. */
     timer: RunTimer? = null,
     /** LOCATION_DATA encounters for the current area (null hides the encounter frame). */
@@ -668,6 +700,12 @@ fun NdsTrackerPanel(
     onPokecenter: ((Boolean) -> Unit)? = null,
     /** Your Pokemon AND the opponent together instead of swapping between them: landscape, as on GBA. */
     stackBoth: Boolean = false,
+    /** Kaizo's BST line (BstRule), from the run in Play; a test hands its own. */
+    bstLines: BstRule.Lines? = bstLinesInPlay(attempt),
+    /** What each of your Pokemon joined the run as, beside the run's marks. */
+    joinedForms: JoinedForms? = joinedFormsInPlay(attempt, bstLines),
+    /** The run's banned moves (MoveRule), from the run in Play; a test hands its own. */
+    moveRules: MoveRule.Rules? = moveRulesInPlay(attempt),
 ) {
     // The run-over card is a Kaizo IronMON run's only (PlayRules, 2026-09-30).
     val ironmonOver = ironmonGameOverCard(state?.runOver != null)
@@ -693,16 +731,35 @@ fun NdsTrackerPanel(
       Column(Modifier.fillMaxWidth().then(trackerBackdrop()).padding(PcRef.MARGIN.rp)) {
           // The reference's gear sits at the top of the tracker screen; SETUP is its NavigationMenu.ButtonSetup.
           // In a battle it ends the battle banner (2026-10-02, "wasted space"); otherwise it has the top bar.
+          // The attempt, in a Kaizo IronMON run (2026-10-02: "the tracker needs attempt count").
+          val attemptShown = attempt.takeIf { !LocalAttemptInTitle.current && ironmonRunInPlay(it) }
+          // What each of your Pokemon joined the run as (BstRule), read from the whole party so one that evolves
+          // out of sight is known by what it was (2026-10-02).
+          // A tap on a red BST: its value, the line, and whose it is (null key: a wild one).
+          var bstSheet by remember { mutableStateOf<Triple<Int, Int, Long?>?>(null) }
+          var joinedVersion by remember { mutableIntStateOf(0) }
+          bstSheet?.let { (bst, line, key) ->
+              BstRuleSheet(bst, line, own = key != null, onEvolved = { key?.let { joinedForms?.markEvolved(it) }; joinedVersion++; bstSheet = null }) { bstSheet = null }
+          }
+          if (joinedForms != null && state != null) {
+              val party = state.party.map { it.mon.pid to it.mon.species }
+              androidx.compose.runtime.LaunchedEffect(joinedForms, party) { party.forEach { (pid, sp) -> joinedForms.joinedAs(pid, sp) } }
+          }
           val bannerShows = state != null && state.inBattle &&
               !(state.runOver != null && state.runOver != com.ironmonone.tracker.nds.NdsRunOver.WON && ironmonOver)
           onGear?.takeIf { !bannerShows }?.let { g ->
               Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
+                  attemptShown?.let {
+                      PixText("ATTEMPT $it", PcRef.FONT - 1, Pc.Text, weight = androidx.compose.ui.text.font.FontWeight.Medium)
+                  }
+                  Spacer(Modifier.weight(1f))
                   // RepelDrawer: the DS tracker draws its own three item icons.
                   if (TrackerOptions.showRepel && state != null && !state.inBattle && state.repelSteps > 0) {
                       PcRepelBar(state.repelSteps, state.repelDuration, dsIcons = true)
                       Spacer(Modifier.width(6.dp))
                   }
-                  PcSmallButton("SETUP") { g() }
+                  TrackerGearButton { g() }
+                  headerTrailing?.invoke()
               }
               Spacer(Modifier.height(2.rp))
           }
@@ -718,8 +775,8 @@ fun NdsTrackerPanel(
                 Column(Modifier.padding(6.dp)) {
                     // The memory address line was a debug read-out in front of players (audit, 2026-09-27).
                     PixText("No Pokemon yet. The tracker fills in when you get your first one.", 8, Pc.Dim, wrap = true)
-                    randomBall?.let { Spacer(Modifier.height(4.dp)); RandomBallRow(it, hgss = state.badgeSet == "HGSS") }
-                    favoriteLine?.list?.let { Spacer(Modifier.height(3.dp)); PixText(it, 7, Pc.Gold, wrap = true) }
+                    // The random ball row, and the favorites' icons beside it where they fit (FavoriteIcons).
+                    DsBallAndFavorites(randomBall, hgss = state.badgeSet == "HGSS", favoriteLine?.icons.orEmpty())
                 }
             }
 
@@ -747,32 +804,41 @@ fun NdsTrackerPanel(
                 androidx.compose.runtime.LaunchedEffect(state.inBattle, view.locked) { view.onRead(state) }
                 androidx.compose.runtime.LaunchedEffect(effectivenessReady) { view.onPause(effectivenessReady, state, TrackerOptions.dsAutoSwapToEnemy) }
                 val shownEnemy = view.shownEnemy(state)
+                // Your Pokemon the view shows: in a double or triple battle, the slot it is on (DsViewState.shownPlayer).
+                val shownPlayer = view.shownPlayer(state)
                 // With no Pokemon of yours read (a battle before the party is found), the opponent shows.
-                val showEnemy = shownEnemy != null && (stackBoth || view.viewingEnemy || state.playerPokemon == null)
-                // No swap control when both are on screen; none during the pause after a new opponent.
-                val onSwap = if (!stackBoth && view.canSwap(state, effectivenessReady)) { { view.swap(state, effectivenessReady) } } else null
+                val showEnemy = shownEnemy != null && (stackBoth || view.viewingEnemy || shownPlayer == null)
+                // A single battle has no swap when both are on screen; none during the pause after a new opponent. A
+                // double or triple battle's swap walks the Pokemon on the field (DsViewState.next).
+                val onSwap = if (view.canSwap(state, effectivenessReady, stackBoth)) { { view.swap(state, effectivenessReady, stackBoth) } } else null
+                val side = view.sideWords(state, stackBoth)
                 if (state.inBattle) {
-                    PcBattleBanner(state.isWildBattle, onFlee, viewingOwn = !showEnemy, onSwapView = onSwap, onGear = onGear)
+                    PcBattleBanner(state.isWildBattle, onFlee, viewingOwn = if (side == null) !showEnemy else view.offersFoe(state, stackBoth),
+                        onSwapView = onSwap, onGear = onGear, trailing = headerTrailing, attempt = attemptShown,
+                        side = side, swapSpoken = view.swapSpoken(state, stackBoth))
                     Spacer(Modifier.height(2.rp))
                 } else if (onSwap != null) {
                     // After the battle a locked opponent stays in reach (readMemory keeps it while locked).
                     DsLockedBanner(viewingOwn = !showEnemy, onSwap)
                     Spacer(Modifier.height(4.dp))
                 }
-                if (stackBoth || !showEnemy) state.playerPokemon?.let { p ->
+                if (stackBoth || !showEnemy) shownPlayer?.let { p ->
                     NdsPartyCard(onMoveHistory = onMoveHistory, onTypeDefenses = onTypeDefenses, p,
                         heals = ndsHealsView(state, p, TrackerOptions.healsWhole, TrackerOptions.dsPokecenterHeals,
-                            pokecenterCount, TrackerOptions.tourneyTracker, TrackerOptions.dsAccEva),
+                            pokecenterCount, TrackerOptions.tourneyTracker, TrackerOptions.dsAccEva, shownCarrier = p),
                         onHealsList = { kind, lines ->
                             dsInfo = Triple("$kind Items", "", lines.joinToString("\n").ifEmpty { com.ironmonone.tracker.nds.NdsHeals.emptyText(kind) })
                         },
                         onPokecenter = { up -> onPokecenter?.invoke(up) },
                         onInfo = { t, sub, body -> dsInfo = Triple(t, sub, body) },
-                        moveCtx = ndsMoveContext(state, p, enemyCard = false, hiddenPowerType, showEffectiveness, opponent = shownEnemy),
+                        moveCtx = ndsMoveContext(state, p, enemyCard = false, hiddenPowerType, showEffectiveness, opponent = shownEnemy, shownActive = p.takeIf { state.playerBattlers.size > 1 }),
                         inBattle = state.inBattle,
                         hiddenPowerType = hiddenPowerType, hiddenPowerJustChanged = hiddenPowerChangedAt != 0L,
                         onHiddenPower = onStepHiddenPower?.let { step -> { forward -> step(forward); hiddenPowerChangedAt = System.currentTimeMillis() } },
-                        gen = if (state.badgeSet.startsWith("BW")) 5 else 4)
+                        gen = if (state.badgeSet.startsWith("BW")) 5 else 4,
+                        bstBroken = joinedVersion >= 0 && BstRule.ownBreaks(p.info?.bst, bstLines, joinedForms, p.mon.pid, p.mon.species),
+                        onBstTap = { bstSheet = Triple(p.info?.bst ?: 0, bstLines?.own ?: 0, p.mon.pid) },
+                        markMove = MoveRule.ndsMark(moveRules, p, state))
                 }
                 if (showEnemy) shownEnemy?.let {
                     // readTrackedEncountersIntoLabel: only in a wild battle, and only where the
@@ -782,11 +848,13 @@ fun NdsTrackerPanel(
                         enemyEncounters, onCycleMark, enemyNote, onEditNote,
                         movesSeenRunWide, moveInfoFor,
                         encounterLine = area?.let { a -> { DsEncounterLine(a, encountersSeen.size) { encounterOpen = true } } },
-                        moveCtx = ndsMoveContext(state, it, enemyCard = true, hiddenPowerType, showEffectiveness, opponent = it),
+                        moveCtx = ndsMoveContext(state, it, enemyCard = true, hiddenPowerType, showEffectiveness, opponent = it, shownActive = shownPlayer.takeIf { state.playerBattlers.size > 1 }),
                         onMoveInfo = { n, d -> dsInfo = Triple(n, "", d) },
                         gen = if (state.badgeSet.startsWith("BW")) 5 else 4,
                         lock = (view.locked != null).takeIf { TrackerOptions.dsEnemyLocking },
-                        onLock = { view.toggleLock(state, TrackerOptions.dsEnemyLocking) })
+                        onLock = { view.toggleLock(state, TrackerOptions.dsEnemyLocking) },
+                        bstBroken = state.isWildBattle && BstRule.wildBreaks(it.info?.bst, bstLines),
+                        onBstTap = { bstSheet = Triple(it.info?.bst ?: 0, bstLines?.wild ?: 0, null) })
                 }
                 PcCarousel(
                     inBattle = state.inBattle,
@@ -794,6 +862,8 @@ fun NdsTrackerPanel(
                     badgeSet = state.badgeSet,
                     note = enemyNote,
                     onEditNote = onEditNote,
+                    // NdsEnemyCard ends with the note row, as the DS tracker's card does.
+                    notesInCard = true,
                     encounters = enemyEncounters,
                     leagueBeaten = state.leagueBeaten,
                 )

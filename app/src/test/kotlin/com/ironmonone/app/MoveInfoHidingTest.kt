@@ -61,6 +61,54 @@ class MoveInfoHidingTest {
         assertTrue("GearToggle(\"Type matchups in move info\", TrackerOptions.showTypeMatchups)" in gear, "the player turns it on in Tracker Setup")
     }
 
+    /**
+     * rc32 audit P3 #32: the reference marks a same-type move before it hides anything (DataHelper.lua:306-309) and clears
+     * the green only where the move types are hidden (TrackerScreen.lua:1469, :1535-1541). With "Reveal info if
+     * randomized" off and the types not randomized, the opponent's Fire move from a Fire attacker stays green.
+     */
+    @Test
+    fun `an opponent's same-type move keeps its green while its type is shown`() {
+        val powerOnly = RandomizedFlags(false, false, false, false, false, false, false, true, false, false)
+        assertTrue(flamethrower.toPcMove(opponent(powerOnly)).stab, "move types shown: green, on a power that reads ?")
+        assertTrue(!flamethrower.toPcMove(opponent(everything)).stab, "move types hidden: no green")
+        assertTrue(flamethrower.toPcMove(opponent(null)).stab, "nothing hidden, as before")
+    }
+
+    /**
+     * rc32 audit P3 #73: your own Hidden Power's chart is its set type's, read when it is drawn, as the tag and the
+     * category beside the arrows are. It was worked out once, from the type the card opened with.
+     */
+    @Test
+    fun `Hidden Power's matchups follow its type arrows`() {
+        val saved = TrackerOptions.showTypeMatchups
+        val dir = java.nio.file.Files.createTempDirectory("hp").toFile()
+        try {
+            TrackerOptions.showTypeMatchups = true
+            HiddenPowerTypes.load(java.io.File(dir, "hp.txt"))
+            val pid = 0x1234L
+            val hp = MoveRow(MoveRules.HIDDEN_POWER, "HIDDEN POWER", 15, 15, 1, 100, 0, "PHY")
+            val d = detailOf(hp.toPcMove(null), null).copy(hiddenPowerPid = pid)
+            assertNull(MoveInfoText.chart(d), "no type set: no chart")
+            repeat(9) { HiddenPowerTypes.next(pid) }                      // Fighting ... Fire
+            assertEquals(10, HiddenPowerTypes.of(pid))
+            assertEquals(setOf("Grass", "Ice", "Bug", "Steel"), MoveInfoText.chart(d)?.strongAgainst?.toSet(), "Fire's")
+            HiddenPowerTypes.next(pid)                                     // Water
+            assertEquals(setOf("Fire", "Ground", "Rock"), MoveInfoText.chart(d)?.strongAgainst?.toSet(), "Water's, on the same card")
+            TrackerOptions.showTypeMatchups = false
+            assertNull(MoveInfoText.chart(detailOf(hp.toPcMove(null), null).copy(hiddenPowerPid = pid)), "the switch still rules")
+            // Any other move keeps the chart it opened with.
+            TrackerOptions.showTypeMatchups = true
+            val f = detailOf(flamethrower.toPcMove(opponent(null)), null)
+            assertEquals(f.typeChart, MoveInfoText.chart(f))
+        } finally {
+            TrackerOptions.showTypeMatchups = saved
+            dir.deleteRecursively()
+        }
+        val card = java.io.File("src/main/kotlin/com/ironmonone/app/PcMoveInfo.kt").readText()
+        assertTrue("MoveInfoText.chart(d)?.let { g ->" in card, "the card draws the live chart")
+        assertTrue("d.typeChart?.let" !in card)
+    }
+
     @Test
     fun `nothing hidden shows the numbers as before`() {
         val d = detailOf(flamethrower.toPcMove(opponent(null)), null)

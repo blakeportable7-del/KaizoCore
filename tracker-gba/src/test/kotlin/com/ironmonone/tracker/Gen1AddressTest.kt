@@ -11,13 +11,27 @@ import kotlin.test.assertTrue
  * came back empty on a device, and the unit tests' 64 KB fake memory hid it.
  */
 class Gen1AddressTest {
-    private fun wram(m: Gen1Map) = listOf(m.partyCount, m.partySpecies, m.partyMons, m.enemyMon,
-        m.inBattle, m.enemyMove, m.badges, m.numItems, m.items, m.aiTurns, m.statMods, m.statMods + 0x14 + 5, m.curMap)
+    /**
+     * Every work RAM read of the map, which are its Long fields (the ROM tables are Ints), found by reflection so a read
+     * added later is checked too: a hand list stopped at curMap and left out the twelve Nuzlocke reads (rc32 audit
+     * P3 #117). Then the far end of each block read in one go, and the tracker's own fixed reads. 0 is a read the map
+     * does not have.
+     */
+    private fun wram(m: Gen1Map): List<Long> {
+        val fields = Gen1Map::class.java.declaredFields.filter { it.type == java.lang.Long.TYPE }
+            .map { f -> f.isAccessible = true; f.getLong(m) }.filter { it != 0L }
+        return fields + listOf(m.partyMons + 6 * Gen1Tracker.PARTY_STRIDE - 1, m.enemyMon + Gen1Tracker.ENEMY_SIZE - 1,
+            m.items + 2 * Gen1Tracker.ITEM_SLOTS, m.statMods + 0x14 + 5, m.nicks + 6 * 11 - 1,
+            Gen1Tracker.MENU + 6, Gen1Tracker.TILE_MAP + 0x10 * 20 + 0x0F, Gen1Tracker.PLAYER_MON_NUMBER)
+    }
 
     @Test
     fun `every Gen 1 address lies inside the 8 KB work RAM`() {
-        for (m in listOf(Gen1Map.RED_BLUE, Gen1Map.YELLOW))
-            for (a in wram(m)) assertTrue(a in 0L until 0x2000L, "${m.name}: 0x%X is outside work RAM".format(a))
+        for (m in listOf(Gen1Map.RED_BLUE, Gen1Map.YELLOW)) {
+            val reads = wram(m)
+            assertTrue(reads.size >= 30, "${m.name}: only ${reads.size} reads found; the reflection lost the map's fields")
+            for (a in reads) assertTrue(a in 0L until 0x2000L, "${m.name}: 0x%X is outside work RAM".format(a))
+        }
     }
 
     @Test

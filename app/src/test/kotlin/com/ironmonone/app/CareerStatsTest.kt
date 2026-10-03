@@ -151,8 +151,11 @@ class CareerStatsTest {
         assertEquals(2, CareerStats.winStreak(listOf(rec(1, WON).copy(resumes = 3), rec(2, WON))), "a resume after the app closed was not chosen")
         val s = CareerStats.compute(inputs(records = mapOf("emerald-u" to listOf(rec(1, WON), rewound, rec(3, LOST)))))
         assertEquals(2, s.wins); assertEquals(1, s.winsAfterRewinds)
-        assertEquals("2, 1 after state loads, retries or restarts", StatsCopy.wins(s.wins, s.winsAfterRewinds))
-        assertEquals("3", StatsCopy.wins(3, 0))
+        // The count, and under it a line of its own for the wins that went back in time (rc32 audit P2 #15).
+        assertEquals("2", StatsCopy.wins(s.wins))
+        assertEquals("1 after state loads, retries or restarts", StatsCopy.winsNote(s.winsAfterRewinds))
+        assertEquals("3", StatsCopy.wins(3))
+        assertEquals(null, StatsCopy.winsNote(0))
         // The best run is the first win, which was clean; had only the rewound one won, the line says so.
         assertEquals(0, s.bests.single().rewinds)
         val onlyRewound = CareerStats.compute(inputs(records = mapOf("emerald-u" to listOf(rec(1, LOST, badges = 3), rewound)))).bests.single()
@@ -233,19 +236,47 @@ class CareerStatsTest {
             ds(end + 5_000L, 60, PastRun.NOWHERE, "ONIX"),                       // the same run: written a moment after the history's record
             ds(end - 3_600_000L, 100, PastRun.PAST_LAB, "ZANGOOSE"),             // an hour before it: from before the history
             ds(end - 7_200_000L, 200, PastRun.WON),                              // a win from before the history
-            ds(end + CareerStats.SAME_RUN_MS, 30, PastRun.NOWHERE, "ONIX"),      // exactly two minutes: the same run
-            ds(end + CareerStats.SAME_RUN_MS + 1, 40, PastRun.NOWHERE, "ONIX"),  // a moment more: another run
+            ds(end + 120_000L, 30, PastRun.NOWHERE, "ONIX"),                     // two minutes after: the same run's line again
+            ds(end + 120_001L, 40, PastRun.NOWHERE, "ONIX"),                     // later, with no record: not a run (rc32 audit P2 #14)
         )
         val s = CareerStats.compute(inputs(records = mapOf("black2-u" to history), attempts = mapOf("black2-u" to 9), clock = mapOf("black2-u#7" to 500L), past = past))
         assertEquals(1, s.wins, "the older win; the run the history also holds is not counted twice")
-        assertEquals(500L + 100 + 200 + 40, s.playSeconds, "the clock, plus the seconds of the three runs only the log holds")
-        // The record's Onix, the older Zangoose and the later Onix: Onix twice.
-        assertEquals("Onix" to 2, s.topCause)
+        assertEquals(500L + 100 + 200, s.playSeconds, "the clock, plus the seconds of the two runs from before the history")
+        // The record's Onix and the older Zangoose, one each: the tie goes to the name first in the alphabet.
+        assertEquals("Onix" to 1, s.topCause)
         // The counter holds every run that was started; the log's older runs are among them, not on top of them.
         assertEquals(9, s.runsStarted)
         // A DS past run has no mode and no attempt number: no best run and no streak come from it.
         assertEquals(1, s.bests.size)
         assertEquals(0, s.longestWinStreak)
+    }
+
+    /**
+     * rc32 audit P2 #14: a DS loss logs its past run, and Retry left that line in the log; the run's end logged it again
+     * with its record. The first line, matching no record, counted as a run from before the history: a second cause, its
+     * seconds on top of the run clock. And rc31 logged a past run for a DS library game, which has no record at all.
+     */
+    @Test
+    fun `a retried DS loss and a library game's line are not runs of their own`() {
+        val start = t0
+        val end = t0 + 30 * 60_000L
+        val record = rec(7, LOST, 2, ruleset = "B2W2 Kaizo.rnqs", killer = "Onix", ended = end).copy(started = start)
+        val past = listOf(
+            ds(start + 10 * 60_000L, 600, PastRun.NOWHERE, "GEODUDE"),    // the loss that was retried
+            ds(end + 1_000L, 1_800, PastRun.NOWHERE, "ONIX"),               // the run's own end, beside its record
+            ds(start + 40 * 60_000L, 900, PastRun.WON, "LILLIPUP"),         // a library game, logged by rc31 as a run
+        )
+        val s = CareerStats.compute(inputs(records = mapOf("black2-u" to listOf(record)), attempts = mapOf("black2-u" to 7), clock = mapOf("black2-u#7" to 1_800L), past = past))
+        assertEquals(0, s.wins)
+        assertEquals(1_800L, s.playSeconds, "the run clock, and nothing on top of it")
+        assertEquals("Onix" to 1, s.topCause)
+        assertEquals(7, s.runsStarted)
+        // A past run from before the first record still counts, whatever comes after it.
+        val before = ds(start - 86_400_000L, 120, PastRun.WON)
+        val withOlder = CareerStats.compute(inputs(records = mapOf("black2-u" to listOf(record)), clock = mapOf("black2-u#7" to 1_800L), past = past + before))
+        assertEquals(1, withOlder.wins)
+        assertEquals(1_800L + 120, withOlder.playSeconds)
+        assertEquals(2, withOlder.runsStarted, "the record and the run from before it")
     }
 
     @Test
@@ -280,6 +311,7 @@ class CareerStatsTest {
         // The DS past runs: one good line written the way the log writes it, junk around it.
         val log = File(root, "prep/pastruns-Pokemon Black 2.tsv")
         PastRunStore(log).log(ds(t0 - 9_000_000L, 70, PastRun.WON))
+        DiskWriter.drain()   // the log is written on the writer's thread (rc32 audit P2 #40): on disk before the junk goes after it
         log.appendText("junk\n1" + tab + "2\n")
         // Nuzlocke ledgers: three real ones (one finished, one lost, one going), and files that are not ledgers.
         val store = NuzlockeStore(root)

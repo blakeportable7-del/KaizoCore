@@ -16,10 +16,16 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -31,6 +37,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -52,6 +59,8 @@ import com.ironmonone.tracker.nds.NdsLogData
 import com.ironmonone.tracker.nds.NdsMoveInfo
 import com.ironmonone.tracker.nds.NdsTrackedMon
 import com.ironmonone.tracker.nds.NdsTracker
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
 import androidx.compose.foundation.lazy.grid.items as gridItems
 
@@ -93,7 +102,9 @@ private class DsTabState {
  * 4, each team with its stats estimated as TeamInfoScreen does), Pivots (the
  * early areas' encounters with their odds), Gym TMs, Info and Search (Pokemon
  * or trainers with a move or an ability). The arrow in the top right goes
- * back; with nothing to go back to it is the X that closes the log.
+ * back; with nothing to go back to it is the X that closes the log. Every word
+ * is DialogText, which follows the phone's font size, and the tabs and the
+ * close are 48dp (rc32 audit P2 #19, #102): it was fixed 6 to 9dp text.
  *
  * Not drawn: the trainers' portraits and card art, the type-matchup hover on
  * a Pokemon's picture, and the bookmark filter for marked Pokemon; the phone's
@@ -101,22 +112,19 @@ private class DsTabState {
  */
 @Composable
 internal fun DsLogViewer(file: File, tracker: NdsTracker, party: List<NdsTrackedMon>?, onClose: () -> Unit) {
-    val log = remember(file) { RandomizerLog.parse(file) }
-    val game = remember(log) { log?.let { NdsLogData.gameFor(tracker.map, DsLog.logGameName(it)) } }
-    val ds = remember(log, game) {
-        if (log == null || game == null || DsLog.logGameName(log) != game.name) null
-        else DsLog(
-            log, game,
-            DsLog.starterNumber(log, listOfNotNull(tracker.firstPokemonId.takeIf { it > 0 }) + (party?.map { it.mon.species } ?: emptyList())),
-            speciesName = { tracker.speciesName(it) },
-        )
+    // The log and everything built from it, read off the main thread (rc32 audit P2 #27): a 2.4 MB Black 2 log was
+    // parsed in the first composition, and the screen froze after the tap. Null until it lands.
+    val loaded by produceState<DsLogData?>(null, file, tracker) {
+        value = withContext(Dispatchers.Default) { loadDsLog(file, tracker, party) }
     }
+    val log = loaded?.log
+    val ds = loaded?.ds
     val ctx = LocalContext.current
     val sprites = remember { HashMap<Int, ImageBitmap?>() }
     val spriteOf: (Int) -> ImageBitmap? = { id ->
         if (sprites.containsKey(id)) sprites[id] else PcAssets.dsSprite(ctx, id, false).also { sprites[id] = it }
     }
-    val moves = remember(tracker) { tracker.moveTable().filter { it.name.isNotBlank() && it.name != "-" }.associateBy { DsLog.norm(it.name) } }
+    val moves = loaded?.moves ?: emptyMap()
     // Program.openLogFromPath: with a Pokemon in the party the viewer opens on its page.
     val lead = party?.firstOrNull()?.mon?.species
     var view by remember(ds) { mutableStateOf(if (ds != null && lead != null && ds.byId.containsKey(lead)) DsView(pokemon = lead) else DsView()) }
@@ -132,19 +140,26 @@ internal fun DsLogViewer(file: File, tracker: NdsTracker, party: List<NdsTracked
                 Row(Modifier.weight(1f).horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
                     DsTab.entries.forEach { t ->
                         val on = t == view.tab
-                        PixText(t.label, 7, if (on) Pc.Gold else Pc.Text,
-                            Modifier.background(if (on) Pc.Page else Pc.Ground).border(1.dp, if (on) Pc.Gold else Pc.Border)
-                                .clickable { openTab(t) }.padding(horizontal = 6.dp, vertical = 6.dp))
+                        // 48dp tall and selectable, in the dialog's text size (rc32 audit P2 #19).
+                        Box(
+                            Modifier.heightIn(min = PcMin.DIALOG_TOUCH_DP.dp).background(if (on) Pc.Page else Pc.Ground)
+                                .border(if (on) 2.dp else 1.dp, if (on) Pc.Gold else Pc.Border)
+                                .selectable(selected = on, role = Role.Tab) { openTab(t) }.padding(horizontal = 8.dp),
+                            contentAlignment = Alignment.Center,
+                        ) { DialogText(t.label, 12, if (on) Pc.Gold else Pc.Text, underline = on) }
                     }
                 }
                 Spacer(Modifier.width(4.dp))
-                PixText(if (history.isEmpty()) "X" else "<", 9, Pc.Text,
-                    Modifier.background(Pc.Page).border(1.dp, Pc.Border).clickable { back() }.padding(horizontal = 10.dp, vertical = 6.dp))
+                // Back while there is somewhere to go back to, else the X that closes the log: a 48dp target that says
+                // which (rc32 audit P2 #102); it was a 25 by 21dp glyph read as "X" or "<".
+                PcTap(if (history.isEmpty()) "X" else "<", 9, Pc.Text, if (history.isEmpty()) "Close" else "Back",
+                    Modifier.background(Pc.Page).border(1.dp, Pc.Border)) { back() }
             }
             Spacer(Modifier.height(6.dp))
-            if (log == null) { PixText("The log could not be read.", 8, Pc.Negative, wrap = true); return@Column }
+            if (loaded == null) { DialogText("Reading the log.", 13, Pc.Dim); return@Column }
+            if (log == null) { DialogText("The log could not be read.", 13, Pc.Negative); return@Column }
             if (ds == null) {
-                PixText("Game does not match. Only load logs with the same game as the one you're playing.", 8, Pc.Negative, wrap = true)
+                DialogText("Game does not match. Only load logs with the same game as the one you're playing.", 13, Pc.Negative)
                 return@Column
             }
             val v = view
@@ -159,7 +174,7 @@ internal fun DsLogViewer(file: File, tracker: NdsTracker, party: List<NdsTracked
                 }
                 DsTab.TRAINERS -> {
                     val g = ds.groups.getOrNull(v.group)
-                    if (g == null) PixText("---", 8, Pc.Text)
+                    if (g == null) DialogText("---", 13, Pc.Text)
                     else if (v.team != null) DsTeamPage(
                         ds, g, v.team, v.member, moves, spriteOf,
                         onPosition = { view = v.copy(team = it, member = 0) }, onMember = { view = v.copy(member = it) }, onPokemon = toPokemon,
@@ -176,6 +191,22 @@ internal fun DsLogViewer(file: File, tracker: NdsTracker, party: List<NdsTracked
     }
 }
 
+/** What the DS log viewer draws from, read off the main thread (rc32 audit P2 #27). [ds] is null when the log is another game's. */
+internal class DsLogData(val log: RandomizerLog?, val ds: DsLog?, val moves: Map<String, NdsMoveInfo>)
+
+internal fun loadDsLog(file: File, tracker: NdsTracker, party: List<NdsTrackedMon>?): DsLogData {
+    val log = RandomizerLog.parse(file)
+    val game = log?.let { NdsLogData.gameFor(tracker.map, DsLog.logGameName(it)) }
+    val ds = if (log == null || game == null || DsLog.logGameName(log) != game.name) null
+    else DsLog(
+        log, game,
+        DsLog.starterNumber(log, listOfNotNull(tracker.firstPokemonId.takeIf { it > 0 }) + (party?.map { it.mon.species } ?: emptyList())),
+        speciesName = { tracker.speciesName(it) },
+    )
+    val moves = tracker.moveTable().filter { it.name.isNotBlank() && it.name != "-" }.associateBy { DsLog.norm(it.name) }
+    return DsLogData(log, ds, moves)
+}
+
 // ---- widgets --------------------------------------------------------------
 
 @Composable
@@ -185,16 +216,15 @@ private fun DsBox(modifier: Modifier = Modifier, content: @Composable ColumnScop
 
 @Composable
 private fun DsArrow(text: String, visible: Boolean = true, onClick: () -> Unit) {
-    val m = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-    // 48dp to tap, same glyph (audit, 2026-09-27).
-    if (visible) PcTap(text, 9, Pc.Text, if (text.contains("<")) "Previous" else "Next") { onClick() } else PixText(" ", 9, Pc.Text, m)
+    // 48dp to tap, same glyph (audit, 2026-09-27); a hidden one keeps its room, so the row does not shift.
+    if (visible) PcTap(text, 9, Pc.Text, if (text.contains("<")) "Previous" else "Next") { onClick() } else Spacer(Modifier.size(PcMin.DIALOG_TOUCH_DP.dp))
 }
 
 /** A Pokemon's picture; a form with no picture shows its name instead. */
 @Composable
 private fun DsMonIcon(art: ImageBitmap?, name: String, size: Int = 32, modifier: Modifier = Modifier) {
     if (art != null) Image(art, name, modifier.size(size.dp), filterQuality = FilterQuality.None)
-    else Box(modifier.size(size.dp), contentAlignment = Alignment.Center) { PixText(name, 6, Pc.Dim, align = TextAlign.Center, wrap = true) }
+    else Box(modifier.sizeIn(minWidth = size.dp, minHeight = size.dp), contentAlignment = Alignment.Center) { DialogText(name, 12, Pc.Dim, align = TextAlign.Center) }
 }
 
 @Composable
@@ -213,17 +243,17 @@ private fun DsField(value: String, onValue: (String) -> Unit) {
 @Composable
 private fun DsBarGraph(heading: String, values: List<Int>) {
     DsBox(Modifier.fillMaxWidth()) {
-        PixText(heading, 7, Pc.Text)
+        DialogText(heading, 12, Pc.Text)
         Spacer(Modifier.height(4.dp))
         Row(Modifier.fillMaxWidth().height(74.dp), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.Bottom) {
             values.forEach { v ->
                 Column(Modifier.fillMaxHeight(), verticalArrangement = Arrangement.Bottom, horizontalAlignment = Alignment.CenterHorizontally) {
-                    PixText("$v", 6, Pc.Text)
+                    DialogText("$v", 12, Pc.Text)
                     Box(Modifier.width(14.dp).fillMaxHeight((v / 255f).coerceIn(0.02f, 1f)).background(Pc.Text))
                 }
             }
         }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) { DsLog.STAT_KEYS.forEach { PixText(it, 6, Pc.Text) } }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) { DsLog.STAT_KEYS.forEach { DialogText(it, 12, Pc.Text) } }
     }
 }
 
@@ -266,13 +296,13 @@ private fun stab(p: RandomizerLog.Pokemon?, m: NdsMoveInfo?): Boolean =
 private fun DsMoveDialog(m: NdsMoveInfo, onClose: () -> Unit) {
     Dialog(onDismissRequest = onClose) {
         DsBox(Modifier.clickable { onClose() }) {
-            PixText(m.name, 9, Pc.Gold)
+            DialogText(m.name, 14, Pc.Gold)
             Spacer(Modifier.height(4.dp))
-            PixText("Type: ${logTitle(m.type)}", 7, Pc.Text)
-            if (m.category.isNotBlank()) PixText("Category: ${m.category}", 7, Pc.Text)
-            PixText("Power: ${if (m.power > 0) m.power.toString() else "---"}", 7, Pc.Text)
-            PixText("Accuracy: ${if (m.accuracy > 0) m.accuracy.toString() else "---"}", 7, Pc.Text)
-            PixText("PP: ${m.pp}", 7, Pc.Text)
+            DialogText("Type: ${logTitle(m.type)}", 12, Pc.Text)
+            if (m.category.isNotBlank()) DialogText("Category: ${m.category}", 12, Pc.Text)
+            DialogText("Power: ${if (m.power > 0) m.power.toString() else "---"}", 12, Pc.Text)
+            DialogText("Accuracy: ${if (m.accuracy > 0) m.accuracy.toString() else "---"}", 12, Pc.Text)
+            DialogText("PP: ${m.pp}", 12, Pc.Text)
         }
     }
 }
@@ -284,15 +314,18 @@ private fun DsMoveDialog(m: NdsMoveInfo, onClose: () -> Unit) {
 private fun DsPokemonOverview(ds: DsLog, st: DsTabState, spriteOf: (Int) -> ImageBitmap?, onPokemon: (Int) -> Unit, onStats: () -> Unit) {
     Column(Modifier.fillMaxSize()) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            PixText("Type below to search any pokemon:", 7, Pc.Text, Modifier.weight(1f), wrap = true)
-            Row(Modifier.background(Pc.Page).border(1.dp, Pc.Border).clickable { onStats() }.padding(horizontal = 6.dp, vertical = 4.dp),
+            DialogText("Type below to search any pokemon:", 12, Pc.Text, Modifier.weight(1f))
+            Row(Modifier.heightIn(min = PcMin.DIALOG_TOUCH_DP.dp).background(Pc.Page).border(1.dp, Pc.Border).clickable(role = Role.Button) { onStats() }
+                .wrapContentHeight(Alignment.CenterVertically).padding(horizontal = 6.dp, vertical = 4.dp),
                 verticalAlignment = Alignment.Bottom) {
                 listOf(15, 27, 21).forEach { h -> Box(Modifier.padding(end = 2.dp).width(6.dp).height((h * 0.6f).dp).background(Pc.Text)) }
                 Spacer(Modifier.width(4.dp))
-                PixText("Stats", 7, Pc.Text)
+                DialogText("Stats", 12, Pc.Text)
             }
         }
         Spacer(Modifier.height(6.dp))
+        // A log that lists no Pokemon says why (rc32 audit P2 #71).
+        if (ds.log.pokemon.isEmpty() && ds.log.statsUnchanged) { DialogText(NO_POKEMON_IN_LOG, 13, Pc.Dim); return@Column }
         DsField(st.overviewQuery) { st.overviewQuery = it }
         Spacer(Modifier.height(6.dp))
         val q = st.overviewQuery.trim()
@@ -303,7 +336,7 @@ private fun DsPokemonOverview(ds: DsLog, st: DsTabState, spriteOf: (Int) -> Imag
                 Column(Modifier.background(Pc.Page).border(1.dp, Pc.Border).clickable { onPokemon(p.id) }.padding(4.dp),
                     horizontalAlignment = Alignment.CenterHorizontally) {
                     DsMonIcon(spriteOf(p.id), ds.nameOf(p))
-                    PixText(ds.nameOf(p), 6, Pc.Text, align = TextAlign.Center)
+                    DialogText(ds.nameOf(p), 12, Pc.Text, align = TextAlign.Center)
                 }
             }
         }
@@ -332,7 +365,7 @@ private fun DsPokemonPage(
                 DsArrow("<") { onSwap(list[(at - 1 + list.size) % list.size].id) }
                 DsMonIcon(spriteOf(p.id), ds.nameOf(p), 40)
                 Spacer(Modifier.width(6.dp))
-                PixText(ds.nameOf(p), 9, Pc.Text, Modifier.weight(1f))
+                DialogText(ds.nameOf(p), 14, Pc.Text, Modifier.weight(1f))
                 DsArrow(">") { onSwap(list[(at + 1) % list.size].id) }
             }
         }
@@ -342,15 +375,15 @@ private fun DsPokemonPage(
         val evos = p.evolutions.mapNotNull { ds.log.pokemonNamed(it) }
         DsBox(Modifier.fillMaxWidth()) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                PixText("Evos:", 8, Pc.Text, Modifier.width(52.dp))
-                if (evos.isEmpty()) PixText("None", 7, Pc.Text)
+                DialogText("Evos:", 13, Pc.Text, Modifier.widthIn(min = 52.dp).padding(end = 4.dp))
+                if (evos.isEmpty()) DialogText("None", 12, Pc.Text)
                 else {
                     val i = evo.coerceIn(0, evos.lastIndex)
                     val e = evos[i]
                     DsArrow("<", evos.size > 1) { evo = (i - 1 + evos.size) % evos.size }
                     DsMonIcon(spriteOf(e.id), ds.nameOf(e), 32, Modifier.clickable { onOpen(e.id) })
                     DsArrow(">", evos.size > 1) { evo = (i + 1) % evos.size }
-                    PixText(ds.evoText(p, i), 7, Pc.Text, Modifier.weight(1f), wrap = true)
+                    DialogText(ds.evoText(p, i), 12, Pc.Text, Modifier.weight(1f))
                 }
             }
         }
@@ -358,30 +391,31 @@ private fun DsPokemonPage(
         DsBox(Modifier.fillMaxWidth()) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 DsArrow("<") { tms = !tms }
-                PixText(if (tms) "Gym TMs" else "Moves", 8, Pc.Text, Modifier.weight(1f), align = TextAlign.Center)
+                DialogText(if (tms) "Gym TMs" else "Moves", 13, Pc.Text, Modifier.weight(1f), align = TextAlign.Center)
                 DsArrow(">") { tms = !tms }
             }
             if (!tms) p.moves.forEach { (lv, mv) ->
                 val m = moves[DsLog.norm(mv)]
                 val level = lv.toString().let { if (it.length == 1) "  $it" else it }
-                PixText("$level ${m?.name ?: logTitle(mv)}", 7, if (stab(p, m)) Pc.Positive else Pc.Text,
-                    Modifier.fillMaxWidth().clickable(enabled = m != null) { info = m }.padding(vertical = 2.dp))
+                // Each tapped word here is a 48dp row (rc35 follow-up N #27); P2 #26 had done the GBA viewer's.
+                DialogText("$level ${m?.name ?: logTitle(mv)}", 12, if (stab(p, m)) Pc.Positive else Pc.Text,
+                    Modifier.fillMaxWidth().dsTap(m != null) { info = m })
             } else ds.game.gymTms.forEach { tm ->
                 if (tm == -1) Spacer(Modifier.height(14.dp))
                 else {
                     val mv = ds.tmMove(tm)
                     val m = moves[DsLog.norm(mv)]
                     val can = tm in p.tmsLearnable
-                    PixText("TM %02d %s".format(tm, m?.name ?: logTitle(mv)), 7, if (can && stab(p, m)) Pc.Positive else Pc.Text,
-                        Modifier.clickable(enabled = m != null) { info = m }.padding(vertical = 2.dp).then(if (can) Modifier else Modifier.strike()))
+                    DialogText("TM %02d %s".format(tm, m?.name ?: logTitle(mv)), 12, if (can && stab(p, m)) Pc.Positive else Pc.Text,
+                        Modifier.dsTap(m != null) { info = m }.then(if (can) Modifier else Modifier.strike()))
                 }
             }
         }
         Spacer(Modifier.height(4.dp))
         DsBox(Modifier.fillMaxWidth()) {
-            PixText("Abilities", 8, Pc.Text)
+            DialogText("Abilities", 13, Pc.Text)
             Spacer(Modifier.height(2.dp))
-            ds.abilityLines(p).forEach { PixText(it, 7, Pc.Text, Modifier.padding(vertical = 1.dp)) }
+            ds.abilityLines(p).forEach { DialogText(it, 12, Pc.Text, Modifier.padding(vertical = 1.dp)) }
         }
     }
     info?.let { DsMoveDialog(it) { info = null } }
@@ -397,10 +431,10 @@ private fun DsStatsScreen(ds: DsLog, st: DsTabState, spriteOf: (Int) -> ImageBit
         DsBox(Modifier.fillMaxWidth()) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 DsArrow("<") { st.statistic = (si - 1 + n) % n; st.statPos = 0 }
-                PixText(s.name, 8, Pc.Text, Modifier.weight(1f), align = TextAlign.Center)
+                DialogText(s.name, 13, Pc.Text, Modifier.weight(1f), align = TextAlign.Center)
                 DsArrow(">") { st.statistic = (si + 1) % n; st.statPos = 0 }
             }
-            PixText(s.description, 7, Pc.Text, Modifier.fillMaxWidth(), align = TextAlign.Center, wrap = true)
+            DialogText(s.description, 12, Pc.Text, Modifier.fillMaxWidth(), align = TextAlign.Center)
         }
         if (s.top.isEmpty()) return@Column
         val pos = st.statPos.coerceIn(0, s.top.lastIndex)
@@ -411,7 +445,7 @@ private fun DsStatsScreen(ds: DsLog, st: DsTabState, spriteOf: (Int) -> ImageBit
                 DsArrow("<") { st.statPos = (pos - 1 + s.top.size) % s.top.size }
                 Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                     DsMonIcon(spriteOf(p.id), ds.nameOf(p), 40, Modifier.clickable { onOpen(p.id) })
-                    PixText("#${pos + 1}. ${ds.nameOf(p)}", 8, Pc.Text)
+                    DialogText("#${pos + 1}. ${ds.nameOf(p)}", 13, Pc.Text)
                 }
                 DsArrow(">") { st.statPos = (pos + 1) % s.top.size }
             }
@@ -436,8 +470,10 @@ private fun DsTrainerGroups(ds: DsLog, group: Int, onGroup: (Int) -> Unit, onBat
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), verticalAlignment = Alignment.CenterVertically) {
             ds.groups.forEachIndexed { i, gr ->
-                if (i > 0) PixText(" | ", 8, Pc.Text)
-                PixText(gr.name, 7, Pc.Text, Modifier.clickable { onGroup(i) }.then(if (i == group) Modifier.underline() else Modifier).padding(vertical = 6.dp))
+                if (i > 0) DialogText(" | ", 13, Pc.Text)
+                DialogText(gr.name, 12, Pc.Text, Modifier.heightIn(min = PcMin.DIALOG_TOUCH_DP.dp)
+                    .selectable(selected = i == group, role = Role.Tab) { onGroup(i) }.wrapContentHeight(Alignment.CenterVertically)
+                    .then(if (i == group) Modifier.underline() else Modifier))
             }
         }
         Spacer(Modifier.height(6.dp))
@@ -447,7 +483,7 @@ private fun DsTrainerGroups(ds: DsLog, group: Int, onGroup: (Int) -> Unit, onBat
                 row.forEach { b ->
                     DsBox(Modifier.weight(1f).clickable { onBattle(b.position) }) {
                         if (g.isRival) {
-                            PixText(b.location, 7, Pc.Text, wrap = true)
+                            DialogText(b.location, 12, Pc.Text)
                             Spacer(Modifier.height(4.dp))
                             val size = ds.team(b).size
                             Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) { for (i in 0 until 6) if (i < size) DsBall(8) else DsDot(8) }
@@ -456,7 +492,7 @@ private fun DsTrainerGroups(ds: DsLog, group: Int, onGroup: (Int) -> Unit, onBat
                                 PcAssets.badge(ctx, ds.badgeSetFor(g), n, true)?.let { Image(it, null, Modifier.size(16.dp), filterQuality = FilterQuality.None) }
                                 Spacer(Modifier.width(2.dp))
                             }
-                            PixText(b.name, 7, Pc.Text, wrap = true)
+                            DialogText(b.name, 12, Pc.Text)
                         }
                     }
                 }
@@ -486,7 +522,7 @@ private fun DsTeamPage(
         DsBox(Modifier.fillMaxWidth()) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 DsArrow("<") { onPosition(g.battles[(at - 1 + n) % n].position) }
-                PixText(g.battleName(b), 9, Pc.Text, Modifier.weight(1f), align = TextAlign.Center)
+                DialogText(g.battleName(b), 14, Pc.Text, Modifier.weight(1f), align = TextAlign.Center)
                 DsArrow(">") { onPosition(g.battles[(at + 1) % n].position) }
             }
             Spacer(Modifier.height(4.dp))
@@ -513,36 +549,36 @@ private fun DsTeamMon(t: DsLog.TeamMon, moves: Map<String, NdsMoveInfo>, spriteO
             DsMonIcon(p?.let { spriteOf(it.id) }, t.name, 48, open)
             Spacer(Modifier.width(6.dp))
             Column(Modifier.weight(1f)) {
-                PixText(t.name, 9, Pc.Text, open)
-                PixText("Lv. ${t.level}", 7, Pc.Text)
-                p?.let { PixText(it.types.joinToString(" / ") { ty -> logTitle(ty) }, 7, Pc.Text) }
-                PixText(t.ability, 7, Pc.Gold)
-                t.item?.let { PixText(it, 7, Pc.Gold) }
+                DialogText(t.name, 14, Pc.Text, open)
+                DialogText("Lv. ${t.level}", 12, Pc.Text)
+                p?.let { DialogText(it.types.joinToString(" / ") { ty -> logTitle(ty) }, 12, Pc.Text) }
+                DialogText(t.ability, 12, Pc.Gold)
+                t.item?.let { DialogText(it, 12, Pc.Gold) }
             }
         }
         Spacer(Modifier.height(6.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
             DsLog.STAT_KEYS.forEachIndexed { i, k ->
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    PixText(k, 6, Pc.Text)
-                    PixText("${t.stats[i]}", 8, Pc.Text)
+                    DialogText(k, 12, Pc.Text)
+                    DialogText("${t.stats[i]}", 13, Pc.Text)
                 }
             }
         }
         Spacer(Modifier.height(6.dp))
         Row {
-            PixText("Moves", 7, Pc.Text, Modifier.weight(1f))
-            PixText("PP", 7, Pc.Text, Modifier.width(28.dp))
-            PixText("Pow", 7, Pc.Text, Modifier.width(34.dp))
-            PixText("Acc", 7, Pc.Text, Modifier.width(34.dp))
+            DialogText("Moves", 12, Pc.Text, Modifier.weight(1f))
+            DialogText("PP", 12, Pc.Text, Modifier.widthIn(min = 28.dp))
+            DialogText("Pow", 12, Pc.Text, Modifier.widthIn(min = 34.dp))
+            DialogText("Acc", 12, Pc.Text, Modifier.widthIn(min = 34.dp))
         }
         t.moves.forEach { mv ->
             val m = moves[DsLog.norm(mv)]
             Row(Modifier.padding(vertical = 2.dp)) {
-                PixText(m?.name ?: logTitle(mv), 7, if (stab(p, m)) Pc.Positive else Pc.Text, Modifier.weight(1f))
-                PixText(m?.pp?.toString() ?: "---", 7, Pc.Text, Modifier.width(28.dp))
-                PixText(m?.power?.takeIf { it > 0 }?.toString() ?: "---", 7, Pc.Text, Modifier.width(34.dp))
-                PixText(m?.accuracy?.takeIf { it > 0 }?.toString() ?: "---", 7, Pc.Text, Modifier.width(34.dp))
+                DialogText(m?.name ?: logTitle(mv), 12, if (stab(p, m)) Pc.Positive else Pc.Text, Modifier.weight(1f))
+                DialogText(m?.pp?.toString() ?: "---", 12, Pc.Text, Modifier.widthIn(min = 28.dp))
+                DialogText(m?.power?.takeIf { it > 0 }?.toString() ?: "---", 12, Pc.Text, Modifier.widthIn(min = 34.dp))
+                DialogText(m?.accuracy?.takeIf { it > 0 }?.toString() ?: "---", 12, Pc.Text, Modifier.widthIn(min = 34.dp))
             }
         }
     }
@@ -559,30 +595,37 @@ private fun DsPivots(ds: DsLog, st: DsTabState, onPokemon: (Int) -> Unit) {
     val cur = st.pivotType?.takeIf { it in types } ?: types.firstOrNull()
     Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
         DsBox(Modifier.width(118.dp).fillMaxHeight()) {
-            PixText("Areas", 9, Pc.Text, Modifier.fillMaxWidth(), align = TextAlign.Center)
+            DialogText("Areas", 14, Pc.Text, Modifier.fillMaxWidth(), align = TextAlign.Center)
             Spacer(Modifier.height(4.dp))
             Column(Modifier.verticalScroll(rememberScrollState())) {
                 ds.pivotAreas.forEachIndexed { i, a ->
-                    PixText(a, 7, if (i == st.pivotArea) Pc.Positive else Pc.Text,
-                        Modifier.fillMaxWidth().clickable { st.pivotArea = i; st.pivotType = null }.padding(vertical = 4.dp), wrap = true)
+                    DialogText(a, 12, if (i == st.pivotArea) Pc.Positive else Pc.Text,
+                        Modifier.fillMaxWidth().heightIn(min = PcMin.DIALOG_TOUCH_DP.dp)
+                            .selectable(selected = i == st.pivotArea, role = Role.Tab) { st.pivotArea = i; st.pivotType = null }
+                            .wrapContentHeight(Alignment.CenterVertically))
                 }
             }
         }
         DsBox(Modifier.weight(1f).fillMaxHeight()) {
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 types.forEach { t ->
-                    PixText(t, 7, Pc.Text, Modifier.clickable { st.pivotType = t }.then(if (t == cur) Modifier.underline() else Modifier).padding(vertical = 4.dp))
+                    DialogText(t, 12, Pc.Text, Modifier.heightIn(min = PcMin.DIALOG_TOUCH_DP.dp)
+                        .selectable(selected = t == cur, role = Role.Tab) { st.pivotType = t }.wrapContentHeight(Alignment.CenterVertically)
+                        .then(if (t == cur) Modifier.underline() else Modifier))
                 }
             }
             Spacer(Modifier.height(4.dp))
-            if (data == null) PixText("---", 7, Pc.Text)
+            if (data == null) DialogText("---", 12, Pc.Text)
             val rows = cur?.let { data?.get(it) } ?: emptyList()
             LazyColumn(Modifier.fillMaxSize()) {
                 items(rows) { r ->
-                    Row(Modifier.fillMaxWidth().clickable { onPokemon(r.pokemon.id) }.padding(vertical = 4.dp)) {
-                        PixText(ds.nameOf(r.pokemon), 7, Pc.Text, Modifier.weight(1f))
-                        PixText(if (r.minLevel == r.maxLevel) "Lv. ${r.minLevel}" else "Lv. ${r.minLevel} - ${r.maxLevel}", 7, Pc.Text, Modifier.width(80.dp))
-                        PixText("${r.percent}%", 7, Pc.Text, Modifier.width(34.dp), align = TextAlign.End)
+                    // A Pokemon the log does not list (it lists none when they were not randomized) is named, not opened.
+                    Row(Modifier.fillMaxWidth().heightIn(min = PcMin.DIALOG_TOUCH_DP.dp)
+                        .clickable(enabled = r.pokemon != null, role = Role.Button) { r.pokemon?.let { onPokemon(it.id) } },
+                        verticalAlignment = Alignment.CenterVertically) {
+                        DialogText(r.pokemon?.let(ds::nameOf) ?: logTitle(r.name), 12, Pc.Text, Modifier.weight(1f))
+                        DialogText(if (r.minLevel == r.maxLevel) "Lv. ${r.minLevel}" else "Lv. ${r.minLevel} to ${r.maxLevel}", 12, Pc.Text, Modifier.widthIn(min = 80.dp))
+                        DialogText("${r.percent}%", 12, Pc.Text, Modifier.widthIn(min = 34.dp), align = TextAlign.End)
                     }
                 }
             }
@@ -599,15 +642,15 @@ private fun DsGymTms(ds: DsLog, moves: Map<String, NdsMoveInfo>, onLeader: (Int,
         items(ds.gymTms) { r ->
             if (r.tm == -1) Spacer(Modifier.height(18.dp))
             else Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                PixText("TM%02d".format(r.tm), 7, Pc.Text, Modifier.width(44.dp))
+                DialogText("TM%02d".format(r.tm), 12, Pc.Text, Modifier.widthIn(min = 44.dp))
                 val m = moves[DsLog.norm(r.move)]
-                PixText(m?.name ?: logTitle(r.move), 7, Pc.Text, Modifier.weight(1f).clickable(enabled = m != null) { info = m })
+                DialogText(m?.name ?: logTitle(r.move), 12, Pc.Text, Modifier.weight(1f).dsTap(m != null) { info = m })
                 PcAssets.badge(ctx, r.badgeSet, r.badge, true)?.let { Image(it, null, Modifier.size(16.dp), filterQuality = FilterQuality.None) }
                 Spacer(Modifier.width(6.dp))
                 val gi = r.group?.let { ds.groups.indexOf(it) } ?: -1
                 val leader = r.leader
-                PixText(leader?.name ?: "", 7, Pc.Text,
-                    Modifier.width(80.dp).clickable(enabled = leader != null && gi >= 0) { if (leader != null) onLeader(gi, leader.position) })
+                DialogText(leader?.name ?: "", 12, Pc.Text,
+                    Modifier.widthIn(min = 80.dp).dsTap(leader != null && gi >= 0) { if (leader != null) onLeader(gi, leader.position) })
             }
         }
     }
@@ -622,14 +665,14 @@ private fun DsInfo(ds: DsLog) {
     DsBox(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         listOf("Game Name:" to name, "Randomizer Version:" to ds.log.version, "Random Seed:" to ds.log.seed).forEach { (l, r) ->
             Row(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-                PixText(l, 7, Pc.Text, Modifier.width(150.dp))
-                PixText(r, 7, Pc.Text, wrap = true)
+                DialogText(l, 12, Pc.Text, Modifier.width(150.dp))
+                DialogText(r, 12, Pc.Text)
             }
         }
-        PixText("Settings String:", 7, Pc.Text, Modifier.padding(top = 6.dp, bottom = 2.dp))
-        ds.log.settingsString.chunked(40).forEach { PixText(it, 6, Pc.Text) }
+        DialogText("Settings String:", 12, Pc.Text, Modifier.padding(top = 6.dp, bottom = 2.dp))
+        ds.log.settingsString.chunked(40).forEach { DialogText(it, 12, Pc.Text) }
         Spacer(Modifier.height(10.dp))
-        PixText("Copy info", 8, Pc.Text, Modifier.border(1.dp, Pc.Border).clickable { copy = true }.padding(horizontal = 8.dp, vertical = 5.dp))
+        DialogText("Copy info", 13, Pc.Text, Modifier.border(1.dp, Pc.Border).dsTap { copy = true }.padding(horizontal = 8.dp))
     }
     if (copy) {
         val ctx = LocalContext.current
@@ -640,19 +683,19 @@ private fun DsInfo(ds: DsLog) {
         var copied by remember { mutableStateOf(false) }
         Dialog(onDismissRequest = { copy = false }) {
             DsBox(Modifier.fillMaxWidth()) {
-                PixText("Seed Info", 9, Pc.Gold)
+                DialogText("Seed Info", 14, Pc.Gold)
                 Spacer(Modifier.height(6.dp))
-                PixText(text, 7, Pc.Text, Modifier.fillMaxWidth().border(1.dp, Pc.Border).padding(6.dp), wrap = true)
+                DialogText(text, 12, Pc.Text, Modifier.fillMaxWidth().border(1.dp, Pc.Border).padding(6.dp))
                 Spacer(Modifier.height(8.dp))
                 Row {
-                    PixText(if (copied) "COPIED" else "COPY", 8, if (copied) Pc.Positive else Pc.Gold,
-                        Modifier.border(1.dp, Pc.Border).clickable {
+                    DialogText(if (copied) "COPIED" else "COPY", 13, if (copied) Pc.Positive else Pc.Gold,
+                        Modifier.border(1.dp, Pc.Border).dsTap {
                             val cm = ctx.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
                             cm.setPrimaryClip(android.content.ClipData.newPlainText("Seed info", text))
                             copied = true
-                        }.padding(horizontal = 10.dp, vertical = 6.dp))
+                        }.padding(horizontal = 10.dp))
                     Spacer(Modifier.width(10.dp))
-                    PixText("Close", 8, Pc.Text, Modifier.border(1.dp, Pc.Border).clickable { copy = false }.padding(horizontal = 10.dp, vertical = 6.dp))
+                    DialogText("Close", 13, Pc.Text, Modifier.border(1.dp, Pc.Border).dsTap { copy = false }.padding(horizontal = 10.dp))
                 }
             }
         }
@@ -694,9 +737,10 @@ private fun DsSearch(
                 Spacer(Modifier.height(4.dp))
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     items(matches) { name ->
-                        PixText(name, 7, if (name == st.searchMatch) Pc.Positive else Pc.Text,
-                            Modifier.border(1.dp, if (name == st.searchMatch) Pc.Positive else Pc.Border).clickable { st.searchMatch = name }
-                                .padding(horizontal = 6.dp, vertical = 5.dp))
+                        DialogText(name, 12, if (name == st.searchMatch) Pc.Positive else Pc.Text,
+                            Modifier.border(1.dp, if (name == st.searchMatch) Pc.Positive else Pc.Border).heightIn(min = PcMin.DIALOG_TOUCH_DP.dp)
+                                .selectable(selected = name == st.searchMatch, role = Role.RadioButton) { st.searchMatch = name }
+                                .wrapContentHeight(Alignment.CenterVertically).padding(horizontal = 6.dp))
                     }
                 }
             }
@@ -711,15 +755,15 @@ private fun DsSearch(
             if (match == null || !st.searchTrainers) emptyList() else ds.trainersWith(match, move = !st.searchAbility)
         }
         val total = if (st.searchTrainers) trainerRows.size else pokemonRows.size
-        PixText(if (total == 0) "None found" else "Total: $total", 8, Pc.Text, Modifier.fillMaxWidth(), align = TextAlign.Center)
+        DialogText(if (total == 0) "None found" else "Total: $total", 13, Pc.Text, Modifier.fillMaxWidth(), align = TextAlign.Center)
         Spacer(Modifier.height(4.dp))
         LazyColumn(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             if (st.searchTrainers) items(trainerRows) { t ->
                 Column(Modifier.fillMaxWidth().background(Pc.Page).border(1.dp, Pc.Border).clickable {
                     onTrainer(ds.groups.indexOf(t.group), t.battle.position, t.found.first())
                 }.padding(6.dp)) {
-                    PixText(t.battleName, 8, Pc.Text)
-                    PixText("${t.found.size} Pokémon", 7, Pc.Text)
+                    DialogText(t.battleName, 13, Pc.Text)
+                    DialogText("${t.found.size} Pokémon", 12, Pc.Text)
                 }
             } else items(pokemonRows) { r ->
                 Row(Modifier.fillMaxWidth().background(Pc.Page).border(1.dp, Pc.Border).clickable { onPokemon(r.pokemon.id) }.padding(4.dp),
@@ -727,8 +771,8 @@ private fun DsSearch(
                     DsMonIcon(spriteOf(r.pokemon.id), ds.nameOf(r.pokemon))
                     Spacer(Modifier.width(6.dp))
                     Column {
-                        PixText(ds.nameOf(r.pokemon), 8, Pc.Text)
-                        PixText(r.label, 7, Pc.Text)
+                        DialogText(ds.nameOf(r.pokemon), 13, Pc.Text)
+                        DialogText(r.label, 12, Pc.Text)
                     }
                 }
             }
@@ -739,11 +783,21 @@ private fun DsSearch(
 @Composable
 private fun DsRadioRow(label: String, options: List<String>, selected: Int, onPick: (Int) -> Unit) {
     Row(Modifier.padding(vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
-        PixText(label, 7, Pc.Text, Modifier.width(70.dp))
+        DialogText(label, 12, Pc.Text, Modifier.widthIn(min = 70.dp).padding(end = 4.dp))
         options.forEachIndexed { i, o ->
             val on = i == selected
-            PixText(o, 7, if (on) Pc.Positive else Pc.Text,
-                Modifier.padding(end = 6.dp).border(1.dp, if (on) Pc.Positive else Pc.Border).clickable { onPick(i) }.padding(horizontal = 8.dp, vertical = 5.dp))
+            DialogText(o, 12, if (on) Pc.Positive else Pc.Text,
+                Modifier.padding(end = 6.dp).border(1.dp, if (on) Pc.Positive else Pc.Border).heightIn(min = PcMin.DIALOG_TOUCH_DP.dp)
+                    .selectable(selected = on, role = Role.RadioButton) { onPick(i) }.wrapContentHeight(Alignment.CenterVertically)
+                    .padding(horizontal = 8.dp))
         }
     }
 }
+
+/**
+ * A word in the DS log that opens something: a 48dp row, a button to a screen reader, its text centred in it
+ * (rc35 follow-up N #27). They were 12 to 26dp tall.
+ */
+private fun Modifier.dsTap(enabled: Boolean = true, onClick: () -> Unit): Modifier =
+    heightIn(min = PcMin.DIALOG_TOUCH_DP.dp).clickable(enabled = enabled, role = Role.Button) { onClick() }
+        .wrapContentHeight(Alignment.CenterVertically)

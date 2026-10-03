@@ -39,6 +39,25 @@ class RunVariantAndCodeTest {
     }
 
     @Test
+    fun `a mode the 60% levels are not for, run with them on, says +6% levels on its record`() {
+        // rc32 audit P2 #20: Standard and Ultimate with the switch on read as plain official runs at about x1.59.
+        assertEquals("+6% levels", ExtraPasses.variant(RomKind.EMERALD_U, "RSE Standard.rnqs", official("RSE Standard.rnqs"), bundled, prePassTaken = true, part2Taken = false))
+        assertEquals("+6% levels", ExtraPasses.variant(RomKind.EMERALD_U, "RSE Ultimate.rnqs", official("RSE Ultimate.rnqs"), bundled, prePassTaken = true, part2Taken = false))
+        assertEquals("+6% levels", ExtraPasses.variant(RomKind.CRYSTAL_U, "GSC Ultimate.rnqs", official("GSC Ultimate.rnqs"), bundled, prePassTaken = true, part2Taken = false))
+        assertNull(ExtraPasses.variant(RomKind.CRYSTAL_U, "GSC Kaizo.rnqs", official("GSC Kaizo.rnqs"), bundled, prePassTaken = true, part2Taken = false), "Kaizo calls for it")
+        assertNull(ExtraPasses.variant(RomKind.EMERALD_U, "RSE Standard.rnqs", official("RSE Standard.rnqs"), bundled, prePassTaken = false, part2Taken = false))
+        // The switch's line says what the mode's rules are, not "as the official settings do".
+        val standard = ExtraPasses.prePassLine(RomKind.EMERALD_U, "standard", official = true)
+        assertTrue("Standard's rules use the mode's +50% only" in standard && "+6% levels" in standard, standard)
+        assertFalse("as the official settings do" in standard, standard)
+        assertTrue("as the official settings do" in ExtraPasses.prePassLine(RomKind.EMERALD_U, "kaizo", official = true))
+        assertTrue("Gold, Silver and Crystal" in ExtraPasses.prePassLine(RomKind.CRYSTAL_U, "survival", official = true))
+        val custom = ExtraPasses.prePassLine(RomKind.EMERALD_U, null, official = false)
+        assertTrue("custom or edited" in custom && "record" !in custom, custom)
+        for (t in listOf(standard, custom, ExtraPasses.prePassLine(RomKind.CRYSTAL_U, "kaizo", true))) assertFalse('—' in t || '–' in t || " - " in t, t)
+    }
+
+    @Test
     fun `the record keeps it, and the shared line, the card and Your stats say it`() {
         val r = RunRecord(attempt = 7, seed = "aa", ruleset = "RSE Kaizo.rnqs", started = 0, ended = 1, playSeconds = 0,
             outcome = RunRecord.Outcome.LOST, badges = 2, lead = null, killer = null, trainer = "", location = "",

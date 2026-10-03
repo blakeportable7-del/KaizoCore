@@ -336,20 +336,18 @@ class Gen1Tracker(
         return out
     }
 
-    private fun readHeals(bag: List<Pair<Int, Int>>, maxHp: Int): Pair<Int, Int> {
-        if (maxHp <= 0) return 0 to 0
-        var total = 0; var count = 0
-        for ((id, qty) in bag) {
-            val heal = HEALS[id] ?: continue
-            if (qty !in 1..99) continue
-            val each = if (heal.second) maxHp * heal.first / 100 else minOf(heal.first, maxHp)
-            total += each * qty; count += qty
-        }
-        return (total * 100 / maxHp) to count
+    /** Heals in Bag for a Pokemon with [maxHp]: the PC tracker's rounding, not integer division (HealTotals, rc32 audit P2 #99). */
+    private fun readHeals(bag: List<Pair<Int, Int>>, maxHp: Int): HealTotals {
+        val items = LinkedHashMap<Int, Int>()
+        for ((id, qty) in bag) if (id in HEALS && qty in 1..99) items[id] = (items[id] ?: 0) + qty
+        return HealTotals.of(items, maxHp) { id -> HEALS[id]?.let { it.first.toDouble() to it.second } }
     }
 
     /** "Game is considered over when", set by the app from its options; the lead by default. */
     @Volatile var lossCondition: LossCondition = LossCondition.LEAD
+
+    /** The Champion beaten, the end of a Red, Blue or Yellow run (GbWin). */
+    private val win = GbWin.gen1()
 
     // ------------------------------------------------------------------ the Nuzlocke reads (2026-09-30)
 
@@ -366,7 +364,8 @@ class Gen1Tracker(
         if (map == null || m.playerId == 0L) return null
         val n = nuzTracker
         val wild = mode == 1
-        n.look(battling, wild, enemy?.curHp, escapedNow = byteAt(m.escaped) > 0, capturedNow = byteAt(m.captured) > 0)
+        n.look(battling, wild, enemy?.curHp, escapedNow = byteAt(m.escaped) > 0, capturedNow = byteAt(m.captured) > 0,
+            enemyLeft = { Gen12Nuzlocke.enemyLeft(byteAt(m.enemyMove), byteAt(m.playerMove)) })
         val place = n.place(mapId)
         val id = ram(m.playerId, 2).let { if (it.size == 2) be16(it, 0) else -1 }
         val dvs = if (battling && wild) ram(m.enemyDvs, 2).let { if (it.size == 2) be16(it, 0) else -1 } else -1
@@ -380,7 +379,7 @@ class Gen1Tracker(
             generation = 1, game = m.gameKey, gameKeys = listOf(m.gameKey),
             place = place?.place, detail = place?.detail,
             playerId = id, enemyDvs = dvs, enemyHpLast = n.lastEnemyHp, lastWild = n.lastWild,
-            battleResult = byteAt(m.battleResult), escaped = n.escaped, captured = n.captured,
+            battleResult = byteAt(m.battleResult), escaped = n.escaped, enemyFled = n.enemyFled, captured = n.captured,
             battleType = byteAt(m.battleType).coerceAtLeast(0), ghost = ghost,
             surfing = byteAt(m.surfState) == 2,
             ballCount = balls,
@@ -390,6 +389,8 @@ class Gen1Tracker(
             battleStyleSet = if (options < 0) null else (options and 0x40) != 0,
             opponent = opponent, caps = n.caps(),
             nicknames = party.indices.map { i -> if (nicks.size >= (i + 1) * 11) GbText.decode(nicks, i * 11) else "" },
+            // wPartyCount, when it is a count: Gen 1 has no eggs (rc32 audit P3 #111).
+            partyCount = lastCount.takeIf { it in 1..6 } ?: -1,
         )
         return NuzlockeReads(gb = gb)
     }
@@ -423,13 +424,16 @@ class Gen1Tracker(
         val lead = party.getOrNull(onField)
         val heals = readHeals(bag, lead?.mon?.maxHp ?: 0)
         val mapId = ram(m.curMap, 1).takeIf { m.curMap != 0L && it.isNotEmpty() }?.u8(0)
+        // Read first, as the GBA tracker reads its win before its loss (rc32 audit P2 #135). wEnemyMon's HP is at + 1.
+        val won = win.read(mode, byteAt(m.trainerClass), byteAt(m.battleResult),
+            enemyHp = ram(m.enemyMon + 1, 2).let { if (it.size == 2) be16(it, 0) else -1 }, mapId = mapId)
         return TrackerState(
             partyCount = party.size, party = party, ownOnField = onField,
             inBattle = battling, isWildBattle = inBattle && mode == 1, enemy = enemy,
             // "Team:" in a trainer battle: the one ball the reference knows (gbEnemyTeam).
             enemyTeam = gbEnemyTeam(trainerBattle = battling && mode == 2, enemy = enemy),
             badges = badges, badgeSet = "RBY",
-            healPercent = heals.first, healCount = heals.second,
+            healPercent = heals.percent, healCount = heals.count, healHp = heals.hp,
             // "Last move: X" between the enemy's moves (GbLastMove); MoveData.isValid is 1..165.
             lastAttackMove = lastMove.shown.takeIf { it in 1..165 }?.let { moveNames[it] ?: "#$it" },
             // Program.updateMapLocation (Program.lua:1114-1129): the map is wCurMap, and any map read is
@@ -438,7 +442,7 @@ class Gen1Tracker(
             // and 2), so Viridian City, map 1, would read "Petalburg City"; the point says Unknown Area.
             mapId = mapId,
             // The player's condition, checked once the battle byte reads 0, never mid-battle (GbGameOver).
-            gameOver = if (GbGameOver.lost(mode, party, lossCondition)) GameOver.LOST else null,
+            gameOver = if (won) GameOver.WON else if (GbGameOver.lost(mode, party, lossCondition)) GameOver.LOST else null,
             diagnostics = "${m.name}  party=%d mode=%d".format(party.size, mode),
             unreadable = party.isEmpty() && lastCount != 0,
             nuz = runCatching { nuzReads(party, mode, battling, enemy, bag, mapId) }.getOrNull(),
@@ -489,6 +493,8 @@ data class Gen1Map(
     val trainerClass: Long = 0L, val trainerNo: Long = 0L, val battleType: Long = 0L, val surfState: Long = 0L,
     /** The enemy's DVs (wEnemyMon + 12) and the party's nicknames (wPartyMonNicks, six of 11 bytes). */
     val enemyDvs: Long = 0L, val nicks: Long = 0L,
+    /** wPlayerMoveNum, six bytes after wEnemyMoveNum ([enemyMove]): whose Teleport, Roar or Whirlwind set wEscapedFromBattle. */
+    val playerMove: Long = 0L,
     /** The randomizer's TrainerDataTableOffset ([Red (U)] and [Yellow (U)] in gen1_offsets.ini), and the game's data key. */
     val trainerTable: Int = 0, val gameKey: String = "rb",
 ) {
@@ -506,6 +512,7 @@ data class Gen1Map(
             playerId = 0x1359L, battleResult = 0x0F0BL, escaped = 0x1078L, captured = 0x111CL, options = 0x1355L,
             trainerClass = 0x1031L, trainerNo = 0x105DL, battleType = 0x105AL, surfState = 0x1700L,
             enemyDvs = 0x0FF1L, nicks = 0x12B5L, trainerTable = 0x39D3B, gameKey = "rb",
+            playerMove = 0x0FD2L,   // wPlayerMoveNum CFD2
         )
         val YELLOW = Gen1Map(
             name = "Yellow",
@@ -520,12 +527,13 @@ data class Gen1Map(
             playerId = 0x1358L, battleResult = 0x0F0BL, escaped = 0x1077L, captured = 0x111BL, options = 0x1354L,
             trainerClass = 0x1030L, trainerNo = 0x105CL, battleType = 0x1059L, surfState = 0x16FFL,
             enemyDvs = 0x0FF0L, nicks = 0x12B4L, trainerTable = 0x39DD1, gameKey = "y",
+            playerMove = 0x0FD1L,   // wPlayerMoveNum CFD1
         )
 
         /** From the cartridge header title: "POKEMON RED", "POKEMON BLUE" (pokered's rgbfix titles) or "POKEMON YELLOW". */
         fun forRom(rom: ByteArray): Gen1Map? {
             if (rom.size < 0x150) return null
-            val title = String(rom, 0x134, 16, Charsets.US_ASCII).substringBefore(' ').trim()
+            val title = String(rom, 0x134, 16, Charsets.US_ASCII).substringBefore('\u0000').trim()
             return when (title) {
                 "POKEMON RED", "POKEMON BLUE" -> RED_BLUE
                 "POKEMON YELLOW" -> YELLOW

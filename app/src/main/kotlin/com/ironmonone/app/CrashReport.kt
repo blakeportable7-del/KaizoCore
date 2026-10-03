@@ -17,7 +17,7 @@ import java.time.LocalDate
  * It is opt-in: with the switch off the app asks first, every time.
  *
  * What goes is what a fix needs and nothing that names the player's files: the
- * app and Android versions, the phone model, the game family, and the report
+ * app and Android versions, the phone model, the family of the game that was open, and the report
  * text, run through [scrub] first. Nothing here touches the network except
  * [send], which is blocking and belongs on Dispatchers.IO.
  */
@@ -348,14 +348,43 @@ object CrashReport {
         result
     }
 
-    /** The phone's half of a send: app version, device, Android and the game family of the last run. Reads files, so not on the main thread. */
+    /** The phone's half of a send: app version, device, Android and the game that was open. Reads files, so not on the main thread. */
     fun meta(context: Context): Meta {
         val d = Feedback.device(context)
-        val family = runCatching {
-            PrepStore(context).loadLastRun()?.first?.let { com.ironmonone.core.RomKind.byId(it)?.family }
-        }.getOrNull()
-        return Meta(BuildConfigish.version(context), d.model, d.android, family)
+        return Meta(BuildConfigish.version(context), d.model, d.android, keptGame(context.filesDir))
     }
+
+    // ------------------------------------------------------------- game
+
+    /** The game that was open at the newest crash, kept beside the report when it is collected (CrashLog.collect). */
+    const val GAME_FILE = "crash-game.txt"
+
+    /**
+     * The game the report names (rc32 audit P3 #25): the one Play had open when the app died. Play's marker
+     * (prep/playing.txt, CrashResume) names it and is still there when the report is collected at the next launch;
+     * [session] is the game Play opens, the same one while the marker names it. Its family, else its console for a
+     * game the tracker does not read; null when no game was open. It was the last Kaizo run's family, whatever crashed.
+     */
+    internal fun gameOf(markerSession: String?, session: GameSession?): String? {
+        if (markerSession == null || session == null || session.id != markerSession) return null
+        return session.kind?.family ?: when (session.platform) {
+            com.ironmonone.core.Platform.GBA -> "GBA"
+            com.ironmonone.core.Platform.NDS -> "DS"
+            com.ironmonone.core.Platform.GBC -> "Game Boy"
+        }
+    }
+
+    /** [gameOf] for this phone. Reads files: at collection, off the main thread. */
+    internal fun gameAtExit(store: PrepStore): String? =
+        CrashResume.parse(store.playMarker)?.let { left -> gameOf(left.sessionId, store.session()) }
+
+    /** Keeps [game] for the report just collected; none when no game was open. */
+    internal fun keepGame(dir: File, game: String?) {
+        runCatching { if (game == null) File(dir, GAME_FILE).delete() else SafeWrite.text(File(dir, GAME_FILE), game) }
+    }
+
+    internal fun keptGame(dir: File): String? =
+        runCatching { File(dir, GAME_FILE).takeIf { it.isFile }?.readText()?.trim()?.ifEmpty { null } }.getOrNull()
 
     /** From the phone: send [report]. Blocking; call it on Dispatchers.IO. */
     fun submit(context: Context, report: String): SendResult = deliver(context.filesDir, meta(context), report)

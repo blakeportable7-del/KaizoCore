@@ -172,9 +172,19 @@ data class PadLayout(
         ), opacity = 1f, dsLayout = "top-bottom")
         fun myBoy(landscape: Boolean) = if (landscape) MYBOY_LANDSCAPE else MYBOY_PORTRAIT
 
+        /**
+         * The layout editor's My Boy and Original pad presets for a console: a Game Boy has no L or R, so they are left
+         * out, as [default] leaves them out (rc32 audit P3 #41: the chips put two dead pills back on a Game Boy game).
+         */
+        fun myBoyFor(landscape: Boolean, gb: Boolean) = myBoy(landscape).let { if (gb) it.copy(places = it.places - Element.L - Element.R) else it }
+        fun legacyFor(landscape: Boolean, gb: Boolean) = legacy(landscape).let { if (gb) it.copy(places = it.places - Element.L - Element.R) else it }
+
         /** One file per orientation and console. */
         fun key(landscape: Boolean, platform: Platform) =
             (if (landscape) "landscape" else "portrait") + "-" + platform.name.lowercase()
+
+        /** The shipped layout for a [key], as LayoutStore falls back to it. */
+        fun defaultFor(key: String) = default(key.startsWith("landscape"), nds = key.endsWith("-nds"), gb = key.endsWith("-gbc"))
     }
 }
 
@@ -213,14 +223,78 @@ class LayoutStore(private val dir: File) {
         l.dsLayout?.let { p.setProperty("dsLayout", it) }
         p.setProperty("dsGap", l.dsGap.toString())
         p.setProperty("abxyDiamond", l.abxyDiamond.toString())
+        // Whole or not at all (SafeWrite): a failed first rename deleted the layout and renamed again, so a kill in between
+        // put the pad back on its default (RC35-NOTICED N #4).
         runCatching {
-            val f = file(key); val tmp = File(dir, f.name + ".tmp")
-            tmp.outputStream().use { p.store(it, null) }
-            if (!tmp.renameTo(f)) { f.delete(); tmp.renameTo(f) }
+            val bytes = java.io.ByteArrayOutputStream().also { p.store(it, null) }.toByteArray()
+            SafeWrite.bytes(file(key), bytes)
         }
     }
 
     fun reset(key: String) { file(key).delete() }
+}
+
+/**
+ * The pad's layouts for one Play visit, one per orientation, and the layout editor's edit over them (rc32 audit P3 #48).
+ *
+ * The layout on screen was remembered per orientation and loaded again from disk on a rotation, while the editor stayed
+ * open with the first orientation's layout as it was on entry: turning the phone mid-edit dropped the edits, Back asked
+ * about changes there were none of, and Cancel put the first orientation's layout on the other one. Now each
+ * orientation's layout is held here, edits and all, and an edit notes every orientation it reaches as it was then:
+ * Done saves each of them, Cancel puts each back, and nothing crosses from one orientation to the other.
+ *
+ * Play holds it as `var padLayout by padLayouts.at(layoutKey, landscape)`.
+ */
+class PadLayouts(private val store: LayoutStore) {
+    private val shown = HashMap<String, androidx.compose.runtime.MutableState<PadLayout>>()
+    /** Each layout an open edit has reached, as it was when it got there; empty with no edit open. */
+    private val before = LinkedHashMap<String, PadLayout>()
+    private var editing = false
+
+    private fun state(key: String, landscape: Boolean) =
+        shown.getOrPut(key) { androidx.compose.runtime.mutableStateOf(store.load(key, landscape)) }
+
+    /** The layout for [key] (PadLayout.key), loaded once; an open edit notes it the first time it is shown. */
+    fun layout(key: String, landscape: Boolean): PadLayout {
+        val l = state(key, landscape).value
+        if (editing && key !in before) before[key] = l
+        return l
+    }
+
+    fun set(key: String, landscape: Boolean, layout: PadLayout) { state(key, landscape).value = layout }
+
+    /** EDIT LAYOUT on the layout for [key]. */
+    fun startEdit(key: String, landscape: Boolean) {
+        before.clear()
+        editing = true
+        layout(key, landscape)
+    }
+
+    /** Whether the edit changed any layout it reached. */
+    fun changed(): Boolean = before.any { (k, was) -> shown[k]?.value != was }
+
+    /**
+     * Done ([keep]) or Cancel. Done saves each layout the edit reached, a layout put back to its default as no file
+     * (as RESET used to leave it); Cancel puts each one back as the edit found it.
+     */
+    fun finishEdit(keep: Boolean) {
+        for ((k, was) in before) {
+            val now = shown[k] ?: continue
+            if (!keep) now.value = was
+            else if (now.value == PadLayout.defaultFor(k)) store.reset(k)
+            else store.save(k, now.value)
+        }
+        before.clear()
+        editing = false
+    }
+
+    /** The layout for [key] as a property, read and written through this holder. */
+    fun at(key: String, landscape: Boolean) = Slot(key, landscape)
+
+    inner class Slot(private val key: String, private val landscape: Boolean) {
+        operator fun getValue(thisRef: Any?, property: kotlin.reflect.KProperty<*>): PadLayout = layout(key, landscape)
+        operator fun setValue(thisRef: Any?, property: kotlin.reflect.KProperty<*>, value: PadLayout) = set(key, landscape, value)
+    }
 }
 
 /**

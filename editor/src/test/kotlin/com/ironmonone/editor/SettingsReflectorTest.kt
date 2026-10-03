@@ -110,6 +110,11 @@ class SettingsReflectorTest {
         assertTrue(SettingsReflector.unsupportedIn("allowTotemAltFormes", "GBA3"))
         assertTrue(SettingsReflector.unsupportedIn("swapTrainerMegaEvos", "NDS5"))
         assertFalse(SettingsReflector.unsupportedIn("allowTotemAltFormes", null))
+        // The app names Gen 5 NDS5, and the table GEN5 (rc32 audit P3 #89): the two forme switches Gen 5 ignores are hidden.
+        assertTrue(SettingsReflector.unsupportedIn("allowStarterAltFormes", "NDS5"))
+        assertTrue(SettingsReflector.unsupportedIn("allowStaticAltFormes", "NDS5"))
+        assertFalse(SettingsReflector.unsupportedIn("allowWildAltFormes", "NDS5"), "no GEN5 row: still shown")
+        assertTrue(SettingsReflector.unsupportedIn("allowWildAltFormes", "NDS4") && SettingsReflector.unsupportedIn("allowWildAltFormes", "GEN4"))
         assertEquals("TMs HMs compatibility mod", SettingsReflector.prettify("tmsHmsCompatibilityMod"))
         assertEquals("TMs force good damaging", SettingsReflector.prettify("tmsForceGoodDamaging"))
         assertEquals("TM levels", SettingsReflector.prettify("tmLevels"))

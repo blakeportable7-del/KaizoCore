@@ -122,9 +122,12 @@ private fun SpriteIsMeControls(pix: Boolean) {
     }
     val pickSheets = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
         if (uris.isNotEmpty()) scope.launch {
-            val kept = withContext(Dispatchers.IO) { SpriteIsMeStore.saveSheets(filesDir, SpriteIsMeImport.sheets(ctx, uris)) }
+            val (kept, big) = withContext(Dispatchers.IO) {
+                val picked = SpriteIsMeImport.sheets(ctx, uris)
+                SpriteIsMeStore.saveSheets(filesDir, picked) to SpriteIsMeStore.tooBig(picked)
+            }
             if (kept > 0) { s.who = SpriteIsMeSettings.Who.OWN; s.save() }
-            message = if (kept > 0) SpriteIsMeCopy.sheetsFound(kept) else SpriteIsMeCopy.SHEETS_FAILED
+            message = if (kept == SpriteIsMeStore.NOT_SAVED) SpriteIsMeCopy.SHEETS_NOT_SAVED else SpriteIsMeCopy.sheetsSaved(kept, big)
         }
     }
 
@@ -163,12 +166,16 @@ private fun SpriteIsMeControls(pix: Boolean) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Btn(pix, if (s.always > 0) speciesName(s.always) else SpriteIsMeCopy.CHOOSE, raw = s.always > 0) { picking = true }
         }
+        // The picked Pokemon's shiny (Blake, 2026-10-03), a switch like the section's own; one with no shiny walks plain.
+        Check(pix, SpriteIsMeCopy.SHINY, s.alwaysShiny) { s.alwaysShiny = it; s.save() }
     }
     Check(pix, SpriteIsMeCopy.OWN, s.who == SpriteIsMeSettings.Who.OWN, radio = true) {
         s.who = if (s.who == SpriteIsMeSettings.Who.OWN) SpriteIsMeSettings.Who.LEAD else SpriteIsMeSettings.Who.OWN; s.save()
     }
     if (s.who == SpriteIsMeSettings.Who.OWN) OwnSpriteFiles(pix, s, pickPicture, pickSheets, onSheetSettings = { sheetDialog = true }, onRemoved = { message = null })
     message?.let { Note(pix, it) }
+    // Imported art the game cannot draw, said where the choice is made (rc32 audit P2 #88, P3 #66).
+    SpriteIsMeSupport.ownNote?.takeIf { s.who == SpriteIsMeSettings.Who.OWN && it != message }?.let { Note(pix, it) }
 
     if (picking) SpeciesPickerDialog(SpriteIsMeCopy.ALWAYS, s.always, onPick = {
         s.always = it; s.who = SpriteIsMeSettings.Who.ALWAYS; s.artVersion++; s.save(); picking = false
@@ -193,6 +200,7 @@ private fun OwnSpriteFiles(
         SpriteIsMeSettings.Own.PICTURE -> SpriteIsMeCopy.OWN_PICTURE
         SpriteIsMeSettings.Own.SHEET -> SpriteIsMeCopy.OWN_SHEETS
     })
+    Note(pix, SpriteIsMeCopy.IN_BACKUPS)
     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Btn(pix, SpriteIsMeCopy.CHOOSE_PICTURE) {
             pickPicture.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
@@ -215,9 +223,11 @@ private fun OwnSpriteFiles(
 @Composable
 private fun SpeciesPickerDialog(title: String, current: Int, onPick: (Int) -> Unit, onDismiss: () -> Unit) {
     val ctx = LocalContext.current
-    val all = remember { SpriteIsMeLogic.choices(Favorites.namesInOrder) { id, dex -> WalkingPals.find(ctx, id, dex) } }
+    // The tables are read off the main thread (RC35-NOTICED N #10): an empty list for the moment that takes.
+    val ix = WalkingPals.ready(ctx)
+    val all = remember(ix) { SpriteIsMeLogic.choices(Favorites.namesInOrder) { id, dex -> ix?.find(id, dex) } }
     var query by remember { mutableStateOf("") }
-    val shown = remember(query) { SpriteIsMeSearch.matches(all, query) }
+    val shown = remember(all, query) { SpriteIsMeSearch.matches(all, query) }
     androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
         Gen3Box(Modifier.fillMaxWidth(), paper = Shell.paper) {
             Column {
@@ -233,7 +243,7 @@ private fun SpeciesPickerDialog(title: String, current: Int, onPick: (Int) -> Un
                         Text(name, color = if (id == current) Shell.accentOnNight else Shell.inkOnPaper,
                             modifier = Modifier.fillMaxWidth().clickable { onPick(id) }.heightIn(min = Shell.touchTarget).padding(vertical = 12.dp))
                     }
-                    if (shown.isEmpty()) item { Note(false, SpriteIsMeCopy.NO_MATCH) }
+                    if (shown.isEmpty() && ix != null) item { Note(false, SpriteIsMeCopy.NO_MATCH) }
                 }
                 Spacer(Modifier.height(8.dp))
                 Gen3Button(SpriteIsMeCopy.CLOSE, accent = true, onClick = onDismiss)

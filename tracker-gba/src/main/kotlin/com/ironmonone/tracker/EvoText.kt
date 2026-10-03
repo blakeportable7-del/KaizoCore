@@ -53,6 +53,43 @@ object EvoText {
         "WATER30" to setOf(97), "WATER37" to setOf(97), "WATER37_REV" to setOf(97),
     )
 
+    /** One of the Nat. Dex extension's evolution methods: its abbreviation, short and detailed words, and evoItemIds. */
+    private class Method(val abbreviation: String, val short: List<String>, val detailed: List<String>, val items: Set<Int> = emptySet())
+
+    /**
+     * NatDexExtension.lua natDexEvoDetails (lines 4795-4969), the methods its species table names
+     * (gen3/species-extra-natdex.tsv): the new stones, the held items that replace trades, the female-only levels and
+     * Eevee's eight stones. Its item ids are the Nat. Dex ROM's (rc33 audit P1 #67).
+     */
+    private val NAT_DEX = mapOf(
+        "SHINY" to Method("SHINY", listOf("Shiny"), listOf("Shiny Stone"), setOf(99)),
+        "DUSK" to Method("DUSK", listOf("Dusk"), listOf("Dusk Stone"), setOf(100)),
+        "DAWN" to Method("DAWN", listOf("Dawn"), listOf("Dawn Stone"), setOf(101)),
+        "ICE" to Method("ICE", listOf("Ice"), listOf("Ice Stone"), setOf(102)),
+        "METAL_COAT" to Method("MTL CT", listOf("Mtl.Coat"), listOf("Metal Coat"), setOf(199)),
+        "KINGS_ROCK" to Method("KNG RCK", listOf("K.Rock"), listOf("King's Rock"), setOf(187)),
+        "DRAGON_SCALE" to Method("DSCALE", listOf("D.Scale"), listOf("Dragon Scale"), setOf(201)),
+        "UPGRADE" to Method("UPGRADE", listOf("Up-Grade"), listOf("Up-Grade"), setOf(218)),
+        "DUBIOUS_DISC" to Method("D.DISC", listOf("Dub.Disc"), listOf("Dubious Disc"), setOf(89)),
+        "RAZOR_CLAW" to Method("R.CLAW", listOf("Rzr.Claw"), listOf("Razor Claw"), setOf(90)),
+        "RAZOR_FANG" to Method("R.FANG", listOf("Rzr.Fang"), listOf("Razor Fang"), setOf(91)),
+        "LINKING_CORD" to Method("L.CORD", listOf("Link Crd."), listOf("Linking Cord"), setOf(92)),
+        "WATER_DUSK" to Method("WTR/DSK", listOf("Water", "Dusk"), listOf("Water Stone", "Dusk Stone"), setOf(97, 100)),
+        "MOON_SUN" to Method("MN/SUN", listOf("Moon", "Sun"), listOf("Moon Stone", "Sun Stone"), setOf(94, 93)),
+        "SUN_LEAF_DAWN" to Method("SN/LF/DW", listOf("Sun", "Leaf", "Dawn"), listOf("Sun Stone", "Leaf Stone", "Dawn Stone"), setOf(93, 98, 101)),
+        "SUN_MOON_DUSK" to Method("SN/MN/DS", listOf("Sun", "Moon", "Dusk"), listOf("Sun Stone", "Moon Stone", "Dusk Stone"), setOf(93, 94, 100)),
+        "COAT_ROCK" to Method("MCT/KRK", listOf("Mtl.Coat", "K.Rock"), listOf("Metal Coat", "King's Rock"), setOf(199, 187)),
+        "DAWN42" to Method("42/DWN", listOf("Lv.42", "Dawn(F)"), listOf("Level 42", "Dawn Stone (Female)"), setOf(101)),
+        "DAWN30" to Method("30/DWN", listOf("Lv.30", "Dawn(M)"), listOf("Level 30", "Dawn Stone (Male)"), setOf(101)),
+        "FEMALE21" to Method("21F", listOf("Lv.21(F)"), listOf("Level 21 (Female)")),
+        "FEMALE33" to Method("33F", listOf("Lv.33(F)"), listOf("Level 33 (Female)")),
+        "WATER_ROCK" to Method("WTR/KRK", listOf("Water", "K.Rock"), listOf("Water Stone", "King's Rock"), setOf(97, 187)),
+        "ROCK37" to Method("37/KRK", listOf("Lv. 37", "K.Rock"), listOf("Level 37", "King's Rock"), setOf(187)),
+        "DEEPSEA" to Method("DEEPSEA", listOf("D.S.Tooth", "D.S.Scale"), listOf("Deep Sea Tooth", "Deep Sea Scale"), setOf(192, 193)),
+        "EEVEE_STONES_NATDEX" to Method("STONE", listOf("Thunder", "Water", "Fire", "Sun", "Moon", "Leaf", "Ice", "Dawn"),
+            listOf("8 Diff. Stones"), setOf(93, 94, 95, 96, 97, 98, 102, 101)),
+    )
+
     /** Program.lua's friendshipRequired before the ROM answers, and PokemonData.Values.DefaultBaseFriendship. */
     const val DEFAULT_REQUIRED = 220
     const val DEFAULT_BASE = 70
@@ -71,7 +108,7 @@ object EvoText {
     /** Utils.getEvoAbbreviation, or null when it does not evolve. */
     fun abbreviation(evo: String?): String? {
         val e = clean(evo) ?: return null
-        return if (isLevel(e)) e else ABBREVIATION[e]
+        return if (isLevel(e)) e else ABBREVIATION[e] ?: NAT_DEX[e]?.abbreviation
     }
 
     fun forEnemy(evo: String?): Label? = abbreviation(evo)?.let { Label(it, Tone.PLAIN) }
@@ -86,6 +123,7 @@ object EvoText {
     fun detailed(evo: String?, friendshipRequired: Int = DEFAULT_REQUIRED, generation: Int = 3): List<String> {
         val e = clean(evo) ?: return listOf("---")
         if (isLevel(e)) return listOf("Level $e")
+        NAT_DEX[e]?.let { return it.detailed }
         val thunder = if (generation < 3) "Thunder Stone" else "Thunderstone"
         return when (e) {
             "FRIEND" -> listOf("${if (friendshipRequired > 1) friendshipRequired else DEFAULT_REQUIRED} Friendship")
@@ -112,6 +150,7 @@ object EvoText {
     fun short(evo: String?): List<String> {
         val e = clean(evo) ?: return listOf("---")
         if (isLevel(e)) return listOf("Lv.$e")
+        NAT_DEX[e]?.let { return it.short }
         return when (e) {
             "FRIEND" -> listOf("Friend")
             "EEVEE_STONES" -> listOf("Thunder", "Water", "Fire", "Sun", "Moon")
@@ -149,7 +188,7 @@ object EvoText {
         }
         val text = abbreviation(e) ?: return null
         val byLevel = isLevel(e) && level + 1 >= e.toInt()
-        val byStone = STONES[e]?.let { stones -> bagIds().any { it in stones } } == true
+        val byStone = (STONES[e] ?: NAT_DEX[e]?.items)?.let { stones -> bagIds().any { it in stones } } == true
         return Label(text, if (byLevel || byStone) Tone.READY else Tone.WAITING)
     }
 

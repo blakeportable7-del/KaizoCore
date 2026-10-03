@@ -34,9 +34,10 @@ It warns and it records. It never stops the game.
 
 ## Level caps
 
-The cap is the level of the next boss's strongest Pokémon. Gym leaders and the Champion are checked when the battle
-starts, and the Elite Four when you walk in. Rivals and villain team leaders count as bosses when **Rivals and team
-leaders are bosses** is on.
+The cap is the level of the next boss's strongest Pokémon. Gym leaders are checked when the battle starts. The Elite
+Four is checked once, when its first battle starts, against the strongest Pokémon in the whole Elite Four; inside the
+League there is no cap after that, the Champion included. Rivals and villain team leaders count as bosses when
+**Rivals and team leaders are bosses** is on.
 
 ## The ledger
 

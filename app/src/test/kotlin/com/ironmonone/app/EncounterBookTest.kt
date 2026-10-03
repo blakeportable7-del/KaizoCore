@@ -164,4 +164,52 @@ class EncounterBookTest {
         assertEquals(2, m.totalEncounters(74))
         assertEquals(12, m.lastLevelSeen(74))
     }
+
+    @Test fun `no state yet is not the end of a battle`() {
+        // rc33 audit P1 #15, #30: Play starts every visit with no state; read as "not in battle" it ended the battle the
+        // player came back to, filed its levels, and counted it again.
+        val m = marks(); val book = EncounterBook()
+        val wild = battle(enemy(27, 7), true, listOf(EnemyPartyMon(0, 27, 7, true)), listOf(0))
+        feed(book, m, wild)
+        kotlin.test.assertNull(EncounterBook.gbaUpdate(null))
+        kotlin.test.assertFalse(book.onGba(m, EncounterBook.gbaUpdate(null), true))
+        assertNull(marks().lastLevelSeen(27), "no levels filed by a missing read")
+        feed(book, m, wild, overworld)
+        assertEquals(1, m.encounters(27, true), "the same battle, counted once")
+        assertEquals(7, marks().lastLevelSeen(27))
+        kotlin.test.assertNull(EncounterBook.dsUpdate(null))
+        kotlin.test.assertFalse(book.onDs(m, EncounterBook.dsUpdate(null), true))
+    }
+
+    @Test fun `Play keeps one book per run, so a new run starts clean`() {
+        val play = File("src/main/kotlin/com/ironmonone/app/PlayScreen.kt").readText()
+        kotlin.test.assertTrue("EncounterBook.of(if (session.isRun) \"run/\" + store.lastSeedText() else session.id)" in play)
+        kotlin.test.assertTrue("remember(session.id, gameKeyForRom) { EncounterBook.of(" in play)
+    }
+
+    @Test fun `a DS battle not fetched is counted nowhere, and a fetched wild one goes on its area's frame`() {
+        // rc33 audit P1 #80: Platinum's catching demonstration is never fetched; it was counted in Total seen and put on
+        // Route 202's encounter frame.
+        val m = marks(); val book = EncounterBook()
+        fun state(fetched: Boolean, trainer: Int = 0, pid: Long = 0x202L) = com.ironmonone.tracker.nds.NdsTrackerState(
+            partyCount = 1, party = emptyList(), located = true, inBattle = true, isWildBattle = trainer == 0, areaName = "Route 202",
+            enemyTrainerId = trainer, battleFetched = fetched,
+            enemy = com.ironmonone.tracker.nds.NdsTrackedMon(com.ironmonone.tracker.nds.Gen4.Mon(
+                pid = pid, species = 399, heldItem = 0, abilityId = 0, level = 2, curHp = 10, maxHp = 10, atk = 5, def = 5, spe = 5,
+                spAtk = 5, spDef = 5, moves = List(4) { 0 }, pp = List(4) { 0 }, ppUps = List(4) { 0 }, ivs = List(6) { 0 }, shiny = false,
+                nature = 0, isEgg = false, otId = 0, otSid = 0), "BIDOOF", null, "-", "-", emptyList()),
+        )
+        book.onDs(m, EncounterBook.dsUpdate(state(fetched = false)), true)
+        assertEquals(0, m.totalEncounters(399))
+        assertEquals(emptyMap(), m.dsEncountersIn("Route 202"))
+        book.onDs(m, EncounterBook.dsUpdate(state(fetched = true, pid = 0x303L)), true)
+        assertEquals(1, m.totalEncounters(399))
+        assertEquals(mapOf(399 to listOf(2)), m.dsEncountersIn("Route 202"))
+        // A trainer's Pokemon is counted, never put on the route's frame.
+        val other = EncounterBook()
+        other.onDs(m, EncounterBook.dsUpdate(state(fetched = true, trainer = 247, pid = 0x404L).copy(areaName = "Route 203")), true)
+        assertEquals(emptyMap(), m.dsEncountersIn("Route 203"))
+        val play = File("src/main/kotlin/com/ironmonone/app/PlayScreen.kt").readText()
+        kotlin.test.assertFalse("statMarks.seeDsEncounter(" in play, "the frame is EncounterBook's now, behind the fetch")
+    }
 }

@@ -55,11 +55,11 @@ class TrainerTeamsRandomizedTest {
 
     @Test
     fun `Blake's vanilla dumps all read as unrandomized teams`() {
-        val dir = System.getenv("IRONMON_ROMS") ?: return
+        val dir = Dumps.romsDir() ?: return
         val games = listOf("ruby-u.gba" to GameMap.RUBY_U, "sapphire-u.gba" to GameMap.SAPPHIRE_U, "emerald-u.gba" to GameMap.EMERALD_U,
             "firered-u-v10.gba" to GameMap.FIRERED_U_V10, "leafgreen-u.gba" to GameMap.LEAFGREEN_U)
         for ((file, map) in games) {
-            val f = File(dir, file).takeIf { it.isFile } ?: continue
+            val f = Dumps.file(dir, file) ?: continue
             assertEquals(false, GbaTracker(romReader(f), map).trainerTeamsRandomized(), file)
         }
     }

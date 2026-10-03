@@ -25,10 +25,11 @@ class StreamSnapshotThreadTest {
 
     @Test
     fun `the snapshot is built on the main thread and only the JSON off it`() {
-        val play = File("src/main/kotlin/com/ironmonone/app/PlayScreen.kt").readText().replace("\r\n", "\n")
-        val build = play.indexOf("val snap = com.ironmonone.app.stream.StreamSnapshot.build(run, gba, nds, notes, ref)")
-        val off = play.indexOf("withContext(kotlinx.coroutines.Dispatchers.Default) { com.ironmonone.app.stream.Json.write(snap) }")
+        // Built in StreamFeed since rc32 audit P3 #50 moved the effect out of PlayScreen.
+        val feed = File("src/main/kotlin/com/ironmonone/app/stream/StreamFeed.kt").readText().replace("\r\n", "\n")
+        val build = feed.indexOf("val snap = StreamSnapshot.build(shown, gba, nds, notes, ref, com.ironmonone.app.gbaView, com.ironmonone.app.dsView)")
+        val off = feed.indexOf("withContext(kotlinx.coroutines.Dispatchers.Default) { Json.write(snap) }")
         assertTrue(build in 0 until off)
-        assertFalse("StreamSnapshot.build(run, gba, nds, notes, ref))\n        }" in play, "no build left inside the background block")
+        assertFalse("StreamSnapshot.build(shown, gba, nds, notes, ref, com.ironmonone.app.gbaView, com.ironmonone.app.dsView))\n        }" in feed, "no build left inside the background block")
     }
 }

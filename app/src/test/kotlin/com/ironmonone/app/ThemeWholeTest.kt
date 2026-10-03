@@ -63,9 +63,11 @@ class ThemeWholeTest {
         val f = File(dir, "prep/theme.txt")
         ThemeStore.load(f)
         assertTrue(ThemeStore.import(eight))
+        DiskWriter.drain()   // written on the writer's thread (rc32 audit P3 #69)
         assertEquals(eight, f.readText())
         assertEquals(eight, ThemeStore.export())
         ThemeStore.reset()
+        DiskWriter.drain()
         assertEquals(ThemeStore.KEYS.joinToString(",") { ThemeStore.hex(it.default) }, f.readText())
     }
 

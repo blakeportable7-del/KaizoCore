@@ -12,6 +12,28 @@ class NdsScreensTest {
         assertEquals("126", NdsScreens.classicGap(128)); assertEquals("0", NdsScreens.classicGap(0))
     }
 
+    /**
+     * rc32 audit P2 #34: the picker offered "Rotated left" and "Rotated right", which the classic core cannot draw, so
+     * both showed the stacked layout. Every choice it offers now draws something of its own.
+     */
+    @Test
+    fun `every arrangement the picker offers is a different picture`() {
+        val values = NdsScreens.choices.map { NdsScreens.classicName(it) }
+        assertEquals(values.size, values.toSet().size, "two choices give the core the same layout: ${NdsScreens.choices.zip(values)}")
+        assertEquals(false, NdsScreens.choices.any { it.startsWith("rotate-") })
+        assertEquals(8, NdsScreens.choices.size)
+        // A layout saved with a rotated arrangement still loads, and the picker shows it as the stacked one it draws.
+        assertEquals(true, "rotate-left" in PadLayout.DS_LAYOUTS && "rotate-right" in PadLayout.DS_LAYOUTS)
+        assertEquals("top-bottom", NdsScreens.shownAs("rotate-left"))
+        assertEquals("top-bottom", NdsScreens.shownAs("rotate-right"))
+        assertEquals("hybrid-top", NdsScreens.shownAs("hybrid-top"))
+        assertEquals(null, NdsScreens.shownAs(null))
+        val dialog = java.io.File("src/main/kotlin/com/ironmonone/app/SideScreens.kt").readText()
+            .substringAfter("fun DsScreensDialog(").substringBefore("\n}\n")
+        assertEquals(true, "(listOf<String?>(null) + NdsScreens.choices).forEach" in dialog, "the dialog lists the choices")
+        assertEquals(true, "ShellRadio(k == NdsScreens.shownAs(current))" in dialog)
+    }
+
     @Test
     fun `a phone column goes side by side, a tablet column stacks, no size is side by side`() {
         assertEquals("left-right", NdsScreens.autoLayout(550, 360))

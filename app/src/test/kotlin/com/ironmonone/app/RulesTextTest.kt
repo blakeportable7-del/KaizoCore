@@ -30,10 +30,13 @@ class RulesTextTest {
             TrackerOptions.load(f)
             TrackerOptions.startRunWith("B2W2 Kaizo.rnqs")
             assertEquals(LossCondition.HIGHEST_LEVEL, TrackerOptions.dsLossCondition)
+            DiskWriter.drain()   // the options are written on the writer's thread (rc32 audit P3 #71)
             assertTrue("dsLossConditionFor.B2W2 Kaizo.rnqs=HighestLevelFaints" in f.readText())
             // The gear dialog keeps the pick for the run's file, as the Gen 3 rows do.
             assertTrue("TrackerOptions.chooseDsLossCondition(c, runSettingsName)" in src("TrackerGearDialog.kt"))
         } finally {
+            // A save still queued would be what load reads (DiskWriter.read): let it land before the options go back.
+            DiskWriter.drain()
             f.writeText(saved); TrackerOptions.load(f); f.delete()
         }
     }

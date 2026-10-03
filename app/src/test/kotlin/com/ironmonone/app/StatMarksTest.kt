@@ -142,6 +142,7 @@ class StatMarksTest {
     fun `a names-only moves file from an earlier build still reads`() {
         val m = marks()
         m.addMovesSeen(1, listOf(33 to "Tackle"), 5)
+        DiskWriter.drain()   // the save above is on its way to disk (rc32 audit P2 #90): there before the old file goes over it
         java.io.File(dir, "moves.txt").writeText("261:Bite|Tackle\n")
         val again = marks()
         assertEquals(listOf("Bite", "Tackle"), again.movesSeenFor(261).map { it.name })
@@ -159,11 +160,13 @@ class StatMarksTest {
         m.cycle(25, 0); m.setNote(25, "fast"); m.seeOnRoute(17, 261); m.addMovesSeen(25, listOf(84 to "Thunder Shock"), 5)
         m.revealAbility(25, "Static"); m.trackEncounter(25, wild = true); m.seeSafari(40, 111, 25); m.seeDsEncounter("Route 201", 396, 3)
         val names = listOf("marks.txt", "notes.txt", "routes.txt", "moves.txt", "abilities.txt", "encounters.txt", "safari.txt", "ds-encounters.txt")
+        DiskWriter.drain()   // written on the writer's thread (rc32 audit P2 #90)
         val before = names.associateWith { File(dir, it).readText() }
         for (n in names) assertTrue(before.getValue(n).isNotBlank(), "$n holds nothing to lose")
         for (n in names) assertTrue(File(dir, "$n.tmp").mkdirs(), "a folder in the temp file's place")
         m.cycle(25, 1); m.setNote(25, "slow"); m.seeOnRoute(17, 263); m.addMovesSeen(25, listOf(85 to "Thunderbolt"), 9)
         m.revealAbility(25, "Lightning Rod"); m.trackEncounter(25, wild = true); m.seeSafari(40, 112, 27); m.seeDsEncounter("Route 201", 399, 4)
+        DiskWriter.drain()
         for (n in names) assertEquals(before.getValue(n), File(dir, n).readText(), "$n was written in place")
         assertFalse("bufferedWriter()" in File("src/main/kotlin/com/ironmonone/app/StatMarks.kt").readText())
     }

@@ -82,6 +82,59 @@ class AutoThemeTest {
         assertEquals(ThemeStore.KEYS.joinToString(",") { ThemeStore.hex(it.default) }, ThemeStore.export())
     }
 
+    /** rc32 audit P3 #18: Play sends an update only when the team changes, so the auto theme stayed off after the editor closed. */
+    @Test
+    fun `closing the colour editor puts the lead's theme back at once`() {
+        AutoTheme.onGba(listOf(4 to false), on = true)
+        val code = AutoTheme.current
+        AutoTheme.suspend()
+        assertNull(AutoTheme.current)
+        AutoTheme.resume()
+        assertEquals(code, AutoTheme.current, "Charmander's theme, with no new update")
+        // The same on a DS game.
+        AutoTheme.onDs(AutoTheme.DsPokemon(4, 7, 0), on = true)
+        val ds = AutoTheme.current
+        AutoTheme.suspend()
+        AutoTheme.resume()
+        assertEquals(ds, AutoTheme.current)
+        assertEquals("7D563A", hex(Pc.Page))
+    }
+
+    @Test
+    fun `an option switched off while the editor was open stays off when it closes, and a second resume does nothing`() {
+        AutoTheme.onGba(listOf(4 to false), on = true)
+        AutoTheme.suspend()
+        AutoTheme.onGba(listOf(4 to false), on = false)   // Play's update while the editor is open
+        AutoTheme.resume()
+        assertNull(AutoTheme.current)
+        assertEquals("000000", hex(Pc.Page))
+        AutoTheme.onGba(listOf(4 to false), on = true)
+        val showing = AutoTheme.current
+        AutoTheme.resume()   // the editor was not open: nothing is applied again
+        assertEquals(showing, AutoTheme.current)
+    }
+
+    /**
+     * rc32 audit P2 #93: the editor's hex fields were read in its first draw, before it held the auto theme off, so they
+     * showed the auto colours, and Done on one saved it over the user's own theme.
+     */
+    @Test
+    fun `the colour editor opens on the user's own colours while an auto theme shows`() {
+        ThemeStore.KEYS.first { it.name == "Main background color" }.set(Color(0xFF123456))
+        AutoTheme.onGba(listOf(1 to false), on = true)
+        assertEquals("BE434C", hex(Pc.Page), "Bulbasaur's theme shows")
+        val opening = ThemeEditor.openingHex()
+        assertEquals("FF123456", opening["Main background color"], "the user's, not Bulbasaur's")
+        assertEquals(ThemeStore.KEYS.map { it.name }, opening.keys.toList())
+        AutoTheme.suspend()
+        assertEquals(ThemeStore.KEYS.associate { it.name to ThemeStore.hex(it.get()) }, opening, "exactly what the editor shows once the auto theme is held off")
+        // With no auto theme showing, it is what shows.
+        AutoTheme.resume(); AutoTheme.onGba(listOf(1 to false), on = false)
+        assertEquals(ThemeStore.KEYS.associate { it.name to ThemeStore.hex(it.get()) }, ThemeEditor.openingHex())
+        val src = File("src/main/kotlin/com/ironmonone/app/Theme.kt").readText()
+        assertTrue("var edits by remember { mutableStateOf(ThemeEditor.openingHex()) }" in src)
+    }
+
     private fun dsMon(pid: Long, species: Int, curHp: Int, form: Int = 0) = NdsTrackedMon(
         mon = Gen4.decodeParty(Gen4.encodeParty(pid, species, 20, curHp, 50, listOf(33, 0, 0, 0), form = form))!!,
         speciesName = "-", info = null, abilityName = "-", itemName = "-", moves = emptyList(),

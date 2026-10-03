@@ -62,6 +62,10 @@ object PresetStrings {
         runCatching { android.util.Log.w("IronMonOne", whatFailed, t) }
         val msg = generateSequence(t) { it.cause }.mapNotNull { it.message }.joinToString(" ")
         return when {
+            // Already worded for the player (PrepRun), as Library shows them: making the Nat. Dex version on Kaizo IronMON
+            // replaced "a patch this build does not carry" with "Try again" (rc32 audit P3 #62).
+            t is PrepFailure && !t.message.isNullOrBlank() -> t.message!!
+            t is NeedPatch -> NEED_NATDEX_PATCH
             "newer randomizer" in msg -> "$whatFailed: it is from a newer randomizer than this app carries."
             "ENOSPC" in msg || "No space" in msg -> "$whatFailed: the phone is out of storage."
             "did not read back" in msg -> "$whatFailed: the saved file did not read back the same, so it was not kept."

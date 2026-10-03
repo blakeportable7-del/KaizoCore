@@ -37,13 +37,18 @@ object SummaryChecks {
     fun mark(attempt: Int) {
         if (attempt in checked) return
         checked += attempt
-        runCatching { file?.let { it.parentFile?.mkdirs(); it.writeText(checked.joinToString("\n", postfix = "\n")) } }
+        save()
     }
 
     /** A new run took attempt [attempt]: an earlier run under the same number (another settings file's) is not it. */
     fun forget(attempt: Int) {
         if (!checked.remove(attempt)) return
-        runCatching { file?.let { it.parentFile?.mkdirs(); it.writeText(checked.joinToString("\n", postfix = "\n")) } }
+        save()
+    }
+
+    /** Whole or not at all, off the main thread (DiskWriter): it was rewritten in place (rc32 audit P2 #65). */
+    private fun save() {
+        file?.let { DiskWriter.write(it, if (checked.isEmpty()) "" else checked.joinToString("\n", postfix = "\n")) }
     }
 
     /**
@@ -53,12 +58,12 @@ object SummaryChecks {
      */
     fun forgetAll() {
         checked.clear()
-        runCatching { file?.let { it.parentFile?.mkdirs(); it.writeText("") } }
+        save()
     }
 
     fun load(f: File) {
         file = f
         checked.clear()
-        runCatching { if (f.exists()) f.forEachLine { l -> l.trim().toIntOrNull()?.let { checked += it } } }
+        runCatching { DiskWriter.read(f)?.lineSequence()?.forEach { l -> l.trim().toIntOrNull()?.let { checked += it } } }
     }
 }

@@ -131,8 +131,8 @@ class NdsRomCapsTest {
     }
 
     private fun check(file: String, code: String, system: NuzlockeSystem, game: String, top: (Rom) -> Map<Int, Int>) {
-        val f = File(roms, file)
-        if (!f.isFile) { println("SKIP: $file is not on this machine"); return }
+        val f = Dumps.file(roms, file)
+        if (f == null) { println("SKIP: $file is not on this machine"); return }
         Rom(f).use { rom ->
             assertEquals(code, rom.code, "$file is the game it says")
             val levels = top(rom)
@@ -164,8 +164,8 @@ class NdsRomCapsTest {
 
     @Test
     fun `the trainer ids the tracker treats as the lab and the final fight are the ones the ROM holds`() {
-        val f = File(roms, "platinum-u.nds")
-        if (!f.isFile) { println("SKIP: platinum-u.nds is not on this machine"); return }
+        val f = Dumps.file(roms, "platinum-u.nds")
+        if (f == null) { println("SKIP: platinum-u.nds is not on this machine"); return }
         Rom(f).use { rom ->
             val levels = gen4Top(rom, 2)
             for (id in NdsGameMap.PLATINUM.labTrainerIds + NdsGameMap.PLATINUM.finalTrainerId) assertNotNull(levels[id], "trainer $id has a team")

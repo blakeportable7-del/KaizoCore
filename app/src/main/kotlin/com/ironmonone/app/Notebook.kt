@@ -15,6 +15,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
@@ -52,6 +53,20 @@ internal fun notebookAbilityLines(tracked: List<String>, rom: List<String>, canS
 }
 
 /**
+ * The species the Notebook counts and lists under "Include unseen": Gen 3's 386 on a GBA game (ids 1 to 411 less the
+ * 25 empty slots 252 to 276), and the game's own Pokedex on a Game Boy one, 151 (Red, Blue, Yellow) or 251 (Gold,
+ * Silver, Crystal). A Game Boy game has no GBA tracker, so the page counted out of 386 and listed #152 to #411 with
+ * later games' sprites (rc32 audit P2 #36). [badgeSet] is TrackerState's: "RBY" or "GSC" there.
+ */
+internal object NotebookSpecies {
+    fun ids(tracker: GbaTracker?, badgeSet: String?): List<Int> = when {
+        tracker == null && badgeSet == "RBY" -> (1..151).toList()
+        tracker == null && badgeSet == "GSC" -> (1..251).toList()
+        else -> (1 until 412).filter { it !in 252..276 }
+    }
+}
+
+/**
  * The Notebook, four screens from the reference in one dialog:
  * NotebookIndexScreen (Pokemon seen and trainers fought, each a row that
  * opens its list), NotebookPokemonSeen (every species with a tracked note,
@@ -60,6 +75,8 @@ internal fun notebookAbilityLines(tracked: List<String>, rom: List<String>, canS
  * with usable trainers and the beaten count, with its "show completed" and
  * FRLG "Sevii" checkboxes) and NotebookPokemonNoteView (one species: types,
  * BST, last level, abilities, encounters, marks, moves seen and the note).
+ * Its words are DialogText, which follows the phone's font size, and its rows
+ * are 48dp targets (rc32 audit P2 #19): it was fixed 7 to 10dp text.
  */
 @Composable
 fun NotebookDialog(
@@ -71,6 +88,8 @@ fun NotebookDialog(
     lastSeenSpecies: Int?,
     speciesName: (Int) -> String,
     spriteFor: (Int) -> ImageBitmap?,
+    /** Every species of this game (NotebookSpecies): the count's total and the list with unseen included. */
+    speciesIds: List<Int>,
     onClose: () -> Unit,
 ) {
     var page by remember { mutableStateOf("index") }
@@ -90,23 +109,23 @@ fun NotebookDialog(
         Column(Modifier.width(300.dp).background(Pc.Page).border(1.dp, Pc.Border).padding(8.dp).verticalScroll(rememberScrollState())) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 val title = when (page) { "seen" -> "POKEMON SEEN"; "areas" -> "TRAINERS BY AREA"; "note" -> viewed?.let { speciesName(it).uppercase() } ?: "NOTE"; else -> "NOTEBOOK" }
-                PixText(title, 10, Pc.Text, Modifier.weight(1f))
+                DialogText(title, 16, Pc.Text, Modifier.weight(1f), heading = true)
                 if (page != "index") PcTap("BACK", 8, Pc.Dim, "Back") { back() }
                 PcTap("X", 9, Pc.Dim, "Close") { onClose() }
             }
             Spacer(Modifier.height(6.dp))
             when (page) {
                 "index" -> {
-                    PixText("Review your notes on:", 8, Pc.Text); Spacer(Modifier.height(6.dp))
-                    val total = tracker?.notebookSpeciesTotal() ?: 386
-                    Row(Modifier.fillMaxWidth().border(1.dp, Pc.Border).clickable { page = "seen" }.padding(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    DialogText("Review your notes on:", 13, Pc.Text); Spacer(Modifier.height(6.dp))
+                    val total = speciesIds.size
+                    Row(Modifier.fillMaxWidth().heightIn(min = PcMin.DIALOG_TOUCH_DP.dp).border(1.dp, Pc.Border).clickable { page = "seen" }.padding(6.dp), verticalAlignment = Alignment.CenterVertically) {
                         PcSprite(spriteFor(lastSeenSpecies ?: tracked.firstOrNull() ?: 1))
-                        Column(Modifier.padding(start = 8.dp)) { PixText("Pokemon Seen", 8, Pc.Gold); PixText("${tracked.size} / $total", 8, Pc.Text) }
+                        Column(Modifier.padding(start = 8.dp)) { DialogText("Pokemon Seen", 13, Pc.Gold); DialogText("${tracked.size} / $total", 13, Pc.Text) }
                     }
                     Spacer(Modifier.height(8.dp))
                     val totals = tracker?.notebookTrainerTotals(includeSevii || !frlg)
-                    Row(Modifier.fillMaxWidth().border(1.dp, Pc.Border).clickable { page = "areas" }.padding(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Column(Modifier.padding(start = 8.dp)) { PixText("Trainers Fought", 8, Pc.Gold); PixText(if (totals != null) "${totals.first} / ${totals.second}" else "--- / ---", 8, Pc.Text) }
+                    Row(Modifier.fillMaxWidth().heightIn(min = PcMin.DIALOG_TOUCH_DP.dp).border(1.dp, Pc.Border).clickable { page = "areas" }.padding(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.padding(start = 8.dp)) { DialogText("Trainers Fought", 13, Pc.Gold); DialogText(if (totals != null) "${totals.first} / ${totals.second}" else "--- / ---", 13, Pc.Text) }
                     }
                 }
                 "seen" -> {
@@ -114,7 +133,7 @@ fun NotebookDialog(
                     Spacer(Modifier.height(4.dp))
                     // A name filter: with unseen included the list is 386 species long (2026-09-27, audit).
                     Row(Modifier.fillMaxWidth().heightIn(min = 40.dp).border(1.dp, Pc.Border).padding(horizontal = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                        PixText("FIND", 7, Pc.Dim, Modifier.width(34.dp))
+                        DialogText("FIND", 12, Pc.Dim, Modifier.widthIn(min = 34.dp).padding(end = 4.dp))
                         BasicTextField(
                             value = filter, onValueChange = { filter = it }, singleLine = true,
                             textStyle = TextStyle(color = Pc.Text, fontSize = 12.sp),
@@ -124,21 +143,21 @@ fun NotebookDialog(
                         if (filter.isNotEmpty()) PcTap("X", 7, Pc.Dim, "Clear") { filter = "" }
                     }
                     Spacer(Modifier.height(4.dp))
-                    val ids = if (includeUnseen) (1 until 412).filter { it !in 252..276 } else tracked.toList()
+                    val ids = if (includeUnseen) speciesIds else tracked.toList()
                     val q = filter.trim()
                     val rows = ids.map { it to speciesName(it) }.filter { q.isEmpty() || it.second.contains(q, ignoreCase = true) }.sortedBy { it.second }
-                    if (rows.isEmpty()) PixText(if (q.isEmpty()) "Nothing tracked yet this run." else "No Pokemon match.", 8, Pc.Dim)
+                    if (rows.isEmpty()) DialogText(if (q.isEmpty()) "Nothing tracked yet this run." else "No Pokemon match.", 13, Pc.Dim)
                     rows.forEach { (id, name) ->
                         val m = marks.of(id)
                         val summary = StatMarks.STAT_NAMES.indices.mapNotNull { i -> when (m.getOrElse(i) { 0 }) { 1 -> StatMarks.STAT_NAMES[i] + "+"; 2 -> StatMarks.STAT_NAMES[i] + "--"; 3 -> StatMarks.STAT_NAMES[i] + "="; else -> null } }.joinToString(" ")
-                        Row(Modifier.fillMaxWidth().border(1.dp, Pc.Border).clickable { viewed = id; page = "note" }.padding(3.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Row(Modifier.fillMaxWidth().heightIn(min = PcMin.DIALOG_TOUCH_DP.dp).border(1.dp, Pc.Border).clickable { viewed = id; page = "note" }.padding(3.dp), verticalAlignment = Alignment.CenterVertically) {
                             PcSprite(spriteFor(id))
                             Column(Modifier.weight(1f).padding(start = 6.dp)) {
-                                PixText(name, 8, if (id in tracked) Pc.Text else Pc.Dim)
-                                if (summary.isNotEmpty()) PixText(summary, 7, Pc.Gold)
-                                val note = marks.noteFor(id); if (note.isNotEmpty()) PixText(note, 7, Pc.Dim, wrap = true)
+                                DialogText(name, 13, if (id in tracked) Pc.Text else Pc.Dim)
+                                if (summary.isNotEmpty()) DialogText(summary, 12, Pc.Gold)
+                                val note = marks.noteFor(id); if (note.isNotEmpty()) DialogText(note, 12, Pc.Dim)
                             }
-                            val seen = encountersOf(id); if (seen > 0) PixText("Seen: $seen", 7, Pc.Dim)
+                            val seen = encountersOf(id); if (seen > 0) DialogText("Seen: $seen", 12, Pc.Dim)
                         }
                     }
                 }
@@ -147,11 +166,11 @@ fun NotebookDialog(
                     if (frlg) GearToggle("Include Sevii Islands", includeSevii) { includeSevii = it }
                     Spacer(Modifier.height(4.dp))
                     val rows = tracker?.notebookAreas(includeSevii || !frlg, showCompleted) ?: emptyList()
-                    if (rows.isEmpty()) PixText(if (tracker == null) "No trainer data for this game." else "Every area is done.", 8, Pc.Dim)
+                    if (rows.isEmpty()) DialogText(if (tracker == null) "No trainer data for this game." else "Every area is done.", 13, Pc.Dim)
                     rows.forEach { r ->
                         Row(Modifier.fillMaxWidth().border(1.dp, Pc.Border).padding(4.dp)) {
-                            PixText(r.name, 8, Pc.Text, Modifier.weight(1f))
-                            PixText("${r.defeated} / ${r.total}", 8, if (r.defeated == r.total) Pc.Positive else Pc.Text, Modifier.width(60.dp), TextAlign.End)
+                            DialogText(r.name, 13, Pc.Text, Modifier.weight(1f))
+                            DialogText("${r.defeated} / ${r.total}", 13, if (r.defeated == r.total) Pc.Positive else Pc.Text, Modifier.widthIn(min = 60.dp), TextAlign.End)
                         }
                     }
                 }
@@ -172,12 +191,12 @@ fun NotebookDialog(
                         Column {
                             StatMarks.STAT_NAMES.forEachIndexed { i, n ->
                                 val st = m.getOrElse(i) { 0 }
-                                if (st != 0) PixText(n + " " + StatMarks.symbol(st), 7, Pc.Gold)
+                                if (st != 0) DialogText(n + " " + StatMarks.symbol(st), 12, Pc.Gold)
                             }
                         }
                     }
                     Spacer(Modifier.height(4.dp))
-                    @Composable fun line(k: String, v: String) { Row { PixText(k, 8, Pc.Dim, Modifier.width(96.dp)); PixText(v, 8, Pc.Text, wrap = true) } }
+                    @Composable fun line(k: String, v: String) { Row { DialogText(k, 13, Pc.Dim, Modifier.width(96.dp)); DialogText(v, 13, Pc.Text) } }
                     line("BST", base?.bst?.toString() ?: "---")
                     line("Last level", lastLevelOf(id)?.toString() ?: "---")
                     val (ability1, ability2) = notebookAbilityLines(
@@ -188,13 +207,13 @@ fun NotebookDialog(
                     line("", ability2)
                     line("Encounters", encountersOf(id).toString())
                     Spacer(Modifier.height(4.dp))
-                    PixText("Moves seen", 8, Pc.Gold)
+                    DialogText("Moves seen", 13, Pc.Gold)
                     val moves = marks.movesSeenFor(id)
-                    if (moves.isEmpty()) PixText("---", 8, Pc.Dim)
+                    if (moves.isEmpty()) DialogText("---", 13, Pc.Dim)
                     moves.forEach { mv -> line(mv.name, if (mv.minLv == mv.maxLv) "Lv.${mv.minLv}" else "Lv.${mv.minLv}-${mv.maxLv}") }
                     Spacer(Modifier.height(4.dp))
-                    PixText("Note", 8, Pc.Gold)
-                    PixText(marks.noteFor(id).ifEmpty { "---" }, 8, Pc.Text, wrap = true)
+                    DialogText("Note", 13, Pc.Gold)
+                    DialogText(marks.noteFor(id).ifEmpty { "---" }, 13, Pc.Text)
                 }
             }
         }

@@ -186,6 +186,8 @@ fun LayoutToolbar(
     onEdit: (PadLayout) -> Unit,
     onReset: () -> Unit,
     onDone: () -> Unit,
+    /** A Game Boy game: the presets leave out L and R, which it has no use for. */
+    gb: Boolean = false,
     skin: PadSkin = PadSkin.CLASSIC,
     onSkin: (PadSkin) -> Unit = {},
     onCancel: () -> Unit = {},
@@ -221,13 +223,13 @@ fun LayoutToolbar(
         LayoutChip("Skin: " + skin.label.lowercase()) { onSkin(skin.next()) }
         // 2.1: the most-downloaded store emulator's layout, one tap. DS keeps its own until its reference is measured.
         if (!isDs) LayoutChip("My Boy layout") {
-            confirm = Triple("Use the My Boy layout?", "USE IT") { onEdit(PadLayout.myBoy(landscape)); onSkin(PadSkin.OUTLINE) }
+            confirm = Triple("Use the My Boy layout?", "USE IT") { onEdit(PadLayout.myBoyFor(landscape, gb)); onSkin(PadSkin.OUTLINE) }
         }
         if (isDs) LayoutChip("SuperNDS layout") {
             confirm = Triple("Use the SuperNDS layout?", "USE IT") { onEdit(PadLayout.default(landscape, nds = true)); onSkin(PadSkin.OUTLINE) }
         }
         if (!isDs) LayoutChip("Original pad") {
-            confirm = Triple("Use the original pad?", "USE IT") { onEdit(PadLayout.legacy(landscape)); onSkin(PadSkin.CLASSIC) }
+            confirm = Triple("Use the original pad?", "USE IT") { onEdit(PadLayout.legacyFor(landscape, gb)); onSkin(PadSkin.CLASSIC) }
         }
         LayoutChip("Reset") { confirm = Triple("Reset to the default layout?", "RESET", onReset) }
         onMoveBar?.let { LayoutChip(if (barAtBottom) "Bar to top" else "Bar to bottom", onClick = it) }

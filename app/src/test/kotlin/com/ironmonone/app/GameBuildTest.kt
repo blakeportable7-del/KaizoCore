@@ -249,7 +249,8 @@ class GameBuildTest {
 
     @Test
     fun `with nothing chosen every bundled mode comes out as the same settings it went in as`() {
-        val files = presets.listFiles { f -> f.extension == "rnqs" }!!.sortedBy { it.name }.filter { !RnqsInfo.of(it).appliedByApp }
+        // MaxDex's file is not a starting point: Build your own is not offered on MaxDex in its first version (RunScreen).
+        val files = presets.listFiles { f -> f.extension == "rnqs" }!!.sortedBy { it.name }.filter { !RnqsInfo.of(it).appliedByApp && !RnqsInfo.of(it).maxDex }
         assertTrue(files.size >= 70, "${files.size} presets")
         for (f in files) {
             val kind = RomKind.all.firstOrNull { k -> RulesetCatalog.forRom(k, files).any { it.preset == f || f in it.alternatives } }
@@ -345,10 +346,13 @@ class GameBuildTest {
         assertEquals("FRLG Kaizo (Kaizo).rnqs", fromKaizo.name)
         val mode = RulesetCatalog.forRom(fireRed, store.listSettings()).single { it.key == "kaizo" }
         assertEquals(official, mode.preset, "the official file is still what the Kaizo mode runs")
-        assertTrue(plain in mode.alternatives && fromKaizo in mode.alternatives)
-        // The one that started from Kaizo says so in its sidecar; the plain one has no mode.
+        assertTrue(fromKaizo in mode.alternatives, "the build that started from Kaizo is one of its alternatives")
+        // The one that started from Kaizo says so in its sidecar. The plain one has no mode: the word the player typed
+        // used to make it one (rc33 audit P1 #48), and it stays one of FireRed's settings files all the same.
         assertEquals("kaizo", RnqsInfo.of(fromKaizo).ruleset)
-        assertEquals("kaizo", RnqsInfo.of(plain).ruleset, "its name has the word, which is all the Run tab reads")
+        kotlin.test.assertNull(RnqsInfo.of(plain).ruleset, "typed words never decide the mode")
+        kotlin.test.assertFalse(plain in mode.alternatives)
+        assertTrue(RulesetCatalog.isCompatible(fireRed, plain))
     }
 
     @Test

@@ -2,7 +2,6 @@ package com.ironmonone.app
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -10,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
@@ -83,37 +83,48 @@ object ScoreSheet {
             rows += Row(species, speciesName(species), cells, score)
         }
         rows.sortWith(compareBy<Row> { it.score }.thenBy { it.species })
-        val percentage = if (total == 0) "---" else if (great == total) "100" else String.format("%.1f", great * 100.0 / total)
+        // The letter is read back from the number shown, as the reference does (tonumber(percentageScore)). Formatted in
+        // the phone's own language that number was "87,5", which did not read back, so every grade under 100% was a D
+        // (rc32 audit P2 #82). Locale.ROOT writes a point and plain digits whatever the language.
+        val percentage = if (total == 0) "---" else if (great == total) "100" else String.format(java.util.Locale.ROOT, "%.1f", great * 100.0 / total)
         return Result(rows, great, poor, total, percentage, letter(percentage.toDoubleOrNull() ?: 0.0))
     }
 }
 
+/**
+ * The sheet, in DialogText, which follows the phone's font size, with a 48dp X that says Close (rc32 audit P2 #19,
+ * #102): fixed 7 to 10dp text and a 17 by 13dp X. The labels share the row with their numbers by weight, not a
+ * fixed column, so a big font wraps them instead of cutting them.
+ */
 @Composable
 fun ScoreSheetDialog(r: ScoreSheet.Result, spriteFor: (Int) -> ImageBitmap?, onClose: () -> Unit) {
     Dialog(onDismissRequest = onClose) {
         Column(Modifier.width(320.dp).background(Pc.Page).border(1.dp, Pc.Border).padding(8.dp).verticalScroll(rememberScrollState())) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                PixText("STAT MARKING SCORE SHEET", 10, Pc.Text, Modifier.weight(1f))
-                PixText("X", 9, Pc.Dim, Modifier.clickable { onClose() }.padding(horizontal = 6.dp, vertical = 2.dp))
+                DialogText("STAT MARKING SCORE SHEET", 16, Pc.Text, Modifier.weight(1f), heading = true)
+                PcTap("X", 9, Pc.Dim, "Close") { onClose() }
             }
             Spacer(Modifier.height(6.dp))
             if (r.total == 0) {
-                PixText("Take notes while playing by marking stats on opposing Pokemon. (The Speed stat is excluded from grading.)", 8, Pc.Text, wrap = true)
+                DialogText("Take notes while playing by marking stats on opposing Pokemon. (The Speed stat is excluded from grading.)", 13, Pc.Text)
                 return@Column
             }
-            Row(Modifier.fillMaxWidth()) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Row { PixText("Great marks:", 8, Pc.Text, Modifier.width(90.dp)); PixText("${r.great}", 8, Pc.Positive) }
-                    Row { PixText("Poor marks:", 8, Pc.Text, Modifier.width(90.dp)); PixText("${r.poor}", 8, Pc.Negative) }
-                    Row { PixText("Total:", 8, Pc.Text, Modifier.width(90.dp)); PixText("${r.total}", 8, Pc.Text) }
-                    Row { PixText("Percentage:", 8, Pc.Text, Modifier.width(90.dp)); PixText(r.percentage + "%", 8, Pc.Gold) }
+                    @Composable fun line(label: String, value: String, color: androidx.compose.ui.graphics.Color) {
+                        Row { DialogText(label, 13, Pc.Text, Modifier.weight(1f)); DialogText(value, 13, color, Modifier.padding(start = 6.dp)) }
+                    }
+                    line("Great marks:", "${r.great}", Pc.Positive)
+                    line("Poor marks:", "${r.poor}", Pc.Negative)
+                    line("Total:", "${r.total}", Pc.Text)
+                    line("Percentage:", r.percentage + "%", Pc.Gold)
                 }
-                PixText(r.letter.toString(), 28, if (r.letter == 'A') Pc.Positive else if (r.letter == 'D') Pc.Negative else Pc.Gold, Modifier.width(48.dp), TextAlign.Center)
+                DialogText(r.letter.toString(), 28, if (r.letter == 'A') Pc.Positive else if (r.letter == 'D') Pc.Negative else Pc.Gold, Modifier.widthIn(min = 48.dp), TextAlign.Center)
             }
             Spacer(Modifier.height(8.dp))
             Row(Modifier.fillMaxWidth()) {
                 Spacer(Modifier.width(40.dp))
-                listOf("HP", "ATK", "DEF", "SPA", "SPD").forEach { PixText(it, 7, Pc.Dim, Modifier.weight(1f), TextAlign.Center) }
+                listOf("HP", "ATK", "DEF", "SPA", "SPD").forEach { DialogText(it, 12, Pc.Dim, Modifier.weight(1f), TextAlign.Center) }
             }
             r.rows.forEach { row ->
                 Row(Modifier.fillMaxWidth().border(1.dp, Pc.Border).padding(2.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -122,8 +133,8 @@ fun ScoreSheetDialog(r: ScoreSheet.Result, spriteFor: (Int) -> ImageBitmap?, onC
                         Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                             val mark = c.mark ?: " "
                             val tick = when (c.accurate) { true -> " \u2713"; false -> " \u2717"; null -> "" }
-                            PixText(mark + tick, 8, when (c.accurate) { true -> Pc.Positive; false -> Pc.Negative; null -> Pc.Text })
-                            PixText((if (c.exception) "^" else "") + "${c.base}", 7, Pc.Dim)
+                            DialogText(mark + tick, 12, when (c.accurate) { true -> Pc.Positive; false -> Pc.Negative; null -> Pc.Text }, align = TextAlign.Center)
+                            DialogText((if (c.exception) "^" else "") + "${c.base}", 12, Pc.Dim, align = TextAlign.Center)
                         }
                     }
                 }

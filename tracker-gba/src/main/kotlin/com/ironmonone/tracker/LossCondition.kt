@@ -22,15 +22,13 @@ enum class LossCondition(val key: String, val label: String) {
 
     /**
      * The reference's conditions over the party in slot order, eggs ignored
-     * (`pokemon.isEgg ~= 1`): the lead is slot 1 itself, so an egg there is never
-     * a lost lead; highest level checks every tie; entire party needs a real
-     * Pokemon and every real one at 0 HP.
+     * (`pokemon.isEgg ~= 1`): the lead is the first Pokemon that is not an egg,
+     * as TrackerAPI.getPlayerPokemon(1) finds it (Tracker.getPokemon skips eggs,
+     * Tracker.lua:105-140); highest level checks every tie; entire party needs a
+     * real Pokemon and every real one at 0 HP. The lead was slot 1 itself, so an
+     * egg there meant the lead fainting never ended the run (rc32 audit P2 #136).
      */
     fun lostMons(party: List<LossMon>): Boolean {
-        if (this == LEAD) {
-            val lead = party.firstOrNull { it.level > 0 } ?: return false
-            return !lead.isEgg && lead.curHp == 0
-        }
         val real = party.filter { it.level > 0 && !it.isEgg }.map { it.level to it.curHp }
         if (real.isEmpty()) return false
         return when (this) {

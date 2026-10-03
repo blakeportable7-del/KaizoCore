@@ -19,7 +19,20 @@ class PrepStore(private val filesDir: File) {
 
     constructor(context: Context) : this(context.filesDir)
 
+    /** The app's files folder, for a helper that keeps a file of its own beside the run's (KeptSave). */
+    internal val files: File get() = filesDir
+
+    /** Free space on [File]'s volume; a test sets a phone that is full. */
+    internal var freeBytes: (File) -> Long = { it.usableSpace }
+
     companion object {
+        /**
+         * Held while a run's files are copied out (saveAttempt) or replaced (installRun). "Save this attempt" then
+         * "New game" put the NEW run's randomizer log, a live spoiler, into the old attempt's folder, which every backup
+         * and cloud copy carries (rc33 audit P1 #41). Taken before NextRun's lock, never inside it.
+         */
+        private val RUN_FILES = Any()
+
         /**
          * Whether a state stamp names a run. [runIdentity] writes "?" for a
          * game or seed not on disk, which is also the stamp half way through
@@ -27,6 +40,24 @@ class PrepStore(private val filesDir: File) {
          * never match each other.
          */
         fun stampKnown(stamp: String): Boolean = stamp.isNotBlank() && stamp.split('/').none { it == "?" || it.isBlank() }
+
+        /**
+         * What a file name may not hold, compiled once (rc32 audit P2 #56): it was built on every call, and the attempt
+         * number is asked for several times on each tracker change.
+         */
+        private val UNSAFE_NAME = Regex("[^A-Za-z0-9._-]")
+
+        /** The extensions a run's game can have. */
+        private val RUN_EXTENSIONS = (RomKind.allV1 + RomKind.allNatDex + RomKind.allPatched).map { it.fileExtension }.toSet()
+
+        /**
+         * In prep/runs/: every previous.* file, and the game and log of a current run whose extension is not [ext]
+         * (the console of the run in play). The shared names (current.species.tsv, current.recipe) belong to the run.
+         */
+        internal fun staleRunFiles(runs: File, ext: String?): List<File> = runs.listFiles().orEmpty().filter { f ->
+            f.isFile && (f.name.startsWith("previous.") ||
+                (ext != null && RUN_EXTENSIONS.any { e -> e != ext && (f.name == "current.$e" || f.name == "current.$e.log") }))
+        }
     }
 
     private val root = File(filesDir, "prep").apply { mkdirs() }
@@ -161,7 +192,9 @@ class PrepStore(private val filesDir: File) {
                     "has no use for it."))
         }
         val f = File(patches, name)
-        f.writeBytes(bytes)
+        // Whole or not at all (SafeWrite): written in place, a kill in the middle left a cut patch where a good one had
+        // been, and a full phone threw out of the import (RC35-NOTICED N #15).
+        if (!SafeWrite.bytes(f, bytes)) return Result.failure(IllegalArgumentException(PATCH_NOT_SAVED))
         return Result.success(f)
     }
 
@@ -170,21 +203,49 @@ class PrepStore(private val filesDir: File) {
     fun preparedFile(kind: RomKind): File =
         File(prepared, "${kind.id}.${kind.fileExtension}")
 
-    fun savePrepared(kind: RomKind, bytes: ByteArray): File =
-        preparedFile(kind).apply { writeBytes(bytes) }
+    /** A built game from memory (the Nat. Dex patch's output): [crc] is its own, worked out by the caller. */
+    fun savePrepared(kind: RomKind, bytes: ByteArray, crc: Long? = null): File {
+        val dest = preparedFile(kind)
+        // Whole or not at all, as a file is (rc32 audit P2 #64): written in place, a failure left half a game.
+        if (!SafeWrite.bytes(dest, bytes)) throw java.io.IOException("could not write ${dest.name}")
+        remember(dest, crc)
+        return dest
+    }
 
     /**
      * The same from a file on disk, MOVED when the source is ours (the PREP
      * cache), copied otherwise. A copy of a 512 MB dump needs another 512 MB
      * free and, left behind in the cache, filled a phone up (2026-09-07).
+     *
+     * The new copy goes in beside the old one and replaces it in one step, and only once it is whole. The old copy
+     * used to be deleted first: a pick that had gone (Patched versions, after a second pick failed) then threw
+     * after the game's prepared copy was already gone, and trying again could never work (rc32 audit P2 #64).
+     * [crc] is the copy's checksum when the caller already holds it (rc32 audit P2 #63), kept so the list of
+     * prepared games never hashes a 512 MB build again on the main thread.
      */
-    fun savePrepared(kind: RomKind, file: File): File {
+    fun savePrepared(kind: RomKind, file: File, crc: Long? = null): File {
+        if (!file.isFile) throw java.io.FileNotFoundException("${file.name} is gone")
         val dest = preparedFile(kind)
         dest.parentFile?.mkdirs()
-        if (dest.exists()) dest.delete()
-        if (!file.renameTo(dest)) { file.copyTo(dest, overwrite = true); file.delete() }
-        crcCache.remove(dest.absolutePath)
+        val incoming = File(dest.parentFile, dest.name + ".tmp")
+        incoming.delete()
+        if (!file.renameTo(incoming)) {
+            try { file.copyTo(incoming, overwrite = true) } catch (t: Throwable) { incoming.delete(); throw t }
+            file.delete()
+        }
+        try { StateSlots.replace(incoming, dest) } catch (t: Throwable) { incoming.delete(); throw t }
+        remember(dest, crc)
         return dest
+    }
+
+    /** A stored build's checksum, when known, in the cache and the memo; otherwise the cache forgets the path. */
+    private fun remember(dest: File, crc: Long?) {
+        synchronized(crcMemo) {
+            if (crc == null) { crcCache.remove(dest.absolutePath); return }
+            readMemo()
+            crcCache[dest.absolutePath] = (dest.lastModified().toString() + ":" + dest.length()) to crc
+            writeMemo()
+        }
     }
 
     /**
@@ -206,24 +267,40 @@ class PrepStore(private val filesDir: File) {
     private val crcMemo = File(root, "crc-cache.txt")
     private fun cachedCrc(f: File): Long {
         val stamp = f.lastModified().toString() + ":" + f.length()
-        crcCache[f.absolutePath]?.let { (s, crc) -> if (s == stamp) return crc }
-        if (crcCache.isEmpty()) runCatching {
-            crcMemo.takeIf { it.isFile }?.forEachLine { line ->
-                val p = line.split('|'); if (p.size == 3) crcCache[p[0]] = p[1] to (p[2].toLongOrNull() ?: return@forEachLine)
-            }
+        synchronized(crcMemo) {
+            crcCache[f.absolutePath]?.let { (s, crc) -> if (s == stamp) return crc }
+            // On any miss, not only the first: a build stored since by another PrepStore (My games' PATCH, while the
+            // Kaizo screen's store already had its cache) is in the memo, and hashing it again was seconds on the
+            // main thread for a DS build (rc32 audit P2 #63).
+            readMemo()
             crcCache[f.absolutePath]?.let { (s, crc) -> if (s == stamp) return crc }
         }
         val c = java.util.zip.CRC32()
         f.inputStream().buffered(1 shl 20).use { i -> val buf = ByteArray(1 shl 20); while (true) { val n = i.read(buf); if (n < 0) break; c.update(buf, 0, n) } }
         val crc = c.value
-        crcCache[f.absolutePath] = stamp to crc
-        runCatching { crcMemo.writeText(crcCache.entries.joinToString(System.lineSeparator()) { (k, v) -> k + "|" + v.first + "|" + v.second }) }
+        synchronized(crcMemo) {
+            crcCache[f.absolutePath] = stamp to crc
+            writeMemo()
+        }
         return crc
+    }
+
+    private fun readMemo() {
+        runCatching {
+            crcMemo.takeIf { it.isFile }?.forEachLine { line ->
+                val p = line.split('|'); if (p.size == 3) crcCache[p[0]] = p[1] to (p[2].toLongOrNull() ?: return@forEachLine)
+            }
+        }
+    }
+
+    /** The memo, a cache: a write that fails only means a hash later. */
+    private fun writeMemo() {
+        runCatching { crcMemo.writeText(crcCache.entries.joinToString(System.lineSeparator()) { (k, v) -> k + "|" + v.first + "|" + v.second }) }
     }
 
     /** Every prepared ROM on hand, identified by CRC so a stale file cannot lie. */
     fun listPrepared(): List<Pair<RomKind, File>> {
-        val prepared = (RomKind.allV1 + RomKind.allNatDex + RomKind.allPatched).mapNotNull { kind ->
+        val prepared = RomKind.all.mapNotNull { kind ->
             val f = preparedFile(kind)
             if (f.exists() && cachedCrc(f) == kind.expectedCrc) kind to f else null
         }
@@ -409,7 +486,7 @@ class PrepStore(private val filesDir: File) {
     private val favoritesDir = File(root, "favorites").apply { mkdirs() }
     private val legacyFavoritesFile = File(root, "favorites.txt")
     private fun favoritesFile(romId: String?): File =
-        File(favoritesDir, (romId ?: "unknown").replace(Regex("[^A-Za-z0-9._-]"), "_") + ".txt")
+        File(favoritesDir, (romId ?: "unknown").replace(UNSAFE_NAME, "_") + ".txt")
 
     fun favoritesText(romId: String? = currentRomId()): String {
         val f = favoritesFile(romId)
@@ -420,7 +497,8 @@ class PrepStore(private val filesDir: File) {
         }
     }
 
-    fun saveFavorites(romId: String?, text: String) = runCatching { favoritesFile(romId).writeText(text) }.let { }
+    /** Whole or not at all (SafeWrite): written in place, a kill in the middle emptied the game's favourites (rc32 audit P2 #65). */
+    fun saveFavorites(romId: String?, text: String) { SafeWrite.text(favoritesFile(romId), text) }
 
     fun loadFavorites(romId: String? = currentRomId()): Set<String> =
         favoritesText(romId).split('\n', ',').map { it.trim().lowercase() }.filter { it.isNotEmpty() }.toSet()
@@ -434,9 +512,13 @@ class PrepStore(private val filesDir: File) {
      * lines; after them come what is known about the run: whether its settings file is custom (CustomRuns), and
      * whether it is a Nuzlocke, which counts no attempt and files no IronMON record.
      */
-    fun saveLastRun(romKindId: String, settingsName: String, custom: Boolean? = null, nuzlocke: Boolean = false, variant: String? = null) =
-        lastRunFile.writeText("$romKindId\n$settingsName" + (custom?.let { "\ncustom=$it" } ?: "") + (if (nuzlocke) "\nnuzlocke=true" else "") +
-            (variant?.takeIf { it.isNotBlank() }?.let { "\nvariant=" + it.replace('\n', ' ') } ?: ""))
+    fun saveLastRun(romKindId: String, settingsName: String, custom: Boolean? = null, nuzlocke: Boolean = false, variant: String? = null) {
+        // Whole or not at all (rc32 audit P2 #65): written in place, a full phone or a dead battery left it short, and
+        // the run lost its game (a DS run showed no run; a GBA run played untracked, its save at saves/unknown.srm).
+        if (!SafeWrite.text(lastRunFile, "$romKindId\n$settingsName" + (custom?.let { "\ncustom=$it" } ?: "") + (if (nuzlocke) "\nnuzlocke=true" else "") +
+                (variant?.takeIf { it.isNotBlank() }?.let { "\nvariant=" + it.replace('\n', ' ') } ?: "")))
+            throw RunSetupProblem(RUN_NOT_SAVED)
+    }
 
     private fun lastRunFlag(line: String): Boolean =
         runCatching { lastRunFile.readLines().drop(2).any { it.trim() == line } }.getOrDefault(false)
@@ -518,7 +600,7 @@ class PrepStore(private val filesDir: File) {
      *   your current number"). A game first played after this starts at 0.
      * - A randomized Nuzlocke counts no attempt: installRun's [countAttempt].
      */
-    private fun safeName(s: String) = s.replace(Regex("[^A-Za-z0-9._-]"), "_")
+    private fun safeName(s: String) = s.replace(UNSAFE_NAME, "_")
     private fun attemptFile(romId: String) = File(attemptsDir, safeName(romId) + ".txt")
     private fun fileAttemptFile(romId: String, settingsName: String) = File(File(attemptsDir, safeName(romId)), safeName(settingsName) + ".txt")
     private fun baseFile(romId: String) = File(attemptsDir, safeName(romId) + ".base")
@@ -533,9 +615,14 @@ class PrepStore(private val filesDir: File) {
     private fun base(romId: String): Int =
         readCount(baseFile(romId)) ?: gameAttempts(romId).also { SafeWrite.text(baseFile(romId), "$it") }
 
-    /** The attempts started on [romId] with [settingsName]; with no file named, the game's own count. */
-    fun attemptOf(romId: String, settingsName: String?): Int = when {
-        Demo.mode != null -> Demo.ATTEMPT
+    /** The attempts started on [romId] with [settingsName]; with no file named, the game's own count. A staged demo shows its own number. */
+    fun attemptOf(romId: String, settingsName: String?): Int = if (Demo.mode != null) Demo.ATTEMPT else countOf(romId, settingsName)
+
+    /**
+     * The count itself, whatever is staged: what a run is filed and counted under. A staged demo's number is for the
+     * screens only, and a run replaced in a demo's process was filed in its history as attempt 37 (rc32 audit P2 #29).
+     */
+    private fun countOf(romId: String, settingsName: String?): Int = when {
         settingsName.isNullOrBlank() -> gameAttempts(romId)
         else -> readCount(fileAttemptFile(romId, settingsName)) ?: base(romId)
     }
@@ -580,14 +667,17 @@ class PrepStore(private val filesDir: File) {
             val kind = RomKind.byId(romId) ?: return
             val run = currentRunFor(kind).takeIf { it.isFile } ?: return
             val seed = lastSeedText().takeIf { it.isNotBlank() } ?: return
-            val n = attemptOf(romId, settingsName)
+            val n = countOf(romId, settingsName)
             val history = RunHistory(runHistoryFile(kind))
             if (history.find(n, seed) != null) return
             val events = RunEvents(File(root, "integrity.txt")).entries()
+            // How far it got, as Play last saw it: it was filed with 0 badges and no lead whatever it reached, so Your
+            // stats' best run and the death card's Best never counted it (rc32 audit P3 #58).
+            val seen = RunProgress.read(filesDir)?.takeIf { it.attempt == n && it.seed == seed }
             history.record(RunRecord(
                 attempt = n, seed = seed, ruleset = settingsName, started = run.lastModified(), ended = at,
-                playSeconds = RunClock.of(RunClock.key(romId, n)), outcome = RunRecord.Outcome.ENDED, badges = 0,
-                lead = null, killer = null, trainer = "", location = "",
+                playSeconds = RunClock.of(RunClock.key(romId, n)), outcome = RunRecord.Outcome.ENDED, badges = seen?.badges ?: 0,
+                lead = seen?.lead, killer = null, trainer = "", location = seen?.location.orEmpty(),
                 restores = rewinds(events), resumes = events.count { it.kind == RunEvents.Kind.RESUME },
                 resets = events.count { it.kind == RunEvents.Kind.RESET },
                 keptSave = events.any { it.kind == RunEvents.Kind.KEPT_SAVE }, custom = lastRunCustom(),
@@ -601,7 +691,10 @@ class PrepStore(private val filesDir: File) {
     /** Every run of [kind] that ended (RunHistory): personal bests and the death card. */
     fun runHistoryFile(kind: RomKind): File = File(root, "runhistory-${kind.id}.tsv")
 
-    fun saveLastSeed(seed: Long) = lastSeedFile.writeText("%016x".format(seed))
+    /** Whole or not at all, as [saveLastRun] (rc32 audit P2 #65): an empty seed made every state of the run refused. */
+    fun saveLastSeed(seed: Long) {
+        if (!SafeWrite.text(lastSeedFile, "%016x".format(seed))) throw RunSetupProblem(RUN_NOT_SAVED)
+    }
 
     /**
      * Which randomization is loaded right now: the prepared ROM's id plus the
@@ -625,7 +718,7 @@ class PrepStore(private val filesDir: File) {
      */
     private fun runExtension(): String =
         loadLastRun()?.first?.let { id ->
-            (RomKind.allV1 + RomKind.allNatDex + RomKind.allPatched).firstOrNull { it.id == id }?.fileExtension
+            RomKind.all.firstOrNull { it.id == id }?.fileExtension
         } ?: "gba"
 
     val currentRun: File get() = File(runs, "current.${runExtension()}")
@@ -649,24 +742,66 @@ class PrepStore(private val filesDir: File) {
      * named by seed, and never overwrites an earlier save. Here: the current
      * run's ROM and log, a save state of the moment (when one could be taken),
      * and the per-run notes, into files/attempts/<game>-<attempt>-<seed>/.
-     * Returns whether every file that exists was copied.
+     * Returns whether every file that exists was copied; [attemptShortOfRoom] says whether a refusal was for want of space.
      */
-    fun saveAttempt(kind: RomKind, attempt: Int, seed: String, state: ByteArray?): Boolean = runCatching {
-        val base = File(File(root.parentFile, "attempts"), "${kind.id}-attempt$attempt-$seed".replace(Regex("[^A-Za-z0-9._-]"), "_"))
-        var dir = base; var n = 2
-        while (dir.exists()) { dir = File(base.parentFile, base.name + "-$n"); n++ }
-        dir.mkdirs()
-        val rom = currentRunFor(kind)
-        if (!rom.isFile) error("no run")
-        rom.copyTo(File(dir, "run.${kind.fileExtension}"), overwrite = true)
-        currentRunLogFor(kind)?.copyTo(File(dir, "run.${kind.fileExtension}.log"), overwrite = true)
-        state?.takeIf { it.isNotEmpty() }?.let { File(dir, "state.bin").writeBytes(it) }
-        listOf("marks.txt", "notes.txt", "routes.txt", "moves.txt", "abilities.txt", "encounters.txt", "ds-encounters.txt", "safari.txt", "ds-tracked.txt", "integrity.txt").forEach { f ->
-            File(root, f).takeIf { it.isFile }?.copyTo(File(dir, f), overwrite = true)
+    fun saveAttempt(kind: RomKind, attempt: Int, seed: String, state: ByteArray?): Boolean = synchronized(RUN_FILES) {
+        var made: File? = null
+        attemptShortOfRoom = false
+        val ok = runCatching {
+            // The run named is not the one in place any more (a new run went in first): nothing of it is left to save.
+            val now = lastSeedText()
+            if ((now.isNotEmpty() && now != seed) || loadLastRun()?.first?.let { it != kind.id } == true) return@runCatching false
+            val rom = currentRunFor(kind)
+            if (!rom.isFile) error("no run")
+            val attempts = File(root.parentFile, "attempts").apply { mkdirs() }
+            // Room for the game first (rc32 audit P2 #66): a DS game is 128 to 512 MB, and a copy cut short by a full
+            // phone stayed behind, where nothing lists it and every backup carried it.
+            if (freeBytes(attempts) < rom.length() + ATTEMPT_SPARE) {
+                SaveTrouble.report(SaveTrouble.ATTEMPT, ATTEMPT_NO_ROOM)
+                attemptShortOfRoom = true
+                return@runCatching false
+            }
+            val base = File(attempts, "${kind.id}-attempt$attempt-$seed".replace(UNSAFE_NAME, "_"))
+            var dir = base; var n = 2
+            while (dir.exists()) { dir = File(base.parentFile, base.name + "-$n"); n++ }
+            dir.mkdirs()
+            made = dir
+            // The notes as they are now, the ones still on their way to disk included (DiskWriter).
+            DiskWriter.drain()
+            // The log and the notes first, the ROM (the slow copy) last.
+            currentRunLogFor(kind)?.copyTo(File(dir, "run.${kind.fileExtension}.log"), overwrite = true)
+            listOf("marks.txt", "notes.txt", "routes.txt", "moves.txt", "abilities.txt", "encounters.txt", "ds-encounters.txt", "safari.txt", "ds-tracked.txt", "integrity.txt").forEach { f ->
+                File(root, f).takeIf { it.isFile }?.copyTo(File(dir, f), overwrite = true)
+            }
+            rom.copyTo(File(dir, "run.${kind.fileExtension}"), overwrite = true)
+            state?.takeIf { it.isNotEmpty() }?.let { File(dir, "state.bin").writeBytes(it) }
+            // Last: an attempt folder without it is a copy that never finished (sweepUnfinishedAttempts).
+            File(dir, ATTEMPT_DONE).writeText("game=${kind.id}\nattempt=$attempt\nseed=$seed\n")
+            true
+        }.getOrDefault(false)
+        // Nothing half made stays (rc32 audit P2 #66): the folder goes whole on any failure.
+        if (!ok) made?.let { runCatching { it.deleteRecursively() } }
+        ok
+    }
+
+    /**
+     * Whether the last [saveAttempt] on this store was refused for want of space, so the game-over tile can say so
+     * (rc35 follow-up N #20): it said "Unable to save" for a full phone too, and the reason was only a toast.
+     */
+    @Volatile var attemptShortOfRoom = false
+        private set
+
+    /**
+     * Attempt folders a kill left unfinished (no attempt.txt, written last since the first build that saved attempts),
+     * deleted at launch (rc32 audit P2 #66). Under the run files' lock, so a save copying now is never swept from
+     * under itself; call it off the main thread.
+     */
+    fun sweepUnfinishedAttempts() = synchronized(RUN_FILES) {
+        runCatching {
+            File(root.parentFile, "attempts").listFiles()?.filter { it.isDirectory && !File(it, ATTEMPT_DONE).isFile }
+                ?.forEach { it.deleteRecursively() }
         }
-        File(dir, "attempt.txt").writeText("game=${kind.id}\nattempt=$attempt\nseed=$seed\n")
-        true
-    }.getOrDefault(false)
+    }
 
     /** The seed of the run in play, as saved by the last randomization, or "" before any. */
     fun lastSeedText(): String = runCatching { lastSeedFile.readText().trim() }.getOrDefault("")
@@ -682,10 +817,12 @@ class PrepStore(private val filesDir: File) {
      * new-run paths go through.
      */
     fun clearRunNotes() {
-        listOf("marks.txt", "notes.txt", "routes.txt", "moves.txt",
-            "abilities.txt", "encounters.txt", "ds-encounters.txt", "safari.txt", "ds-tracked.txt", "integrity.txt").forEach {
-            runCatching { File(root, it).delete() }
-        }
+        val files = listOf("marks.txt", "notes.txt", "routes.txt", "moves.txt",
+            "abilities.txt", "encounters.txt", "ds-encounters.txt", "safari.txt", "ds-tracked.txt", "integrity.txt", RunProgress.FILE).map { File(root, it) }
+        // A save of the old run's notes still queued would write them back over the new run (DiskWriter, rc32 audit P2 #90).
+        DiskWriter.forget(files)
+        RunProgress.forget()
+        files.forEach { runCatching { it.delete() } }
     }
 
     /**
@@ -724,7 +861,7 @@ class PrepStore(private val filesDir: File) {
         variant: String? = null,
         /** Built from a run code: its record says so, and whether the seed was played before (R7). */
         fromCode: Boolean = false,
-    ) {
+    ): Unit = synchronized(RUN_FILES) {
         // Before anything moves: the run this replaces, if it never ended, goes into its history as ended (R13).
         fileOpenRunAsEnded()
         // First. A save state is stamped with the seed (runIdentity), and were
@@ -751,7 +888,7 @@ class PrepStore(private val filesDir: File) {
         library.selectRun()
         // Named explicitly: this counter is per game and settings file and must not depend on the order of the lines
         // above. A randomized Nuzlocke takes its file's number without counting one (R8).
-        val n = if (countAttempt) bumpAttempt(kind.id, settingsName) else attemptOf(kind.id, settingsName)
+        val n = if (countAttempt) bumpAttempt(kind.id, settingsName) else countOf(kind.id, settingsName)
         freshAttempt(kind.id, n)
         // Marks, notes and route sightings describe the OLD seed's
         // randomization; carrying them into the new run is misleading.
@@ -762,5 +899,28 @@ class PrepStore(private val filesDir: File) {
             val before = RunCodeHistory.playedBefore(RunHistory(runHistoryFile(kind)), "%016x".format(staged.seed), settingsName)
             RunEvents(File(root, "integrity.txt")).add(RunEvents.Kind.CODE, "run code", before?.let { "seed played before as attempt ${it.attempt}" }.orEmpty())
         }
+        dropStaleRuns(kind)
+    }
+
+    /**
+     * Once a new run is in: the run it replaced (previous.*, which nothing reads) and a run of another console
+     * (current.<other ext>, its game and log) are deleted. They stayed for good, up to 512 MB each for a DS game, and
+     * every backup and cloud sync carried them (rc32 audit P2 #67). "Save this attempt" is the way to keep a run.
+     */
+    private fun dropStaleRuns(kind: RomKind) {
+        runCatching { staleRunFiles(runs, kind.fileExtension).forEach { it.delete() } }
     }
 }
+
+/** What NEW RUN says when the new run's name or seed could not be written (rc32 audit P2 #65). */
+internal const val RUN_NOT_SAVED = "Could not save the new run's game and seed. If this phone is out of space, free some, then start the run again."
+
+/** What Prepare says when a Nat. Dex patch it took could not be written (RC35-NOTICED N #15). */
+internal const val PATCH_NOT_SAVED = "Could not save the patch. If this phone is out of space, free some, then try again."
+
+/** Save this attempt: the folder's last file, written once everything else is in (rc32 audit P2 #66). */
+internal const val ATTEMPT_DONE = "attempt.txt"
+/** Room kept free beyond the game's own size when an attempt is saved. */
+internal const val ATTEMPT_SPARE = 32L * 1024 * 1024
+internal const val ATTEMPT_NO_ROOM = "Not enough free space on this phone to save this attempt. Free some space first."
+

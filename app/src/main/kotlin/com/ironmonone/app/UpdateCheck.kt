@@ -95,6 +95,8 @@ object UpdateCheck {
     const val IN_BROWSER = "Download in the browser"
     const val NEEDS_ALLOW = "Android asks once before KaizoCore may install its own updates. Tap Allow, switch on " +
         "Allow from this source, then come back here."
+    /** While the build is copied into Android's installer: no Close then, or Android's question had no one to come back to (rc32 audit P2 #105). */
+    const val HANDING = "Handing it to Android..."
     const val INSTALLING = "Android is asking to install it. KaizoCore closes while it updates; open it again when it finishes."
     const val DECLINED = "Update canceled."
 
@@ -102,10 +104,14 @@ object UpdateCheck {
     fun downloading(done: Long, total: Long): String = "Downloading... ${done / 1_000_000} of ${megabytes(total)} MB"
 
     fun failText(why: UpdateInstall.Why, bytes: Long): String = when (why) {
-        UpdateInstall.Why.NO_SPACE -> "Not enough free space: the update needs about ${megabytes(bytes + UpdateInstall.SPARE_BYTES)} MB."
+        // The room for the download and for Android's own copy of it (rc32 audit P2 #103).
+        UpdateInstall.Why.NO_SPACE -> "Not enough free space: the update needs about ${megabytes(UpdateInstall.needBytes(bytes))} MB."
         UpdateInstall.Why.SIZE, UpdateInstall.Why.CHECKSUM ->
             "The download did not match the build the site names, so it was not installed. Try again."
-        UpdateInstall.Why.HTTP, UpdateInstall.Why.NETWORK -> "The download stopped. Check the connection and try again."
+        UpdateInstall.Why.NETWORK -> "The download stopped. Check the connection and try again."
+        // An answer from the site is not a connection problem (rc32 audit P3 #76).
+        UpdateInstall.Why.HTTP -> "The site did not send the update. Try again later."
+        UpdateInstall.Why.GONE -> "That build is no longer on willowcreek.group. Try again later."
         UpdateInstall.Why.CANCELLED -> "Download canceled."
     }
 
@@ -149,6 +155,14 @@ object UpdateCheck {
 
     /** A version code newer than the installed one. Older or equal is not an update. */
     fun isNewer(m: Manifest, installedCode: Long): Boolean = m.versionCode > installedCode
+
+    /**
+     * The build to offer instead of [held] once the site no longer has it (Why.GONE): [fresh], latest.json asked again,
+     * when it names a newer one. A prompt held for the process outlived a release, its old APK answered with a redirect,
+     * and the player was told to check the connection for good (rc32 audit P3 #76). Null when there is none: a release
+     * pulled back, or no answer.
+     */
+    fun replacement(held: Manifest, fresh: Manifest?): Manifest? = fresh?.takeIf { it.versionCode > held.versionCode }
 
     /**
      * Whether the automatic check should ask now: on, and never asked or 20 hours ago. A last
@@ -277,11 +291,17 @@ object UpdateCheck {
     /** From the package manager, since buildConfig is not enabled in this project. Null if it cannot be read. */
     fun installed(context: Context): Installed? = runCatching {
         val p = context.packageManager.getPackageInfo(context.packageName, 0)
-        // longVersionCode is API 28; minSdk is 26.
-        @Suppress("DEPRECATION")
-        val code = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) p.longVersionCode else p.versionCode.toLong()
-        Installed(code, displayVersion(p.versionName ?: ""))
+        Installed(versionCode(p), displayVersion(p.versionName ?: ""))
     }.getOrNull()
+
+    /**
+     * The build's version code, the one place it is read. longVersionCode is API 28 and minSdk is 26: called bare on
+     * Android 8.0 and 8.1 it threw, and runCatching turned the crash report's version and the next run's app stamp
+     * into "unknown" on every build there (rc32 audit P3 #35).
+     */
+    @Suppress("DEPRECATION")
+    fun versionCode(p: android.content.pm.PackageInfo): Long =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) p.longVersionCode else p.versionCode.toLong()
 
     /** "1.0.0-rc30+c8e0a70" is shown as "1.0.0-rc30": the build id says which build, the name says which release. */
     fun displayVersion(versionName: String): String = versionName.substringBefore('+').ifBlank { "?" }
@@ -308,8 +328,9 @@ object UpdateCheck {
      */
     suspend fun checkIfDue(context: Context): Manifest? = withContext(Dispatchers.IO) {
         runCatching {
-            // A download from an earlier launch was installed (it is this build) or abandoned.
-            UpdateInstall.sweep(context.cacheDir)
+            // A download from an earlier launch was installed (it is this build) or abandoned. Once a process: this runs
+            // again whenever the activity is rebuilt, maybe while INFO's card is downloading (RC35-NOTICED N #8).
+            UpdateInstall.sweepOnce(context.cacheDir)
             if (Demo.mode != null) return@runCatching null
             val inst = installed(context) ?: return@runCatching null
             checkOnce(context.filesDir, inst.code, System.currentTimeMillis())

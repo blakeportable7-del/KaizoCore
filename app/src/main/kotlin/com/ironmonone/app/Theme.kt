@@ -88,7 +88,7 @@ data class WholeTheme(
     companion object {
         /** The eight colours in [ThemeStore.KEYS] order, and nothing else. */
         fun ofKeys(keys: List<Color>): WholeTheme {
-            require(keys.size == 8) { "eight colours, not ${keys.size}" }
+            require(keys.size == 8) { "eight colors, not ${keys.size}" }
             return WholeTheme(keys[0], keys[1], keys[2], keys[3], keys[4], keys[5], keys[6], keys[7])
         }
     }
@@ -213,17 +213,33 @@ object ThemeStore {
 
     fun load(f: File) {
         file = f
-        if (!f.isFile) return
         runCatching {
-            val text = f.readText().trim()
+            val text = (DiskWriter.read(f) ?: return).trim()
             // The colours are what matter: a damaged tail must not cost the player the eight.
             (decode(text) ?: decode(text.substringBefore('|')))?.let { show(it) }
         }
     }
-    fun save() { file?.let { SafeWrite.text(it, export()) } }
+    /**
+     * Whole (SafeWrite), on the writer's thread (DiskWriter): each valid hex typed and each preset tap saves, and the
+     * sync ran on the main thread while a new run could be writing hundreds of MB (rc32 audit P3 #69).
+     */
+    fun save() { file?.let { DiskWriter.write(it, export()) } }
 
     /** Tests only: stop writing to the file [load] was given. */
     internal fun detach() { file = null }
+}
+
+/** The colour editor's hex fields as it opens. */
+internal object ThemeEditor {
+    /**
+     * The user's own eight colours, not an auto theme's: the fields were read during the first draw, before the editor
+     * held the auto theme off, so they showed the auto colours, and Done on a field saved one over the user's theme
+     * (rc32 audit P2 #93). AutoTheme.userTheme is the theme the hold puts back.
+     */
+    fun openingHex(): Map<String, String> {
+        val user = AutoTheme.userTheme().keys
+        return ThemeStore.KEYS.mapIndexed { i, k -> k.name to ThemeStore.hex(user[i]) }.toMap()
+    }
 }
 
 /**
@@ -244,7 +260,7 @@ fun ColorThemeDialog(ds: Boolean = false, onClose: () -> Unit) {
     var showExport by remember { mutableStateOf(false) }
     var copied by remember { mutableStateOf(false) }
     var resetArmed by remember { mutableStateOf(false) }
-    var edits by remember { mutableStateOf(ThemeStore.KEYS.associate { it.name to ThemeStore.hex(it.get()) }) }
+    var edits by remember { mutableStateOf(ThemeEditor.openingHex()) }
     // Swatches read the live Pc colours; this bumps them when one is applied.
     var applied by remember { mutableIntStateOf(0) }
     fun refreshEdits() { edits = ThemeStore.KEYS.associate { it.name to ThemeStore.hex(it.get()) }; applied++ }
@@ -258,7 +274,7 @@ fun ColorThemeDialog(ds: Boolean = false, onClose: () -> Unit) {
         Gen3Box(Modifier.fillMaxWidth(), paper = Shell.paper) {
             Column(Modifier.verticalScroll(rememberScrollState())) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text("Tracker colours", style = MaterialTheme.typography.titleLarge,
+                    Text("Tracker colors", style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Medium, color = Shell.inkOnPaper, modifier = Modifier.weight(1f))
                     IconButton(onClick = onClose, modifier = Modifier.size(Shell.touchTarget)) {
                         Icon(Icons.Filled.Close, contentDescription = "Close", tint = Shell.inkOnPaper)
@@ -268,9 +284,9 @@ fun ColorThemeDialog(ds: Boolean = false, onClose: () -> Unit) {
                 Spacer(Modifier.height(16.dp))
                 TrackerImageSection()
                 Spacer(Modifier.height(16.dp))
-                Text("Edit colours", style = MaterialTheme.typography.titleSmall,
+                Text("Edit colors", style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Medium, color = Shell.inkOnPaper)
-                Text("Hex, 6 or 8 digits (RRGGBB or AARRGGBB). A colour applies once it is valid.",
+                Text("Hex, 6 or 8 digits (RRGGBB or AARRGGBB). A color applies once it is valid.",
                     style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper)
                 Spacer(Modifier.height(8.dp))
                 ThemeStore.KEYS.forEachIndexed { idx, k ->
@@ -319,14 +335,14 @@ fun ColorThemeDialog(ds: Boolean = false, onClose: () -> Unit) {
                                 },
                             )
                         }
-                        if (!valid) Text("Not a colour. Use 6 or 8 hex digits, like FF8800.",
+                        if (!valid) Text("Not a color. Use 6 or 8 hex digits, like FF8800.",
                             style = MaterialTheme.typography.bodySmall, color = Shell.dangerOnPaper,
                             modifier = Modifier.padding(top = 4.dp))
                     }
                 }
                 Spacer(Modifier.height(10.dp))
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Gen3Button(if (resetArmed) "Sure? Reset colours" else "Reset colours", accent = resetArmed) {
+                    Gen3Button(if (resetArmed) "Sure? Reset colors" else "Reset colors", accent = resetArmed) {
                         if (resetArmed) { ThemeStore.reset(); refreshEdits(); resetArmed = false } else resetArmed = true
                     }
                     Gen3Button(if (showExport) "Hide theme string" else "Export theme") { showExport = !showExport }
@@ -367,7 +383,7 @@ fun ColorThemeDialog(ds: Boolean = false, onClose: () -> Unit) {
                     }
                     Gen3Button("Apply", accent = true, enabled = importText.isNotBlank()) {
                         if (ThemeStore.import(importText.trim())) { refreshEdits(); importText = ""; importError = null }
-                        else importError = "That is not a theme string. It should be eight hex colours, separated by commas."
+                        else importError = "That is not a theme string. It should be eight hex colors, separated by commas."
                     }
                 }
             }

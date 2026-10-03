@@ -1,6 +1,5 @@
 package com.ironmonone.app
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -31,7 +30,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -49,6 +47,9 @@ internal fun LogPokemonTab(
     rows: List<RandomizerLog.Pokemon>,
     spriteOf: ((RandomizerLog.Pokemon) -> ImageBitmap?)?,
     onPokemon: (RandomizerLog.Pokemon) -> Unit,
+    names: LogNames = LogNames.PLAIN,
+    /** Its Walking Pals, which stand idle in place of the still (LogTabPokemon's icons, SpriteData.Types.Idle). */
+    palOf: ((RandomizerLog.Pokemon) -> WalkingPals.Pal?)? = null,
 ) {
     if (rows.isEmpty()) {
         DialogText("No Pok\u00e9mon match that search.", 14, Pc.Dim)
@@ -63,10 +64,9 @@ internal fun LogPokemonTab(
                 Modifier.background(Pc.Page).border(1.dp, Pc.Border).clickable { onPokemon(p) }.padding(horizontal = 4.dp, vertical = 6.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                val art = spriteOf?.invoke(p)
-                if (art != null) Image(art, p.name, Modifier.size(56.dp), filterQuality = FilterQuality.None)
-                else Spacer(Modifier.size(56.dp))
-                DialogText(logTitle(p.name), 13, Pc.Text, Modifier.fillMaxWidth(), TextAlign.Center)
+                val shown = names.species(p.name)
+                LogMonIcon(spriteOf?.invoke(p), palOf?.invoke(p), 56.dp, shown)
+                DialogText(shown, 13, Pc.Text, Modifier.fillMaxWidth(), TextAlign.Center)
                 Spacer(Modifier.height(4.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(3.dp), verticalAlignment = Alignment.CenterVertically) {
                     p.types.forEach { PcTypeChip(it.uppercase(), pcTypeColorByName(it)) }
@@ -110,26 +110,28 @@ internal fun LogPokemonDetail(
     frlg: Boolean,
     spriteOf: ((RandomizerLog.Pokemon) -> ImageBitmap?)?,
     moveTypes: Map<String, Int>,
-    /** Log name, upper case, to the team member's IVs and EVs in the reference's stat order. */
-    team: Map<String, Pair<List<Int>, List<Int>>>,
+    /** The team member of this species' IVs and EVs in the reference's stat order, when it is on the team. */
+    mine: Pair<List<Int>, List<Int>>?,
+    /** The game's names for the log's (LogNames). */
+    names: LogNames,
     onPokemon: (RandomizerLog.Pokemon) -> Unit,
     onBack: () -> Unit,
     /** A species' evolution methods, short (EvoText.short of its PokemonData evolution); null for none. */
     evoMethodsOf: ((RandomizerLog.Pokemon) -> List<String>)? = null,
+    /** Walking Pals for the icons that stand idle on PC: this one and its evolutions (LogTabPokemonDetails). */
+    palOf: ((RandomizerLog.Pokemon) -> WalkingPals.Pal?)? = null,
 ) {
     val types = p.types.mapNotNull { Gen3Types.idOf(it) }
     fun stab(move: String) = moveTypes[move.uppercase()]?.let { it in types } == true
     var levelTab by remember(p.id) { mutableStateOf(true) }
     var view by remember(p.id) { mutableStateOf(StatView.BST) }
-    val mine = team[p.name.uppercase()]
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         // The header (2026-10-02, readable): Back, the sprite, the name, its types as the tracker draws them.
         Row(Modifier.fillMaxWidth().background(Pc.Page).border(1.dp, Pc.Border).padding(end = 10.dp), verticalAlignment = Alignment.CenterVertically) {
             LogBack(onBack)
-            val art = spriteOf?.invoke(p)
-            if (art != null) Image(art, null, Modifier.size(48.dp), filterQuality = FilterQuality.None)
+            LogMonIcon(spriteOf?.invoke(p), palOf?.invoke(p), 48.dp, null)
             Spacer(Modifier.width(8.dp))
-            DialogText(logTitle(p.name), 17, Pc.Gold, Modifier.weight(1f), heading = true)
+            DialogText(names.species(p.name), 17, Pc.Gold, Modifier.weight(1f), heading = true)
             Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) { p.types.forEach { PcTypeChip(it.uppercase(), pcTypeColorByName(it)) } }
         }
         Spacer(Modifier.height(6.dp))
@@ -147,12 +149,12 @@ internal fun LogPokemonDetail(
                 Modifier.fillMaxWidth().background(Pc.Page).border(1.dp, Pc.Border).padding(8.dp).horizontalScroll(rememberScrollState()),
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                prevos.forEach { pre -> EvoIcon(pre, spriteOf, onPokemon, evoMethodsOf?.let { LogEvoLabels.into(it(pre), pre.evolutions, p.name) }) }
+                prevos.forEach { pre -> EvoIcon(pre, spriteOf, onPokemon, names, palOf, evoMethodsOf?.let { LogEvoLabels.into(it(pre), pre.evolutions, p.name) }) }
                 if (prevos.isNotEmpty()) DialogText(">", 16, Pc.Dim)
-                EvoIcon(p, spriteOf, null)
+                EvoIcon(p, spriteOf, null, names, palOf)
                 if (evos.isNotEmpty()) DialogText(">", 16, Pc.Dim)
                 val methods = evoMethodsOf?.invoke(p) ?: emptyList()
-                evos.forEachIndexed { i, evo -> EvoIcon(evo, spriteOf, onPokemon, evoMethodsOf?.let { LogEvoLabels.forward(methods, i) }) }
+                evos.forEachIndexed { i, evo -> EvoIcon(evo, spriteOf, onPokemon, names, palOf, evoMethodsOf?.let { LogEvoLabels.forward(methods, i) }) }
             }
         }
         // STAT GRAPH
@@ -209,8 +211,8 @@ internal fun LogPokemonDetail(
                 }
             }
             if (levelTab) {
-                p.evoMoves.forEach { mv -> moveRow("Evo", logTitle(mv), if (stab(mv)) Pc.Positive else Pc.Text) }
-                p.moves.forEach { (lv, mv) -> moveRow("Lv %d".format(lv), logTitle(mv), if (stab(mv)) Pc.Positive else Pc.Text) }
+                p.evoMoves.forEach { mv -> moveRow("Evo", names.move(mv), if (stab(mv)) Pc.Positive else Pc.Text) }
+                p.moves.forEach { (lv, mv) -> moveRow("Lv %d".format(lv), names.move(mv), if (stab(mv)) Pc.Positive else Pc.Text) }
                 if (p.moves.isEmpty() && p.evoMoves.isEmpty()) DialogText("The log lists no level-up moves for it.", 13, Pc.Dim)
             } else {
                 LogSearch.tmRows(p, log, frlg, TrackerOptions.logShowUnlearnableGymTms).forEach { r ->
@@ -221,12 +223,12 @@ internal fun LogPokemonDetail(
                         val num = "TM%02d".format(r.number)
                         if (r.unlearnable) {
                             // The reference fades a gym TM it cannot learn and strikes it through in red.
-                            moveRow(num, logTitle(r.move), Pc.Text.copy(alpha = 0.62f), Modifier.drawWithContent {
+                            moveRow(num, names.move(r.move), Pc.Text.copy(alpha = 0.62f), Modifier.drawWithContent {
                                 drawContent()
                                 val y = size.height / 2f
                                 drawLine(Pc.Negative.copy(alpha = 0.75f), Offset(0f, y), Offset(size.width, y), 1.dp.toPx())
                             })
-                        } else moveRow(num, logTitle(r.move), if (stab(r.move)) Pc.Positive else Pc.Text)
+                        } else moveRow(num, names.move(r.move), if (stab(r.move)) Pc.Positive else Pc.Text)
                     }
                 }
             }
@@ -235,14 +237,17 @@ internal fun LogPokemonDetail(
 }
 
 @Composable
-private fun EvoIcon(p: RandomizerLog.Pokemon, spriteOf: ((RandomizerLog.Pokemon) -> ImageBitmap?)?, onPokemon: ((RandomizerLog.Pokemon) -> Unit)?, method: String? = null) {
+private fun EvoIcon(
+    p: RandomizerLog.Pokemon, spriteOf: ((RandomizerLog.Pokemon) -> ImageBitmap?)?, onPokemon: ((RandomizerLog.Pokemon) -> Unit)?,
+    names: LogNames, palOf: ((RandomizerLog.Pokemon) -> WalkingPals.Pal?)?, method: String? = null,
+) {
     Column(
         Modifier.then(if (onPokemon != null) Modifier.clickable { onPokemon(p) } else Modifier).padding(2.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        val art = spriteOf?.invoke(p)
-        if (art != null) Image(art, p.name, Modifier.size(44.dp), filterQuality = FilterQuality.None)
-        DialogText(logTitle(p.name), 12, if (onPokemon == null) Pc.Gold else Pc.Text)
+        val shown = names.species(p.name)
+        LogMonIcon(spriteOf?.invoke(p), palOf?.invoke(p), 44.dp, shown)
+        DialogText(shown, 12, if (onPokemon == null) Pc.Gold else Pc.Text)
         if (!method.isNullOrEmpty()) DialogText(method, 12, Pc.Dim)
     }
 }

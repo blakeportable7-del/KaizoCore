@@ -145,8 +145,13 @@ class StreamSnapshotTest {
             for (k in listOf("hp", "maxHp", "ability", "item", "stats")) assertNull(p[k], "$k waits for the summary")
             assertEquals(emptyList<Any>(), p["moves"]); assertEquals(emptyMap<String, Int>(), p["stages"])
             assertFalse(Json.write(snap).contains("Swarm"), "the ability is nowhere in the JSON")
+            // The heals give the max HP away: 0 and 0, as the phone's strip and the reference (rc32 audit P2 #98).
+            val healed = StreamSnapshot.build(run, battle(flags(abilities = true)).copy(healPercent = 62, healCount = 1), null, StreamSnapshot.Notes())
+            assertEquals(mapOf("percent" to 0, "count" to 0), healed["heals"])
 
             com.ironmonone.app.SummaryChecks.mark(attempt)
+            assertEquals(mapOf("percent" to 62, "count" to 1),
+                StreamSnapshot.build(run, battle(flags(abilities = true)).copy(healPercent = 62, healCount = 1), null, StreamSnapshot.Notes())["heals"])
             val after = leadOf(StreamSnapshot.build(run, battle(flags(abilities = true)), null, StreamSnapshot.Notes()))
             assertEquals(74, after["maxHp"]); assertEquals("Swarm", after["ability"]); assertEquals(55, (after["stats"] as Map<*, *>)["atk"])
 

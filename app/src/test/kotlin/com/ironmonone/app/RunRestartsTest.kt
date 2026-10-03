@@ -26,6 +26,6 @@ class RunRestartsTest {
         val side = File("src/main/kotlin/com/ironmonone/app/SideScreens.kt").readText()
         assertTrue("onRestart(); RunRestarts.log(restartFiles)" in side)
         val play = File("src/main/kotlin/com/ironmonone/app/PlayScreen.kt").readText()
-        assertTrue("onRestart = { retro?.reset() }" in play, "PlayScreen is at the verifier's limit and is not touched")
+        assertTrue("onRestart = { RetroAchievements.restartGame(retro) }" in play, "the game and the achievement client restart together (rc33 audit P1 #38)")
     }
 }

@@ -201,6 +201,15 @@ class NextRun(val dir: File) {
     }
 
     /**
+     * [make] then [claim] in one hold of the lock (RunStart). As two holds, the background worker's [ready] or [clear]
+     * could land between them and delete the stage just made (rc33 audit P1 #22).
+     */
+    fun makeAndClaim(recipe: Recipe, seed: Long, randomize: (dest: File, seed: Long) -> Unit): Staged? = synchronized(LOCK) {
+        make(recipe, seed, randomize)
+        claim(recipe)
+    }
+
+    /**
      * Takes the stage for [recipe]. Its meta is deleted before anything moves,
      * so from here on nothing can take it a second time, and whatever a crash
      * leaves behind has no meta and is never taken. The files then move to

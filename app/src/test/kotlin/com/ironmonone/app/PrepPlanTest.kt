@@ -25,6 +25,8 @@ class PrepPlanTest {
         assertTrue(PrepPlan.lines(RomKind.RED_U).none { it.contains("as the IronMON rules require") || it.startsWith("Kaizo:") })
         assertTrue(PrepPlan.lines(RomKind.CRYSTAL_U).first().contains("require it for Crystal"))
         assertTrue(PrepPlan.lines(RomKind.HEARTGOLD_U).first().contains("Super Kaizo"))
+        assertTrue(PrepPlan.lines(RomKind.HEARTGOLD_U).first().contains("IronMON HGSS"), "HeartGold has three choices, and the screen names each")
+        assertEquals("Already carries the IronMON HGSS 0.2.2a patch. Stored as is, ready to randomize.", PrepPlan.lines(RomKind.HEARTGOLD_IRONMON).single())
         assertTrue(PrepPlan.lines(RomKind.PLATINUM_U).first().contains("Super Kaizo") && PrepPlan.lines(RomKind.PLATINUM_U).first().contains("Platinum 1.0"))
         assertTrue(PrepPlan.lines(RomKind.DIAMOND_U).first().contains("needs no patch"), "Diamond keeps the plain line: no Super Kaizo patch exists for it")
         assertTrue(PrepPlan.lines(RomKind.RED_PF).first().startsWith("Already carries"))

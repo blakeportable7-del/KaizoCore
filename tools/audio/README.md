@@ -58,3 +58,22 @@ band-limited resample of the same 10 s of music:
 | `WindowedSincResampler` | 29.8 dB | -84.7 dB | -45.6 dB |
 
 The sinc's remaining difference is its rolloff between 20 and 24 kHz (its cutoff is 22 kHz).
+
+## DS games: the core's own sound (2026-10-02)
+
+Blake heard the same crackle on Black 2. The resampler was not it (its cutoff sits at 92% of the lower Nyquist,
+15 kHz from 32,768 Hz). melonDS's own defaults were: "Automatic" bit depth is 10-bit on a DS and the interpolation
+is None, and KaizoCore set neither. Recorded straight off the stream tap with `ws_record.py` (STREAM on in the game
+menu, `adb forward tcp:8642 tcp:8642`, the token from the menu), scored with `pcm_stats.py`, Black 2's title music:
+
+| | distinct values | samples on multiples of 32 | 8 to 12 kHz | 12 to 16.4 kHz |
+|---|---|---|---|---|
+| core defaults (10-bit, None) | 961 | 100% | -25.8 dB | -28.4 dB |
+| 16-bit, Cubic (KaizoCore's defaults since) | 25,150 | 3.1% | -33.2 dB | -36.5 dB |
+
+The interpolation applies mid-game; the bit depth only when the game boots (switched live the samples stayed 16-bit,
+after a restart they were 10-bit), so its row says so.
+
+`pcm_dump` takes core options as `PCM_OPTS="key=value,..."` and gives melonDS its log and rumble interfaces, but
+melonDS still cannot run headless from adb's shell ("Failed to allocate memory using ftruncate!") and plays silence:
+record DS games through the stream instead.

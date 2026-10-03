@@ -31,6 +31,14 @@ object PlayRules {
     /** The IronMON game-over popup and its latch. */
     fun ironmonGameOver(k: Kind): Boolean = k == Kind.IRONMON
 
+    /**
+     * A+B+Start's new run is offered only for a run in Play: NewRunConfirmDialog asks this first, and says "No run to
+     * start" otherwise. PlayScreen arms the combo in every game, so without it a library game re-randomized the last
+     * Kaizo run over the one in progress (UX audit P0-1). Here, not inline in the dialog, so a test holds it (rc32 audit
+     * P3 #64).
+     */
+    fun newRunOffered(session: GameSession): Boolean = session.isRun
+
     /** Rules in the File menu and in Tracker Setup: the Nuzlocke's own rules in a Nuzlocke, the mode's otherwise. */
     fun nuzlockeRules(k: Kind): Boolean = k == Kind.NUZLOCKE
 }
@@ -42,12 +50,38 @@ object PlayRules {
  * [ended] turns on, not on every poll, because it reads the session from the disk; any failure keeps the card.
  */
 @Composable
+fun ironmonRunInPlay(attempt: Int): Boolean {
+    // The tracker's attempt count is a Kaizo IronMON run's (Blake, 2026-10-02: "the tracker needs attempt count"): a
+    // Nuzlocke counts no attempt, and a library game has none. Read from the disk once per attempt, like the card below.
+    val context = LocalContext.current
+    return remember(attempt) {
+        attempt > 0 && runCatching {
+            val filesDir = context.applicationContext.filesDir
+            PlayRules.kind(PrepStore(filesDir).session(), filesDir) == PlayRules.Kind.IRONMON
+        }.getOrDefault(false)
+    }
+}
+
+/**
+ * The run in place as Play shows it: its attempt number and seed, read from the disk once per run (rc32 audit P2 #56,
+ * P3 #55). Play asked PrepStore for the attempt in composition, five times on each tracker change in landscape, and
+ * each ask read lastrun.txt twice and a count file on the main thread. The poll loops read it once per launch.
+ */
+internal class RunIds(val attempt: Int, val seed: String)
+
+/** [runKey] is Play's gameKeyForRom, which every install of a run bumps (NEW RUN, the wait for one made elsewhere). */
+@Composable
+internal fun rememberRunIds(store: PrepStore, runKey: Int): RunIds = remember(runKey) { RunIds(store.attempt(), store.lastSeedText()) }
+
+@Composable
 fun ironmonGameOverCard(ended: Boolean): Boolean {
     val context = LocalContext.current
-    return remember(ended) {
+    val kaizo = remember(ended) {
         ended && runCatching {
             val filesDir = context.applicationContext.filesDir
             PlayRules.ironmonGameOver(PlayRules.kind(PrepStore(filesDir).session(), filesDir))
         }.getOrDefault(true)
     }
+    // Continue playing goes back to the battle and the party, as the PC tracker's does (GameOverCard).
+    return GameOverCard.shows(kaizo)
 }

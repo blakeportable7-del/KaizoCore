@@ -160,10 +160,10 @@ Read the official IronMON Rules first (http://ironmon.gg/), as well as the versi
         - Any Pokémon can be chosen as a starter unless it is categorized as a Strong Legendary or Mythical by Serebii's Legendary Pokémon list (https://www.serebii.net/pokemon/legendary.shtml). Sub-Legendaries are fine.
         - Pivots are banned, no exceptions.
         - The Move Reminder is banned.
-- You may have up to 9 favourites. However, because the Tracker only shows 3 favourites, you may use the Welcome Message (or other means, such as a stream overlay) to show the rest.
+- You may have up to 9 favorites. However, because the Tracker only shows 3 favorites, you may use the Welcome Message (or other means, such as a stream overlay) to show the rest.
     - Example:
-    - (v1.2.0+ only) Your favourites can be up to 600 BST, and if you are playing Standard or Ultimate, any Pokémon above 600 BST that is not categorized as Strong Legendary or Mythical by Serebii's Legendary Pokémon list (https://www.serebii.net/pokemon/legendary.shtml) is also allowed
-    - NOTE: Having a Pokémon as a favourite only counts for that specific form. For example, if you have Arcanine as a favourite, this only applies to Kantonian Arcanine, not Hisuian Arcanine. You may have multiple forms as favourites.
+    - (v1.2.0+ only) Your favorites can be up to 600 BST, and if you are playing Standard or Ultimate, any Pokémon above 600 BST that is not categorized as Strong Legendary or Mythical by Serebii's Legendary Pokémon list (https://www.serebii.net/pokemon/legendary.shtml) is also allowed
+    - NOTE: Having a Pokémon as a favorite only counts for that specific form. For example, if you have Arcanine as a favorite, this only applies to Kantonian Arcanine, not Hisuian Arcanine. You may have multiple forms as favorites.
 - Ultimate and harder: HM moves are allowed to be used in battle, as long as the moves are not taught with the HM items.
 - Kaizo and harder: Changing Deoxys and Shaymin forms is allowed. However, the Move Reminder may only be used if they are in the form they started as.
 - Changing Hoopa's form into Hoopa Unbound is not allowed in any ruleset.

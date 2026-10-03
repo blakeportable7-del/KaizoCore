@@ -235,6 +235,21 @@ class NuzlockeDataTest {
         }
     }
 
+    @Test
+    fun `a Generation 3 static is at a place the tracker names in its game, and a species check is Gen 3's own number`() {
+        // rc33 audit P1 #76. Ruby and Sapphire share the "rs" rows; each hideout row names the version's own hideout.
+        fun names(version: String) = rows("/gen3/routeinfo-$version.tsv").mapNotNull { it.getOrNull(2) }.toSet()
+        val places = mapOf("rs" to names("ruby") + names("sapphire"), "e" to names("emerald"))
+        val rows = NuzlockeStatics.all(NuzlockeSystem.GEN3)
+        assertEquals(9, rows.size)
+        assertEquals(rows.size, rows.map { Triple(it.game, it.place.lowercase(), it.level) }.toSet().size, "two rows for one game, place and level")
+        for (r in rows) {
+            assertTrue(r.place in places.getValue(r.game), "gen3 ${r.game}: ${r.place} is not a place the tracker names")
+            assertTrue(r.level in 1..100)
+            assertTrue(r.species == null || r.species in 1..251, "${r.place}: species ${r.species}")
+        }
+    }
+
     // ================================================================ statics
 
     @Test
@@ -390,7 +405,7 @@ class NuzlockeDataTest {
     fun `nothing a player reads in these files or notes has a dash the copy rules forbid`() {
         val bad = setOf('\u2014', '\u2013')
         for (path in listOf("levelcaps-gen1", "levelcaps-gen2", "levelcaps-gen4", "levelcaps-gen5", "trainers-gen1", "trainers-gen2", "areas-gen1", "areas-gen2",
-            "statics-gen1", "statics-gen2", "statics-gen4", "statics-gen5", "families-gen1", "families-gen2", "families-gen4", "families-gen5", "species-gen4", "species-gen5")) {
+            "statics-gen1", "statics-gen2", "statics-gen3", "statics-gen4", "statics-gen5", "families-gen1", "families-gen2", "families-gen4", "families-gen5", "species-gen4", "species-gen5")) {
             val text = resource("/nuzlocke/$path.tsv")
             assertTrue(text.none { it in bad }, "$path has a dash")
             assertTrue(text.all { it.code < 128 }, "$path is not plain ASCII")

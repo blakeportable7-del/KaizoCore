@@ -53,4 +53,12 @@ class PresetMigrationTest {
         PresetMigration.seed(dir, names, ::bundled)
         assertContentEquals(mine, File(dir, "DPPt Kaizo.rnqs").readBytes())
     }
+
+    @Test
+    fun `the presets come up to date at launch, before the next-run worker reads them`() {
+        // rc33 audit P1 #53: only the Run and Nuzlocke screens ran the migration, so NEW RUN from Play used a stale copy.
+        val main = File("src/main/kotlin/com/ironmonone/app/MainActivity.kt").readText()
+        val seed = main.indexOf("runCatching { PrepStore(this).seedBundledPresets(this) }")
+        kotlin.test.assertTrue(seed > 0 && seed < main.indexOf("NextRunJob.load(PrepStore(this))"))
+    }
 }

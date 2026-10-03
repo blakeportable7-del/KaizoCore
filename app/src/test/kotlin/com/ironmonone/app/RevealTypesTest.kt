@@ -53,7 +53,8 @@ class RevealTypesTest {
     fun `the enemy card, the info screens and the Notebook draw types through the rules`() {
         val panel = File("src/main/kotlin/com/ironmonone/app/TrackerPanel.kt").readText().replace("\r\n", "\n")
         assertTrue("typeChips = InfoRules.typeIcons(GhostCard.types(e), InfoRules.hidesRandomizedTypes(rand))" in panel)
-        assertTrue("InfoRules.infoScreenHidesTypes(state?.randomized, ownLead = species == state?.party?.firstOrNull()?.mon?.species)" in panel)
+        // Your lead is the viewed Pokemon of your own, never an Egg (RC35-NOTICED N #34), in a double battle the one viewed (rc34).
+        assertTrue("InfoRules.infoScreenHidesTypes(state?.randomized, ownLead = species == gbaView.own(state)?.mon?.species)" in panel)
         assertEquals(3, Regex("types = infoTypes\\(").findAll(panel).count(), "the species, party and starter info screens")
         val notebook = File("src/main/kotlin/com/ironmonone/app/Notebook.kt").readText().replace("\r\n", "\n")
         assertTrue("InfoRules.hidesRandomizedTypes(tracker?.randomized())" in notebook)

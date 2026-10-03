@@ -18,7 +18,9 @@ import com.ironmonone.tracker.nds.NdsTrackerState
  * DS, BattleHandlerGen4.lua:190 and BattleHandlerGen5.lua:277: every time a new Pokemon
  * becomes the active enemy it is counted (logNewEnemyPokemonInBattle, one count, the
  * card's "Total seen"), the one it replaced has its level recorded, and when the battle
- * ends so does the one still out (BattleHandlerBase.lua:364).
+ * ends so does the one still out (BattleHandlerBase.lua:364). The reference does this for
+ * each enemy slot (its battleData slots), so a double or triple battle's other opponents are
+ * counted and recorded the same way, each in its own slot (rc34).
  *
  * The battle state is kept per session for the life of the process, so leaving the Play
  * screen mid-battle and coming back does not count the same Pokemon twice.
@@ -30,8 +32,16 @@ class EncounterBook {
     /** What the book needs from one GBA or Game Boy update. */
     data class Gba(val inBattle: Boolean, val wild: Boolean, val onField: List<Battler>, val party: List<Pair<Int, Int>>)
 
+    /** One more opposing slot's Pokemon in a DS double or triple battle: its PID, species and level. */
+    data class DsFoe(val pid: Long, val species: Int, val level: Int)
+
     /** What the book needs from one DS update: the active enemy's PID, species and level. */
-    data class Ds(val inBattle: Boolean, val wild: Boolean, val pid: Long?, val species: Int, val level: Int)
+    /** [area]: the DS area name a wild Pokemon is met in, for its encounter frame (Tracker.updateEncounterData). */
+    /** [others]: a double or triple battle's other opposing slots, from the second, null for one that read nothing this tick. */
+    data class Ds(
+        val inBattle: Boolean, val wild: Boolean, val pid: Long?, val species: Int, val level: Int, val area: String = "",
+        val others: List<DsFoe?> = emptyList(),
+    )
 
     private val counted = HashSet<String>()
     private val seen = LinkedHashMap<String, Pair<Int, Int>>()
@@ -40,15 +50,19 @@ class EncounterBook {
     private var dsInBattle = false
     private var dsActive: Long? = null
     private var dsActiveMon: Pair<Int, Int>? = null
+    /** The same for a double or triple battle's other opposing slots, by their place in [Ds.others]. */
+    private val dsOthers = HashMap<Int, Long>()
+    private val dsOthersMon = HashMap<Int, Pair<Int, Int>>()
 
     /** A new run: nothing of the last one's battle carries over. */
     fun reset() {
         counted.clear(); seen.clear(); lastParty = emptyList(); gbaInBattle = false
-        dsInBattle = false; dsActive = null; dsActiveMon = null
+        dsInBattle = false; dsActive = null; dsActiveMon = null; dsOthers.clear(); dsOthersMon.clear()
     }
 
-    /** One GBA or Game Boy update. [save] false keeps it off disk (Demo). True when anything was recorded. */
-    fun onGba(marks: StatMarks, u: Gba, save: Boolean): Boolean {
+    /** One GBA or Game Boy update; null (no read yet) changes nothing. [save] false keeps it off disk (Demo). True when anything was recorded. */
+    fun onGba(marks: StatMarks, u: Gba?, save: Boolean): Boolean {
+        if (u == null) return false
         var changed = false
         if (u.inBattle) {
             gbaInBattle = true
@@ -68,24 +82,42 @@ class EncounterBook {
         return changed
     }
 
-    /** One DS update. [save] false keeps it off disk (Demo). True when anything was recorded. */
-    fun onDs(marks: StatMarks, u: Ds, save: Boolean): Boolean {
+    /** One DS update; null (no read yet) changes nothing. [save] false keeps it off disk (Demo). True when anything was recorded. */
+    fun onDs(marks: StatMarks, u: Ds?, save: Boolean): Boolean {
+        if (u == null) return false
         var changed = false
         if (u.inBattle) {
             dsInBattle = true
             if (u.pid != null && u.species > 0) {
                 if (u.pid != dsActive) {
                     marks.trackEncounter(u.species, u.wild, save)
+                    // Tracker.updateEncounterData: a new wild Pokemon on the area's encounter frame. Here, with the count,
+                    // so a battle not fetched (a catching demonstration) is on neither (rc33 audit P1 #80).
+                    if (u.wild && save) marks.seeDsEncounter(u.area, u.species, u.level)
                     dsActiveMon?.let { marks.recordLastLevels(listOf(it), save) }
                     dsActive = u.pid
                     changed = true
                 }
                 dsActiveMon = u.species to u.level
             }
+            // The other opposing slots, each as the first is: a new Pokemon in a slot is counted, put on the area's frame
+            // when wild, and the one it replaced in that slot has its level recorded.
+            u.others.forEachIndexed { k, f ->
+                if (f == null || f.species <= 0) return@forEachIndexed
+                if (f.pid != dsOthers[k]) {
+                    marks.trackEncounter(f.species, u.wild, save)
+                    if (u.wild && save) marks.seeDsEncounter(u.area, f.species, f.level)
+                    dsOthersMon[k]?.let { marks.recordLastLevels(listOf(it), save) }
+                    dsOthers[k] = f.pid
+                    changed = true
+                }
+                dsOthersMon[k] = f.species to f.level
+            }
         } else if (dsInBattle) {
             dsInBattle = false
             dsActiveMon?.let { if (marks.recordLastLevels(listOf(it), save)) changed = true }
-            dsActive = null; dsActiveMon = null
+            if (dsOthersMon.isNotEmpty() && marks.recordLastLevels(dsOthersMon.values.toList(), save)) changed = true
+            dsActive = null; dsActiveMon = null; dsOthers.clear(); dsOthersMon.clear()
         }
         return changed
     }
@@ -93,12 +125,17 @@ class EncounterBook {
     companion object {
         private val books = HashMap<String, EncounterBook>()
 
-        /** The book for session [id], kept for the life of the process. */
+        /** The book for [id] (a run's seed in Play, so a new run never inherits the last one's battle), kept for the life of the process. */
         fun of(id: String): EncounterBook = synchronized(books) { books.getOrPut(id) { EncounterBook() } }
 
-        /** The book's view of one GBA or Game Boy tracker update. */
-        fun gbaUpdate(s: TrackerState?): Gba {
-            if (s == null || !s.inBattle) return Gba(false, false, emptyList(), emptyList())
+        /**
+         * The book's view of one GBA or Game Boy tracker update. Null for no state, or an unreadable one: Play starts every
+         * visit with no state, and reading that as "not in battle" ended the battle the player came back to, counted it
+         * again and filed its levels (rc33 audit P1 #15, #30).
+         */
+        fun gbaUpdate(s: TrackerState?): Gba? {
+            if (s == null || s.unreadable) return null
+            if (!s.inBattle) return Gba(false, false, emptyList(), emptyList())
             val party = s.enemyParty.map { it.species to it.level }
             val e = s.enemy
             // Battle.lua:505: nothing is counted for a Pokemon Tower ghost; its party still
@@ -116,12 +153,34 @@ class EncounterBook {
             return Gba(true, s.isWildBattle, onField.map { Battler("s${it.slot}", it.species, it.level) }, party)
         }
 
-        /** The book's view of one DS tracker update. */
-        fun dsUpdate(s: NdsTrackerState?): Ds {
-            if (s == null || !s.inBattle) return Ds(false, false, null, 0, 0)
-            // Still in battle with no enemy read this tick (a switch): nothing to count, no end.
-            val e = s.enemy ?: return Ds(true, s.isWildBattle, null, 0, 0)
-            return Ds(true, s.isWildBattle, e.mon.pid, e.mon.species, e.mon.level)
+        /** The book's view of one DS tracker update; null for no state yet (see [gbaUpdate]). */
+        fun dsUpdate(s: NdsTrackerState?): Ds? {
+            if (s == null) return null
+            if (!s.inBattle) return Ds(false, false, null, 0, 0)
+            // Still in battle with no enemy read this tick (a switch), or a battle not fetched (a catching demonstration,
+            // rc33 audit P1 #80): nothing to count, no end.
+            val e = s.enemy?.takeIf { s.battleFetched } ?: return Ds(true, s.isWildBattle, null, 0, 0)
+            // A double or triple battle's other opponents, your partner's left out (NdsTrackerState.opponentSlots).
+            val others = s.opponentSlots.drop(1).map { o -> o?.let { DsFoe(it.mon.pid, it.mon.species, it.mon.level) } }
+            return Ds(true, s.isWildBattle && s.enemyTrainerId == 0, e.mon.pid, e.mon.species, e.mon.level, s.areaName, others)
         }
+    }
+}
+
+/**
+ * The moves the DS notebook records: every opposing Pokemon on the field's (NdsTrackerState.opponents), as the DS tracker
+ * checks each enemy slot's PP (BattleHandlerBase.updateAllPokemonInBattle and checkEnemyPP). Its moves are already the
+ * used ones (NdsTracker.usedOnly), so every one is a sighting. Only the first opponent's were recorded until rc34.
+ */
+internal object DsFoeMoves {
+    /** What Play keys the recording on: each opponent's species and moves, so a change in any of them records it. */
+    fun key(s: NdsTrackerState?): List<Pair<Int, List<com.ironmonone.tracker.nds.NdsMoveInfo>>> =
+        s?.opponents?.map { it.mon.species to it.moves }.orEmpty()
+
+    /** Records every opponent's moves into [marks]; true when any was new. */
+    fun record(marks: StatMarks, s: NdsTrackerState?): Boolean {
+        var changed = false
+        s?.opponents?.forEach { e -> if (marks.addMovesSeen(e.mon.species, e.moves.map { it.id to it.name }, e.mon.level)) changed = true }
+        return changed
     }
 }

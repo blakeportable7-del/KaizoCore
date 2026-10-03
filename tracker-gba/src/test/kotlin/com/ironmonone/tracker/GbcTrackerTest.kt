@@ -111,6 +111,7 @@ class GbcTrackerTest {
         assertEquals(0b11, s.badges)
         // 3 Potions x 20 HP on a 40 HP lead: 150%, 3 items. Master Balls ignored.
         assertEquals(150 to 3, s.healPercent to s.healCount)
+        assertEquals(60, s.healHp, "the whole HP, for Show heals as whole number (HealTotals)")
     }
 
     @Test
@@ -377,6 +378,22 @@ class GbcTrackerTest {
         }
     }
 
+    /**
+     * Every Long field of Gen2Map, by reflection, so the Nuzlocke reads (2026-09-30), the 2D menu and wCurBattleMon are
+     * range checked too: the list above names none of them (rc32 audit P3 #117). The ends of the blocks read in one go.
+     */
+    @Test
+    fun `every Gen 2 work RAM read of the map is inside work RAM`() {
+        for (m in listOf(Gen2Map.CRYSTAL, Gen2Map.GS)) {
+            val fields = Gen2Map::class.java.declaredFields.filter { it.type == java.lang.Long.TYPE }
+                .map { f -> f.isAccessible = true; f.getLong(m) }.filter { it != 0L }
+            assertTrue(fields.size >= 25, "${m.name}: only ${fields.size} reads found; the reflection lost the map's fields")
+            val reads = fields + listOf(m.partyMons + 6 * GbcTracker.PARTY_STRIDE - 1, m.nicks + 6 * 11 - 1,
+                m.balls + 12 * 2, m.menu2D + 12, m.statLevels + 8 + 6)
+            reads.forEach { assertTrue(it in 1L until 0x2000L, "${m.name}: 0x%X is outside work RAM".format(it)) }
+        }
+    }
+
     // ------------------------------------------------------------ Gold / Silver
 
     /** Gold: pokegold's header, Cyndaquil and Ember at gen2_offsets.ini's Gold (U) tables. */
@@ -485,5 +502,64 @@ class GbcTrackerTest {
         assertEquals(161, s.onField!!.mon.species)
         assertTrue(s.party[0].statStages.isEmpty(), "slot 1 is not on the field")
         assertTrue(s.party[1].statStages.isNotEmpty())
+    }
+
+    /** rc32 audit P2 #134: CheckShininess needs bit 1 of the Attack DV (pokecrystal engine/gfx/color.asm:3-36), not Attack 2. */
+    @Test
+    fun `a party Pokemon is shiny by the game's own rule, the Red Gyarados included`() {
+        fun shinyWith(atkDef: Int): Boolean {
+            val w = overworld()
+            w.put(GbcTracker.PARTY_MONS + 21, atkDef); w.put(GbcTracker.PARTY_MONS + 22, 0xAA)
+            return GbcTracker(w, rom()).read().party[0].mon.shiny
+        }
+        assertTrue(shinyWith(0xEA), "Attack 14: ATKDEFDV_SHINY, the Lake of Rage Gyarados")
+        assertTrue(shinyWith(0x3A), "Attack 3")
+        assertTrue(shinyWith(0x2A), "Attack 2")
+        assertTrue(!shinyWith(0x1A), "Attack 1: bit 1 clear")
+        assertTrue(!shinyWith(0xE9), "Defense 9")
+    }
+
+    /** rc32 audit P3 #110: Curse's type byte is CURSE_TYPE, 19 (pokecrystal constants/type_constants.asm:22-23, moves.asm:190). */
+    @Test
+    fun `Curse is the ??? type, not Normal`() {
+        assertEquals(9, GbcTracker.gen3Type(19))
+        val r = rom()
+        val m = GbcTracker.MOVES + (174 - 1) * GbcTracker.MOVE_STRIDE
+        r[m + 2] = 0; r[m + 3] = 19; r[m + 4] = 255.toByte(); r[m + 5] = 10
+        val t = GbcTracker(overworld(), r)
+        assertEquals(9, t.moveData(174)!![1])
+        assertEquals(9, t.moveRowOf(174, 10, 10).type)
+        assertEquals(0, GbcTracker.gen3Type(0), "Normal stays Normal")
+    }
+
+    /**
+     * rc32 audit P2 #135: Red beaten on Mt. Silver is the GSC rulebook's win. A trainer battle against class RED (0x3F) that
+     * ends with wBattleResult's low bits at WIN reads WON until the next battle begins. CleanUpBattleRAM clears the class
+     * with the battle byte, so it is the class seen during the battle that counts. A loss to Red, or a win over anyone
+     * else, is no win.
+     */
+    @Test
+    fun `beating Red reads as a win until the next battle, and losing to him or beating anyone else does not`() {
+        val c = Gen2Map.CRYSTAL
+        fun fight(w: Wram, trainerClass: Int) { w.put(GbcTracker.BATTLE_MODE, 2); w.put(c.trainerClass, trainerClass) }
+        fun end(w: Wram, result: Int) { w.put(GbcTracker.BATTLE_MODE, 0); w.put(c.trainerClass, 0); w.put(c.battleResult, result) }
+
+        var w = overworld(); var t = GbcTracker(w, rom())
+        fight(w, 0x3F)
+        assertNull(t.read().gameOver, "not while the battle is on")
+        end(w, 0x80)                                       // WIN, with the box-full bit set
+        assertEquals(GameOver.WON, t.read().gameOver)
+        assertEquals(GameOver.WON, t.read().gameOver, "held, as the GBA's battle outcome byte holds it")
+        w.put(GbcTracker.BATTLE_MODE, 1)
+        assertNull(t.read().gameOver, "until the next battle begins")
+        w.put(GbcTracker.BATTLE_MODE, 0)
+        assertNull(t.read().gameOver, "and it is not given again")
+
+        w = overworld(); t = GbcTracker(w, rom())
+        fight(w, 0x3F); t.read(); end(w, 1)
+        assertNull(t.read().gameOver, "lost to Red, the lead still standing")
+        w = overworld(); t = GbcTracker(w, rom())
+        fight(w, 0x01); t.read(); end(w, 0)
+        assertNull(t.read().gameOver, "Falkner")
     }
 }

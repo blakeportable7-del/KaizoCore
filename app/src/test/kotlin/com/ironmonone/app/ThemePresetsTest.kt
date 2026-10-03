@@ -170,6 +170,7 @@ class ThemePresetsTest {
         ThemeStore.load(f)
         val fire = pc("Fire Red")
         ThemePresets.apply(fire)
+        DiskWriter.drain()   // written on the writer's thread (rc32 audit P3 #69)
         assertTrue(f.isFile, "picking a preset saves the theme")
         // The next launch.
         ThemeStore.show(ThemeStore.FACTORY)

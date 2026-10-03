@@ -62,12 +62,17 @@ object CrashResume {
     /**
      * The Play screen closing. The normal way (leaving the tab, the activity
      * finishing) clears the marker. An activity Android destroys without
-     * finishing is brought back, in this same process when it lives, and its
-     * Play screen resumes then, so the marker stays and is read once more.
+     * finishing keeps it, for a process that dies before the game is back.
+     * While the process lives the marker is not read again: nothing crashed.
+     * The rebuilt activity (a change of font size or language, Don't keep
+     * activities) opens the game at the snapshot taken as it closed, the way a
+     * game left the normal way opens (its left mark), with nothing on the run's
+     * record. It used to be read once more, as if the app had died: a RESUME
+     * went on the run, with the reason of an older, unrelated exit (rc32 audit
+     * P2 #33, P3 #26).
      */
     fun left(marker: File, finishing: Boolean, destroyed: Boolean) {
         if (finishing || !destroyed) closed(marker)
-        else synchronized(read) { read.remove(marker.absolutePath) }
     }
 
     private fun mark(marker: File, text: String) {

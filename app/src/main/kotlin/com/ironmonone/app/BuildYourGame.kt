@@ -35,6 +35,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -90,6 +91,58 @@ fun BuildYourGameEntry(onOpen: () -> Unit) {
 /** The file a plan was last saved as, and what it was saved for: any change to either makes it stale. */
 private data class SavedBuild(val plan: GameBuild.Plan, val name: String, val file: File)
 
+/**
+ * A plan as text for the saved state (RC35-NOTICED N #13): the starting point's file, the starters, then one pick a line.
+ * A starting point gone since is no starting point, and a line that will not read is left out.
+ */
+internal object PlanText {
+    fun of(p: GameBuild.Plan): String = buildString {
+        append("base=").append(p.base?.path.orEmpty()).append('\n')
+        append("starters=").append(
+            when (val s = p.starters) {
+                GameBuild.Starters.Keep -> "keep"
+                GameBuild.Starters.Own -> "own"
+                GameBuild.Starters.Random -> "random"
+                is GameBuild.Starters.Pick -> "pick:" + slotsText(s.slots)
+            },
+        ).append('\n')
+        for ((k, v) in p.picks) append("pick=").append(k).append('=').append(v).append('\n')
+    }
+
+    fun planOf(text: String): GameBuild.Plan {
+        var base: File? = null
+        var starters: GameBuild.Starters = GameBuild.Starters.Keep
+        val picks = LinkedHashMap<String, String>()
+        for (line in text.lines()) {
+            val key = line.substringBefore('=', "")
+            val value = line.substringAfter('=', "")
+            when (key) {
+                "base" -> base = File(value).takeIf { value.isNotEmpty() && it.isFile }
+                "starters" -> starters = when {
+                    value == "own" -> GameBuild.Starters.Own
+                    value == "random" -> GameBuild.Starters.Random
+                    value.startsWith("pick:") -> slotsOf(value.removePrefix("pick:"))?.let { GameBuild.Starters.Pick(it) } ?: GameBuild.Starters.Keep
+                    else -> GameBuild.Starters.Keep
+                }
+                "pick" -> value.indexOf('=').takeIf { it > 0 }?.let { picks[value.substring(0, it)] = value.substring(it + 1) }
+            }
+        }
+        return GameBuild.Plan(base, starters, picks)
+    }
+
+    /** Starter slots: a species number, or r for a random one. */
+    fun slotsText(slots: List<Int?>): String = slots.joinToString(",") { it?.toString() ?: "r" }
+
+    fun slotsOf(text: String): List<Int?>? =
+        text.split(',').map { t -> if (t == "r") null else t.toIntOrNull() ?: return null }.takeIf { it.isNotEmpty() }
+
+    val Saver = androidx.compose.runtime.saveable.Saver<GameBuild.Plan, String>(save = { of(it) }, restore = { planOf(it) })
+
+    val SlotsSaver = androidx.compose.runtime.saveable.Saver<List<Int?>?, String>(
+        save = { it?.let { s -> slotsText(s) } }, restore = { slotsOf(it) },
+    )
+}
+
 private const val KEEP = "keep"
 private val STEPS = listOf("Start from", "Starters", "The world", "The Pokémon", "Save and play")
 
@@ -122,10 +175,12 @@ fun BuildYourGame(
     val cls = remember(kind.id) { GameBuild.settingsClass(kind) }
     val modes = remember(kind.id, settingsList) { RulesetCatalog.forRom(kind, settingsList) }
 
-    var step by remember { mutableIntStateOf(0) }
-    var plan by remember { mutableStateOf(GameBuild.Plan()) }
-    var slot by remember { mutableStateOf<Int?>(null) }
-    var typedName by remember { mutableStateOf(GameBuild.DEFAULT_NAME) }
+    // The page, the plan, the open starter slot and the name are kept with the activity (RC35-NOTICED N #13, the rest of
+    // rc32 audit P2 #33): a process death while the app was in the background lost every choice.
+    var step by rememberSaveable { mutableIntStateOf(0) }
+    var plan by rememberSaveable(stateSaver = PlanText.Saver) { mutableStateOf(GameBuild.Plan()) }
+    var slot by rememberSaveable { mutableStateOf<Int?>(null) }
+    var typedName by rememberSaveable { mutableStateOf(GameBuild.DEFAULT_NAME) }
     var saved by remember { mutableStateOf<SavedBuild?>(null) }
     var note by remember { mutableStateOf<String?>(null) }
     var noteIsError by remember { mutableStateOf(false) }
@@ -133,7 +188,7 @@ fun BuildYourGame(
     var confirmLeave by remember { mutableStateOf(false) }
     var startedHere by remember { mutableStateOf(false) }
     // The picks last made, so switching to "Random" and back does not lose them.
-    var pickMemory by remember { mutableStateOf<List<Int?>?>(null) }
+    var pickMemory by rememberSaveable(stateSaver = PlanText.SlotsSaver) { mutableStateOf<List<Int?>?>(null) }
 
     // The game's own Pokémon list, read once off the phone's ROM on the IO thread.
     var facts by remember(kind.id, rom.second.path) { mutableStateOf<GameFacts.Facts?>(null) }
@@ -171,7 +226,7 @@ fun BuildYourGame(
     fun startNow() {
         val file = upToDate ?: saveNow() ?: return
         startedHere = true
-        RunJob.randomize(context, rom, file, seed = null)
+        if (!RunJob.randomize(context, rom, file, seed = null)) { startedHere = false; RunJob.say(NewRunGuard.BUSY, true) }
     }
 
     fun leave() {

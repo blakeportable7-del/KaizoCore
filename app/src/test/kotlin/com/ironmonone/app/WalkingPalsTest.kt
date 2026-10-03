@@ -1,12 +1,15 @@
 package com.ironmonone.app
 
+import androidx.compose.runtime.snapshots.Snapshot
 import com.ironmonone.app.WalkingPals.Dex
 import com.ironmonone.app.WalkingPals.Pack
 import com.ironmonone.app.WalkingPals.Pal
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertNotSame
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -85,13 +88,45 @@ class WalkingPalsTest {
     fun `no sheet is null, never another Pokemon's`() {
         assertNull(ix.find(539, Dex.NAT_DEX), "Simisear: nobody has drawn it yet")
         assertNull(ix.find(514, Dex.NATIONAL), "Simisear by its national number")
-        assertNull(ix.find(1053, Dex.NAT_DEX), "Charizard-Y's slot is empty")
+        assertNull(ix.find(1263, Dex.NAT_DEX), "Mega Falinks: Falinks has no sheet either, so nothing stands in")
         assertNull(ix.find(260, Dex.GEN3), "one of Gen 3's unused slots")
         assertNull(ix.find(1284, Dex.NAT_DEX), "a Nat. Dex build's egg")
         assertNull(ix.find(1285, Dex.NAT_DEX), "the Nat. Dex ghost stand-in")
         assertNull(ix.find(413, Dex.GEN3), "the retail ghost stand-in")
         assertNull(ix.find(1026, Dex.NATIONAL), "past the National Dex")
         for (d in Dex.entries) { assertNull(ix.find(0, d)); assertNull(ix.find(-5, d)) }
+    }
+
+    /**
+     * Blake, 2026-10-02: a Mega or form with no walking sprite of its own uses its base species' sheet, "only if we don't
+     * have the correct sprites". The converter writes it into natdex-map.tsv (convert_walking_pals_nat.py's stand_in,
+     * tested by convert_walking_pals_nat_test.py), so the first run after a form's own sheet is drawn uses that instead.
+     */
+    @Test
+    fun `a Mega or form with no sheet of its own walks as its base species, never over a sheet of its own`() {
+        class Row(val id: Int, val national: Int, val form: String, val pal: Pal?, val note: String)
+        val rows = File("src/main/assets/walkingpals-nat/natdex-map.tsv").readLines(Charsets.UTF_8)
+            .filter { it.isNotBlank() && !it.startsWith("#") }.map { it.split('\t') }
+            .map { c -> Row(c[0].toInt(), c[2].toInt(), c[3], ShippedPals.natDex[c[0].toInt()], c.getOrElse(6) { "" }) }
+        val standIns = rows.filter { "stands in until its own is drawn" in it.note }
+        assertTrue(standIns.size >= 60, "only ${standIns.size}")
+        for (r in standIns) {
+            assertTrue(r.id > 1050, "${r.id}: only a Mega or form stands in, never a species")
+            assertFalse("${r.national}-${r.form}" in ShippedPals.national, "${r.id} stands in over a sheet of its own")
+            // Its base species' sheet, as the base's own row has it (Gen 1-3 by Gen 3's id).
+            val base = assertNotNull(Favorites.fromNational(r.national))
+            assertEquals(ix.find(base, Dex.NAT_DEX), assertNotNull(r.pal), "${r.id} walks as ${r.national}")
+        }
+        // Every form that has a sheet of its own keeps it.
+        for (r in rows) if (r.id > 1050 && r.form.isNotEmpty() && "${r.national}-${r.form}" in ShippedPals.national) {
+            assertEquals(Pal(Pack.NATIONAL, "${r.national}-${r.form}"), r.pal, "${r.id}")
+        }
+        assertEquals(Pal(Pack.GEN3, "6"), ix.find(1053, Dex.NAT_DEX), "Charizard-Y walks as Charizard")
+        assertEquals(Pal(Pack.NATIONAL, "6-mega-x"), ix.find(1052, Dex.NAT_DEX), "Charizard-X keeps its own")
+        assertEquals(Pal(Pack.GEN3, "282"), ix.find(1073, Dex.NAT_DEX), "Mega Blaziken walks as Blaziken, by Gen 3's id")
+        assertEquals(Pal(Pack.NATIONAL, "668-female"), ix.find(1255, Dex.NAT_DEX), "Mega Pyroar as Pyroar's own row has it")
+        assertNull(ix.find(1263, Dex.NAT_DEX), "Mega Falinks: its base has no sheet")
+        assertNull(ix.find(895, Dex.NAT_DEX), "Falinks itself: no species is given another's")
     }
 
     @Test
@@ -138,6 +173,62 @@ class WalkingPalsTest {
         assertEquals(Dex.NATIONAL, WalkingPals.trackerDex(generation = 2, speciesTotal = 251))
         assertEquals(Dex.GEN3, WalkingPals.trackerDex(generation = 3, speciesTotal = 411))
         assertEquals(Dex.NAT_DEX, WalkingPals.trackerDex(generation = 3, speciesTotal = 1283))
+        // MaxDex 1.0 in Play: its own numbering, though the panel counts it as an expanded build like Nat. Dex.
+        assertEquals(Dex.MAX_DEX, WalkingPals.trackerDex(generation = 3, speciesTotal = 1283, maxDex = true))
+    }
+
+    private fun species(set: String) =
+        WalkingPals.parseSpecies(File("../tracker-gba/src/main/resources/$set/species.tsv").readLines(Charsets.UTF_8).asSequence())
+
+    /**
+     * MaxDex 1.0 walks too (2026-10-03). Its ids are the Nat. Dex Extension's to 1235; its 45 Legends Z-A Megas, 1236 to
+     * 1280, are in an order of its own, so each is the Nat. Dex Mega of the same name, with that one's sheet or stand-in.
+     * Read from the tracker's own two species tables, as the phone reads them.
+     */
+    @Test
+    fun `MaxDex counts its own way, Nat Dex's ids to 1235 and its Z-A Megas by name`() {
+        val ids = ShippedPals.maxDex
+        val max = species("maxdex")
+        val nat = species("natdex")
+        assertEquals((1..1280).toSet(), ids.keys, "every MaxDex id, and nothing past its last")
+        assertTrue((1..1235).all { ids[it] == it }, "the ids the two tables share")
+        val megas = (1236..1280).associateWith { ids.getValue(it) }
+        assertEquals(45, megas.values.toSet().size, "45 Megas, 45 Nat. Dex ids")
+        for ((m, n) in megas) {
+            assertEquals(max.getValue(m), nat.getValue(n), "MaxDex's $m is the Nat. Dex Pokemon of its own name")
+            assertTrue(n in 1238..1283, "$m: a Legends Z-A Mega in Nat. Dex too")
+        }
+        assertEquals(1241, ids[1236], "Dragonite-M")
+        assertEquals(1282, ids[1280], "Baxcalibur-M")
+        // Each walks as the Nat. Dex Pokemon of its name, never as the one Nat. Dex keeps at the same number.
+        assertEquals(Pal(Pack.GEN3, "149"), ix.find(1236, Dex.MAX_DEX), "Dragonite-M walks as Dragonite")
+        assertEquals(Pal(Pack.NATIONAL, "658"), ix.find(1236, Dex.NAT_DEX), "Nat. Dex's 1236 is Battle Bond Greninja")
+        assertEquals(Pal(Pack.NATIONAL, "998"), ix.find(1280, Dex.MAX_DEX), "Baxcalibur-M walks as Baxcalibur")
+        assertEquals(Pal(Pack.NATIONAL, "227-mega"), ix.find(1244, Dex.MAX_DEX), "Skarmory-M has a sheet of its own")
+        assertNull(ix.find(1276, Dex.MAX_DEX), "Falinks-M: its base has no sheet either")
+        assertEquals(44, (1236..1280).count { ix.find(it, Dex.MAX_DEX) != null })
+        // Gen 1 to 9 as the Nat. Dex Extension numbers them.
+        assertEquals(Pal(Pack.GEN3, "1"), ix.find(1, Dex.MAX_DEX))
+        assertEquals(Pal(Pack.GEN3, "277"), ix.find(277, Dex.MAX_DEX), "Treecko")
+        assertEquals(Pal(Pack.NATIONAL, "387"), ix.find(412, Dex.MAX_DEX), "Turtwig")
+        assertEquals(Pal(Pack.NATIONAL, "1007"), ix.find(1032, Dex.MAX_DEX), "Koraidon")
+        assertNull(ix.find(1033, Dex.MAX_DEX), "Miraidon: nobody has drawn it yet")
+        // Past MaxDex's last Pokemon (where its egg and ghost stand-ins sit), and Gen 3's unused slots: nothing.
+        for (id in listOf(1281, 1282, 1283, 1285, 260, 0, -1)) assertNull(ix.find(id, Dex.MAX_DEX), "$id")
+    }
+
+    @Test
+    fun `a MaxDex id is matched by its name or not at all`() {
+        val max = mapOf(1 to "Bulbasaur", 252 to "none", 1236 to "Dragonite-M", 1240 to "Nobody", 1241 to "none")
+        val nat = mapOf(1 to "Bulbasaur", 252 to "none", 253 to "none", 1236 to "Greninja-B", 1241 to "Dragonite-M")
+        // The same name at the same id keeps the id; a name that moved follows its name; a name Nat. Dex does not have,
+        // or has twice and not at that id, is left out.
+        assertEquals(mapOf(1 to 1, 252 to 252, 1236 to 1241), WalkingPals.maxDexToNatDex(max, nat))
+        // Without the tables (a read that failed), a MaxDex Pokemon finds nothing, never a Nat. Dex one by its number.
+        val bare = WalkingPals.Index(ShippedPals.gen3, ShippedPals.national, ShippedPals.natDex)
+        assertNull(bare.find(1, Dex.MAX_DEX))
+        assertNull(bare.find(1236, Dex.MAX_DEX))
+        assertEquals(mapOf(1 to "Bulbasaur", 412 to "Turtwig"), WalkingPals.parseSpecies(sequenceOf("1\tBulbasaur", "", "x\ty", "412\tTurtwig ")))
     }
 
     @Test
@@ -160,5 +251,104 @@ class WalkingPalsTest {
         assertEquals(4, WalkingPals.facingRow(up = true, down = false, left = false, right = false))
         assertEquals(6, WalkingPals.facingRow(up = false, down = false, left = true, right = false))
         assertEquals(5, WalkingPals.facingRow(up = true, down = false, left = true, right = false))
+    }
+
+    /**
+     * rc32 audit P2 #106: every sheet decoded was kept for the life of the process, about 634 KB a species in the Gen 1-3
+     * set and 905 KB in the other, hundreds of MB over a long session on top of a DS core. The cache is bounded by bytes.
+     */
+    @Test
+    fun `decoded sheets are bounded by what they hold, the least recently used going first`() {
+        val mb = 1024 * 1024
+        var loads = 0
+        val c = SheetCache<ByteArray>(32L * mb) { it.size.toLong() }
+        repeat(60) { i -> assertNotNull(c.get("s$i") { loads++; ByteArray(mb) }) }
+        assertEquals(60, loads)
+        assertEquals(32, c.size)
+        assertTrue(c.bytes <= 32L * mb, "${c.bytes} bytes")
+        // The first ones went: asked for again, one is decoded again. One still held is not, and is kept the longer for it.
+        assertNotNull(c.get("s0") { loads++; ByteArray(mb) })
+        assertEquals(61, loads)
+        assertNotNull(c.get("s59") { loads++; ByteArray(mb) })
+        assertEquals(61, loads)
+        // A sheet that is not there is looked for once.
+        assertNull(c.get("missing") { loads++; null })
+        assertNull(c.get("missing") { loads++; null })
+        assertEquals(62, loads)
+        // One bigger than the bound on its own is still given to the icon that asked, and the rest make room for it.
+        assertNotNull(c.get("huge") { ByteArray(40 * mb) })
+        assertEquals(1, c.size)
+    }
+
+    @Test
+    fun `the animated icon decodes off the main thread, never in composition`() {
+        val src = File("src/main/kotlin/com/ironmonone/app/WalkingPals.kt").readText().replace("\r\n", "\n")
+        val icon = src.substringAfter("fun WalkingPalsIcon(")
+        assertFalse(Regex("remember\\(pal\\) \\{[^}]*WalkingPals\\.bitmap").containsMatchIn(icon), "a remember block runs in composition, on the main thread")
+        val produce = icon.substringAfter("produceState<").substringBefore("\n    }\n")
+        assertTrue("withContext(Dispatchers.IO) { WalkingPals.bitmap(ctx, WalkingPals.Anim.IDLE, pal) }" in produce, produce)
+        assertEquals(2, Regex("WalkingPals\\.bitmap\\(").findAll(icon.substringBefore("Canvas(")).count(), "the idle sheet, then the rest, both on IO")
+        assertTrue("SheetCache<ImageBitmap>(CACHE_BYTES)" in src)
+    }
+
+    /**
+     * RC35-NOTICED N #10: the three tables were read and parsed on first use, and the first use was on the main thread (the
+     * tracker's icon and the picker in composition, Play as your Pokemon in a tick). They are read once, on a thread of
+     * their own; the first to ask is told null at once, and a composable told so is told again when they land.
+     */
+    @Test
+    fun `the tables are read once on a thread of their own, and the main thread never waits for them`() {
+        var handed: Runnable? = null
+        val once = ReadOnce<String> { r -> handed = r }
+        var reads = 0
+        var readOn: Thread? = null
+        val read = { reads++; readOn = Thread.currentThread(); "tables" }
+        // Asked as composition asks: answered at once, and the answer's state is a read the composition records.
+        val seen = HashSet<Any>()
+        assertNull(Snapshot.observe(readObserver = { seen.add(it) }) { once.get(read) })
+        assertNull(once.get(read))
+        assertEquals(0, reads, "nothing is read on the thread that asks")
+        val job = assertNotNull(handed, "the read was handed to a thread of its own")
+        val changed = HashSet<Any>()
+        val observer = Snapshot.registerApplyObserver { set, _ -> changed.addAll(set) }
+        try {
+            Thread(job).apply { start(); join() }
+            Snapshot.sendApplyNotifications()
+        } finally {
+            observer.dispose()
+        }
+        assertEquals(1, reads)
+        assertNotSame(Thread.currentThread(), readOn)
+        assertTrue(seen.isNotEmpty() && seen.any { it in changed }, "what composition read changed when the tables landed, so it recomposes")
+        assertEquals("tables", once.get(read))
+        assertEquals(1, reads, "read once, not once per ask")
+        // A read that fails leaves it empty, as a missing table leaves the sets empty, and never throws at the one asking.
+        val failing = ReadOnce<String> { it.run() }
+        assertNull(failing.get { error("no assets") })
+        assertNull(failing.get { "not asked again" })
+    }
+
+    @Test
+    fun `nothing on the main thread reads the tables, every lookup there asks ready`() {
+        val src = File("src/main/kotlin/com/ironmonone/app").walk().filter { it.extension == "kt" }
+            .associate { it.name to it.readText().replace("\r\n", "\n") }
+        val pals = src.getValue("WalkingPals.kt")
+        // The lookups that read the tables on first use are gone; ready hands the read to its own thread.
+        assertFalse(Regex("fun (find|sheets)\\(ctx").containsMatchIn(pals), "a lookup that reads on first use")
+        assertTrue("fun ready(ctx: android.content.Context): Index? = loaded.get { index(ctx.applicationContext ?: ctx) }" in pals)
+        assertTrue("Thread(r, \"walking-pals\").apply { isDaemon = true }.start()" in pals)
+        // The read that waits is only where it runs off the main thread: AndroidSpriteArt.prepare.
+        assertEquals(listOf("SpriteIsMeArt.kt"), src.filter { "WalkingPals.index(" in it.value }.keys.toList())
+        // MaxDex's two species tables are read with the rest, inside that read, and nowhere else.
+        assertEquals(listOf("WalkingPals.kt"), src.filter { "maxDexIds()" in it.value }.keys.toList())
+        assertTrue("maxDexIds()," in pals.substringAfter("fun index(ctx: android.content.Context): Index =").substringBefore("private val loaded"))
+        val art = src.getValue("SpriteIsMeArt.kt")
+        assertTrue("val table = WalkingPals.index(ctx).sheets(p)" in art.substringAfter("private fun preparePal(").substringBefore("\n    }\n"))
+        // The four that run on the main thread ask ready: the animated icon, the tracker card's head, the picker, the tick.
+        assertTrue("WalkingPals.ready(ctx).let { ix -> remember(ix, pal) { ix?.sheets(pal) } }" in pals.substringAfter("fun WalkingPalsIcon("))
+        assertTrue("WalkingPals.ready(iconCtx).let { ix -> remember(ix, iconSpecies, iconDex, iconLook)" in src.getValue("PcTracker.kt").substringAfter("fun PcHeadBlock("))
+        val picker = src.getValue("SpriteIsMeUi.kt").substringAfter("private fun SpeciesPickerDialog(")
+        assertTrue("val ix = WalkingPals.ready(ctx)" in picker && "remember(all, query)" in picker, "the list fills in when the tables land")
+        assertTrue("override fun pal(id: Int, dex: WalkingPals.Dex): WalkingPals.Pal? = WalkingPals.ready(ctx)?.find(id, dex)" in art)
     }
 }

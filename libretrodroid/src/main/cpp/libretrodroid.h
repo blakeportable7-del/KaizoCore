@@ -46,6 +46,7 @@
 #include "renderers/es2/imagerendereres2.h"
 #include "renderers/es3/imagerendereres3.h"
 #include "utils/rect.h"
+#include "gamecontent.h"
 
 namespace libretrodroid {
 
@@ -102,7 +103,7 @@ public:
     void reset();
 
     void loadGameFromPath(const std::string &gamePath);
-    void loadGameFromBytes(const int8_t *data, size_t size);
+    void loadGameFromBytes(std::vector<char> gameBytes);
     void loadGameFromVirtualFiles(std::vector<VFSFile> virtualFiles);
 
     /**
@@ -173,6 +174,8 @@ public:
     size_t coreMemorySize(unsigned id);
 
     void setAudioEnabled(bool enabled);
+    // KaizoCore (rc32 audit P2 #123): the display's refresh rate changed, or the view moved to another display.
+    void setScreenRefreshRate(float refreshRate);
 
     void setShaderConfig(ShaderManager::Config shaderConfig);
 
@@ -216,6 +219,9 @@ private:
 
     Rect viewportRect = Rect(0.0F, 0.0F, 1.0F, 1.0F);
     float screenRefreshRate = 60.0;
+    // KaizoCore (rc32 audit P2 #123): the game's own timing, kept so the pacing can be rebuilt for a new refresh rate.
+    double contentFps = 0.0;
+    double contentSampleRate = 0.0;
     int openglESVersion = 2;
     bool skipDuplicateFrames = false;
     bool immersiveModeEnabled = false;
@@ -233,13 +239,18 @@ private:
     std::unique_ptr<Input> input;
     std::unique_ptr<Rumble> rumble;
 
-    // LOCAL MODIFICATION (KaizoCore): the ROM read into memory for a core that
-    // takes its content as data. It was never freed, so every game load leaked
-    // the whole ROM: +145 MB per load for HeartGold on 2026-09-29, and a DS
-    // player's NEW RUNs ran the app out of memory. Owned here, kept while the
-    // game runs (a core may keep reading it, as mGBA does), freed in destroy()
-    // once the core has unloaded the game.
-    std::unique_ptr<char[]> gameData;
+    // LOCAL MODIFICATION (KaizoCore, rc34): what retro_load_game was given, kept until destroy(). The classic melonDS
+    // core keeps the retro_game_info pointer and reads the ROM through it again on retro_reset, so the struct, the path
+    // it points into and the bytes all live as long as the game.
+    //  - The struct was a local of the loader, so a DS Restart read a dead stack frame and crashed (2026-10-03).
+    //  - The path was a new[] copy that was never freed, one per load.
+    //  - The bytes were read into the heap: never freed at first (+145 MB per load for HeartGold, 2026-09-29), then
+    //    freed at destroy(), which still held them beside the core's own copy for the whole game, 512 MB twice for
+    //    Black 2 and White 2. They are a read-only mapping now whose pages leave once the core has its copy.
+    bool handOver(const std::string& path, GameContent bytes);
+    std::string contentPath;
+    struct retro_game_info contentInfo {};
+    GameContent content;
 };
 
 } //namespace libretrodroid

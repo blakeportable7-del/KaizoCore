@@ -20,18 +20,19 @@ class FavoriteRulesTest {
         "RBY" to RomKind.RED_U, "GSC" to RomKind.CRYSTAL_U, "FRLG" to RomKind.FIRERED_U_V11, "RSE" to RomKind.EMERALD_U,
         "DPPt" to RomKind.PLATINUM_U, "HGSS" to RomKind.HEARTGOLD_U, "BW" to RomKind.BLACK_U, "B2W2" to RomKind.BLACK2_U,
         "FRLG-NatDex" to RomKind.FIRERED_NATDEX_121, "RSE-NatDex" to RomKind.EMERALD_NATDEX_121,
+        "FRLG-MaxDex" to RomKind.FIRERED_MAXDEX_10,
     )
     private val generation = mapOf("RBY" to 1, "GSC" to 2, "FRLG" to 3, "RSE" to 3, "DPPt" to 4, "HGSS" to 4, "BW" to 5, "B2W2" to 5)
 
     @Test
     fun `every book's favorites count is the one the app gives its game`() {
-        assertEquals(71, allBooks().size, "the books bundled today")
+        assertEquals(72, allBooks().size, "the books bundled today")
         for (f in allBooks()) {
             val text = f.readText()
             val family = f.parentFile.name
             assertTrue("Favorites Clause" in text, f.path)
             // Three, one more each generation after the third; nine on a Nat. Dex build.
-            val want = if ("up to 9 favourites" in text) 9 else 3 + maxOf(0, generation.getValue(family.removeSuffix("-NatDex")) - 3)
+            val want = if ("up to 9 favorites" in text) 9 else 3 + maxOf(0, generation.getValue(family.substringBefore('-')) - 3)
             assertEquals(want, Favorites.slotCount(kindOf.getValue(family)), f.path)
         }
     }
@@ -78,7 +79,7 @@ class FavoriteRulesTest {
         assertTrue(kaizo.any { it.startsWith("Favorites Clause:") }, kaizo.toString())
         assertTrue(kaizo.any { "under 600 BST" in it })
         assertTrue(kaizo.none { "https://" in it || it.startsWith("-") })
-        assertTrue(FavoriteRules.lines(File(books, "RSE-NatDex/kaizo.md").readText()).any { "up to 9 favourites" in it })
+        assertTrue(FavoriteRules.lines(File(books, "RSE-NatDex/kaizo.md").readText()).any { "up to 9 favorites" in it })
         assertTrue(FavoriteRules.lines(File(books, "FRLG/survival.md").readText()).any { "580+ BST" in it })
         // Legendaries, forms by their species.
         for (n in listOf("Rayquaza", "Kyogre", "Articuno", "Celebi", "Zacian", "Pecharunt")) assertTrue(FavoriteRules.isLegendary(n), n)
@@ -97,7 +98,8 @@ class FavoriteRulesTest {
     @Test
     fun `the screen reads the book of the game and mode picked`() {
         val run = File("src/main/kotlin/com/ironmonone/app/RunScreen.kt").readText().replace("\r\n", "\n")
-        assertTrue("Rules.text(context, Rules.dirFor(k.family, k.isNatDex), favMode)" in run)
+        // With the game itself, so MaxDex reads its own book (FRLG-MaxDex, the Nat. Dex 1.1.3 lines), not Nat. Dex 1.2.1's.
+        assertTrue("Rules.text(context, Rules.dirFor(k.family, k.isNatDex, k), favMode)" in run)
         assertTrue("FavoriteRulesBlock(favBook, favMode, favSlots)" in run)
         assertTrue("val favMode = RulesetCatalog.modeOf(modes, selectedSettings)?.key" in run)
     }

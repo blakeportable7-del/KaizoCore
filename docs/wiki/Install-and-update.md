@@ -11,5 +11,6 @@ newer APK by hand over the old one keeps them too.
 **Do not uninstall to update.** Uninstalling wipes your games, saves, notes and attempt counts. Make a backup
 first (More, Backup and info, Back up) if you ever need to.
 
-**Games.** KaizoCore contains no games. Add game files you own under Library, My games. Nothing is downloaded, and
-nothing leaves your phone.
+**Games.** KaizoCore contains no games. Add game files you own under Library, My games. Nothing is downloaded. Your
+games stay on the phone; only with cloud sync on does your backup, with the run's randomized games in it,
+go to the cloud folder you pick.

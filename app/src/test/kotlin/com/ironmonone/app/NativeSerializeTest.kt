@@ -61,6 +61,7 @@ class NativeSerializeTest {
         // If the core ever returned a pointer into its own memory, freeing it would be a crash, not a fix.
         assertTrue("auto data = new int8_t[size];" in core, "serializeState allocates its copy")
         assertTrue("auto* data = new int8_t[size];" in core, "serializeSRAM allocates its copy")
-        assertTrue(Regex("return \\{ new int8_t\\[0\\], 0 \\};").findAll(core).count() == 2, "the empty returns are allocated too")
+        // Four since rc32 audit P3 #99: serializeState's no-game, nothing-to-save and refused returns, and serializeSRAM's.
+        assertTrue(Regex("return \\{ new int8_t\\[0\\], 0 \\};").findAll(core).count() == 4, "the empty returns are allocated too")
     }
 }

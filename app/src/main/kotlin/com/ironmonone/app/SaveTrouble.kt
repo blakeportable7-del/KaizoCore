@@ -17,9 +17,16 @@ object SaveTrouble {
     const val AUTO = "auto"
     const val LEDGER = "ledger"
     const val CLOUD = "cloud"
+    /** The files the background writer keeps (DiskWriter): tracker notes, play time, tracker settings. */
+    const val NOTES = "notes"
+    /** A cheat list, a slot lock or the hardcore switch, saved from a tap in Play (rc32 audit P2 #16). */
+    const val SETTING = "setting"
+    /** Save this attempt, refused for want of space (rc32 audit P2 #66). */
+    const val ATTEMPT = "attempt"
 
     /** SafeWrite answers yes or no, so the ledger's line cannot say why. */
     const val LEDGER_FAILED = "Could not save the Nuzlocke ledger. If this phone is out of space, free some; it saves again with your next change."
+    const val NOTES_FAILED = "Could not save your tracker notes and settings. If this phone is out of space, free some; they save again with your next change."
 
     fun init(context: Context) { app = context.applicationContext }
 

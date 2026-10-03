@@ -130,9 +130,9 @@ Super Kaizo Specific Rules do not apply! No Safari Pivot.
 - Swift Beginnings: ALL banned moves may be used while labbing and pivoting. The normal restrictions on moves apply once you begin the first non-rival battle.
     - Note: This allows the use of moves like Spore to speed up catches.
 - Put That Down!: Any items acquired via the pickup ability must be thrown away asap
-- Limited Healthcare: After receiving your first Gym badge you MUST immediately use the Pokémon Centre. You may now only use the Pokémon Centre up to 5 times for the remainder of the run.
+- Limited Healthcare: After receiving your first Gym badge you MUST immediately use the Pokémon Center. You may now only use the Pokémon Center up to 5 times for the remainder of the run.
     - Note: You may use beds, Doctors, the Healing Circle and other PC substitutes, these still count towards your usages
-- Final Frontier: After Acquiring your 8th Gym badge, you gain one Bonus Pokémon Centre usage.
+- Final Frontier: After Acquiring your 8th Gym badge, you gain one Bonus Pokémon Center usage.
     - Note: Changed as of 21/11/25 - Battle Items are now usable for the entire run
 - Power Limiter: Moves that boost stats without dealing damage are banned against Gym Leader, Elite Four and Champion fights.
     - Note: Secondary boosts like charge beam & Field effects like light screen, mist and rain dance are allowed.

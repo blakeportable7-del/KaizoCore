@@ -225,7 +225,8 @@ JNIEXPORT jbyteArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_read
     jlong address,
     jint length
 ) {
-    if (length <= 0 || length > 0x100000) return env->NewByteArray(0);
+    // KaizoCore (rc32 audit P3 #93): a negative jlong would become an address near 2^64.
+    if (address < 0 || length <= 0 || length > 0x100000) return env->NewByteArray(0);
 
     std::vector<unsigned char> buffer(length);
     size_t read = LibretroDroid::getInstance().readMemory(
@@ -251,7 +252,7 @@ JNIEXPORT jint JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_writeMemor
     jbyteArray data
 ) {
     jsize length = env->GetArrayLength(data);
-    if (length <= 0 || length > 0x1000) return 0;
+    if (address < 0 || length <= 0 || length > 0x1000) return 0;   // KaizoCore (rc32 audit P3 #93)
     std::vector<unsigned char> buffer(length);
     env->GetByteArrayRegion(data, 0, length, reinterpret_cast<jbyte*>(buffer.data()));
     return static_cast<jint>(LibretroDroid::getInstance().writeMemory(
@@ -296,17 +297,18 @@ JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_unseri
         jbyte* data = env->GetByteArrayElements(sram, &isCopy);
         jsize size = env->GetArrayLength(sram);
 
-        LibretroDroid::getInstance().unserializeSRAM(data, size);
+        // KaizoCore (rc32 audit P3 #100): the core's answer, not a fixed yes. A save the core refused (too big, no save
+        // RAM) used to read as loaded, and the app's next flush wrote the core's blank save over it.
+        bool loaded = LibretroDroid::getInstance().unserializeSRAM(data, size);
 
         env->ReleaseByteArrayElements(sram, data, JNI_ABORT);
+        return loaded ? JNI_TRUE : JNI_FALSE;
 
     } catch (std::exception &exception) {
         LOGE("Error in unserializeSRAM: %s", exception.what());
         JavaUtils::throwRetroException(env, ERROR_SERIALIZATION);
         return JNI_FALSE;
     }
-
-    return JNI_TRUE;
 }
 
 JNIEXPORT jbyteArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_serializeSRAM(
@@ -486,15 +488,11 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_loadGameFr
     jbyteArray gameFileBytes
 ) {
     try {
-        size_t size = env->GetArrayLength(gameFileBytes);
-        auto* data = new int8_t[size];
-        env->GetByteArrayRegion(
-            gameFileBytes,
-            0,
-            size,
-            reinterpret_cast<int8_t*>(data)
-        );
-        LibretroDroid::getInstance().loadGameFromBytes(data, size);
+        jsize size = env->GetArrayLength(gameFileBytes);
+        // KaizoCore (rc34): handed over, and freed by destroy(). It was a new[] copy that was never freed.
+        std::vector<char> bytes(static_cast<size_t>(size));
+        env->GetByteArrayRegion(gameFileBytes, 0, size, reinterpret_cast<jbyte*>(bytes.data()));
+        LibretroDroid::getInstance().loadGameFromBytes(std::move(bytes));
     } catch (std::exception &exception) {
         LOGE("Error in loadGameFromBytes: %s", exception.what());
         JavaUtils::throwRetroException(env, ERROR_LOAD_GAME);
@@ -687,6 +685,15 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setSlowMot
     jint divisor
 ) {
     LibretroDroid::getInstance().setSlowMotion(divisor);
+}
+
+// KaizoCore (rc32 audit P2 #123): the display's refresh rate, read again when it changes.
+JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setScreenRefreshRate(
+    JNIEnv* env,
+    jclass obj,
+    jfloat refreshRate
+) {
+    LibretroDroid::getInstance().setScreenRefreshRate(refreshRate);
 }
 
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setFrameSpeed(

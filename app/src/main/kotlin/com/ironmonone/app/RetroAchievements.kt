@@ -50,16 +50,30 @@ object RetroAchievements {
     }
 
     // ------------------------------------------------------------ storage
+    const val HARDCORE_FAILED = "Could not save the hardcore switch. If this phone is out of space, free some, then set it again."
+
     class Store(private val file: File) {
         fun load(): Pair<String, String>? {
             val lines = runCatching { file.readLines() }.getOrNull() ?: return null
             return if (lines.size >= 2 && lines[0].isNotBlank() && lines[1].isNotBlank()) lines[0] to lines[1] else null
         }
-        fun save(user: String, token: String) { runCatching { file.parentFile?.mkdirs(); file.writeText("$user\n$token\n") } }
-        fun clear() { file.delete() }
+        /** Whole or not at all (SafeWrite): rewritten in place, a kill or a full phone left the token cut short (RC35-NOTICED N #15). */
+        fun save(user: String, token: String) { SafeWrite.text(file, "$user\n$token\n") }
+        /**
+         * Signing out, or a token the server refused. Hardcore goes with the session (rc32 audit P2 #54): the flag
+         * outlived it, and a signed-out player, whose dialog has no hardcore switch, found every game refusing to
+         * reopen where it was left.
+         */
+        fun clear() { file.delete(); hardcore = false }
         var hardcore: Boolean
             get() = File(file.parentFile, "ra-hardcore").exists()
-            set(v) { val f = File(file.parentFile, "ra-hardcore"); if (v) f.writeText("1") else f.delete() }
+            set(v) {
+                val f = File(file.parentFile, "ra-hardcore")
+                // A full phone threw here, out of the switch's tap, and closed the app mid-game (rc32 audit P2 #16).
+                if (runCatching { if (v) f.writeText("1") else f.delete() }.isFailure) SaveTrouble.report(SaveTrouble.SETTING, HARDCORE_FAILED)
+            }
+        /** Hardcore with a signed-in session on disk: a flag an older build left behind after a sign-out counts for nothing. */
+        fun hardcoreSignedIn(): Boolean = hardcore && load() != null
     }
 
     // ------------------------------------------------------------ network
@@ -85,17 +99,48 @@ object RetroAchievements {
         }
     }
 
-    /** The listener the Play screen installs on the view. Replies are posted back on the main thread. */
-    fun listener(mainPost: (() -> Unit) -> Unit, onEvent: (Int, String, String, Int, String, Int) -> Unit) =
+    /** The process's own main thread, for replies; made on first use (a JVM test has no Looper). */
+    private val main by lazy { android.os.Handler(android.os.Looper.getMainLooper()) }
+
+    /**
+     * The listener the Play screen installs on the view. A server reply goes back to the client on the main thread through
+     * [post], the app's own main handler, never through the view: a view that had left the screen (a tab switch, NEW RUN)
+     * never ran its posts, so the reply was dropped and the client stayed "logging in" until the app was killed (rc33
+     * audit P1 #36). The request then holds no view either. [respond] is the client's door, a test's stand-in.
+     */
+    fun listener(
+        onEvent: (Int, String, String, Int, String, Int) -> Unit,
+        post: (Runnable) -> Unit = { main.post(it) },
+        respond: (Int, String, Int) -> Unit = { id, body, status -> LibretroDroid.cheevosServerResponse(id, body, status) },
+    ) =
         object : GLRetroView.CheevosListener {
             override fun onServerCall(id: Int, url: String, postData: String, contentType: String) {
                 perform(id, url, postData, contentType) { rid, body, status ->
-                    mainPost { runCatching { LibretroDroid.cheevosServerResponse(rid, body, status) } }
+                    post(Runnable { runCatching { respond(rid, body, status) } })
                 }
             }
             override fun onEvent(type: Int, title: String, description: String, points: Int, badgeUrl: String, result: Int) =
                 onEvent(type, title, description, points, badgeUrl, result)
         }
+
+    /**
+     * Whether a failed sign-in was the server refusing the saved token (rc_error.h: -33 access denied, -34 invalid
+     * credentials, -35 expired token). Only then is the token deleted: offline (-32), a sign-in already in flight (-25),
+     * an abort (-31) or a server hiccup used to sign the player out for good (rc33 audit P1 #37).
+     */
+    fun tokenRefused(result: Int): Boolean = result == -33 || result == -34 || result == -35
+
+    /**
+     * The game and the achievement client restarted together, between frames on the emulation thread. rcheevos waits for
+     * this after hardcore goes on mid-game (RC_CLIENT_EVENT_RESET) and counts nothing until it comes; nothing answered
+     * that event, so every achievement stopped until the game was opened again (rc33 audit P1 #38).
+     */
+    fun restartGame(view: GLRetroView?) {
+        view?.queueEvent { runCatching { LibretroDroid.reset(); LibretroDroid.cheevosReset() } }
+    }
+
+    /** A sign-in that is already under way (rc_error.h RC_INVALID_STATE): not an error to show. */
+    const val SIGN_IN_IN_FLIGHT = -25
 
     // --------------------------------------------------------------- JSON
     private fun field(json: String, key: String): String? {

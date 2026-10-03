@@ -14,18 +14,18 @@ Architecture: `IRONMON_ONE_MAP.md` (how, with verified reference-repo findings).
 
 ## Beta
 
-Download the APK from https://willowcreek.group/kaizocore (or the releases page here); the SHA-256 is on both. Install a newer APK over the old one; uninstalling wipes your games, saves, notes and attempt count. You need your own game dumps: nothing here contains or fetches a ROM. The Hacks tab's list opens each ROM hack's own page for its patch.
+Download the APK from https://willowcreek.group/kaizocore (or the releases page here); the SHA-256 is on both. Install a newer APK over the old one; uninstalling wipes your games, saves, notes and attempt count. You need your own game dumps: nothing here contains or fetches a ROM. Home, ROM Hacks lists the hacks made for your game and opens each one's own page for its patch.
 
-Your first run: Library tab, All files, Add files, pick your dump (a zip is fine). Run tab, pick the game and a mode, Start new run. Play. Library, Set up a game is only for Nat. Dex on Emerald or FireRed v1.1 and the patched rulesets. Bugs: More tab, Backup and info, Report a bug, Email Blake.
+Your first run: Library, My games, Add files, pick your dump (a zip is fine). Home, Kaizo IronMON, pick the game and a mode, Start attempt 1. Play. Library, Patched versions is only for Nat. Dex on Emerald or FireRed v1.1 and the patched rulesets. Bugs: More, Backup and info, Report a bug, Email Blake.
 
 ## State as of 2026-08-30
 
 **Milestones 1 and 2 are done and tested, and the toolchain is installed.**
 JDK 21.0.12 LTS, Android SDK (platform-tools, android-34, build-tools 34.0.0,
 licences accepted) at `C:\Users\bepor\Android\Sdk`, Gradle 8.7 with a wrapper in the
-repo. `core-api` compiles and its tests pass. The NDK is deliberately **not** installed
-yet: it is 1-3GB and nothing needs it until the emulator milestone, which is blocked on
-the ironmon_emu source question.
+repo. `core-api` compiles and its tests pass. The NDK was deliberately **not** installed
+then; it is now required: NDK 26.1.10909125, for libretrodroid's native code and for the
+strip step that keeps its debug info out of the APK (app/build.gradle.kts ndkVersion).
 
 ```
 core-api/        pure Kotlin, zero Android deps   — 10 tests green
@@ -40,7 +40,10 @@ app/             Compose shell: ROM library + About — BUILDS, untested on devi
 nds/             stubs only, must stay empty in v1               — not started
 ```
 
-Build the APK (lands in `app/build/outputs/apk/debug/`):
+Build a debug APK (lands in `app/build/outputs/apk/debug/`). A release is built only by
+`tools/release.sh`, and docs/RELEASING.md is the whole release checklist. The versionCode
+moves only in the commit you release: a build made after the bump carries the release's
+code, and a phone on it is never offered the release (release.sh refuses otherwise).
 
 ```bash
 ./gradlew :app:assembleDebug

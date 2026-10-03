@@ -69,7 +69,7 @@ class GbLookupsTest {
 
     private fun redWram(level: Int): Wram {
         val map = Gen1Map.RED_BLUE
-        val w = Wram(0x10000)
+        val w = Wram(0x2000)
         w.put(map.partyCount, 1); w.put(map.partySpecies, 0xB1); w.put(map.partySpecies + 1, 0xFF)
         val p = map.partyMons
         w.put(p, 0xB1); w.be16(p + 1, 30); w.put(p + 8, 52); w.put(p + 29, 20)
@@ -177,8 +177,7 @@ class GbLookupsTest {
 
     // ------------------------------------------------------------------ real dumps
 
-    private fun dump(name: String): ByteArray? =
-        System.getenv("IRONMON_ROMS")?.let { File(it, name) }?.takeIf { it.isFile }?.readBytes()
+    private fun dump(name: String): ByteArray? = Dumps.rom(name)?.readBytes()
 
     private val none = MemoryReader { _, _ -> ByteArray(0) }
 

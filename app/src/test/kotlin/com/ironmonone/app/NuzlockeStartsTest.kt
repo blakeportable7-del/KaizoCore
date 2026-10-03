@@ -12,6 +12,7 @@ import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -45,9 +46,10 @@ class NuzlockeStartsTest {
 
     @Test
     fun `every game the app can check is offered, so no supported game is left out`() {
-        val checked = RomKind.all.filter { it.expectedCrc != RomKind.CRC_UNKNOWN }
+        // All but MaxDex, which has no Nuzlocke in its first version (MaxDexPrepareTest).
+        val checked = RomKind.all.filter { it.expectedCrc != RomKind.CRC_UNKNOWN && !it.isMaxDex }
         assertTrue(checked.size >= 25, "the app knows only ${checked.size} checked games")
-        val got = NuzlockeStarts.plainGames(checked.map { verified(it) }).map { it.kind }
+        val got = NuzlockeStarts.plainGames((checked + RomKind.FIRERED_MAXDEX_10).map { verified(it) }).map { it.kind }
         assertEquals(checked, got)
     }
 
@@ -83,6 +85,7 @@ class NuzlockeStartsTest {
         assertEquals(NuzlockeSystem.GEN3, NuzlockeStarts.systemOf(RomKind.FIRERED_NATDEX_121))
         assertEquals(NuzlockeSystem.GEN4, NuzlockeStarts.systemOf(RomKind.PLATINUM_U))
         assertEquals(NuzlockeSystem.GEN4, NuzlockeStarts.systemOf(RomKind.HEARTGOLD_SUPERKAIZO))
+        assertEquals(NuzlockeSystem.GEN4, NuzlockeStarts.systemOf(RomKind.HEARTGOLD_IRONMON))
         assertEquals(NuzlockeSystem.GEN5, NuzlockeStarts.systemOf(RomKind.BLACK2_U))
         assertEquals(NuzlockeSystem.GEN5, NuzlockeStarts.systemOf(RomKind.WHITE_U))
         assertEquals(NuzlockeSystem.GEN3, NuzlockeStarts.systemOf(null))
@@ -101,6 +104,7 @@ class NuzlockeStartsTest {
         assertEquals("gold", NuzlockeStarts.gameKeyOf(RomKind.GOLD_PF))
         assertEquals("platinum", NuzlockeStarts.gameKeyOf(RomKind.PLATINUM_SUPERKAIZO))
         assertEquals("heartgold", NuzlockeStarts.gameKeyOf(RomKind.HEARTGOLD_SUPERKAIZO))
+        assertEquals("heartgold", NuzlockeStarts.gameKeyOf(RomKind.HEARTGOLD_IRONMON))
         assertEquals("black2", NuzlockeStarts.gameKeyOf(RomKind.BLACK2_FASTERPWT))
         assertEquals("white", NuzlockeStarts.gameKeyOf(RomKind.WHITE_U))
         assertEquals("", NuzlockeStarts.gameKeyOf(RomKind.EMERALD_U))
@@ -196,5 +200,60 @@ class NuzlockeStartsTest {
         assertEquals("Over", NuzlockeStarts.statusLine(RunStatus.OVER, "  ", 5L))
         assertEquals("Finished. The Champion is beaten.", NuzlockeStarts.statusLine(RunStatus.COMPLETE, "", 5L))
         assertEquals("Replaced by a newer run", NuzlockeStarts.statusLine(RunStatus.ABANDONED, "", 5L))
+    }
+
+    @Test
+    fun `a type the picked game has none of stops the start`() {
+        // rc32 audit P3 #38: Steel or Dark picked with no game picked stayed on for Red, Blue or Yellow, and every wild
+        // Pokemon of the run was then skipped as the wrong type.
+        val mono = NuzlockePreset.MONOTYPE
+        val steel = NuzlockeRules.forPreset(mono, 8)
+        val gen1 = assertNotNull(NuzlockeStarts.problem(mono, steel, game = true, mode = true, busy = false, natDex = false, system = NuzlockeSystem.GEN1))
+        assertEquals("This game has no Steel-type Pokémon. Pick another type.", gen1)
+        assertNotNull(NuzlockeStarts.problem(mono, NuzlockeRules.forPreset(mono, 17), true, true, false, false, NuzlockeSystem.GEN1), "Dark")
+        assertNull(NuzlockeStarts.problem(mono, steel, game = true, mode = true, busy = false, natDex = false, system = NuzlockeSystem.GEN2))
+        assertNull(NuzlockeStarts.problem(mono, NuzlockeRules.forPreset(mono, 10), true, true, false, false, NuzlockeSystem.GEN1), "Fire is in Red")
+        assertFalse('—' in gen1 || '–' in gen1)
+    }
+
+    // ---------------------------------------------------------------- the game's own save
+
+    @Test
+    fun `a DS game's save is melonDS's own file, and every other game's is its battery save`() {
+        // rc32 audit P2 #37: the DS check read the .srm melonDS never writes, so "This game already has a save" never showed.
+        val filesDir = kotlin.io.path.createTempDirectory("insave").toFile()
+        try {
+            val store = PrepStore(filesDir)
+            val ds = GameSession.forLibrary(entry(RomKind.HEARTGOLD_U, RomKind.HEARTGOLD_U.expectedCrc, "heartgold.nds"))!!
+            val save = NuzlockeStarts.inGameSave(filesDir, ds, store.sramFile(ds))
+            assertEquals(File(filesDir, "saves/heartgold.sav"), save)
+            assertFalse(SaveCheck.hasProgress(save, ds.platform), "no file yet")
+            save.parentFile.mkdirs(); save.writeBytes(ByteArray(512) { if (it == 40) 7 else -1 })
+            assertTrue(SaveCheck.hasProgress(save, ds.platform))
+            val gba = GameSession.forLibrary(verified(RomKind.EMERALD_U))!!
+            assertEquals(store.sramFile(gba), NuzlockeStarts.inGameSave(filesDir, gba, store.sramFile(gba)))
+            assertEquals(File(filesDir, "saves/lib/${gba.id}.srm"), store.sramFile(gba))
+        } finally { filesDir.deleteRecursively() }
+    }
+
+    // ---------------------------------------------------------------- the next game of a Genlocke
+
+    private fun header(preset: NuzlockePreset, genlockeId: String) =
+        com.ironmonone.tracker.nuzlocke.NuzlockeText.Header("nz-1", "lib-1", "Game", preset, 1L, RunStatus.COMPLETE, "", 1, genlockeId)
+
+    @Test
+    fun `any finished run started as a Genlocke offers the next game, whatever its preset`() {
+        // rc32 audit P2 #39: only the Genlocke preset was asked, so a Hardcore run with the switch on never offered it.
+        assertTrue(NuzlockeStarts.canContinue(header(NuzlockePreset.HARDCORE, "gl-1"), RunStatus.COMPLETE))
+        assertTrue(NuzlockeStarts.canContinue(header(NuzlockePreset.WEDLOCKE, "gl-1"), RunStatus.COMPLETE))
+        assertFalse(NuzlockeStarts.canContinue(header(NuzlockePreset.STANDARD, ""), RunStatus.COMPLETE))
+        assertTrue(NuzlockeStarts.canContinue(header(NuzlockePreset.GENLOCKE, ""), RunStatus.COMPLETE), "a Genlocke preset run as before")
+        assertFalse(NuzlockeStarts.canContinue(header(NuzlockePreset.HARDCORE, "gl-1"), RunStatus.OVER))
+        // The next game keeps the chain's own preset and switches, the Genlocke switch on.
+        val hardcore = NuzlockeRules.forPreset(NuzlockePreset.HARDCORE).copy(genlocke = true, dupes = false)
+        assertEquals(hardcore, NuzlockeStarts.legRules(hardcore.copy(genlocke = false)), "the switches kept, the Genlocke switch on")
+        assertEquals(NuzlockePreset.HARDCORE, NuzlockeStarts.legRules(hardcore).preset)
+        val random = NuzlockeStarts.legRules(NuzlockeRules.forPreset(NuzlockePreset.RANDOMIZER).copy(genlocke = true))
+        assertEquals(NuzlockePreset.GENLOCKE, random.preset, "the next game is played as it is")
     }
 }

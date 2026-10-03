@@ -49,7 +49,7 @@ internal object NatDexInfo {
     fun lines(base: RomKind): List<String> = everyGame + when (base.id) {
         RomKind.FIRERED_U_V11.id -> listOf(
             "Everything Faster FireRed has: instant healing at the PC and shorter errands.",
-            "The Move Reminder is in Cinnabar Lab; S.S. Anne rooms are coloured by who is inside; an NPC outside Rock Tunnel hands out Flash.",
+            "The Move Reminder is in Cinnabar Lab; S.S. Anne rooms are colored by who is inside; an NPC outside Rock Tunnel hands out Flash.",
         )
         RomKind.EMERALD_U.id -> listOf(
             "Everything Faster Emerald has: a shorter intro and instant healing.",

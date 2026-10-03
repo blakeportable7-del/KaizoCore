@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -33,6 +34,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
@@ -72,8 +74,9 @@ object LogSuggest {
         }
     }
 
-    fun pokemon(log: RandomizerLog, query: String, limit: Int = 6): List<RandomizerLog.Pokemon> =
-        log.pokemon.mapNotNull { p -> rank(p.name, query)?.let { it to p } }
+    /** Ranked by the log's name or the one the viewer shows (LogNames), whichever is nearer: "pumpkaboo j" finds MaxDex's "PumpkabooX". */
+    fun pokemon(log: RandomizerLog, query: String, limit: Int = 6, names: LogNames = LogNames.PLAIN): List<RandomizerLog.Pokemon> =
+        log.pokemon.mapNotNull { p -> listOfNotNull(rank(p.name, query), rank(names.species(p.name), query)).minOrNull()?.let { it to p } }
             .sortedWith(compareBy({ it.first }, { it.second.id }))
             .take(limit).map { it.second }
 
@@ -101,8 +104,11 @@ object LogSuggest {
     }
 }
 
-/** One line of the dropdown: a Pokemon (sprite, name, types, BST) or a plain word. */
-internal class LogSuggestion(val label: String, val pokemon: RandomizerLog.Pokemon? = null)
+/**
+ * One line of the dropdown: a Pokemon (sprite, name, types, BST) or a plain word. [label] is what a tap puts in the
+ * search box, [shown] what the line says (a Pokemon's name as the viewer shows it, LogNames).
+ */
+internal class LogSuggestion(val label: String, val pokemon: RandomizerLog.Pokemon? = null, val shown: String = label)
 
 /**
  * The log's search box: a magnifier, the hint, what is typed in the tracker's face at a size a phone can read, and a
@@ -169,7 +175,7 @@ internal fun LogSearchField(
                             if (art != null) Image(art, null, Modifier.size(40.dp), filterQuality = FilterQuality.None)
                             else Spacer(Modifier.size(40.dp))
                         }
-                        DialogText(if (p != null) logTitle(p.name) else s.label, 15, Pc.Text, Modifier.weight(1f))
+                        DialogText(s.shown, 15, Pc.Text, Modifier.weight(1f))
                         if (p != null) {
                             Row(horizontalArrangement = Arrangement.spacedBy(3.dp), verticalAlignment = Alignment.CenterVertically) {
                                 p.types.forEach { PcTypeChip(it.uppercase(), pcTypeColorByName(it)) }
@@ -191,6 +197,28 @@ internal fun LogBack(onBack: () -> Unit) {
             .semantics { contentDescription = "Back" },
         contentAlignment = Alignment.Center,
     ) { DialogText("< Back", 13, Pc.Dim) }
+}
+
+/**
+ * One of a row of choices (a filter, a tab of encounters): a 48dp target, read out as a selected or unselected tab,
+ * the chosen one gold and underlined (rc32 audit P2 #26). The words had 4dp above and below, about 25dp to hit.
+ */
+@Composable
+internal fun LogChoice(label: String, on: Boolean, onClick: () -> Unit) {
+    Box(
+        Modifier.heightIn(min = PcMin.DIALOG_TOUCH_DP.dp).widthIn(min = PcMin.DIALOG_TOUCH_DP.dp)
+            .selectable(selected = on, role = Role.Tab) { onClick() }.padding(horizontal = 4.dp),
+        contentAlignment = Alignment.Center,
+    ) { DialogText(label, 12, if (on) Pc.Gold else Pc.Text, underline = on) }
+}
+
+/** A framed word that does something (Share Seed, COPY, CLOSE): drawn as before, in a 48dp tall touch area (rc32 audit P2 #26). */
+@Composable
+internal fun LogButton(label: String, color: androidx.compose.ui.graphics.Color, size: Int = 13, onClick: () -> Unit) {
+    Box(
+        Modifier.heightIn(min = PcMin.DIALOG_TOUCH_DP.dp).clickable(role = Role.Button) { onClick() },
+        contentAlignment = Alignment.Center,
+    ) { DialogText(label, size, color, Modifier.border(1.dp, Pc.Border).padding(horizontal = 10.dp, vertical = 6.dp)) }
 }
 
 /** The search box's magnifier, drawn so it needs no glyph the tracker's font may not have. */

@@ -98,21 +98,21 @@ object LogSearch {
     fun preEvolutions(log: RandomizerLog, p: RandomizerLog.Pokemon): List<RandomizerLog.Pokemon> =
         log.pokemon.filter { q -> q.evolutions.any { it.equals(p.name, ignoreCase = true) } }
 
-    /** LogTabPokemon's search and sort. */
-    fun pokemonRows(log: RandomizerLog, query: String, filter: LogFilter, sort: LogSort): List<RandomizerLog.Pokemon> {
+    /** LogTabPokemon's search and sort; a name is found and sorted by the one shown too (LogNames). */
+    fun pokemonRows(log: RandomizerLog, query: String, filter: LogFilter, sort: LogSort, names: LogNames = LogNames.PLAIN): List<RandomizerLog.Pokemon> {
         val q = query.trim()
         val base = if (q.isEmpty()) log.pokemon else log.pokemon.filter { p ->
             when (filter) {
                 LogFilter.ABILITY -> p.abilities.any { it.contains(q, ignoreCase = true) }
                 LogFilter.MOVE -> (p.moves.map { it.second } + p.evoMoves).any { it.contains(q, ignoreCase = true) }
-                else -> p.name.contains(q, ignoreCase = true)
+                else -> names.finds(p.name, q)
             }
         }
         val stat = when (sort) {
             LogSort.HP -> "HP"; LogSort.ATK -> "ATK"; LogSort.DEF -> "DEF"; LogSort.SPA -> "SPA"; LogSort.SPD -> "SPD"; LogSort.SPE -> "SPE"; else -> null
         }
         return base.sortedWith(when {
-            sort == LogSort.ALPHA -> compareBy<RandomizerLog.Pokemon>({ logTitle(it.name) }, { it.id })
+            sort == LogSort.ALPHA -> compareBy<RandomizerLog.Pokemon>({ names.species(it.name) }, { it.id })
             sort == LogSort.BST -> compareBy<RandomizerLog.Pokemon>({ -it.bst }, { it.id })
             stat != null -> compareBy<RandomizerLog.Pokemon>({ -statOf(it, stat) }, { it.id })
             else -> compareBy<RandomizerLog.Pokemon> { it.id }
@@ -120,14 +120,14 @@ object LogSearch {
     }
 
     /** LogTabRoutes' includeInGrid per filter, then the chosen sort. */
-    fun routeRows(routes: List<LogRoute>, log: RandomizerLog, query: String, filter: LogFilter, sort: LogSort): List<LogRoute> {
+    fun routeRows(routes: List<LogRoute>, log: RandomizerLog, query: String, filter: LogFilter, sort: LogSort, names: LogNames = LogNames.PLAIN): List<LogRoute> {
         val q = query.trim()
         fun partyHas(r: LogRoute, test: (RandomizerLog.PartyMon) -> Boolean) = r.trainers.any { t -> t.party.any(test) }
         val base = if (q.isEmpty()) routes else routes.filter { r ->
             when (filter) {
                 LogFilter.TRAINER -> r.trainers.any { logTitle(it.originalName).contains(q, ignoreCase = true) }
-                LogFilter.NAME -> partyHas(r) { it.name.contains(q, ignoreCase = true) } ||
-                    r.areas.values.any { ws -> ws.any { it.name.contains(q, ignoreCase = true) } }
+                LogFilter.NAME -> partyHas(r) { names.finds(it.name, q) } ||
+                    r.areas.values.any { ws -> ws.any { names.finds(it.name, q) } }
                 LogFilter.ABILITY -> partyHas(r) { m -> log.pokemonNamed(m.name)?.abilities?.any { it.contains(q, ignoreCase = true) } == true }
                 LogFilter.MOVE -> partyHas(r) { m -> log.pokemonNamed(m.name)?.let { p -> log.movesAt(p, m.level).any { it.contains(q, ignoreCase = true) } } == true }
                 else -> r.name.contains(q, ignoreCase = true)

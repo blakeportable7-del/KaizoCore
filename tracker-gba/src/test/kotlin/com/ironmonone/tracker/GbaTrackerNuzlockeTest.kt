@@ -327,4 +327,24 @@ class GbaTrackerNuzlockeTest {
         m.blocks.remove(map.saveBlock1Ptr)
         assertEquals(-1, inBattle(m).second.nuz!!.ballCount)
     }
+
+    @Test
+    fun `the map section and type are read with the map's layout id, and never paired with another map's`() {
+        // rc32 audit P2 #140: gMapHeader +0x12 layout id, +0x14 regionMapSectionId, +0x17 mapType.
+        val m = world()
+        m.poke(map.mapHeader + 0x12, byteArrayOf(8, 0, 0x66, 0, 0, 8))
+        val t = GbaTracker(m.reader(), map)
+        t.read()
+        val n = assertNotNull(t.read().nuz)
+        assertEquals(0x66, n.mapSection)
+        assertEquals(8, n.mapType)
+        // The next map's header, read once: its layout id is not adopted yet, so neither is its section.
+        m.poke(map.mapHeader + 0x12, byteArrayOf(9, 0, 0x5B, 0, 0, 2))
+        val moving = assertNotNull(t.read().nuz)
+        assertEquals(-1, moving.mapSection)
+        assertEquals(-1, moving.mapType)
+        val there = assertNotNull(t.read().nuz)
+        assertEquals(0x5B, there.mapSection)
+        assertEquals(2, there.mapType)
+    }
 }

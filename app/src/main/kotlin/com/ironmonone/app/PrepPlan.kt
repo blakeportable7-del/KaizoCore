@@ -19,6 +19,7 @@ object PrepPlan {
     private const val DS_RAM = "A DS game wants a phone with at least 3 GB of RAM."
 
     fun lines(k: RomKind): List<String> = when {
+        k.isMaxDex -> listOf("Already a MaxDex build. Stored as is, ready to randomize.")
         k.isNatDex -> listOf("Already a Nat. Dex build. Stored as is, ready to randomize.")
         // FireRed 1.1 is the one dump with three: Nat. Dex, the game as it is, and the Faster FireRed
         // quality-of-life patch.
@@ -26,6 +27,9 @@ object PrepPlan {
             "Standard: the game is stored as it is. Nat. Dex: the Nat. Dex patch is applied and the result stored, for the Nat. Dex modes." +
                 (if (PrepOptions.forKind(k).any { it.out?.patchTag == "faster" })
                     " ${if (k.id == RomKind.EMERALD_U.id) "Faster Emerald" else "Faster FireRed"}: the quality-of-life patch is applied instead (marked hidden items, instant healing)." else ""),
+        ) + listOfNotNull(
+            // FireRed 1.1 also makes MaxDex, with Trip's patch, built in since rc34 (MaxDexInfo).
+            "MaxDex: Trip's MaxDex patch, which is built in, is applied instead, for MaxDex Kaizo.".takeIf { MaxDexInfo.buildOf(k) != null },
         )
         // The one FireRed that cannot take Nat. Dex says why, and which file does (2026-09-30, UX audit P0-10): dumps of v1.1 are named "Rev 1".
         k.id == "firered-u-v10" -> listOf(
@@ -46,7 +50,8 @@ object PrepPlan {
         k.generation == Generation.GBA3 && PrepOptions.forKind(k).any { it.mode == PrepOptions.Mode.PATCH } -> listOf("Standard: the game is stored as it is. Super Kaizo: the Smart AI patch is applied instead, so every trainer picks its best move and switches like a player would, as that ruleset requires.")
         k.generation == Generation.GBA3 -> listOf("Stored as a standard base. No patch applies to this game.")
         k.id == RomKind.BLACK2_U.id || k.id == RomKind.WHITE2_U.id -> listOf("Standard: the game is stored as it is; Kaizo on this game needs no patch. Faster B2W2: the cutscene-skip patch is applied instead, with or without the Driftveil tournament.", DS_RAM)
-        k.id == RomKind.HEARTGOLD_U.id -> listOf("Standard: the game is stored as it is. Super Kaizo: its patch is applied instead.", DS_RAM)
+        k.id == RomKind.HEARTGOLD_U.id -> listOf("Standard: the game is stored as it is. IronMON HGSS: its quality-of-life patch is applied instead, " +
+            "for faster animations and less talk. Super Kaizo: its own patch is applied instead.", DS_RAM)
         k.id == RomKind.PLATINUM_U.id -> listOf("Standard: the game is stored as it is. Super Kaizo: its patch is applied instead, which gives every trainer smart AI. It is made for Platinum 1.0, the version this game is.", DS_RAM)
         k.generation == Generation.NDS4 || k.generation == Generation.NDS5 -> listOf("Stored as a standard base. Kaizo on this game needs no patch; the randomizer works on the game directly.", DS_RAM)
         else -> listOf("Stored as is, ready to randomize.")

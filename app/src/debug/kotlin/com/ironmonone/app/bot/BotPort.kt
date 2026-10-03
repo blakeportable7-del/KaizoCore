@@ -2,6 +2,7 @@ package com.ironmonone.app.bot
 
 import android.util.Log
 import android.view.KeyEvent
+import com.ironmonone.app.SpriteMotion
 import com.swordfish.libretrodroid.GLRetroView
 import com.swordfish.libretrodroid.LibretroDroid
 import java.io.BufferedInputStream
@@ -175,13 +176,23 @@ internal object BotPort {
         Log.i(TAG, "lockstep off")
     }
 
+    /**
+     * One key, as a player's press reaches the app: the core, and the walking sprites' idle clock and facing
+     * (SpriteMotion), which the pad and a controller feed too. The bot's keys went to the core alone, so in a run the
+     * bot drove every sprite fell asleep 55 seconds in and never walked or turned (2026-10-03).
+     */
+    private fun key(action: Int, code: Int) {
+        LibretroDroid.onKeyEvent(0, action, code)
+        SpriteMotion.key(action, code)
+    }
+
     /** Emulation thread only: from the next frame on, exactly [keys] are held. */
     private fun setHeld(keys: Set<Int>) {
         for (code in held.toList()) if (code !in keys) {
-            LibretroDroid.onKeyEvent(0, KeyEvent.ACTION_UP, code)
+            key(KeyEvent.ACTION_UP, code)
             held.remove(code)
         }
-        for (code in keys) if (held.add(code)) LibretroDroid.onKeyEvent(0, KeyEvent.ACTION_DOWN, code)
+        for (code in keys) if (held.add(code)) key(KeyEvent.ACTION_DOWN, code)
     }
 
     fun start(token: String) {
@@ -250,7 +261,7 @@ internal object BotPort {
     private fun releaseAll() {
         runCatching {
             onStep {
-                for (code in held) LibretroDroid.onKeyEvent(0, KeyEvent.ACTION_UP, code)
+                for (code in held) key(KeyEvent.ACTION_UP, code)
                 held.clear()
             }
         }
@@ -260,7 +271,7 @@ internal object BotPort {
         try {
             val down = onStep {
                 for (code in keys) {
-                    LibretroDroid.onKeyEvent(0, KeyEvent.ACTION_DOWN, code)
+                    key(KeyEvent.ACTION_DOWN, code)
                     held.add(code)
                 }
                 frames.get()
@@ -268,7 +279,7 @@ internal object BotPort {
             waitUntil(down + hold)
             val up = onStep {
                 for (code in keys) {
-                    LibretroDroid.onKeyEvent(0, KeyEvent.ACTION_UP, code)
+                    key(KeyEvent.ACTION_UP, code)
                     held.remove(code)
                 }
                 frames.get()

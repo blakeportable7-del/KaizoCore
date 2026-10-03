@@ -51,22 +51,99 @@ class NuzlockeEngine(val ledger: NuzlockeLedger) {
 
     private var battle: Battle? = null
 
+    /** Whether this engine has settled what an engine before it left "in battle" (settleStale): once, at its first look. */
+    private var staleChecked = false
+
     /** Feeds one poll. True when the ledger changed and wants saving. */
     fun update(s: Snapshot, at: Long): Boolean {
         if (!s.readable) return false
         val before = ledger.revision
         if (meta.status != RunStatus.ACTIVE) { battle = null; return false }
+        // A party the game lends for a facility battle: its faints are no deaths, losing is no whiteout, and its rentals
+        // are nobody's catch or gift. When the real party comes back nothing has changed (rc32 audit P2 #141).
+        if (s.facility) { battle = null; return false }
 
-        val real = s.party.filter { it.real }
+        val real = distinctIds(s.party.filter { it.real })
+        learnSection(s)
         beginRules(real, s, at)
         if (s.inBattle && battle == null) startBattle(s, at)
         battle?.takeIf { s.inBattle }?.let { trackBattle(it, s, at) }
+        noteEggs(s, at, firstSight = !meta.partySeen)
         takeParty(real, s, at)
         recordDeaths(real, s, at)
         if (!s.inBattle && battle != null) endBattle(s, at)
+        if (!staleChecked && !s.inBattle && battle == null && real.isNotEmpty()) settleStale(at)
         checkWhiteout(real, s, at)
         checkStyle(s, at)
         return ledger.revision != before
+    }
+
+    // ------------------------------------------------------------------ where a gift was received
+
+    /** A Gen 3 map section seen outdoors, with the map's name, for the gifts in its buildings ([giftArea]). The first name stays. */
+    private fun learnSection(s: Snapshot) {
+        val sec = s.area.section ?: return
+        val name = s.area.name?.takeIf { it.isNotBlank() } ?: return
+        if (s.area.indoor || sec in meta.sections) return
+        meta.sections[sec] = name
+        ledger.touch()
+    }
+
+    /**
+     * Where a gift was received. A building takes the town or route it stands in, by its map section (the game's own
+     * "met at" place) as it was seen outdoors: every Pokemon Center shares one layout and so one name, so FireRed's
+     * Route 4 Magikarp used up one "Pokemon Center" area for the whole game while Route 4 stayed open (rc32 audit P2
+     * #140). A section not seen outdoors yet, and the games that give no section, keep the map's own name.
+     */
+    private fun giftArea(s: Snapshot): AreaKey {
+        val a = s.area
+        val outdoors = if (a.indoor) a.section?.let { meta.sections[it] } else null
+        return NuzlockeAreas.of(if (outdoors != null) NzArea(outdoors, null) else a, null, rules, system)
+    }
+
+    /**
+     * Each egg in the party, with where it was first seen: an egg is not a party member the rules count until it
+     * hatches, and the Pokemon that hatches is a gift of the place the egg was received, not of the route it hatched on
+     * (rc32 audit P2 #140: Emerald's Lavaridge egg used up Route 117). An egg the ledger found in the party at its first
+     * look, or before the rules began, hatches free.
+     */
+    private fun noteEggs(s: Snapshot, at: Long, firstSight: Boolean) {
+        for (m in s.party) {
+            if (!m.isEgg || m.id == 0L || m.id in meta.eggs || ledger.roster.containsKey(m.id)) continue
+            val area = giftArea(s)
+            meta.eggs[m.id] = EggSeen(area.key, area.name, meta.started && !firstSight)
+            if (!firstSight) ledger.event(at, "egg", "An egg joined the party at ${area.name}.", areaKey = area.key)
+            ledger.touch()
+        }
+    }
+
+    /**
+     * An encounter an engine before this one left "in battle": the app closed during a wild battle and the game went on
+     * from before it, so no poll will ever see how that battle ended, and the area said "in battle" for the rest of the
+     * run (rc32 audit P3 #116). At this engine's first look out of battle with a party read, each one is settled as it
+     * stands: caught when its Pokemon is on the roster, otherwise unknown. A battle that does come back is the same
+     * Pokemon, which planFor takes up again before this runs, and it ends as any other.
+     */
+    private fun settleStale(at: Long) {
+        staleChecked = true
+        for (a in ledger.areas.values) {
+            a.encounter?.takeIf { it.outcome == Outcome.IN_PROGRESS && !it.manual }?.let { enc ->
+                val mon = ledger.roster[enc.pid]
+                enc.outcome = if (mon != null) Outcome.CAUGHT else Outcome.UNKNOWN
+                enc.monId = mon?.id
+                ledger.event(at, "outcome",
+                    if (mon != null) "${a.name}: ${enc.speciesName} Lv ${enc.level} was caught before the app closed."
+                    else "${a.name}: the app closed during the battle with ${enc.speciesName} Lv ${enc.level}, so how it ended is not known.",
+                    areaKey = a.key)
+                ledger.touch()
+            }
+            for (x in a.extras) if (x.outcome == Outcome.IN_PROGRESS) {
+                val mon = ledger.roster[x.pid]
+                x.outcome = if (mon != null) Outcome.CAUGHT else Outcome.UNKNOWN
+                x.monId = mon?.id
+                ledger.touch()
+            }
+        }
     }
 
     // ------------------------------------------------------------------ the rules begin
@@ -81,6 +158,25 @@ class NuzlockeEngine(val ledger: NuzlockeLedger) {
     }
 
     // ------------------------------------------------------------------ the party
+
+    /**
+     * Two party members never share a record. Shedinja is a copy of the Nincada that made it (pokeemerald CreateShedinja:
+     * CopyMon, then its own species, nickname and item), so it carries Ninjask's personality value, the id the Gen 3 and
+     * DS adapters give a Pokemon: one record stood for both, a death was missed, a living Ninjask was called revived, and
+     * the ledger was rewritten on every poll as the two took turns at it (rc33 audit P1 #78). The member that keeps the
+     * id is the one whose species the record holds, else the first; any other takes [twinId], the same on every poll
+     * whatever the party's order, and is adopted as a Pokemon of its own.
+     */
+    private fun distinctIds(party: List<NzMon>): List<NzMon> {
+        val byId = party.groupBy { it.id }
+        if (byId.values.all { it.size == 1 }) return party
+        return party.map { m ->
+            val same = byId.getValue(m.id)
+            if (same.size == 1) return@map m
+            val keeper = same.firstOrNull { it.species == ledger.roster[m.id]?.species } ?: same.first()
+            if (m === keeper) m else m.copy(id = twinId(m.id, m.species))
+        }
+    }
 
     private fun takeParty(real: List<NzMon>, s: Snapshot, at: Long) {
         val firstSight = !meta.partySeen
@@ -115,10 +211,19 @@ class NuzlockeEngine(val ledger: NuzlockeLedger) {
     private fun adopt(m: NzMon, s: Snapshot, at: Long, firstSight: Boolean, partySize: Int): RosterMon {
         val ctx = battle
         val inWild = ctx != null && ctx.wild && !ctx.ghost
+        // A Pokemon out of an egg is a gift of the place the egg was received (noteEggs).
+        val egg = if (firstSight || inWild) null else meta.eggs.remove(m.id)
         // A catch belongs to the area its battle was counted in, which can be the water half of a place.
-        val area = if (inWild) ctx!!.area else NuzlockeAreas.of(s.area, null, rules, system)
+        val area = when {
+            inWild -> ctx!!.area
+            egg != null -> AreaKey(egg.areaKey, egg.areaName)
+            else -> giftArea(s)
+        }
+        val twin = isTwin(m.id)
         val origin = when {
             firstSight -> if (partySize == 1) Origin.STARTER else Origin.EXISTING
+            // Shedinja is no encounter, no catch and no gift: it came out of an evolution, so it is a free extra.
+            twin -> Origin.EXTRA
             inWild -> originFor(ctx!!.plan)
             else -> Origin.GIFT
         }
@@ -130,9 +235,13 @@ class NuzlockeEngine(val ledger: NuzlockeLedger) {
         when (origin) {
             Origin.STARTER -> ledger.event(at, "starter", "Starter: $label.", areaKey = area.key)
             Origin.EXISTING -> ledger.event(at, "existing", "In the party already: $label.", areaKey = area.key)
+            Origin.EXTRA.takeIf { twin } -> ledger.event(at, "extra",
+                "$label shares its game id with another Pokemon in the party, as Shedinja does with Ninjask: kept as a Pokemon of its own, and free.",
+                areaKey = area.key)
             Origin.GIFT -> {
-                ledger.event(at, "gift", "Gift or trade: $label, at ${area.name}.", areaKey = area.key)
-                countGift(mon, area, at)
+                if (egg != null) ledger.event(at, "gift", "Hatched from the egg from ${area.name}: $label.", areaKey = area.key)
+                else ledger.event(at, "gift", "Gift or trade: $label, at ${area.name}.", areaKey = area.key)
+                if (egg == null || egg.counts) countGift(mon, area, at)
             }
             else -> {
                 ctx!!.caught = mon
@@ -143,6 +252,13 @@ class NuzlockeEngine(val ledger: NuzlockeLedger) {
         if (rules.wedlocke && origin != Origin.EXISTING) pair(mon, at)
         ledger.touch()
         return mon
+    }
+
+    internal companion object {
+        /** A party member's id when another holds its game id: that id with its species above it, past any real id's 32 bits. */
+        fun twinId(id: Long, species: Int): Long = (species.toLong() shl 32) or (id and 0xFFFFFFFFL)
+        /** Above every game's 32-bit ids; a hand-added Pokemon's are negative. */
+        fun isTwin(id: Long): Boolean = id > 0xFFFFFFFFL
     }
 
     private fun originFor(plan: Plan): Origin = when {
@@ -290,8 +406,10 @@ class NuzlockeEngine(val ledger: NuzlockeLedger) {
             }
         }
         if (s.method == Method.STATIC && !rules.staticsCount) return Plan(PlanKind.FREE, ExtraKind.STATIC)
-        if (rec?.encounter != null) return Plan(PlanKind.USED)
+        // A shiny "does not use up the area" (NuzlockeRules), so it is free in a used area too; it was checked after the
+        // used area's return and so never applied there (rc33 audit P1 #79).
         if (e.shiny && rules.shinyClause) return Plan(PlanKind.FREE, ExtraKind.SHINY)
+        if (rec?.encounter != null) return Plan(PlanKind.USED)
         val type = rules.monotypeType
         if (type != null && type !in e.types) return Plan(PlanKind.SKIP, ExtraKind.TYPE)
         // Generation 1 has no genders, so no encounter can be judged by one: Wedlocke pairs go by the order of the catches there.

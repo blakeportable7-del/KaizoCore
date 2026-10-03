@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * Proves the vendored ZX engine actually runs on the JVM we build with, using Blake's
  * real settings files rather than fixtures.
  *
- * These tests live in `test/` because `src/` is vendored source and must stay pristine.
+ * These tests live in `test/` because `src/` is vendored source, changed only where NOTICE says.
  */
 public class ZxEngineTest {
 

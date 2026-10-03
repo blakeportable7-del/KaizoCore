@@ -98,6 +98,8 @@ public class LibretroDroid {
     public static native void loadGameFromBytes(byte[] gameFileBytes);
     public static native void loadGameFromVirtualFiles(List<DetachedVirtualFile> virtualFiles);
     public static native void resume();
+    // KaizoCore (rc32 audit P2 #123): the display's refresh rate changed, or the view moved to another display.
+    public static native void setScreenRefreshRate(float refreshRate);
 
     public static native void onSurfaceCreated();
     public static native void onSurfaceChanged(int width, int height);

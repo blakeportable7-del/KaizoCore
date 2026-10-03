@@ -118,6 +118,10 @@ object CalcAtk {
         ownTypes: List<Int>, ownDef: Int, ownSpd: Int, ownWeightKg: Double?,
         enemyTypes: List<Int>, enemyLevel: Int, enemyCurHp: Int, enemyMaxHp: Int, enemyBurned: Boolean,
         enemyBaseFriendship: Int?, wild: Boolean, weatherWord: Int?,
+        /** The Nat. Dex expansion's chart (Gen3Types.effect). */
+        natDex: Boolean = false,
+        /** MaxDex 1.0, whose Freeze-Dry is super effective on Water (MoveRules.effectiveness). */
+        maxDex: Boolean = false,
     ): Fill {
         var guessed = false
         var moveType = type
@@ -161,7 +165,7 @@ object CalcAtk {
             level = enemyLevel, damage = damage,
             defense = if (physical) ownDef else ownSpd,
             power = movePower,
-            effectiveness = MoveRules.effectiveness(moveId, moveType, category, ownTypes),
+            effectiveness = MoveRules.effectiveness(moveId, moveType, category, ownTypes, power = power, natDex = natDex, maxDex = maxDex),
             // Utils.isSTAB(move, move.type, enemyTypes): the move's own type and power.
             stab = MoveRules.isStab(moveId, type, category, power, enemyTypes),
             weather = weather,

@@ -49,7 +49,8 @@ class HomeWiringTest {
     @Test
     fun `the app opens where PrepStore says, on the state AppNav makes from it`() {
         assertTrue("val start = remember { runCatching { PrepStore(appContext).startingPoint(Demo.mode) }.getOrDefault(\"HOME\") }" in main)
-        assertTrue("var nav by remember { mutableStateOf(AppNav.opening(start)) }\n    val tab = nav.tab" in main)
+        assertTrue(") { mutableStateOf(AppNav.opening(start)) }\n    val tab = nav.tab" in main)
+        assertTrue("restore = { AppNav.restore(it, start) }" in main, "a saved place comes back, and a game to reopen wins over it (rc32 audit P2 #32)")
         // No tab is set by hand any more: every move goes through AppNav.
         assertEquals(0, Regex("\\btab\\s*=\\s*Tab\\.").findAll(main).count(), "a tab assigned outside AppNav")
         assertFalse(Regex("\\b(libraryPage|morePage)\\b\\s*=").containsMatchIn(main.replace("nav.libraryPage", "").replace("nav.morePage", "")), "a page kept outside AppNav")
@@ -169,7 +170,7 @@ class HomeWiringTest {
         val block = main.substring(at, main.indexOf("Column(", at))
         assertTrue("WelcomeScreen(" in block && "return" in block, "it replaces the screen, and the rest of App() waits")
         // It is drawn after the crash dialog and the update prompt, so neither is ever hidden by it.
-        assertTrue(main.indexOf("UpdatePrompt(show = tab != Tab.PLAY && launchCrash == null)") in 1 until at)
+        assertTrue(main.indexOf("UpdatePrompt(show = tab != Tab.PLAY && crashChecked && launchCrash == null)") in 1 until at)
         assertTrue(main.indexOf("CrashReportLaunch(text") in 1 until at)
     }
 

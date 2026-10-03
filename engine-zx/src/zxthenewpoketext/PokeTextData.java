@@ -2,7 +2,7 @@ package zxthenewpoketext;
 
 /*----------------------------------------------------------------------------*/
 /*--  PokeTextData.java - decodes gen4 games text into Unicode              --*/
-/*--  Code derived from "zxthenewpoketext", copyright (C) loadingNOW          --*/
+/*--  Code derived from "thenewpoketext", copyright (C) loadingNOW            --*/
 /*--  Ported to Java and bugfixed/customized by Dabomstew                   --*/
 /*----------------------------------------------------------------------------*/
 

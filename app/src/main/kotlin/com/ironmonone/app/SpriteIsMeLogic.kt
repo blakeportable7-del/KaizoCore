@@ -12,9 +12,14 @@ import com.ironmonone.tracker.PokemonDecoder
 object SpriteIsMeLogic {
     /**
      * The lead: the first Pokemon in the party that is not an egg. [dex] is how the game numbers [species]: Gen 3's own
-     * ids in a retail game, the Nat. Dex Extension's in a Nat. Dex build (Turtwig is 412 there).
+     * ids in a retail game, the Nat. Dex Extension's in a Nat. Dex build (Turtwig is 412 there), MaxDex's own in a
+     * MaxDex build (SpriteLead.dexOf). [look] is how the game draws it past its species: shiny, Unown's letter, the
+     * game's Deoxys (PalForms).
      */
-    data class Lead(val species: Int, val hp: Int, val asleep: Boolean, val dex: WalkingPals.Dex = WalkingPals.Dex.GEN3)
+    data class Lead(
+        val species: Int, val hp: Int, val asleep: Boolean, val dex: WalkingPals.Dex = WalkingPals.Dex.GEN3,
+        val look: WalkingPals.Look = WalkingPals.Look(),
+    )
 
     enum class Source { PAL, PICTURE, SHEET, NONE }
 
@@ -34,12 +39,19 @@ object SpriteIsMeLogic {
      * your lead pokemon, so there is actually no point in choosing it from the list").
      *
      * [always] is numbered as the picker's list is, the Nat. Dex table's ids, whatever the game: Turtwig is 412 on a
-     * FireRed too, and every id up to 411 is Gen 3's own, as it always was. [palOf] is SpriteIsMeArt.pal.
+     * FireRed too, and every id up to 411 is Gen 3's own, as it always was. MaxDex included: a pick is the same Pokemon
+     * on every game, and only the lead is numbered its game's way. [palOf] is SpriteIsMeArt.pal.
+     *
+     * Blake, 2026-10-03: "If they are shiny you should be able to play as shiny". The lead is drawn as its [Lead.look]
+     * says, a picked Pokemon as its shiny when [alwaysShiny] is on; [lookOf] is SpriteIsMeArt.look, which falls back to
+     * the plain sheets where no shiny ships.
      */
     fun choose(
         who: SpriteIsMeSettings.Who, always: Int,
         own: SpriteIsMeSettings.Own, ownReady: Boolean,
         lead: Lead?, palOf: (Int, WalkingPals.Dex) -> WalkingPals.Pal?,
+        alwaysShiny: Boolean = false,
+        lookOf: (WalkingPals.Pal, WalkingPals.Look) -> WalkingPals.Pal = { pal, _ -> pal },
     ): Choice {
         if (who == SpriteIsMeSettings.Who.OWN && ownReady) {
             when (own) {
@@ -48,8 +60,8 @@ object SpriteIsMeLogic {
                 SpriteIsMeSettings.Own.NONE -> {}
             }
         }
-        if (who == SpriteIsMeSettings.Who.ALWAYS && always > 0) palOf(always, WalkingPals.Dex.NAT_DEX)?.let { return Choice(Source.PAL, it, lead) }
-        if (lead != null) palOf(lead.species, lead.dex)?.let { return Choice(Source.PAL, it, lead) }
+        if (who == SpriteIsMeSettings.Who.ALWAYS && always > 0) palOf(always, WalkingPals.Dex.NAT_DEX)?.let { return Choice(Source.PAL, lookOf(it, WalkingPals.Look(shiny = alwaysShiny)), lead) }
+        if (lead != null) palOf(lead.species, lead.dex)?.let { return Choice(Source.PAL, lookOf(it, lead.look), lead) }
         return Choice(Source.NONE)
     }
 
@@ -108,6 +120,15 @@ object SpriteIsMeLogic {
 
     /** Emulated frames one step of the bob lasts: a foot every eight, the length of half a tile at walking pace. */
     const val BOB_FRAMES = 8
+
+    /**
+     * A walk frame shown longer than this (two tiles at walking pace) bobs while it shows, so the walk still shows steps.
+     * Every shipped walk frame is 20 game frames or less but Silcoon's and Cascoon's, which twitch and then hold one for 120.
+     */
+    const val HELD_FRAMES = 4 * BOB_FRAMES
+
+    /** How long the sprite waits, with no key and no step or turn in the game, before it falls asleep (SpriteData's 55 seconds). */
+    const val IDLE_NANOS = WalkingPals.IDLE_SECONDS_UNTIL_SLEEP * 1_000_000_000L
 }
 
 /**
@@ -141,9 +162,27 @@ object SpriteLead {
             val mon = runCatching { PokemonDecoder.decode(slot, map.monLayout) }.getOrNull() ?: continue
             if (mon.isEgg) continue
             if (mon.species <= 0) continue
-            val dex = if (map.expandedSpeciesIds) WalkingPals.Dex.NAT_DEX else WalkingPals.Dex.GEN3
-            return Reading.Found(SpriteIsMeLogic.Lead(mon.species, mon.curHp, (mon.status and SLEEP_MASK) != 0L, dex))
+            return Reading.Found(lead(mon, dexOf(map), map))
         }
         return Reading.None
+    }
+
+    /**
+     * How [map]'s game numbers its party: MaxDex 1.0 its own way (its Legends Z-A Megas, 1236 on, are not Nat. Dex's
+     * Pokemon at those ids), a Nat. Dex build the Nat. Dex Extension's way, any other Gen 3 game Gen 3's.
+     */
+    fun dexOf(map: GameMap): WalkingPals.Dex = when {
+        map.nameSet == "maxdex" -> WalkingPals.Dex.MAX_DEX
+        map.expandedSpeciesIds -> WalkingPals.Dex.NAT_DEX
+        else -> WalkingPals.Dex.GEN3
+    }
+
+    /**
+     * [mon] as the lead to walk as: its species (Castform out of battle in its Normal form), its HP and sleep, and how the
+     * game draws it, shiny and in its form (PalForms: Unown's letter from its personality, the game's Deoxys).
+     */
+    fun lead(mon: PokemonDecoder.Mon, dex: WalkingPals.Dex, map: GameMap): SpriteIsMeLogic.Lead {
+        val species = PalForms.overworld(mon.species, dex)
+        return SpriteIsMeLogic.Lead(species, mon.curHp, (mon.status and SLEEP_MASK) != 0L, dex, PalForms.gen3(species, dex, mon.pid, mon.shiny, map.routeVersion))
     }
 }

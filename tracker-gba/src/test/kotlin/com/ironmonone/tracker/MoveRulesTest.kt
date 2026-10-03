@@ -39,6 +39,20 @@ class MoveRulesTest {
     }
 
     @Test
+    fun `a fixed-damage move checks immunities and nothing else`() {
+        // rc33 audit P1 #77, Utils.lua:715-721: the ROM's power 1 made Seismic Toss and the rest read as ordinary attacks.
+        val PSYCHIC = 14; val DRAGON = 16
+        assertEquals(1.0, MoveRules.effectiveness(69, FIGHTING, "PHY", listOf(ROCK), power = "0"), "Seismic Toss on Rock")
+        assertEquals(0.0, MoveRules.effectiveness(69, FIGHTING, "PHY", listOf(GHOST), power = "0"), "but not on a Ghost")
+        assertEquals(0.0, MoveRules.effectiveness(101, GHOST, "SPE", listOf(NORMAL), power = "0"), "Night Shade on Normal")
+        assertEquals(1.0, MoveRules.effectiveness(82, DRAGON, "SPE", listOf(DRAGON), power = "0"), "Dragon Rage on Dragon")
+        assertEquals(0.0, MoveRules.effectiveness(90, GROUND, "PHY", listOf(FLYING), power = "0"), "Fissure on Flying")
+        assertEquals(1.0, MoveRules.effectiveness(149, PSYCHIC, "SPE", listOf(STEEL), power = "0"), "Psywave on Steel")
+        assertEquals(0.5, MoveRules.effectiveness(33, NORMAL, "PHY", listOf(ROCK), power = "35"), "Tackle on Rock is unchanged")
+        assertEquals(0.5, MoveRules.effectiveness(33, NORMAL, "PHY", listOf(ROCK)), "and so is a caller that gives no power")
+    }
+
+    @Test
     fun `effectiveness multiplies both types once each`() {
         assertEquals(4.0, MoveRules.effectiveness(58, ICE, "SPE", listOf(GRASS, FLYING)))   // Ice Beam on Grass/Flying
         assertEquals(0.25, MoveRules.effectiveness(52, FIRE, "SPE", listOf(WATER, ROCK)))   // Ember on Water/Rock
@@ -138,5 +152,20 @@ class MoveRulesTest {
         assertEquals(2.0, MoveRules.effectiveness(122, GHOST, "PHY", listOf(PSYCHIC)))
         assertEquals(4.0, MoveRules.effectiveness(41, BUG, "PHY", listOf(POISON, GRASS), gen1 = true))  // Twineedle on Oddish
         assertEquals(1.0, MoveRules.effectiveness(41, BUG, "PHY", listOf(POISON, GRASS)))
+    }
+
+    @Test
+    fun `move rows and Calc Atk follow the Nat Dex chart`() {
+        // rc33 audit P1 #70: Shadow Ball on a Steel/Flying, and a Fairy move on a Dragon.
+        assertEquals(0.5, MoveRules.effectiveness(247, 7, "PHY", listOf(8, 2), power = "80"))
+        assertEquals(1.0, MoveRules.effectiveness(247, 7, "PHY", listOf(8, 2), power = "80", natDex = true))
+        assertEquals(2.0, MoveRules.effectiveness(585, 18, "SPE", listOf(16, 16), power = "95", natDex = true))
+        val fill = CalcAtk.autoFill(
+            moveId = 247, power = "80", type = 7, category = "PHY", damage = 30,
+            ownTypes = listOf(8, 2), ownDef = 100, ownSpd = 60, ownWeightKg = null,
+            enemyTypes = listOf(7, 7), enemyLevel = 30, enemyCurHp = 50, enemyMaxHp = 90, enemyBurned = false,
+            enemyBaseFriendship = null, wild = true, weatherWord = null, natDex = true,
+        )
+        assertEquals(1.0, fill.inputs.effectiveness)
     }
 }

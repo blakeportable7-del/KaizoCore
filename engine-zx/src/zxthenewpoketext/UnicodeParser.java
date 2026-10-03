@@ -2,7 +2,7 @@ package zxthenewpoketext;
 
 /*----------------------------------------------------------------------------*/
 /*--  UnicodeParser.java - maintains the poke<->unicode text table          --*/
-/*--  Code loosely derived from "zxthenewpoketext", copyright (C) loadingNOW  --*/
+/*--  Code loosely derived from "thenewpoketext", copyright (C) loadingNOW    --*/
 /*--  Ported to Java and customized by Dabomstew                            --*/
 /*----------------------------------------------------------------------------*/
 

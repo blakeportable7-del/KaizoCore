@@ -49,7 +49,11 @@ td.n,th.n{text-align:right}
 const q=new URLSearchParams(location.search);
 if(q.get('w'))document.documentElement.style.setProperty('--w',q.get('w')+'px');
 const k=q.get('k')||'';
-let S=null, DEX=null, overTab='party', dexSel=null, dexQuery='';
+let S=null, DEX=null, overTab='party', dexSel=null, dexQuery='', dexFailed=false, runKey=null;
+// OBS keeps this page open across runs: the randomizer data and its tab belong to one run, named by its game, seed and
+// attempt, and start over when that changes (rc33 audit P1 #5: run N+1 opened on run N's data).
+const keyOf=r=>[r.title,r.seed,r.attempt].join('|');
+function sameRun(){const key=keyOf(S);if(key!==runKey){runKey=key;DEX=null;dexSel=null;dexQuery='';dexFailed=false;overTab='party'}}
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const types=t=>`<span class="types">${(t||[]).map(x=>`<span>${esc(x)}</span>`).join('')}</span>`;
 const hpbar=(hp,max)=>{const p=max>0?Math.max(0,Math.min(100,hp*100/max)):0;
@@ -69,27 +73,34 @@ function foot(s){const r=s.route;const b=[];
   if(s.run===true)b.push(`<span>Attempt <b>${s.attempt}</b></span>`);
   return `<div class="foot">${b.join('')}</div>`}
 const countBits=n=>{let c=0;n=n|0;while(n){c+=n&1;n>>=1}return c};
-function ownCard(s){const p=(s.party||[])[0];if(!p)return `<div class="wait">${s.tracked?'No Pokémon yet.':(s.title?esc(s.title)+': no tracker for this game.':'No tracker for this game.')}</div>`;
-  return `<h1><span>${esc(p.name)} <small>Lv ${p.level}</small></span>${types(p.types)}</h1>
+// Your card: in a double or triple battle the Pokemon the phone shows (s.own), else the party's first, as always.
+const mine=s=>s.own||(s.party||[])[0];
+// Where a card's Pokemon stands on the game's screen, in a double or triple battle only.
+const side=w=>w?`<div class="mini">${esc(w)}</div>`:'';
+function ownCard(s){const p=mine(s);if(!p)return `<div class="wait">${s.tracked?'No Pokémon yet.':(s.title?esc(s.title)+': no tracker for this game.':'No tracker for this game.')}</div>`;
+  return `${side((s.sides||{}).own)}<h1><span>${esc(p.name)} <small>Lv ${p.level}</small></span>${types(p.types)}</h1>
   ${p.maxHp!=null?hpbar(p.hp,p.maxHp):''}<div class="row"><span>HP <b>${p.maxHp!=null?p.hp+'/'+p.maxHp:'---'}</b>${p.status?` <b style="color:var(--gold)">${esc(p.status)}</b>`:''}</span><span>BST <b>${p.bst??'-'}</b></span></div>
   <div class="row"><span>${esc(p.ability)}</span><span>${esc(p.item)}</span></div>
   ${statsOwn(p.stats)}${moves(p.moves,true)}
   <div class="row"><span>Moves ${p.movesLearned}/${p.movesTotal}${p.nextMoveLevel?` · next Lv ${p.nextMoveLevel}`:''}</span><span>${esc(p.evolution||'')}</span></div>
   ${p.note?`<div class="note">${esc(p.note)}</div>`:''}${foot(s)}`}
 function enemyCard(s){const e=s.enemy;if(!e)return '';const team=(s.enemyTeam||[]);
-  return `<div class="tag">${s.wild?'WILD':'TRAINER'}</div><h1><span>${esc(e.name)} <small>Lv ${e.level}</small></span>${types(e.types)}</h1>
+  return `<div class="tag">${s.wild?'WILD':'TRAINER'}</div>${side((s.sides||{}).foe)}<h1><span>${esc(e.name)} <small>Lv ${e.level}</small></span>${types(e.types)}</h1>
   ${hpbar(e.hpPercent,100)}<div class="row"><span>HP <b>${e.hpPercent}%</b></span><span>BST <b>${e.bst??'?'}</b></span><span>${e.encounters?`Seen ${e.encounters}×${e.lastSeenLevel?` (last Lv ${e.lastSeenLevel})`:''}`:'New'}</span></div>
   <div class="row"><span>${e.ability?esc(e.ability):'<i>'+esc(e.abilityGuess||'?')+'</i>'}</span>${team.length?`<span class="balls">${team.map(a=>`<span class="${a?'':'out'}"></span>`).join('')}</span>`:''}</div>
   ${statsMarks(e.marks)}${moves(e.moves.length?e.moves:(e.movesSeen||[]).map(n=>({name:n})),false)}
   ${e.note?`<div class="note">${esc(e.note)}</div>`:''}
-  <div class="row" style="margin-top:6px"><span>vs ${esc(((s.party||[])[0]||{}).name||'')} Lv ${((s.party||[])[0]||{}).level||''}</span></div>`}
+  <div class="row" style="margin-top:6px"><span>vs ${esc((mine(s)||{}).name||'')} Lv ${(mine(s)||{}).level||''}</span></div>`}
 function overView(s){const won=s.outcome==='WON';
   let h=`<div class="ban ${won?'won':''}">${won?'RUN WON':'RUN OVER'}${s.run===true?` · attempt ${s.attempt}`:''}</div>
   <div class="tabs"><button class="${overTab==='party'?'on':''}" onclick="overTab='party';draw()">Final party</button><button class="${overTab==='dex'?'on':''}" onclick="overTab='dex';loadDex()">Randomizer data</button></div>`;
   if(overTab==='party'){h+=(s.party||[]).map(p=>`<div style="margin-top:8px;border-top:1px solid var(--line);padding-top:6px"><b>${esc(p.name)}</b> Lv ${p.level} ${types(p.types)} BST ${p.bst??'-'}<div class="mini">${esc(p.ability)} · ${esc(p.item)}</div>${statsOwn(p.stats)}${moves(p.moves,true)}</div>`).join('')||'<div class="wait">No party recorded.</div>'}
   else{h+=`<input id="dexq" placeholder="Search a Pokémon…" value="${esc(dexQuery)}" oninput="dexQuery=this.value;draw();document.getElementById('dexq').focus()">`;
-    if(!DEX)h+='<div class="wait">Loading…</div>';
-    else if(dexSel!=null){const d=DEX.find(x=>x.species===dexSel);h+=`<div><a href="#" onclick="dexSel=null;draw();return false" style="color:var(--blue)">← back</a></div><h1><span>${esc(d.name)}</span>${types(d.types)}</h1><div class="row"><span>${(d.abilities||[]).map(esc).join(' / ')}</span><span>BST <b>${d.bst}</b></span></div>${statsOwn(d.stats)}<div class="row"><span>${esc(d.evolution||'')}</span><span>${esc(d.weight?d.weight+' kg':'')}</span></div>`+
+    const d=dexSel!=null&&DEX?DEX.find(x=>x.species===dexSel):null;if(dexSel!=null&&!d)dexSel=null;
+    if(dexFailed)h+='<div class="wait">Could not load the randomizer data. Tap Randomizer data to try again.</div>';
+    else if(!DEX)h+='<div class="wait">Loading…</div>';
+    else if(!DEX.length)h+='<div class="wait">No randomizer data for this game.</div>';
+    else if(d){h+=`<div><a href="#" onclick="dexSel=null;draw();return false" style="color:var(--blue)">← back</a></div><h1><span>${esc(d.name)}</span>${types(d.types)}</h1><div class="row"><span>${(d.abilities||[]).map(esc).join(' / ')}</span><span>BST <b>${d.bst}</b></span></div>${statsOwn(d.stats)}<div class="row"><span>${esc(d.evolution||'')}</span><span>${esc(d.weight?d.weight+' kg':'')}</span></div>`+
       (d.learnset?`<table><tr><th class="n">Lv</th><th>Move</th></tr>${d.learnset.map(l=>`<tr><td class="n">${l.level}</td><td>${esc(l.move)}</td></tr>`).join('')}</table>`:(d.moveLevels?`<div class="mini">Move levels: ${d.moveLevels.join(', ')}</div>`:''))}
     else{const ql=dexQuery.toLowerCase();h+=`<div id="dexlist">${DEX.filter(d=>!ql||d.name.toLowerCase().includes(ql)).slice(0,300).map(d=>`<div onclick="dexSel=${d.species};draw()">${esc(d.name)} <span class="mini">${(d.types||[]).join('/')}${d.bst?' · '+d.bst:''}</span></div>`).join('')}</div>`}}
   return h}
@@ -97,8 +108,15 @@ function draw(){if(!S)return;const over=document.getElementById('over'),en=docum
   if(S.outcome){over.className='on';own.style.display='none';en.className='';over.innerHTML=overView(S);return}
   over.className='';own.style.display='';own.innerHTML=ownCard(S);
   if(S.enemy&&S.inBattle){en.className='on';en.innerHTML=enemyCard(S)}else{en.className=''}}
-function loadDex(){overTab='dex';draw();if(DEX)return;fetch('/dex.json?k='+k).then(r=>r.json()).then(d=>{DEX=d;draw()}).catch(()=>{DEX=[];draw()})}
-function connect(){const es=new EventSource('/events?k='+k);es.addEventListener('state',e=>{try{S=JSON.parse(e.data);draw()}catch(x){}});
+// A refused or failed answer is not "no data": nothing is kept, so the next tap asks again. A 503 is the phone still
+// putting the data together after the run ended: the page waits and asks again by itself (RC35-NOTICED N #7).
+function loadDex(){overTab='dex';dexFailed=false;draw();if(DEX)return;const key=runKey;
+  fetch('/dex.json?k='+k).then(r=>r.ok?r.json():Promise.reject(r.status))
+    .then(d=>{if(key!==runKey)return;DEX=Array.isArray(d)?d:[];draw()})
+    .catch(s=>{if(key!==runKey)return;DEX=null;
+      if(s===503){setTimeout(()=>{if(key===runKey&&overTab==='dex'&&!DEX)loadDex()},1500);return}
+      dexFailed=true;draw()})}
+function connect(){const es=new EventSource('/events?k='+k);es.addEventListener('state',e=>{try{S=JSON.parse(e.data);sameRun();draw()}catch(x){}});
   es.onerror=()=>{es.close();setTimeout(connect,2000)}}
 if(q.get('demo')){S={tracked:true,run:true,attempt:812,inBattle:q.get('demo')==='battle',wild:true,outcome:q.get('demo')==='over'?'LOST':null,badges:3,heals:{percent:44,count:7},route:{name:'Route 3',seen:2,total:6,trainers:5},steps:1204,
   party:[{name:'Mothim',level:23,hp:61,maxHp:74,types:['Bug','Flying'],ability:'Swarm',item:'Oran Berry',bst:424,stats:{hp:74,atk:55,def:40,spa:61,spd:38,spe:52},moves:[{name:'Gust',pp:31,ppMax:35,power:40,acc:100,type:'Flying'},{name:'Confusion',pp:25,ppMax:25,power:50,acc:100,type:'Psychic'},{name:'Poison Powder',pp:35,ppMax:35,power:0,acc:75,type:'Poison'},{name:'Psybeam',pp:20,ppMax:20,power:65,acc:100,type:'Psychic'}],movesLearned:6,movesTotal:11,nextMoveLevel:26,evolution:'',note:'Speed ties Geodude'}],

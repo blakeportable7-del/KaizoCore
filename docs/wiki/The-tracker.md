@@ -1,7 +1,9 @@
 # The tracker
 
 KaizoCore's tracker is its own copy of the IronMON trackers: [Ironmon-Tracker](https://github.com/besteon/Ironmon-Tracker)
-by Besteon for Gen 1 to 3, and the [NDS-Ironmon-Tracker](https://github.com/Brian0255/NDS-Ironmon-Tracker) for Gen 4
+by Besteon for Gen 3, its Gen 1 and Gen 2 forks by Sannji
+([Ironmon-gen-tracker](https://github.com/mollo010/Ironmon-gen-tracker)) and seadogstingray
+([Ironmon-gen-2-tracker](https://github.com/seadogstingray/Ironmon-gen-2-tracker)), and the [NDS-Ironmon-Tracker](https://github.com/Brian0255/NDS-Ironmon-Tracker) for Gen 4
 and 5. It reads the game's memory while you play, and it keeps their options, their names and their defaults. Since
 rc33 it has a look of its own: rounded cards, type and status pills, and move names in their type's color with the DS
 tracker's type symbols. Your color theme sets every color.
@@ -14,7 +16,7 @@ works in every mode: a Kaizo IronMON run, a Nuzlocke, a ROM hack or a game from 
 
 - **Portrait**: under the game, with the moves beside the stats so the whole card fits on the screen.
 - **Landscape**: pick under Landscape tracker in Tracker Setup.
-  - **Docked beside the game**: drag its edge to make it wider.
+  - **Docked beside the game**, with no bar between them: drag the tracker's left edge to make it wider or narrower.
   - **Floating window over the game**: drag and resize it; **DOCK** puts it back.
   - **Hidden, game full screen**.
 
@@ -50,7 +52,7 @@ works in every mode: a Kaizo IronMON run, a Nuzlocke, a ROM hack or a game from 
 
 ## Make it yours
 
-- **Colors**: **EDIT COLOR THEME** has the PC tracker's 15 presets on Gen 1 to 3 and the DS tracker's 16 on DS games.
+- **Colors**: **EDIT COLOR THEME** has the PC tracker's 15 presets on Gen 1 to 3 and the DS tracker's 15 and a Default on DS games.
   Save your own, edit any color by its code, and export or import a theme.
 - **Image behind the tracker**: your own picture, with Dim, See-through boxes, and Fill or Fit.
 - **GAME OVER LINES**: up to 100 lines of your own, 120 characters each, for the game-over screen to throw at you,

@@ -41,6 +41,11 @@ import java.net.URLEncoder
  * never retried; with the box ticked, switching to another scene and back loads the page again. "shutdown"
  * (the checkbox "Shutdown source when not visible") stays false. The game's address also ends in int=1, so
  * the picture is scaled by whole numbers and every pixel is the same size.
+ *
+ * 2026-10-03 (Favorites As Sources, StreamFavorites): the scene also has a browser source for each favorite,
+ * "KaizoCore favorite 1" to "9", 128 x 128, in a row along the top. They are hidden ("visible" false on the
+ * item), because no place on the canvas is free for them in every game, and "shutdown" is true on them alone,
+ * so a hidden one costs OBS nothing until the streamer clicks its eye.
  */
 object ObsScene {
     const val COLLECTION = "KaizoCore stream"
@@ -48,6 +53,13 @@ object ObsScene {
     const val GAME = "KaizoCore game"
     const val TRACKER = "KaizoCore tracker"
     const val ATTEMPTS = "KaizoCore attempts"
+    const val FAVORITE = "KaizoCore favorite"
+
+    /** A favorite's source: 4 times a 32-pixel icon and 2 times a 64-pixel front picture, so either fills it in whole pixels. */
+    const val FAVORITE_SIZE = 128
+
+    /** Favorite [n]'s source name. */
+    fun favoriteName(n: Int): String = "$FAVORITE $n"
 
     const val CANVAS_W = 1920
     const val CANVAS_H = 1080
@@ -91,11 +103,17 @@ object ObsScene {
         val tracker = browser(TRACKER, url.getValue(TRACKER), TRACKER_W, TRACKER_H)
         val attempts = browser(ATTEMPTS, url.getValue(ATTEMPTS), TRACKER_W, ATTEMPTS_H)
 
+        val favorites = (1..StreamFavorites.SLOTS).map { n ->
+            browser(favoriteName(n), StreamFavorites.pageUrl(base, token, n), FAVORITE_SIZE, FAVORITE_SIZE, shutdown = true)
+        }
+
         val items = listOf(
             item(1, GAME, 0.0, 0.0),
             item(2, TRACKER, GAME_W.toDouble(), 0.0),
             item(3, ATTEMPTS, GAME_W.toDouble(), (CANVAS_H - ATTEMPTS_H).toDouble()),
-        )
+        ) + (1..StreamFavorites.SLOTS).map { n ->
+            item(3 + n, favoriteName(n), ((n - 1) * FAVORITE_SIZE).toDouble(), 0.0, visible = false)
+        }
         val scene = source(
             id = "scene", name = SCENE, mixers = 0,
             settings = linkedMapOf("id_counter" to items.size, "custom_size" to false, "items" to items),
@@ -106,7 +124,7 @@ object ObsScene {
             "current_scene" to SCENE,
             "current_program_scene" to SCENE,
             "scene_order" to listOf(mapOf("name" to SCENE)),
-            "sources" to listOf(scene, game, tracker, attempts),
+            "sources" to listOf(scene, game, tracker, attempts) + favorites,
             "groups" to emptyList<Any?>(),
             "current_transition" to "Fade",
             "transition_duration" to 300,
@@ -122,7 +140,7 @@ object ObsScene {
         )
     }
 
-    private fun browser(name: String, url: String, width: Int, height: Int, audio: Boolean = false, fps: Int? = null): Map<String, Any?> {
+    private fun browser(name: String, url: String, width: Int, height: Int, audio: Boolean = false, fps: Int? = null, shutdown: Boolean = false): Map<String, Any?> {
         val settings = linkedMapOf<String, Any?>(
             "url" to url,
             "width" to width,
@@ -130,7 +148,8 @@ object ObsScene {
             "css" to BROWSER_CSS,
             "reroute_audio" to audio,
             "is_local_file" to false,
-            "shutdown" to false,
+            // "Shutdown source when not visible": only the favorites, which the scene keeps hidden.
+            "shutdown" to shutdown,
             // Reload the page whenever its scene comes up: the cure for an error box left by OBS opening first.
             "restart_when_active" to true,
         )
@@ -166,10 +185,10 @@ object ObsScene {
         "private_settings" to emptyMap<String, Any?>(),
     )
 
-    /** One scene item: the source's name, and where it sits in pixels. `align` 5 is top-left. */
-    private fun item(id: Int, name: String, x: Double, y: Double): Map<String, Any?> = linkedMapOf(
+    /** One scene item: the source's name, and where it sits in pixels. `align` 5 is top-left. Hidden when not [visible]. */
+    private fun item(id: Int, name: String, x: Double, y: Double, visible: Boolean = true): Map<String, Any?> = linkedMapOf(
         "name" to name,
-        "visible" to true,
+        "visible" to visible,
         "locked" to false,
         "rot" to 0.0,
         "align" to 5,

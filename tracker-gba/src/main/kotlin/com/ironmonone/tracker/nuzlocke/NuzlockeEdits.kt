@@ -13,14 +13,39 @@ class NuzlockeEdits(private val ledger: NuzlockeLedger) {
     /**
      * The encounter of [area] as the player says it was. A "caught" one that has no Pokemon behind it gets a
      * roster entry, out of the party, so the team list, the dupes clause and the graveyard can see it.
+     *
+     * That entry goes again when the area is set to anything but caught: it was there only because the area was said
+     * to be caught. It stayed alive in a box for the rest of the run, a dupe of its line, and kept "No living Pokemon
+     * left" from ever ending the run (rc32 audit P2 #139). A Pokemon the tracker saw, or one added by hand, stays.
      */
     fun setEncounter(area: AreaKey, species: Int, speciesName: String, level: Int, outcome: Outcome, at: Long) {
         val name = Names.pretty(speciesName).ifBlank { "Unknown" }
         val rec = ledger.area(area.key, area.name)
         val old = rec.encounter
         var monId: Long? = old?.monId?.takeIf { ledger.roster.containsKey(it) }
+        val made = monId?.let { ledger.roster[it] }?.takeIf { it.madeFor == area.key && it.id < 0 && !it.inParty && it.death == null }
+        if (outcome != Outcome.CAUGHT && made != null) {
+            drop(made)
+            monId = null
+            say(at, "${area.name}: ${made.shownName} is off the roster, as it was not caught.", area.key)
+        }
+        // A caught encounter said to be another Pokemon kept the old one's link, so the roster went on with the old
+        // species, and the dupes clause with its line (RC35-NOTICED N #37). The Pokemon made for the area stands for the
+        // catch and becomes the new one; one the tracker saw, or one added by hand, is only let go when the new species is
+        // of another line, as an evolution or a level put right is still that Pokemon.
+        val linked = monId?.let { ledger.roster[it] }
+        if (outcome == Outcome.CAUGHT && linked != null && species > 0 && linked.species != species) {
+            if (linked === made) {
+                linked.species = species; linked.speciesName = name; linked.level = level; linked.highestLevel = level
+                linked.types = emptyList()
+            } else if (NuzlockeFamilies.lineOf(linked.species, ledger.meta.system) != NuzlockeFamilies.lineOf(species, ledger.meta.system)) {
+                monId = null
+                say(at, "${area.name}: ${linked.shownName} is no longer this area's encounter.", area.key)
+            }
+        }
         if (outcome == Outcome.CAUGHT && monId == null) {
             val mon = RosterMon(nextManualId(), species, name, "", level, null, Origin.CAUGHT, area.key, area.name, at)
+            mon.madeFor = area.key
             ledger.roster[mon.id] = mon
             monId = mon.id
         }
@@ -59,11 +84,19 @@ class NuzlockeEdits(private val ledger: NuzlockeLedger) {
         return true
     }
 
-    fun markDead(monId: Long, cause: String, at: Long): Boolean {
+    /** A death marked with no game running: the catch area and no badges stand in for where and when. */
+    fun markDead(monId: Long, cause: String, at: Long): Boolean = markDead(monId, cause, at, null, null)
+
+    /**
+     * A death the tracker missed. [areaName] and [badges] are where the player is now and the badges held, as the
+     * tracker records them for a death it sees; the catch area and no badges were recorded whatever the player had
+     * (rc32 audit P3 #115). Null for either is the catch area or no badges.
+     */
+    fun markDead(monId: Long, cause: String, at: Long, areaName: String?, badges: Int?): Boolean {
         val mon = ledger.roster[monId] ?: return false
         if (!mon.alive) return false
         mon.alive = false
-        mon.death = Death(at, mon.level, mon.areaName, cause.ifBlank { "by hand" }, 0, manual = true)
+        mon.death = Death(at, mon.level, areaName?.takeIf { it.isNotBlank() } ?: mon.areaName, cause.ifBlank { "by hand" }, badges ?: 0, manual = true)
         say(at, "${mon.shownName} is marked dead: ${mon.death!!.cause}.")
         val partner = mon.partner?.let { ledger.roster[it] }
         if (partner != null) { partner.partner = null; mon.partner = null }
@@ -128,6 +161,31 @@ class NuzlockeEdits(private val ledger: NuzlockeLedger) {
         say(at, "$name Lv $level added to the roster by hand.", area.key)
         ledger.touch()
         return mon.id
+    }
+
+    /**
+     * A Pokemon that never was, off the roster (rc32 audit P2 #139): one added by hand, or made when an area was set to
+     * caught, that the player never had. Only one the tracker never saw can go (a negative id); a Pokemon the tracker
+     * saw is in the game. Every record that named it lets go of it. False when there is nothing to take off.
+     */
+    fun removeMon(monId: Long, at: Long): Boolean {
+        val mon = ledger.roster[monId] ?: return false
+        if (monId >= 0 || mon.inParty) return false
+        drop(mon)
+        say(at, "${mon.shownName} is taken off the roster by hand.")
+        ledger.touch()
+        return true
+    }
+
+    /** Takes [mon] off the roster, and off its partner and every encounter that named it. */
+    private fun drop(mon: RosterMon) {
+        ledger.roster.remove(mon.id)
+        mon.partner?.let { ledger.roster[it] }?.takeIf { it.partner == mon.id }?.partner = null
+        for (a in ledger.areas.values) {
+            a.encounter?.takeIf { it.monId == mon.id }?.monId = null
+            for (x in a.extras) if (x.monId == mon.id) x.monId = null
+        }
+        ledger.touch()
     }
 
     fun dismiss(warningId: String): Boolean {

@@ -92,4 +92,40 @@ class DsSurvivalTest {
         assertTrue(PcHeals.observeDsSurvival(m, 0, PcHeals.Limit.REVIVAL), "the new run arms again")
         assertEquals(5, m.dsPokecenterCount())
     }
+
+    /**
+     * rc32 audit P2 #91: Tracker Setup's CLEAR TRACKED DATA tidies the notes in the middle of a run. It wiped the DS run's
+     * counters too, and the next read armed Survival again at 10: the heals already used were back.
+     */
+    @Test fun `clearing tracked data keeps the heals used, the Hidden Power type and the progress`() {
+        val m = marks()
+        PcHeals.observeDsSurvival(m, 0, PcHeals.Limit.SURVIVAL)
+        repeat(7) { m.bumpDsPokecenter(false) }          // 3 left
+        repeat(5) { m.stepDsHiddenPower(forward = true) } // Bug, Dark, Dragon, Electric, Fighting, Fire
+        m.noteDsProgress(1)
+        m.setNote(25, "outspeeds")
+        m.clear(keepRunCounters = true)
+        assertEquals("", m.noteFor(25), "the notes go")
+        assertFalse(PcHeals.observeDsSurvival(m, 0, PcHeals.Limit.SURVIVAL), "not armed again")
+        assertEquals(3, m.dsPokecenterCount())
+        assertEquals("FIRE", m.dsHiddenPowerType())
+        assertEquals(1, m.dsProgress())
+        val read = marks()
+        assertEquals(Triple(3, "FIRE", 1), Triple(read.dsPokecenterCount(), read.dsHiddenPowerType(), read.dsProgress()), "and on disk")
+        // A new run's clear still starts them over.
+        m.clear()
+        val fresh = marks()
+        assertEquals(Triple(10, "BUG", 0), Triple(fresh.dsPokecenterCount(), fresh.dsHiddenPowerType(), fresh.dsProgress()))
+    }
+
+    private val gear get() = File("src/main/kotlin/com/ironmonone/app/TrackerGearDialog.kt").readText()
+
+    @Test fun `Tracker Setup's YES, CLEAR is the clear that keeps them`() {
+        assertTrue("marks.clear(keepRunCounters = true); clears++" in gear)
+    }
+
+    /** rc32 audit P3 #70: the same StatMarks object after the clear, so a list remembered on it alone kept every name. */
+    @Test fun `Tracker Setup's Notebook list is built again after a clear`() {
+        assertTrue("val noted = remember(marks, clears)" in gear, "the Notebook list was remembered on the marks alone")
+    }
 }

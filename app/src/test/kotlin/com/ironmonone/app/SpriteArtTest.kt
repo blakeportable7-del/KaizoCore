@@ -339,6 +339,47 @@ class SpriteArtTest {
         } finally { dir.deleteRecursively(); SpriteIsMeSettings.reset() }
     }
 
+    /**
+     * rc32 audit P2 #88, P3 #66: a sheet's PNG may say 8192 x 8192, and it was kept and then decoded whole on the main
+     * thread, 256 MB, freezing the game or getting the app closed. A frame is at most 128 pixels and eight rows are read,
+     * so a sheet past 2048 x 1024 is refused at import, and one already on disk is not read.
+     */
+    @Test
+    fun `a sheet past the bound is not kept, and one already on disk is not read`() {
+        val dir = tmp()
+        SpriteIsMeSettings.load(java.io.File(dir, "prep/sprite-is-me.txt"))
+        try {
+            assertEquals(0, SpriteIsMeStore.saveSheets(dir, mapOf(WalkingPals.Anim.IDLE to png(8192, 8192))))
+            assertEquals(SpriteIsMeSettings.Own.NONE, SpriteIsMeSettings.own, "nothing was set")
+            assertTrue(SpriteIsMeStore.tooBig(mapOf(WalkingPals.Anim.IDLE to png(8192, 8192))))
+            assertEquals(SpriteIsMeCopy.SHEET_TOO_BIG, SpriteIsMeCopy.sheetsSaved(0, tooBig = true), "and the import says why")
+            // The bound itself fits; a pixel past it either way does not.
+            val kept = SpriteIsMeStore.saveSheets(dir, mapOf(
+                WalkingPals.Anim.IDLE to png(SheetSet.MAX_SHEET_W, SheetSet.MAX_SHEET_H),
+                WalkingPals.Anim.WALK to png(64, SheetSet.MAX_SHEET_H + 1),
+                WalkingPals.Anim.SLEEP to png(SheetSet.MAX_SHEET_W + 1, 32),
+            ))
+            assertEquals(1, kept)
+            assertEquals(setOf(WalkingPals.Anim.IDLE), SpriteIsMeStore.sheetSizes(dir).keys)
+            assertEquals("Found 1 sheet. " + SpriteIsMeCopy.SHEET_TOO_BIG, SpriteIsMeCopy.sheetsSaved(1, tooBig = true))
+            assertFalse(SpriteIsMeStore.oversized(dir))
+            // A sheet on disk past the bound (imported before it, or put there by hand) is left out, and noticed.
+            SpriteIsMeStore.sheetFile(dir, WalkingPals.Anim.WALK).writeBytes(png(64, 2048))
+            assertEquals(setOf(WalkingPals.Anim.IDLE), SpriteIsMeStore.sheetSizes(dir).keys)
+            assertTrue(SpriteIsMeStore.oversized(dir))
+            assertTrue(SpriteIsMeStore.ready(dir, SpriteIsMeSettings.Own.SHEET), "the sheet that fits is still drawn")
+        } finally { dir.deleteRecursively(); SpriteIsMeSettings.reset() }
+    }
+
+    @Test
+    fun `every Walking Pals sheet of Gen 1 to 3 fits the bound, so a set made like them is never refused`() {
+        val root = java.io.File("src/main/assets/walkingpals")
+        val sizes = WalkingPals.Anim.entries.flatMap { a -> java.io.File(root, a.key).listFiles().orEmpty().filter { it.name.endsWith(".png") } }
+            .map { f -> f.name to SheetSet.pngSize(f.inputStream().use { s -> ByteArray(32).also { s.read(it) } })!! }
+        assertTrue(sizes.size > 1000, "the set is there: ${sizes.size}")
+        assertEquals(emptyList(), sizes.filterNot { SheetSet.fits(it.second) })
+    }
+
     @Test
     fun `things that are not sprites are refused and change nothing`() {
         val dir = tmp()

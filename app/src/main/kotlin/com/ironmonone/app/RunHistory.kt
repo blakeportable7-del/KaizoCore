@@ -313,6 +313,14 @@ fun fileRunEnd(history: RunHistory, attempt: Int, seed: String, reopened: Boolea
     return r to false
 }
 
+/**
+ * Whether Retry undid [filed] after it was filed, by the run's own event log. The app's memory of a retry dies with the
+ * process, so after a restart the run's real end was never filed (rc33 audit P1 #49); the RETRY line on disk outlives it.
+ * A re-filing gets a newer end, so an older RETRY no longer reopens it.
+ */
+fun retriedAfter(filed: RunRecord?, events: List<RunEvents.Entry>?): Boolean =
+    filed != null && events?.any { it.kind == RunEvents.Kind.RETRY && it.at > filed.ended } == true
+
 /** Retry undid the loss filed for [attempt]: count the retry on it. False when nothing was filed. */
 fun fileRetry(history: RunHistory, attempt: Int, seed: String): Boolean {
     val filed = history.find(attempt, seed) ?: return false
@@ -351,12 +359,13 @@ object RunHistoryHook {
             val seed = store.lastSeedText()
             val history = RunHistory(store.runHistoryFile(kind))
             val k = key(kind.id, attempt, seed)
+            // The run's own event log (RunEvents) is the count; it dies with the run's notes.
+            val events = store.runEvents(session)?.entries()
             // A win after a loss the player did not retry is still a lost run: the loss stays.
-            val (r, earlier) = fileRunEnd(history, attempt, seed, reopened = k in reopened) { restores ->
+            val (r, earlier) = fileRunEnd(history, attempt, seed,
+                reopened = k in reopened || retriedAfter(history.find(attempt, seed), events)) { restores ->
                 val trainer = gba?.opponentTrainerId?.takeIf { gba.inBattle && !gba.isWildBattle }
                     ?.let { id -> tracker?.trainer(id) }?.let { "${it.className} ${it.name}".trim() }
-                // The run's own event log (RunEvents) is the count; it dies with the run's notes.
-                val events = store.runEvents(session)?.entries()
                 runRecordAtEnd(
                     attempt = attempt, seed = seed, ruleset = store.loadLastRun()?.second.orEmpty(),
                     started = store.currentRunFor(kind).lastModified(), playSeconds = RunClock.of(RunClock.key(kind.id, attempt)),

@@ -45,6 +45,15 @@ object Gen12Nuzlocke {
     fun enemyId(g: GbNuzReads): Long =
         if (g.enemyDvs < 0) 0L else if (g.playerId < 0) (1L shl 32) or g.enemyDvs.toLong() else id(g.playerId, g.enemyDvs)
 
+    /**
+     * The id of an egg: the id the Pokemon in it will have, so the Pokemon that hatches is the egg the engine followed
+     * (rc32 audit P2 #140). HatchEggs writes the player's trainer id into the egg as it hatches (pokecrystal
+     * engine/pokemon/breeding.asm, MON_ID from wPlayerID), and Crystal's Odd Egg carries another one until then
+     * (data/events/odd_eggs.asm), so it is the player's id above the egg's DVs; the egg's own id when the player's could
+     * not be read.
+     */
+    fun eggId(g: GbNuzReads, egg: GbEgg): Long = id(if (g.playerId >= 0) g.playerId else egg.otId, egg.dvs)
+
     // ---- the games' own formulas
 
     /** Generation 2 shininess (pokecrystal CheckShininess): Defense, Speed and Special DVs of 10, and bit 1 of the Attack DV set. */
@@ -106,11 +115,23 @@ object Gen12Nuzlocke {
      *
      * Generation 1: wBattleResult is 0 for a win, 1 for a loss and 2 both when the player ran and when a ball caught the
      * Pokemon, so a catch is told by wCapturedMonSpecies having been set. A wild Pokemon that ran, or Teleport, Roar,
-     * Whirlwind and the Poke Doll, leave it at 0: the enemy's HP at its last look says whether it fainted.
+     * Whirlwind and the Poke Doll, leave it at 0: the enemy's HP at its last look says whether it fainted. The escape flag
+     * is set by the wild Pokemon's own Teleport, Roar or Whirlwind as well as by yours ([enemyLeft]): only yours is a run.
      * Generation 2: the low two bits are 0 a win, 1 a loss, 2 a draw, and a draw is how every escape ends. A catch leaves a
      * win, and wWildMon having been set (the flag [GbNuzReads.captured] latches); a tracker that missed the flag falls back
      * on the wild Pokemon having been standing at its last look.
      */
+    /** TELEPORT, ROAR and WHIRLWIND (pokered constants/move_constants.asm). */
+    private val LEAVING_MOVES = setOf(0x64, 0x2E, 0x12)
+
+    /**
+     * pokered and pokeyellow engine/battle/effects.asm, SwitchAndTeleportEffect: the enemy's successful Teleport, Roar or
+     * Whirlwind sets wEscapedFromBattle exactly as the player's does, so on its own the flag read as "you ran" and the
+     * escape clause never applied to a wild Abra that teleported (rc33 audit P1 #75). It was the wild Pokemon that left
+     * when its move ([enemyMove], wEnemyMoveNum) is one of the three and yours ([playerMove], wPlayerMoveNum) is not.
+     */
+    fun enemyLeft(enemyMove: Int, playerMove: Int): Boolean = enemyMove in LEAVING_MOVES && playerMove !in LEAVING_MOVES
+
     fun battleEnd(g: GbNuzReads): BattleEnd {
         val r = g.battleResult
         if (r < 0) return BattleEnd.UNKNOWN
@@ -120,7 +141,7 @@ object Gen12Nuzlocke {
             g.captured -> BattleEnd.CAUGHT
             r == 2 -> BattleEnd.RAN
             r != 0 -> BattleEnd.UNKNOWN
-            g.escaped -> BattleEnd.RAN
+            g.escaped -> if (g.enemyFled) BattleEnd.MON_FLED else BattleEnd.RAN
             g.enemyHpLast == 0 -> BattleEnd.WON
             g.enemyHpLast > 0 -> BattleEnd.MON_FLED
             else -> BattleEnd.UNKNOWN
@@ -141,6 +162,18 @@ object Gen12Nuzlocke {
 
     private fun types(a: Int, b: Int): List<Int> = if (a == b) listOf(a) else listOf(a, b)
 
+    /**
+     * The party's name as the ledger reads it: the game's default name is the species' own. A male Nidoran left unnamed
+     * is NIDORAN and the male sign (pokered data/pokemon/names.asm:5, pokecrystal :34), which GbText reads NIDORAN, while
+     * gen2/species.tsv calls dex 32 NIDORAN M: so the ledger called it nicknamed and never asked for a name. A name that
+     * is the species' own without its " M" or " F" is given as the species name, which counts as no nickname (rc32 audit
+     * P3 #106).
+     */
+    internal fun nickname(decoded: String, speciesName: String): String {
+        val plain = speciesName.removeSuffix(" M").removeSuffix(" F")
+        return if (plain != speciesName && decoded.equals(plain, ignoreCase = true)) speciesName else decoded
+    }
+
     /** The engine's view of this state, or null when it has none to give: no Game Boy reads, or a failed read. */
     fun snapshot(s: TrackerState): Snapshot? {
         val g = s.nuz?.gb ?: return null
@@ -150,11 +183,18 @@ object Gen12Nuzlocke {
             val dvs = dvsOf(p.mon)
             NzMon(
                 id = partyId(p.mon), species = p.mon.species, speciesName = p.speciesName,
-                nickname = g.nicknames.getOrNull(i) ?: "",
+                nickname = nickname(g.nicknames.getOrNull(i) ?: "", p.speciesName),
                 level = p.mon.level, hp = p.mon.curHp, maxHp = p.mon.maxHp, isEgg = false,
                 gender = gender(gen, p.base?.genderRatio, dvs),
                 types = p.base?.let { types(it.type1, it.type2) } ?: emptyList(),
                 shiny = shiny(gen, dvs),
+            )
+        } + g.eggs.map { e ->
+            // The party's eggs, which the tracker's party leaves out: the engine notes where each joined, and gives the
+            // Pokemon that hatches to that place (rc32 audit P2 #140).
+            NzMon(
+                id = eggId(g, e), species = e.species, speciesName = "EGG", nickname = "", level = e.level,
+                hp = 0, maxHp = 0, isEgg = true, gender = null, types = emptyList(), shiny = false,
             )
         }
         val wild = s.isWildBattle
@@ -179,7 +219,11 @@ object Gen12Nuzlocke {
             end = if (s.inBattle) BattleEnd.UNKNOWN else battleEnd(g),
             turn = g.turn.takeIf { it >= 0 },
             party = party,
-            partyCount = s.partyCount,
+            // The game's count when it says more: a slot that failed to decode for one read ends the party list, and the
+            // engine would take the short list as whole, box the rest and, with the lead fainted, log a whiteout (rc32
+            // audit P3 #111). TrackerState.partyCount stays the list's size, which the panel's no-party card reads. The
+            // eggs are in [party] here, so their slots are in the count: an egg that did not read is a read that is not whole.
+            partyCount = maxOf(s.partyCount, g.partyCount) + g.eggSlots,
             badges = s.badges,
             ballCount = g.ballCount.takeIf { it >= 0 },
             bag = g.bag?.mapValues { NzItem(it.value.name, it.value.qty) },

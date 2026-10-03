@@ -10,7 +10,7 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        maven("https://jitpack.io")   // LibretroDroid, RadialGamePad
+        maven("https://jitpack.io")   // LibretroDroid
     }
 }
 
@@ -26,6 +26,7 @@ include(":app")
 include(":tracker-nds")
 include(":engine-zx")
 include(":engine-natdex")
+include(":engine-maxdex")   // MaxDex 1.0: the Nat. Dex 1.1.3 randomizer with Trip's changes
 include(":editor")
 include(":libretrodroid")   // vendored, GPL-3.0, carries the memory-read patch
 include(":tracker-gba")

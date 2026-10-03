@@ -14,8 +14,7 @@ import kotlin.test.assertNotEquals
  * seed a different one. Skipped without IRONMON_ROMS.
  */
 class SeedDeterminismTest {
-    private fun rom(name: String): File? =
-        System.getenv("IRONMON_ROMS")?.let { File(it, name) }?.takeIf { it.isFile }
+    private fun rom(name: String): File? = Dumps.rom(name)
 
     private fun crcOf(src: File, preset: String, seed: Long, gen: Generation): Long {
         val out = File.createTempFile("seed", "." + src.extension)

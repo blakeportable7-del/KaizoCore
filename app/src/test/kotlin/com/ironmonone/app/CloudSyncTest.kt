@@ -69,9 +69,42 @@ class CloudSyncTest {
         val local = sync.indexOf("tmp.outputStream().buffered(1 shl 20).use { Backup.write(context.filesDir, it) }")
         val remote = sync.indexOf("openOutputStream(uri, \"wt\")")
         kotlin.test.assertTrue(local in 0 until remote, "the zip is whole before the synced file is truncated")
-        kotlin.test.assertTrue("synchronized(writeLock) {" in sync)
+        kotlin.test.assertTrue("writeLock.withLock {" in sync)
         kotlin.test.assertTrue("} finally { tmp.delete() }" in sync)
         kotlin.test.assertTrue("if (r is Result.Failed) SaveTrouble.report(SaveTrouble.CLOUD, r.reason)" in c)
+    }
+
+    /**
+     * rc32 audit P2 #9: a restore's restart cut off a cloud sync writing the only cloud copy. A restore waits for one under
+     * way, and no background sync starts while a restore holds them off.
+     */
+    @Test
+    fun `a restore waits for a sync under way, and no background sync starts while one is held`() {
+        val released = java.util.concurrent.atomic.AtomicBoolean(false)
+        val holding = java.util.concurrent.CountDownLatch(1)
+        val writer = Thread {
+            CloudSync.writeLock.lock()
+            holding.countDown()
+            try { Thread.sleep(300) } finally { released.set(true); CloudSync.writeLock.unlock() }
+        }.apply { start() }
+        holding.await()
+        kotlin.test.assertTrue(CloudSync.awaitIdle(5_000))
+        kotlin.test.assertTrue(released.get(), "it returned only once the sync under way let go")
+        writer.join()
+        // One that does not finish in time is said: the restore then waits for the next try.
+        val stuck = java.util.concurrent.CountDownLatch(1)
+        val done = java.util.concurrent.CountDownLatch(1)
+        Thread { CloudSync.writeLock.lock(); stuck.countDown(); try { done.await() } finally { CloudSync.writeLock.unlock() } }.start()
+        stuck.await()
+        assertFalse(CloudSync.awaitIdle(100))
+        done.countDown()
+        val c = File("src/main/kotlin/com/ironmonone/app/CloudSync.kt").readText().replace("\r\n", "\n")
+        val bg = c.substringAfter("fun syncInBackground(context: Context")
+        kotlin.test.assertTrue(bg.indexOf("if (held) return") in 0 until bg.indexOf("worker.execute"), "held: no background sync is started")
+        kotlin.test.assertTrue("if (held) return@execute" in bg, "nor one asked for just before")
+        // Sync now: refused under the lock the restore waits on, so the two can never overlap.
+        val sync = c.substring(c.indexOf("fun sync(context: Context"))
+        kotlin.test.assertTrue(sync.indexOf("if (held) return Result.Failed(RESTORING)") in sync.indexOf("writeLock.withLock {") until sync.indexOf("openOutputStream(uri, \"wt\")"))
     }
 
     @Test

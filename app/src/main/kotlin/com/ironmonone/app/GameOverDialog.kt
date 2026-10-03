@@ -8,13 +8,17 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -44,7 +48,11 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 
 /** One member of the team the run ended with, whichever tracker produced it. */
-data class GameOverMon(val species: Int, val name: String, val level: Int, val fainted: Boolean, val shiny: Boolean = false)
+data class GameOverMon(
+    val species: Int, val name: String, val level: Int, val fainted: Boolean, val shiny: Boolean = false,
+    /** The GBA game's own picture where it is not the species' plain one (TrackedMon.picture). */
+    val picture: com.ironmonone.tracker.Gen3Pictures.Picture? = null,
+)
 
 /**
  * Which PC tracker's end-of-run screen this popup clones. Each was read on
@@ -69,7 +77,23 @@ data class GameOverMon(val species: Int, val name: String, val level: Int, val f
 enum class GameOverFamily { GEN12, GEN3, DS }
 
 /** What happened when the player asked to keep this attempt: the reference's clickedStatus. */
-enum class SaveAttemptStatus { NOT_CLICKED, SAVING, SUCCESS, FAILED }
+enum class SaveAttemptStatus {
+    NOT_CLICKED, SAVING, SUCCESS, FAILED,
+    /** Refused for want of space (PrepStore.attemptShortOfRoom): the tile says so (rc35 follow-up N #20). */
+    NO_ROOM;
+
+    companion object {
+        /** A finished save's tile: [saved] as PrepStore.saveAttempt answered, [noRoom] why it did not. */
+        fun of(saved: Boolean, noRoom: Boolean): SaveAttemptStatus = when {
+            saved -> SUCCESS
+            noRoom -> NO_ROOM
+            else -> FAILED
+        }
+
+        /** The tile's words for a full phone. */
+        const val NO_ROOM_LABEL = "Not enough free space"
+    }
+}
 
 /** The loss colour: the header band, the frame and the title. */
 private val LossRed = Color(0xFFE0483C)
@@ -86,6 +110,7 @@ private val LossRed = Color(0xFFE0483C)
  * What it says and does is unchanged.
  */
 @Composable
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 fun GameOverDialog(
     family: GameOverFamily,
     won: Boolean,
@@ -101,7 +126,7 @@ fun GameOverDialog(
     onContinue: () -> Unit,
     onRetry: () -> Unit,
     /** Returns whether the attempt was saved; the button reports it in place, as the reference does. */
-    onSaveAttempt: suspend () -> Boolean,
+    onSaveAttempt: suspend () -> SaveAttemptStatus,
     onNewGame: () -> Unit,
     /** GameOverScreen.NotesGrade: the Stat Marking Score Sheet. Null hides it (no marks to grade). */
     onGrade: (() -> Unit)? = null,
@@ -147,16 +172,17 @@ fun GameOverDialog(
                     SaveAttemptStatus.SAVING -> "Saving..."
                     SaveAttemptStatus.SUCCESS -> "Saved to the attempts folder"
                     SaveAttemptStatus.FAILED -> "Unable to save"
+                    SaveAttemptStatus.NO_ROOM -> SaveAttemptStatus.NO_ROOM_LABEL
                 },
                 when (saveStatus) {
                     SaveAttemptStatus.NOT_CLICKED, SaveAttemptStatus.SAVING -> Tone.PLAIN
                     SaveAttemptStatus.SUCCESS -> Tone.GOOD
-                    SaveAttemptStatus.FAILED -> Tone.DANGER
+                    SaveAttemptStatus.FAILED, SaveAttemptStatus.NO_ROOM -> Tone.DANGER
                 },
             ) {
                 if (saveStatus == SaveAttemptStatus.NOT_CLICKED) {
                     saveStatus = SaveAttemptStatus.SAVING
-                    saveScope.launch { saveStatus = if (onSaveAttempt()) SaveAttemptStatus.SUCCESS else SaveAttemptStatus.FAILED }
+                    saveScope.launch { saveStatus = onSaveAttempt() }
                 }
             },
         )
@@ -174,7 +200,7 @@ fun GameOverDialog(
         properties = androidx.compose.ui.window.PopupProperties(focusable = true, dismissOnBackPress = true, dismissOnClickOutside = false),
     ) {
         FitInside(gameFrame) {
-            Column(Modifier.fillMaxWidth().background(Pc.Page).border(2.dp, accent)) {
+            Column(Modifier.fillMaxWidth().background(Pc.Page).border(2.dp, accent).verticalScroll(rememberScrollState())) {
                 // Header: the lead, the title, the attempt and the rest of the team, the X.
                 Row(
                     Modifier.fillMaxWidth()
@@ -204,37 +230,50 @@ fun GameOverDialog(
                         )
                         Spacer(Modifier.height(7.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            PixText("ATTEMPT", 10, Pc.Dim)
+                            DialogText("ATTEMPT", 12, Pc.Dim)
                             Spacer(Modifier.width(5.dp))
-                            PixText("$attempt", 13, Pc.Text)
-                            if (team.size > 1) {
-                                Spacer(Modifier.width(12.dp))
+                            DialogText("$attempt", 16, Pc.Text)
+                        }
+                        if (team.size > 1) {
+                            // Each 24dp picture in a 48dp touch box (rc32 audit P2 #23); a team that does not fit beside
+                            // the lead flows onto a second line.
+                            FlowRow {
                                 team.forEachIndexed { i, m ->
                                     val b = spriteOf(m)
                                     Box(
-                                        Modifier.size(26.dp).clickable { pick(i) }
-                                            .then(if (i == teamIndex) Modifier.drawBehind {
+                                        Modifier.size(PcMin.DIALOG_TOUCH_DP.dp).clickable { pick(i) },
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        Box(
+                                            Modifier.size(26.dp).then(if (i == teamIndex) Modifier.drawBehind {
                                                 drawLine(accent, Offset(2f, size.height - 1f), Offset(size.width - 2f, size.height - 1f), 2.dp.toPx())
                                             } else Modifier),
-                                        contentAlignment = Alignment.Center,
-                                    ) { if (b != null) MonImage(b, m.name, m.fainted, Modifier.size(24.dp)) }
+                                            contentAlignment = Alignment.Center,
+                                        ) { if (b != null) MonImage(b, m.name, m.fainted, Modifier.size(24.dp)) }
+                                    }
                                 }
                             }
                         }
                     }
                     // Blake, 2026-09-07: an X in the top right closes the popup; the run
                     // stays as it is, the same as Continue playing.
+                    // Drawn 32dp as before, in a 48dp touch box a screen reader calls Close (rc32 audit P2 #23): it read "X".
                     Box(
-                        Modifier.size(32.dp).border(1.dp, Pc.Border).clickable { onContinue() },
+                        Modifier.size(InfoSheetClose.TOUCH_DP.dp).clickable(role = Role.Button) { onContinue() }
+                            .semantics { contentDescription = InfoSheetClose.SPOKEN },
                         contentAlignment = Alignment.Center,
-                    ) { Text("X", fontFamily = com.ironmonone.app.gen3.Gen3.PixelFont, fontSize = 12.sp, color = Pc.Text) }
+                    ) {
+                        Box(Modifier.size(32.dp).border(1.dp, Pc.Border), contentAlignment = Alignment.Center) {
+                            Text("X", fontFamily = com.ironmonone.app.gen3.Gen3.PixelFont, fontSize = 12.sp, color = Pc.Text)
+                        }
+                    }
                 }
                 // The announcer's line, or the DS tracker's run-over message.
-                PixText(
+                DialogText(
                     if (won && family != GameOverFamily.DS) "CONGRATULATIONS!!" else quote,
-                    13, if (won) Pc.Positive else Pc.Text,
+                    15, if (won) Pc.Positive else Pc.Text,
                     Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
-                    align = TextAlign.Center, wrap = true,
+                    align = TextAlign.Center,
                 )
                 if (card != null) RunLines(card, onShare)
                 Box(Modifier.fillMaxWidth().height(1.dp).background(Pc.Border.copy(alpha = 0.45f)))
@@ -265,23 +304,23 @@ private fun RunLines(card: DeathCard, onShare: (() -> Unit)?) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             card.headline()?.let { (label, text) ->
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    PixText(label, 10, Pc.Dim)
+                    DialogText(label, 12, Pc.Dim)
                     Spacer(Modifier.width(6.dp))
-                    PixText(text, 12, Pc.Text, Modifier.weight(1f), wrap = true)
+                    DialogText(text, 13, Pc.Text, Modifier.weight(1f))
                 }
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (card.newBest) {
-                    PixText("NEW BEST", 11, Pc.Gold)
+                    DialogText("NEW BEST", 13, Pc.Gold)
                     Spacer(Modifier.width(8.dp))
                 }
-                PixText(card.statsText() + (card.bestText()?.let { ". $it" } ?: ""), 11, Pc.Dim, Modifier.weight(1f), wrap = true)
+                DialogText(card.statsText() + (card.bestText()?.let { ". $it" } ?: ""), 13, Pc.Dim, Modifier.weight(1f))
             }
         }
         if (onShare != null) {
             Spacer(Modifier.width(8.dp))
             Box(
-                Modifier.size(36.dp).border(1.dp, Pc.Border)
+                Modifier.size(PcMin.DIALOG_TOUCH_DP.dp).border(1.dp, Pc.Border)
                     .clickable(onClickLabel = "Share this run", role = Role.Button) { onShare() }
                     .semantics { contentDescription = "Share this run" },
                 contentAlignment = Alignment.Center,
@@ -306,7 +345,10 @@ private enum class Tone { PRIMARY, PLAIN, GOLD, GOOD, DANGER }
 
 private class TileSpec(val glyph: Glyph, val label: String, val tone: Tone, val onClick: () -> Unit)
 
-/** One action: the reference's icon and label, as a 40dp tile. */
+/**
+ * One action: the reference's icon and label, as a tile at least 48dp tall whose label follows the phone's font size
+ * (rc32 audit P2 #23): 40dp tiles of fixed 12dp words, shrunk to about 30dp with the card on a short picture.
+ */
 @Composable
 private fun GameOverTile(a: TileSpec, modifier: Modifier) {
     val bg: Color; val fg: Color; val edge: Color
@@ -318,12 +360,13 @@ private fun GameOverTile(a: TileSpec, modifier: Modifier) {
         Tone.PLAIN -> { bg = Pc.Ground; fg = Pc.Text; edge = Pc.Border }
     }
     Row(
-        modifier.height(40.dp).background(bg).border(1.dp, edge).clickable { a.onClick() }.padding(horizontal = 10.dp),
+        modifier.heightIn(min = PcMin.DIALOG_TOUCH_DP.dp).background(bg).border(1.dp, edge).clickable(role = Role.Button) { a.onClick() }
+            .padding(horizontal = 10.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         GlyphIcon(a.glyph, fg, Modifier.size(16.dp))
         Spacer(Modifier.width(8.dp))
-        PixText(a.label, 12, fg, Modifier.weight(1f), wrap = true)
+        DialogText(a.label, 13, fg, Modifier.weight(1f))
     }
 }
 
@@ -395,31 +438,43 @@ private class OverGameFrame(private val frame: androidx.compose.ui.geometry.Rect
 
 /**
  * With a game picture: fills it with a dim layer and lays the card out at the
- * picture's width (up to 440dp) centred on it, scaled down only if it is still
- * taller than the picture. Without one: the card at 400dp, centred. Taps follow
- * the scale.
+ * picture's width (up to 440dp) centred on it, no taller than the picture
+ * ([GameOverFit]): a taller card scrolls inside it. Without one: the card at
+ * 400dp, centred. The card used to be scaled down to fit, to about three
+ * quarters on a phone in portrait, which shrank its buttons to about 30dp and
+ * its words to about 9dp (rc32 audit P2 #23).
  */
 @Composable
 private fun FitInside(frame: androidx.compose.ui.geometry.Rect?, content: @Composable () -> Unit) {
     androidx.compose.ui.layout.Layout(
         content = content,
         modifier = if (frame != null) Modifier.background(Color(0xA6000000)) else Modifier,
-    ) { measurables, _ ->
+    ) { measurables, constraints ->
         val margin = 6.dp.toPx()
         val cardW = ((frame?.width?.minus(2 * margin)) ?: 400.dp.toPx()).coerceAtMost(440.dp.toPx()).toInt().coerceAtLeast(1)
-        val p = measurables.first().measure(androidx.compose.ui.unit.Constraints(maxWidth = cardW))
-        val maxH = frame?.let { it.height - 2 * margin } ?: p.height.toFloat()
-        val s = minOf(1f, maxH / p.height).coerceAtLeast(0.4f)
-        val w = frame?.width?.toInt() ?: (p.width * s).toInt()
-        val h = frame?.height?.toInt() ?: (p.height * s).toInt()
-        layout(w, h) {
-            val x = ((w - p.width * s) / 2f).toInt()
-            val y = ((h - p.height * s) / 2f).toInt()
-            p.placeWithLayer(x, y) {
-                scaleX = s
-                scaleY = s
-                transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0f, 0f)
-            }
-        }
+        val p = measurables.first().measure(
+            androidx.compose.ui.unit.Constraints(maxWidth = cardW, maxHeight = GameOverFit.maxHeight(frame?.height, margin, constraints.maxHeight)),
+        )
+        val w = frame?.width?.toInt() ?: p.width
+        val h = frame?.height?.toInt() ?: p.height
+        layout(w, h) { p.place((w - p.width) / 2, (h - p.height) / 2) }
     }
+}
+
+/** How the game-over card fits the game picture: at full size, at most the picture's height less the margins. */
+internal object GameOverFit {
+    /**
+     * The card's greatest height in px: the picture's less a margin above and below, or without a picture what the
+     * window allows ([available]). Always a bound: a scrolling column must be given one.
+     */
+    fun maxHeight(frameHeight: Float?, margin: Float, available: Int): Int {
+        val cap = frameHeight?.let { (it - 2 * margin).toInt() } ?: available
+        return (if (cap == androidx.compose.ui.unit.Constraints.Infinity) NO_BOUND else cap).coerceAtLeast(1)
+    }
+
+    /** A screen's worth of px, for a window that gives no bound at all. */
+    const val NO_BOUND = 4096
+
+    /** Whether a card [cardHeight] tall scrolls inside a picture that gives it [maxHeight]: it is never scaled. */
+    fun scrolls(cardHeight: Int, maxHeight: Int): Boolean = cardHeight > maxHeight
 }

@@ -5,7 +5,10 @@ import android.content.Intent
 import android.net.Uri
 import java.io.File
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 
 /**
  * Cloud sync of the backup zip, through the system document picker.
@@ -21,8 +24,11 @@ import java.util.concurrent.atomic.AtomicBoolean
  * registered against this build's signing key in a Google Cloud project,
  * a Play Services dependency, and a consent screen, for one file. The
  * document provider is the same contract every cloud app already ships,
- * needs nothing registered, and keeps the ROM rule intact: only the
- * backup zip goes up, and the backup never holds a ROM.
+ * and needs nothing registered. Only the backup zip goes up (Backup): never
+ * a library game or a patch, but it does hold the randomized game of the
+ * run in play and of every saved attempt, up to 512 MB each for a DS game,
+ * and the pictures chosen for the tracker and Play as your Pokemon
+ * (rc32 audit P2 #2, #94).
  *
  * The link lives in prep/cloudsync.txt, which the backup does NOT admit:
  * a link is a fact about this phone, and a restore onto another phone
@@ -67,7 +73,9 @@ object CloudSync {
 
     fun save(filesDir: File, link: Link?) {
         val f = File(filesDir, CONFIG)
-        if (link == null) f.delete() else { f.parentFile?.mkdirs(); f.writeText(format(link)) }
+        // Whole or not at all (SafeWrite): written in place, a kill in the middle lost the link, or its restore-pending
+        // mark (rc32 audit P2 #65).
+        if (link == null) f.delete() else SafeWrite.text(f, format(link))
     }
 
     /** A human name for the provider that owns the document. */
@@ -142,7 +150,10 @@ object CloudSync {
         }
         val uri = Uri.parse(link.uri)
         val n = runCatching {
-            synchronized(writeLock) {
+            writeLock.withLock {
+                // Sync now pressed while a restore holds syncs: checked under the lock the restore waits on, so the restart
+                // never cuts a copy short (rc32 audit P2 #9).
+                if (held) return Result.Failed(RESTORING)
                 // The zip is made whole on this phone first, then copied over the synced file in one pass. Made
                 // straight into the file, a failure part way (a file changing, no space) left the only cloud copy cut
                 // short; and one sync at a time, so Sync now and a background sync never interleave (rc33 audit P1).
@@ -185,18 +196,52 @@ object CloudSync {
     // --------------------------------------------------------- background
     private val worker = Executors.newSingleThreadExecutor { r -> Thread(r, "cloud-sync").apply { isDaemon = true } }
     /** One write to the synced file at a time: a background sync and Sync now used to interleave on it. */
-    private val writeLock = Any()
+    internal val writeLock = ReentrantLock()
     private val running = AtomicBoolean(false)
     @Volatile var lastResult: Result? = null
         private set
 
+    /**
+     * A restore is under way (RestoreGate): no background sync starts, so none is cut off by the restart or rewrites the
+     * file being restored from (rc32 audit P2 #9). In memory only: a crash can never leave syncing switched off.
+     */
+    @Volatile private var held = false
+
+    fun hold() { held = true }
+    fun release() { held = false }
+
+    /** A sync is writing now, a background one or Sync now: a restore waits for it, and says so. */
+    val syncing: Boolean get() = running.get() || writeLock.isLocked
+
+    const val RESTORING = "A restore is under way. Sync again once it is done."
+
+
+    /**
+     * Waits, [timeoutMs] at most, for a sync under way, background or Sync now, to finish writing the synced file.
+     * False when one is still writing: the restore's restart would cut its copy short (rc32 audit P2 #9).
+     */
+    fun awaitIdle(timeoutMs: Long): Boolean {
+        val until = System.nanoTime() + timeoutMs * 1_000_000
+        while (running.get()) {
+            if (System.nanoTime() >= until) return false
+            Thread.sleep(25)
+        }
+        val left = (until - System.nanoTime()).coerceAtLeast(0L)
+        if (!writeLock.tryLock(left, TimeUnit.NANOSECONDS)) return false
+        writeLock.unlock()
+        return true
+    }
+
     /** Fire-and-forget from lifecycle hooks; one at a time, never on the caller's thread. */
     fun syncInBackground(context: Context, onDone: ((Result) -> Unit)? = null) {
+        if (held) return
         if (load(context.filesDir) == null) return
         if (!running.compareAndSet(false, true)) return
         val app = context.applicationContext
         worker.execute {
             try {
+                // Held after it was asked for: a restore began in between.
+                if (held) return@execute
                 val r = sync(app)
                 lastResult = r
                 // A background sync that failed was never shown anywhere (rc33 audit P1).

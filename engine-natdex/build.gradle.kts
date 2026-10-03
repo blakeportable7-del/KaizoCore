@@ -10,11 +10,11 @@ plugins {
  * Version identity: VERSION = 908, VERSION_STRING = "4.6.1-END121". 908 > mainline's
  * 322, which is why vanilla ZX rejects NatDex .rnqs files as "from a newer version".
  *
- * v0.2 ships this as the ONLY engine in the APK, so the com.dabomstew.pkrandom package
- * collision with engine-zx never arises there. engine-zx stays a JVM-side module for
- * tests and the future relocated build. NEVER add both to the app without relocation.
+ * Both engines ship in the APK: engine-zx's copy of ZX was renamed to
+ * com.dabomstew.pkrandomzx on 2026-08-30 (133f0f25), so this one keeps
+ * com.dabomstew.pkrandom and the two never collide.
  *
- * Same vendoring rules as engine-zx: `src` is pristine upstream, our tests live in
+ * Same vendoring rules as engine-zx: `src` is upstream plus the changes NOTICE lists, our tests live in
  * `test/`, nothing excluded (Swing is dexed dead weight; the only user outside the GUI
  * is the desktop launcher, which nothing calls on Android).
  */

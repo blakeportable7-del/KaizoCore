@@ -22,9 +22,10 @@ object NuzlockeNotes {
     private fun gen1() = Notes(
         automatic = listOf(
             "Each map is an area from the game's own map list. Every floor of a cave or tower is one area, and each Safari Zone section is its own area unless the switch makes the whole Zone one.",
-            "A catch is seen when a Pokemon joins the party or the game says a ball caught the wild Pokemon. A wild Pokemon that fainted, ran off or was got away from is told apart from the game's battle result and the enemy's last HP.",
+            "A catch is seen when a Pokemon joins the party or the game says a ball caught the wild Pokemon. A wild Pokemon that fainted, ran off or was got away from is told apart from the game's battle result, the enemy's last HP and whose Teleport, Roar or Whirlwind ended the battle.",
             "Faints and whiteouts are seen the moment they happen. A Pokemon that fainted stays dead after a Pokemon Center heals it.",
-            "Level caps: the gym leaders, the Elite Four and the Champion are checked when their battle starts, using the levels in your copy of the game, so a randomized game has its own caps.",
+            // What NuzlockeEngine.trainerStart checks: each leader, and the League once, at its first battle (rc32 audit P2 #142).
+            "Level caps: each gym leader is checked when their battle starts. The first Elite Four battle is checked against the strongest Pokemon in the whole Elite Four, and after that there is no cap, the Champion included. The levels are the ones in your copy of the game, so a randomized game has its own caps.",
             "Items used in battle are found by comparing the bag before and after. Poke Balls are ignored.",
             "The battle style option is read. The Old Man's lesson and the Pokemon Tower ghosts are not encounters. Snorlax, the legendary birds, Mewtwo and the Power Plant's Voltorb and Electrode are set battles, found by place and level (Red and Blue's Route 12 Snorlax and Marowak also by species, so a randomized game misses those two).",
             "Nicknames are read from the party.",
@@ -47,7 +48,7 @@ object NuzlockeNotes {
                 "A catch is seen when a Pokemon joins the party or the game's own catch flag was set. A fainted wild Pokemon is told apart from the game's battle result.",
                 "Faints and whiteouts are seen the moment they happen. A Pokemon that fainted stays dead after a Pokemon Center heals it.",
                 "Gender and shininess are worked out from the DVs the way the game does. Wedlocke pairs and the shiny clause work.",
-                "Level caps: the Johto gyms, the Elite Four and the Champion are checked when their battle starts, using the levels in your copy of the game. Kanto's gyms come in any order, and each is checked against its own leader.",
+                "Level caps: each Johto gym leader is checked when their battle starts, and the first Elite Four battle against the strongest Pokemon in the whole Elite Four. After that there is no cap, Lance included. The levels are the ones in your copy of the game. Kanto's gyms come in any order, and each is checked against its own leader.",
                 "Fishing and Headbutt trees are told apart from walking by the battle's own type. The roamers, the Bug-Catching Contest, forced shinies, the Team Rocket traps and the Rocket base's Electrode are set battles, and so are Sudowoodo, Snorlax and the rest of the static table.",
                 "Items used in battle are found by comparing the bag before and after. Poke Balls are ignored. The battle style option is read. Nicknames are read from the party.",
             ),
@@ -57,7 +58,9 @@ object NuzlockeNotes {
                 "Rock Smash counts as walking, because the game gives it no battle type of its own. Swarms and the time of day are ordinary encounters of the area.",
                 "A gift, an egg, a Game Corner prize or an in-game trade shows up as a gift and is free unless 'Gifts count' is on. The Bug-Catching Contest's catch arrives as a gift.",
                 "A catch with a full party goes to a box, which the tracker cannot see inside.",
-                if (crystal) "Crystal's Odd Egg and the Mystery Egg are gifts when they hatch." else "Gold and Silver have no Odd Egg. The Mystery Egg is a gift when it hatches.",
+                (if (crystal) "Crystal's Odd Egg and the Mystery Egg are gifts when they hatch." else "Gold and Silver have no Odd Egg. The Mystery Egg is a gift when it hatches.") +
+                    // The tracker follows an egg from the place it joined the party (rc32 audit P2 #140).
+                    " With 'Gifts count' on, a hatched egg uses up the area where you got it, not the one it hatches in.",
                 "The dupes clause uses the games' own evolution lines. A randomizer that changes evolutions changes who belongs together, so fix a wrong dupe by hand.",
             ),
         )
@@ -71,7 +74,7 @@ object NuzlockeNotes {
                 "A catch is seen when a new Pokemon joins the party during a wild battle. A wild Pokemon that fainted is seen when its HP reaches 0.",
                 "Faints and whiteouts are seen the moment they happen. A Pokemon that fainted stays dead after a Pokemon Center heals it.",
                 "Gender, shininess and (on a game that was not randomized) types come from the Pokemon's own data and the game's species table. A randomized game's own types come from its randomizer file.",
-                "Level caps: the gym leaders (Platinum's in Platinum's order), the Elite Four and the Champion are checked when their battle starts. The caps are the standard table for the game, from the game's own trainer data.",
+                "Level caps: each gym leader (Platinum's in Platinum's order) is checked when their battle starts, and the first Elite Four battle against the strongest Pokemon in the whole Elite Four. After that there is no cap, the Champion included. The caps are the standard table for the game, from the game's own trainer data.",
                 "A trainer battle is a win when its last Pokemon was down, or when it ended with one of yours standing (the Champion only by the first test). Legendaries and other set battles are a table of place and level, some by species too.",
                 "The badge count moves the level cap on. Items in battle: the healing and status items in the bag are compared before and after. Nicknames are read: letters, digits and spaces, and any other mark shows as a question mark.",
             ),
@@ -96,7 +99,7 @@ object NuzlockeNotes {
                 "A catch is seen when a new Pokemon joins the party during a wild battle. A wild Pokemon that fainted is seen when its HP reaches 0.",
                 "Faints and whiteouts are seen the moment they happen. A Pokemon that fainted stays dead after a Pokemon Center heals it.",
                 "Gender, shininess and (on a game that was not randomized) types come from the Pokemon's own data and the game's species table. A randomized game's own types come from its randomizer file.",
-                "Level caps: the eight gym leaders, the Elite Four (in any order) and the last fight are checked when their battle starts, from the standard table for the game.",
+                "Level caps: the eight gym leaders are checked when their battle starts, and whichever Elite Four member you fight first against the strongest Pokemon in the whole Elite Four. After that there is no cap, and none at the last fight. The caps are the standard table for the game.",
                 "A trainer battle is a win when its last Pokemon was down, or when it ended with one of yours standing (the last fight only by the first test). Legendaries and other set battles are a table of place and level, some by species too. Nicknames are read.",
                 "Items in battle: the healing and status items in the bag are compared before and after.",
             ),

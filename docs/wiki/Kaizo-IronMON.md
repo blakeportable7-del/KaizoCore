@@ -18,6 +18,7 @@ the full text of each.
 | Emerald | the Ruby and Sapphire modes, plus Super Kaizo |
 | FireRed, LeafGreen | all ten: Standard, Ultimate, Kaizo, Super Kaizo, Survival, Survival Revival, Kaizo Doubles, Chaos Kaizo, Evo Kaizo, IronMON Journey |
 | Emerald and FireRed, Nat. Dex builds | all ten |
+| FireRed, MaxDex build | Kaizo (Trip ships one mode, on the Nat. Dex 1.1.3 rules) |
 | Diamond, Pearl | Standard, Ultimate, Kaizo, Survival, Kaizo Doubles, IronMON Journey |
 | Platinum | the Diamond and Pearl modes, plus Super Kaizo |
 | HeartGold, SoulSilver | Standard, Ultimate, Kaizo, Super Kaizo, Survival, Kaizo Doubles, IronMON Journey |
@@ -60,6 +61,7 @@ take it:
 | Super Kaizo | under 600 BST, and no legendary |
 | Survival | under 580 BST, and no legendary |
 | Nat. Dex builds | up to 600 BST, and in Standard and Ultimate above 600 too unless it is a Strong Legendary or Mythical |
+| MaxDex | up to 600 BST, by the Nat. Dex rules for 1.1.3, the version MaxDex is built on |
 
 It never says what the other balls hold, so with no favorite there the pick stays blind. IronMON Journey has no such
 line: you may take any starter there.
@@ -74,7 +76,8 @@ line: you may take any starter there.
   in. It skips this when the phone is short on space or memory, and for a run built from a run code. The switch is
   **Get the next run ready in the background**, under New runs in Tracker Setup, and it is on by default.
 - A new run keeps your in-game save, in every game. Continue on the title screen opens it, so a save made in front
-  of the starters skips the intro on every attempt, and New Game is the clean start.
+  of the starters skips the intro on every attempt, and New Game is the clean start. A save that holds a team brings
+  it along on Continue, and the run's record says so.
 
 ## The game-over popup
 
@@ -146,6 +149,7 @@ your best run in each game and mode, and your Nuzlockes.
 ## What a run's record keeps
 
 Save states, Time Machine restores and Retry are allowed in a run, and every use goes on the run's record: state
-loads, restores, retries, coming back after a crash, File > Restart, a kept in-game save and a backup restore. The
+loads, restores, retries, coming back after a crash, File > Restart, the last run's team from a kept in-game save and
+a backup restore. The
 game-over card and the shared line say so. Rewind and cheats are off in runs. More in
 [How KaizoCore follows the IronMON rules](IronMON-rules).

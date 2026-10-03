@@ -53,6 +53,20 @@ class HackLinksTest {
         assertEquals("emerald", HackLinks.familyOf("emerald-natdex-121"))
     }
 
+    /**
+     * Each quality-of-life patch KaizoCore makes builds of is on the list under the game it patches, on its own page,
+     * saying the app already has it. IronMON HGSS joined on 2026-10-02 (Blake), under HeartGold only.
+     */
+    @Test
+    fun `every quality-of-life patch the app bundles is listed under its game`() {
+        val bundled = RomKind.allPatched.filter { it.patchTag == "faster" || it.patchTag == "ironmon" }
+        assertTrue(RomKind.HEARTGOLD_IRONMON in bundled)
+        for (k in bundled) assertNotNull(HackLinks.all.firstOrNull { k.baseId in it.ids && "KaizoCore already includes it." in it.blurb }, k.id)
+        val hgss = HackLinks.all.single { it.name == "IronMON HGSS" }
+        assertEquals("PyroMikeGit" to "https://github.com/PyroMikeGit/IronMONHGSS/releases", hgss.author to hgss.url)
+        assertEquals(setOf(RomKind.HEARTGOLD_U.id), hgss.ids)
+    }
+
     @Test
     fun `only the pages that carry game files are flagged`() {
         assertEquals(listOf("Polished Crystal"), HackLinks.all.filter { it.fullRomPage }.map { it.name })

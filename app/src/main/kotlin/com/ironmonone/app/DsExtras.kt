@@ -32,9 +32,12 @@ import java.io.File
 
 /**
  * TimerScreen.lua: a run clock in HH:MM:SS that counts while the game runs,
- * pauses on a tap (the reference's left click) and stops for good when the
- * run ends. Session only, like the reference's timer seconds in its tracked
- * data. Shown under SETUP on the DS panel when the option is on.
+ * pauses on a tap (the reference's left click) and holds while the run is
+ * over (its tracker.hasRunEnded()). It belongs to the run, as the reference's
+ * currentTimerSeconds does in the run's tracked data (rc32 audit P2 #48): it
+ * starts from the time the run has been played ([forRun]), not at 00:00 on
+ * each visit to Play, and runs again when Retry undoes the loss ([resume]).
+ * Shown under SETUP on the DS panel when the option is on.
  */
 class RunTimer(private val startedAt: Long = System.currentTimeMillis()) {
     var paused by mutableStateOf(false)
@@ -54,8 +57,17 @@ class RunTimer(private val startedAt: Long = System.currentTimeMillis()) {
 
     fun stop(now: Long = System.currentTimeMillis()) { if (!stopped) { if (!paused) pausedAt = now; stopped = true } }
 
+    /** The run is on again (Retry undid the loss): counting goes on from where it stopped. A pause stays a pause. */
+    fun resume(now: Long = System.currentTimeMillis()) { if (stopped) { if (!paused) deducted += now - pausedAt; stopped = false } }
+
     companion object {
         fun hms(seconds: Long): String = String.format("%02d:%02d:%02d", seconds / 3600, (seconds % 3600) / 60, seconds % 60)
+
+        /** The timer for the game in Play: a run's starts from the seconds it has been played (RunClock), anything else at 0. */
+        fun forRun(session: GameSession, attempt: Int, now: Long = System.currentTimeMillis()): RunTimer {
+            val played = session.kind?.takeIf { session.isRun }?.let { RunClock.of(RunClock.key(it.id, attempt)) } ?: 0
+            return RunTimer(now - played * 1000L)
+        }
     }
 }
 
@@ -215,16 +227,20 @@ class TourneyTracker(private val file: File) {
 
     private fun load() {
         scores.clear()
-        if (file.isFile) runCatching {
-            file.forEachLine { line ->
-                val p = line.split('\t'); if (p.size < 3) return@forEachLine
+        runCatching {
+            DiskWriter.read(file)?.lineSequence()?.forEach { line ->
+                val p = line.split('\t'); if (p.size < 3) return@forEach
                 scores += Score(p[0], p[1].split(',').mapNotNull { it.toIntOrNull() }.toMutableList(), p[2].split(',').mapNotNull { it.toIntOrNull() }.toMutableList())
             }
         }
     }
 
+    /**
+     * Whole or not at all (SafeWrite), on the writer's thread (DiskWriter): rewritten in place, a kill in the middle of
+     * a milestone's save left every seed's score empty (rc32 audit P3 #42).
+     */
     fun save() {
-        runCatching { file.parentFile?.mkdirs(); file.writeText(scores.joinToString("") { "${it.seed}\t${it.milestones.joinToString(",")}\t${it.bonuses.joinToString(",")}\n" }) }
+        DiskWriter.write(file, scores.joinToString("") { "${it.seed}\t${it.milestones.joinToString(",")}\t${it.bonuses.joinToString(",")}\n" })
         version++
     }
 
@@ -233,6 +249,21 @@ class TourneyTracker(private val file: File) {
 
     fun points(s: Score): Int = s.milestones.sumOf { MILESTONES.getOrNull(it - 1)?.points ?: 0 } + s.bonuses.sumOf { BONUSES.getOrNull(it - 1)?.second ?: 0 }
     fun cumulative(): Int = scores.sumOf { points(it) }
+
+    /**
+     * One DS read, moved out of PlayScreen (verifier limit): scores [defeated] for [seed] and returns the status line
+     * for a new milestone, or null. Only the Kaizo IronMON run in Play scores, and only while it has not ended ([latch]
+     * applies and is armed; rc32 audit P2 #50): a library HeartGold or a Nuzlocke filed its wins under the last run's
+     * seed, and the whiteout out of Sprout Tower after a lost run still awarded the tower. The reference returns at
+     * once when tracker.hasRunEnded() (TourneyTracker.lua:327-330).
+     */
+    fun onRead(state: com.ironmonone.tracker.nds.NdsTrackerState?, defeated: Set<Int>?, latch: GameOverLatch, seed: String): String? {
+        val s = state ?: return null
+        if (!TrackerOptions.tourneyTracker || s.badgeSet != "HGSS" || defeated == null || Demo.mode != null) return null
+        if (!latch.applies || !latch.armed) return null
+        val done = update(seed, defeated, s.mapId)
+        return if (done.isEmpty()) null else "Milestone: ${done.joinToString(", ") { it.name }}. New total: ${points(scoreFor(seed))} points"
+    }
 
     /** TourneyTracker.updateMilestones: returns the milestones newly completed, in order. */
     fun update(seed: String, defeated: Set<Int>, mapId: Int = 0): List<Milestone> {

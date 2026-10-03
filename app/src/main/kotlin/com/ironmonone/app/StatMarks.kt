@@ -115,6 +115,7 @@ class StatMarks(private val file: File) {
      * The DS tracker's run-wide values in its trackedData (Tracker.lua:5-17), kept
      * with the run as the reference keeps them with the ROM: key=value lines.
      * currentHiddenPowerType starts at BUG, PokemonData.TYPE_LIST's first entry.
+     * The Gen 3 tracker's rival (Tracker.Data.whichRival) is kept here too ([gbaRival]).
      */
     private val dsTracked = HashMap<String, String>()
     private val dsTrackedFile = File(file.parentFile, "ds-tracked.txt")
@@ -130,25 +131,67 @@ class StatMarks(private val file: File) {
         loadDsTracked()
     }
 
+    /**
+     * [f]'s lines as the writer will leave them (DiskWriter.read): what a Play visit just closed queued is read before
+     * the disk, so reopening Play at once never loads the notes from before its last saves. Null when there is none.
+     */
+    private fun linesOf(f: File): Sequence<String>? = DiskWriter.read(f)?.lineSequence()
+
+    /** The run's note files, every one [clear] empties or deletes. */
+    private fun noteFiles(): List<File> =
+        listOf(file, notesFile, routeFile, dsEncounterFile, movesFile, abilitiesFile, encountersFile, safariFile, dsTrackedFile)
+
+    /**
+     * Forgets the writes of this run's note files still queued or under way (DiskWriter.forget), for a clear about to
+     * empty them: [clear] calls it before anything else.
+     */
+    internal fun dropQueuedWrites() = DiskWriter.forget(noteFiles())
+
     private fun loadDsTracked() {
         dsTracked.clear()
-        if (!dsTrackedFile.exists()) return
+        val lines = linesOf(dsTrackedFile) ?: return
         runCatching {
-            dsTrackedFile.forEachLine { line ->
+            lines.forEach { line ->
                 val cut = line.indexOf('='); if (cut > 0) dsTracked[line.substring(0, cut)] = line.substring(cut + 1)
             }
         }
     }
 
     private fun saveDsTracked() {
-        runCatching {
-            dsTrackedFile.parentFile?.mkdirs()
-            SafeWrite.text(dsTrackedFile, dsTracked.entries.joinToString("") { "${it.key}=${it.value}\n" })
-        }
+        DiskWriter.write(dsTrackedFile, dsTracked.entries.joinToString("") { "${it.key}=${it.value}\n" })
+    }
+
+    /**
+     * Tracker.Data.whichRival (Tracker.lua:362-371): which of the three rivals this run has, as the Gen 3 tracker learned
+     * it in a rival battle. The reference keeps it with the run's tracked data; the tracker here is made again on every
+     * visit to Play and forgot it, so all three rivals were listed and counted again after a restart, and a Nuzlocke's
+     * FireRed and LeafGreen Champion cap took the strongest of the three teams (rc32 audit P2 #130). Null until learned;
+     * gone with the rest on [clear], as the reference's resetData drops it.
+     */
+    fun gbaRival(): String? = dsTracked["whichRival"]?.takeIf { it.isNotBlank() }
+
+    /** Keeps the rival a battle taught the tracker (TrackerRival). */
+    fun noteGbaRival(choice: String) {
+        if (choice.isBlank() || '\n' in choice || choice == gbaRival()) return
+        dsTracked["whichRival"] = choice
+        saveDsTracked()
     }
 
     /** Tracker.getCurrentHiddenPowerType: the one Hidden Power type the DS tracker keeps for the run. */
     fun dsHiddenPowerType(): String = dsTracked["hiddenPowerType"]?.takeIf { it in DS_HIDDEN_POWER_TYPES } ?: DS_HIDDEN_POWER_TYPES[0]
+
+    /**
+     * Tracker.getProgress (Tracker.lua:407-412): how far the DS run has got, kept with the run as the reference keeps
+     * it in trackedData, because the tracker object is made again on every visit to Play. 0 nowhere, 1 past the lab.
+     */
+    fun dsProgress(): Int = dsTracked["progress"]?.toIntOrNull()?.coerceIn(0, 2) ?: 0
+
+    /** The DS tracker's progress from a read: kept when it is further than the run has been. */
+    fun noteDsProgress(p: Int) {
+        if (p <= dsProgress()) return
+        dsTracked["progress"] = p.coerceIn(0, 2).toString()
+        saveDsTracked()
+    }
 
     /** Tracker.getPokecenterCount: the DS tracker's Pokecenter heals, 10 to start (Tracker.lua:16). */
     fun dsPokecenterCount(): Int = dsTracked["pokecenterCount"]?.toIntOrNull()?.coerceIn(0, 99) ?: 10
@@ -214,12 +257,12 @@ class StatMarks(private val file: File) {
 
     private fun loadSafari() {
         safari.clear()
-        if (!safariFile.exists()) return
+        val lines = linesOf(safariFile) ?: return
         runCatching {
-            safariFile.forEachLine { line ->
+            lines.forEach { line ->
                 val cut = line.indexOf(':')
-                if (cut <= 0) return@forEachLine
-                val map = line.substring(0, cut).toIntOrNull() ?: return@forEachLine
+                if (cut <= 0) return@forEach
+                val map = line.substring(0, cut).toIntOrNull() ?: return@forEach
                 val seen = LinkedHashMap<Int, Int>()
                 line.substring(cut + 1).split(',').forEach { e ->
                     val sp = e.substringBefore('/').trim().toIntOrNull() ?: return@forEach
@@ -241,17 +284,18 @@ class StatMarks(private val file: File) {
     /**
      * Writes one of the run's note files whole or not at all (SafeWrite). All eight were written in place, which
      * empties the file first: a kill or a crash in that moment left the run's marks, notes or route record blank,
-     * and every tap on a stat box rewrites the marks (2026-09-30, UX audit P0-3).
+     * and every tap on a stat box rewrites the marks (2026-09-30, UX audit P0-3). The text is made here, on the
+     * thread that owns these maps, and written on the writer's (DiskWriter): each save synced on the main thread,
+     * several of them as a battle began (rc32 audit P2 #90).
      */
     private fun writeWhole(target: File, fill: (Lines) -> Unit) {
         val lines = Lines()
         fill(lines)
-        SafeWrite.text(target, lines.text.toString())
+        DiskWriter.write(target, lines.text.toString())
     }
 
     private fun saveSafari() {
         runCatching {
-            safariFile.parentFile?.mkdirs()
             writeWhole(safariFile) { w ->
                 safari.forEach { (map, seen) ->
                     w.write(map.toString() + ":" + seen.entries.joinToString(",") { (sp, lv) -> "$sp/$lv" })
@@ -284,12 +328,12 @@ class StatMarks(private val file: File) {
 
     private fun loadEncounters() {
         encWild.clear(); encTrainer.clear(); lastLevels.clear()
-        if (!encountersFile.exists()) return
+        val lines = linesOf(encountersFile) ?: return
         runCatching {
-            encountersFile.forEachLine { line ->
+            lines.forEach { line ->
                 val cut = line.indexOf(':')
-                if (cut <= 0) return@forEachLine
-                val sp = line.substring(0, cut).toIntOrNull() ?: return@forEachLine
+                if (cut <= 0) return@forEach
+                val sp = line.substring(0, cut).toIntOrNull() ?: return@forEach
                 val v = line.substring(cut + 1).split(',').map { it.trim().toIntOrNull() ?: 0 }
                 v.getOrNull(0)?.takeIf { it > 0 }?.let { encWild[sp] = it }
                 v.getOrNull(1)?.takeIf { it > 0 }?.let { encTrainer[sp] = it }
@@ -300,7 +344,6 @@ class StatMarks(private val file: File) {
 
     private fun saveEncounters() {
         runCatching {
-            encountersFile.parentFile?.mkdirs()
             writeWhole(encountersFile) { w ->
                 (encWild.keys + encTrainer.keys + lastLevels.keys).sorted().forEach { sp ->
                     w.write("$sp:${encWild[sp] ?: 0},${encTrainer[sp] ?: 0},${lastLevels[sp] ?: 0}")
@@ -348,13 +391,13 @@ class StatMarks(private val file: File) {
 
     private fun load() {
         marks.clear()
-        if (!file.exists()) return
+        val lines = linesOf(file) ?: return
         runCatching {
-            file.forEachLine { line ->
+            lines.forEach { line ->
                 val cut = line.indexOf(':')
                 if (cut > 0) {
                     val species = line.substring(0, cut).toIntOrNull()
-                        ?: return@forEachLine
+                        ?: return@forEach
                     val values = line.substring(cut + 1).split(',')
                         .mapNotNull { it.toIntOrNull() }
                     if (values.size == COUNT) {
@@ -369,7 +412,6 @@ class StatMarks(private val file: File) {
 
     private fun save() {
         runCatching {
-            file.parentFile?.mkdirs()
             writeWhole(file) { w ->
                 marks.forEach { (species, values) ->
                     // Skip all-blank rows so the file stays small and honest.
@@ -384,9 +426,9 @@ class StatMarks(private val file: File) {
 
     private fun loadNotes() {
         notes.clear()
-        if (!notesFile.exists()) return
+        val lines = linesOf(notesFile) ?: return
         runCatching {
-            notesFile.forEachLine { line ->
+            lines.forEach { line ->
                 val cut = line.indexOf(':')
                 if (cut > 0) {
                     line.substring(0, cut).toIntOrNull()?.let {
@@ -399,7 +441,6 @@ class StatMarks(private val file: File) {
 
     private fun saveNotes() {
         runCatching {
-            notesFile.parentFile?.mkdirs()
             writeWhole(notesFile) { w ->
                 notes.forEach { (species, text) ->
                     val flat = text.lines().joinToString(" ").trim()
@@ -425,11 +466,11 @@ class StatMarks(private val file: File) {
         loadDsEncounters()
         routeSeen.clear()
         routeAreaSeen.clear()
-        if (!routeFile.exists()) return
+        val lines = linesOf(routeFile) ?: return
         runCatching {
-            routeFile.forEachLine { line ->
+            lines.forEach { line ->
                 val cut = line.indexOf(':')
-                if (cut <= 0) return@forEachLine
+                if (cut <= 0) return@forEach
                 val key = line.substring(0, cut)
                 val ids = line.substring(cut + 1).split(',').mapNotNull { it.trim().toIntOrNull() }
                 if ('|' in key) routeAreaSeen[key] = LinkedHashSet(ids)
@@ -440,7 +481,6 @@ class StatMarks(private val file: File) {
 
     private fun saveRoutes() {
         runCatching {
-            routeFile.parentFile?.mkdirs()
             writeWhole(routeFile) { w ->
                 routeSeen.forEach { (mapId, mons) ->
                     if (mons.isNotEmpty()) {
@@ -466,9 +506,9 @@ class StatMarks(private val file: File) {
 
     private fun loadMoves() {
         movesSeen.clear()
-        if (!movesFile.exists()) return
+        val lines = linesOf(movesFile) ?: return
         runCatching {
-            movesFile.forEachLine { line ->
+            lines.forEach { line ->
                 val cut = line.indexOf(':')
                 if (cut > 0) line.substring(0, cut).toIntOrNull()?.let { sp ->
                     movesSeen[sp] = line.substring(cut + 1).split('|')
@@ -487,7 +527,6 @@ class StatMarks(private val file: File) {
 
     private fun saveMoves() {
         runCatching {
-            movesFile.parentFile?.mkdirs()
             writeWhole(movesFile) { w ->
                 movesSeen.forEach { (sp, moves) ->
                     if (moves.isNotEmpty()) {
@@ -501,9 +540,9 @@ class StatMarks(private val file: File) {
 
     private fun loadAbilities() {
         abilitiesSeen.clear()
-        if (!abilitiesFile.exists()) return
+        val lines = linesOf(abilitiesFile) ?: return
         runCatching {
-            abilitiesFile.forEachLine { line ->
+            lines.forEach { line ->
                 val cut = line.indexOf(':')
                 // "species:A" (one tracked) or "species:A|B" (both), the
                 // file of builds before 2026-09-27 being the first form.
@@ -517,7 +556,6 @@ class StatMarks(private val file: File) {
 
     private fun saveAbilities() {
         runCatching {
-            abilitiesFile.parentFile?.mkdirs()
             writeWhole(abilitiesFile) { w ->
                 abilitiesSeen.forEach { (sp, names) ->
                     w.write(sp.toString() + ":" + names.joinToString("|") { it.replace('|', ' ') })
@@ -573,6 +611,10 @@ class StatMarks(private val file: File) {
         return changed
     }
 
+    /** [addMovesSeen] for every opposing Pokemon's moves this battle (TrackerState.enemyMovesThisBattle). */
+    fun addBattleMoves(seen: List<com.ironmonone.tracker.EnemyMovesSeen>?): Boolean =
+        seen.orEmpty().fold(false) { changed, m -> addMovesSeen(m.species, m.moves, m.level) || changed }
+
     /** Every move this species has shown this run, most recent first: a copy, never the list being added to (P0-10). */
     fun movesSeenFor(species: Int): List<SeenMove> = movesSeen[species]?.toList() ?: emptyList()
 
@@ -601,11 +643,11 @@ class StatMarks(private val file: File) {
 
     private fun loadDsEncounters() {
         dsEncounters.clear()
-        if (!dsEncounterFile.exists()) return
+        val lines = linesOf(dsEncounterFile) ?: return
         runCatching {
-            dsEncounterFile.forEachLine { line ->
+            lines.forEach { line ->
                 val p = line.split('	')
-                if (p.size < 2) return@forEachLine
+                if (p.size < 2) return@forEach
                 val m = LinkedHashMap<Int, java.util.TreeSet<Int>>()
                 p[1].split(',').forEach { e ->
                     val sp = e.substringBefore(':').toIntOrNull() ?: return@forEach
@@ -618,7 +660,6 @@ class StatMarks(private val file: File) {
 
     private fun saveDsEncounters() {
         runCatching {
-            dsEncounterFile.parentFile?.mkdirs()
             writeWhole(dsEncounterFile) { w ->
                 dsEncounters.forEach { (area, mons) ->
                     w.write(area.replace('	', ' ') + "	" + mons.entries.joinToString(",") { (sp, lv) -> sp.toString() + ":" + lv.joinToString("/") })
@@ -673,8 +714,17 @@ class StatMarks(private val file: File) {
     fun movesSeenSpecies(): Set<Int> = movesSeen.filterValues { it.isNotEmpty() }.keys
     fun abilitySeenSpecies(): Set<Int> = abilitiesSeen.keys
 
-    /** New Run: last attempt's notes describe a different randomization. */
-    fun clear() {
+    /**
+     * New Run: last attempt's notes describe a different randomization. [keepRunCounters] is Tracker Setup's CLEAR TRACKED
+     * DATA, which tidies the notes in the middle of a run: the DS run's own counters in ds-tracked.txt stay (the Pokecenter
+     * heals and Survival's flags, the Hidden Power type, how far the run has got), as the GBA heal count in pc-heals.txt
+     * does. They were wiped, and the next read armed Survival again at the full limit (rc32 audit P2 #91).
+     */
+    fun clear(keepRunCounters: Boolean = false) {
+        // The run's note files go to disk on the writer's thread (DiskWriter, rc32 audit P2 #90): a save still queued, or
+        // being written, would land after the files are emptied below and bring the cleared notes back, so those writes
+        // go first. It was done by a hook on the marks map's own clear (RC35-NOTICED N #14).
+        dropQueuedWrites()
         marks.clear()
         notes.clear()
         routeSeen.clear()
@@ -684,8 +734,10 @@ class StatMarks(private val file: File) {
         movesSeen.clear()
         abilitiesSeen.clear()
         encWild.clear(); encTrainer.clear(); lastLevels.clear()
-        dsTracked.clear()
-        runCatching { dsTrackedFile.delete() }
+        if (!keepRunCounters) {
+            dsTracked.clear()
+            runCatching { dsTrackedFile.delete() }
+        }
         runCatching { if (encountersFile.exists()) encountersFile.writeText("") }
         safari.clear()
         runCatching { if (safariFile.exists()) safariFile.writeText("") }
@@ -694,5 +746,7 @@ class StatMarks(private val file: File) {
         runCatching { if (routeFile.exists()) routeFile.writeText("") }
         runCatching { if (movesFile.exists()) movesFile.writeText("") }
         runCatching { if (abilitiesFile.exists()) abilitiesFile.writeText("") }
+        // The run's counters stay, and their newest save went with the queued writes dropped above: queue it again.
+        if (keepRunCounters) saveDsTracked()
     }
 }

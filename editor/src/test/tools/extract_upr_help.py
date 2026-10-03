@@ -129,6 +129,7 @@ def phone(t):
     t = re.sub(r"\bPokemon\b", "Pokémon", t)
     t = re.sub(r"\bpokemon\b", "Pokémon", t)
     t = t.replace("Poke Ball", "Poké Ball")
+    t = re.sub(r"\blearnt\b", "learned", t)   # American spelling, as everything a player reads (Blake, 2026-10-03)
     return t
 
 

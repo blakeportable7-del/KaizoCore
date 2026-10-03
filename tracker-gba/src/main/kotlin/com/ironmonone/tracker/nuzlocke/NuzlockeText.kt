@@ -22,6 +22,11 @@ object NuzlockeText {
         val status: RunStatus,
         val endReason: String,
         val version: Int,
+        /**
+         * The Genlocke the run is a game of, empty for none. A run on any preset can be one (its Genlocke switch), so
+         * the run list offers the next game by this and not by the preset (rc32 audit P2 #39).
+         */
+        val genlockeId: String = "",
     )
 
     private fun clean(s: String): String = s.replace('\t', ' ').replace('\n', ' ').replace('\r', ' ')
@@ -43,6 +48,8 @@ object NuzlockeText {
         if (m.genlockeId.isNotEmpty() || m.leg > 0) line("genlocke", m.genlockeId, m.leg, m.carriedFrom)
         for (h in m.heirsIn) line("heirin", h.species, h.speciesName, h.nickname, h.level, g(h.gender), b(h.shiny))
         for (h in m.heirsOut) line("heirout", h.species, h.speciesName, h.nickname, h.level, g(h.gender), b(h.shiny))
+        for ((id, e) in m.eggs) line("egg", id, e.areaKey, e.areaName, b(e.counts))
+        for ((sec, name) in m.sections) line("section", sec, name)
         for (a in ledger.areas.values) {
             line("area", a.key, a.name)
             a.encounter?.let { e ->
@@ -52,7 +59,8 @@ object NuzlockeText {
         }
         for (r in ledger.roster.values) {
             line("mon", r.id, r.species, r.speciesName, r.nickname, r.level, g(r.gender), r.origin.key, r.areaKey ?: "", r.areaName, r.at,
-                b(r.inParty), b(r.alive), b(r.violation), r.partner ?: "", b(r.shiny), r.types.joinToString(","), r.highestLevel, b(r.forgiven))
+                b(r.inParty), b(r.alive), b(r.violation), r.partner ?: "", b(r.shiny), r.types.joinToString(","), r.highestLevel, b(r.forgiven),
+                r.madeFor ?: "")
             r.death?.let { d -> line("death", r.id, d.at, d.level, d.areaName, d.cause, d.badges, b(d.manual)) }
         }
         for (e in ledger.events) line("evt", e.at, e.kind, b(e.manual), e.areaKey ?: "", e.text)
@@ -67,6 +75,7 @@ object NuzlockeText {
         var version = 0
         var run: List<String>? = null
         val rules = HashMap<String, String>()
+        var genlocke = ""
         var first = true
         for (raw in lines) {
             val f = raw.split('\t')
@@ -79,6 +88,7 @@ object NuzlockeText {
             when (f.getOrNull(0)) {
                 "run" -> run = f
                 "rule" -> if (f.size >= 3) rules[f[1]] = f[2]
+                "genlocke" -> genlocke = f.getOrNull(1).orEmpty()
                 // Everything the header needs comes before the first area or roster line.
                 "area", "mon", "enc", "evt" -> break
             }
@@ -90,6 +100,7 @@ object NuzlockeText {
             preset = NuzlockePreset.byKey(rules["preset"]) ?: NuzlockePreset.STANDARD,
             startedAt = r.getOrNull(4)?.toLongOrNull() ?: 0L,
             status = RunStatus.byKey(r.getOrNull(5)), endReason = r.getOrNull(7) ?: "", version = version,
+            genlockeId = genlocke,
         )
     }
 
@@ -129,6 +140,8 @@ object NuzlockeText {
                 "genlocke" -> { meta.genlockeId = f.getOrNull(1) ?: ""; meta.leg = f.getOrNull(2)?.toIntOrNull() ?: 0; meta.carriedFrom = f.getOrNull(3) ?: "" }
                 "heirin" -> heir(f)?.let { meta.heirsIn += it }
                 "heirout" -> heir(f)?.let { meta.heirsOut += it }
+                "egg" -> if (f.size >= 5) f[1].toLongOrNull()?.let { meta.eggs[it] = EggSeen(f[2], f[3], f[4] == "1") }
+                "section" -> if (f.size >= 3) f[1].toIntOrNull()?.let { meta.sections[it] = f[2] }
                 "area" -> if (f.size >= 3) { ledger.areas[f[1]] = AreaRecord(f[1], f[2]) }
                 "enc" -> if (f.size >= 13) {
                     val species = f[2].toIntOrNull(); val level = f[4].toIntOrNull(); val pid = f[5].toLongOrNull(); val at = f[9].toLongOrNull()
@@ -152,6 +165,8 @@ object NuzlockeText {
                         r.partner = f[14].toLongOrNull(); r.shiny = f[15] == "1"
                         r.types = f[16].split(',').mapNotNull { it.trim().toIntOrNull() }
                         r.highestLevel = f[17].toIntOrNull() ?: level; r.forgiven = f[18] == "1"
+                        // The 20th field came with rc34; a file from before has 19 and nothing was made by hand for an area.
+                        r.madeFor = f.getOrNull(19)?.takeIf { it.isNotEmpty() }
                         ledger.roster[id] = r
                     }
                 }

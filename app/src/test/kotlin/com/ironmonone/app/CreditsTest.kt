@@ -28,7 +28,7 @@ class CreditsTest {
             assertTrue("\"$url\"" in about, "About links $url")
         }
         assertTrue("CreditLink(GEN1_TRACKER_URL)" in about && "CreditLink(GEN2_TRACKER_URL)" in about)
-        assertTrue("used under \" +\n                \"the MIT licence." in about, "About states the licence")
+        assertTrue("used under \" +\n                \"the MIT license." in about, "About states the licence")
         // Both LICENSE.txt files are besteon's MIT text, carried over by the forks.
         assertEquals(2, Regex("\"Copyright 2022-2023 Besteon\"").findAll(notice).count())
     }
@@ -51,7 +51,6 @@ class CreditsTest {
             Triple("Ajarmar", "https://github.com/Ajarmar/universal-pokemon-randomizer-zx", "Universal Pokemon Randomizer ZX — GPL-3.0"),
             Triple("CyanSixFour", "https://github.com/CyanSMP64/universal-pokemon-randomizer-zx", "CyanSMP64 randomizer fork — GPL-3.0"),
             Triple("Swordfish90", "https://github.com/Swordfish90/LibretroDroid", "LibretroDroid 0.13.2 — GPL-3.0"),
-            Triple("RadialGamePad", "https://github.com/Swordfish90/RadialGamePad", "Swordfish90/RadialGamePad — GPL-3.0"),
             Triple("rcheevos", "https://github.com/RetroAchievements/rcheevos", "rcheevos - MIT"),
             Triple("CodeMan38", "", "Press Start 2P - SIL Open Font License 1.1"),
             Triple("PMD Sprite", "https://sprites.pmdcollab.org", "PMD Sprite Collab - CC BY-NC 4.0"),
@@ -63,6 +62,43 @@ class CreditsTest {
             assertTrue(line in notice, "NOTICE has: $line")
         }
         assertTrue("Dabomstew" in about, "the original randomizer's author")
+    }
+
+    /**
+     * rc32 audit P3 #17: About credited RadialGamePad for the on-screen controls, which are KaizoCore's own (FreePad,
+     * PadSkin); no build depends on it. A library About names must be one a build file names.
+     */
+    @Test
+    fun `About credits no controls library that no build uses`() {
+        val about = File("src/main/kotlin/com/ironmonone/app/AboutScreen.kt").readText()
+        // The root's build files and every module's.
+        val root = File("..")
+        val buildFiles = (listOf(root) + root.listFiles()!!.filter { it.isDirectory && !it.name.startsWith(".") })
+            .flatMap { d -> listOf("build.gradle", "build.gradle.kts", "settings.gradle.kts").map { File(d, it) } }
+            .filter { it.isFile }
+        val builds = buildFiles.joinToString("\n") { it.readText().replace(Regex("//[^\\n]*"), "") }
+        assertTrue("dependencies" in builds, "the build files were read")
+        if ("radialgamepad" !in builds.lowercase()) assertFalse("RadialGamePad" in about, "About credits RadialGamePad, which no build uses")
+        assertFalse("RadialGamePad" in File("../settings.gradle.kts").readText(), "nor names it as a reason for a repository")
+    }
+
+    /**
+     * rc32 audit P3 #17: About put every Walking Pals sprite under CC BY-NC 4.0, while the table that ships with them says
+     * each sheet's own terms, and some are Spike Chunsoft's sprites from the Mystery Dungeon games (NOTICE says so).
+     */
+    @Test
+    fun `the sprite credit says what the sprites' own table says`() {
+        val licences = File("src/main/assets/walkingpals-nat/credits.tsv").readLines()
+            .filter { it.isNotBlank() && !it.startsWith("#") }.mapNotNull { it.split('\t').getOrNull(4) }
+        assertTrue(licences.size > 100, "the table was read: ${licences.size} rows")
+        val about = File("src/main/kotlin/com/ironmonone/app/AboutScreen.kt").readText().replace("\r\n", "\n")
+        val line = about.substringAfter("(the Walking Pals icon set)").substringBefore("style =")
+        if (licences.any { "Unspecified" in it }) assertTrue("Spike Chunsoft" in line, "some sheets are Spike Chunsoft's: $line")
+        if (licences.any { "PMDCollab_" in it || "Unspecified" in it }) {
+            assertFalse("used under the Creative Commons BY-NC 4.0 license" in line.replace(Regex("\"\\s*\\+\\s*\""), ""),
+                "not every sheet is under CC BY-NC 4.0: $line")
+        }
+        assertTrue("CreditLink(\"https://sprites.pmdcollab.org\")" in about, "the collab is still linked")
     }
 
     /** Where the reference checkouts are on this machine, the licences NOTICE states are the repositories' own. */
@@ -105,7 +141,7 @@ class CreditsTest {
         assertTrue("UTDZac / DeathQuotes-IronmonExtension - MIT   $repo" in notice, "NOTICE names the extension, its licence and its link")
         assertTrue("\"Copyright (c) 2023 UTDZac\"" in notice, "NOTICE quotes the copyright line the repository carries")
         assertTrue("\"$repo\"" in about && "CreditLink(\"$repo\")" in about, "About links it")
-        assertTrue("Death Quotes extension by UTDZac, used under the \" +\n                \"MIT licence." in about, "About states the licence")
+        assertTrue("Death Quotes extension by UTDZac, used under the \" +\n                \"MIT license." in about, "About states the licence")
         assertTrue(about.indexOf("Death Quotes") in about.indexOf("\"Credits\"") until about.indexOf("This is not an official IronMON"), "in the Credits section")
         // Where the checkout is on this machine, what NOTICE states is the repository's own.
         val license = File(System.getProperty("user.home"), "ironmon-ref/DeathQuotes-IronmonExtension/LICENSE").takeIf { it.isFile } ?: return
@@ -149,5 +185,30 @@ class CreditsTest {
         // The folder's own record of where the files came from.
         assertTrue("https://github.com/billgreenwald/ironmon_emu" in source && "abf9453ba031a2ff58ab9a11059cb8678aec15e1" in source)
         assertTrue("Bill Greenwald (doctrDNA)" in source)
+    }
+
+    /**
+     * The stream's favorite pictures (2026-10-03, StreamFavorites) follow UTDZac's Favorites As Sources extension, which
+     * Blake linked. None of its Lua ships, but it is credited as Death Quotes is: NOTICE with its licence and copyright
+     * line, the About screen with a link, and its MIT text on the Licences page.
+     */
+    @Test
+    fun `NOTICE, the About screen and the Licenses page credit UTDZac for Favorites As Sources`() {
+        val notice = File("../NOTICE").readText().replace("\r\n", "\n")
+        val about = File("src/main/kotlin/com/ironmonone/app/AboutScreen.kt").readText().replace("\r\n", "\n")
+        val repo = "https://github.com/UTDZac/FavoritesAsSources-IronmonExtension"
+        assertTrue("UTDZac / FavoritesAsSources-IronmonExtension - MIT   $repo" in notice, "NOTICE names the extension, its licence and its link")
+        assertTrue("\"Copyright (c) 2026 UTDZac (Zeke)\"" in notice.replace(Regex("\\s+"), " "), "NOTICE quotes the copyright line the repository carries")
+        assertTrue("CreditLink(\"$repo\")" in about, "About links it")
+        assertTrue("\"Your favorites as pictures for OBS follow the Favorites As Sources extension by UTDZac, \" +\n" +
+            "                \"used under the MIT license.\"" in about, "About names it, its author and its license")
+        assertTrue(about.indexOf("Favorites As Sources") in about.indexOf("\"Credits\"") until about.indexOf("This is not an official IronMON"), "in the Credits section")
+        // Its own LICENSE ships whole, with its copyright line, under a Part that names it.
+        val text = File("src/main/assets/licenses/MIT-FavoritesAsSources.txt").readText()
+        assertTrue(text.startsWith("MIT License") && "Copyright (c) 2026 UTDZac (Zeke)" in text && "Permission is hereby granted, free of charge" in text)
+        assertTrue(Licences.parts.any { it.name == "Favorites As Sources" && it.what == "By UTDZac." && it.licence == "MIT-FavoritesAsSources" })
+        // Where a checkout is on this machine, what NOTICE states is the repository's own.
+        val license = File(System.getProperty("user.home"), "ironmon-ref/FavoritesAsSources-IronmonExtension/LICENSE").takeIf { it.isFile } ?: return
+        assertEquals(license.readText().replace("\r\n", "\n"), text.replace("\r\n", "\n"))
     }
 }

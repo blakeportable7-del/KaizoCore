@@ -1,0 +1,299 @@
+# The shiny Gen 1-3 Walking Pals in this folder that are exact recolors of their plain sheets, from PMD Sprite Collab d2ceb96254fb (2026-10-03), github.com/PMDCollab/SpriteCollab.
+# Written by tools/trainer-data/convert_walking_pals_nat.py (THE SHINIES); the app recolors the plain sheet with
+# the map. colors: each opaque color of the plain sheet = the shiny's color for it, as RRGGBB; animations whose
+# maps agree on every color they share share a row. A key or animation not here or in shiny.tsv has no shiny.
+# key	animations	colors
+2	idle,walk,sleep	000000=000000 278700=27873f 577787=278700 5fb727=5faf27 6f9fc7=5fb727 9f0000=cf8f00 9fcf6f=7fdf57 a76f00=a76f00 afcfef=9fdf47 d73f00=ffd700 d7efa7=afff3f dfb700=b76f2f ff875f=fff797 fff700=971f37 ffffff=ffffff
+3	idle,walk,sleep	000000=000000 278700=27873f 3f576f=278700 5fb727=5faf27 67879f=5fb727 87afcf=9fdf47 9f0000=cf8f00 9fcf6f=7fdf57 a76f00=b76f2f d73f00=ffd700 d7efa7=afff3f dfb700=cfd727 ff875f=fff797 ffffff=ffffff
+10	idle,walk,sleep	000000=000000 278700=af7f17 5fb727=df9f27 9f0000=df170f 9fcf6f=ffe737 a76f00=af8737 d7efa7=ffff4f dfb700=e7cf7f ff875f=ff972f fff700=efef67 ffffff=ffffff
+11	idle,walk,sleep	000000=000000 278700=7f3f17 5fb727=cf5f0f 9fcf6f=ff7737 d7efa7=f7a77f ffffff=ffffff
+13	sleep	000000=000000 773f00=7d700e a75f1f=8f8326 d7bf67=d7bf67 df771f=baae4b e73f67=dc67ab ff8faf=f5a8d5 ff9747=f0e37f fff79f=fff79f ffffff=ffffff
+14	idle,walk,sleep	000000=000000 a76f00=2f6717 bf7727=4f8700 dfb700=8fb727 fff700=afff3f ffffff=ffffff
+15	idle,walk,sleep	000000=000000 373f8f=3f4767 4f5f97=4f5f77 6787af=87878f a76f00=4f9f00 bfcff7=b7b7bf d73f00=2757b7 dfb700=8fb727 ff875f=6f87ff fff700=afef5f ffffff=ffffff
+16	idle,walk,sleep	000000=000000 773f00=575f00 a75f1f=9f8707 b78727=7f671f d7bf67=cfd727 df771f=bfa707 e73f67=b76f00 ff8faf=e7c727 ffc7d7=ffe76f fff79f=ffe787 ffffff=ffffff
+18	idle,walk,sleep	000000=000000 773f00=6f3f00 a75f1f=af7f17 a76f00=a76f00 b78727=b78727 d7bf67=ffcf57 df771f=c78f3f dfb700=dfb700 e73f67=bc6d25 ff8faf=e7a700 ff9747=ffc75f fff700=fff700 fff79f=fff79f ffffff=ffffff
+20	idle,walk,sleep	000000=000000 773f00=772f00 a75f1f=af5f37 b78727=828139 d7bf67=c9c865 df771f=de5b23 e73f67=874f0f ff8faf=c78747 ff9747=ff8229 ffc7d7=efc787 fff79f=cfe797 ffffff=ffffff
+21	idle,walk,sleep	000000=000000 773f00=7f671f a75f1f=9f8707 b78727=5f5747 d7bf67=8f7f57 df771f=bfa707 dfb700=dfb700 e73f67=e7a700 ff8faf=efcf00 ff9747=e7cf4f ffc7d7=ffefbf fff79f=c7af9f ffffff=ffffff
+22	idle,walk,sleep	000000=000000 773f00=977737 a75f1f=bfa707 b78727=c7a777 d7bf67=e7dfaf df771f=d7cf4f e73f67=cf7f00 ff8faf=e7a700 ff9747=ffe787 ffc7d7=ffe737 fff79f=f7f7f7 ffffff=ffffff
+23	idle,walk,sleep	000000=000000 572f9f=376840 8f67bf=7ea26a a76f00=9b7322 b797df=b9cc8e dfb700=deb941 fff700=ffec6f ffffff=ffffff
+24	idle,walk,sleep	000000=000000 572f9f=635431 8f67bf=a58c52 9f0000=002787 b797df=d8b86c d73f00=2757b7 dfb700=e7c727 ff875f=4f9ff7 fff700=ffff00 ffffff=ffffff
+25	idle,walk,sleep,faint	000000=000000 a76f00=b72f00 bf7727=6f1f00 d73f00=b72f0f dfaf67=e7a700 dfb700=ef7f00 ff875f=e76747 fff700=efbf37 ffffff=ffffff
+26	idle,walk,sleep	000000=000000 773f00=874f17 a75f1f=a7774f b78727=b78727 d7bf67=d7bf67 df871f=df6f1f dfb700=b79767 e73f67=ff8faf ffaf47=ff9747 fff700=dfbf8f fff79f=fff79f ffffff=ffffff
+27	idle,walk,sleep	000000=000000 0067b7=0067b7 a76f00=447c1e dfaf67=bfb7b7 dfb700=76a953 ffe79f=dcdcd6 fff700=a6d884 ffffff=ffffff
+31	sleep	000000=000000 0067b7=608a45 1f9fe7=a1b87c 7fcfff=c5d881 bf7727=98555d d7dfdf=f1f1f1 dfaf67=df8995 ffe79f=f8bac9 ffffff=ffffff
+32	idle,walk,sleep	000000=000000 278700=703800 5fc737=a86018 d7dfdf=d7dfdf e73f67=4870a8 ff8faf=90a0d0 ffc7d7=c8c8f8 ffffff=ffffff
+33	idle,walk,sleep	000000=000000 006f47=5e2a46 1f9f67=89536e 9f0000=3f3b77 c7d7d7=c7d7d7 e73f67=716bb2 ff8faf=aaaaef ffc7d7=c8c8f8 ffffff=ffffff
+34	idle,walk,sleep	000000=000000 47676f=47676f 5767b7=703800 873f87=0060b0 879fff=b87020 979fa7=979fa7 af6fb7=1998e0 b7cfff=d8a860 bf7727=bf7727 d73f00=d73f00 d797df=78c8f8 d7dfdf=d7dfdf ffffff=ffffff
+35	sleep	000000=000000 1f9fe7=1f9fe7 773f00=339900 8fdfff=8fdfff 9f0000=9f0000 a75f1f=66cc00 d73f00=d73f00 e73f67=e058a0 ff875f=ff875f ff8faf=f8a0c8 ffc7d7=f8d8e8 ffffff=ffffff
+36	sleep	000000=000000 9f0000=980000 a75f1f=33cc66 af5f37=c860a0 d73f00=e03860 df771f=33cc66 ef979f=f8a0c8 ff875f=f888a8 ffc7cf=f8d8e8
+37	idle,walk,sleep,faint	000000=000000 6f1f00=823400 773f00=6b6927 a7270f=c4632f a75f1f=a5811f b78727=b78727 cf5f0f=f78040 d7bf67=d7bf67 df771f=e0b550 e73f67=e73f67 ff6f0f=ffb955 ff9747=ffe474 fff79f=fff79f ffffff=ffffff
+38	idle,walk,sleep,faint	000000=000000 773f00=695f6b a77f57=908498 dfa777=c4b8cb e73f67=e73f67 efe797=d3d3e7 ff8faf=ff8faf ffffff=ffffff
+39	idle,walk,sleep	000000=000000 2f6f67=256b3f 37a777=3ca737 9f0000=7a0e68 c7d7d7=c7d7d7 d73f00=9a3d8a e73f67=c26bbb ff8faf=e6a8da ffc7d7=f3d3ec ffffff=ffffff
+40	idle,walk,sleep	000000=000000 2f6757=358d1b 379f6f=8bd562 7fe7a7=b4ff8b 9f0000=883088 9f7fa7=9f7fa7 af97bf=999999 dfbfd7=bfbfbf e73f67=cb64ba efd7ef=e5e5e5 ff8faf=e8a0e0 ffc7d7=fed8fd ffffff=ffffff
+41	idle,walk,sleep	000000=000000 5767b7=208000 873f87=b87020 879fff=58b020 979fa7=979fa7 af6fb7=d8a860 b7cfff=74da4e d797df=f8e098 d7dfdf=d7dfdf ffffff=ffffff
+42	idle,walk,sleep	000000=000000 5767b7=208000 873f87=e03860 879fff=58b020 979fa7=979fa7 af6fb7=f888a8 b7cfff=74da4e d797df=f8c0d0 d7dfdf=d7dfdf ffffff=ffffff
+43	idle,walk,sleep	000000=000000 278700=58b020 5767b7=339900 5fb727=9add46 879fff=66cc00 d73f00=d73f00 d7efa7=d0e8a0
+44	idle,walk,sleep	000000=000000 47676f=508000 773f00=804800 7f8f97=88b020 9f0000=b85000 a75f1f=b08020 afb7bf=b0d060 d73f00=f89000 d7dfdf=d7dfdf df771f=d0b860 ffffff=ffffff
+45	idle,walk,sleep	000000=000000 373f8f=1e641e 4f5f97=2a944f 6787af=62b26f 9f0000=983c0b a76f00=a76f00 bfcff7=bfcff7 d73f00=cf6027 dfb700=dfb700 ff875f=f79b4c fff700=fff700 ffffff=ffffff
+46	idle,walk,sleep	000000=000000 1f9fe7=1f9fe7 8fdfff=8fdfff 9f0000=900000 a76f00=a76f00 d73f00=c02020 dfb700=dfb700 ff875f=e06060 fff700=fff700 ffffff=ffffff
+48	idle,walk,sleep	000000=000000 572f9f=502898 6787af=6787af 8f67bf=845eb2 9f0000=0060b0 a76f00=a76f00 bfcff7=bfcff7 d73f00=1898e0 dfb700=dfb700 ff875f=88d8f8 ffffff=ffffff
+49	idle,walk,sleep	000000=000000 47676f=47676f 5767b7=5068af 873f87=597dbf 879fff=80a4f7 979fa7=979fa7 af6fb7=7fb1e2 d797df=b4deff d7dfdf=d7dfdf ffffff=ffffff
+50	walk	773f00=773f00 a75f1f=a75f1f b78727=b78727 d7bf67=d7bf67
+51	walk	773f00=773f00 a75f1f=a75f1f b78727=b78727 d7bf67=d7bf67
+52	idle,walk,sleep,faint	000000=000000 773f00=984000 a75f1f=a75f1f b78727=b27d2e d7bf67=d69f4d df771f=d05068 dfb700=dfb700 e73f67=a82838 ff8faf=f87050 ff9747=f07888 fff700=fff700 fff79f=f7d199 ffffff=ffffff
+53	idle,walk,sleep	000000=000000 773f00=8b6a08 a75f1f=896e23 b78727=bd9c31 d7bf67=eecd83 df771f=df771f e73f67=f65241 ff8faf=ffbd9c fff79f=fff8bf ffffff=ffffff
+54	idle,walk,sleep	000000=000000 773f00=026e79 974f1f=1f8f9a b78727=498886 bf8737=61b4bc cfb777=7ebab8 f7dfc7=d1f4f3 ffc75f=98e5ec ffffff=ffffff
+55	idle,walk,sleep	000000=000000 0067b7=315aa4 1f9fe7=627bd5 8fdfff=6ab4ff bf7727=e65252 dfaf67=f69494 ff875f=ff875f ffe79f=ffc5c5 ffffff=ffffff
+56	sleep	000000=000000 773f00=773f00 a75f1f=b4834a b78727=5a7b29 d7bf67=a4b473 df771f=cdb473 ff9747=f2d48a fff79f=c5ee9c ffffff=ebffd8
+58	idle,walk,sleep	000000=000000 9f0000=b88800 a76f00=a76f00 bf7727=b7a72f d73f00=ffcc00 dfaf67=efdd77 ff875f=f8f878 ffe79f=ffffc6 ffffff=ffffff
+59	idle,walk,sleep	000000=000000 9f0000=b49c00 a76f00=75755c bf7727=a0a06f d73f00=e6d529 dfaf67=dad485 ff875f=ff875f ff87bf=dc90b4 ffe79f=f4fcc8 ffffff=ffffff
+60	idle,walk,sleep	000000=000000 373f8f=204aa4 4f5f97=5273d5 6787af=73acff 9f0000=9f0000 bfcff7=bfcff7 d73f00=d73f00 ff875f=ff875f ffffff=ffffff
+61	idle,walk,sleep	000000=000000 373f8f=0085d9 4f5f97=52bbff 6787af=9ae6f5 bfcff7=bfcff7 ffffff=ffffff
+62	idle,walk,sleep	000000=000000 373f8f=315218 4f5f97=5e7a42 6787af=78a363 bfcff7=bfcff7 ffffff=ffffff
+63	idle,walk,sleep	000000=000000 773f00=773f00 a75f1f=964b50 a76f00=a76f00 b78727=b78727 d7bf67=d7bf67 df771f=bf7881 dfb700=ffcc00 ff9747=d6909e fff700=f8f878 ffffff=ffffff
+64	idle,walk,sleep	000000=000000 773f00=773f00 a75f1f=83525a a76f00=a76f00 b78727=b78727 d7bf67=d7bf67 df771f=b47b83 dfb700=ffcc00 e73f67=e73f67 fff700=f8f878 fff79f=fff79f ffffff=ffffff
+65	idle,walk,sleep	000000=000000 773f00=773f00 a75f1f=b2376d a76f00=9a5009 b78727=b78727 d7bf67=d7bf67 df771f=d862a0 dfb700=c79325 fff700=fdd949 fff79f=fff79f ffffff=ffffff
+66	idle,walk,sleep,faint	000000=000000 47876f=5e5a41 773f00=9f3f4f 8fafb7=a09b6e 9f0000=9f0000 a75f1f=6d6d68 d7a700=ada496 d7e7df=d4d294 ff570f=df5f67 ffffff=ffffff
+68	idle,walk,sleep	000000=000000 47876f=508000 8fafb7=88b020 9f0000=9f0000 a75f1f=a75f1f d7a700=d7a700 d7e7df=b0d060 ff570f=ff570f ffe79f=f8e098 fff700=fff700 ffffff=ffffff
+69	idle,walk,sleep	000000=000000 278700=b8a000 5fb727=e0d000 9f0000=803880 9fcf6f=f7ec71 a76f00=a06800 d73f00=a868b0 dfb700=ffcc00 ff875f=d090d8 fff700=f8f888
+72	idle,walk,sleep	000000=000000 0067b7=6f256e 1f9fe7=9c54a5 6f5737=6f5737 8fdfff=c8a0f0 977f4f=977f4f 9f0000=006645 bf9f5f=bf9f5f c7d7d7=c7d7d7 d73f00=009966 ff875f=33cc99 ffffff=ffffff
+73	idle,walk,sleep	000000=000000 0067b7=303888 1f9fe7=5565b3 574f17=a87820 7f671f=d8a860 8fdfff=9999ff 9f0000=006645 9f7f27=f8e098 c7d7d7=c7d7d7 d73f00=009966 ff875f=33cc99 ffffff=ffffff
+74	idle,walk,sleep	000000=000000 47676f=ba7f00 979fa7=f6c508 d7dfdf=fff375 ffffff=ffffff
+75	idle,walk,sleep	000000=000000 47676f=71431c 7f8f97=8e6220 afb7bf=a98544 d7dfdf=c3ad84 ffffff=ffffff
+79	sleep	000000=000000 47676f=7f8f97 7f8f97=7f8f97 9f0000=a05cb1 afb7bf=afb7bf bf7727=93754b d73f00=bf79cf d7dfdf=d7dfdf dfaf67=cdb28c ff875f=ffbbdd ffe79f=f8dfbc ffffff=ffffff
+80	sleep	000000=000000 47676f=803800 7f8f97=986820 9f0000=502898 afb7bf=b09848 bf7727=bf7727 d73f00=8860b8 d7dfdf=d8c870 dfaf67=dfaf67 ff875f=b090d8 ffe79f=ffe79f ffffff=ffffff
+84	idle,walk,sleep	000000=000000 773f00=5a7300 a75f1f=71823f b78727=a59d57 d7bf67=ced686 df771f=99ad2b ff9747=b2d155 fff79f=fff79f ffffff=ffffff
+86	idle,walk,sleep	000000=000000 47676f=703800 7f8f97=b87020 9f0000=9f0000 afb7bf=d8a860 bf7727=bf7727 d73f00=d73f00 d7dfdf=f8e098 dfaf67=dfaf67 ff875f=ff875f ffffff=f8f8f8
+87	idle,walk,sleep	000000=000000 47676f=703800 7f8f97=b87020 afb7bf=d8a860 bf7727=bf7727 d7dfdf=f8e098 ffffff=ffffff
+90	idle,walk,sleep	000000=000000 572f9f=9e441a 8f67bf=ea8219 9f0000=9f0000 b797df=f2b61f bfcff7=bfcff7 d73f00=d73f00 ff875f=ff875f ffffff=ffffff
+91	idle,walk,sleep	000000=000000 47676f=47676f 674f9f=2b3f64 979fa7=979fa7 a77fcf=4b71aa cfa7f7=6897be d7dfdf=d7dfdf ffffff=ffffff
+92	idle,walk,sleep	000000=440e44 572f9f=35439f 8f67bf=7bc5ee 9f0000=9f0000 b797df=a4e6ff bfcff7=bfcff7 d73f00=d73f00 ff875f=ff875f ffffff=ffffff
+93	idle,walk,sleep	000000=000000 572f9f=572f9f 6787af=6787af 8f67bf=8f67bf 9f0000=0060b0 b797df=b797df bfcff7=bfcff7 d73f00=1898e0 ff875f=78c8f8 ffffff=ffffff
+94	idle,walk,sleep,faint	000000=000000 373f8f=373f8f 572f9f=384060 6787af=6787af 8f67bf=686880 9f0000=9f0000 b797df=9090a8 bfcff7=bfcff7 d73f00=d73f00 ff875f=ff875f ffffff=ffffff
+95	idle,walk,sleep	000000=000000 47676f=839439 7f8f97=acb452 afb7bf=cdd562 d7dfdf=eef683 ffffff=ffffff
+97	idle,walk,sleep	000000=000000 4f5f97=7a502e 6787af=a57a4e a76f00=954a6c bfcff7=e0d0aa dfb700=e373b8 fff700=ffabca ffffff=ffffff
+98	idle,walk,sleep	000000=000000 9f0000=bfa707 bf7727=bf7727 d73f00=efef67 dfaf67=dfaf67 ff875f=ffff9f ffe79f=ffe79f ffffff=ffffff
+99	idle,walk,sleep	000000=000000 9f0000=4b5e12 a76f00=6f660b bf7727=9c912c d73f00=6b7f19 dfaf67=c2cb57 ff875f=a4af46 ffe79f=e6f7c5 ffffff=ffffff
+100	idle,walk,sleep,faint	000000=000000 47676f=47676f 7f8f97=7f8f97 9f0000=1937a4 afb7bf=afb7bf d73f00=3469c6 d7dfdf=d7dfdf ff875f=5784ec ffffff=ffffff
+101	idle,walk,sleep	000000=000000 7f8f97=778a92 9f0000=4060c0 afb7bf=c2c2cf d73f00=5070e1 d7dfdf=d7dfdf ff875f=659eff ffffff=fafaff
+102	idle,walk,sleep	000000=000000 7f8f97=7f8f97 afb7bf=afb7bf d7dfdf=d7dfdf dfb700=dfb600 e73f67=9f6400 ff8faf=c39120 ffc7d7=ffc130 fff700=fff700 ffffff=ffe890
+103	idle,walk,sleep	000000=000000 278700=a64e4f 5fb727=ff7968 773f00=817040 7fdf57=ffad7a 9f0000=9b0040 a75f1f=c6a23f bf7727=828240 d73f00=d23c61 df771f=d2d260 dfaf67=c2c260 ffe79f=ffff9f ffffff=ffffff
+104	idle,walk,sleep	000000=000000 47676f=47676f 773f00=2a491e 7f8f97=7f8f97 a75f1f=456231 afb7bf=afb7bf bf7727=bf7727 d7dfdf=d7dfdf df771f=69834f dfaf67=dfaf67 ffe79f=ffe79f ffffff=ffffff
+106	idle,walk,sleep	000000=000000 47676f=47676f 773f00=206800 7f8f97=7f8f97 a75f1f=508000 afb7bf=afb7bf d7dfdf=d7dfdf df771f=88b020 dfaf67=b0d060 ffe79f=ffe79f ffffff=ffffff
+107	idle,walk,sleep	000000=000000 6f477f=6f477f 773f00=206800 9f0000=0060b0 9f7fb7=9f7fb7 a75f1f=508000 bf7727=88b020 c7a7d7=c7a7d7 d73f00=1898e0 dfaf67=b0d060 e7cff7=e7cff7 ff875f=78c8f8 ffe79f=c4f686 ffffff=ffffff
+109	sleep	000000=000000 572f9f=3f5f67 8f67bf=5f8787 9f0000=9f0000 a76f00=a76f00 b797df=80b0b8 d73f00=d73f00 dfb700=dfb700 ff875f=ff875f ffffff=ffffff
+110	sleep	000000=000000 873f87=316a6a 979fa7=979fa7 af6fb7=528b83 bf7727=bf7727 d73f00=d73f00 d797df=7bb4ac d7dfdf=d7dfdf dfaf67=dfaf67 ffffff=ffffff
+111	idle,walk,sleep	000000=000000 47676f=882800 7f8f97=975737 afb7bf=c08860 d7dfdf=d7dfdf ff875f=ff875f ffffff=ffffff
+112	idle,walk,sleep	000000=000000 47676f=7b7351 773f00=773f00 7f8f97=aea583 9f0000=9f0000 a75f1f=a05819 afb7bf=ded6b5 bf7727=b87020 d73f00=d73f00 d7dfdf=d7dfdf dfaf67=d8a860 ff875f=ff875f ffe79f=ffe79f ffffff=ffffff
+113	idle,walk,sleep	000000=000000 b78727=b78727 d7bf67=d7bf67 e73f67=88b020 ff8faf=b0d060 ffc7d7=f8e098 fff79f=fff79f ffffff=ffffff
+114	idle,walk,sleep	000000=000000 373f8f=317f13 4f5f97=46ce46 6787af=96f975 b70000=b52424 e73f67=e55e7f ff8faf=ffa3be ffffff=ffffff
+116	idle,walk,sleep	000000=000000 0067b7=006655 1f9fe7=118e8e 8fdfff=2ec9b7 9f0000=aa1919 bf7727=c6625b dfb700=f78c8c ff875f=ff7a7a ffe79f=ffd1d1 ffffff=ffffff
+117	idle,walk,sleep	000000=000000 0067b7=303888 1f9fe7=5060b0 8fdfff=8098f8 a76f00=a76f00 bf7727=e03860 dfb700=f888a8 ffe79f=f8c0d0 ffffff=ffffff
+118	idle,walk,sleep	000000=000000 1f9fe7=1f9fe7 8fdfff=8fdfff 9f0000=ae3c00 d73f00=ff8000 ff875f=ffc31f ff87bf=f7ef1c ffffff=ffffff
+119	idle,walk,sleep	000000=000000 1f9fe7=7acc51 8fdfff=99ff66 9f0000=ae3c00 d73f00=ff8000 ff87bf=ffc31f ffffff=ffffff
+120	idle,walk,sleep	000000=000000 773f00=585e4f a75f1f=868d7b b78727=b78727 d7bf67=d7bf67 df771f=b2baa1 e73f67=1883c5 ff8faf=94e6ff ff9747=d5ddc5 ffc7d7=d1f4ff fff79f=fff79f ffffff=ffffff
+121	idle,walk,sleep	000000=000000 572f9f=4260b1 8f67bf=7490e0 9f0000=0c34ff a76f00=a44761 b797df=c2d1ff d73f00=3074ff dfb700=ff618a ff875f=adcfff fff700=ffa2ae ffffff=ffffff
+123	idle,walk,sleep	000000=000000 278700=006600 5fb727=339900 7fdf57=66cc00 bf7727=e03860 dfaf67=d8a860 ffe79f=ffe79f ffffff=ffffff
+124	idle,walk,sleep	000000=000000 572f9f=825088 6787af=6080a8 8f67bf=bb78c3 9f0000=b84c7b a76f00=a49176 b797df=b090d8 bfcff7=bfcff7 d73f00=f96aa8 dfb700=c7b69b ff875f=fb9fb6 fff700=eeddc4 ffffff=ffffff
+125	idle,walk,sleep	000000=000000 3f1700=3f1700 773f00=784819 a75f1f=a75f1f a76f00=965b21 dfb700=d38335 fff700=fba24c ffffff=ffffff
+126	idle,walk,sleep	000000=000000 4f5f97=4f5f97 6787af=6787af 9f0000=91262d a76f00=be5259 bfcff7=bfcff7 d73f00=de4152 dfb700=f9a3b4 ff875f=ff7890 fff700=ffd8f1 ffffff=ffffff
+127	sleep	000000=000000 47676f=bd9c5a 773f00=4a3983 7f8f97=8b7318 a75f1f=5a52ac afb7bf=eed58b df771f=948bcd dfaf67=a593d8 ffe79f=b6a1ed ffffff=ffffff
+129	idle,walk,sleep	000000=000000 1f9fe7=979ada 8fdfff=d6d9ff 9f0000=b18100 a76f00=81401f d73f00=f0d130 dfb700=dfaa00 ff87bf=ffff80 fff700=fff7bf ffffff=ffffff
+130	sleep	000000=000000 0067b7=bd3440 1f9fe7=ff5260 375f4f=60132d 678777=ac0030 7fcfff=ff8980 9f0000=ac0030 9fafa7=e12230 a77f27=aa9231 cfd7d7=ff607e dfb767=ddc87d f7e79f=f5f1b9 ff875f=ff8980 ffffff=ffffff
+131	idle,walk,sleep	000000=000000 0067b7=6a319c 1f9fe7=8b5ac5 47676f=47676f 7f8f97=7f8f97 7fcfff=ac83f6 9f0000=9f0000 afb7bf=afb7bf bf7727=bf7727 d73f00=d73f00 d7dfdf=d7dfdf dfaf67=df9867 ffe79f=ffd5bd ffffff=ffffff
+132	idle,walk,sleep	000000=000000 873f87=21729e af77af=579bc1 cf9fc7=7fb8d8 dfafd7=afcddf
+135	idle,walk,sleep,faint	000000=000000 373f8f=373f8f 4f5f97=4f5f97 6787af=6787af a76f00=318644 bfcff7=bfcff7 d73f00=d73f00 dfb700=9dba46 ff875f=ff875f fff700=dcff75 ffffff=ffffff
+136	idle,walk,sleep	000000=000000 9f0000=8f5c06 a76f00=b4ac3e d73f00=b88021 dfb700=d4ce74 ff875f=dda13b fff700=f3ed9f ffffff=ffffff
+137	idle,walk,sleep	000000=000000 007787=803880 009fb7=b868c8 7fbfe7=e8b8e8 9f0000=303888 c7d7d7=c7d7d7 d73f00=0060b0 ff875f=1898e0 ff8faf=40c0f8 ffc7d7=88d8f8 ffffff=ffffff
+138	idle,walk,sleep	000000=000000 0067b7=803880 1f9fe7=a868b0 8fdfff=e8b8e8 a76f00=703800 bf7727=cc6600 dfaf67=f89040 ffe79f=ffcc66 ffffff=ffffff
+139	idle,walk,sleep	000000=000000 0067b7=803880 1f9fe7=a868b0 8fdfff=d090d8 a76f00=b07000 bf7727=bf7727 dfaf67=ffcc00 dfb700=dfb700 ffe79f=ffff99 fff700=fff700 ffffff=ffffff
+140	idle,walk,sleep	000000=000000 773f00=15613c a75f1f=2d9935 a76f00=a76f00 df771f=47bb5c dfb700=dfb700 e73f67=e73f67 ff8faf=ff8faf ff9747=7fdc75 fff700=fff700 fff79f=d7ff9f ffffff=ffffff
+141	idle,walk,sleep	000000=000000 47676f=47676f 773f00=339900 7f8f97=7f8f97 a75f1f=66cc00 afb7bf=afb7bf d7dfdf=d7dfdf df771f=99ff00 dfaf67=ffff66 ffffff=ffffff
+142	sleep	000000=000000 373f8f=73396a 4f5f97=b473b4 572f9f=73396a 6787af=cd9cc5 bfcff7=ffc5f6 d73f00=d73f00 ff875f=ff875f ffffff=ffffff
+143	idle,walk,sleep	000000=000000 3f5747=204aa4 5f8787=317bc5 773f00=624a18 9f0000=9f0000 9faf9f=9faf9f a75f1f=a75f1f bf7727=a47b4a d73f00=d73f00 d7dfdf=d7dfdf df771f=df771f dfaf67=e6cd9c ff875f=ff875f ffe79f=fff6b4 ffffff=ffffff
+146	idle,walk,sleep	000000=000000 9f0000=970000 a76f00=b2255b bf7727=c54263 d73f00=d4001a dfb700=d45474 ff875f=f36333 ff87bf=ffb335 ffe79f=ffe79f fff700=f685a0 ffffff=ffffff
+147	idle,walk,sleep	000000=000000 0067b7=b43983 1f9fe7=d55abd 47676f=47676f 7f8f97=7f8f97 7fcfff=ffa4ee afb7bf=afb7bf d7dfdf=d7dfdf ffffff=ffffff
+150	idle,walk,sleep,faint	000000=000000 47676f=47676f 873f87=589020 979fa7=979fa7 af6fb7=90c840 d797df=b8e858 d7dfdf=d7dfdf ffffff=ffffff
+151	idle,walk,sleep	000000=000000 0067b7=0067b7 1f9fe7=1f9fe7 8fdfff=8fdfff a75f1f=353ca5 e73f67=507ab2 ff8faf=85bae2 ffc7d7=a8e6ff ffffff=ffffff
+153	idle,walk,sleep	000000=000000 278700=695b22 5fb727=b6973e 9f0000=9f0000 9fcf6f=f1d060 a76f00=af5f15 d73f00=d73f00 d7efa7=ffea7a dfb700=ce8e52 fff700=e6b591 ffffff=ffffff
+154	idle,walk,sleep	000000=000000 278700=727216 5fb727=8c9a43 9f0000=ab5048 9fcf6f=bac252 a76f00=a46907 d73f00=df6238 d7efa7=e7eb5b dfb700=c28d08 ff875f=f2b175 fff700=f3c83c ffffff=ffffff
+155	idle,walk,sleep	000000=000000 373f8f=732900 4f5f97=9c4a20 6787af=c27633 9f0000=9f0000 af8f4f=c38b3a bfcff7=bfcff7 d73f00=de0000 d7b777=e6bd5a f7e79f=ffde94 ffffff=ffffff
+156	idle,walk,sleep	000000=000000 373f8f=7b3108 4f5f97=a45229 6787af=c27633 9f0000=9f0000 af8f4f=b48b41 bfcff7=bfcff7 d73f00=de0000 d7b777=e6b45a f7e79f=ffde94 ffffff=ffffff
+157	idle,walk,sleep,faint	000000=000000 373f8f=602b30 4f5f97=7f5458 6787af=9f6e73 8f67bf=9f0000 9f0000=9f0000 af8f4f=b19448 b797df=d73f00 d73f00=d73f00 d7b777=d6bf85 f7e79f=f5ecb1 ffffff=ffffff
+158	sleep	000000=000000 0067b7=29a179 1f9fe7=52c49e 8fdfff=abfcd3 9f0000=0048bc bf7727=b76f22 d73f00=0080e2 dfaf67=d7a761 ffe79f=f7df99 ffffff=f7f7f7
+159	idle,walk,sleep	000000=000000 0067b7=009966 1f9fe7=33cc99 8fdfff=abfcd3 9f0000=0660ae a76f00=b76f22 d73f00=1b98de dfb700=d7a761 ff875f=ff875f ff87bf=88d7f7 fff700=f7df99 ffffff=ffffff
+160	walk,sleep	000000=000000 0067b7=009966 1f9fe7=33cc99 8fdfff=99ffcc 9f0000=0063b5 bf7727=aaa620 d73f00=189ce7 dfaf67=d6d262 ff87bf=7bc6ff ffe79f=f4f497 ffffff=ffffff
+162	idle,walk,sleep	000000=000000 773f00=bf4180 a75f1f=db518a b78727=efa7ad d7bf67=fcc9d0 df771f=df771f e73f67=e73f67 ff8faf=ff8faf fff79f=ffeede ffffff=ffffff
+165	idle,walk,sleep,faint	000000=000000 373737=373737 572f9f=69543f 676767=676767 6787af=6787af 8f67bf=95785b 9f0000=cf7305 a76f00=b3911b bfcff7=bfcff7 d73f00=feb34b dfb700=e2d664 ff875f=ffe48b fff700=fcfbb1 ffffff=ffffff
+166	idle,walk,sleep	000000=000000 373737=373737 676767=676767 6787af=6787af 878787=878787 9f0000=ae3c00 a76f00=8e7a06 bfcff7=bfcff7 d73f00=ff8000 dfb700=cac506 ff875f=ffbf80 fff700=efef67 ffffff=ffffff
+167	walk,sleep	000000=000000 278700=518faa 5767b7=415157 5fb727=7cafc5 879fff=5e7780 9fcf6f=9fcce3 a76f00=a4317b b7cfff=b7cfff d73f00=e33689 d7efa7=cee9f6 dfb700=d573ac ff875f=f17db5 fff700=e6acde ffffff=ffffff
+168	idle,walk,sleep	000000=000000 572f9f=296bce 6787af=6787af 8f67bf=5a9cff 9f0000=ad1aa6 a76f00=a88a06 b797df=94ceff bfcff7=bfcff7 d73f00=e249d8 dfb700=eac317 ff875f=f492f4 fff700=fff968 ffffff=ffffff
+169	idle,walk,sleep	000000=000000 5767b7=508000 873f87=e858a8 879fff=88b020 979fa7=979fa7 af6fb7=e8a8c8 b7cfff=b0d060 d797df=f8d8e8 d7dfdf=d7dfdf dfaf67=d8a860 ffe79f=f8e098 ffffff=ffffff
+170	idle,walk,sleep	000000=000000 0067b7=317bd5 1f9fe7=40a9dd 8fdfff=5ae7f4 9f0000=9f0000 a76f00=579e19 dfb700=9dc433 ff87bf=ff87bf fff700=c5ff31 ffffff=ffffff
+171	sleep	000000=000000 0067b7=8b3dd3 1f9fe7=bc6ded 8fdfff=deb1f9 a76f00=919d16 dfb700=c4d31f fff700=eeff62 ffffff=ffffff
+172	idle,walk,sleep	000000=000000 a76f00=a76100 bf7727=a76a00 d73f00=bd2929 dfb747=eaae0b ff875f=ff4c5a ffff8f=ffe656 ffffff=ffffff
+174	sleep	000000=000000 9f0000=a0366f d73f00=d73f00 e73f67=d66bb7 ff8faf=f4b0f4 ffc7d7=fcd3ff
+175	idle,walk,sleep	000000=000000 0067b7=9b2f00 1f9fe7=d73f00 47676f=47676f 7f8f97=7f8f97 7fcfff=ff875f afb7bf=afb7bf bf7727=b47e6b d73f00=1f9fe7 d7dfdf=d7dfdf dfaf67=f9af7a ff875f=7fcfff ffe79f=f7d6c5 ffffff=ffffff
+176	sleep	000000=000000 47676f=6d6346 7f8f97=9d9687 afb7bf=c5b8a6 d7dfdf=dbd7d2 ff875f=82b4ec ffffff=fafafa
+177	idle,walk,sleep	000000=000000 278700=799b29 5fb727=9fcc37 9f0000=834a00 9fcf6f=c0e55b a76f00=a76f00 b7cfff=b7cfff d73f00=d56a08 d7efa7=d7efa7 dfb700=dfb700 ff875f=ff9400 fff700=fff700 ffffff=ffffff
+178	idle,walk,sleep	000000=000000 278700=87a043 5767b7=5767b7 5fb727=b3cc53 879fff=879fff 9f0000=8b3900 9fcf6f=cdf665 a76f00=a76f00 b7cfff=b7cfff d73f00=cd6a00 d7efa7=d7efa7 dfb700=dfb700 ff875f=ff8b00 fff700=fff700 ffffff=ffffff
+179	faint	000000=000000 0067b7=0067b7 1f9fe7=1f9fe7 a76f00=a76f00 bf7727=b86e9c dfaf67=e6a7d8 dfb700=dfb700 ffe79f=fccffc fff700=fff700 ffffff=ffffff
+180	idle,walk,sleep,faint	000000=000000 005fcf=13821a 0087ff=10b549 00c7ff=21f29e 373f8f=60594d 4f5f97=635636 7f8f97=ac8f62 afb7bf=dac5ac b70000=c12020 d7dfdf=efebd9 e73f67=d35475 ff8faf=f0a3bc ffc7d7=f7d4df ffffff=ffffff
+181	idle,walk,sleep	000000=000000 6787af=6785ae 9f0000=6847c5 a76f00=b74e97 bfcff7=bfcff7 d73f00=6767ff dfb700=d77ea7 ff875f=8787ff fff700=f7a7d7 ffffff=ffffff
+183	idle,walk,sleep	000000=000000 0067b7=008747 1f9fe7=4ace73 47676f=47676f 7f8f97=7f8f97 7fcfff=94ff94 9f0000=ae3c00 afb7bf=afb7bf d73f00=ef5700 d7dfdf=d7dfdf ff875f=ffb56a ffffff=ffffff
+184	idle,walk,sleep	000000=000000 0067b7=b28230 1f9fe7=e1bb21 47676f=aa5533 7f8f97=8b8a92 7fcfff=ffef4d 9f0000=9a3030 afb7bf=aeb6be d73f00=d36060 d7dfdf=d7dbdf ff875f=ff8158 ffffff=ffffff
+186	idle,walk,sleep	000000=000000 278700=377fdf 5767b7=7587b5 5fb727=55b3ff 879fff=a8b5d7 9f0000=9f0000 9fcf6f=87cfff a76f00=e858a8 b7cfff=d7e7ff d73f00=d73f00 d7efa7=c7efff dfb700=f090c8 ff875f=ff875f fff700=f8c0e8 ffffff=ffffff
+187	sleep	000000=000000 278700=72993b 5fc737=b3d354 8fff67=d6ff66 e73f67=60af16 ff8faf=94de29
+188	idle,walk,sleep	000000=000000 278700=aa5092 5fb727=d68bcd 879fff=879fff 9fcf6f=f7bef0 a76f00=a06800 b7cfff=b7cfff d7efa7=ffccf6 dfb700=d8b100 ff875f=ff6857 fff700=fcf400 ffffff=ffffff
+189	idle,walk,sleep	000000=000000 008747=008747 00bf5f=00bf5f 37778f=bc4262 4f9fd7=e26a8e 8fafb7=cc66cc 9f0000=9f0000 a7cfef=ffb7c9 d7e7df=f2bff2 ff570f=ff570f ffffff=ffe5fc
+190	idle,walk,sleep,faint	000000=000000 47676f=475c84 873f87=b04f70 979fa7=bc8f8f af6fb7=f36c9f bf7727=de4d58 d797df=ff97bf d7dfdf=eed2da dfaf67=ff9185 ffe79f=ffbfbf ffffff=ffffff
+191	idle,walk,sleep	000000=000000 278700=578700 5fb727=8fb727 9fcf6f=c2d959 a76f00=9f4f0f dfb700=e7a700 ff875f=ff875f fff700=ffdf00 ffffff=ffffff
+192	idle,walk,sleep	000000=000000 278700=888800 5fb727=b7b726 977737=a77f27 9f0000=9f0000 9fcf6f=dddd55 a76f00=af8737 dfb700=efc757 e7cf4f=e7cf4f fff700=ffff8f ffffa7=ffffa7 ffffff=ffffff
+193	idle,walk,sleep	000000=000000 278700=208000 5767b7=5767b7 5fb727=5fb727 879fff=8098f8 9f0000=0660ae 9fcf6f=58b020 b7cfff=b0c8f8 d73f00=1b98de d7efa7=99ff00 ff875f=88d7f7 ffffff=f8f8f8
+194	idle,walk,sleep	000000=000000 5767b7=b46273 873f87=c55231 879fff=d59ca4 af6fb7=ee7352 b7cfff=f6cdd5 d73f00=d73f00 d797df=ffa47b
+195	walk	000000=000000 47676f=624b75 5767b7=954aa5 873f87=563f77 879fff=cd73de af6fb7=816da0 b7cfff=efadf7 d797df=ac98e2
+197	idle,walk,sleep,faint	000000=000000 47676f=585858 7f8f97=808783 9f0000=bc8c00 a7870f=339fcd afb7bf=afb7bf d73f00=f4dc00 dfb700=5fc3ed ff875f=f9ff8c fff700=8df4f3
+198	idle,walk,sleep,faint	000000=000000 373f8f=9d2f7c 4f5f97=c4479e 6787af=de73c5 9f0000=ac1020 a76f00=a06c27 bfcff7=bfcff7 d73f00=ee3941 dfb700=daab36 fff700=fff662 ffffff=ffffff
+201	idle,walk,sleep	000000=000000 47676f=0060b0 7f8f97=1898e0 afb7bf=afb7bf d7dfdf=d7dfdf ffffff=ffffff
+202	idle,walk,sleep	000000=000000 0067b7=a84f88 1f9fe7=d777bf 47676f=464656 7f8f97=7e8f97 7fcfff=ffa7df afb7bf=afb7bf d7dfdf=d7dfdf ffffff=ffffff
+204	idle,walk,sleep	000000=000000 1f3737=9f4f0f 377767=d78f2f 479777=efbf37 9f0000=9f0000 bfcff7=bfcff7 d73f00=d73f00 ffffff=ffffff
+205	sleep	000000=000000 7f5787=976727 9f0000=874f0f b787bf=cfa72f cfa7e7=d7c767 d73f00=a77f27 e7c7ff=f7e79f ffffff=ffffff
+206	idle,walk,sleep	000000=000000 0067b7=a7377f 1f9fe7=e767a7 8fdfff=ff9fdf a76f00=a76f00 bf7727=bf7727 d73f00=d73f00 dfaf67=dfaf67 dfb700=dfb700 ff875f=ff875f ffe79f=ffe79f fff700=fff700 ffffff=ffffff
+207	idle,walk,sleep,faint	000000=000000 5767b7=4a5abd 873f87=4b54b2 879fff=6283e6 af6fb7=7178ba d73f00=d73f00 d797df=98a7e9 d7dfdf=d7dfdf ffffff=ffffff
+208	idle,walk,sleep	000000=000000 47676f=806133 7f8f97=b99c46 9f0000=9f0000 afb7bf=e4dc72 d7dfdf=fcffa1 ffffff=ffffff
+210	idle,walk,sleep	000000=000000 572f9f=7b4a39 8f67bf=bd9494 b797df=e6cdb4 bfcff7=bfcff7 d73f00=ff7b94 ff875f=ffc1ce ffffff=ffffff
+211	idle,walk,sleep	000000=000000 373f8f=893f78 4f5f97=a85c9e 6787af=ce79ca 9f0000=940000 a76f00=b473ac bfcff7=f4bbef d73f00=d55262 dfb700=dea4e6 ff875f=ffa494 fff700=f7ceff ffffff=ffffff
+212	idle,walk,sleep	000000=000000 2f2f2f=123615 4f5f97=377b52 575757=427e3a 6787af=7aad74 9f0000=718915 bfcff7=ddffdf d73f00=bbce01 dfb700=dfb700 ff875f=ebf470 ffffff=ffffff
+214	idle,walk,sleep	000000=000000 373f8f=81408e 4f5f97=c46fbe 6787af=ffa4ff a76f00=a76f00 bfcff7=ffd1ff dfb700=dfb700 fff700=fff700 ffffff=ffffff
+215	idle,walk,sleep,faint	000000=000000 373f8f=de4f8f 4f5f97=fb9ec8 6787af=6787af 9f0000=9f5700 a76f00=5579c2 bfcff7=bfcff7 d73f00=c9a203 dfb700=75b2ea ff875f=ffde5f fff700=82e6ff ffffff=ffffff
+216	idle,walk,sleep	000000=000000 773f00=294c23 a75f1f=417b39 b78727=b78727 d7bf67=eed573 df771f=7bc583 e73f67=e73f67 ff9747=a4ee83 fff79f=fff79f ffffff=ffffff
+217	idle,walk,sleep	000000=000000 773f00=205a08 a75f1f=529c39 a76f00=a76f00 d7bf67=d7bf67 df771f=73bd29 dfb700=f6de7b fff700=f6ffa4 fff79f=fff79f ffffff=ffffff
+218	idle,walk,sleep	000000=000000 9f0000=6a5f5b a76f00=a76f00 d73f00=928d8b dfb700=f6a400 ff875f=c3c1be fff700=ffd573
+219	idle,walk,sleep	000000=000000 373f8f=6c2222 4f5f97=983325 6787af=c65924 9f0000=b24ba2 a76f00=a76f00 bfcff7=e0a34c d73f00=e684dd dfb700=dfb700 ff875f=ffd2fa fff700=fff700
+220	idle,walk,sleep	000000=000000 4f4747=3f5747 af7f5f=8eb481 c79f67=bcdba8 e73f67=cf3f00 ff8faf=ff875f ffc7d7=ffb787
+221	idle,walk,sleep	000000=000000 0067b7=0067b7 1f9fe7=1f9fe7 4f4747=bb9332 775f4f=e4db52 8fdfff=8fdfff af7f5f=f7f6bf c7d7d7=c7d7d7 e73f67=8a4413 ff8faf=c15d18 ffc7d7=f0853c ffffff=ffffff
+222	idle,walk,sleep	000000=000000 1f9fe7=189ae3 8fdfff=d5d9ff 9f0000=235280 d73f00=4260c2 e73f67=0085b7 ff8faf=00b1ef ffc7d7=88d1ff ffffff=c4d5ff
+223	idle,walk,sleep	000000=000000 0067b7=73319c 1f9fe7=a44dd9 47676f=a35a9e 7f8f97=be93d8 9f0000=9f0000 afb7bf=d5acee d73f00=d73f00 d7dfdf=edd4fb ffffff=ffffff
+224	idle,walk,sleep	000000=000000 9f0000=6e4a09 a76f00=ad6e00 bfcff7=bdcffc d73f00=876716 dfb700=dbcc00 ff875f=ae983d fff700=f2fa62 ffffff=ffffff
+225	walk,sleep	000000=000000 373f8f=574f5f 4f5f97=676767 6787af=878787 9f0000=9747b7 a76f00=a76f00 bfcff7=cfd7d7 d73f00=e77fe7 dfb700=dfb700 fff700=fff700 ffffff=ffffff
+226	sleep	000000=000000 3f3f7f=224cbb 4757a7=4a73de 6f87d7=73a4ff 979fa7=979fa7 9f77a7=7f84d8 c7a7cf=a5ade7 d7dfdf=d7dfdf efcfff=cedeff ffffff=ffffff
+227	idle,walk,sleep	000000=000000 47676f=524a20 7f8f97=7f7b4d 9f0000=207300 afb7bf=a09c70 d73f00=5ac539 d7dfdf=d2cda0 dfaf67=e1c400 ff875f=94ee5a ffe79f=ffde00 ffffff=fdf9c7
+230	idle,walk,sleep	000000=000000 0067b7=604898 1f9fe7=a078c8 8fdfff=c8a0f0 9f0000=980000 a76f00=a06800 bf7727=b87020 d73f00=d03800 dfb700=d8b000 ff875f=f88058 ffffff=f8f8f8
+231	idle,walk,sleep,faint	000000=000000 0067b7=2f8d7d 1f9fe7=84c9bd 8fdfff=c7ede6 9f0000=9f0000 d73f00=bd3931 ff875f=f66a52 ffffff=ffffff
+233	sleep	000000=000000 0067b7=c07ece 1f9fe7=c694d7 8fdfff=dac4e4 9f0000=024c86 c7d7d7=dbadf2 e73f67=0067b7 ff8faf=1f9fe7 ffc7d7=8fdfff ffffff=ffffff
+235	idle,walk,sleep,faint	000000=000000 47372f=7f571f 5f4f47=a7774f 67875f=e13556 879f7f=ff6777 979787=bc9a34 afaf9f=d7bf67 e7e7df=ffff9f ffffff=ffffff
+236	idle,walk	000000=000000 6787af=6787af 6f2f0f=294abd 6f3f9f=5c5c4e 9f5f0f=3173de bf6fcf=9e948c bfcff7=bfcff7 c78f67=4ab4f6 dfb700=dfb700 efbfef=d5d5bd ffffff=ffffff
+237	idle,walk,sleep	000000=000000 5767b7=a452b4 6787af=cd63c5 773f00=736a52 879fff=d57bcd af671f=aca49c b7bfc7=c0c7ce b7cfff=e19fda df771f=df771f dfaf67=d5d5c5 ff9747=ff9747 ffe79f=eeeee6 ffffff=ffffff
+238	idle,walk,sleep	000000=000000 0067b7=4b8479 9f1747=ac4d60 a76f00=95731e bf7727=ae8478 dfaf67=debc95 dfb700=ebc458 e75787=f38d8d ff9fb7=fdb7b7 ffbfdf=ffced3 ffe79f=fefed7 fff700=fefbad ffffff=ffffff
+239	idle,walk,sleep	000000=000000 773f00=7f5f07 a75f1f=a75f1f a76f00=9f7700 dfb700=efc700 fff700=ffff4f fff79f=ffff9f ffffff=ffffff
+240	idle,walk,sleep,faint	000000=000000 1f9fe7=1f9fe7 8fdfff=8fdfff 9f0000=a14a08 a76f00=bd8900 d73f00=ee8b00 dfb700=e8ca00 ff875f=ffd955 fff700=fff900 ffffff=ffffff
+241	idle,walk,sleep	000000=000000 373f8f=742716 6787af=af6773 afb7bf=b5acaf bf7727=75724c dfaf67=bebe9f e73f67=395db3 ff8faf=79a1d6 ffc7d7=c8e1f9 ffe79f=fbfbe0 ffffff=ffffff
+242	idle,walk,sleep	000000=000000 7f8f97=7f7fcb afb7bf=afaff2 d7dfdf=dedeff e73f67=e66273 ff8faf=ff9ea8 ffc7d7=ffdbdb ffffff=ffffff
+243	idle,walk,sleep	000000=000000 373f8f=505050 4f5f97=616973 572f9f=db9605 6787af=848b95 8f67bf=f9d74a 9f0000=9f0000 a76f00=ba5304 b797df=fff974 bfcff7=bbbfbf d73f00=d73f00 dfb700=e9891b ff875f=ff875f fff700=ffb551 ffffff=ffffff
+245	idle,walk,sleep	000000=000000 47676f=47676f 5767b7=548dc8 873f87=0c2ba8 879fff=8bc5ff 979fa7=979fa7 af6fb7=3666d5 b7cfff=b8ebff bf7727=bf7727 d73f00=d73f00 d797df=6596fd d7dfdf=d7dfdf dfaf67=dfaf67 ffffff=ffffff
+246	idle,walk,sleep,faint	000000=000000 278700=4d8800 5767b7=5767b7 5fb727=a0b72d 9f0000=8b2d50 9fcf6f=d5e35d b7cfff=b7cfff d73f00=ca4c8d d7efa7=d7efa7 ff875f=f79c9c ffffff=ffffff
+247	idle,walk,sleep	000000=000000 0067b7=772f9f 1f9fe7=9f5fc7 8fdfff=cfa7f7 9f0000=9f0000 ffffff=ffffff
+248	sleep	000000=000000 5767b7=865193 778757=7a6e44 879fff=bc79ce 9f0000=9f0000 a7b777=b5a573 b7cfff=e7adff cfe797=e7d694 d73f00=d73f00 e7f7cf=f7efbd ffffff=ffffff
+281	idle,walk,sleep	000000=000000 773f00=701f22 a75f1f=962a2d a76f00=a76f00 b78727=c78500 d7bf67=d7bf67 e73f67=992a35 e76f4f=ae363c e7c76f=d9c536 ff8faf=ce6d74 ff9747=d35d63 ffef9f=fef379 fff79f=fff79f ffffff=ffffff
+283	idle,walk,sleep,faint	000000=000000 373f8f=7e378e 4f5f97=9252a5 5767b7=9d5faf 6787af=ba8d50 773f00=775000 879fff=dc91f5 af671f=af7c1f b7bfc7=f2cc80 df771f=df931f ff9747=ffb247 ffe79f=fff59f ffffff=ffffff
+284	idle,walk,sleep	000000=000000 47676f=74547c 679f8f=b26dbf 7f8f97=a285b2 7fcfff=bdbdcd 7fd7af=e3a0ef 9f0000=a0621b afb7bf=d4bee0 bf7727=c9952c cfefff=dadaea d73f00=ce811c dfaf67=ead362 ffffff=ffffff
+286	idle,walk,sleep,faint	000000=000000 47676f=844d12 7f8f97=bc893c 9f0000=9f0000 afb7bf=e2b368 d73f00=d73f00 d7dfdf=f4dd90 ffe79f=a5c6e2 ffffff=ffffff
+287	walk,sleep,faint	000000=000000 3f3f3f=5c3804 4f4f4f=7d460d 676767=a16a10 7f8f97=8e6e35 afb7bf=cba33e b70000=218bc4 d7dfdf=fbd163 e73f67=4bbee0 ffffff=fff5bc
+288	sleep	000000=000000 4f2f0f=a44100 6f4f27=cd6231 8f6737=ee8339 c7a777=d8d5a6 e7dfaf=f8f5bd
+290	idle,walk,sleep	000000=000000 47676f=47676f 7f8f97=7f8f97 9f0000=8c4292 afb7bf=afb7bf bf7727=bf7727 d73f00=cd6ad5 d7dfdf=d7dfdf dfaf67=dfaf67 ff875f=f9a9ff ffe79f=ffe79f ffffff=ffffff
+291	idle,walk,sleep	000000=000000 47676f=9f4f0f 7f8f97=bf772f 9f0000=0067b7 afb7bf=e7a700 d73f00=1f9fe7 d7dfdf=ffcf77 ffffff=ffefbf
+293	idle,walk,sleep	000000=000000 572f9f=136f00 8f67bf=339900 9f0000=9f0000 b797df=66cc00 d73f00=d73f00 ff875f=ff875f ffffff=afff3f
+294	idle,walk,sleep	000000=000000 278700=764e11 5fc737=b39742 6f3f97=a86e93 8fff67=c8b066 c797df=febde7 dfb700=d4b264 e73f67=db7b7a ff8faf=ff8faf ffc7d7=ffe0f4 fff700=fce286 ffffff=ffffff
+295	idle,walk,sleep	000000=000000 278700=275f7f 5767b7=643039 5fb727=07a797 879fff=a75757 9f0000=9f0000 9fcf6f=77c7af a76f00=a76f00 d73f00=d73f00 d7efa7=97dfc7 dfb700=dfb700 ff875f=ff875f fff700=fff700 ffffff=ffffff
+298	idle,walk,sleep	000000=000000 47676f=7f7c77 773f00=973310 7f8f97=ada9a1 a75f1f=e06721 afb7bf=d8d3c9 bf7727=bf7727 d7dfdf=f9f4e8 dfaf67=c1975e ffe79f=ffec7c
+301	idle,walk,sleep	000000=000000 278700=278700 5fc737=5fc737 7f8f97=846c4c 8f5f67=8f5f67 8fff67=8fff67 afb7bf=b79f34 bf8777=bf8777 d7b7a7=d7b7a7 d7dfdf=e9d369 ffffff=f6eca4
+302	idle,walk,sleep	000000=000000 47676f=845239 7f8f97=d68463 9f0000=f76b10 afb7bf=f7bd42 bf7727=d6a54a d73f00=d73f00 d7dfdf=ffef7b dfaf67=f7d652 ff875f=ff875f ffe79f=ffeeb2 ffffff=ffffff
+303	sleep	000000=000000 47676f=b5846b 773f00=633931 7f8f97=f7c68c a75f1f=b5846b afb7bf=afb7bf bf7727=efbd84 df771f=efbd84 dfaf67=f7e7a5 ffe79f=ffffe7 ffffff=ffffff
+304	idle,walk,sleep	000000=000000 373f8f=276642 4f5f97=3f9362 6787af=59cc89 9f0000=cc751e a76f00=bc9e69 bfcff7=67ea9d d73f00=fda73b dfb700=e2d095 fff700=fcf9ab ffffff=ffffff
+305	idle,walk,sleep	000000=000000 373f8f=276642 4f5f97=3f9362 6787af=59cc89 9f0000=cc751e a76f00=bc9e69 bfcff7=67ea9d d73f00=fda73b dfb700=e2d095 fff700=fcf9ab ffffff=ffffff
+306	idle,walk,sleep	000000=000000 278700=a00000 5fb727=d83800 7fdf57=f07018 8fff67=ffae55 9f0000=9f0000 bf7727=b87020 d73f00=d73f00 dfaf67=d8a860 ffe79f=f8e098 ffffff=ffffff
+307	idle,walk,sleep	000000=000000 278700=9f1414 5fb727=c3351d 773f00=773f00 7fdf57=e65936 8fff67=f47549 9f0000=8a511a bf7727=8a511a d73f00=bc8d54 dfaf67=bc8d54 ff875f=eabc77 ffe79f=eabc77 ffffff=ffffff
+308	idle,walk,sleep	000000=000000 773f00=2e3317 a75f1f=a75f1f bf7727=bf7727 d73f00=6d7738 df771f=df771f dfaf67=dfaf67 ff875f=b4c65c ffe79f=ffe79f
+309	idle,walk,sleep	000000=000000 0067b7=276211 1f9fe7=409315 47676f=47676f 7f8f97=7f8f97 7fcfff=9add46 afb7bf=afb7bf bf7727=bf7727 d7dfdf=d7dfdf dfaf67=dfaf67 ffe79f=ffe79f ffffff=ffffff
+310	idle,walk,sleep	000000=000000 0067b7=5d8951 1f9fe7=78ba68 47676f=47676f 7f8f97=7f8f97 7fcfff=bcf3ad afb7bf=afb7bf bf7727=bf7727 d7dfdf=d7dfdf dfaf67=dfaf67 ffe79f=ffe79f ffffff=ffffff
+311	idle,walk,sleep	000000=000000 0067b7=243746 1f9fe7=305165 8fdfff=6b7f87 a76f00=a76f00 bf7727=bf7727 dfaf67=dfaf67 ff87bf=ffb2d6 ffe79f=ffe79f ffffff=ffffff
+313	idle,walk,sleep	000000=000000 2757b7=a573bd 373f8f=5a2173 4f8fcf=bd94e7 773f00=773f00 8fc7ef=deb5e7 af671f=af671f b7bfc7=b7bfc7 dfaf67=dfaf67 ffe79f=ffe79f ffffff=ffffff
+314	idle,walk,sleep	000000=000000 0067b7=9f5fc7 1f9fe7=bf77df 47676f=47676f 7f8f97=7f8f97 7fcfff=cfa7f7 afb7bf=afb7bf d7dfdf=d7dfdf ffffff=ffffff
+315	idle,walk,sleep,faint	000000=000000 8f07bf=6a3173 a74fef=8b3994 b70000=942020 bf7727=cd8339 bf77df=bf77df dfaf67=ffcd52 e73f67=cd4129 ff8faf=ff8772 ffe79f=fff694
+316	idle,walk,sleep,faint	000000=000000 47676f=47676f 873f87=af3629 af6fb7=d96558 bf7727=d98504 d797df=f38f79 d7dfdf=d7dfdf dfaf67=f8c749 ffe79f=fcf48b ffffff=ffffff
+317	idle,walk,sleep	000000=000000 278700=278700 5fb727=5fb727 9f0000=0063b5 9fcf6f=9fcf6f a76f00=b76f00 d73f00=189ce7 dfb700=f8b000 fff700=fff700 ffffff=ffffff
+318	idle,walk,sleep	000000=000000 9f0000=46b483 a76f00=9d7b00 bf7727=b58b21 d73f00=73e6b0 dfaf67=dbc470 ffe79f=ece29e
+319	idle,walk,sleep	000000=000000 47676f=6f6155 7f8f97=8c8c84 9f0000=9f4800 afb7bf=b7b8ab bf7727=a97b2f d73f00=ce9200 d7dfdf=dcd7df dfaf67=c9ac69 ff875f=fffa48 ffe79f=e9dd9c ffffff=ffffff
+320	idle,walk,sleep	000000=000000 0067b7=b28149 1f9fe7=edb965 8fdfff=fff2c9 9f0000=9f0000 d73f00=d73f00 ff875f=ff875f
+321	idle,walk,sleep	000000=000000 47676f=753535 773f00=ad6b00 7f8f97=9c5a5a 9f0000=9f0000 a75f1f=de9c29 afb7bf=c58484 d73f00=d73f00 d7dfdf=d7dfdf df771f=f4da58 ffffff=ffffff
+322	idle,walk,sleep	000000=000000 373f8f=b29a62 4f5f97=b2ae92 4f97ff=ffe955 572f9f=766635 6787af=e0ddba 8f67bf=b29a62 9f0000=0faa40 b797df=e5d190 d73f00=41d36f ff875f=84ffbd ffffff=ffffff
+323	idle,walk,sleep	000000=000000 0067b7=a77f27 1f9fe7=dfb747 47676f=47676f 7f8f97=7f8f97 7fcfff=ffff4f afb7bf=afb7bf ffffff=ffffff
+324	idle,walk,sleep	000000=000000 373f8f=39428f 4f5f97=516196 5767b7=5767b7 6787af=6887ad 879fff=879fff 9f6f00=774d46 b7bfc7=b7bfc7 b7cfff=b7cfff cfaf37=b97373 ffe76f=f5a898 ffffff=ffffff
+325	idle,walk,sleep	000000=000000 e73f67=e38100 ff8faf=f7d600 ffc7d7=f9ef57 ffffff=ffffff
+326	idle,walk,sleep	000000=000000 9f0000=a53551 bf7727=a58861 d73f00=c96d86 dfaf67=d1b685 ff875f=ef9bb4 ffe79f=efe3b3 ffffff=ffffff
+327	idle,walk,sleep	000000=000000 0067b7=df56ae 1f9fe7=ff81d0 47676f=8f6a6e 7f8f97=7f8f97 7fcfff=f9aaff 9f0000=9e3f13 afb7bf=afb7bf bf7727=bf7727 d73f00=eb780a d7dfdf=d7dfdf dfaf67=e09e53 ff875f=ebb249 ffe79f=ffdc8c ffffff=ffffff
+328	idle,walk,sleep	000000=000000 0067b7=524a63 1f9fe7=9c9cad 876f4f=a57bad 8fdfff=ced6ef 9f0000=7a4855 b79767=c59cc5 d73f00=b56b6b dfbf8f=e6c5e6 ff875f=ff875f ff87bf=e67b63 ffe79f=e6dee6 ffffff=ffffff
+330	idle,walk,sleep	000000=000000 373f8f=569b02 4f5f97=9cc519 6787af=b6e56f 9f0000=0a88a3 a76f00=a75e00 bfcff7=bfcff7 d73f00=63d6c5 dfb700=d6a903 ff875f=92faf2 fff700=ffeb0e ffffff=ffffff
+333	idle,walk,sleep	000000=000000 278700=ce5a21 5fc737=ef7b42 7f8f97=9c9c9c afb7bf=cecece d7dfdf=d7dfdf dfb700=bdb57b fff700=ffffb5 ffffff=ffffff
+334	idle,walk,sleep	000000=000000 278700=6897e8 5fb727=92ceff 9f0000=bb7322 9fcf6f=75b96d d73f00=d8ac42 d7efa7=b4ef78 ffffff=ffffff
+335	idle,walk,sleep	000000=000000 373f8f=b73c3c 4f5f97=d96a57 6787af=f7af8f 9f0000=950000 a76f00=aa7a02 d73f00=b73c3c dfb700=e3c602 ff875f=d96a57 fff700=f7fc18
+336	idle,walk,sleep	000000=000000 373f8f=373f8f 4f5f97=4f5f97 773f00=703b46 976727=a8791c af671f=af371f cf9f07=ce6000 df771f=cc94ac dfaf97=eebb88 ff9747=ecbfde ffcf57=ff8251 ffe7bf=fef5b1 ffffff=ffffff
+337	idle,walk,sleep,faint	000000=000000 278700=1870d0 5fb727=37a7f0 9f0000=9f0000 9fcf6f=77d0e0 a76f00=a76f00 d73f00=d73f00 d7efa7=b7e8f8 dfb700=bfa707 ff875f=ff875f fff700=fff700 ffffff=ffffff
+338	idle,walk,sleep	000000=000000 0067b7=626877 1f9fe7=858b96 9f0000=4693ba 9fe7ff=9da4b5 a76f00=a5845e d73f00=d73f00 dfb700=ddad63 ff875f=ff875f fff700=ffe175 ffffff=ffffff
+339	idle,walk,sleep	000000=000000 278700=5b6f9a 5fb727=819fc0 773f00=65472c 7fdf57=99c0dc 8fff67=b3d3ea a75f1f=a06032 bf7727=b28257 d73f00=d54307 dfaf67=dbb98f ffe79f=f9e3bc ffffff=ffffff
+340	walk,sleep	000000=000000 0067b7=c5a431 1f9fe7=ffee73 47676f=2c313d 7f8f97=4d5a5e 9f0000=4a4a62 bf7727=ab672b d73f00=6b6b83 dfaf67=d49e5b ff875f=9494ac ffe79f=fad389 ffffff=ffffff
+341	idle,walk,sleep	000000=000000 0067b7=803880 1f9fe7=a868b0 7f8f97=7f8f97 7fcfff=e098e0 9f0000=9f0000 afb7bf=afb7bf bf7727=bf7727 d7dfdf=d7dfdf dfaf67=dfaf67 ffe79f=ffe79f ffffff=ffffff
+342	idle,walk,sleep	000000=000000 0067b7=c254b2 1f9fe7=db93e3 47676f=902f88 7f8f97=7f8f97 7fcfff=ffc8fd afb7bf=afb7bf bf7727=bf7727 dfaf67=dfaf67 ffe79f=ffe79f ffffff=ffffff
+343	sleep	000000=000000 0067b7=93609c 1f9fe7=c392e1 47676f=5f3b7b 7f8f97=96779d 9f0000=9f0000 afb7bf=ad9ad7 bf7727=bf7727 d7dfdf=c8c1e9 dfaf67=dfaf67 ffe79f=ffe79f ffffff=e3e3f9
+346	idle,walk,sleep	000000=000000 1f9fe7=c83400 47676f=3a5156 7f8f97=7f8f97 7fcfff=fc8e47 9f0000=c58815 afb7bf=afb7bf bf7727=35819a d73f00=f6c62b d7dfdf=d7dfdf dfaf67=4cc8da ff875f=fcec31 ffe79f=aaeaed ffffff=ffffff
+347	idle,walk,sleep	000000=000000 0067b7=9f0000 1f9fe7=d73f00 47676f=47676f 7f8f97=588080 7fcfff=ff875f 9f0000=9f0000 afb7bf=80b0b8 d73f00=d73f00 d7dfdf=d6ebeb ffffff=ffffff
+348	idle,walk,sleep	000000=000000 9f0000=5d7a88 bf7727=dc8e3e d73f00=829fd1 dfaf67=f5be73 ff875f=b3ccee ff87bf=c6f2ec ffe79f=ffefa1
+349	idle,walk,sleep	000000=000000 773f00=77001d a75f1f=c60031 a76f00=a76f00 b78727=c69442 d7bf67=deb518 df771f=ef1810 dfb700=dfb700 e73f67=0094ff ff8faf=0094ff ff9747=ff5252 fff79f=fff79f ffffff=ede595
+350	idle,walk,sleep	000000=000000 0067b7=1b9535 1f9fe7=50ba5d 47676f=47676f 7f8f97=7f8f97 7fcfff=8dd888 9f0000=930000 afb7bf=afb7bf d73f00=cd3c00 d7dfdf=d7dfdf ff875f=ec7b56 ffffff=ffffff
+351	sleep	000000=000000 7f8f97=a5845a afb7bf=f7c6ad d7dfdf=fbe3d7 e757a7=5a5a73 f79fbf=9494a5 ffd7d7=b5b5c6 ffffff=ffffff
+352	idle,walk,sleep	000000=000000 6f3f97=bd992c 7f8f97=7f8f97 afb7bf=afb7bf c797df=ffef73 d7dfdf=d7dfdf e73f67=e73f67 ff8faf=ff8faf ffc7d7=ffc7d7 ffffff=ffffff
+353	idle,walk,sleep	000000=000000 9f0000=840707 bf7727=b06a1c d73f00=c42000 dfaf67=d09e53 ff875f=ef6e43 ffe79f=eed06e ffffff=ffffff
+354	idle,walk,sleep	000000=000000 0067b7=31844a 1f9fe7=52a56b 8fdfff=8cdea5 bf7727=bc944f dfaf67=f7ce6b ffe79f=ffefa5 ffffff=ffffff
+355	idle,walk,sleep	000000=000000 47676f=6a2f4d 7f8f97=9d5a7c 9f0000=a80c19 afb7bf=afb7bf bf7727=bf8227 d73f00=dd360b d7dfdf=d7dfdf dfaf67=dfbd67 ff875f=ff875f ffe79f=ffe79f ffffff=ffffff
+356	sleep	000000=000000 0067b7=b44131 1f9fe7=e25c41 7f8f97=997799 7fcfff=ff927c 9f0000=9f0000 afb7bf=d6a0d6 d7dfdf=e0c3e0 ffffff=f9e5f9
+357	idle,walk,sleep	000000=000000 47676f=77705a 7f8f97=aca07e 97375f=495f8a afb7bf=c6bda3 d7dfdf=f5ebce e74f87=668bcc e7b700=ccb278 efd700=f8e397 ff6fa7=96b9f1 ffffff=ffffff
+358	idle,walk,sleep	000000=000000 0067b7=8f6519 1f9fe7=c4a951 7fcfff=eada94 afb7bf=bfb9af d7dfdf=dfded7 ffffff=fbfaf4
+359	idle,walk,sleep	000000=000000 0067b7=a67637 1f9fe7=c7a65a 47676f=6f5847 7f8f97=978d7f 7fcfff=edda95 afb7bf=bfbaaf d7dfdf=dfdfd7 ffffff=ffffff
+360	idle,walk,sleep	000000=000000 0067b7=7f2f77 1f9fe7=bd42c5 47676f=47676f 7f8f97=7f8f97 7fcfff=e67bd6 9f0000=9f0000 afb7bf=afb7bf d73f00=d73f00 d7dfdf=d7dfdf ff875f=ff875f ffffff=ffffff
+364	idle,walk,sleep	000000=000000 773f00=3f213c a75f1f=63385c b78727=8f6d96 d7bf67=c691ae df771f=a55297 e73f67=e52756 ff8faf=ff77a0 ffc7d7=ffc7d7 fff79f=ffd9ff ffffff=ffffff
+365	idle,walk,sleep	000000=000000 47676f=544c48 773f00=773f00 7f8f97=8c7c4e 9f0000=993300 a75f1f=a75f1f afb7bf=c6aa75 d73f00=d75d00 d7dfdf=e2dba3 df771f=df771f ff875f=ff8737 ffffff=fffae5
+366	idle,walk,sleep	000000=000000 773f00=563a1b a75f1f=8e6541 b78727=a58c66 d7bf67=ccb466 df771f=d68f44 e73f67=e54e55 ff8faf=ff8f7c fff79f=efd186 ffffff=fff1c1
+367	idle,walk,sleep	000000=000000 278700=4e83ae 5fc737=87b4d8 8fff67=b9e0f4 dfb700=cd7e3e fff700=f4af6e
+369	idle,walk,sleep	000000=000000 278700=647b04 5fb727=9ca829 773f00=7c5600 7fdf57=bdd84c 8fff67=d6fa57 a75f1f=af7b1f bf7727=d19f2d df771f=e39c25 dfaf67=e2c871 ffe79f=ffe79f ffffff=ffffff
+370	idle,walk,sleep	000000=000000 773f00=773f00 a75f1f=a75f1f a76f00=427f26 df771f=df771f dfb700=58c932 e73f67=e53460 ff8faf=ff7aa2 ffc7d7=ffb7cd fff700=b6ffa3
+371	idle,walk,sleep	000000=000000 5767b7=a461aa 879fff=caa6d5 9f0000=a80000 a76f00=b16b00 b7cfff=eedeff d73f00=dd3e00 dfb700=dfb700 ff875f=ff7344 fff700=ffff00 ffffff=ffffff
+372	idle,walk,sleep	000000=000000 5767b7=a461aa 879fff=caa6d5 9f0000=a80000 a76f00=bb6a00 b7cfff=eedeff d73f00=dd3e00 dfb700=e8a300 ff875f=ff7344 fff700=ffff00 ffffff=ffffff
+374	idle,walk,sleep	000000=000000 0067b7=358344 1f9fe7=42a255 773f00=a45608 8fdfff=70e584 a75f1f=f49b00 c7d7d7=c7d7d7 d73f00=d73f00 df771f=fed74f e73f67=e73f67 ff8faf=ff8faf ffffff=ffffff
+375	idle,walk,sleep	000000=000000 6f3f97=6f3f97 afb7bf=afb7bf c797df=c797df d7dfdf=d7dfdf e73f67=b85000 ff8faf=f89000 ffc7d7=f8e000 ffffff=ffffff
+377	idle,walk,sleep	000000=000000 373f8f=348d8d 4f5f97=80c0b7 879fff=55b4be b7cfff=b7cfff ffe79f=ffe79f
+378	idle,walk,sleep	000000=000000 47676f=39758e 7f8f97=739fbc 9f0000=9f0000 bf7727=bf7727 d73f00=d73f00 dfaf67=dfaf67 ff875f=ff875f ffe79f=ffe79f ffffff=ffffff
+379	idle,walk,sleep	000000=000000 373f8f=323e68 4f5f97=4b5c7d 8f67bf=ac295a 9f0000=10317b a76f00=4a8b29 b797df=de5a8b d73f00=395a9c dfb700=8bd56a ff875f=6283de fff700=c5ff94 ffffff=ffffff
+380	walk,sleep	000000=000000 47676f=41616b 7f8f97=7f8f97 9f0000=0065b6 afb7bf=adb5bd d73f00=189ae3 d7dfdf=d7dadf ffe79f=78cfff ffffff=ffffff
+381	idle,walk,sleep	000000=000000 674f47=346960 776747=776747 876f57=52a596 8f7f57=8f7f57 9f0000=9f0000 afb7bf=afb7bf b79f5f=b79f5f d73f00=d73f00 e7cf7f=e7cf7f ff875f=ff875f
+383	idle,walk,sleep	000000=000000 0067b7=aa1e0f 1f9fe7=cd4031 47676f=4a6a66 7f8f97=4f988c 9f0000=9f0000 afb7bf=afbfb7 d73f00=d73f00 d7dfdf=dadfd7 ffffff=ffffff
+385	idle,walk	000000=000000 47676f=8a6595 7f8f97=bda9c2 afb7bf=eed3f5 d7dfdf=fae7ff ffffff=f6e5a1
+387	sleep	000000=000000 47676f=47676f 5767b7=5767b7 873f87=af7e32 879fff=879fff 979fa7=979fa7 af6fb7=cbab70 b7cfff=b7cfff d797df=e7cda1 dfaf67=d27b44 ffe79f=eaaa73
+388	idle,walk,sleep	000000=000000 6f3f97=0d8b63 c797df=87e5b3 dfb700=f2b409 e73f67=fc6f28 ff8faf=ffb256 ffc7d7=fff0a1 fff700=fff351 ffffff=ffffff
+389	idle,walk,sleep	000000=000000 278700=8f3d70 5fc737=c1679b 8fff67=ffa3d8 a75f67=b5594f dfb700=dfb700 e767a7=ec7526 f7a77f=fb9f71 ffc7d7=ffe0ba ffcfcf=f9d4a7 fff700=fff700 ffffff=ffffff
+391	walk,sleep	000000=000000 0067b7=a8484e 1f9fe7=d87077 47676f=563a3a 7f8f97=966464 7fcfff=eba1a2 9f0000=e98b72 afb7bf=afb7bf bf7727=bf7727 d7dfdf=d7dfdf dfaf67=dfaf67 ffe79f=ffe79f ffffff=ffffff
+392	idle,walk,sleep,faint	000000=000000 278700=2e6696 5fc737=41a0d3 7f8f97=917296 8fff67=73ccfe afb7bf=ccaed1 d7dfdf=ddc5e2 e73f67=b16f3e ff8faf=f6b248 ffc7d7=ffcd87 ffffff=f6dffa
+393	idle,walk,sleep,faint	000000=000000 278700=556d7f 5fc737=7499b2 7f8f97=8b838d 8fff67=a4cdea afb7bf=b1a6b5 d7dfdf=d6ceda e73f67=995d38 ff8faf=cc7f53 ffc7d7=ffab77 ffffff=ffffff
+394	idle,walk,sleep	000000=000000 278700=47627a 5fc737=7ea4ca 7f8f97=8b878f 8fff67=b6def6 afb7bf=b5afbb d7dfdf=dedee8 e73f67=ba6c31 ff8faf=ff9b4f ffffff=ffffff
+395	idle,walk,sleep	000000=000000 0067b7=4fa033 1f9fe7=8cde83 47676f=6e6880 7f8f97=9899aa 9f0000=9f0000 afb7bf=bbbccb bf7727=9e5d0d d7dfdf=dcd9e5 dfaf67=c7953a ffe79f=e5c460 ffffff=ffffff
+397	idle,walk,sleep,faint	000000=000000 0067b7=0c8a62 1f9fe7=43c57a 47676f=47676f 7f8f97=7f8f97 7fcfff=8ce7a5 9f0000=951100 afb7bf=afb7bf d73f00=ca5300 d7dfdf=d7dfdf ff875f=ff8c4a ffffff=ffffff
+398	idle,walk,sleep	000000=000000 373f8f=736b7b 4f5f97=a59cad 6787af=c6c6ce 7f8f97=d88800 afb7bf=f8b000 b70000=b70000 e73f67=e73f67 ff8faf=ff8faf ffffff=ffffff
+399	idle,walk,sleep	000000=000000 373f8f=736b7b 4f5f97=a59cad 6787af=c6c6ce 7f8f97=d88800 afb7bf=f8b000 b70000=b70000 d7dfdf=f8f000 e73f67=e73f67 ff8faf=ff8faf ffffff=ffffff
+401	idle,walk,sleep	000000=000000 47676f=51311e 773f00=773f00 7f8f97=6a3918 a75f1f=a75f1f afb7bf=9c6a52 d7dfdf=bd8b62 df771f=df771f dfaf67=dfaf67 ff875f=f77339 ffffff=d5b59b
+402	idle,walk,sleep	000000=000000 373f8f=0066cc 5767b7=0099ff 879fff=33ccff b7cfff=66ffff dfaf67=dfaf67 ffe79f=ffe79f ffffff=f8f8f8
+404	idle,walk,sleep	000000=000000 0067b7=83108b 1f9fe7=b439bd 47676f=5a526a 7f8f97=a48b9c 7fcfff=ee73f6 9f0000=9f0000 afb7bf=d5bdd5 d73f00=d73f00 d7dfdf=e6dee6 ff875f=ff875f ffe79f=ffcd31 ffffff=ffffff
+405	idle,walk,sleep	000000=000000 47676f=73625a 7f8f97=9c8b8b 9f0000=7d8415 afb7bf=bcb5b5 bf7727=9c6a31 d73f00=c5cd31 d7dfdf=e2d3d3 dfaf67=dfaf67 ff875f=f7ff8c ffe79f=ffcd31 ffffff=ffffff
+406	idle,walk,sleep	000000=000000 278700=283128 5fb727=4a524a 9f0000=9f0000 9fcf6f=737b73 a76f00=a76f00 b7cfff=b7cfff d73f00=d73f00 d7efa7=94a49c dfb700=dfb700 ff875f=ff875f fff700=fff700 ffffff=ffffff
+407	idle,walk,sleep,faint	000000=000000 47676f=736a8b 7f8f97=7f8f97 9f0000=c5770e afb7bf=afb7bf d73f00=faa213 d7dfdf=d7dfdf dfaf67=00c64c ff875f=ffe71c ffe79f=35f47b ffffff=ffffff
+408	idle,walk,sleep	000000=000000 0067b7=1a936f 1f9fe7=4abd9c 47676f=6b636b 7f8f97=948c94 7fcfff=79f2d1 9f0000=e06400 afb7bf=b4bbc1 d7dfdf=dedede ffffff=ffffff
+409	sleep	000000=000000 5fc737=be041c 7f8f97=ce6b85 8fff67=dc6047 afb7bf=e9a2b5 d7b747=e2c54a d7dfdf=ffc7d7 ffe78f=fff696 ffffff=ffe9ec
+411	idle,walk,sleep	000000=000000 0067b7=39834a 1f9fe7=6abd7b 7fcfff=94e694 9f0000=9c4100 bf7727=e6a44a d73f00=cd6a00 dfaf67=ffcd5a ff875f=ffbd29 ffe79f=ffe694 ffffff=f3fff3

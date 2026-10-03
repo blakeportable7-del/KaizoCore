@@ -125,4 +125,104 @@ class RandomizersTest {
             assertTrue(File(presets, n).length() > 0, "$n is bundled")
         }
     }
+
+    @Test
+    fun `the engines run in the root locale and the phone's comes back after`() {
+        // rc32 audit P2 #118: a Turkish phone lower-cased FIRE to a dotless "fıre"; an Arabic-digit phone logged its digits.
+        val saved = java.util.Locale.getDefault()
+        try {
+            java.util.Locale.setDefault(java.util.Locale.forLanguageTag("tr-TR"))
+            assertEquals("Fire", Randomizers.inEngineLocale { com.dabomstew.pkrandomzx.RomFunctions.camelCase("FIRE") })
+            assertFalse(com.dabomstew.pkrandomzx.RomFunctions.camelCase("FIRE") == "Fire", "outside it the phone's own rules apply, which is the bug")
+            assertEquals("tr-TR", java.util.Locale.getDefault().toLanguageTag(), "the phone's locale comes back")
+            java.util.Locale.setDefault(java.util.Locale.forLanguageTag("ar-EG-u-nu-arab"))
+            assertEquals("001", Randomizers.inEngineLocale { String.format("%03d", 1) })
+            assertFalse(String.format("%03d", 1) == "001")
+            assertFailsWith<IllegalStateException> { Randomizers.inEngineLocale { error("the engine threw") } }
+            assertEquals("ar-EG-u-nu-arab", java.util.Locale.getDefault().toLanguageTag(), "and comes back when the engine throws")
+        } finally {
+            java.util.Locale.setDefault(saved)
+        }
+    }
+
+    @Test
+    fun `a Turkish or Arabic phone makes the same game and the same log for a seed as any other`() {
+        val roms = File(System.getenv("IRONMON_ROMS") ?: "C:/Users/bepor/IronMonOne/.vendor/roms")
+        val src = Dumps.file(roms, "emerald-u.gba") ?: return println("SKIP: no emerald-u.gba")
+        val presets = listOf("src/main/assets/presets", "app/src/main/assets/presets").map(::File).first { it.isDirectory }
+        // Kaizo with the lower-case names tweak, which runs every Pokemon's name through RomFunctions.camelCase.
+        val tweaked = File(dir, "RSE Kaizo lower.rnqs")
+        val s = java.io.FileInputStream(File(presets, "RSE Kaizo.rnqs")).use { com.dabomstew.pkrandomzx.Settings.read(it) }
+        s.currentMiscTweaks = s.currentMiscTweaks or com.dabomstew.pkrandomzx.MiscTweak.LOWER_CASE_POKEMON_NAMES.value
+        java.io.FileOutputStream(tweaked).use { s.write(it) }
+        val saved = java.util.Locale.getDefault()
+        fun make(tag: String): Pair<ByteArray, String> {
+            java.util.Locale.setDefault(java.util.Locale.forLanguageTag(tag))
+            try {
+                val dest = File(dir, "out-$tag.gba")
+                Randomizers.randomize(RomKind.EMERALD_U, src, tweaked, dest, 0x1234567L)
+                return dest.readBytes() to Randomizers.logFor(dest).readText().lines().filterNot { it.startsWith("Time elapsed:") }.joinToString("\n")
+            } finally {
+                java.util.Locale.setDefault(saved)
+            }
+        }
+        val us = make("en-US")
+        val tr = make("tr-TR")
+        val ar = make("ar-EG-u-nu-arab")
+        assertTrue(us.first.contentEquals(tr.first), "the same seed makes the same ROM on a Turkish phone")
+        assertEquals(us.second, ar.second, "and the same log on a phone with Arabic digits")
+        assertTrue("TM01" in ar.second)
+    }
+
+    private fun halfEngine(): (File, File, File, Long) -> NatDexEngine.Outcome = { src, _, d, sd ->
+        d.writeBytes(src.readBytes().copyOf(src.length().toInt() / 2)); NatDexEngine.Outcome(sd, "log")
+    }
+
+    @Test
+    fun `a Game Boy or GBA game written short is refused and deleted, in every pass`() {
+        // rc32 audit P2 #119: the engines swallow a failed write and only an empty file was refused.
+        val gba = File(dir, "emerald.gba").apply { writeBytes(ByteArray(64) { 3 }) }
+        val out = File(dir, "short.gba")
+        val e = assertFailsWith<NatDexEngine.EngineException> { Randomizers.whole(RomKind.EMERALD_U, halfEngine())(gba, part1, out, 1L) }
+        assertTrue("stopped partway" in e.message!!, e.message)
+        assertFalse(out.exists(), "the cut file is gone")
+        // With less room than the missing part, it is the phone's space, said so on Play and RUN alike.
+        val full = assertFailsWith<RunSetupProblem> { Randomizers.whole(RomKind.EMERALD_U, halfEngine(), free = { 0L })(gba, part1, out, 1L) }
+        assertEquals(Randomizers.NO_ROOM, full.message)
+        assertEquals(Randomizers.NO_ROOM, newRunFailureCopy(full))
+        assertEquals(Randomizers.NO_ROOM, RunJob.randomizeFailure(full))
+        // The checked engine is what each pass runs: PART 1, and the pre-pass.
+        assertFailsWith<NatDexEngine.EngineException> { Randomizers.twoPass(rom, part1, part2, dest, 1L, Randomizers.whole(RomKind.RED_U, halfEngine())) }
+        assertFalse(File(dir, "current.gbc.pass1.tmp").exists() || dest.exists())
+        val pre = File(dir, "RSE PRE-PASS.rnqs").apply { writeText("pre") }
+        assertFailsWith<NatDexEngine.EngineException> { Randomizers.withPrePass(gba, pre, part1, out, 1L, Randomizers.whole(RomKind.EMERALD_U, halfEngine())) }
+        // A whole one passes, and a DS game, whose handler throws on a failed write itself, is not measured.
+        val ok = Randomizers.whole(RomKind.EMERALD_U, { src, _, d, sd -> d.writeBytes(src.readBytes()); NatDexEngine.Outcome(sd, "log") })(gba, part1, out, 1L)
+        assertEquals(1L, ok.seed)
+        val nds = File(dir, "platinum.nds").apply { writeBytes(ByteArray(64)) }
+        Randomizers.whole(RomKind.PLATINUM_U, halfEngine())(nds, part1, File(dir, "out.nds"), 1L)
+        // A full disk that the DS engine reports is said as a full disk too.
+        val enospc = NatDexEngine.EngineException("Randomization failed: x", java.io.IOException("write failed: ENOSPC (No space left on device)"))
+        assertEquals(Randomizers.NO_ROOM, RunJob.randomizeFailure(enospc))
+        assertEquals("The randomizer stopped partway through. Try again, or pick another settings file.", RunJob.randomizeFailure(NatDexEngine.EngineException("Randomization failed: null")))
+    }
+
+    @Test
+    fun `a Limit Pokemon the engine turns off for a changed Gen 3 game is said in the log`() {
+        // rc32 audit P3 #90: the 60% levels' pre-pass output is not the clean dump, so the engine dropped the limit unsaid.
+        val roms = File(System.getenv("IRONMON_ROMS") ?: "C:/Users/bepor/IronMonOne/.vendor/roms")
+        val src = Dumps.file(roms, "emerald-u.gba") ?: return println("SKIP: no emerald-u.gba")
+        val presets = listOf("src/main/assets/presets", "app/src/main/assets/presets").map(::File).first { it.isDirectory }
+        val limited = File(dir, "RSE Kaizo limited.rnqs")
+        val s = java.io.FileInputStream(File(presets, "RSE Kaizo.rnqs")).use { com.dabomstew.pkrandomzx.Settings.read(it) }
+        s.currentRestrictions = com.dabomstew.pkrandomzx.pokemon.GenRestrictions(1 or 2 or 4)
+        s.isLimitPokemon = true
+        java.io.FileOutputStream(limited).use { s.write(it) }
+        val out = File(dir, "limited.gba")
+        Randomizers.randomize(RomKind.EMERALD_U, src, limited, out, 0x77L, prePass = File(presets, "RSE PRE-PASS.rnqs"))
+        assertEquals(listOf(com.ironmonone.app.engine.ZxEngine.LIMIT_DROPPED), RandomizerLog.notesOf(Randomizers.logFor(out)))
+        // On the clean dump the engine keeps the limit, and the log says nothing of it.
+        Randomizers.randomize(RomKind.EMERALD_U, src, limited, out, 0x77L)
+        assertEquals(emptyList(), RandomizerLog.notesOf(Randomizers.logFor(out)))
+    }
 }

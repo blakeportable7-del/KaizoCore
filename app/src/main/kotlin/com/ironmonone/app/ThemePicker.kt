@@ -81,6 +81,9 @@ internal fun ThemePresetSection(ds: Boolean, onApplied: () -> Unit) {
     var note by remember { mutableStateOf<Pair<String, Boolean>?>(null) }
     var removeArmed by remember { mutableStateOf(false) }
     val focus = LocalFocusManager.current
+    // Save and Remove answer whether the write worked, so they wait for it, on an IO thread: the sync held up the
+    // screen while a new run could be writing hundreds of MB (rc32 audit P3 #69).
+    val scope = rememberCoroutineScope()
     // Two taps, disarmed after 3 s, as Reset colours does.
     LaunchedEffect(removeArmed) { if (removeArmed) { delay(3000); removeArmed = false } }
 
@@ -89,7 +92,7 @@ internal fun ThemePresetSection(ds: Boolean, onApplied: () -> Unit) {
         style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper)
     if (TrackerOptions.autoPokemonThemes) {
         // The setting is TrackerOptions.autoPokemonThemes, "Auto Pokemon Themes" in the tracker's setup.
-        Text("Auto Pok\u00e9mon Themes is on, so the lead Pok\u00e9mon's colours show while you play. " +
+        Text("Auto Pok\u00e9mon Themes is on, so the lead Pok\u00e9mon's colors show while you play. " +
             "Turn it off in the tracker's setup to keep the preset you pick.",
             style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper, modifier = Modifier.padding(top = 4.dp))
     }
@@ -114,7 +117,10 @@ internal fun ThemePresetSection(ds: Boolean, onApplied: () -> Unit) {
     if (inUse != null) {
         Spacer(Modifier.height(8.dp))
         Gen3Button(if (removeArmed) "Sure? Remove ${inUse.name}" else "Remove ${inUse.name}", accent = removeArmed, raw = true) {
-            if (removeArmed) { ThemePresets.removeYours(inUse.name); removeArmed = false; note = null } else removeArmed = true
+            if (removeArmed) {
+                removeArmed = false; note = null
+                scope.launch { withContext(Dispatchers.IO) { ThemePresets.removeYours(inUse.name) } }
+            } else removeArmed = true
         }
     }
     Spacer(Modifier.height(10.dp))
@@ -122,21 +128,25 @@ internal fun ThemePresetSection(ds: Boolean, onApplied: () -> Unit) {
         value = name,
         onValueChange = { name = it.take(ThemePresets.MAX_NAME); note = null },
         modifier = Modifier.fillMaxWidth(),
-        label = { Text("Name for these colours") },
+        label = { Text("Name for these colors") },
         singleLine = true,
         keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
         keyboardActions = KeyboardActions(onDone = { focus.clearFocus() }),
         colors = OutlinedTextFieldDefaults.colors(unfocusedBorderColor = Shell.hintOnPaper),
     )
     Spacer(Modifier.height(6.dp))
-    Gen3Button("Save these colours", accent = true, enabled = name.isNotBlank()) {
-        val kept = ThemePresets.cleanName(name)
-        when (ThemePresets.saveYours(name)) {
-            ThemePresets.SaveResult.SAVED -> { note = "Saved as $kept." to false; name = "" }
-            ThemePresets.SaveResult.REPLACED -> { note = "Replaced $kept." to false; name = "" }
-            ThemePresets.SaveResult.EMPTY -> note = "Type a name first." to true
-            ThemePresets.SaveResult.RESERVED -> note = "$kept is the name of a built-in preset. Pick another." to true
-            ThemePresets.SaveResult.FAILED -> note = "Could not save. The phone refused the write." to true
+    Gen3Button("Save these colors", accent = true, enabled = name.isNotBlank()) {
+        val typed = name
+        val kept = ThemePresets.cleanName(typed)
+        val theme = ThemeStore.snapshot()
+        scope.launch {
+            when (withContext(Dispatchers.IO) { ThemePresets.saveYours(typed, theme) }) {
+                ThemePresets.SaveResult.SAVED -> { note = "Saved as $kept." to false; name = "" }
+                ThemePresets.SaveResult.REPLACED -> { note = "Replaced $kept." to false; name = "" }
+                ThemePresets.SaveResult.EMPTY -> note = "Type a name first." to true
+                ThemePresets.SaveResult.RESERVED -> note = "$kept is the name of a built-in preset. Pick another." to true
+                ThemePresets.SaveResult.FAILED -> note = "Could not save. The phone refused the write." to true
+            }
         }
         removeArmed = false
         focus.clearFocus()
@@ -238,10 +248,13 @@ internal fun TrackerImageSection() {
     val hasImage = TrackerBackground.image != null
 
     Text("Image behind the tracker", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium, color = Shell.inkOnPaper)
+    // Said where the photo is chosen (rc32 audit P2 #94): the backup and the cloud copy carry it. Since the See-through
+    // slider the boxes do let it through, all of them (rc32 audit P3 #21).
     Text("Your own photo, kept inside KaizoCore and scaled to at most ${TrackerBackground.MAX_LONG_SIDE} px on its long side. " +
-        "The boxes keep their own colours: give a box colour 8 hex digits (AARRGGBB) to let the image show through it.",
+        TrackerBackground.IN_BACKUPS + " " +
+        "See-through boxes sets how much of it shows through the tracker's boxes.",
         style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper)
-    Text("The OBS stream page has its own colours and does not show the image.",
+    Text("The OBS stream page has its own colors and does not show the image.",
         style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper, modifier = Modifier.padding(top = 4.dp))
     Spacer(Modifier.height(8.dp))
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {

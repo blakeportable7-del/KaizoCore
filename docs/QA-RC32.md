@@ -27,7 +27,8 @@ audit check passed against the live site first. After the deploy: the audit tool
 301s to the page, home and /audit answer 200, and the release notes link answers 200. The GitHub wiki was pushed
 (b81f544): rc32 is the current download, and its release notes list everything new with the counts.
 
-Not shipped yet. This records what has been checked so far; the release section is filled in when it ships.
+Shipped 2026-10-01 (the section above). The counts below are the ones recorded at the time; no full uncached
+suite count was written down for rc32 (rc32 audit P3 #104: release.sh counts and prints it since rc34).
 
 ## What rc32 adds
 
@@ -49,7 +50,7 @@ Not shipped yet. This records what has been checked so far; the release section 
 
 - App module after the Home, Build your own, Nuzlocke and Stream kit merges: 903 tests, 0 failures, uncached.
   tracker-gba: 430, 0 failures.
-- Full uncached suite across all modules: see below once it finishes.
+- Full uncached suite across all modules: not recorded.
 
 ## On the emulator (AVD ironmon, Android 14, release builds)
 

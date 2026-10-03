@@ -1,0 +1,246 @@
+KaizoCore patch to libretro/melonDS 66b5d2634cd0a79030562811e6e05f5532f800ba (GPL-3.0, as melonDS is): melonDS's
+own fix f143e89c931d12a234851e443b7d85f8017db9a3 ("fix UB in software renderer", Arisotura, 2025-09-29,
+github.com/melonDS-emu/melonDS), brought back to this older source with the same changes.
+
+The 3D software renderer's interpolator computes its perspective factor (yfactor) in SetX() only when the two W
+values differ, but InterpolateZ() reads that factor for every W-buffered polygon. Across a span whose two ends have
+the same W, the depth came from whatever the variable held before; for the per-scanline interpolator that is the
+stack, so what got drawn depended on how the compiler laid the function out. Measured on the emulator, 2026-10-03,
+running each game from boot with no input and a fixed clock: the libretro buildbot's binary of this commit (NDK r29)
+and a build of the same source with NDK r26 drew 78 of the first 2,400 frames of HeartGold and 7 of Platinum's
+differently on x86_64 (67 and 8 on arm64, run through the emulator's translation), a few pixels at a polygon edge
+each time, and every one of those frames showed a picture drawn through this path. Filling uninitialized stack
+variables with a pattern changed the picture again, the same whether it was done in every file or in
+GPU3D_Soft.cpp alone. Black 2 and White 2 never went through it and drew the same in both.
+
+The interpolator now knows it is W-buffering and computes the factor for it, as melonDS does since that fix, so the
+core draws those pixels the same with any compiler. The sound was the same sample for sample in all four games,
+on both ABIs.
+
+Applied after 0001 by tools/cores/build_core.py melonds; libretrodroid/cores/melonds/PINNED.txt records the result.
+
+diff --git a/src/GPU3D_Soft.cpp b/src/GPU3D_Soft.cpp
+index 2f0f825..9e7270d 100644
+--- a/src/GPU3D_Soft.cpp
++++ b/src/GPU3D_Soft.cpp
+@@ -594,7 +594,7 @@ void SoftRenderer::SetupPolygonLeftEdge(SoftRenderer::RendererPolygon* rp, s32 y
+ 
+     rp->XL = rp->SlopeL.Setup(polygon->Vertices[rp->CurVL]->FinalPosition[0], polygon->Vertices[rp->NextVL]->FinalPosition[0],
+                               polygon->Vertices[rp->CurVL]->FinalPosition[1], polygon->Vertices[rp->NextVL]->FinalPosition[1],
+-                              polygon->FinalW[rp->CurVL], polygon->FinalW[rp->NextVL], y);
++                              polygon->FinalW[rp->CurVL], polygon->FinalW[rp->NextVL], y, polygon->WBuffer);
+ }
+ 
+ void SoftRenderer::SetupPolygonRightEdge(SoftRenderer::RendererPolygon* rp, s32 y)
+@@ -621,7 +621,7 @@ void SoftRenderer::SetupPolygonRightEdge(SoftRenderer::RendererPolygon* rp, s32
+ 
+     rp->XR = rp->SlopeR.Setup(polygon->Vertices[rp->CurVR]->FinalPosition[0], polygon->Vertices[rp->NextVR]->FinalPosition[0],
+                               polygon->Vertices[rp->CurVR]->FinalPosition[1], polygon->Vertices[rp->NextVR]->FinalPosition[1],
+-                              polygon->FinalW[rp->CurVR], polygon->FinalW[rp->NextVR], y);
++                              polygon->FinalW[rp->CurVR], polygon->FinalW[rp->NextVR], y, polygon->WBuffer);
+ }
+ 
+ void SoftRenderer::SetupPolygon(SoftRenderer::RendererPolygon* rp, Polygon* polygon)
+@@ -667,8 +667,8 @@ void SoftRenderer::SetupPolygon(SoftRenderer::RendererPolygon* rp, Polygon* poly
+         rp->CurVL = vtop; rp->NextVL = vtop;
+         rp->CurVR = vbot; rp->NextVR = vbot;
+ 
+-        rp->XL = rp->SlopeL.SetupDummy(polygon->Vertices[rp->CurVL]->FinalPosition[0]);
+-        rp->XR = rp->SlopeR.SetupDummy(polygon->Vertices[rp->CurVR]->FinalPosition[0]);
++        rp->XL = rp->SlopeL.SetupDummy(polygon->Vertices[rp->CurVL]->FinalPosition[0], polygon->WBuffer);
++        rp->XR = rp->SlopeR.SetupDummy(polygon->Vertices[rp->CurVR]->FinalPosition[0], polygon->WBuffer);
+     }
+     else
+     {
+@@ -740,8 +740,8 @@ void SoftRenderer::RenderShadowMaskScanline(RendererPolygon* rp, s32 y)
+     s32 wl = rp->SlopeL.Interp.Interpolate(polygon->FinalW[rp->CurVL], polygon->FinalW[rp->NextVL]);
+     s32 wr = rp->SlopeR.Interp.Interpolate(polygon->FinalW[rp->CurVR], polygon->FinalW[rp->NextVR]);
+ 
+-    s32 zl = rp->SlopeL.Interp.InterpolateZ(polygon->FinalZ[rp->CurVL], polygon->FinalZ[rp->NextVL], polygon->WBuffer);
+-    s32 zr = rp->SlopeR.Interp.InterpolateZ(polygon->FinalZ[rp->CurVR], polygon->FinalZ[rp->NextVR], polygon->WBuffer);
++    s32 zl = rp->SlopeL.Interp.InterpolateZ(polygon->FinalZ[rp->CurVL], polygon->FinalZ[rp->NextVL]);
++    s32 zr = rp->SlopeR.Interp.InterpolateZ(polygon->FinalZ[rp->CurVR], polygon->FinalZ[rp->NextVR]);
+ 
+     // if the left and right edges are swapped, render backwards.
+     if (xstart > xend)
+@@ -792,7 +792,7 @@ void SoftRenderer::RenderShadowMaskScanline(RendererPolygon* rp, s32 y)
+     int edge;
+ 
+     s32 x = xstart;
+-    Interpolator<0> interpX(xstart, xend+1, wl, wr);
++    Interpolator<0> interpX(xstart, xend+1, wl, wr, polygon->WBuffer);
+ 
+     if (x < 0) x = 0;
+     s32 xlimit;
+@@ -812,7 +812,7 @@ void SoftRenderer::RenderShadowMaskScanline(RendererPolygon* rp, s32 y)
+ 
+         interpX.SetX(x);
+ 
+-        s32 z = interpX.InterpolateZ(zl, zr, polygon->WBuffer);
++        s32 z = interpX.InterpolateZ(zl, zr);
+         u32 dstattr = AttrBuffer[pixeladdr];
+ 
+         // checkme
+@@ -842,7 +842,7 @@ void SoftRenderer::RenderShadowMaskScanline(RendererPolygon* rp, s32 y)
+ 
+         interpX.SetX(x);
+ 
+-        s32 z = interpX.InterpolateZ(zl, zr, polygon->WBuffer);
++        s32 z = interpX.InterpolateZ(zl, zr);
+         u32 dstattr = AttrBuffer[pixeladdr];
+ 
+         if (!fnDepthTest(DepthBuffer[pixeladdr], z, dstattr))
+@@ -867,7 +867,7 @@ void SoftRenderer::RenderShadowMaskScanline(RendererPolygon* rp, s32 y)
+ 
+         interpX.SetX(x);
+ 
+-        s32 z = interpX.InterpolateZ(zl, zr, polygon->WBuffer);
++        s32 z = interpX.InterpolateZ(zl, zr);
+         u32 dstattr = AttrBuffer[pixeladdr];
+ 
+         // checkme
+@@ -954,8 +954,8 @@ void SoftRenderer::RenderPolygonScanline(RendererPolygon* rp, s32 y)
+     s32 wl = rp->SlopeL.Interp.Interpolate(polygon->FinalW[rp->CurVL], polygon->FinalW[rp->NextVL]);
+     s32 wr = rp->SlopeR.Interp.Interpolate(polygon->FinalW[rp->CurVR], polygon->FinalW[rp->NextVR]);
+ 
+-    s32 zl = rp->SlopeL.Interp.InterpolateZ(polygon->FinalZ[rp->CurVL], polygon->FinalZ[rp->NextVL], polygon->WBuffer);
+-    s32 zr = rp->SlopeR.Interp.InterpolateZ(polygon->FinalZ[rp->CurVR], polygon->FinalZ[rp->NextVR], polygon->WBuffer);
++    s32 zl = rp->SlopeL.Interp.InterpolateZ(polygon->FinalZ[rp->CurVL], polygon->FinalZ[rp->NextVL]);
++    s32 zr = rp->SlopeR.Interp.InterpolateZ(polygon->FinalZ[rp->CurVR], polygon->FinalZ[rp->NextVR]);
+ 
+     // if the left and right edges are swapped, render backwards.
+     // on hardware, swapped edges seem to break edge length calculation,
+@@ -1020,7 +1020,7 @@ void SoftRenderer::RenderPolygonScanline(RendererPolygon* rp, s32 y)
+     int edge;
+ 
+     s32 x = xstart;
+-    Interpolator<0> interpX(xstart, xend+1, wl, wr);
++    Interpolator<0> interpX(xstart, xend+1, wl, wr, polygon->WBuffer);
+ 
+     if (x < 0) x = 0;
+     s32 xlimit;
+@@ -1059,7 +1059,7 @@ void SoftRenderer::RenderPolygonScanline(RendererPolygon* rp, s32 y)
+ 
+         interpX.SetX(x);
+ 
+-        s32 z = interpX.InterpolateZ(zl, zr, polygon->WBuffer);
++        s32 z = interpX.InterpolateZ(zl, zr);
+ 
+         // if depth test against the topmost pixel fails, test
+         // against the pixel underneath
+@@ -1155,7 +1155,7 @@ void SoftRenderer::RenderPolygonScanline(RendererPolygon* rp, s32 y)
+ 
+         interpX.SetX(x);
+ 
+-        s32 z = interpX.InterpolateZ(zl, zr, polygon->WBuffer);
++        s32 z = interpX.InterpolateZ(zl, zr);
+ 
+         // if depth test against the topmost pixel fails, test
+         // against the pixel underneath
+@@ -1230,7 +1230,7 @@ void SoftRenderer::RenderPolygonScanline(RendererPolygon* rp, s32 y)
+ 
+         interpX.SetX(x);
+ 
+-        s32 z = interpX.InterpolateZ(zl, zr, polygon->WBuffer);
++        s32 z = interpX.InterpolateZ(zl, zr);
+ 
+         // if depth test against the topmost pixel fails, test
+         // against the pixel underneath
+diff --git a/src/GPU3D_Soft.h b/src/GPU3D_Soft.h
+index 61bf368..beb7abb 100644
+--- a/src/GPU3D_Soft.h
++++ b/src/GPU3D_Soft.h
+@@ -67,16 +67,17 @@ private:
+     {
+     public:
+         Interpolator() {}
+-        Interpolator(s32 x0, s32 x1, s32 w0, s32 w1)
++        Interpolator(s32 x0, s32 x1, s32 w0, s32 w1, bool wbuffer)
+         {
+-            Setup(x0, x1, w0, w1);
++            Setup(x0, x1, w0, w1, wbuffer);
+         }
+ 
+-        void Setup(s32 x0, s32 x1, s32 w0, s32 w1)
++        void Setup(s32 x0, s32 x1, s32 w0, s32 w1, bool wbuffer)
+         {
+             this->x0 = x0;
+             this->x1 = x1;
+             this->xdiff = x1 - x0;
++            this->wbuffer = wbuffer;
+ 
+             // calculate reciprocals for linear mode and Z interpolation
+             // TODO eventually: use a faster reciprocal function?
+@@ -129,7 +130,7 @@ private:
+         {
+             x -= x0;
+             this->x = x;
+-            if (xdiff != 0 && !linear)
++            if ((xdiff != 0) && ((!linear) || wbuffer))
+             {
+                 s64 num = ((s64)x * w0n) << shift;
+                 s32 den = (x * w0d) + ((xdiff-x) * w1d);
+@@ -164,7 +165,7 @@ private:
+             }
+         }
+ 
+-        s32 InterpolateZ(s32 z0, s32 z1, bool wbuffer)
++        s32 InterpolateZ(s32 z0, s32 z1)
+         {
+             if (xdiff == 0 || z0 == z1) return z0;
+ 
+@@ -219,6 +220,7 @@ private:
+ 
+         int shift;
+         bool linear;
++        bool wbuffer;
+ 
+         s32 xrecip, xrecip_z;
+         s32 w0n, w0d, w1d;
+@@ -233,7 +235,7 @@ private:
+     public:
+         Slope() {}
+ 
+-        s32 SetupDummy(s32 x0)
++        s32 SetupDummy(s32 x0, bool wbuffer)
+         {
+             if (side)
+             {
+@@ -252,7 +254,7 @@ private:
+             Increment = 0;
+             XMajor = false;
+ 
+-            Interp.Setup(0, 0, 0, 0);
++            Interp.Setup(0, 0, 0, 0, wbuffer);
+             Interp.SetX(0);
+ 
+             xcov_incr = 0;
+@@ -260,7 +262,7 @@ private:
+             return x0;
+         }
+ 
+-        s32 Setup(s32 x0, s32 x1, s32 y0, s32 y1, s32 w0, s32 w1, s32 y)
++        s32 Setup(s32 x0, s32 x1, s32 y0, s32 y1, s32 w0, s32 w1, s32 y, bool wbuffer)
+         {
+             this->x0 = x0;
+             this->y = y;
+@@ -328,8 +330,8 @@ private:
+ 
+             if (XMajor)
+             {
+-                if (side) Interp.Setup(x0-1, x1-1, w0, w1); // checkme
+-                else      Interp.Setup(x0, x1, w0, w1);
++                if (side) Interp.Setup(x0-1, x1-1, w0, w1, wbuffer); // checkme
++                else      Interp.Setup(x0, x1, w0, w1, wbuffer);
+                 Interp.SetX(x);
+ 
+                 // used for calculating AA coverage
+@@ -337,7 +339,7 @@ private:
+             }
+             else
+             {
+-                Interp.Setup(y0, y1, w0, w1);
++                Interp.Setup(y0, y1, w0, w1, wbuffer);
+                 Interp.SetX(y);
+             }
+ 

@@ -17,7 +17,7 @@ import com.ironmonone.core.Platform
  * 2026-09-30 it was every game the tracker reads, so a plain Emerald from the
  * library, with no run and no rules, had no rewind at all.
  */
-class RewindBuffer(val capacity: Int) {
+class RewindBuffer(val capacity: Int, val maxBytes: Long = Long.MAX_VALUE) {
     private val states = ArrayDeque<ByteArray>()
     val size: Int get() = states.size
     val bytes: Long get() = states.sumOf { it.size.toLong() }
@@ -26,6 +26,23 @@ class RewindBuffer(val capacity: Int) {
         if (state.isEmpty()) return
         states.addLast(state)
         while (states.size > capacity) states.removeFirst()
+        // Capped by size as well (rc32 audit P2 #52): six DS states sat on the Java heap beside the restore points.
+        while (states.size > 1 && bytes > maxBytes) states.removeFirst()
+    }
+
+    /**
+     * Records a state every interval while [canRecord] (the game at 1x, nothing rewinding, Play in front), until
+     * cancelled. Each is taken between frames on the core's own thread from a background one, and kept here on the
+     * caller's (rc32 audit P2 #52): it was serialized on the main thread, a DS state every two seconds, and each one
+     * held up the controls and the tracker.
+     */
+    suspend fun record(view: com.swordfish.libretrodroid.GLRetroView, intervalMs: Long, canRecord: () -> Boolean) {
+        while (true) {
+            kotlinx.coroutines.delay(intervalMs)
+            if (!canRecord()) continue
+            val st = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { AutoSave.snapshot(view, quiet = true) } ?: continue
+            if (canRecord()) push(st)
+        }
     }
 
     /** The newest state, removed. Null when there is nothing to go back to. */
@@ -42,6 +59,9 @@ class RewindBuffer(val capacity: Int) {
             Platform.NDS -> 6 to 2000L
         }
 
-        fun forPlatform(p: Platform) = RewindBuffer(policy(p).first)
+        /** The most a console's history may hold: a DS state runs to megabytes, a GBA one is about half of one. */
+        fun maxBytes(p: Platform): Long = if (p == Platform.NDS) 32L * 1024 * 1024 else 64L * 1024 * 1024
+
+        fun forPlatform(p: Platform) = RewindBuffer(policy(p).first, maxBytes(p))
     }
 }

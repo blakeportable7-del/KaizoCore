@@ -44,6 +44,13 @@ class AbilityTriggerTest {
         mem.put8(base + 0x20, ability)
     }
 
+    /** A base stats line the tracker accepts, its first ability [a1]: what the party Pokemon's own ability is read from. */
+    private fun baseAbility(mem: FakeMem, species: Int, a1: Int) {
+        val at = m.baseStats + species.toLong() * m.baseStatsStride
+        for (i in 0 until 6) mem.put8(at + i, 50)
+        mem.put8(at + 22, a1)
+    }
+
     @Test
     fun `Intimidate on the enemy reveals the enemy's ability`() {
         val mem = FakeMem()
@@ -62,11 +69,65 @@ class AbilityTriggerTest {
         val mem = FakeMem()
         // 82DB458 = TraceActivates, BATTLER trigger, ability 36.
         battle(mem, 0x082DB458, battler = 0, attacker = 0, target = 1)
-        mon(mem, 0, species = 65, ability = 36)   // player: Alakazam/Trace
+        // The game copies the traced ability into the holder's live byte before this script runs (CFRU
+        // ability_battle_effects.c:760-766): the player's Pokemon is a Trace Pokemon whose byte now reads Intimidate.
+        // The old fixture left 36 there, a state the game never produces, and so the test passed (rc32 audit P2 #132).
+        baseAbility(mem, 65, a1 = 36)
+        mon(mem, 0, species = 65, ability = 22)   // player: Trace, now holding Intimidate
         mon(mem, 1, species = 130, ability = 22)  // enemy: Gyarados/Intimidate
+        mem.put8(m.battleTextBuff1 + 2, 1)        // the message names battler 1 (Battle.lua:646-649)
         val t = GbaTracker(mem.reader(), m)
         // The information Trace shows on screen is the TRACED ability.
-        assertEquals(130 to "#22", t.readAbilityTrigger())
+        assertEquals(listOf(130 to "#22"), t.readAbilityTriggers())
+    }
+
+    @Test
+    fun `in a double, Trace reveals the Pokemon its message names`() {
+        val mem = FakeMem()
+        battle(mem, 0x082DB458, battler = 0, attacker = 0, target = 1)
+        mem.put8(m.battlersCount, 4)
+        baseAbility(mem, 65, a1 = 36)
+        mon(mem, 0, species = 65, ability = 26)   // traced Levitate
+        mon(mem, 1, species = 130, ability = 22)
+        mon(mem, 3, species = 92, ability = 26)   // the one traced: Gastly/Levitate
+        mem.put8(m.battleTextBuff1 + 2, 3)
+        assertEquals(listOf(92 to "#26"), GbaTracker(mem.reader(), m).readAbilityTriggers())
+    }
+
+    @Test
+    fun `Clear Body stopping Intimidate reveals both Pokemon`() {
+        val mem = FakeMem()
+        // 82DB522: a BATTLER row (22, the Intimidate) and a REVERSE_BATTLER row (29, 52, 73, what stopped it) at the one
+        // address, the only address with two rows in any table. The first match was all that came back (rc32 audit P2 #132).
+        battle(mem, 0x082DB522, battler = 0, attacker = 0, target = 1)
+        mon(mem, 0, species = 59, ability = 22)   // player: Arcanine/Intimidate
+        mon(mem, 1, species = 72, ability = 29)   // enemy: Tentacool/Clear Body
+        val t = GbaTracker(mem.reader(), m)
+        assertEquals(listOf(59 to "#22", 72 to "#29"), t.readAbilityTriggers())
+        // Both reach the tracker's state, each once, however many fast polls saw the message.
+        t.pollAbilityTrigger(); t.pollAbilityTrigger()
+        val drained = t.javaClass.getDeclaredMethod("drainReveals").apply { isAccessible = true }.invoke(t) as List<*>
+        assertEquals(listOf(59 to "#22", 72 to "#29"), drained)
+    }
+
+    /**
+     * RC35-NOTICED N #36: Damp's message is a BATTLE_TARGET row of scope "both", and the reference walks every battler
+     * for it (Battle.lua:713-724). Only battlers 0 and 1 were looked at, so in a double a Damp on 2 or 3 never showed.
+     */
+    @Test
+    fun `in a double, Damp on the third or fourth battler is revealed`() {
+        val mem = FakeMem()
+        // 82DB566: Emerald's BATTLE_TARGET row for Damp (6), scope both.
+        battle(mem, 0x082DB566, battler = 0, attacker = 0, target = 1)
+        mem.put8(m.battlersCount, 4)
+        mon(mem, 0, species = 25, ability = 9)
+        mon(mem, 1, species = 74, ability = 69)
+        mon(mem, 2, species = 41, ability = 39)
+        mon(mem, 3, species = 60, ability = 6)    // Poliwag/Damp, the foe's second Pokemon
+        assertEquals(listOf(60 to "#6"), GbaTracker(mem.reader(), m).readAbilityTriggers())
+        // In a single only the two on the field are there.
+        mem.put8(m.battlersCount, 2)
+        assertEquals(emptyList(), GbaTracker(mem.reader(), m).readAbilityTriggers())
     }
 
     @Test

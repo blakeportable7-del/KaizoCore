@@ -6,6 +6,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -122,7 +123,9 @@ object LogRoutes {
             set.encounters.forEachIndexed { i0, e ->
                 val slot = i0 + 1
                 if (fishing) area = a.areas.getValue(when { slot <= 2 -> LogEncType.OLDROD; slot <= 5 -> LogEncType.GOODROD; else -> LogEncType.SUPERROD })
-                if (log.pokemonNamed(e.name) == null) return@forEachIndexed   // the reference skips names it cannot map
+                // The reference skips names it cannot map. A log that lists no Pokemon (nothing about them was randomized)
+                // keeps them by name, or every wild area of such a log vanished (rc32 audit P2 #71).
+                if (log.pokemon.isNotEmpty() && log.pokemonNamed(e.name) == null) return@forEachIndexed
                 val w = area.getOrPut(e.name.uppercase()) { MutWild(e.name, slot) }
                 w.lo = minOf(w.lo, e.minLevel)
                 w.hi = maxOf(w.hi, e.maxLevel)
@@ -200,6 +203,7 @@ internal fun LogRoutesTab(routes: List<LogRoute>, query: String, onRoute: (LogRo
  * its level range and its rate, the likeliest first.
  */
 @Composable
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 internal fun LogRouteDetail(
     route: LogRoute,
     rules: LogTrainerRules,
@@ -208,6 +212,9 @@ internal fun LogRouteDetail(
     onTrainer: (RandomizerLog.Trainer) -> Unit,
     onPokemon: (RandomizerLog.Pokemon) -> Unit,
     onBack: () -> Unit,
+    names: LogNames = LogNames.PLAIN,
+    /** Each trainer's portrait from the ROM, as on the Trainers tab. */
+    portraitOf: (RandomizerLog.Trainer) -> ImageBitmap? = { null },
 ) {
     fun count(t: LogEncType) = if (t == LogEncType.TRAINERS) route.trainers.size else route.areas[t]?.size ?: 0
     val tabs = LogEncType.entries.filter { count(it) > 0 }
@@ -222,11 +229,10 @@ internal fun LogRouteDetail(
             LogBack(onBack)
             DialogText(route.name.uppercase(), 13, Pc.Gold, Modifier.weight(1f))
         }
-        Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            DialogText("Encounters:", 12, Pc.Dim)
-            tabs.forEach { t ->
-                DialogText("${t.label} ${count(t)}", 12, if (t == tab) Pc.Gold else Pc.Text, Modifier.clickable { tab = t }.padding(vertical = 4.dp))
-            }
+        // 48dp choices that flow onto a second line on a narrow phone (rc32 audit P2 #26).
+        FlowRow(Modifier.fillMaxWidth().padding(vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            DialogText("Encounters:", 12, Pc.Dim, Modifier.align(Alignment.CenterVertically))
+            tabs.forEach { t -> LogChoice("${t.label} ${count(t)}", t == tab) { tab = t } }
         }
         LazyVerticalGrid(
             GridCells.Adaptive(92.dp), Modifier.fillMaxSize(),
@@ -236,7 +242,7 @@ internal fun LogRouteDetail(
                 // realignTrainerGrid sorts by SortBy.TrainerLevel; a trainer button has no average, so that is
                 // (999 + maxlevel): the highest party level, lowest first, then id.
                 val trainers = route.trainers.sortedWith(compareBy<RandomizerLog.Trainer>({ it.maxLevel }, { it.number }))
-                items(trainers, key = { it.number }) { t -> LogTrainerTile(t, rules, custom) { onTrainer(t) } }
+                items(trainers, key = { it.number }) { t -> LogTrainerTile(t, rules, custom, portraitOf(t)) { onTrainer(t) } }
             } else {
                 // LogTabRouteDetails.realignPokemonGrid: by rate, highest first, then by id.
                 val wilds = (route.areas[tab] ?: emptyList()).sortedWith(compareBy<LogWild>({ -it.rate }, { it.pokemon?.id ?: 9999 }))
@@ -245,9 +251,10 @@ internal fun LogRouteDetail(
                         Modifier.background(Pc.Page).border(1.dp, Pc.Border).clickable(enabled = w.pokemon != null) { w.pokemon?.let(onPokemon) }.padding(6.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
-                        DialogText(logTitle(w.name), 12, Pc.Text, Modifier.fillMaxWidth(), TextAlign.Center)
+                        val shown = names.species(w.name)
+                        DialogText(shown, 12, Pc.Text, Modifier.fillMaxWidth(), TextAlign.Center)
                         val art = w.pokemon?.let { spriteOf?.invoke(it) }
-                        if (art != null) Image(art, w.name, Modifier.size(36.dp), filterQuality = FilterQuality.None)
+                        if (art != null) Image(art, shown, Modifier.size(36.dp), filterQuality = FilterQuality.None)
                         else Spacer(Modifier.size(36.dp))
                         DialogText(if (w.levelMin == w.levelMax) "Lv ${w.levelMin}" else "Lv ${w.levelMin} -- ${w.levelMax}", 12, Pc.Text, Modifier.fillMaxWidth(), TextAlign.Center)
                         DialogText("(${floor(w.rate * 100).toInt()}%)", 12, Pc.Dim, Modifier.fillMaxWidth(), TextAlign.Center)

@@ -46,6 +46,8 @@ object SpriteIsMeSettings {
      * up to 411, Turtwig 412 to Pecharunt 1050, the forms after); 0 = none chosen.
      */
     var always by mutableIntStateOf(0)
+    /** "Always use" plays the picked Pokemon's shiny (Blake, 2026-10-03), where one ships; the plain one where none does. */
+    var alwaysShiny by mutableStateOf(false)
     var own by mutableStateOf(Own.NONE)
     /** The sheet set's frame size (0 = worked out from the sheets) and each animation's frame lengths (blank = default). */
     var sheetWidth by mutableIntStateOf(0)
@@ -72,7 +74,7 @@ object SpriteIsMeSettings {
 
     fun load(f: File) {
         file = f
-        on = false; who = Who.LEAD; always = 0; own = Own.NONE
+        on = false; who = Who.LEAD; always = 0; alwaysShiny = false; own = Own.NONE
         sheetWidth = 0; sheetHeight = 0; idleLengths = ""; walkLengths = ""; sleepLengths = ""; faintLengths = ""
         if (!f.isFile) return
         runCatching {
@@ -83,6 +85,7 @@ object SpriteIsMeSettings {
                     "on" -> on = v == "true"
                     "who" -> who = Who.byKey(v)
                     "always" -> always = species(v)
+                    "alwaysShiny" -> alwaysShiny = v == "true"
                     "own" -> own = Own.byKey(v)
                     "sheetWidth" -> sheetWidth = size(v)
                     "sheetHeight" -> sheetHeight = size(v)
@@ -100,12 +103,12 @@ object SpriteIsMeSettings {
         SafeWrite.text(f, text())
     }
 
-    fun text(): String = "on=$on\nwho=${who.key}\nalways=$always\nown=${own.key}\n" +
+    fun text(): String = "on=$on\nwho=${who.key}\nalways=$always\nalwaysShiny=$alwaysShiny\nown=${own.key}\n" +
         "sheetWidth=$sheetWidth\nsheetHeight=$sheetHeight\nidle=$idleLengths\nwalk=$walkLengths\nsleep=$sleepLengths\nfaint=$faintLengths\n"
 
     /** Every setting back to what a fresh install has (the art files are the store's to delete). */
     fun reset() {
-        on = false; who = Who.LEAD; always = 0; own = Own.NONE
+        on = false; who = Who.LEAD; always = 0; alwaysShiny = false; own = Own.NONE
         sheetWidth = 0; sheetHeight = 0; idleLengths = ""; walkLengths = ""; sleepLengths = ""; faintLengths = ""
         artVersion++
     }
@@ -135,6 +138,8 @@ object SpriteIsMeCopy {
     const val ALWAYS = "Always use"
     const val OWN = "Your own sprite"
     const val CHOOSE = "Choose"
+    /** Under "Always use": the picked Pokemon's shiny colors (Blake, 2026-10-03). */
+    const val SHINY = "Shiny"
     const val CHOOSE_PICTURE = "Choose a picture"
     const val CHOOSE_SHEETS = "Choose a sheet set"
     const val REMOVE = "Remove"
@@ -148,9 +153,15 @@ object SpriteIsMeCopy {
     const val NOT_GBA = "Play as your Pokemon works on Game Boy Advance games only."
     const val NOT_KNOWN = "This game is not one Play as your Pokemon knows."
     const val NAT_DEX = "Play as your Pokemon could not find its way around this Nat. Dex build."
+    /** MaxDex 1.0's overworld is read out of its own code, as Nat. Dex's is; this is said only when that finds nothing. */
+    const val MAX_DEX = "Play as your Pokemon could not find its way around this MaxDex build."
+    /** A game named by its header whose code moved (a hack built from the decompilations), and that could not be read (rc32 audit P2 #87). */
+    const val NO_OVERWORLD = "Play as your Pokemon could not find its way around this game, so you stay the trainer."
     const val LOOKING = "Looking at this game..."
 
     const val NO_OWN_YET = "Nothing imported yet. A picture is fitted into a 32 by 32 box; a sheet set is idle, walk, sleep and faint sheets."
+    /** Beside the import buttons: what is imported goes wherever the backup goes (rc32 audit P2 #94). */
+    const val IN_BACKUPS = "Backups and cloud sync include the picture or sheets you import."
     const val OWN_PICTURE = "A picture is set."
     const val OWN_SHEETS = "A sheet set is set."
     const val SHEET_HELP = "Idle and walk have eight rows, one per direction, and sleep and faint one, with the frames side by side. Leave a number blank to have it worked out."
@@ -165,12 +176,27 @@ object SpriteIsMeCopy {
     fun picked(name: String) = "Playing as $name."
     const val PICTURE_FAILED = "That picture could not be read."
     const val SHEETS_FAILED = "No sheets found. Name them idle, walk, sleep and faint, as PNG files or in a zip."
+    /** The sheets were read, and the phone would not keep them (rc32 audit P3 #67). The set in use stays. */
+    const val SHEETS_NOT_SAVED = "The sheets could not be saved. If this phone is out of space, free some. Your last sprite is still in use."
     fun sheetsFound(n: Int) = if (n == 1) "Found 1 sheet." else "Found $n sheets."
 
+    /** What an import of a sheet set says: how many were kept, and that one was too big when it was. */
+    fun sheetsSaved(kept: Int, tooBig: Boolean): String = when {
+        kept > 0 && tooBig -> sheetsFound(kept) + " " + SHEET_TOO_BIG
+        kept > 0 -> sheetsFound(kept)
+        tooBig -> SHEET_TOO_BIG
+        else -> SHEETS_FAILED
+    }
+    /** A sheet past SheetSet's bound is not kept or drawn (rc32 audit P2 #88, P3 #66). */
+    const val SHEET_TOO_BIG = "A sheet can be at most 2048 by 1024 pixels, so a bigger one is left out."
+    /** Imported art on disk that would not decode: the lead is played as instead (rc32 audit P2 #88). */
+    const val OWN_UNREADABLE = "Your own sprite could not be read, so you play as your lead."
+
     val all: List<String> = listOf(
-        TITLE, GENS, WHAT, WHO, LEAD, ALWAYS, OWN, CHOOSE, CHOOSE_PICTURE, CHOOSE_SHEETS, REMOVE, SHEET_SETTINGS, SAVE, CLOSE, SEARCH, NO_MATCH,
-        NOT_GBA, NOT_KNOWN, NAT_DEX, LOOKING, NO_OWN_YET, OWN_PICTURE, OWN_SHEETS, SHEET_HELP, FRAME_WIDTH, FRAME_HEIGHT, LENGTHS_HINT,
-        IDLE, WALK, SLEEP, FAINT, picked("Pikachu"), PICTURE_FAILED, SHEETS_FAILED, sheetsFound(1), sheetsFound(3),
+        TITLE, GENS, WHAT, WHO, LEAD, ALWAYS, OWN, CHOOSE, SHINY, CHOOSE_PICTURE, CHOOSE_SHEETS, REMOVE, SHEET_SETTINGS, SAVE, CLOSE, SEARCH, NO_MATCH,
+        NOT_GBA, NOT_KNOWN, NAT_DEX, MAX_DEX, NO_OVERWORLD, LOOKING, NO_OWN_YET, IN_BACKUPS, OWN_PICTURE, OWN_SHEETS, SHEET_HELP, FRAME_WIDTH, FRAME_HEIGHT, LENGTHS_HINT,
+        IDLE, WALK, SLEEP, FAINT, picked("Pikachu"), PICTURE_FAILED, SHEETS_FAILED, SHEETS_NOT_SAVED, sheetsFound(1), sheetsFound(3), SHEET_TOO_BIG, OWN_UNREADABLE,
+        sheetsSaved(2, tooBig = true),
     )
 }
 

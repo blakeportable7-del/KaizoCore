@@ -3,7 +3,6 @@ package com.ironmonone.app
 import com.ironmonone.core.RomKind
 import com.ironmonone.tracker.nuzlocke.RunStatus
 import java.io.File
-import kotlin.math.abs
 
 /** One game and mode's best run, for the list on Your stats. */
 data class BestRun(
@@ -86,9 +85,6 @@ data class CareerStats(
     }
 
     companion object {
-        /** A DS run that the run history and the DS past-runs log both hold is written to the two a moment apart. */
-        const val SAME_RUN_MS = 120_000L
-
         val EMPTY = CareerStats(0, 0, 0L, null, 0, emptyList(), 0, 0, 0)
 
         fun read(filesDir: File): CareerStats = compute(Inputs.from(filesDir))
@@ -135,12 +131,24 @@ data class CareerStats(
             return best
         }
 
+        /**
+         * The DS past runs from before the run history, the only ones counted from the log: dated before the history's
+         * first record began. Since the history began, every DS run that ends files a record at the moment it logs its
+         * past run, so a later past run is a record's own (counted from the record), the first end of a run whose loss
+         * was retried (Retry left its line in the log), or a library game the DS log took for a run before rc32 gated it:
+         * none of them is another run (rc32 audit P2 #14). With no record at all, every past run is older.
+         */
+        fun olderPastRuns(pastRuns: List<PastRun>, recs: List<RunRecord>): List<PastRun> {
+            val historyBegan = recs.mapNotNull { r -> (r.started.takeIf { it > 0 } ?: r.ended).takeIf { it > 0 } }.minOrNull()
+                ?: return pastRuns
+            return pastRuns.filter { it.date < historyBegan }
+        }
+
         fun compute(inp: Inputs): CareerStats {
             val all = inp.records.flatMap { (id, rs) -> rs.map { id to it } }
             val recs = all.map { it.second }
-            // A DS run from before the run history: its past run has no record within a couple of minutes of it.
-            val ended = recs.map { it.ended }.filter { it > 0 }
-            val older = inp.pastRuns.filter { p -> ended.none { abs(it - p.date) <= SAME_RUN_MS } }
+            // A DS run from before the run history is counted from its past run; any later past run is not a run of its own.
+            val older = olderPastRuns(inp.pastRuns, recs)
 
             val wins = recs.count { it.outcome == RunRecord.Outcome.WON } + older.count { it.progress == PastRun.WON }
             val winsAfterRewinds = recs.count { it.outcome == RunRecord.Outcome.WON && rewinds(it) > 0 }
@@ -235,8 +243,14 @@ internal object StatsCopy {
     /** "2 state loads, retries or restarts", counted. */
     fun rewindCount(n: Int): String = if (n == 1) "1 state load, retry or restart" else "$n state loads, retries or restarts"
 
-    /** Runs won, and how many of them went back in time (R10). */
-    fun wins(n: Int, afterRewinds: Int): String = if (afterRewinds == 0) number(n) else "$n, $afterRewinds after state loads, retries or restarts"
+    /** Runs won (R10); how many of them went back in time is [winsNote], a line of its own. */
+    fun wins(n: Int): String = number(n)
+
+    /**
+     * How many wins went back in time (R10), under Runs won, or null when none did. It was part of the number, which
+     * then took the row and squeezed "Runs won" to nothing at a large font (rc32 audit P2 #15).
+     */
+    fun winsNote(afterRewinds: Int): String? = if (afterRewinds == 0) null else "$afterRewinds after state loads, retries or restarts"
 
     /** Every fixed line, and one of each shape a number makes, for the copy-rule test. */
     val all: List<String> = listOf(
@@ -248,6 +262,6 @@ internal object StatsCopy {
         bestResult(BestRun("Game", "Kaizo", won = false, badges = 1, attempt = 4, endedBy = "Leader Brock")),
         bestResult(BestRun("Game", "Kaizo", won = false, badges = 3, attempt = 4, endedBy = null)),
         bestResult(BestRun("Game", "Kaizo", won = true, badges = 8, attempt = 4, endedBy = null, rewinds = 2)),
-        wins(3, 0), wins(3, 1),
+        wins(3), winsNote(1)!!, winsNote(2)!!,
     )
 }

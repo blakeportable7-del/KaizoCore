@@ -166,4 +166,42 @@ class EvoTextTest {
         assertEquals(listOf("Water", "Lv.37"), EvoText.short("WATER37_REV"))
         assertEquals(listOf("---"), EvoText.short(null))
     }
+
+    // ------------------------------------------------------------ Nat. Dex (rc33 audit P1 #67)
+
+    @Test
+    fun `the Nat Dex methods have the extension's words and items`() {
+        // Kadabra evolves with a Linking Cord there: level 36 is not ready, the cord in the bag is.
+        assertEquals(Label("L.CORD", Tone.WAITING), own("LINKING_CORD", level = 36))
+        assertEquals(Label("L.CORD", Tone.READY), own("LINKING_CORD", level = 36, bag = setOf(92)))
+        assertEquals(Label("STONE", Tone.READY), own("EEVEE_STONES_NATDEX", bag = setOf(102)), "an Ice Stone readies Eevee there")
+        assertEquals(Label("STONE", Tone.WAITING), own("EEVEE_STONES", bag = setOf(102)), "and not in the base game")
+        assertEquals(Label("42/DWN", Tone.WAITING), own("DAWN42", level = 41), "a combined method is not level-ready")
+        assertEquals(Label("42/DWN", Tone.READY), own("DAWN42", level = 20, bag = setOf(101)))
+        assertEquals(Label("21F", Tone.WAITING), own("FEMALE21", level = 30), "no item makes it ready")
+        assertEquals(Label("SHINY", Tone.PLAIN), EvoText.forEnemy("SHINY"))
+        assertEquals(listOf("8 Diff. Stones"), EvoText.detailed("EEVEE_STONES_NATDEX"))
+        assertEquals(listOf("Level 42", "Dawn Stone (Female)"), EvoText.detailed("DAWN42"))
+        assertEquals(listOf("Thunder", "Water", "Fire", "Sun", "Moon", "Leaf", "Ice", "Dawn"), EvoText.short("EEVEE_STONES_NATDEX"))
+        assertEquals(listOf("Link Crd."), EvoText.short("LINKING_CORD"))
+    }
+
+    @Test
+    fun `every evolution in the Nat Dex table has its abbreviation and words`() {
+        val stream = javaClass.getResourceAsStream("/gen3/species-extra-natdex.tsv") ?: fail("gen3/species-extra-natdex.tsv missing")
+        var rows = 0
+        var evolving = 0
+        stream.bufferedReader(Charsets.UTF_8).useLines { lines ->
+            lines.forEach { line ->
+                rows++
+                val raw = line.split('	').getOrNull(2) ?: return@forEach
+                if (EvoText.clean(raw) == null) return@forEach
+                evolving++
+                assertNotNull(EvoText.abbreviation(raw), "no abbreviation for \"$raw\" in: $line")
+                kotlin.test.assertTrue(EvoText.detailed(raw).none { it == raw } && EvoText.short(raw).none { it == raw }, "no words for $raw")
+            }
+        }
+        assertEquals(1283, rows, "Gen 3's 411 and the 872 the extension adds")
+        kotlin.test.assertTrue(evolving >= 470, "only $evolving evolving species read")
+    }
 }

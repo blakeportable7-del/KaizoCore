@@ -120,22 +120,26 @@ class DsViewTest {
         assertNull(v.locked)
         assertFalse(v.viewingEnemy)
         val play = File("src/main/kotlin/com/ironmonone/app/PlayScreen.kt").readText()
-        assertTrue("onDispose { AutoTheme.release(); dsView.clear() }" in play)
+        assertTrue("onDispose { AutoTheme.release(); dsView.clear(); gbaView.clear() }" in play)
     }
 
     @Test
     fun `the panels show one Pokemon, swap by touch, and bind no game button`() {
         val panel = File("src/main/kotlin/com/ironmonone/app/NdsTrackerPanel.kt").readText()
-        assertTrue("if (stackBoth || !showEnemy) state.playerPokemon?.let { p ->" in panel, "your one card")
+        assertTrue("if (stackBoth || !showEnemy) shownPlayer?.let { p ->" in panel, "your one card")
         assertTrue("if (showEnemy) shownEnemy?.let {" in panel, "the opponent's card")
         // SETUP rides in the banner during a battle (2026-10-02): it had a row of its own.
-        assertTrue("PcBattleBanner(state.isWildBattle, onFlee, viewingOwn = !showEnemy, onSwapView = onSwap, onGear = onGear)" in panel)
+        assertTrue("PcBattleBanner(state.isWildBattle, onFlee, viewingOwn = if (side == null) !showEnemy else view.offersFoe(state, stackBoth)," in panel)
+        assertTrue("onSwapView = onSwap, onGear = onGear, trailing = headerTrailing, attempt = attemptShown," in panel)
         assertTrue("onLock = { view.toggleLock(state, TrackerOptions.dsEnemyLocking) }" in panel)
         assertTrue("view.onPause(effectivenessReady, state, TrackerOptions.dsAutoSwapToEnemy)" in panel)
         assertFalse("state.party.forEachIndexed" in panel, "the six cards are back")
         val play = File("src/main/kotlin/com/ironmonone/app/PlayScreen.kt").readText()
-        assertEquals(2, Regex("stackBoth = true,").findAll(play).count(), "landscape stacks both on GBA and on DS")
-        assertTrue("val notebookSpecies = dsView.locked?.mon?.species ?: enemySpecies" in play, "the locked opponent's notebook")
+        // Both stack where the column has room for them, on GBA and on DS (TrackerRoom, 2026-10-02); LandscapeChromeTest holds the rule.
+        assertEquals(2, Regex(Regex.escape("stackBoth = TrackerRoom.stackBoth(LocalTrackerRoom.current),")).findAll(play).count(), "landscape asks the room on GBA and on DS")
+        assertTrue("val notebookSpecies = viewedFoeSpecies(ndsState, trackerState, enemySpecies)" in play, "the locked opponent's notebook")
+        val doubles = File("src/main/kotlin/com/ironmonone/app/DoublesView.kt").readText()
+        assertTrue("nds?.let { dsView.shownEnemy(it)?.mon?.species } ?: dsView.locked?.mon?.species" in doubles, "the locked one first (shownEnemy), then the one viewed")
         val gear = File("src/main/kotlin/com/ironmonone/app/TrackerGearDialog.kt").readText()
         assertTrue("GearToggle(\"Enable enemy locking\", TrackerOptions.dsEnemyLocking)" in gear)
         assertTrue("GearToggle(\"Auto swap to enemy\", TrackerOptions.dsAutoSwapToEnemy)" in gear)

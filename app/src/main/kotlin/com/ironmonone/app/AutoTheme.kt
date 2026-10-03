@@ -49,6 +49,12 @@ object AutoTheme {
     private var saved: WholeTheme? = null
     private var suspended = false
 
+    /**
+     * The last update given, kept while the colour editor holds the theme off, so closing it puts the lead's theme
+     * back at once: Play sends an update only when the team changes, so it stayed off until then (rc32 audit P3 #18).
+     */
+    private var lastUpdate: (() -> Unit)? = null
+
     fun gbaTheme(species: Int): String? = gba[species]
 
     /**
@@ -56,6 +62,7 @@ object AutoTheme {
      * [party] is (species, isEgg) in slot order.
      */
     fun onGba(party: List<Pair<Int, Boolean>>, on: Boolean) {
+        lastUpdate = { onGba(party, on) }
         if (suspended) return
         if (!on) { release(); return }
         if (party.isEmpty()) return
@@ -102,6 +109,7 @@ object AutoTheme {
      * (undoPokemonTheme). The colour editor suspends it as it does the Gen 3 one.
      */
     fun onDs(pokemon: DsPokemon?, on: Boolean) {
+        lastUpdate = { onDs(pokemon, on) }
         if (suspended) return
         if (!on) { release(); return }
         val code = pokemon?.let { com.ironmonone.tracker.nds.NdsAutoThemes.code(it.gen, it.species, it.form) } ?: return
@@ -157,6 +165,20 @@ object AutoTheme {
     /** The colour editor is open: show and edit the user's own theme. */
     fun suspend() { release(); suspended = true }
 
-    /** The editor closed; the next update applies the lead's theme again. */
-    fun resume() { suspended = false }
+    /**
+     * The editor closed: the last update given is applied again, so the lead's theme comes back now, over the theme
+     * just edited (which it takes as the user's). An update that turned the option off while the editor was open is
+     * applied the same way, so the theme stays off.
+     */
+    fun resume() {
+        if (!suspended) return
+        suspended = false
+        lastUpdate?.invoke()
+    }
+
+    /**
+     * The user's own theme, whatever shows: the one an auto theme put aside, else the one showing. What the colour
+     * editor opens on (ThemeEditor), read before [suspend] puts it back.
+     */
+    fun userTheme(): WholeTheme = saved ?: ThemeStore.snapshot()
 }

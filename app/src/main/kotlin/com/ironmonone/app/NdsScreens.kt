@@ -27,6 +27,16 @@ object NdsScreens {
         else -> "Top/Bottom"
     }
 
+    /**
+     * The arrangements the DS screens picker offers: every one but the rotated pair. The classic core has no rotated
+     * layout, so "Rotated left" and "Rotated right" drew exactly what "Top above bottom" draws (rc32 audit P2 #34).
+     * PadLayout still reads both, so a layout saved with one loads and shows stacked, as it always did.
+     */
+    val choices: List<String> get() = PadLayout.DS_LAYOUTS.filterNot { it.startsWith("rotate-") }
+
+    /** The picker's row for [layout]: a rotated one saved by an older build is drawn stacked, so that row is the one picked. */
+    fun shownAs(layout: String?): String? = if (layout?.startsWith("rotate-") == true) "top-bottom" else layout
+
     /** The core takes 0..126 px between the screens. */
     fun classicGap(gap: Int): String = gap.coerceIn(0, 126).toString()
 

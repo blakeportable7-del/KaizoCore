@@ -1,7 +1,6 @@
 package com.ironmonone.tracker.nds
 
 import com.ironmonone.tracker.LossCondition
-import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -197,12 +196,37 @@ class NdsRunOverTest {
         val s = t.read()
         assertNull(s.runOver)
         assertEquals(1, s.progress)
+        assertEquals(true, m.labTrainerIds.first() in t.defeatedTrainers, "the poll puts the trainer on the list")
+    }
+
+    /**
+     * RC35-NOTICED N #6: the poll adds to the defeated list on its own thread while the HGSS tourney's milestones read it
+     * on the main thread (TourneyTracker.onRead). A HashSet growing under that read could lose sight of a trainer it held,
+     * or throw as it was copied. It is a concurrent set.
+     */
+    @Test
+    fun `the defeated list can be read on the main thread while the poll adds to it`() {
+        val t = tracker(LossCondition.LEAD)
+        val set = t.defeatedTrainers
+        kotlin.test.assertTrue(set is java.util.concurrent.ConcurrentHashMap.KeySetView<*, *>, "safe for a second thread")
+        set.add(1)
+        val poll = Thread { for (i in 2..200_000) set.add(i) }
+        var missed = 0
+        var threw: Throwable? = null
+        poll.start()
+        while (poll.isAlive) {
+            if (1 !in set) missed++                                  // what a milestone asks
+            runCatching { set.toList() }.onFailure { threw = it }   // and a copy of the whole list
+        }
+        poll.join()
+        assertNull(threw, "a copy taken while the list grew")
+        assertEquals(0, missed, "a trainer the list held was not seen")
+        assertEquals(200_000, set.size)
     }
 
     @Test
     fun `Black 2 reads each party member's battle HP (real dump)`() {
-        val dir = System.getenv("IRONMON_DUMPS")?.let { File(it) }?.takeIf { it.isDirectory } ?: return
-        val f = File(dir, "b2-rand-rival-battle.bin").takeIf { it.isFile } ?: return
+        val f = Dumps.dump("b2-rand-rival-battle.bin") ?: return
         val dump = f.readBytes()
         val r = NdsMemoryReader { addr, len ->
             val off = addr - 0x02000000L
@@ -216,5 +240,43 @@ class NdsRunOverTest {
             val p = assertNotNull(s.playerActive)
             assertEquals(483, p.mon.species); assertEquals(8, p.mon.curHp); assertEquals(19, p.mon.maxHp)
         }
+    }
+
+    /** rc33 audit P1 #80: a battle stays fetched once fetched, and a new one starts without the last one's Pokemon. */
+    @Test
+    fun `a battle once fetched stays fetched until it ends, and the next starts without the last one's Pokemon`() {
+        party(overworld = listOf(10 to 40), battle = listOf(10 to 40))
+        inBattle(true)
+        val t = tracker(LossCondition.LEAD)
+        val first = t.read()
+        kotlin.test.assertTrue(first.battleFetched)
+        assertEquals(0x9000L, first.lastBattleEnemy?.mon?.pid)
+        // Mid-battle the guard fails for a read: the battle is still the fetched one.
+        put(versionRel + m.playerBattleBase, mon(0x777L, 10, 40))
+        kotlin.test.assertTrue(t.read().battleFetched)
+        inBattle(false)
+        val after = t.read()
+        kotlin.test.assertFalse(after.battleFetched)
+        assertEquals(0x9000L, after.lastBattleEnemy?.mon?.pid, "kept between battles")
+        // The next battle is a demonstration: the battle's party is not yours, so it is never fetched.
+        inBattle(true)
+        val demo = t.read()
+        kotlin.test.assertFalse(demo.battleFetched)
+        assertNull(demo.lastBattleEnemy, "not the last fight's opponent")
+        inBattle(false)
+        assertNull(t.read().lastBattleEnemy)
+    }
+
+    /** rc33 audit P1 #81: an egg is never sent out, so Kaizo Doubles watches the first two that are not eggs. */
+    @Test
+    fun `Kaizo Doubles watches the first two Pokemon that are not eggs`() {
+        party(overworld = listOf(10 to 40, 1 to 7, 8 to 30), battle = listOf(10 to 40))
+        put(versionRel + m.playerBattleBase + 236L, Gen4.encodeParty(0x101L, 25, 1, 7, 7, listOf(0, 0, 0, 0), egg = true))
+        put(versionRel + m.playerBattleBase + 2 * 236L, mon(0x102L, 8, 30))
+        inBattle(true)
+        val t = tracker(LossCondition.EITHER_OF_FIRST_TWO)
+        assertNull(t.read().runOver)
+        put(versionRel + m.playerBattleBase + 2 * 236L, mon(0x102L, 8, 0))
+        assertNotNull(t.read().runOver, "the Pokemon beside the lead fainted")
     }
 }

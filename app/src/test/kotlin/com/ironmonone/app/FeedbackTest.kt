@@ -48,4 +48,23 @@ class FeedbackTest {
         val mail = Feedback.Links.EMAIL
         kotlin.test.assertEquals("blake@willowcreek.group", mail)
     }
+
+    /**
+     * rc32 audit P3 #16: Share instead, where a phone with no mail app is sent, built its own report and left out the
+     * last crash the card promises. Both buttons send the one report now, the crash in it.
+     */
+    @Test
+    fun `Email Blake and Share instead send the same report, with the last crash`() {
+        val about = java.io.File("src/main/kotlin/com/ironmonone/app/AboutScreen.kt").readText().replace("\r\n", "\n")
+        val code = about.replace(Regex("/\\*.*?\\*/", RegexOption.DOT_MATCHES_ALL), "").replace(Regex("//[^\\n]*"), "")
+        assertEquals(1, Regex("Feedback\\.compose\\(").findAll(code).count(), "one place builds the report")
+        val build = code.substringAfter("Feedback.compose(").substringBefore("\n                )")
+        assertTrue("CrashLog.existing(context)" in build, "with the last crash")
+        val email = code.substringAfter("Gen3Button(\"Email Blake\"").substringBefore("Gen3Button(\"Share instead\")")
+        val share = code.substringAfter("Gen3Button(\"Share instead\")").substringBefore("fun link(")
+        assertTrue("report(device)" in email, "Email Blake sends it")
+        assertTrue("report(Feedback.device(context))" in share, "and so does Share instead")
+        // The report itself carries the crash when there is one.
+        assertTrue("Last crash:" in Feedback.compose(dev, "DPPt", "froze", "log", "a crash"))
+    }
 }

@@ -60,6 +60,12 @@ class NdsAddressAuditTest {
         "abilityTriggerStart" to { m: NdsGameMap -> m.abilityTriggerStart },
         "totalMonsParty" to { m: NdsGameMap -> m.totalMonsParty },
         "playerBattleBase" to { m: NdsGameMap -> m.playerBattleBase },
+        // HeartGold and SoulSilver's own rows, which only other tests' literals checked (rc32 audit P3 #117): the League
+        // byte drives Survival's 7 heals for Kanto, the weekday the Bug-Catching Contest, and the two badge bytes.
+        "leagueBeaten" to { m: NdsGameMap -> m.leagueBeaten },
+        "dayOfWeek" to { m: NdsGameMap -> m.dayOfWeek },
+        "johtoBadges" to { m: NdsGameMap -> m.badgeOffsets.first() },
+        "kantoBadges" to { m: NdsGameMap -> m.badgeOffsets.getOrElse(1) { 0L } },
     )
 
     @Test
