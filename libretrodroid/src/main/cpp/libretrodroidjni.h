@@ -26,6 +26,10 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_reset(JNIE
 JNIEXPORT jbyteArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_serializeState(JNIEnv* env, jclass obj);
 JNIEXPORT jbyteArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_readMemory(JNIEnv* env, jclass obj, jlong address, jint length);
 JNIEXPORT jint JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_writeMemory(JNIEnv* env, jclass obj, jlong address, jbyteArray data);
+// KaizoCore patch (2026-10-04): the ability trigger tap (triggertap.h).
+JNIEXPORT jlong JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_armTriggerTap(JNIEnv* env, jclass obj, jlong watch, jlongArray targets, jlongArray rangeAddresses, jintArray rangeLengths);
+JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_disarmTriggerTap(JNIEnv* env, jclass obj, jlong token);
+JNIEXPORT jbyteArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_drainTriggerTap(JNIEnv* env, jclass obj);
 JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_unserializeState(JNIEnv* env, jclass obj, jbyteArray data);
 JNIEXPORT jbyteArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_serializeSRAM(JNIEnv* env, jclass obj);
 JNIEXPORT jboolean JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_unserializeSRAM(JNIEnv* env, jclass obj, jbyteArray data);

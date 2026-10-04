@@ -2,6 +2,29 @@
 
 Newest first. Each build's GitHub release has the same list, with the APK and its checksum.
 
+## 1.0.0-rc34.1
+
+**Changed**
+
+- **The floating tracker is tighter:** its edge meets the tracker's boxes, and the lock, the title and the menu sit together at the left of its title bar. Resize it by grabbing just outside its sides, its bottom or its bottom corners.
+- **File and NEW are red** in landscape, like NEW RUN in portrait.
+- **The RUN button is gone from the tracker.** It did not work. B to run still works on Game Boy and Game Boy Advance games.
+- **The Random MAC address setting is gone from DS settings.** It is always off now. Turned on, it could lock a Gen 4 game's daily events every time you continued.
+
+**Fixed**
+
+- **Every landscape menu button can be reached:** the File strip and the layout editor's bar stop at the edge of a docked DS tracker instead of running under it, so MENU and the last buttons can be tapped. Both bars now scroll round and round, so the first button comes back after the last.
+- **Double battles in a narrow tracker:** the banner no longer spells the side's words one letter to a line. When the buttons leave too little room, the title and the side go on a line under them.
+- **Long area names scroll:** the area at the top of the tracker (Rustboro City, Mt. Chimney) scrolls by when the buttons leave it too little room, instead of being cut off. With animations turned off it ends in an ellipsis.
+- **Every move has a description on Nat. Dex and MaxDex:** Fairy Wind and every other move past Gen 3 now shows a short one when you tap it. Most of the newest moves' descriptions are Pokémon Showdown's.
+- **An opponent's ability shows once the battle reveals it, at any speed:** at 8x and 16x the tracker could miss the moment the ability's message was on screen, a weather ability at the start of a battle most of all. It now sees every frame the game plays, on FireRed, LeafGreen, Emerald, Ruby, Sapphire, both Nat. Dex games and MaxDex.
+- **Platinum saves continue:** continuing a Platinum save no longer stops on "A communication error has occurred" and a white screen.
+- **Black 2 runs resume:** resuming a Black 2 run no longer closes the app.
+
+**Known issues**
+
+- The first time a Diamond, Pearl, Platinum, HeartGold or SoulSilver save made before this update is continued, the game may treat it as a clock change and lock its daily events for a day. It happens once per save.
+
 ## 1.0.0-rc34
 
 **New**

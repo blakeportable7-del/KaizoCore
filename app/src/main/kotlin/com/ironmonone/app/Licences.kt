@@ -62,6 +62,7 @@ internal object Licences {
         Text("MIT-DeathQuotes", "MIT license (Death Quotes)", "licenses/MIT-DeathQuotes.txt"),
         Text("MIT-AutoPokemonThemes", "MIT license (Auto Pokémon Themes)", "licenses/MIT-AutoPokemonThemes.txt"),
         Text("MIT-FavoritesAsSources", "MIT license (Favorites As Sources)", "licenses/MIT-FavoritesAsSources.txt"),
+        Text("MIT-PokemonShowdown", "MIT license (Pokémon Showdown)", "licenses/MIT-PokemonShowdown.txt"),
         Text("OFL-1.1", "SIL Open Font License 1.1", "OFL_press_start_2p.txt"),
         Text("CC-BY-NC-4.0", "Creative Commons Attribution-NonCommercial 4.0", "licenses/CC-BY-NC-4.0.txt"),
     )
@@ -74,8 +75,9 @@ internal object Licences {
         Part("The Nat. Dex randomizer", "CyanSixFour's fork of the randomizer.", "GPL-3.0",
             "github.com/CyanSMP64/universal-pokemon-randomizer-zx"),
         Part("LibretroDroid 0.13.2", "By Swordfish90, the emulators' host.", "GPL-3.0", "github.com/Swordfish90/LibretroDroid"),
-        Part("melonDS libretro core", "The DS emulator, built from its source with two fixes: ours to how a game is closed, " +
-            "and melonDS's own to its 3D drawing. Both are in KaizoCore's source, beside the commit it is built from.", "GPL-3.0",
+        Part("melonDS libretro core", "The DS emulator, built from its source with four fixes: ours to how a game is closed " +
+            "and to a saved state loaded in the middle of a 3D scene, and melonDS's own to its 3D drawing and to the Wi-Fi " +
+            "settings it gives a game. All are in KaizoCore's source, beside the commit it is built from.", "GPL-3.0",
             "github.com/libretro/melonDS"),
         Part("NDS IronMON Tracker", "By Brian0255: the DS trackers' rules, and the badges, icons, sprites and type symbols taken from it.",
             "GPL-3.0", "github.com/Brian0255/NDS-Ironmon-Tracker"),
@@ -96,6 +98,8 @@ internal object Licences {
         Part("Death Quotes", "By UTDZac.", "MIT-DeathQuotes"),
         Part("Auto Pokémon Themes", "By Fellshadow.", "MIT-AutoPokemonThemes"),
         Part("Favorites As Sources", "By UTDZac.", "MIT-FavoritesAsSources"),
+        Part("Pokémon Showdown", "By Guangcong Luo and contributors: most move descriptions of the Nat. Dex and MaxDex " +
+            "moves from X and Y on.", "MIT-PokemonShowdown"),
         Part("Press Start 2P", "The pixel font, by CodeMan38.", "OFL-1.1"),
         Part("PMD Sprite Collab", "The Walking Pals sprites, by the collab's artists, each under the terms its artist gave.",
             "CC-BY-NC-4.0", "sprites.pmdcollab.org"),

@@ -6,7 +6,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.systemGestureExclusion
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,7 +15,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -169,13 +167,15 @@ fun FreePad(
 }
 
 /**
- * The strip of edit controls shown while the layout is being edited. DONE first: it must never scroll away.
+ * The strip of edit controls shown while the layout is being edited. DONE first: it must never scroll away, so it
+ * stays put while the rest goes round (LoopingRow, Blake, 2026-10-03: "They both should have infinite scroll").
  *
  * 2026-09-27, audit: sizes and opacity are steppers with the value on them
  * (they were tap cycles), the DS screens open a picker in words, RESET and the
  * presets ask first, and CANCEL puts the layout back as it was. In landscape
  * the bar is not full width, so the corners (where L and R usually sit) stay
- * reachable, and it can move to the bottom when a button is under it.
+ * reachable, and it can move to the bottom when a button is under it. It ends at a docked DS tracker's left edge
+ * (dsDockClearance): it ran on under the tracker, where its last chips could not be reached (2026-10-03).
  */
 @Composable
 fun LayoutToolbar(
@@ -198,46 +198,49 @@ fun LayoutToolbar(
 ) {
     var confirm by remember { mutableStateOf<Triple<String, String, () -> Unit>?>(null) }
     var screensOpen by remember { mutableStateOf(false) }
+    val loop = rememberLoopRowState()
     Row(
-        modifier.then(if (landscape) Modifier.fillMaxWidth(0.72f) else Modifier.fillMaxWidth())
-            .background(Gen3.FrameDark.copy(alpha = 0.85f)).padding(6.dp)
-            .horizontalScroll(rememberScrollState()),
+        // Centred in what the dock leaves, so the corners there stay free too.
+        modifier.then(if (landscape) Modifier.padding(end = dsDockClearance()).fillMaxWidth(0.72f) else Modifier.fillMaxWidth())
+            .background(Gen3.FrameDark.copy(alpha = 0.85f)).padding(6.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         LayoutChip("Done", accent = true, onClick = onDone)
-        LayoutChip("Cancel", onClick = onCancel)
-        if (selected != null) {
-            // A diamond member draws at A's size, so its stepper edits A's.
-            val target = if (layout.inDiamond(selected)) PadLayout.Element.A else selected
-            ToolbarLabel("${selected.label} size %")
-            ShellStepper((layout[target].scale * 100).roundToInt(), 60..180, onChange = { v ->
-                onEdit(layout.with(target, layout[target].copy(scale = v / 100f)))
-            })
+        LoopingRow(loop, Modifier.weight(1f), gap = 6.dp) {
+            LayoutChip("Cancel", onClick = onCancel)
+            if (selected != null) {
+                // A diamond member draws at A's size, so its stepper edits A's.
+                val target = if (layout.inDiamond(selected)) PadLayout.Element.A else selected
+                ToolbarLabel("${selected.label} size %")
+                ShellStepper((layout[target].scale * 100).roundToInt(), 60..180, onChange = { v ->
+                    onEdit(layout.with(target, layout[target].copy(scale = v / 100f)))
+                })
+            }
+            if (landscape) {
+                ToolbarLabel("Opacity %")
+                ShellStepper((layout.opacity * 100).roundToInt(), 15..100, onChange = { v -> onEdit(layout.copy(opacity = v / 100f)) })
+            }
+            if (isDs) LayoutChip("Screens: " + dsLayoutName(layout.dsLayout)) { screensOpen = true }
+            LayoutChip("Skin: " + skin.label.lowercase()) { onSkin(skin.next()) }
+            // 2.1: the most-downloaded store emulator's layout, one tap. DS keeps its own until its reference is measured.
+            if (!isDs) LayoutChip("My Boy layout") {
+                confirm = Triple("Use the My Boy layout?", "USE IT") { onEdit(PadLayout.myBoyFor(landscape, gb)); onSkin(PadSkin.OUTLINE) }
+            }
+            if (isDs) LayoutChip("SuperNDS layout") {
+                confirm = Triple("Use the SuperNDS layout?", "USE IT") { onEdit(PadLayout.default(landscape, nds = true)); onSkin(PadSkin.OUTLINE) }
+            }
+            if (!isDs) LayoutChip("Original pad") {
+                confirm = Triple("Use the original pad?", "USE IT") { onEdit(PadLayout.legacyFor(landscape, gb)); onSkin(PadSkin.CLASSIC) }
+            }
+            LayoutChip("Reset") { confirm = Triple("Reset to the default layout?", "RESET", onReset) }
+            onMoveBar?.let { LayoutChip(if (barAtBottom) "Bar to top" else "Bar to bottom", onClick = it) }
+            Text(
+                if (selected == null) "Drag a button. Tap one to size it." else "Drag to move.",
+                style = MaterialTheme.typography.bodySmall, color = Shell.hintOnNight,
+                modifier = Modifier.padding(horizontal = 6.dp),
+            )
         }
-        if (landscape) {
-            ToolbarLabel("Opacity %")
-            ShellStepper((layout.opacity * 100).roundToInt(), 15..100, onChange = { v -> onEdit(layout.copy(opacity = v / 100f)) })
-        }
-        if (isDs) LayoutChip("Screens: " + dsLayoutName(layout.dsLayout)) { screensOpen = true }
-        LayoutChip("Skin: " + skin.label.lowercase()) { onSkin(skin.next()) }
-        // 2.1: the most-downloaded store emulator's layout, one tap. DS keeps its own until its reference is measured.
-        if (!isDs) LayoutChip("My Boy layout") {
-            confirm = Triple("Use the My Boy layout?", "USE IT") { onEdit(PadLayout.myBoyFor(landscape, gb)); onSkin(PadSkin.OUTLINE) }
-        }
-        if (isDs) LayoutChip("SuperNDS layout") {
-            confirm = Triple("Use the SuperNDS layout?", "USE IT") { onEdit(PadLayout.default(landscape, nds = true)); onSkin(PadSkin.OUTLINE) }
-        }
-        if (!isDs) LayoutChip("Original pad") {
-            confirm = Triple("Use the original pad?", "USE IT") { onEdit(PadLayout.legacyFor(landscape, gb)); onSkin(PadSkin.CLASSIC) }
-        }
-        LayoutChip("Reset") { confirm = Triple("Reset to the default layout?", "RESET", onReset) }
-        onMoveBar?.let { LayoutChip(if (barAtBottom) "Bar to top" else "Bar to bottom", onClick = it) }
-        Text(
-            if (selected == null) "Drag a button. Tap one to size it." else "Drag to move.",
-            style = MaterialTheme.typography.bodySmall, color = Shell.hintOnNight,
-            modifier = Modifier.padding(horizontal = 6.dp),
-        )
     }
     confirm?.let { (title, yes, run) ->
         LayoutConfirmDialog(title, "This replaces the layout on screen. Cancel in the bar still puts back the one you started with.", yes,

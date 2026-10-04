@@ -9,9 +9,14 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import com.swordfish.libretrodroid.GLRetroView
 
@@ -51,7 +56,22 @@ object DsDock {
 
     /** The game view's viewport for [g]; the whole view when the layout does not apply. */
     fun viewport(g: Geometry?): RectF = g?.let { RectF(it.left, it.top, it.left + it.width, it.top + it.height) } ?: RectF(0f, 0f, 1f, 1f)
+
+    /**
+     * The docked tracker's width in pixels while it is drawn over the play area, else 0; [dsDockIn] keeps it. The bars
+     * across the top of the game, the File strip and the layout editor's, end at its left edge (dsDockClearance): they
+     * ran on under it, and their last chips, MENU among them, could not be reached even scrolled to the end (Blake,
+     * 2026-10-03: "You can't select the last buttons on this menu").
+     */
+    var coverPx by mutableFloatStateOf(0f)
+
+    /** What [coverPx] is for a layout of [g]: its tracker's width, or nothing with no dock. */
+    fun cover(g: Geometry?): Float = g?.trackerW ?: 0f
 }
+
+/** The room a bar across the top of the play area leaves at its right end for a docked DS tracker (DsDock.coverPx). */
+@Composable
+internal fun dsDockClearance(): Dp = with(LocalDensity.current) { DsDock.coverPx.toDp() }
 
 /**
  * The docked DS layout for the game in Play, or null where it does not apply: [base] holds what PlayScreen knows (a
@@ -69,7 +89,10 @@ internal fun dsDockIn(retro: GLRetroView?, ui: PlayUiState, base: Boolean, track
     SideEffect {
         val want = DsDock.viewport(g)
         if (retro != null && retro.viewport != want) retro.viewport = want
+        DsDock.coverPx = DsDock.cover(g)
     }
+    // Leaving Play takes the dock with it, so no bar elsewhere keeps the room.
+    DisposableEffect(Unit) { onDispose { DsDock.coverPx = 0f } }
     return g
 }
 

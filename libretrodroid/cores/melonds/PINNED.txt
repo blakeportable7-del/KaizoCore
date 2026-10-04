@@ -8,9 +8,11 @@ version: melonDS 0.9.3 (MELONDS_VERSION in Makefile.common)
 license: GPL-3.0 (the repository's LICENSE)
 patch: 0001-unload-stops-the-render-thread-and-frees-the-screen-buffer.patch sha256=e6dcd864c0d6cc2f7c4e2b3a96d3f3f1820264795525d9894dc865377b4c895e
 patch: 0002-3d-depth-no-longer-reads-a-value-it-never-set.patch sha256=60e3260c20618ebb57907216c2076c6fd4183a78162112737743bd40a20b3929
+patch: 0003-generated-firmware-carries-wifi-calibration.patch sha256=f2bb9ec8d282f3d7de09024b086fd1a8ac6fddc57a117ab1477860b1293388d4
+patch: 0004-3d-a-loaded-state-never-writes-past-the-vertex-buffer.patch sha256=940fddc480e961d201292809f0d2e2dc3e5e37e99907abde00ce8e266c44b9dc
 ndk: 26.1.10909125
 build: -C jni APP_PLATFORM=android-21 APP_LDFLAGS=-Wl,-z,max-page-size=16384
 module: libretro.so
 ship-as: libmelonds_libretro_android.so
-arm64-v8a: sha256=ae7291d2e2a8b02728cf8e9dd12f7f4f9cbb94f778ee58c49108df19c7b7402e build-id=67d7bced4153607873c7ab53750dd59ab909b73f symbols-sha256=dbbc76001efe8f640569933db1987ddcd56ee92c2cf35c7afafbeb904d593f66
-x86_64: sha256=cb3b942d02ef17865b9b208bc73cecf5520f747920e69af8f90b181882b5c2fc build-id=843dc4c495d41166456eee8912d61b4a2ca976f0 symbols-sha256=9c28955eb2503c959c9860d16f0952fabca6a8183fbd8af94afeef96e69c2c02
+arm64-v8a: sha256=4d88e9ed8efbe4eda6f93af35aed30f005b88bf398668b4a4f4b4f97aa95efaa build-id=7ffdddb4832c2ecdb7e58c22bd0a9c6709b083c2 symbols-sha256=c20dfe72263b0d6d75ec9b7f85787d8772ecd1238d5c4ccf231907db582aa339
+x86_64: sha256=7485d26bc20f7d72f2d06d0250a088ab9c90e658195c604e04c4772ba0be150d build-id=728fca635996bdbb049b9ee26b6fdd9f81f70ad9 symbols-sha256=2a3aef23dc0ac601c15784eb53cc8af98d814588da5ea2fce105bb1358db4b6e

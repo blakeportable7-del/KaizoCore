@@ -62,8 +62,9 @@ class FireRedAbilityTrackingTest {
         mem.put32(m.scriptCurrInstr, 0x081D78FF)   // BATTLER trigger, ability 43, on screen now
         t.pollAbilityTrigger(); t.pollAbilityTrigger()
         mem.put32(m.scriptCurrInstr, 0x08123456)   // and gone before the next full read
-        val drained = t.javaClass.getDeclaredMethod("drainReveals").apply { isAccessible = true }
-            .invoke(t) as List<*>
+        // live = true: drained by a read during an active battle.
+        val drained = t.javaClass.getDeclaredMethod("drainReveals", Boolean::class.javaPrimitiveType).apply { isAccessible = true }
+            .invoke(t, true) as List<*>
         assertEquals(1, drained.size, "seen once, recorded once")
         assertEquals(64, (drained[0] as Pair<*, *>).first)
     }

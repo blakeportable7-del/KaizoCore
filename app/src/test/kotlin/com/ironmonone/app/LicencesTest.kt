@@ -40,6 +40,7 @@ class LicencesTest {
         assertTrue("Copyright (c) 2023 UTDZac" in File(assets, "licenses/MIT-CalcAtk.txt").readText())
         assertTrue("Copyright (c) 2023 Fellshadow" in File(assets, "licenses/MIT-AutoPokemonThemes.txt").readText())
         assertTrue("Copyright (c) 2026 UTDZac (Zeke)" in File(assets, "licenses/MIT-FavoritesAsSources.txt").readText())
+        assertTrue("Copyright (c) 2011-2026 Guangcong Luo and other contributors" in File(assets, "licenses/MIT-PokemonShowdown.txt").readText())
         assertEquals(5, Regex("The RetroArch team").findAll(File(assets, "licenses/MIT-libretro-common.txt").readText()).count(), "each compiled file's statement")
     }
 
@@ -58,7 +59,7 @@ class LicencesTest {
         }
         for (name in listOf("mGBA", "melonDS", "Gambatte", "LibretroDroid", "rcheevos", "CameraX", "Oboe", "Press Start 2P", "PMD Sprite Collab",
             "Universal Pokémon Randomizer ZX", "NDS IronMON Tracker", "Calc Atk", "Sprite Is Me", "Death Quotes", "Auto Pokémon Themes", "inih",
-            "Favorites As Sources"))
+            "Favorites As Sources", "Showdown"))
             assertTrue(Licences.parts.any { name in it.name }, "the page names $name")
         // The GPL and MPL parts say where their source is.
         for (p in Licences.parts.filter { it.licence == "GPL-3.0" || it.licence == "GPL-2.0" || it.licence == "MPL-2.0" })

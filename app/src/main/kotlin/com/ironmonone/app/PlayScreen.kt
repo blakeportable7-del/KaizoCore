@@ -826,9 +826,10 @@ fun PlayScreen(
                     runCatching {
                         val probe = r.readMemory(0x08000000L, 4)
                         if (probe.isEmpty()) null
-                        else com.ironmonone.tracker.GbaTracker(
+                        // The per-frame trigger tap, so ability reveals do not depend on the speed (RetroTriggerTap).
+                        else RetroTriggerTap.attach(com.ironmonone.tracker.GbaTracker(
                             reader, com.ironmonone.tracker.GameMap.resolve(reader)
-                        )
+                        ), r)
                     }.getOrNull()
                 }
                 trackerRef = tracker
@@ -1328,7 +1329,7 @@ fun PlayScreen(
     // B does nothing special in a trainer battle or in the overworld.
     androidx.compose.runtime.DisposableEffect(wildBattleNow) {
         FleeOnB.onFlee = if (wildBattleNow) ({ flee() }) else null
-        // Gen 1, 2 and 3 read the battle menu live (ActionMenuGate). DS cannot: B there is only B, and RUN stays.
+        // Gen 1, 2 and 3 read the battle menu live (ActionMenuGate). DS cannot: B there is only B.
         FleeOnB.menuUp = { actionMenuUp() ?: false }
         onDispose { FleeOnB.onFlee = null; FleeOnB.menuUp = null }
     }
@@ -1572,7 +1573,7 @@ fun PlayScreen(
                       )
                   } }
                   if (dsScreens) NdsTrackerPanel(
-                      state = ndsState, onFlee = { flee() }, onGear = { gearDialog = true }, headerTrailing = corner, timer = if (TrackerOptions.showTimer) runTimer else null,
+                      state = ndsState, onGear = { gearDialog = true }, headerTrailing = corner, timer = if (TrackerOptions.showTimer) runTimer else null,
                       favoriteLine = favoriteLine,
                       randomBall = ndsTrackerRef?.randomBall?.takeIf { TrackerOptions.ballPickerShows() },
                       onTypeDefenses = { n, a, b -> typeDefenses = n to com.ironmonone.tracker.Gen3Types.defenses(com.ironmonone.tracker.nds.Gen4Types.idOf(a) ?: -1, com.ironmonone.tracker.nds.Gen4Types.idOf(b) ?: (com.ironmonone.tracker.nds.Gen4Types.idOf(a) ?: -1)) },
@@ -1603,7 +1604,7 @@ fun PlayScreen(
                       onRandomEvos = { sp -> side.randomEvos = sp }, hasRandomEvos = { sp -> trackerRef?.hasRandomEvos(sp) == true },
                       onMoveHistory = { sp, n, lv -> side.moveHistory = Triple(sp, n, lv) },
                       onTypeDefenses = { n, a, b -> typeDefenses = n to com.ironmonone.tracker.Gen3Types.defenses(a, b, gen1 = session.kind?.generation == com.ironmonone.core.Generation.GB1, natDex = session.kind?.isNatDex == true) },
-                      trackerState, onFlee = { flee() }, ballCall = ballCall, onGear = { gearDialog = true }, headerTrailing = corner,
+                      trackerState, ballCall = ballCall, onGear = { gearDialog = true }, headerTrailing = corner,
                 onRerollBall = { ballReroll++ },
                 movesSeenRunWide = gbaView.foe(trackerState)
                     ?.let { statMarks.movesSeenFor(it.species) } ?: emptyList(),
@@ -2034,7 +2035,7 @@ fun PlayScreen(
                     OverlayChip("LOAD") { askLoad() }
                     // Runs only, as in portrait: on a library game or hack NEW
                     // re-randomized the last IronMON run (2026-09-27, audit).
-                    if (session.isRun) OverlayChip("NEW") { confirmNewRun = true }
+                    if (session.isRun) NewRunChip { confirmNewRun = true }
                     ChipRule()
                     OverlayChip("Speed $speedLabel") { ui.speedPicker = true }
                     if (rewindAllowed) HoldChip("REWIND", onDown = { startRewind() }, onUp = { stopRewind() })
@@ -2135,7 +2136,7 @@ fun PlayScreen(
                 // party of six is taller than any phone screen.
                 TrackerScroll(Modifier.weight(1f), background = null) {
                     NdsTrackerPanel(
-                        state = ndsState, onFlee = { flee() }, onGear = { gearDialog = true }, timer = if (TrackerOptions.showTimer) runTimer else null,
+                        state = ndsState, onGear = { gearDialog = true }, timer = if (TrackerOptions.showTimer) runTimer else null,
                         favoriteLine = favoriteLine,
                         randomBall = ndsTrackerRef?.randomBall?.takeIf { TrackerOptions.ballPickerShows() },
                         onTypeDefenses = { n, a, b -> typeDefenses = n to com.ironmonone.tracker.Gen3Types.defenses(com.ironmonone.tracker.nds.Gen4Types.idOf(a) ?: -1, com.ironmonone.tracker.nds.Gen4Types.idOf(b) ?: (com.ironmonone.tracker.nds.Gen4Types.idOf(a) ?: -1)) },
@@ -2174,7 +2175,7 @@ fun PlayScreen(
                       onRandomEvos = { sp -> side.randomEvos = sp }, hasRandomEvos = { sp -> trackerRef?.hasRandomEvos(sp) == true },
                 onMoveHistory = { sp, n, lv -> side.moveHistory = Triple(sp, n, lv) },
                 onTypeDefenses = { n, a, b -> typeDefenses = n to com.ironmonone.tracker.Gen3Types.defenses(a, b, gen1 = session.kind?.generation == com.ironmonone.core.Generation.GB1, natDex = session.kind?.isNatDex == true) },
-                trackerState, onFlee = { flee() }, ballCall = ballCall, onGear = { gearDialog = true },
+                trackerState, ballCall = ballCall, onGear = { gearDialog = true },
                 onRerollBall = { ballReroll++ },
                 movesSeenRunWide = gbaView.foe(trackerState)
                     ?.let { statMarks.movesSeenFor(it.species) } ?: emptyList(),

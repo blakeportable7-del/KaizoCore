@@ -28,6 +28,7 @@
 #include "libretrodroid.h"
 #include "memrange.h"
 #include "cheevos.h"
+#include "triggertap.h"   // KaizoCore patch (2026-10-04)
 #include "utils/libretrodroidexception.h"
 #include "log.h"
 #include "core.h"
@@ -253,6 +254,33 @@ size_t LibretroDroid::readMemory(uint64_t address, size_t length, unsigned char*
     size_t available = std::min(length, static_cast<size_t>(ramSize - offset));
     memcpy(output, ram + offset, available);
     return available;
+}
+
+// KaizoCore patch (2026-10-04): the ability trigger tap (triggertap.h). One emulated frame's look, from step() and
+// stepBot() with coreLock held: nothing while the tap is off, and nothing until the core has run long enough for its
+// RAM to be asked for (framesRun, as readMemory waits).
+void LibretroDroid::tapFrame() {
+    TriggerTap& tap = TriggerTap::getInstance();
+    if (!tap.isArmed() || core == nullptr || framesRun < 120) return;
+    tap.doFrame(static_cast<const unsigned char*>(core->retro_get_memory_data(RETRO_MEMORY_SYSTEM_RAM)),
+                core->retro_get_memory_size(RETRO_MEMORY_SYSTEM_RAM));
+}
+
+// KaizoCore patch (2026-10-04): arm, disarm and drain the tap under coreLock, which the frames hold, so the tap needs no
+// lock of its own.
+uint32_t LibretroDroid::armTriggerTap(uint64_t watch, std::vector<uint32_t> targets, const std::vector<std::pair<uint64_t, uint32_t>>& ranges) {
+    std::lock_guard<std::mutex> lock(coreLock);
+    return TriggerTap::getInstance().arm(watch, std::move(targets), ranges);
+}
+
+void LibretroDroid::disarmTriggerTap(uint32_t token) {
+    std::lock_guard<std::mutex> lock(coreLock);
+    TriggerTap::getInstance().disarm(token);
+}
+
+std::vector<unsigned char> LibretroDroid::drainTriggerTap() {
+    std::lock_guard<std::mutex> lock(coreLock);
+    return TriggerTap::getInstance().drain();
 }
 
 // IronMON One patch: write counterpart of readMemory. Same fallback, because a
@@ -516,6 +544,8 @@ void LibretroDroid::destroy() {
     std::lock_guard<std::mutex> lock(coreLock);
     gameLoaded = false;
     framesRun = 0;
+    // KaizoCore patch (2026-10-04): the tap was armed for this game's memory; the next game's tracker arms its own.
+    TriggerTap::getInstance().disarm(0);
     // KaizoCore (rc33 audit P1): a core whose game failed to load is torn down too now (GLRetroView.onDestroy used to
     // skip it), and retro_unload_game is only for a game the core actually took.
     const bool hadGame = coreHasGame;
@@ -583,6 +613,7 @@ void LibretroDroid::stepBot(unsigned frames) {
         if (framesRun < 1000) framesRun++;
         core->retro_run();
         Cheevos::getInstance().doFrame();
+        tapFrame();   // KaizoCore patch (2026-10-04)
     }
     if (video && !video->rendersInVideoCallback()) {
         video->renderFrame();
@@ -626,6 +657,8 @@ void LibretroDroid::step() {
         for (size_t i = 0; i < frames * frameSpeed; i++) {
             core->retro_run();
             if (gameLoaded) Cheevos::getInstance().doFrame();
+            // KaizoCore patch (2026-10-04): every emulated frame, fast forward included (triggertap.h).
+            if (gameLoaded) tapFrame();
         }
     }
 

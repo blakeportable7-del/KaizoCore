@@ -648,6 +648,15 @@ fun AboutScreen(modifier: Modifier = Modifier, onStats: () -> Unit = {}) {
         Spacer(Modifier.height(12.dp))
 
         Text(
+            "On Nat. Dex and MaxDex, most descriptions of the moves from X and Y on are Pokémon Showdown's, by " +
+                "Guangcong Luo and contributors, used under the MIT license.",
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        CreditLink("https://github.com/smogon/pokemon-showdown") { openOrSay(it) }
+
+        Spacer(Modifier.height(12.dp))
+
+        Text(
             "Runs are randomized with the Universal Pokémon Randomizer ZX by Ajarmar, built on " +
                 "Dabomstew's Universal Pokémon Randomizer, and Nat. Dex runs with CyanSixFour's fork " +
                 "of it, all used under the GPL-3.0 license.",

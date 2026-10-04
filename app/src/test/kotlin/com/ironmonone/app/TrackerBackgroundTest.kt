@@ -323,7 +323,7 @@ class TrackerBackgroundTest {
     fun `the backdrop is painted in the panels, the floating window and the second display, and the hosts paint it once`() {
         for (panel in listOf("TrackerPanel.kt", "NdsTrackerPanel.kt")) {
             val s = src(panel)
-            assertTrue("Column(Modifier.fillMaxWidth().then(trackerBackdrop()).padding(PcRef.MARGIN.rp))" in s, panel)
+            assertTrue("Column(Modifier.fillMaxWidth().then(trackerBackdrop()).padding(trackerMargin()))" in s, panel)
             assertFalse("Column(Modifier.fillMaxWidth().background(Pc.Page).padding(PcRef.MARGIN.rp))" in s, "$panel still paints only the colour")
         }
         val floating = src("FloatingTracker.kt")

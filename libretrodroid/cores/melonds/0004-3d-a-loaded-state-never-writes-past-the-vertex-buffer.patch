@@ -1,0 +1,46 @@
+KaizoCore patch to libretro/melonDS 66b5d2634cd0a79030562811e6e05f5532f800ba (GPL-3.0, as melonDS is): a savestate
+brings the 3D engine's VertexNumInPoly back but not PolygonMode (melonDS saves the mode only in later versions), so a
+state saved in the middle of a quad and loaded where the mode is triangles let SubmitVertex write a fifth vertex past
+TempVertexBuffer, over NumOpaquePolygons among other globals. VBlank places the translucent polygons after that count,
+so part of the list it sorts was never written, still null after a boot, and YSort read it: Black 2 resumed from its
+snapshot closed KaizoCore (SIGSEGV at 0xd8, the polygon's SortKey; rc34's core at 0x11f130, the nightly's at
+0x11b250). SubmitVertex now starts a new polygon instead of writing past the buffer, and VBlank counts the opaque
+polygons from their own flags (and never sorts past the list). Neither changes anything for a game that was not
+loaded from such a state. KaizoCore, 2026-10-04.
+
+diff --git a/src/GPU3D.cpp b/src/GPU3D.cpp
+index 9c02b2f..c833060 100644
+--- a/src/GPU3D.cpp
++++ b/src/GPU3D.cpp
+@@ -1424,6 +1424,15 @@ void SubmitPolygon()
+ 
+ void SubmitVertex()
+ {
++    // KaizoCore: TempVertexBuffer holds four vertices. A savestate brings VertexNumInPoly back but not PolygonMode
++    // (melonDS saves the mode only in later versions), so a state saved in the middle of a quad and loaded where the
++    // mode is triangles left VertexNumInPoly at 4 with nothing to reset it, and the next vertex went past the buffer,
++    // over the globals after it: in this build VertexNum, VertexNumInPoly, NumConsecutivePolygons, LastStripPolygon and
++    // NumOpaquePolygons. That count then left holes in the list VBlank sorts (Black 2 resumed from its snapshot crashed
++    // in YSort, rc34 and the nightly before it). Start a new polygon instead.
++    if (VertexNumInPoly > 3)
++        VertexNumInPoly = 0;
++
+     s64 vertex[4] = {(s64)CurVertex[0], (s64)CurVertex[1], (s64)CurVertex[2], 0x1000};
+     Vertex* vertextrans = &TempVertexBuffer[VertexNumInPoly];
+ 
+@@ -2534,6 +2543,15 @@ void VBlank()
+             {
+                 if (NumPolygons)
+                 {
++                    // KaizoCore: count the opaque polygons from their own flags. The translucent ones are placed after
++                    // NumOpaquePolygons, so when that count disagreed with the flags (see SubmitVertex) part of the list
++                    // was never written, still null right after a boot, and the sort below read it. Never past the list.
++                    if (NumPolygons > 2048) NumPolygons = 2048;
++                    u32 numopaque = 0;
++                    for (u32 i = 0; i < NumPolygons; i++)
++                        if (!CurPolygonRAM[i].Translucent) numopaque++;
++                    NumOpaquePolygons = numopaque;
++
+                     // separate translucent polygons from opaque ones
+ 
+                     u32 io = 0, it = NumOpaquePolygons;

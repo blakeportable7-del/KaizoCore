@@ -39,12 +39,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -470,6 +468,8 @@ fun PixText(
     wrap: Boolean = false,
     /** KaizoCore's look (TrackerLook): names and buttons a weight heavier. */
     weight: FontWeight = FontWeight.Normal,
+    /** One line cut short with an ellipsis instead of clipped (AreaName with animations off). */
+    ellipsis: Boolean = false,
 ) {
     // `size` is in REFERENCE PIXELS. Outside a PcCanvas one reference pixel is
     // 1.dp, which is what this used to be in sp, so nothing else moves.
@@ -491,7 +491,7 @@ fun PixText(
         ),
         textAlign = align, modifier = modifier, fontWeight = weight,
         maxLines = if (wrap) Int.MAX_VALUE else 1,
-        overflow = androidx.compose.ui.text.style.TextOverflow.Clip,
+        overflow = if (ellipsis) androidx.compose.ui.text.style.TextOverflow.Ellipsis else androidx.compose.ui.text.style.TextOverflow.Clip,
         softWrap = wrap)
 }
 
@@ -1891,37 +1891,8 @@ internal object PcMin {
     const val DIALOG_TOUCH_DP = 48
     /** A label in a tracker dialog, in sp: it follows the phone's font size and never drops under this. */
     const val LABEL_SP = 12
-    /** The clear space between the RUN and SEE MINE touch boxes, in dp. */
+    /** The clear space between two of the battle banner's touch boxes (SEE MINE and SETUP), in dp. */
     const val BUTTON_GAP_DP = 10
-}
-
-/**
- * A button that asks twice (2026-09-30, UX audit P0-14): the first tap arms it, a second inside [WINDOW_MS] does
- * the thing, and otherwise it disarms. It is the "Sure?" the library's deletes use (RomLibraryScreen's
- * DISARM_MS), kept as a plain holder so the timing is proved on the JVM. RUN used to flee the wild battle on the
- * first touch, and in a Nuzlocke a mis-tap next to SEE MINE cost the encounter.
- */
-internal class ArmedTap(private val windowMs: Long = WINDOW_MS) {
-    /** When it was armed, or [NOT_ARMED]. State, so the label follows it and a timer keyed on it restarts on every arming. */
-    var armedAt by mutableStateOf(NOT_ARMED)
-        private set
-
-    val armed: Boolean get() = armedAt != NOT_ARMED
-
-    /** A tap at [now] (ms, on any steady clock). True: do the thing. False: this tap only armed it. */
-    fun tap(now: Long): Boolean {
-        if (armed && now - armedAt <= windowMs) { armedAt = NOT_ARMED; return true }
-        armedAt = now
-        return false
-    }
-
-    /** The window ran out, or the button left the screen. */
-    fun disarm() { armedAt = NOT_ARMED }
-
-    companion object {
-        const val WINDOW_MS = 3000L
-        const val NOT_ARMED = Long.MIN_VALUE
-    }
 }
 
 /**
@@ -1931,31 +1902,23 @@ internal class ArmedTap(private val windowMs: Long = WINDOW_MS) {
 @Composable
 fun PcSmallButton(label: String, onClick: () -> Unit) = PcButton(label, onClick = onClick)
 
-/**
- * [PcSmallButton] with a colour for its label, and [spoken] for a screen reader in place of the label. [alert]
- * announces the change when the label changes under a finger (RUN turning into RUN?).
- */
+/** [PcSmallButton] with [spoken] for a screen reader in place of the label. */
 @Composable
 internal fun PcButton(
     label: String,
     modifier: Modifier = Modifier,
-    color: Color = Pc.Text,
     spoken: String? = null,
-    alert: Boolean = false,
     onClick: () -> Unit,
 ) {
     Box(
         modifier.sizeIn(minWidth = PcMin.TOUCH_DP.dp, minHeight = PcMin.TOUCH_DP.dp)
             .clickable(role = Role.Button) { onClick() }
-            .semantics {
-                if (spoken != null) contentDescription = spoken
-                if (alert) liveRegion = LiveRegionMode.Polite
-            },
+            .semantics { if (spoken != null) contentDescription = spoken },
         contentAlignment = Alignment.Center,
     ) {
         // KaizoCore's look: a pill on the faint raised surface, the label a weight heavier.
         Box(Modifier.clip(androidx.compose.foundation.shape.RoundedCornerShape(50)).background(TrackerLook.inset).padding(horizontal = 6.rp, vertical = 2.rp)) {
-            PixText(label, PcRef.FONT, color, weight = FontWeight.Medium)
+            PixText(label, PcRef.FONT, Pc.Text, weight = FontWeight.Medium)
         }
     }
 }
@@ -1965,18 +1928,12 @@ internal fun PcButton(
  * reader gets a sentence.
  */
 internal object PcBannerCopy {
-    const val RUN = "RUN"
-    const val RUN_ARMED = "RUN?"
-    const val RUN_SPOKEN = "Run from this battle"
-    const val RUN_ARMED_SPOKEN = "Run away? Tap again to run"
     const val SEE_MINE = "SEE MINE"
     const val SEE_FOE = "SEE FOE"
     const val SEE_MINE_SPOKEN = "Show my Pok\u00e9mon"
     const val SEE_FOE_SPOKEN = "Show the opponent's Pok\u00e9mon"
     const val TRAINER_SPOKEN = "Open the trainer's info"
 
-    fun run(armed: Boolean) = if (armed) RUN_ARMED else RUN
-    fun runSpoken(armed: Boolean) = if (armed) RUN_ARMED_SPOKEN else RUN_SPOKEN
     /** The button offers the side that is not on screen. */
     fun see(viewingOwn: Boolean) = if (viewingOwn) SEE_FOE else SEE_MINE
     fun seeSpoken(viewingOwn: Boolean) = if (viewingOwn) SEE_FOE_SPOKEN else SEE_MINE_SPOKEN
@@ -1991,40 +1948,135 @@ internal object PcBannerCopy {
 }
 
 /**
- * The strip a battle banner is drawn as, with room for touch (2026-09-30, UX audit P0-14). The strip keeps its
- * look and its height; the buttons in it sit in a band [PcMin.TOUCH_DP] tall, so their touch boxes are real
- * space that never reaches the row above or the card below. The blank above and below the strip is the price.
+ * Which of a banner's words sit beside its buttons and which go on a line of their own under them (Blake, 2026-10-03, a
+ * double battle in a narrow docked column: "Something bad is happening with double battles"). The buttons left the
+ * words a sliver, and the side of a double battle wrapped a letter to a line down a tall column while the title did not
+ * show at all. Widths are in pixels, each line's as it is drawn on one line.
+ */
+internal object BannerFit {
+    data class Plan(
+        /** The title beside the buttons; false: on the line under them. */
+        val titleInRow: Boolean,
+        /** Its short form (TRAINER for TRAINER BATTLE). */
+        val titleShort: Boolean,
+        /** The lines under the title (a double battle's side, the attempt and the weather) beside the buttons too. */
+        val linesInRow: Boolean,
+        /** The side's short form (MINE LEFT for MINE ON THE LEFT). */
+        val linesShort: Boolean,
+    ) {
+        /** Something has a line of its own under the buttons. */
+        val under: Boolean get() = !titleInRow || !linesInRow
+    }
+
+    /**
+     * [room]: the width beside the buttons; [band]: the band's whole width. [lines] and [linesShort] are the widest of
+     * the lines under the title, with the side in its whole and short words; [hasLines] false when there are none.
+     */
+    fun plan(room: Int, band: Int, title: Int, titleShort: Int, lines: Int, linesShort: Int, hasLines: Boolean): Plan {
+        // The title is never cut below its short form: where even that does not fit beside the buttons, it goes under.
+        val titleInRow = titleShort <= room
+        val linesInRow = !hasLines || (titleInRow && linesShort <= room)
+        return Plan(
+            titleInRow = titleInRow,
+            titleShort = title > (if (titleInRow) room else band),
+            linesInRow = linesInRow,
+            linesShort = hasLines && lines > (if (linesInRow) room else band),
+        )
+    }
+}
+
+/** The band's parts: the words measured (never drawn), the buttons, the words drawn, and the tap under them all. */
+private enum class BandSlot { TITLE, TITLE_SHORT, SIDE, SIDE_SHORT, NOTE, CONTROLS, SHOWN_TITLE, SHOWN_SIDE, SHOWN_NOTE, TAP }
+
+/**
+ * The strip a battle banner is drawn as, with room for touch (2026-09-30, UX audit P0-14). The buttons sit in a row
+ * [PcMin.TOUCH_DP] tall, so their touch boxes are real space that never reaches the row above or the card below.
  * [fill] is the strip's own colour, so a banner decides for itself whether the tracker's image shows through.
+ *
+ * The words give way to the buttons, and never a letter at a time (BannerFit): the [label] beside them as long as its
+ * [labelShort] fits there, else on a line under them; the [side] (or [sideShort]) and the [note] under the label while
+ * they fit beside the buttons, else under them across the whole band. Every word is drawn on one line. [onTap] is a tap
+ * anywhere on the band but its buttons, which [tapLabel] names for a screen reader.
  */
 @Composable
 internal fun PcBannerBand(
     fill: Color,
     buttons: Boolean,
     label: @Composable () -> Unit,
+    labelShort: @Composable () -> Unit = label,
+    side: (@Composable () -> Unit)? = null,
+    sideShort: (@Composable () -> Unit)? = null,
+    note: (@Composable () -> Unit)? = null,
+    onTap: (() -> Unit)? = null,
+    tapLabel: String? = null,
     controls: @Composable RowScope.() -> Unit,
 ) {
     // KaizoCore's look (2026-10-02, "lots of wasted space"): the band IS the touch row, a rounded bar as tall as its
     // buttons' touch boxes, where it used to be a thin strip with blank space above and below it for them.
     val shape = androidx.compose.foundation.shape.RoundedCornerShape(TrackerLook.RADIUS.rp)
-    Row(
-        Modifier.fillMaxWidth().heightIn(min = if (buttons) PcMin.TOUCH_DP.dp else (PcRef.FONT + 8).rp)
-            .clip(shape).background(fill, shape).border(1.rp, TrackerLook.outline, shape).padding(horizontal = 4.rp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        // The label gives way, so the buttons are never squeezed off a narrow pane.
-        Box(Modifier.weight(1f)) { label() }
-        controls()
+    val rowMin = if (buttons) PcMin.TOUCH_DP.dp else (PcRef.FONT + 8).rp
+    val gap = 2.rp
+    val foot = 4.rp
+    androidx.compose.ui.layout.SubcomposeLayout(
+        Modifier.fillMaxWidth().clip(shape).background(fill, shape).border(1.rp, TrackerLook.outline, shape).padding(horizontal = 4.rp),
+    ) { constraints ->
+        val w = constraints.maxWidth
+        // Each word at its own width, on one line. These are measured and never drawn, so a screen reader and a test
+        // find each word once, where it is drawn below.
+        val one = androidx.compose.ui.unit.Constraints()
+        fun measured(slot: BandSlot, content: (@Composable () -> Unit)?) = content?.let { c ->
+            subcompose(slot) { Box(Modifier.clearAndSetSemantics { }) { c() } }.first().measure(one)
+        }
+        // The buttons first, at their own width: the label gives way, the buttons never do.
+        val controlsP = subcompose(BandSlot.CONTROLS) {
+            Row(verticalAlignment = Alignment.CenterVertically, content = controls)
+        }.first().measure(androidx.compose.ui.unit.Constraints(maxWidth = w))
+        val titleW = measured(BandSlot.TITLE, label)!!.width
+        val titleShortW = measured(BandSlot.TITLE_SHORT, labelShort)!!.width
+        val sideW = measured(BandSlot.SIDE, side)?.width
+        val sideShortW = measured(BandSlot.SIDE_SHORT, sideShort ?: side)?.width
+        val noteW = measured(BandSlot.NOTE, note)?.width
+        val room = (w - controlsP.width).coerceAtLeast(0)
+        val plan = BannerFit.plan(
+            room, w, titleW, titleShortW,
+            lines = maxOf(sideW ?: 0, noteW ?: 0), linesShort = maxOf(sideShortW ?: 0, noteW ?: 0),
+            hasLines = sideW != null || noteW != null,
+        )
+        // What is drawn: each word once, in the form the plan picked.
+        val title = subcompose(BandSlot.SHOWN_TITLE) { if (plan.titleShort) labelShort() else label() }.first().measure(one)
+        val shownSide = (if (plan.linesShort) sideShort ?: side else side)?.let { c -> subcompose(BandSlot.SHOWN_SIDE) { c() }.first().measure(one) }
+        val shownNote = note?.let { c -> subcompose(BandSlot.SHOWN_NOTE) { c() }.first().measure(one) }
+        val lines = listOfNotNull(shownSide, shownNote)
+        val inRow = (if (plan.titleInRow) listOf(title) else emptyList()) + (if (plan.linesInRow) lines else emptyList())
+        val under = (if (plan.titleInRow) emptyList() else listOf(title)) + (if (plan.linesInRow) emptyList() else lines)
+        val gapPx = gap.roundToPx()
+        fun tall(ps: List<androidx.compose.ui.layout.Placeable>) = if (ps.isEmpty()) 0 else ps.sumOf { it.height } + gapPx * (ps.size - 1)
+        val rowH = maxOf(rowMin.roundToPx(), controlsP.height, tall(inRow))
+        val height = rowH + if (under.isEmpty()) 0 else tall(under) + foot.roundToPx()
+        val tapP = onTap?.let { tap ->
+            subcompose(BandSlot.TAP) { Box(Modifier.clickable(onClickLabel = tapLabel, role = Role.Button) { tap() }) }
+                .first().measure(androidx.compose.ui.unit.Constraints.fixed(w, height))
+        }
+        layout(w, height) {
+            // The tap first, under everything, so a button takes its own touches.
+            tapP?.place(0, 0)
+            var y = (rowH - tall(inRow)) / 2
+            for (p in inRow) { p.place(0, y); y += p.height + gapPx }
+            y = rowH
+            for (p in under) { p.place(0, y); y += p.height + gapPx }
+            controlsP.place(w - controlsP.width, (rowH - controlsP.height) / 2)
+        }
     }
 }
 
 /**
- * Battle banner. RUN only appears in wild battles: trainers never allow it. RUN asks twice (ArmedTap): the first
- * tap draws it as RUN? in the warning colour, a second inside three seconds flees, and otherwise it disarms.
+ * Battle banner: WILD BATTLE or TRAINER BATTLE and the buttons a battle needs. It offered RUN in a wild battle until
+ * 2026-10-03 (Blake: "remove the run button from the tracker, it doesn't work at all"); B on a controller or the pad
+ * still runs from a wild battle on Game Boy and Game Boy Advance games (FleeOnB).
  */
 @Composable
 fun PcBattleBanner(
     isWild: Boolean,
-    onFlee: () -> Unit,
     viewingOwn: Boolean = false,
     onSwapView: (() -> Unit)? = null,
     /** TrainersOnRouteScreen: the TRAINER BATTLE banner opens Trainer Info for the opponent. */
@@ -2045,61 +2097,28 @@ fun PcBattleBanner(
     /** The swap button's spoken label, naming where its next Pokemon stands; null for the plain one. */
     swapSpoken: String? = null,
 ) {
-    val run = remember { ArmedTap() }
-    // A timer per arming: armedAt changes on every tap that arms, so an older timer never disarms a newer one.
-    LaunchedEffect(run.armedAt) {
-        if (run.armed) { kotlinx.coroutines.delay(ArmedTap.WINDOW_MS); run.disarm() }
-    }
+    val titleColor = if (isWild) Pc.Positive else Pc.Negative
+    val weatherShown = weather != null && TrackerWeather.name(weather) != null
     PcBannerBand(
         fill = TrackerBackground.boxFill(Pc.Ground),
-        buttons = onSwapView != null || isWild || onGear != null || trailing != null,
-        label = {
-            val trainerTap = if (isWild) null else onTrainerTap
-            Box(
-                if (trainerTap != null) {
-                    Modifier.heightIn(min = PcMin.TOUCH_DP.dp)
-                        .clickable(onClickLabel = PcBannerCopy.TRAINER_SPOKEN, role = Role.Button) { trainerTap() }
-                } else Modifier,
-                contentAlignment = Alignment.CenterStart,
-            ) {
-                // The band is a touch row's height anyway: the weather takes the line under the label, not a row.
-                Column {
-                    // "TRAINER" or "WILD" where the whole words do not fit: in a narrow window the buttons left the
-                    // label a single "T" (2026-10-02).
-                    val full = if (isWild) "WILD BATTLE" else "TRAINER BATTLE"
-                    androidx.compose.foundation.layout.BoxWithConstraints {
-                        val measurer = androidx.compose.ui.text.rememberTextMeasurer()
-                        val style = androidx.compose.ui.text.TextStyle(fontFamily = PcFont, fontSize = PcRef.FONT.rsp, fontWeight = FontWeight.Medium)
-                        val fits = measurer.measure(full, style).size.width <= constraints.maxWidth
-                        PixText(
-                            if (fits) full else if (isWild) "WILD" else "TRAINER", PcRef.FONT,
-                            if (isWild) Pc.Positive else Pc.Negative, weight = FontWeight.Medium,
-                        )
-                    }
-                    // A double (or triple) battle: which Pokemon the cards show, by where it stands on the game's screen. The
-                    // reference names none, its swap being a hotkey; here it is the one way to tell two of a side apart.
-                    side?.let { s ->
-                        Spacer(Modifier.height(2.rp))
-                        androidx.compose.foundation.layout.BoxWithConstraints {
-                            val measurer = androidx.compose.ui.text.rememberTextMeasurer()
-                            val style = androidx.compose.ui.text.TextStyle(fontFamily = PcFont, fontSize = (PcRef.FONT - 2).rsp, fontWeight = FontWeight.Medium)
-                            val fits = measurer.measure(s.full, style).size.width <= constraints.maxWidth
-                            // Wraps rather than clips where even the short words do not fit a narrow window.
-                            PixText(if (fits) s.full else s.short, PcRef.FONT - 2, Pc.Text, weight = FontWeight.Medium, wrap = true)
-                        }
-                    }
-                    val weatherShown = weather != null && TrackerWeather.name(weather) != null
-                    if (attempt != null || weatherShown) {
-                        Spacer(Modifier.height(2.rp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            attempt?.let { PixText("ATTEMPT $it", PcRef.FONT - 2, Pc.Dim, weight = FontWeight.Medium) }
-                            if (attempt != null && weatherShown) Spacer(Modifier.width(4.rp))
-                            if (weatherShown) TrackerWeatherPill(weather!!)
-                        }
-                    }
-                }
+        buttons = onSwapView != null || onGear != null || trailing != null,
+        label = { PixText(if (isWild) "WILD BATTLE" else "TRAINER BATTLE", PcRef.FONT, titleColor, weight = FontWeight.Medium) },
+        // "TRAINER" or "WILD" where the whole words do not fit: in a narrow window the buttons left the label a single
+        // "T" (2026-10-02). Neither is cut further; where even it does not fit beside the buttons it goes under them.
+        labelShort = { PixText(if (isWild) "WILD" else "TRAINER", PcRef.FONT, titleColor, weight = FontWeight.Medium) },
+        // A double (or triple) battle: which Pokemon the cards show, by where it stands on the game's screen. The
+        // reference names none, its swap being a hotkey; here it is the one way to tell two of a side apart.
+        side = side?.let { s -> { PixText(s.full, PcRef.FONT - 2, Pc.Text, weight = FontWeight.Medium) } },
+        sideShort = side?.let { s -> { PixText(s.short, PcRef.FONT - 2, Pc.Text, weight = FontWeight.Medium) } },
+        note = if (attempt != null || weatherShown) { {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                attempt?.let { PixText("ATTEMPT $it", PcRef.FONT - 2, Pc.Dim, weight = FontWeight.Medium) }
+                if (attempt != null && weatherShown) Spacer(Modifier.width(4.rp))
+                if (weatherShown) TrackerWeatherPill(weather!!)
             }
-        },
+        } } else null,
+        onTap = if (isWild) null else onTrainerTap,
+        tapLabel = PcBannerCopy.TRAINER_SPOKEN,
     ) {
         // The reference swaps between your Pokemon and the enemy's with a
         // CONTROLLER BUTTON (Input.lua:178, Battle.togglePokemonViewed),
@@ -2110,15 +2129,6 @@ fun PcBattleBanner(
         // anything either.
         onSwapView?.let {
             PcButton(PcBannerCopy.see(viewingOwn), spoken = swapSpoken ?: PcBannerCopy.seeSpoken(viewingOwn), onClick = it)
-        }
-        if (isWild) {
-            if (onSwapView != null) Spacer(Modifier.width(PcMin.BUTTON_GAP_DP.dp))
-            PcButton(
-                PcBannerCopy.run(run.armed),
-                color = if (run.armed) Pc.Negative else Pc.Text,
-                spoken = PcBannerCopy.runSpoken(run.armed),
-                alert = run.armed,
-            ) { if (run.tap(android.os.SystemClock.elapsedRealtime())) onFlee() }
         }
         onGear?.let {
             Spacer(Modifier.width(PcMin.BUTTON_GAP_DP.dp))

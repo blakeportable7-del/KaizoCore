@@ -81,6 +81,9 @@ add_library(libretrodroid SHARED
         cheevos.cpp
         streamtap.h
         streamtap.cpp
+        # KaizoCore patch (2026-10-04): the ability trigger tap.
+        triggertap.h
+        triggertap.cpp
         ${RCHEEVOS_SOURCES}
         utils/javautils.h
         utils/javautils.cpp

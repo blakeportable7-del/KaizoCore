@@ -49,11 +49,11 @@ class LandscapeChromeTest {
         val src = read("FloatingTracker.kt")
         assertTrue("val locked = TrackerOptions.floatingLocked" in src)
         assertTrue("if (locked) Modifier else Modifier\n                            .pointerInput(areaW, areaH)" in src, "no dragging while locked")
-        assertTrue("if (!locked) {\n                // The border" in src, "no resizing while locked")
+        assertTrue("if (!locked) {\n            // The grabs" in src, "no resizing while locked")
         assertTrue("TrackerOptions.floatingLocked = !locked; TrackerOptions.save()" in src)
         assertTrue("floatingLocked=\$floatingLocked" in read("TrackerOptions.kt"), "the lock is saved")
-        assertTrue("(BAR_DP + contentH + frameDp).coerceIn(FloatFrame.MIN_H, shown.h)" in src, "the height set is the most it takes")
-        assertTrue("val room = (shown.h - BAR_DP - frameDp)" in src, "room is the height given, not the fitted one")
+        assertTrue("(BAR_DP + contentH).coerceIn(FloatFrame.MIN_H, shown.h)" in src, "the height set is the most it takes")
+        assertTrue("val room = (shown.h - BAR_DP)" in src, "room is the height given, not the fitted one")
     }
 
     @Test
@@ -72,11 +72,13 @@ class LandscapeChromeTest {
     @Test
     fun `the File band is centred, shows arrows while it scrolls and closes with an X`() {
         val band = read("LandscapeChrome.kt").substringAfter("internal fun LandscapeMenuBand(").substringBefore("\n}\n")
-        assertTrue("horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally)" in band)
-        assertTrue("Modifier.widthIn(min = viewport)" in band, "a short row centres in the band")
+        assertTrue("LoopingRow(loop, Modifier.weight(1f).padding(vertical = 6.dp), gap = 6.dp, center = true, content = chips)" in band,
+            "a short row centres in the band, a long one goes round (LoopRowTest)")
         assertTrue("if (overflows) BandArrow(" in band && "Scroll the menu left" in band && "Scroll the menu right" in band,
             "an arrow at each end, only while the row overflows")
+        assertTrue("loop.page(forward = false)" in band && "loop.page(forward = true)" in band, "the arrows move through the loop")
         assertTrue("contentDescription = \"Close the menu\"" in band && "onClose()" in band)
+        assertTrue(band.indexOf("contentDescription = \"Close the menu\"") > band.indexOf("LoopingRow("), "the X stays put, outside the loop")
         assertTrue("LandscapeMenuBand(" in read("PlayScreen.kt"))
     }
 

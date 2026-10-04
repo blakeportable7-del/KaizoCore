@@ -129,7 +129,7 @@ class DsViewTest {
         assertTrue("if (stackBoth || !showEnemy) shownPlayer?.let { p ->" in panel, "your one card")
         assertTrue("if (showEnemy) shownEnemy?.let {" in panel, "the opponent's card")
         // SETUP rides in the banner during a battle (2026-10-02): it had a row of its own.
-        assertTrue("PcBattleBanner(state.isWildBattle, onFlee, viewingOwn = if (side == null) !showEnemy else view.offersFoe(state, stackBoth)," in panel)
+        assertTrue("PcBattleBanner(state.isWildBattle, viewingOwn = if (side == null) !showEnemy else view.offersFoe(state, stackBoth)," in panel)
         assertTrue("onSwapView = onSwap, onGear = onGear, trailing = headerTrailing, attempt = attemptShown," in panel)
         assertTrue("onLock = { view.toggleLock(state, TrackerOptions.dsEnemyLocking) }" in panel)
         assertTrue("view.onPause(effectivenessReady, state, TrackerOptions.dsAutoSwapToEnemy)" in panel)

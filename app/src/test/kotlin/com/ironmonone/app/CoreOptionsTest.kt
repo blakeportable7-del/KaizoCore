@@ -95,4 +95,29 @@ class CoreOptionsTest {
         assertEquals(CoreOptions.DSI_GROUP, CoreOptions.NDS.first { it.key == "melonds_console_mode" }.group,
             "the console row belongs to the DSi section, which checks the files first")
     }
+
+    @Test
+    fun `Random MAC address is hidden and every DS boot gets it off, whatever was saved before (rc34_1)`() {
+        val key = "melonds_randomize_mac_address"
+        // Since core patch 0003 it would give the DS a new address every boot, which a Gen 4 game takes for another
+        // console: a day's clock penalty on every continue.
+        assertTrue(CoreOptions.forPlatform(Platform.NDS).none { it.key == key }, "no row on the DS settings page")
+        // A player who turned it on in rc34 or before: the value is still in nds.properties.
+        val dir = Files.createTempDirectory("mac").toFile()
+        File(dir, "nds.properties").writeText("$key=enabled\nmelonds_mic_input=None\n")
+        val store = CoreOptionStore(dir)
+        assertTrue(key !in store.load(Platform.NDS) && key !in store.effective(Platform.NDS), "the saved value is dropped")
+        assertEquals("None", store.load(Platform.NDS)["melonds_mic_input"], "the other saved values stay")
+        // A key left out keeps its last value inside the core, so the boot says it outright, once, even when handed on.
+        for (values in listOf(store.effective(Platform.NDS), store.effective(Platform.NDS) + (key to "enabled"), emptyMap())) {
+            val sent = CoreOptions.coreVariables(Platform.NDS, values).filter { it.first == key }
+            assertEquals(listOf(key to "disabled"), sent)
+        }
+        // Another option changed later rewrites the file without it.
+        store.set(Platform.NDS, "melonds_mic_input", "White Noise")
+        assertTrue(key !in File(dir, "nds.properties").readText(), "the next save forgets it")
+        // The other consoles' cores never hear of it.
+        for (p in listOf(Platform.GBA, Platform.GBC))
+            assertTrue(CoreOptions.coreVariables(p, CoreOptionStore(dir).effective(p)).none { it.first == key }, "$p")
+    }
 }

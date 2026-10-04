@@ -2430,7 +2430,7 @@ class GbaTracker(
             enemyMovesThisBattle = if (inBattle && !ghost) enemyMovesThisBattle(enemyParty) else emptyList(),
             abilityRevealed = if (inBattle) readAbilityTrigger() else null,
             encounterArea = encounterArea,
-            abilitiesRevealed = if (inBattle && !ghost) drainReveals() else { pendingReveals.clear(); emptyList() },
+            abilitiesRevealed = drainReveals(live = inBattle && !ghost),
             // Your own battlers' abilities are tracked in a ghost battle too: that
             // block sits outside the reference's isGhost check (Battle.lua:482-503).
             ownAbilities = if (inBattle) readOwnAbilities() else emptyList(),
@@ -3566,8 +3566,35 @@ class GbaTracker(
     private val moveDescs by lazy { loadDesc("/gen3/movedesc.tsv") }
     private val abilityDescs by lazy { loadDesc("/gen3/abilitydesc.tsv") }
 
-    fun moveDescription(moveId: Int): String? =
-        moveDescs[moveId]?.second?.takeIf { it.isNotBlank() }
+    /**
+     * The Nat. Dex builds' moves past 354, one description each, in its source's words: the Nat. Dex Extension's own
+     * where it has one, else the DS tracker's for a move Black and White already had, else Pokemon Showdown's short
+     * one, or KaizoCore's own line where that says nothing (natdex/movedesc.tsv, made by
+     * tools/trainer-data/convert_natdex_move_desc.py). Before rc34.1 nothing past 354 had one, so Fairy Wind showed none.
+     */
+    private val natDexMoveDescs by lazy { loadDesc("/natdex/movedesc.tsv") }
+
+    /** The same text by move name, for MaxDex: it numbers its moves its own way (Fairy Wind is 358 there, 584 here). */
+    private val natDexMoveDescsByName by lazy { natDexMoveDescs.values.associate { moveKey(it.first) to it.second } }
+
+    /**
+     * The move's description for the info screen. Ids 1-354 are Gen 3's moves on every build and keep the reference's
+     * Gen 3 text (gen3/movedesc.tsv). Past them, a Nat. Dex build reads natdex/movedesc.tsv by id and MaxDex by the
+     * move's name (its list, maxdex/moves.tsv); the five games have no move past 354.
+     */
+    fun moveDescription(moveId: Int): String? {
+        val text = when {
+            moveId <= 0 -> null
+            moveId <= VANILLA_LAST_MOVE -> moveDescs[moveId]?.second
+            map.nameSet == "maxdex" -> natDexMoveDescsByName[moveKey(moveName(moveId))]
+            map.namesFromLists -> natDexMoveDescs[moveId]?.second
+            else -> null
+        }
+        return text?.takeIf { it.isNotBlank() }
+    }
+
+    /** A move name as a match key: case, spaces and punctuation ignored ("U-turn" and "U-Turn" are one move). */
+    private fun moveKey(name: String): String = name.lowercase().filter { it in 'a'..'z' || it in '0'..'9' }
 
     /**
      * The ability's description, then its Emerald-only effect under the reference's label
@@ -4207,9 +4234,10 @@ class GbaTracker(
      * That is a Pokemon Tower ghost met before the Silph Scope, including the
      * Marowak. Read live, like the reference, from gBattleTypeFlags.
      */
-    internal fun isGhostBattle(): Boolean {
+    internal fun isGhostBattle(mem: MemoryReader = memory): Boolean {
         if (!isFrlg || map.battleTypeFlags == 0L) return false
-        val flags = rd(map.battleTypeFlags)
+        val b = mem.read(map.battleTypeFlags, 4)
+        val flags = if (b.size == 4) b.u32(0) else 0L
         return (flags shr 15) and 1L == 1L && (flags shr 13) and 1L == 0L
     }
 
@@ -4424,7 +4452,7 @@ class GbaTracker(
      * same table through pointer slots, resolved here the way the extension
      * itself builds GS.ABILITIES.
      */
-    private val abilityScripts: Map<Long, List<Triple<String, Set<Int>, String>>> by lazy {
+    internal val abilityScripts: Map<Long, List<Triple<String, Set<Int>, String>>> by lazy {
         val out = HashMap<Long, MutableList<Triple<String, Set<Int>, String>>>()
         if (map.abilityScriptTable.isEmpty()) return@lazy out
         javaClass.getResourceAsStream(
@@ -4505,18 +4533,93 @@ class GbaTracker(
      * that, so reveals were missed (2026-09-27, Blake: abilities not tracked on
      * FireRed). This reads only the battle-script pointer and a few bytes, so
      * the play screen calls it every few frames between full reads.
+     *
+     * That was still a wall clock: every 31 ms is about 15 emulated frames at
+     * 8x and 30 at 16x, more around each full read, and a short message was
+     * still missed there (Blake, 2026-10-04: missed at 8x, caught at 4x). Where
+     * the emulator has the trigger tap ([triggerTap]), every frame is looked at
+     * and these polls only collect what it caught (drainTap).
      */
     private val pendingReveals = ArrayList<Pair<Int, String>>()
 
     fun pollAbilityTrigger() {
         // The move tracking wants the same fast polls: a move action can be over in a quarter second at 4x.
         if (inBattleScreen && battleDataReady) runCatching { pollMoves() }
+        synchronized(pendingReveals) { runCatching { drainTap() } }
         val r = runCatching { readAbilityTriggers() }.getOrNull() ?: return
         synchronized(pendingReveals) {
             // The same message stays up across several polls, and one message can reveal two: each once.
             for (p in r) if (p !in pendingReveals) pendingReveals += p
         }
     }
+
+    /**
+     * The emulator's per-frame watch on the battle-script pointer (TriggerTap; libretrodroid's cpp/triggertap.h).
+     * Setting it arms it with this game's ability scripts and the memory their check reads ([tapPlan]); null is the
+     * old way, the polls alone.
+     */
+    var triggerTap: TriggerTap? = null
+        set(value) {
+            if (field !== value) field?.let { old -> runCatching { old.disarm() } }
+            field = value
+            tapArmed = value != null && runCatching {
+                tapPlan?.let { p -> value.arm(p.watch, p.targets, p.addresses, p.lengths) } ?: false
+            }.getOrDefault(false)
+        }
+    private var tapArmed = false
+
+    /**
+     * What the tap watches and copies. The pointer is gBattlescriptCurrInstr and the values are this game's ability
+     * script addresses ([abilityScripts], the reference's GameSettings.ABILITIES). The copy is every byte that changes
+     * during a battle and that [readAbilityTriggers] reads (Battle.readBattleValues, Battle.lua:542-547, the attacker
+     * from :322, and the battle parties' abilities, :616-726): the battler count, the scripting battler, the attacker and
+     * the target, the Trace message's battler (gBattleTextBuff1 + 2, :648), the battlers' party slots, each battler's
+     * species, IV word and live ability byte, the battle type flags (the ghost check, :505) and gBattleOutcome. The
+     * parties and the species data stay as they were from that frame to the drain and are read live. The tap reads
+     * only the work RAM (TapPlan.inRam), where every one of these is kept, except Ruby and Sapphire's gBattleTextBuff1,
+     * which sits in IWRAM there and is read live too (it only matters to Trace in a double battle).
+     */
+    internal val tapPlan: TapPlan? by lazy {
+        if (!TapPlan.inRam(map.scriptCurrInstr, 4) || map.battleMons == 0L || abilityScripts.isEmpty()) return@lazy null
+        val addresses = ArrayList<Long>(); val lengths = ArrayList<Int>()
+        fun copy(address: Long, length: Int) { if (TapPlan.inRam(address, length)) { addresses += address; lengths += length } }
+        copy(map.battlersCount, 1)
+        copy(map.scriptingBattler, 1)
+        copy(map.battlerAttacker, 1)
+        copy(map.battlerTarget, 1)
+        copy(map.battleOutcome, 1)
+        copy(map.battleTypeFlags, 4)
+        copy(map.battleTextBuff1.let { if (it == 0L) 0L else it + 2 }, 1)
+        copy(map.battlerPartyIndexes, 8)
+        // Species at 0, the IV word with the ability bit at 0x14, the live ability byte at 0x20.
+        for (i in 0 until 4) copy(map.battleMons + i.toLong() * map.battleMonSize, 0x21)
+        TapPlan(map.scriptCurrInstr, abilityScripts.keys.sorted().toLongArray(), addresses.toLongArray(), lengths.toIntArray())
+    }
+
+    /**
+     * Run the reference's check on every frame the tap caught since the last drain, as that frame left the game. Battle.update
+     * (Battle.lua:116-139) looks only during a battle, so a caught frame counts only if gBattleOutcome was still 0 on it
+     * (Battle.lua:150-151); a frame the pointer only reaches inside a battle's scripts needs nothing more. A reveal found
+     * this way stands even if this read has not seen the battle start yet: at 8x the whole intro can pass between two
+     * reads. Call with [pendingReveals] held; what it finds waits in [tapReveals] for the next read.
+     */
+    private fun drainTap() {
+        val tap = triggerTap ?: return
+        if (!tapArmed) return
+        val plan = tapPlan ?: return
+        val bytes = runCatching { tap.drain() }.getOrNull() ?: return
+        for (hit in TapHits.parse(bytes, plan.contextLength)) {
+            val view = plan.view(memory, hit)
+            if (map.battleOutcome != 0L) {
+                val o = view.read(map.battleOutcome, 1)
+                if (o.size == 1 && o[0].toInt() != 0) continue
+            }
+            for (p in readAbilityTriggers(view)) if (p !in tapReveals) tapReveals += p
+        }
+    }
+
+    /** The tap's reveals waiting for the next read; [pendingReveals]' lock guards both. */
+    private val tapReveals = ArrayList<Pair<Int, String>>()
 
     /**
      * One poll of the move tracking (EnemyMoveWatch, Battle.lua:376-445), from the fast battle poll and from read(): a
@@ -4575,8 +4678,16 @@ class GbaTracker(
         }
     }
 
-    private fun drainReveals(): List<Pair<Int, String>> = synchronized(pendingReveals) {
-        for (p in readAbilityTriggers()) if (p !in pendingReveals) pendingReveals += p
+    /**
+     * The reveals since the last read. What the tap caught was checked against its own frame (drainTap) and stands; the
+     * live check, and the fast polls' reveals, only in an active battle that is not a ghost one ([live]), as before.
+     */
+    private fun drainReveals(live: Boolean): List<Pair<Int, String>> = synchronized(pendingReveals) {
+        if (!live) pendingReveals.clear()
+        runCatching { drainTap() }
+        if (live) for (p in readAbilityTriggers()) if (p !in pendingReveals) pendingReveals += p
+        for (p in tapReveals) if (p !in pendingReveals) pendingReveals += p
+        tapReveals.clear()
         val out = pendingReveals.toList(); pendingReveals.clear(); out
     }
 
@@ -4586,19 +4697,19 @@ class GbaTracker(
      * by side), decoded for its ability slot, then its species' ability. Falls back
      * to the battle struct's own IV word (+0x14, bit 31) when the index is unknown.
      */
-    private fun partyAbility(i: Int): Int {
-        val battle = memory.read(map.battleMons + i.toLong() * map.battleMonSize, 0x18)
+    private fun partyAbility(i: Int, mem: MemoryReader = memory): Int {
+        val battle = mem.read(map.battleMons + i.toLong() * map.battleMonSize, 0x18)
         if (battle.size < 0x18) return 0
         val battleSpecies = battle.u16(0)
         var species = battleSpecies
         var slot = ((battle.u32(0x14) ushr 31) and 1L).toInt()
         if (map.battlerPartyIndexes != 0L) {
-            val idxB = memory.read(map.battlerPartyIndexes + i * 2L, 2)
+            val idxB = mem.read(map.battlerPartyIndexes + i * 2L, 2)
             val idx = if (idxB.size == 2) idxB.u16(0) else -1
             val party = if (i % 2 == 0) map.party else map.enemyParty
             val size = map.monLayout.size
             if (idx in 0..5 && party != 0L) {
-                val bytes = memory.read(party + idx.toLong() * size, size)
+                val bytes = mem.read(party + idx.toLong() * size, size)
                 if (bytes.size == size && !PokemonDecoder.isEmpty(bytes)) {
                     val mon = PokemonDecoder.decode(bytes, map.monLayout)
                     if (mon.species == battleSpecies) { species = mon.species; slot = mon.abilitySlot }
@@ -4618,20 +4729,23 @@ class GbaTracker(
      * two: Clear Body, Hyper Cutter or White Smoke stopping Intimidate has a BATTLER row (the Intimidate) and a
      * REVERSE_BATTLER row (what stopped it) at the same address, the one address in any table with two. Returning at
      * the first match kept your Intimidate and dropped the foe's ability (rc32 audit P2 #132).
+     *
+     * [mem] is the memory the check reads: the live game, or one frame the trigger tap caught (TapPlan.view), which is
+     * how a message too short for any poll at 8x or 16x is still checked exactly as the reference would have.
      */
-    internal fun readAbilityTriggers(): List<Pair<Int, String>> {
+    internal fun readAbilityTriggers(mem: MemoryReader = memory): List<Pair<Int, String>> {
         if (map.scriptCurrInstr == 0L || abilityScripts.isEmpty()) return emptyList()
         // Battle.lua:505: checkAbilitiesToTrack is skipped in a ghost battle.
-        if (isGhostBattle()) return emptyList()
-        val msgB = memory.read(map.scriptCurrInstr, 4)
+        if (isGhostBattle(mem)) return emptyList()
+        val msgB = mem.read(map.scriptCurrInstr, 4)
         if (msgB.size < 4) return emptyList()
         val rows = abilityScripts[msgB.u32(0)] ?: return emptyList()
 
-        val nB = memory.read(map.battlersCount, 1)
+        val nB = mem.read(map.battlersCount, 1)
         val n = (if (nB.isEmpty()) 0 else nB[0].toInt() and 0xFF)
             .coerceIn(1, 4)
         fun battlerByte(addr: Long): Int {
-            val b = memory.read(addr, 1)
+            val b = mem.read(addr, 1)
             return if (b.isEmpty()) 0 else (b[0].toInt() and 0xFF) % n
         }
         val battler = battlerByte(map.scriptingBattler)
@@ -4646,14 +4760,14 @@ class GbaTracker(
             // reads that byte at all: a battler's ability is its species' ability for
             // the party Pokemon's ability slot (Battle.populateBattlePartyObject,
             // PokemonData.getAbilityId).
-            if (map.abilitiesAreU16) return partyAbility(i)
+            if (map.abilitiesAreU16) return partyAbility(i, mem)
             // Vanilla: the live byte, which also follows Skill Swap and Role Play the
             // way the reference's own swap tracking does.
-            val b = memory.read(map.battleMons + i * map.battleMonSize + 0x20L, 1)
+            val b = mem.read(map.battleMons + i * map.battleMonSize + 0x20L, 1)
             return if (b.isEmpty()) 0 else b[0].toInt() and 0xFF
         }
         fun speciesOf(i: Int): Int {
-            val b = memory.read(map.battleMons + i * map.battleMonSize.toLong(), 2)
+            val b = mem.read(map.battleMons + i * map.battleMonSize.toLong(), 2)
             return if (b.size < 2) 0 else b.u16(0)
         }
         val out = LinkedHashSet<Pair<Int, String>>()
@@ -4666,7 +4780,7 @@ class GbaTracker(
         // the reveal never fired. The reference tests its own record of the holder, still Trace (Battle.lua:637), and
         // reveals the Pokemon named in gBattleTextBuff1 + 2 (:646-649); without that address, the other side in a single.
         fun traced(holder: Int): Int? {
-            if (map.battleTextBuff1 != 0L) memory.read(map.battleTextBuff1 + 2, 1).takeIf { it.size == 1 }?.let { b ->
+            if (map.battleTextBuff1 != 0L) mem.read(map.battleTextBuff1 + 2, 1).takeIf { it.size == 1 }?.let { b ->
                 val t = b[0].toInt() and 0xFF
                 if (t < n && t != holder) return t
             }
@@ -4676,7 +4790,7 @@ class GbaTracker(
         for ((trigger, ids, scope) in rows) {
             when (trigger) {
                 "BATTLER" -> when {
-                    TRACE in ids && partyAbility(battler) == TRACE -> traced(battler)?.let { reveal(it) }
+                    TRACE in ids && partyAbility(battler, mem) == TRACE -> traced(battler)?.let { reveal(it) }
                     abilityOf(battler) in ids -> reveal(battler)
                 }
                 // Battle.lua:656-663: the target's ability stopped the battler's, and both are tracked.

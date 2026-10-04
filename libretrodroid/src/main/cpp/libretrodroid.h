@@ -118,6 +118,14 @@ public:
     size_t readMemory(uint64_t address, size_t length, unsigned char* output);
 
     /**
+     * KaizoCore patch (2026-10-04): the ability trigger tap (triggertap.h), armed, disarmed and drained under coreLock.
+     * [armTriggerTap] returns the arming's token, 0 when refused; [disarmTriggerTap] lets go only of that arming.
+     */
+    uint32_t armTriggerTap(uint64_t watch, std::vector<uint32_t> targets, const std::vector<std::pair<uint64_t, uint32_t>>& ranges);
+    void disarmTriggerTap(uint32_t token);
+    std::vector<unsigned char> drainTriggerTap();
+
+    /**
      * IronMON One patch: true only between a successful game load and teardown.
      *
      * Querying core memory before the game is loaded crashes INSIDE the core -
@@ -188,6 +196,8 @@ public:
     uintptr_t handleGetCurrentFrameBuffer();
 
 private:
+    // KaizoCore patch (2026-10-04): one emulated frame's look for the trigger tap; the caller holds coreLock.
+    void tapFrame();
     void updateAudioSampleRateMultiplier();
     // KaizoCore patch (2026-09-29): see streamtap.h.
     void updateStreamAudioRate();

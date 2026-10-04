@@ -33,6 +33,8 @@ https://github.com/CyanSMP64/NatDexExtension
 
   Scope: covers the extension's Pokemon and move data tables and its sprites, both
   as a Kotlin port and as bundled files. It does NOT extend to anything else.
+  The move descriptions the extension has written (natDexMoveDescriptions) are in
+  tracker-gba's natdex/movedesc.tsv under this grant, word for word.
 
 
 DrMaple / Faster-FireRed — ALL RIGHTS RESERVED, BUNDLED ON BLAKE'S DECISION, NO GRANT
@@ -244,6 +246,37 @@ UTDZac / FavoritesAsSources-IronmonExtension - MIT   https://github.com/UTDZac/F
   (app stream/StreamFavorites.kt). Written again in Kotlin; none of its Lua is used.
   Credited on the About screen.
 
+smogon / pokemon-showdown - MIT               https://github.com/smogon/pokemon-showdown
+  Pokemon Showdown's move text, data/text/moves.ts at commit 9fb3a5b9 (fetched
+  2026-10-03; tools/trainer-data/sources/showdown-moves.ts, with the full commit, its
+  SHA-256 and this license in showdown-moves.PINNED.txt beside it), supplies the move
+  descriptions of the Nat. Dex and MaxDex moves from X and Y onward that neither the
+  Nat. Dex Extension nor the NDS tracker describes: 271 of them on Nat. Dex. Each is
+  its shortDesc, never its longer desc, word for word but for American spelling and no
+  em dashes (tools/trainer-data/convert_natdex_move_desc.py, into tracker-gba
+  natdex/movedesc.tsv). The other 10, whose shortDesc reads "No competitive use." or
+  "No additional effect.", have KaizoCore's own line instead. The file is read as
+  data; none of its code is run and the APK does not carry it. Its LICENSE:
+
+    Copyright (c) 2011-2026 Guangcong Luo and other contributors http://pokemonshowdown.com/
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy of
+    this software and associated documentation files (the "Software"), to deal in
+    the Software without restriction, including without limitation the rights to
+    use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+    the Software, and to permit persons to whom the Software is furnished to do so,
+    subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+    FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+    COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+    IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 rcheevos - MIT                                RetroAchievements/rcheevos
   ** VENDORED IN THIS REPO ** at libretrodroid/src/main/cpp/rcheevos, with its
   LICENSE ("Copyright (c) 2018 RetroAchievements.org"). RetroAchievements support.
@@ -278,7 +311,8 @@ LibretroDroid 0.13.2 — GPL-3.0                Swordfish90/LibretroDroid
   - the memory-read patch, SET_MEMORY_MAPS capture and the readMemory and writeMemory
     JNI: "IronMON One patch"
   - RetroAchievements (cpp/cheevos.cpp and .h, cpp/CMakeLists.txt), the stream taps
-    for picture and sound (cpp/streamtap.cpp and .h) and the melonDS state guard
+    for picture and sound (cpp/streamtap.cpp and .h), the ability trigger tap
+    (cpp/triggertap.cpp and .h and its JNI) and the melonDS state guard
     (MelonState.kt): "KaizoCore patch"
   - Play as your Pokemon (cpp/sprite_core.h, cpp/sprite_overlay.cpp and .h,
     SpriteOverlay.java): "KaizoCore addition"
@@ -308,19 +342,29 @@ NDS-Ironmon-Tracker (Brian0255) - GPL-3.0   Brian0255/NDS-Ironmon-Tracker
   The seventeen move type symbols drawn before a move's name on every tracker
   (app TypeSymbols.kt) are this project's IconDrawer.lua *_FILLED icons, their
   pixel grids and colors transcribed 2026-10-02.
+  The move descriptions on the DS tracker's move info are this project's MoveData
+  text (nds/move-desc.tsv), and so are the Nat. Dex and MaxDex descriptions of the
+  moves Black and White had (tracker-gba natdex/movedesc.tsv).
   GPL-3.0 is this app's own license.
 
 melonDS libretro core — GPL-3.0               libretro/melonDS
   Built here from source since rc34, the .so per ABI in app/src/main/jniLibs:
   https://github.com/libretro/melonDS (melonDS 0.9.3) at commit
-  66b5d2634cd0a79030562811e6e05f5532f800ba, with two patches, both in
+  66b5d2634cd0a79030562811e6e05f5532f800ba, with four patches, all in
   libretrodroid/cores/melonds/:
   0001-unload-stops-the-render-thread-and-frees-the-screen-buffer.patch, ours,
   which stops the core's 3D render thread and frees its screen buffer when a game
   is unloaded; and 0002-3d-depth-no-longer-reads-a-value-it-never-set.patch,
   melonDS's own later fix f143e89c931d12a234851e443b7d85f8017db9a3
   (github.com/melonDS-emu/melonDS) brought back to this source, so the 3D
-  renderer never reads a depth value it has not set.
+  renderer never reads a depth value it has not set; and
+  0003-generated-firmware-carries-wifi-calibration.patch, the Wi-Fi calibration,
+  MAC address and access point blocks melonDS 0.9.4 writes into the firmware it
+  makes when none is imported (github.com/melonDS-emu/melonDS, src/SPI.cpp),
+  brought back to this source, so a game's wireless library starts; and
+  0004-3d-a-loaded-state-never-writes-past-the-vertex-buffer.patch, ours, so a
+  saved state loaded in the middle of a 3D scene can no longer write past the 3D
+  engine's vertex buffer and leave holes in the list of polygons it sorts.
   libretrodroid/cores/melonds/PINNED.txt records the commit, the patches and the
   hashes of the libraries that ship, and `python tools/cores/build_core.py melonds`
   builds them again from that source. The source of the core in the APK is that
@@ -348,11 +392,13 @@ LICENSE TEXTS IN THE APK
   MPL-2.0 (mGBA's own LICENSE), Apache-2.0 (Oboe's LICENSE), each MIT project's
   own LICENSE with its copyright line (rcheevos, the libretro-common files
   LibretroDroid compiles, besteon's tracker, the Gen 1 and Gen 2 forks, Calc Atk,
-  Sprite Is Me, Death Quotes, Auto Pokemon Themes, Favorites As Sources), inih's BSD
+  Sprite Is Me, Death Quotes, Auto Pokemon Themes, Favorites As Sources, Pokemon
+  Showdown), inih's BSD
   license and the public domain notes of MurmurHash3 and the LZMA SDK from mGBA's tree,
   and the PMD Sprite Collab's CC BY-NC 4.0 LICENSE.md. Each was copied from a copy on
   the build machine, none fetched, except Favorites As Sources' LICENSE, read from its
-  repository on 2026-10-03.
+  repository on 2026-10-03, and Pokemon Showdown's, read on 2026-10-03 at the commit
+  its move text is pinned to.
 
 
 BUNDLED IN THE APK

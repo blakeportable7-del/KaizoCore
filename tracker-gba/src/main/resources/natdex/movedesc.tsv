@@ -1,0 +1,494 @@
+# move id	name	description	source (natdex: NatDexExtension.lua natDexMoveDescriptions; nds: NDS-Ironmon-Tracker MoveData, Gen 5; showdown: Pokemon Showdown data/text/moves.ts shortDesc, MIT; kaizocore: KaizoCore's own line). Made by tools/trainer-data/convert_natdex_move_desc.py
+355	Roost	Heals the user for half its max HP. If the user is flying, its flying type is ignored until the end of this turn.	nds
+356	Gravity	For five turns, all immunities to ground moves are disabled. For the duration of this effect, the Accuracy of every Pokémon on the field is multiplied by 5/3. Cancels the effects of Bounce, Fly, and Sky Drop.	nds
+357	Miracle Eye	Ignores the target's boosted Evasion stages until the target leaves the field. A dark Pokémon under this effect takes normal damage from psychic moves.	nds
+358	Wake-Up Slap	Inflicts regular damage and makes contact. If the target is sleeping, this move has double power, and the target wakes up.	nds
+359	Hammer Arm	Inflicts regular damage and makes contact. Lowers the user's Speed by one stage.	nds
+360	Gyro Ball	Inflicts regular damage and makes contact. Power increases with the target's current Speed compared to the user, capped at 150.	nds
+361	Healing Wish	User faints. Its replacement's HP is fully restored, and any major status effect is removed. If the replacement Pokémon is immediately fainted by a switch-in effect, the next replacement is healed by this move instead.	nds
+362	Brine	Inflicts regular damage. If the target has less than half its max HP remaining, this move has double power.	nds
+363	Natural Gift	Inflicts regular damage. Power and type are determined by the user's held berry. The berry is consumed. If the user is not holding a berry, this move will fail.	nds
+364	Feint	Increased priority. Inflicts regular damage. Removes the effects of Detect or Protect from the target before hitting.	nds
+365	Pluck	Inflicts regular damage and makes contact. If the target is holding a berry, the user takes the berry and uses it immediately.	nds
+366	Tailwind	For the next four turns, all Pokémon on the user's side of the field have their original Speed doubled. This effect remains if the user leaves the field.	nds
+367	Acupressure	Raises one of the target's stats by two stages. The raised stat is chosen at random from any stats that can be raised.	nds
+368	Metal Burst	Targets the last opposing Pokémon to hit the user with a damaging move this turn. Inflicts 1.5x the damage that move did to the user. Type immunity applies, but other type effects are ignored.	nds
+369	U-turn	Inflicts regular damage and makes contact. User immediately switches out, and the trainer selects a replacement Pokémon from the party.	nds
+370	Close Combat	Inflicts regular damage and makes contact. Lowers the user's Defense and Special Defense by one stage each.	nds
+371	Payback	Inflicts regular damage and makes contact. If the target uses a move, switches out, or the trainer uses an item this turn before this move is used, this move has double power.	nds
+372	Assurance	Inflicts regular damage and makes contact. If the target takes damage this turn for any reason before this move is used, this move has double power.	nds
+373	Embargo	Target cannot use its held item and its trainer cannot use items from the bag on it for five turns. If the target leaves the field, this effect ends.	nds
+374	Fling	Inflicts regular damage. Power is determined by the user's held item. The item is consumed. If the user is not holding an item, or its item has no set power, this move will fail.	nds
+375	Psycho Shift	If the user has a major status effect and the target does not, the user's status is transferred to the target.	nds
+376	Trump Card	Inflicts regular damage and makes contact. Power is determined by the PP remaining for this move, after its PP cost is deducted. Ignores Accuracy and Evasion modifiers.	nds
+377	Heal Block	For the next five turns, the target may not use any moves that only restore HP. Moves that steal HP may still be used, but will only inflict damage and not heal the target. The target will also not be healed by held items or abilities.	nds
+378	Wring Out	Inflicts regular damage and makes contact. Power directly relates to the target's relative remaining HP, up to a maximum of 121.	nds
+379	Power Trick	The user's original Attack and Defense are swapped.	nds
+380	Gastro Acid	The target's ability is disabled as long as it remains on the field.	nds
+381	Lucky Chant	For five turns, opposing Pokémon cannot score critical hits.	nds
+382	Me First	If the target has selected a damaging move this turn, the user will copy that move and use it against the target, with a 50% increase in power.	nds
+383	Copycat	Uses the last move that was used successfully by any Pokémon, including the user.	nds
+384	Power Swap	User swaps its Attack and Special Attack stat modifiers with the target.	nds
+385	Guard Swap	User swaps its Defense and Special Defense stat modifiers with the target.	nds
+386	Punishment	Inflicts regular damage and makes contact. Power starts at 60 and is increased by 20 for every stage any of the target's stats has been raised, capping at 200. Accuracy and Evasion modifiers do not increase this move's power.	nds
+387	Last Resort	Inflicts regular damage and makes contact. This move can only be used if each of the user's other moves has been used at least once since the user entered the field. If this is the user's only move, this move will fail.	nds
+388	Worry Seed	Changes the target's ability to Insomnia for as long as it remains on the field.	nds
+389	Sucker Punch	Increased priority. Inflicts regular damage and makes contact. If the target has not selected a damaging move this turn, or if the target has already acted this turn, this move will fail.	nds
+390	Toxic Spikes	Scatters poisoned spikes around the opposing field, which poison opposing Pokémon that enter the field. A second layer of these spikes may be laid down, in which case Pokémon will be badly poisoned instead.	nds
+391	Heart Swap	User swaps its stat modifiers with the target.	nds
+392	Aqua Ring	Restores 1/16 of the user's max HP at the end of each turn. If the user leaves the field, this effect ends.	nds
+393	Magnet Rise	For five turns, the user is immune to ground moves.	nds
+394	Flare Blitz	Inflicts regular damage and makes contact. User takes 1/3 the damage it inflicts in recoil. Has a 10% chance to burn the target. Frozen Pokémon will thaw if they use this move.	nds
+395	Force Palm	Inflicts regular damage and makes contact. Has a 30% chance to paralyze the target.	nds
+396	Aura Sphere	Inflicts regular damage. Ignores Accuracy and Evasion modifiers.	nds
+397	Rock Polish	Raises the user's Speed by two stages.	nds
+398	Poison Jab	Inflicts regular damage and makes contact. Has a 30% chance to poison the target.	nds
+399	Dark Pulse	Inflicts regular damage. Has a 20% chance to make the target flinch.	nds
+400	Night Slash	Inflicts regular damage and makes contact. User's critical hit rate is one level higher when using this move.	nds
+401	Aqua Tail	Inflicts regular damage and makes contact.	nds
+402	Seed Bomb	Inflicts regular damage.	nds
+403	Air Slash	Deals damage and has a 30% chance of causing the target to flinch.	natdex
+404	X-Scissor	Inflicts regular damage and makes contact.	nds
+405	Bug Buzz	Inflicts regular damage. Has a 10% chance to lower the target's Special Defense by one stage.	nds
+406	Dragon Pulse	Inflicts regular damage.	nds
+407	Dragon Rush	Inflicts regular damage and makes contact. Has a 20% chance to make the target flinch.	nds
+408	Power Gem	Inflicts regular damage.	nds
+409	Drain Punch	Inflicts regular damage and makes contact. Drains half the damage inflicted to heal the user.	nds
+410	Vacuum Wave	Increased priority. Inflicts regular damage.	nds
+411	Focus Blast	Inflicts regular damage. Has a 10% chance to lower the target's Special Defense by one stage.	nds
+412	Energy Ball	Inflicts regular damage. Has a 10% chance to lower the target's Special Defense by one stage.	nds
+413	Brave Bird	Inflicts regular damage and makes contact. User takes 1/3 the damage it inflicts in recoil.	nds
+414	Earth Power	Inflicts regular damage. Has a 10% chance to lower the target's Special Defense by one stage.	nds
+415	Switcheroo	User and target permanently swap held items. Works even if one of the Pokémon isn't holding anything.	nds
+416	Giga Impact	Inflicts regular damage and makes contact. User loses its next turn to recharge, and cannot attack or switch out during that turn.	nds
+417	Nasty Plot	Raises the user's Special Attack by two stages.	nds
+418	Bullet Punch	Increased priority. Inflicts regular damage and makes contact.	nds
+419	Avalanche	Decreased priority. Inflicts regular damage and makes contact. If the target damaged the user this turn, this move has double power.	nds
+420	Ice Shard	Increased priority. Inflicts regular damage.	nds
+421	Shadow Claw	Inflicts regular damage and makes contact. User's critical hit rate is one level higher when using this move.	nds
+422	Thunder Fang	Inflicts regular damage and makes contact. Has a 10% chance to paralyze the target and a separate 10% chance to make the target flinch.	nds
+423	Ice Fang	Inflicts regular damage and makes contact. Has a 10% chance to freeze the target and a separate 10% chance to make the target flinch.	nds
+424	Fire Fang	Inflicts regular damage and makes contact. Has a 10% chance to burn the target and a separate 10% chance to make the target flinch.	nds
+425	Shadow Sneak	This is an increased priority move, causing the user to attack before most other moves.	natdex
+426	Mud Bomb	Inflicts regular damage. Has a 30% chance to lower the target's Accuracy by one stage.	nds
+427	Psycho Cut	Inflicts regular damage. User's critical hit rate is one level higher when using this move.	nds
+428	Zen Headbutt	Inflicts regular damage and makes contact. Has a 20% chance to make the target flinch.	nds
+429	Mirror Shot	Inflicts regular damage. Has a 30% chance to lower the target's Accuracy by one stage.	nds
+430	Flash Cannon	Inflicts regular damage. Has a 10% chance to lower the target's Special Defense by one stage.	nds
+431	Rock Climb	Inflicts regular damage and makes contact. Has a 20% chance to confuse the target.	nds
+432	Defog	Lowers the target's Evasion by one stage. Removes the effects of mist, light screen, reflect, safeguard, spikes, stealth rock, and toxic spikes from the target's side of the field.	nds
+433	Trick Room	Decreased priority. For five turns, slower Pokémon will act before faster Pokémon. Move priority is not affected.	nds
+434	Draco Meteor	Inflicts regular damage, then lowers the user's Special Attack by two stages.	nds
+435	Discharge	Inflicts regular damage. Has a 30% chance to paralyze the target.	nds
+436	Lava Plume	Inflicts regular damage. Has a 30% chance to burn the target.	nds
+437	Leaf Storm	Deals damage and lowers the user's Special Attack stat by two stages.	natdex
+438	Power Whip	Inflicts regular damage and makes contact.	nds
+439	Rock Wrecker	Inflicts regular damage. User loses its next turn to recharge, and cannot attack or switch out during that turn.	nds
+440	Cross Poison	Inflicts regular damage and makes contact. User's critical hit rate is one level higher when using this move. Has a 10% chance to poison the target.	nds
+441	Gunk Shot	Inflicts regular damage. Has a 30% chance to poison the target.	nds
+442	Iron Head	Inflicts regular damage and makes contact. Has a 30% chance to make the target flinch.	nds
+443	Magnet Bomb	Inflicts regular damage. Ignores Accuracy and Evasion modifiers.	nds
+444	Stone Edge	Inflicts regular damage. User's critical hit rate is one level higher when using this move.	nds
+445	Captivate	Lowers the target's Special Attack by two stages. If the user and target are the same gender, or either is genderless, this move will fail.	nds
+446	Stealth Rock	Spreads sharp rocks around the opposing field, damaging any Pokémon that enters the field for 1/8 its max HP. This damage is affected by the entering Pokémon's susceptibility to rock moves.	nds
+447	Grass Knot	Inflicts regular damage and makes contact. Power increases with the target's weight in kilograms, to a maximum of 120.	nds
+448	Chatter	Inflicts regular damage. Has either a 0% or 10% chance to confuse the target, based on the volume of the recording made for this move.	nds
+449	Judgment	Inflicts regular damage. If the user is holding a plate, this move's type is the type corresponding to that item.	nds
+450	Bug Bite	Inflicts regular damage and makes contact. If the target is holding a berry, the user takes the berry and uses it immediately.	nds
+451	Charge Beam	Inflicts regular damage. Has a 70% chance to raise the user's Special Attack by one stage.	nds
+452	Wood Hammer	Inflicts regular damage and makes contact. User takes 1/3 the damage it inflicts in recoil.	nds
+453	Aqua Jet	Increased priority. Inflicts regular damage and makes contact.	nds
+454	Attack Order	Inflicts regular damage. User's critical hit rate is one level higher when using this move.	nds
+455	Defend Order	Raises the user's Defense and Special Defense by one stage.	nds
+456	Heal Order	Heals the user for half its max HP.	nds
+457	Head Smash	Inflicts regular damage and makes contact. User takes 1/2 the damage it inflicts in recoil.	nds
+458	Double Hit	Inflicts regular damage and makes contact. Hits twice in one turn.	nds
+459	Roar of Time	Inflicts regular damage. User loses its next turn to recharge, and cannot attack or switch out during that turn.	nds
+460	Spacial Rend	Inflicts regular damage. User's critical hit rate is one level higher when using this move.	nds
+461	Lunar Dance	User faints. Its replacement's HP and PP are fully restored, and any major status effect is removed.	nds
+462	Crush Grip	Inflicts regular damage and makes contact. Power directly relates to the target's relative remaining HP, up to a maximum of 121.	nds
+463	Magma Storm	Inflicts regular damage. For the next 4-5 turns, the target cannot leave the field and is damaged for 1/16 its max HP at the end of each turn.	nds
+464	Dark Void	Puts all adjacent foes to sleep.	nds
+465	Seed Flare	Inflicts regular damage. Has a 40% chance to lower the target's Special Defense by two stages.	nds
+466	Ominous Wind	Inflicts regular damage. Has a 10% chance to raise all of the user's stats one stage.	nds
+467	Shadow Force	Inflicts regular damage and makes contact. User vanishes for one turn, becoming immune to attack, and hits on the second turn. Hits the target through Protect and Detect, and removes their effects.	nds
+468	Hone Claws	Raises the user's Attack and Accuracy by one stage.	nds
+469	Wide Guard	Increased priority. Moves with multiple targets will not hit friendly Pokémon for the remainder of this turn. If the user is last to act this turn, this move will fail.	nds
+470	Guard Split	Averages the user's unmodified Defense with the target's unmodified Defense; the value becomes the unmodified Defense for both Pokémon. Unmodified Special Defense is averaged the same way.	nds
+471	Power Split	Averages the user's unmodified Attack with the target's unmodified Attack; the value becomes the unmodified Attack for both Pokémon. Unmodified Special Attack is averaged the same way.	nds
+472	Wonder Room	Decreased priority. For five turns, every Pokémon's Defense and Special Defense are swapped.	nds
+473	Psyshock	Inflicts regular damage. Damage calculation always uses the target's Defense, regardless of this move's damage class.	nds
+474	Venoshock	Inflicts regular damage. If the target is poisoned, this move has double power.	nds
+475	Autotomize	Raises the user's Speed by two stages. If successful, reduces the user's weight by 100 kg (minimum 0.1 kg).	nds
+476	Rage Powder	Increased priority. Until the end of this turn, any moves that opposing Pokémon target solely at the user's ally will instead target the user.	nds
+477	Telekinesis	For three turns, moves used against the target have perfect accuracy, but the target is immune to ground damage. Accuracy of one-hit KO moves is exempt from this effect.	nds
+478	Magic Room	Decreased priority. For five turns, passive effects of held items are ignored, and Pokémon will not use their held items.	nds
+479	Smack Down	Inflicts regular damage. Removes the target's immunity to ground-type damage. This move will hit targets under the effect of Bounce, Fly, or Sky Drop.	nds
+480	Storm Throw	Inflicts regular damage and makes contact. Always scores a critical hit.	nds
+481	Flame Burst	Inflicts regular damage. If this move successfully hits the target, any Pokémon adjacent to the target are damaged for 1/16 their max HP.	nds
+482	Sludge Wave	Inflicts regular damage and hits all adjacent Pokémon. Has 10% chance to poison each target.	nds
+483	Quiver Dance	Raises the user's Special Attack, Special Defense, and Speed by one stage each.	nds
+484	Heavy Slam	Inflicts regular damage and makes contact. The greater the user's weight compared to the target's, the higher power this move has, to a maximum of 120.	nds
+485	Synchronoise	Inflicts regular damage. Only Pokémon that share a type with the user will take damage from this move.	nds
+486	Electro Ball	Inflicts regular damage. The greater the user's Speed compared to the target's, the higher power this move has, to a maximum of 150.	nds
+487	Soak	Changes the target to pure water-type until it leaves the field. If the target has multitype, this move will fail.	nds
+488	Flame Charge	Inflicts regular damage and makes contact. Raises the user's Speed by one stage.	nds
+489	Coil	Raises the user's Attack, Defense, and Accuracy by one stage each.	nds
+490	Low Sweep	Inflicts regular damage and makes contact. Lowers the target's Speed by one stage.	nds
+491	Acid Spray	Inflicts regular damage. Lowers the target's Special Defense by two stages.	nds
+492	Foul Play	Inflicts regular damage and makes contact. Damage is calculated using the target's attacking stat rather than the user's.	nds
+493	Simple Beam	Changes the target's ability to Simple. This effect ends when the target leaves battle.	nds
+494	Entrainment	Changes the target's ability to match the user's. This effect ends when the target leaves battle.	nds
+495	After You	The target will act next this turn, regardless of Speed or move priority.	nds
+496	Round	Inflicts regular damage. If round has already been used this turn, this move's power is doubled.	nds
+497	Echoed Voice	Inflicts regular damage. Power increases by 40 for each subsequent use, up to a maximum of 200 damage.	nds
+498	Chip Away	Inflicts regular damage and makes contact. Damage calculation ignores the target's stat modifiers, including Evasion.	nds
+499	Clear Smog	Inflicts regular damage. All of the target's stat modifiers are reset to zero.	nds
+500	Stored Power	Inflicts regular damage. Power increases by 20 for every stage any of the user's stats have been raised.	nds
+501	Quick Guard	Increased priority. Moves with priority greater than 0 will not hit friendly Pokémon for the remainder of this turn. If the user is last to act this turn, this move will fail.	nds
+502	Ally Switch	Increased priority. User switches position on the field with the friendly Pokémon opposite it. If the user is in the middle position in a triple battle, or there are no other friendly Pokémon, this move will fail.	nds
+503	Scald	Inflicts regular damage. Has a 30% chance to burn the target.	nds
+504	Shell Smash	Raises the user's Attack, Special Attack, and Speed by two stages each. Lowers the user's Defense and Special Defense by one stage each.	nds
+505	Heal Pulse	Heals the target for half its max HP.	nds
+506	Hex	Inflicts regular damage. If the target has a major status ailment, this move has double power.	nds
+507	Sky Drop	Inflicts regular damage and makes contact. User carries the target high into the air for one turn, and on the following turn, the user drops the target to inflict damage. Ineffective on flying types.	nds
+508	Shift Gear	Raises the user's Attack by one stage and its Speed by two stages.	nds
+509	Circle Throw	Decreased priority. Inflicts regular damage and makes contact. Switches the target out for another of its trainer's Pokémon, selected at random.	nds
+510	Incinerate	Inflicts regular damage. If the target is holding a berry, it's destroyed and cannot be used in response to this move.	nds
+511	Quash	Forces the target to act last this turn, regardless of Speed or move priority. If the target has already acted this turn, this move will fail.	nds
+512	Acrobatics	Inflicts regular damage and makes contact. If the user has no held item, this move has double power.	nds
+513	Reflect Type	User's type changes to match the target's.	nds
+514	Retaliate	Inflicts regular damage and makes contact. If a friendly Pokémon fainted on the previous turn, this move has double power.	nds
+515	Final Gambit	Inflicts damage equal to the user's remaining HP. User faints.	nds
+516	Bestow	Transfers the user's held item to the target. If the user has no held item, or the target already has a held item, this move will fail.	nds
+517	Inferno	Inflicts regular damage. Has a 100% chance to burn the target.	nds
+518	Water Pledge	Inflicts regular damage. If a friendly Pokémon used grass pledge earlier this turn, all opposing Pokémon have halved Speed for four turns.	nds
+519	Fire Pledge	Inflicts regular damage. If a friendly Pokémon used water pledge earlier this turn, moves used by any friendly Pokémon have doubled effect chance for four turns.	nds
+520	Grass Pledge	Inflicts regular damage. If a friendly Pokémon used fire pledge earlier this turn, all opposing Pokémon will take 1/8 their max HP in damage at the end of every turn for four turns.	nds
+521	Volt Switch	Inflicts regular damage, then the user immediately switches out, and the trainer selects a replacement Pokémon from the party.	nds
+522	Struggle Bug	Deals damage to all adjacent opponents and lowers the Special Attack of each by one stage.	natdex
+523	Bulldoze	Inflicts regular damage. Has a 100% chance to lower the target's Speed by one stage.	nds
+524	Frost Breath	Inflicts regular damage. Always scores a critical hit.	nds
+525	Dragon Tail	Decreased priority. Inflicts regular damage and makes contact. Switches the target out for another of its trainer's Pokémon, selected at random.	nds
+526	Work Up	Raises the user's Attack and Special Attack by one stage each.	nds
+527	Electroweb	Inflicts regular damage. Lowers the target's Speed by one stage.	nds
+528	Wild Charge	Inflicts regular damage and makes contact. User takes 1/4 the damage it inflicts in recoil.	nds
+529	Drill Run	Inflicts regular damage and makes contact. User's critical hit rate is one level higher when using this move.	nds
+530	Dual Chop	Inflicts regular damage and makes contact. Hits twice in one turn.	nds
+531	Heart Stamp	Inflicts regular damage and makes contact. Has a 30% chance to make the target flinch.	nds
+532	Horn Leech	Inflicts regular damage and makes contact. Drains half the damage inflicted to heal the user.	nds
+533	Sacred Sword	Inflicts regular damage and makes contact. Damage calculation ignores the target's stat modifiers, including Evasion.	nds
+534	Razor Shell	Inflicts regular damage and makes contact. Has a 50% chance to lower the target's Defense by one stage.	nds
+535	Heat Crash	Inflicts regular damage and makes contact. The greater the user's weight compared to the target's, the higher power this move has, to a maximum of 120.	nds
+536	Leaf Tornado	Inflicts regular damage. Has a 50% chance to lower the target's Accuracy by one stage.	nds
+537	Steamroller	Inflicts regular damage and makes contact. Has a 30% chance to make the target flinch.	nds
+538	Cotton Guard	Raises the user's Defense by three stages.	nds
+539	Night Daze	Inflicts regular damage. Has a 40% chance to lower the target's Accuracy by one stage.	nds
+540	Psystrike	Inflicts regular damage. Damage calculation always uses the target's Defense, regardless of this move's damage class.	nds
+541	Tail Slap	Inflicts regular damage and makes contact. Hits 2-5 times in one turn, and averages to 3 hits per use.	nds
+542	Hurricane	Inflicts regular damage. Has a 30% chance to confuse the target. Has perfect accuracy in the rain, but only 50% accuracy in harsh sunlight.	nds
+543	Head Charge	Inflicts regular damage and makes contact. User takes 1/4 the damage it inflicts in recoil.	nds
+544	Gear Grind	Inflicts regular damage and makes contact. Hits twice in one turn.	nds
+545	Searing Shot	Inflicts regular damage. Has a 30% chance to burn the target.	nds
+546	Techno Blast	Inflicts regular damage. If the user is holding a drive, this move's type is the type corresponding to that item.	nds
+547	Relic Song	Inflicts regular damage. Has a 10% chance to put the target to sleep.	nds
+548	Secret Sword	Inflicts regular damage. Damage calculation uses the target's Defense.	nds
+549	Glaciate	Inflicts regular damage. Lowers the target's Speed by one stage.	nds
+550	Bolt Strike	Inflicts regular damage and makes contact. Has a 20% chance to paralyze the target.	nds
+551	Blue Flare	Inflicts regular damage. Has a 20% chance to burn the target.	nds
+552	Fiery Dance	Inflicts regular damage. Has a 50% chance to raise the user's Special Attack by one stage.	nds
+553	Freeze Shock	Inflicts regular damage. Has a 30% chance to paralyze the target. User charges for one turn before attacking.	nds
+554	Ice Burn	Inflicts regular damage. Has a 30% chance to burn the target. User charges for one turn before attacking.	nds
+555	Snarl	Inflicts regular damage. Has a 100% chance to lower the target's Special Attack by one stage.	nds
+556	Icicle Crash	Inflicts regular damage. Has a 30% chance to make the target flinch.	nds
+557	V-create	Inflicts regular damage and makes contact. Lowers the user's Defense, Special Defense, and Speed by one stage each.	nds
+558	Fusion Flare	Inflicts regular damage. If any Pokémon used Fusion Bolt earlier this turn, this move has double power.	nds
+559	Fusion Bolt	Inflicts regular damage. If any Pokémon used Fusion Flare earlier this turn, this move has double power.	nds
+560	Flying Press	Combines Flying in its type effectiveness.	showdown
+561	Mat Block	Protects allies from damaging attacks. Turn 1 only.	showdown
+562	Belch	Cannot be selected until the user eats a Berry.	showdown
+563	Rototiller	Raises Atk/Sp. Atk of grounded Grass types by 1.	showdown
+564	Sticky Web	Lowers Speed of grounded foes by 1 on switch-in.	showdown
+565	Fell Stinger	Raises user's Attack by 3 if this KOes the target.	showdown
+566	Phantom Force	Disappears turn 1. Hits turn 2. Breaks protection.	showdown
+567	Trick-or-Treat	Adds Ghost to the target's type(s).	showdown
+568	Noble Roar	Lowers the target's Attack and Sp. Atk by 1.	showdown
+569	Ion Deluge	Normal moves become Electric type this turn.	showdown
+570	Parabolic Charge	User recovers 50% of the damage dealt.	showdown
+571	Forest's Curse	Adds Grass to the target's type(s).	showdown
+572	Petal Blizzard	No additional effect. Hits adjacent Pokemon.	showdown
+573	Freeze-Dry	10% chance to freeze. Super effective on Water.	showdown
+574	Disarming Voice	Deals damage and bypasses accuracy checks to always hit, unless the target is in the semi-invulnerable turn of a move such as Dig or Fly. No effect against Soundproof.	natdex
+575	Parting Shot	Lowers target's Atk, Sp. Atk by 1. User switches.	showdown
+576	Topsy-Turvy	Inverts the target's stat stages.	showdown
+577	Draining Kiss	75% of the damage dealt is restored to the user as HP.	natdex
+578	Crafty Shield	Protects allies from Status moves this turn.	showdown
+579	Flower Shield	Raises Defense by 1 of all active Grass types.	showdown
+580	Grassy Terrain	5 turns. Grounded: +Grass power, +1/16 max HP.	showdown
+581	Misty Terrain	5 turns. Can't status,-Dragon power vs grounded.	showdown
+582	Electrify	Changes the target's move to Electric this turn.	showdown
+583	Play Rough	Deals damage and has a 10% chance of lowering the target's Attack stat by one stage.	natdex
+584	Fairy Wind	Deals damage and has no secondary effect.	natdex
+585	Moonblast	Deals damage and has a 30% chance of lowering the target's Special Attack stat by one stage.	natdex
+586	Boomburst	No additional effect. Hits adjacent Pokemon.	showdown
+587	Fairy Lock	Prevents all Pokemon from switching next turn.	showdown
+588	King's Shield	Protects from damaging attacks. Contact: -1 Atk.	showdown
+589	Play Nice	Reduces the target's Attack by one stage. Bypasses accuracy checks, as well as Protect and Substitute, unless the target is in the semi-invulnerable state.	natdex
+590	Confide	Lowers the target's Sp. Atk by 1.	showdown
+591	Diamond Storm	50% chance to raise user's Defense by 2.	showdown
+592	Steam Eruption	30% chance to burn the target. Thaws target.	showdown
+593	Hyperspace Hole	Breaks the target's protection for this turn.	showdown
+594	Water Shuriken	Usually goes first. Hits 2-5 times in one turn.	showdown
+595	Mystical Fire	100% chance to lower the target's Sp. Atk by 1.	showdown
+596	Spiky Shield	Protects from moves. Contact: loses 1/8 max HP.	showdown
+597	Aromatic Mist	Raises an ally's Sp. Def by 1.	showdown
+598	Eerie Impulse	Lowers the target's Sp. Atk by 2.	showdown
+599	Venom Drench	Lowers Atk/Sp. Atk/Speed of poisoned foes by 1.	showdown
+600	Powder	If using a Fire move, target loses 1/4 max HP.	showdown
+601	Geomancy	Charges, then raises SpA, SpD, Spe by 2 turn 2.	showdown
+602	Magnetic Flux	Raises Def, Sp. Def of allies with Plus/Minus by 1.	showdown
+603	Happy Hour	Doubles the prize money from the battle.	kaizocore
+604	Electric Terrain	5 turns. Grounded: +Electric power, can't sleep.	showdown
+605	Dazzling Gleam	Deals damage to all adjacent opponents.	natdex
+606	Celebrate	The Pokémon congratulates you. It has no effect in battle.	kaizocore
+607	Hold Hands	The user and an ally hold hands. It has no effect in battle.	kaizocore
+608	Baby-Doll Eyes	Lowers the target's Attack by 1.	showdown
+609	Nuzzle	100% chance to paralyze the target.	showdown
+610	Hold Back	Always leaves the target with at least 1 HP.	showdown
+611	Infestation	Traps and damages the target for 4-5 turns.	showdown
+612	Power-Up Punch	100% chance to raise the user's Attack by 1.	showdown
+613	Oblivion Wing	User recovers 75% of the damage dealt.	showdown
+614	Thousand Arrows	Grounds adjacent foes. First hit neutral on Flying.	showdown
+615	Thousand Waves	Hits adjacent foes. Prevents them from switching.	showdown
+616	Land's Wrath	No additional effect. Hits adjacent foes.	showdown
+617	Light Of Ruin	Has 1/2 recoil.	showdown
+618	Origin Pulse	No additional effect. Hits adjacent foes.	showdown
+619	Precipice Blades	No additional effect. Hits adjacent foes.	showdown
+620	Dragon Ascent	Lowers the user's Defense and Sp. Def by 1.	showdown
+621	Hyperspace Fury	Hoopa-U: Lowers user's Def by 1; breaks protect.	showdown
+622	Shore Up	User restores 1/2 its max HP; 2/3 in Sandstorm.	showdown
+623	First Impression	Nearly always goes first. First turn out only.	showdown
+624	Baneful Bunker	Protects from moves. Contact: poison.	showdown
+625	Spirit Shackle	Prevents the target from switching out.	showdown
+626	Darkest Lariat	Ignores the target's stat stage changes.	showdown
+627	Sparkling Aria	The target is cured of its burn.	showdown
+628	Ice Hammer	Lowers the user's Speed by 1.	showdown
+629	Floral Healing	Heals the target by 50% of its max HP.	showdown
+630	High Horsepower	Inflicts regular damage with no additional effect.	kaizocore
+631	Strength Sap	User heals HP=target's Atk stat. Lowers Atk by 1.	showdown
+632	Solar Blade	Charges turn 1. Hits turn 2. No charge in sunlight.	showdown
+633	Leafage	Inflicts regular damage with no additional effect.	kaizocore
+634	Spotlight	Target's foes' moves are redirected to it this turn.	showdown
+635	Toxic Thread	Lowers the target's Speed by 1 and poisons it.	showdown
+636	Laser Focus	Until the end of the next turn, user's moves crit.	showdown
+637	Gear Up	Raises Atk, Sp. Atk of allies with Plus/Minus by 1.	showdown
+638	Throat Chop	For 2 turns, the target cannot use sound moves.	showdown
+639	Pollen Puff	If the target is an ally, heals 50% of its max HP.	showdown
+640	Anchor Shot	Prevents the target from switching out.	showdown
+641	Psychic Terrain	5 turns. Grounded: +Psychic power, priority-safe.	showdown
+642	Lunge	100% chance to lower the target's Attack by 1.	showdown
+643	Fire Lash	100% chance to lower the target's Defense by 1.	showdown
+644	Power Trip	+ 20 power for each of the user's stat boosts.	showdown
+645	Burn Up	User's Fire type becomes typeless; must be Fire.	showdown
+646	Speed Swap	Swaps Speed stat with target.	showdown
+647	Smart Strike	This move does not check accuracy.	showdown
+648	Purify	Cures target's status; heals user 1/2 max HP if so.	showdown
+649	Revelation Dance	Type varies based on the user's primary type.	showdown
+650	Core Enforcer	Nullifies the foe(s) Ability if the foe(s) move first.	showdown
+651	Trop Kick	100% chance to lower the target's Attack by 1.	showdown
+652	Instruct	The target immediately uses its last used move.	showdown
+653	Beak Blast	Burns on contact with the user before it moves.	showdown
+654	Clanging Scales	Lowers the user's Defense by 1.	showdown
+655	Dragon Hammer	Inflicts regular damage with no additional effect.	kaizocore
+656	Brutal Swing	No additional effect. Hits adjacent Pokemon.	showdown
+657	Aurora Veil	For 5 turns, damage to allies halved. Snow only.	showdown
+658	Shell Trap	User must take physical damage before moving.	showdown
+659	Fleur Cannon	Lowers the user's Sp. Atk by 2.	showdown
+660	Psychic Fangs	Destroys screens, unless the target is immune.	showdown
+661	Stomping Tantrum	Power doubles if the user's last move failed.	showdown
+662	Shadow Bone	20% chance to lower the target's Defense by 1.	showdown
+663	Accelerock	Usually goes first.	showdown
+664	Liquidation	20% chance to lower the target's Defense by 1.	showdown
+665	Prismatic Laser	User cannot move next turn.	showdown
+666	Spectral Thief	Steals target's boosts before dealing damage.	showdown
+667	Sunsteel Strike	Ignores the Abilities of other Pokemon.	showdown
+668	Moongeist Beam	Ignores the Abilities of other Pokemon.	showdown
+669	Tearful Look	Lowers the target's Attack and Sp. Atk by 1.	showdown
+670	Zing Zap	30% chance to make the target flinch.	showdown
+671	Nature's Madness	Does damage equal to 1/2 target's current HP.	showdown
+672	Multi-Attack	Type varies based on the held Memory.	showdown
+673	Mind Blown	User loses 50% max HP. Hits adjacent Pokemon.	showdown
+674	Plasma Fists	Normal moves become Electric type this turn.	showdown
+675	Photon Geyser	Physical if user's Atk > Sp. Atk. Ignores Abilities.	showdown
+676	Zippy Zap	Goes first. Raises user's evasion by 1.	showdown
+677	Splishy Splash	30% chance to paralyze the target.	showdown
+678	Floaty Fall	30% chance to make the target flinch.	showdown
+679	Pika Papow	Max happiness: 102 power. Can't miss.	showdown
+680	Bouncy Bubble	User recovers 50% of the damage dealt.	showdown
+681	Buzzy Buzz	100% chance to paralyze the foe.	showdown
+682	Sizzly Slide	100% chance to burn the foe.	showdown
+683	Glitzy Glow	Summons Light Screen.	showdown
+684	Baddy Bad	Summons Reflect.	showdown
+685	Sappy Seed	Summons Leech Seed.	showdown
+686	Freezy Frost	Eliminates all stat changes.	showdown
+687	Sparkly Swirl	Cures the user's party of all status conditions.	showdown
+688	Veevee Volley	Max happiness: 102 power. Can't miss.	showdown
+689	Double Iron Bash	Hits twice. 30% chance to make the target flinch.	showdown
+690	Dynamax Cannon	Inflicts regular damage with no additional effect.	kaizocore
+691	Snipe Shot	High critical hit ratio. Cannot be redirected.	showdown
+692	Jaw Lock	Prevents both user and target from switching out.	showdown
+693	Stuff Cheeks	Must hold Berry to use. User eats Berry, Def +2.	showdown
+694	No Retreat	Raises all stats by 1 (not acc/eva). Traps user.	showdown
+695	Tar Shot	Target gets -1 Spe and becomes weaker to Fire.	showdown
+696	Magic Powder	Changes the target's type to Psychic.	showdown
+697	Dragon Darts	Hits twice. Doubles: Tries to hit each foe once.	showdown
+698	Teatime	All active Pokemon consume held Berries.	showdown
+699	Octolock	Traps target, lowers Def and SpD by 1 each turn.	showdown
+700	Bolt Beak	Power doubles if user moves before the target.	showdown
+701	Fishious Rend	Power doubles if user moves before the target.	showdown
+702	Court Change	Swaps user's field effects with the opposing side.	showdown
+703	Clangorous Soul	User loses 33% of its max HP. +1 to all stats.	showdown
+704	Body Press	Uses user's Def stat as Atk in damage calculation.	showdown
+705	Decorate	Raises the target's Attack and Sp. Atk by 2.	showdown
+706	Drum Beating	100% chance to lower the target's Speed by 1.	showdown
+707	Snap Trap	Traps and damages the target for 4-5 turns.	showdown
+708	Pyro Ball	10% chance to burn the target. Thaws user.	showdown
+709	Behemoth Blade	Inflicts regular damage with no additional effect.	kaizocore
+710	Behemoth Bash	Inflicts regular damage with no additional effect.	kaizocore
+711	Aura Wheel	Morpeko: Electric; Hangry: Dark; 100% +1 Spe.	showdown
+712	Breaking Swipe	100% chance to lower the foe(s) Attack by 1.	showdown
+713	Branch Poke	Inflicts regular damage with no additional effect.	kaizocore
+714	Overdrive	No additional effect. Hits foe(s).	showdown
+715	Apple Acid	100% chance to lower the target's Sp. Def by 1.	showdown
+716	Grav Apple	Target: 100% -1 Def. During Gravity: 1.5× power.	showdown
+717	Spirit Break	100% chance to lower the target's Sp. Atk by 1.	showdown
+718	Strange Steam	20% chance to confuse the target.	showdown
+719	Life Dew	Heals the user and its allies by 1/4 their max HP.	showdown
+720	Obstruct	Protects from damaging attacks. Contact: -2 Def.	showdown
+721	False Surrender	This move does not check accuracy.	showdown
+722	Meteor Assault	User cannot move next turn.	showdown
+723	Eternabeam	User cannot move next turn.	showdown
+724	Steel Beam	User loses 50% max HP.	showdown
+725	Expanding Force	User on Psychic Terrain: 1.5× power, hits foes.	showdown
+726	Steel Roller	Fails if there is no terrain active. Ends the terrain.	showdown
+727	Scale Shot	Hits 2-5 times. User: -1 Def, +1 Spe after last hit.	showdown
+728	Meteor Beam	Raises user's Sp. Atk by 1 on turn 1. Hits turn 2.	showdown
+729	Shell Side Arm	20% psn. Physical+contact if it would be stronger.	showdown
+730	Misty Explosion	User faints. User on Misty Terrain: 1.5× power.	showdown
+731	Grassy Glide	User on Grassy Terrain: +1 priority.	showdown
+732	Rising Voltage	2× power if target is grounded in Electric Terrain.	showdown
+733	Terrain Pulse	User on terrain: power doubles, type varies.	showdown
+734	Skitter Smack	100% chance to lower target's Sp. Atk by 1.	showdown
+735	Burning Jealousy	100% burns a target that had a stat rise this turn.	showdown
+736	Lash Out	2× power if the user had a stat lowered this turn.	showdown
+737	Poltergeist	Fails if the target has no held item.	showdown
+738	Corrosive Gas	Removes adjacent Pokemon's held items.	showdown
+739	Coaching	Raises an ally's Attack and Defense by 1.	showdown
+740	Flip Turn	User switches out after damaging the target.	showdown
+741	Triple Axel	Hits 3 times. Each hit can miss, but power rises.	showdown
+742	Dual Wingbeat	Hits 2 times in one turn.	showdown
+743	Scorching Sands	30% chance to burn the target. Thaws target.	showdown
+744	Jungle Healing	User and allies: healed 1/4 max HP, status cured.	showdown
+745	Wicked Blow	Always results in a critical hit.	showdown
+746	Surging Strikes	Always results in a critical hit. Hits 3 times.	showdown
+747	Thunder Cage	Traps and damages the target for 4-5 turns.	showdown
+748	Dragon Energy	Less power as user's HP decreases. Hits foe(s).	showdown
+749	Freezing Glare	10% chance to freeze the target.	showdown
+750	Fiery Wrath	20% chance to make the foe(s) flinch.	showdown
+751	Thunderous Kick	100% chance to lower the target's Defense by 1.	showdown
+752	Glacial Lance	No additional effect. Hits adjacent foes.	showdown
+753	Astral Barrage	No additional effect. Hits adjacent foes.	showdown
+754	Eerie Spell	Removes 3 PP from the target's last move.	showdown
+755	Dire Claw	50% chance to sleep, poison, or paralyze target.	showdown
+756	Psyshield Bash	100% chance to raise the user's Defense by 1.	showdown
+757	Power Shift	Switches user's Attack and Defense stats.	showdown
+758	Stone Axe	Sets Stealth Rock on the target's side.	showdown
+759	Springtide Storm	30% chance to lower the foe(s) Attack by 1.	showdown
+760	Mystical Power	100% chance to raise the user's Sp. Atk by 1.	showdown
+761	Raging Fury	Lasts 2-3 turns. Confuses the user afterwards.	showdown
+762	Wave Crash	Has 33% recoil.	showdown
+763	Chloroblast	User loses 50% max HP.	showdown
+764	Mountain Gale	30% chance to make the target flinch.	showdown
+765	Victory Dance	Raises the user's Attack, Defense, Speed by 1.	showdown
+766	Headlong Rush	Lowers the user's Defense and Sp. Def by 1.	showdown
+767	Barb Barrage	50% psn. 2× power if target already poisoned.	showdown
+768	Esper Wing	100% chance to raise user Speed by 1. High crit.	showdown
+769	Bitter Malice	100% chance to lower the target's Attack by 1.	showdown
+770	Shelter	Raises the user's Defense by 2.	showdown
+771	Triple Arrows	High crit. Target: 50% -1 Defense, 30% flinch.	showdown
+772	Infernal Parade	30% burn. 2× power if target is already statused.	showdown
+773	Ceaseless Edge	Sets a layer of Spikes on the opposing side.	showdown
+774	Bleakwind Storm	30% to lower foe(s) Speed by 1. Rain: can't miss.	showdown
+775	Wildbolt Storm	20% chance to paralyze foe(s). Rain: can't miss.	showdown
+776	Sandsear Storm	20% chance to burn foe(s). Can't miss in rain.	showdown
+777	Lunar Blessing	User and allies: healed 1/4 max HP, status cured.	showdown
+778	Take Heart	Cures user's status, raises Sp. Atk, Sp. Def by 1.	showdown
+779	Tera Blast	If Terastallized: Phys. if Atk > SpA, type = Tera.	showdown
+780	Silk Trap	Protects from damaging attacks. Contact: -1 Spe.	showdown
+781	Axe Kick	30% confusion. User loses 50% max HP if miss.	showdown
+782	Last Respects	+50 power for each time a party member fainted.	showdown
+783	Lumina Crash	100% chance to lower the target's Sp. Def by 2.	showdown
+784	Order Up	Curly|Droopy|Stretchy eaten: +1 Atk|Def|Spe.	showdown
+785	Jet Punch	Usually goes first.	showdown
+786	Spicy Extract	Raises target's Atk by 2 and lowers its Def by 2.	showdown
+787	Spin Out	Lowers the user's Speed by 2.	showdown
+788	Population Bomb	Hits 10 times. Each hit can miss.	showdown
+789	Ice Spinner	Ends the effects of terrain.	showdown
+790	Glaive Rush	User takes sure-hit 2× damage until its next turn.	showdown
+791	Revival Blessing	Revives a fainted Pokemon to 50% HP.	showdown
+792	Salt Cure	Deals 1/8 max HP each turn; 1/4 on Steel, Water.	showdown
+793	Triple Dive	Hits 3 times.	showdown
+794	Mortal Spin	Poisons foes, frees user from hazards/bind/leech.	showdown
+795	Doodle	User and ally's Abilities become target's Ability.	showdown
+796	Fillet Away	+2 Attack, Sp. Atk, Speed for 1/2 user's max HP.	showdown
+797	Kowtow Cleave	This move does not check accuracy.	showdown
+798	Flower Trick	Always results in a critical hit; no accuracy check.	showdown
+799	Torch Song	100% chance to raise the user's Sp. Atk by 1.	showdown
+800	Aqua Step	100% chance to raise the user's Speed by 1.	showdown
+801	Raging Bull	Destroys screens. Type depends on user's form.	showdown
+802	Make It Rain	Lowers the user's Sp. Atk by 1. Hits foe(s).	showdown
+803	Ruination	Does damage equal to 1/2 target's current HP.	showdown
+804	Collision Course	Deals 1.3333× damage with supereffective hits.	showdown
+805	Electro Drift	Deals 1.3333× damage with supereffective hits.	showdown
+806	Shed Tail	User takes 1/2 its max HP to pass a substitute.	showdown
+807	Chilly Reception	Starts Snow. User switches out.	showdown
+808	Tidy Up	User +1 Atk, Spe. Clears all substitutes/hazards.	showdown
+809	Snowscape	For 5 turns, snow falls. Ice: 1.5× Def.	showdown
+810	Pounce	100% chance to lower the target's Speed by 1.	showdown
+811	Trailblaze	100% chance to raise the user's Speed by 1.	showdown
+812	Chilling Water	100% chance to lower the target's Attack by 1.	showdown
+813	Hyper Drill	Bypasses protection without breaking it.	showdown
+814	Twin Beam	Hits 2 times in one turn.	showdown
+815	Rage Fist	+50 power for each time user was hit. Max 6 hits.	showdown
+816	Armor Cannon	Lowers the user's Defense and Sp. Def by 1.	showdown
+817	Bitter Blade	User recovers 50% of the damage dealt.	showdown
+818	Double Shock	User's Electric type: typeless; must be Electric.	showdown
+819	Gigaton Hammer	Cannot be selected the turn after it's used.	showdown
+820	Comeuppance	If hit by an attack, returns 1.5× damage.	showdown
+821	Aqua Cutter	High critical hit ratio.	showdown
+822	Blazing Torque	30% chance to burn the target.	showdown
+823	Wicked Torque	10% chance to cause the target to fall asleep.	showdown
+824	Noxious Torque	30% chance to poison the target.	showdown
+825	Combat Torque	30% chance to paralyze the target.	showdown
+826	Magical Torque	30% chance to confuse the target.	showdown
+827	Psyblade	During Electric Terrain: 1.5× power.	showdown
+828	Hydro Steam	During Sun: 1.5× damage instead of half.	showdown
+829	Blood Moon	Cannot be selected the turn after it's used.	showdown
+830	Matcha Gotcha	20% burn. Recovers 50% dmg dealt. Thaws foe(s).	showdown
+831	Syrup Bomb	Target's Speed is lowered by 1 stage for 3 turns.	showdown
+832	Ivy Cudgel	High critical hit ratio. Type depends on user's form.	showdown
+833	Electro Shot	Raises Sp. Atk by 1, hits turn 2. Rain: no charge.	showdown
+834	Tera Starstorm	Terapagos-Stellar: Stellar type, hits both foes.	showdown
+835	Fickle Beam	Has a 30% chance this move's power is doubled.	showdown
+836	Burning Bulwark	Protects from damaging attacks. Contact: burn.	showdown
+837	Thunderclap	Usually goes first. Fails if target is not attacking.	showdown
+838	Mighty Cleave	Bypasses protection without breaking it.	showdown
+839	Tachyon Cutter	Hits twice. This move does not check accuracy.	showdown
+840	Hard Press	More power the more HP the target has left.	showdown
+841	Dragon Cheer	Ally: Crit ratio +1, or +2 if ally is Dragon type.	showdown
+842	Alluring Voice	100% confuse target that had a stat rise this turn.	showdown
+843	Temper Flare	Power doubles if the user's last move failed.	showdown
+844	Supercell Slam	User is hurt by 50% of its max HP if it misses.	showdown
+845	Psychic Noise	For 2 turns, the target is prevented from healing.	showdown
+846	Upper Hand	100% flinch. Fails unless target using priority attack.	showdown
+847	Malignant Chain	50% chance to badly poison the target.	showdown

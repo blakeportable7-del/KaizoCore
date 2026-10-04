@@ -38,8 +38,8 @@ object AppBarActions {
  * again, and a B out of the move menu ran, the game being back on the action
  * menu by the time B came up. [menuUp] is read as B goes down, before the game
  * has seen it; a held key's repeats never arm it again. A game whose tracker
- * cannot see its battle menu (DS, 2026-10-02) never runs on B: the tracker's
- * RUN button, two taps, still does.
+ * cannot see its battle menu (DS, 2026-10-02) never runs on B. The tracker's
+ * own RUN button is gone (Blake, 2026-10-03: "it doesn't work at all").
  */
 object FleeOnB {
     /** Set while a WILD battle is on screen; null at every other moment. */

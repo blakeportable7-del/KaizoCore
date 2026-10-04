@@ -224,6 +224,19 @@ class GLRetroView(
     fun writeMemory(address: Long, data: ByteArray): Int =
         LibretroDroid.writeMemory(address, data)
 
+    /**
+     * KaizoCore patch (2026-10-04): arm the ability trigger tap (cpp/triggertap.h), which looks at the u32 at [watch]
+     * after every emulated frame, fast forward included. Returns the arming's token, 0 when refused. Safe from any thread.
+     */
+    fun armTriggerTap(watch: Long, targets: LongArray, rangeAddresses: LongArray, rangeLengths: IntArray): Long =
+        LibretroDroid.armTriggerTap(watch, targets, rangeAddresses, rangeLengths)
+
+    /** KaizoCore patch (2026-10-04): the tap off, if [token] is still the arming's. Safe from any thread. */
+    fun disarmTriggerTap(token: Long) = LibretroDroid.disarmTriggerTap(token)
+
+    /** KaizoCore patch (2026-10-04): what the tap caught since the last drain. Safe from any thread. */
+    fun drainTriggerTap(): ByteArray = LibretroDroid.drainTriggerTap()
+
     fun serializeState(useEmulationThread: Boolean = true): ByteArray {
         return runOnEmulationThread(useEmulationThread, ByteArray(0)) {
             LibretroDroid.serializeState()

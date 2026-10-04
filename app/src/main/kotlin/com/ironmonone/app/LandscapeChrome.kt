@@ -2,18 +2,15 @@ package com.ironmonone.app
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -29,7 +26,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -65,35 +61,28 @@ object TrackerRoom {
  * The landscape File band: the chips over the game, centred, with an arrow at each end while there is more to
  * scroll to, and an X at the far right that closes it (Blake, 2026-10-02: "needs to be centered, needs to inform
  * with arrows that it scrolls and then needs a close x at the far right of the band").
+ *
+ * The chips go round (LoopingRow, Blake, 2026-10-03: "They both should have infinite scroll"), and the arrows move
+ * through the loop. The X stays put outside it. The band ends at a docked DS tracker's left edge: it ran on under
+ * the tracker, and the last chips, MENU among them, could not be reached even scrolled to the end ("So I can't get
+ * to the menu button at all").
  */
 @Composable
 internal fun LandscapeMenuBand(modifier: Modifier, onClose: () -> Unit, chips: @Composable RowScope.() -> Unit) {
-    val scroll = rememberScrollState()
+    val loop = rememberLoopRowState()
     val scope = rememberCoroutineScope()
-    var page by remember { mutableStateOf(0) }
     Row(
-        modifier.clip(RoundedCornerShape(14.dp)).background(Color.Black.copy(alpha = 0.55f)),
+        modifier.padding(end = dsDockClearance()).clip(RoundedCornerShape(14.dp)).background(Color.Black.copy(alpha = 0.55f)),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        val overflows = scroll.maxValue > 0
-        if (overflows) BandArrow("◀", "Scroll the menu left", enabled = scroll.value > 0) {
-            scope.launch { scroll.animateScrollTo((scroll.value - page).coerceAtLeast(0)) }
+        val overflows = loop.overflows
+        if (overflows) BandArrow("◀", "Scroll the menu left", enabled = loop.canBack) {
+            scope.launch { loop.page(forward = false) }
         }
-        BoxWithConstraints(Modifier.weight(1f)) {
-            val viewport = maxWidth
-            page = with(LocalDensity.current) { (viewport * 0.6f).roundToPx() }
-            Row(Modifier.horizontalScroll(scroll)) {
-                // As wide as the band at least, so a short row sits in the middle instead of at the left.
-                Row(
-                    Modifier.widthIn(min = viewport).padding(vertical = 6.dp),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
-                    verticalAlignment = Alignment.CenterVertically,
-                    content = chips,
-                )
-            }
-        }
-        if (overflows) BandArrow("▶", "Scroll the menu right", enabled = scroll.value < scroll.maxValue) {
-            scope.launch { scroll.animateScrollTo((scroll.value + page).coerceAtMost(scroll.maxValue)) }
+        // A short row sits in the middle instead of at the left.
+        LoopingRow(loop, Modifier.weight(1f).padding(vertical = 6.dp), gap = 6.dp, center = true, content = chips)
+        if (overflows) BandArrow("▶", "Scroll the menu right", enabled = loop.canForward) {
+            scope.launch { loop.page(forward = true) }
         }
         Box(
             Modifier.size(Shell.touchTarget).clickable(role = Role.Button) { onClose() }
@@ -148,7 +137,8 @@ internal fun TrackerCornerMenu(
                 "ATTEMPT $attempt", color = Pc.Dim, fontSize = 12.sp, fontWeight = FontWeight.Medium,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             )
-            DropdownMenuItem(text = { Text(if (menuOpen) "Hide the file menu" else "File") }, onClick = { open = false; onMenu() })
+            // Red, as Blake asked (2026-10-03: "I want the file button to be red"): the colour that reads on the dark menu.
+            DropdownMenuItem(text = { Text(if (menuOpen) "Hide the file menu" else "File", color = Shell.dangerOnNight) }, onClick = { open = false; onMenu() })
             if (dsTopOnly != null) DropdownMenuItem(
                 text = { Text(if (dsTopOnly) "2 screens" else "1 screen (top only)") },
                 onClick = { open = false; onScreens() },
@@ -217,6 +207,28 @@ internal fun ScreenTapMenu(
                 } },
             )
         }
+    }
+}
+
+/**
+ * NEW in the landscape File strip, filled red like portrait's NEW RUN (Gen3Button with accent): it ends the run (Blake,
+ * 2026-10-03: "the new button should be red as well"). In size and shape it is the strip's other chips (PlayScreen's
+ * OverlayChip), whose call it replaces one for one, so Play's method does not grow.
+ */
+@Composable
+internal fun NewRunChip(onClick: () -> Unit) {
+    val g = com.ironmonone.app.gen3.Gen3
+    Box(
+        Modifier
+            .background(g.FrameDark.copy(alpha = 0.45f))
+            .padding(1.dp)
+            .background(Shell.accent)
+            .clickable(role = Role.Button) { onClick() }
+            .heightIn(min = Shell.touchTarget)
+            .padding(horizontal = 10.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(Shell.label("NEW"), fontWeight = FontWeight.Medium, fontSize = 12.sp, color = Shell.onAccent, maxLines = 1, softWrap = false)
     }
 }
 

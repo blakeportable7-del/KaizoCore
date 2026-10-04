@@ -2,6 +2,7 @@ package com.ironmonone.app
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
@@ -177,6 +178,32 @@ internal fun TrackerWeatherPill(code: String) {
             .padding(horizontal = 3.rp),
         contentAlignment = Alignment.Center,
     ) { PixText(name.uppercase(), PcRef.FONT - 3, TrackerLook.onFill(fill), weight = FontWeight.Medium) }
+}
+
+/**
+ * The area's name in the tracker's top row, beside the attempt, SETUP and the menu: still while it fits, and scrolling
+ * by when it does not, so the whole name shows over time (Blake, 2026-10-03: "The area rustboro city up top, can that be
+ * scrolling animated? It's cut off"; it read "Rustb"). With animations off in the phone's settings (Remove animations
+ * sets the animator scale to 0) it stays still, cut short with an ellipsis. A screen reader reads the whole name either
+ * way, since the text is the whole name and only its drawing is moved or cut.
+ */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@Composable
+internal fun AreaName(name: String, modifier: Modifier) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val still = androidx.compose.runtime.remember(context) { !TrackerMotion.animationsOn(context) }
+    if (still) PixText(name, PcRef.FONT, Pc.Dim, modifier, weight = FontWeight.Medium, ellipsis = true)
+    // basicMarquee moves only content wider than its room; a name that fits is drawn still.
+    else PixText(name, PcRef.FONT, Pc.Dim, modifier.basicMarquee(iterations = Int.MAX_VALUE), weight = FontWeight.Medium)
+}
+
+/** Whether the phone runs animations: the animator scale its developer and accessibility settings set, 0 for none. */
+internal object TrackerMotion {
+    fun animationsOn(scale: Float): Boolean = scale > 0f
+
+    fun animationsOn(context: android.content.Context): Boolean = animationsOn(
+        android.provider.Settings.Global.getFloat(context.contentResolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f),
+    )
 }
 
 /**

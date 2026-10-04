@@ -1,0 +1,47 @@
+showdown-moves.ts beside this file is Pokemon Showdown's data/text/moves.ts, byte for byte, as served at
+
+  https://raw.githubusercontent.com/smogon/pokemon-showdown/9fb3a5b99f1a0bea17f495c5cc1bfe04fdd19c3e/data/text/moves.ts
+
+Repository  https://github.com/smogon/pokemon-showdown
+Commit      9fb3a5b99f1a0bea17f495c5cc1bfe04fdd19c3e
+            (master on 2026-10-03: "Fix crash in /dt", committed 2026-10-03T22:23:46Z)
+Fetched     2026-10-03, with Blake's yes, the one file and nothing else from the repository,
+            and its LICENSE (below) read at the same commit for the notice it asks for
+Size        549098 bytes, LF line endings
+SHA-256     811028921074d1fd8ea8798bc0f0e29602a59f639e58bdf53b0eedf3fdcf54e5
+            (of the LF bytes; tools/trainer-data/convert_natdex_move_desc.py checks it, after
+            turning a CRLF checkout back into LF)
+
+A build input only. convert_natdex_move_desc.py READS it as data (nothing in it is run) for the
+move descriptions of the Nat. Dex and MaxDex moves that neither the Nat. Dex Extension nor the DS
+tracker describes: the moves from X and Y on. It takes each move's shortDesc, never its desc. The
+app does not carry this file; it carries those descriptions, in
+tracker-gba/src/main/resources/natdex/movedesc.tsv, and Showdown's license ships with them
+(app/src/main/assets/licenses/MIT-PokemonShowdown.txt, NOTICE).
+
+To move to a newer Showdown: fetch data/text/moves.ts at the new commit, write its commit, date,
+size and SHA-256 here and its SHA-256 in convert_natdex_move_desc.py, rerun the script, and read
+the diff of movedesc.tsv.
+
+Its LICENSE at that commit, verbatim:
+
+The MIT License (MIT)
+
+Copyright (c) 2011-2026 Guangcong Luo and other contributors http://pokemonshowdown.com/
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

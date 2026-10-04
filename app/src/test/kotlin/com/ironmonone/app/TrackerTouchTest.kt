@@ -7,10 +7,11 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /**
- * The tracker's touch targets and dialog text after the 2026-09-30 UX audit (P0-14 and P0-15): RUN asks twice, the
- * banner's buttons have room, Tracker Setup and Rules read at 12sp or more in the phone's own font size, and the
- * small controls beside them are 48dp. A Compose screen cannot run on the JVM, so what is drawn is held to the
- * source, for exactly the lines a phone would otherwise be needed to see. The two-tap logic runs for real.
+ * The tracker's touch targets and dialog text after the 2026-09-30 UX audit (P0-14 and P0-15): the banner's buttons
+ * have room, Tracker Setup and Rules read at 12sp or more in the phone's own font size, and the small controls beside
+ * them are 48dp. RUN, which asked twice since that audit, is gone from the banner (Blake, 2026-10-03: "remove the run
+ * button from the tracker, it doesn't work at all"). A Compose screen cannot run on the JVM, so what is drawn is held
+ * to the source, for exactly the lines a phone would otherwise be needed to see.
  */
 class TrackerTouchTest {
     private val dir = File("src/main/kotlin/com/ironmonone/app")
@@ -63,66 +64,37 @@ class TrackerTouchTest {
         return calls to sizes
     }
 
-    // ---------------------------------------------------------------- RUN asks twice
+    // ---------------------------------------------------------------- no RUN
 
     @Test
-    fun `the first tap arms RUN and a second inside three seconds runs`() {
-        val t = ArmedTap()
-        assertFalse(t.armed, "nothing is armed to begin with")
-        assertFalse(t.tap(1_000), "the first tap only arms it")
-        assertTrue(t.armed)
-        assertTrue(t.tap(3_999), "a second tap 2999 ms later runs")
-        assertFalse(t.armed, "and it is spent")
-        assertFalse(t.tap(5_000), "the next tap starts over")
-        assertTrue(t.armed)
-    }
-
-    @Test
-    fun `a second tap after the window arms it again instead of running`() {
-        val t = ArmedTap()
-        t.tap(0)
-        assertFalse(t.tap(3_001), "3001 ms is too late: it arms again")
-        assertTrue(t.armed)
-        assertTrue(t.tap(3_001 + 2_999), "the new window counts from the second tap")
-
-        val edge = ArmedTap()
-        edge.tap(0)
-        assertTrue(edge.tap(3_000), "exactly three seconds is still inside")
-    }
-
-    @Test
-    fun `the timer disarms it, so a stray tap later starts over`() {
-        val t = ArmedTap()
-        t.tap(0)
-        t.disarm()
-        assertFalse(t.armed)
-        assertFalse(t.tap(10), "after the timer, a tap arms again and does not run")
-        assertTrue(t.armed)
-    }
-
-    @Test
-    fun `the window is three seconds, the length of the library's Sure`() {
-        assertEquals(3000L, ArmedTap.WINDOW_MS)
-    }
-
-    @Test
-    fun `RUN goes through the guard, reads RUN with a question mark in the warning colour, and a timer per arming disarms it`() {
+    fun `the battle banner offers no RUN, in a wild battle or any other, on any tracker`() {
         val pc = code(read("PcTracker.kt"))
-        assertTrue("if (run.tap(android.os.SystemClock.elapsedRealtime())) onFlee()" in pc, "flee only when the guard says so")
-        assertFalse(Regex("PcSmallButton\\(\"RUN\"|onClick = onFlee|, onFlee\\)").containsMatchIn(pc), "no route from a tap straight to onFlee")
-        assertTrue("color = if (run.armed) Pc.Negative else Pc.Text" in pc, "RUN? is drawn in the warning colour")
-        assertTrue("LaunchedEffect(run.armedAt)" in pc && "delay(ArmedTap.WINDOW_MS); run.disarm()" in pc, "three seconds, then it disarms")
-        assertEquals("RUN?", PcBannerCopy.run(true))
-        assertEquals("RUN", PcBannerCopy.run(false))
-        assertTrue(PcBannerCopy.runSpoken(true) != PcBannerCopy.runSpoken(false), "a screen reader hears the change")
+        val banner = pc.substringAfter("fun PcBattleBanner(").substringBefore("\n}\n")
+        assertTrue(banner.length in 1000..8000, "the banner's body was cut out, not the rest of the file")
+        assertFalse(Regex(""""RUN\??"|onFlee|ArmedTap|\.run\(""").containsMatchIn(banner), "no RUN button and nothing to flee with")
+        assertFalse("isWild ||" in banner, "a wild battle adds no button of its own")
+        // SEE FOE and SETUP stay: the swap and the gear are still the banner's buttons.
+        assertTrue("PcButton(PcBannerCopy.see(viewingOwn)" in banner && "TrackerGearButton(onClick = it)" in banner)
+        // Nothing is left that only RUN used.
+        assertFalse(Regex("""class ArmedTap|RUN_SPOKEN|RUN_ARMED|fun run\(|fun runSpoken|liveRegion""").containsMatchIn(pc))
+        for (panel in listOf("TrackerPanel.kt", "NdsTrackerPanel.kt")) {
+            val src = code(read(panel))
+            assertFalse("onFlee" in src, "$panel takes no flee any more")
+            assertTrue("PcBattleBanner(" in src, panel)
+        }
+        assertFalse("onFlee = { flee() }" in read("PlayScreen.kt"), "Play hands the panels no flee")
+        // B on a controller or the pad still runs from a wild battle (FleeOnB), which is not the banner's.
+        assertTrue("FleeOnB.onFlee = if (wildBattleNow) ({ flee() }) else null" in read("PlayScreen.kt"))
+        // The stream page's tracker never had one.
+        assertFalse(Regex("""\bRUN\b(?! (WON|OVER))""").containsMatchIn(File("src/main/assets/stream/tracker.html").readText()))
     }
 
     // ---------------------------------------------------------------- room to touch
 
     @Test
-    fun `the tracker's buttons have a 44dp box and RUN and SEE MINE a clear gap`() {
+    fun `the tracker's buttons have a 44dp box and the banner's buttons a clear gap`() {
         assertTrue(PcMin.TOUCH_DP >= 44, "the touch box")
-        assertTrue(PcMin.BUTTON_GAP_DP >= 8, "the gap between RUN and SEE MINE")
+        assertTrue(PcMin.BUTTON_GAP_DP >= 8, "the gap between SEE MINE and SETUP")
         val pc = read("PcTracker.kt")
         assertTrue("modifier.sizeIn(minWidth = PcMin.TOUCH_DP.dp, minHeight = PcMin.TOUCH_DP.dp)" in pc, "the box is real, both ways")
         assertTrue("Spacer(Modifier.width(PcMin.BUTTON_GAP_DP.dp))" in pc, "and the two boxes do not touch")
@@ -149,7 +121,7 @@ class TrackerTouchTest {
         val gear = read("TrackerLook.kt").substringAfter("internal fun TrackerGearButton(").substringBefore("\n}\n")
         assertTrue("sizeIn(minWidth = PcMin.TOUCH_DP.dp, minHeight = PcMin.TOUCH_DP.dp)" in gear, "the gear has the 44dp box")
         assertTrue("contentDescription = \"Tracker Setup\"" in gear, "and a screen reader hears what it is")
-        assertTrue("buttons = onSwapView != null || isWild || onGear != null" in banner, "and its band is 44dp tall for it")
+        assertTrue("buttons = onSwapView != null || onGear != null || trailing != null" in banner, "and its band is 44dp tall for it")
     }
 
     @Test
@@ -158,10 +130,13 @@ class TrackerTouchTest {
         val band = pc.substringAfter("internal fun PcBannerBand(").substringBefore("\n}\n")
         // KaizoCore's look (2026-10-02): the drawn band IS the touch row, a rounded bar at least as tall as a button's
         // box, where it was a thin strip with blank space above and below it for the boxes.
-        assertTrue("heightIn(min = if (buttons) PcMin.TOUCH_DP.dp else (PcRef.FONT + 8).rp)" in band, "the band is 44dp tall while it has buttons")
+        assertTrue("val rowMin = if (buttons) PcMin.TOUCH_DP.dp else (PcRef.FONT + 8).rp" in band, "the band is 44dp tall while it has buttons")
+        assertTrue("val rowH = maxOf(rowMin.roundToPx(), controlsP.height, tall(inRow))" in band, "and never shorter than its buttons")
         assertFalse(Regex("padding\\((vertical|top|bottom) =|padding\\(\\d").containsMatchIn(band),
             "nothing pads the band above or below, so a 44dp box fits inside a 44dp band")
-        assertTrue("Box(Modifier.weight(1f)) { label() }" in band, "the label gives way, the buttons never do")
+        assertTrue("val controlsP = subcompose(BandSlot.CONTROLS) {" in band &&
+            "}.first().measure(androidx.compose.ui.unit.Constraints(maxWidth = w))" in band &&
+            "val room = (w - controlsP.width).coerceAtLeast(0)" in band, "the label gives way, the buttons never do")
         // DS keeps its solid strip: only the battle banner lets the tracker's image show through.
         assertTrue("fill = Pc.Ground, buttons = true" in read("DsView.kt"))
     }
@@ -295,7 +270,7 @@ class TrackerTouchTest {
         for (spoken in listOf(PcBannerCopy.SEE_MINE_SPOKEN, PcBannerCopy.SEE_FOE_SPOKEN)) {
             assertTrue(accented in spoken, spoken)
         }
-        for (copy in listOf(PcBannerCopy.RUN_SPOKEN, PcBannerCopy.RUN_ARMED_SPOKEN, PcBannerCopy.TRAINER_SPOKEN)) {
+        for (copy in listOf(PcBannerCopy.TRAINER_SPOKEN)) {
             assertFalse(copy.contains(0x2014.toChar()) || copy.contains(0x2013.toChar()), copy)
             assertFalse(Regex("\\bAI\\b").containsMatchIn(copy), copy)
             assertFalse("Pokemon" in copy, "$copy needs the accent")

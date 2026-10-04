@@ -45,6 +45,35 @@ packages are merged, so its branches begin from the rc34 that ships)
   SameBoy), with the Gen 1 and 2 trackers proved on it. A Game Boy save state made before cannot load after, so the
   release notes say so; in-game saves carry over (to prove).
 - Google Play stays "not yet" (P3 #9, #13).
+- **A description for every move** (Blake, 2026-10-03: "fairy wind didn't have a description in emerald, need to add
+  descriptions to all moves"). **Done for Nat. Dex and MaxDex in rc34.1:** GbaTracker.moveDescription reads
+  natdex/movedesc.tsv (tools/trainer-data/convert_natdex_move_desc.py) past 354, by id on Nat. Dex and by name on
+  MaxDex, and every move of both has one (NatDexMoveDescriptionTest). Its three sources, in order: the extension's
+  natDexMoveDescriptions, which has only 11 real ones (the other 482 read "Not implemented yet.", which the PC
+  tracker shows); the DS tracker's MoveData for the 201 moves Black and White had; Pokemon Showdown's move text (MIT,
+  data/text/moves.ts pinned at commit 9fb3a5b9 in tools/trainer-data/sources) for the other 281: its shortDesc, never
+  its desc (Blake, 2026-10-04, on Doodle's 837 characters: "not 800 characters"), capped at the longest Gen 3
+  description (174), with KaizoCore's own line for the 10 whose shortDesc reads "No competitive use." or "No
+  additional effect." (OWN in the script). Gen 1, Gen 2, Gen 3's 354 and the DS trackers already had a description
+  for every move.
+- Read Nat. Dex and MaxDex move descriptions from the player's own ROM (the game's summary-screen text table), so the
+  tracker matches the game word for word; Showdown's lines stay as the fallback.
+- **The bottom strip is slow to show the route and weather** (Blake, 2026-10-03: "the bottom of tracker bar that says
+  walking and weather, it's very slow to start displaying data"). Find what holds the carousel's route line ("Walking" until routeArea is known, PcTracker.kt "route") and the weather pill back after a load or a map change, and show them as soon as the game's data is read.
+- **No repel bar on Nat. Dex Emerald** (Blake, 2026-10-03: "I also don't see my repel icon in natl dex emerald"). The steps are read the PC extension's way (GbaTracker.kt about line 1205: gameVarsOffset from 0x08000154 plus the repel offset from 0x080003EE, NatDexExtension.lua:17538), so check that read on a real Nat. Dex Emerald run with a Repel active, then RepelRules (Nat. Dex item ids), then where the bar draws in landscape.
+- **Random MAC address stays hidden** (rc34.1, 2026-10-04). Until rc34.1 the DS settings row did nothing: the core's
+  own firmware had no Wi-Fi block, so every game read the address as FF:FF:FF:FF:FF:FF whatever the row said. Core
+  patch 0003 gave that firmware a real Wi-Fi block, and from then on the row would give the DS a new address every
+  boot, which a Gen 4 Pokemon game takes for another console: its daily events locked for a day on every continue.
+  rc34.1 removed the row and sends the core "disabled" on every boot (CoreOptions.FORCED; a value saved before is
+  dropped; CoreOptionsTest). Bring it back only with an explanation of that cost on the page, if at all.
+- **DS states should keep the 3D engine's polygon mode** (rc34.1 follow-up, 2026-10-04). melonDS 0.9.3's savestate
+  leaves out PolygonMode, PolygonAttr, CurPolygonAttr, TexParam and TexPalette, and stores each polygon's vertex
+  indices and LastStripPolygon divided once more by the struct size (upstream melonDS saves those fields today, and
+  fixed the indices in PR #1864, January 2024). rc34.1's core patch 0004 stops the crash that caused (a state
+  loaded mid-quad wrote past the vertex buffer: Black 2's resume crash), but such a state still draws its first frame
+  with the wrong mode and vertices. Saving them changes the state format, and an older core refuses a newer minor
+  version ("state from the future"), so it waits for a release that can take that, with old states still loading.
 
 **Built or started, waiting on others**
 - Play as your Pokemon on Game Boy: feat/gb-play-as, 7 commits not merged.

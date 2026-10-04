@@ -72,6 +72,8 @@ class TrackerLookTest {
         joined: JoinedForms? = null,
         // Handed in, never read from the device's own run, so no other shot here picks up its rules.
         moveRules: MoveRule.Rules? = null,
+        onGear: (() -> Unit)? = null,
+        trailing: (@androidx.compose.runtime.Composable () -> Unit)? = null,
     ) {
         // The carousel's clock ticks every 100 ms (PcCarousel), so on a running clock Compose is never idle
         // (2026-10-02: every shot here timed out). The test drives the clock instead.
@@ -82,7 +84,6 @@ class TrackerLookTest {
                     val ctx = androidx.compose.ui.platform.LocalContext.current
                     TrackerPanel(
                         state = state,
-                        onFlee = {},
                         attempt = 2,
                         routeName = "Viridian Forest",
                         // The real bundled pack, so this also proves the art
@@ -90,6 +91,7 @@ class TrackerLookTest {
                         spriteFor = { sp -> PcAssets.gbaSprite(ctx, sp) },
                         stackBoth = stackBoth,
                         bstLines = bstLines, joinedForms = joined, moveRules = moveRules,
+                        onGear = onGear, headerTrailing = trailing,
                     )
                 }
             }
@@ -222,7 +224,7 @@ class TrackerLookTest {
             Box(Modifier.background(Color.Black)) {
                 Box(Modifier.width(paneDp.dp).fillMaxHeight()) {
                     TrackerPanel(
-                        state = live.value, onFlee = {}, attempt = 2,
+                        state = live.value, attempt = 2,
                         stackBoth = true,
                     )
                 }
@@ -372,12 +374,15 @@ class TrackerLookTest {
         name: String, widthDp: Int, state: com.ironmonone.tracker.nds.NdsTrackerState,
         bstLines: BstRule.Lines? = null, joined: JoinedForms? = null, stackBoth: Boolean = false,
         moveRules: MoveRule.Rules? = null,
+        onGear: (() -> Unit)? = null,
+        trailing: (@androidx.compose.runtime.Composable () -> Unit)? = null,
     ) {
         compose.mainClock.autoAdvance = false
         compose.setContent {
             Box(Modifier.background(Color.Black)) {
                 Box(Modifier.width(widthDp.dp).fillMaxHeight()) {
-                    NdsTrackerPanel(state = state, attempt = 2, stackBoth = stackBoth, bstLines = bstLines, joinedForms = joined, moveRules = moveRules)
+                    NdsTrackerPanel(state = state, attempt = 2, stackBoth = stackBoth, bstLines = bstLines, joinedForms = joined, moveRules = moveRules,
+                        onGear = onGear, headerTrailing = trailing)
                 }
             }
         }
@@ -561,6 +566,56 @@ class TrackerLookTest {
         shootNds("look-ds-doubles.png", portraitDp, s)
         compose.onNodeWithText("MINE ON THE RIGHT").assertIsDisplayed()
         compose.onNodeWithText("SEE FOE").assertIsDisplayed()
+        dsView.clear()
+    }
+
+    // ---- A crowded banner (rc34.1) ----------------------------------------------
+    //
+    // Blake, 2026-10-03, a Nat. Dex Emerald double battle with the tracker docked in a narrow column: "Something bad is
+    // happening with double battles". SEE MINE, SETUP and the menu left the words a sliver, the side spelled itself a
+    // letter to a line and TRAINER BATTLE did not show. The words now go under the buttons, whole (BannerFit).
+
+    /** The menu button's 44 dp box, as landscape puts it after SETUP. */
+    private val menuBox: @androidx.compose.runtime.Composable () -> Unit = {
+        Box(Modifier.width(44.dp).fillMaxHeight())
+    }
+
+    /** A docked column of 181 dp, as in Blake's screenshot: SEE FOE, SETUP and the menu beside the words. */
+    @Test
+    fun doubles_banner_narrow_docked() {
+        val s = doublesState()
+        primeGba(s, swaps = 2, stacked = true)
+        shoot("look-doubles-narrow-181.png", 181, s, stackBoth = true, onGear = {}, trailing = menuBox)
+        compose.onNodeWithText("TRAINER BATTLE").assertIsDisplayed()
+        compose.onNodeWithText("MINE LEFT, FOE LEFT").assertIsDisplayed()
+        gbaView.clear()
+    }
+
+    /** The floating window at its narrowest, 160 dp: SETUP but no menu, which is in the window's title bar. */
+    @Test
+    fun doubles_banner_floating_narrowest() {
+        val s = doublesState()
+        primeGba(s, swaps = 2, stacked = false)
+        shoot("look-doubles-narrow-160.png", 160, s, onGear = {})
+        // Without the menu there is room beside the buttons for the short words.
+        compose.onNodeWithText("TRAINER").assertIsDisplayed()
+        compose.onNodeWithText("MINE RIGHT").assertIsDisplayed()
+        gbaView.clear()
+    }
+
+    @Test
+    fun ds_doubles_banner_narrow_docked() {
+        val left = ndsTracked("Turtwig", 387, 12)
+        val right = ndsTracked("Chimchar", 390, 11).let { it.copy(mon = it.mon.copy(pid = 0x2222_2222)) }
+        val foes = listOf(ndsTracked("Starly", 396, 10), ndsTracked("Bidoof", 399, 9))
+        val s = com.ironmonone.tracker.nds.NdsTrackerState(
+            partyCount = 2, party = listOf(left, right), located = true, inBattle = true, enemy = foes[0],
+            healsPid = left.mon.pid, playerBattlers = listOf(left, right), enemyBattlers = foes,
+        )
+        dsView.clear(); dsView.forAttempt(2); dsView.onRead(s); dsView.swap(s, allowed = true)
+        shootNds("look-ds-doubles-narrow.png", 181, s, onGear = {}, trailing = menuBox)
+        compose.onNodeWithText("TRAINER BATTLE").assertIsDisplayed()
+        compose.onNodeWithText("MINE ON THE RIGHT").assertIsDisplayed()
         dsView.clear()
     }
 }

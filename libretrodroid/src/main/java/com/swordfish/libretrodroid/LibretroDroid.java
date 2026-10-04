@@ -164,6 +164,21 @@ public class LibretroDroid {
 
     /** IronMON One patch: returns bytes written; 0 = unmapped or read-only. */
     public static native int writeMemory(long address, byte[] data);
+
+    /**
+     * KaizoCore patch (2026-10-04): the ability trigger tap (cpp/triggertap.h). After every emulated frame the u32 at
+     * [watch] in the GBA's work RAM is read; each time it changes to one of [targets], the ranges ([rangeAddresses],
+     * [rangeLengths]) are copied into a fixed ring. Returns the arming's token, or 0, and the tap off, when the request
+     * is out of bounds.
+     */
+    public static native long armTriggerTap(long watch, long[] targets, long[] rangeAddresses, int[] rangeLengths);
+
+    /** KaizoCore patch (2026-10-04): the tap off, and what it caught forgotten, if [token] is still the arming's (0: any). */
+    public static native void disarmTriggerTap(long token);
+
+    /** KaizoCore patch (2026-10-04): what the tap caught since the last call, packed as cpp/triggertap.h says. */
+    public static native byte[] drainTriggerTap();
+
     public static native boolean unserializeState(byte[] state);
 
     public static native void setCheat(int index, boolean enable, String code);

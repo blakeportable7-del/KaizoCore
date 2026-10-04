@@ -215,7 +215,6 @@ object CoreOptions {
         Option("melonds_use_fw_settings", "Use firmware settings", listOf("disabled", "enabled"), "disabled", "System", restart = true,
             hint = "On reads your name, color and language from an imported firmware.bin."),
         Option("melonds_language", "Language", listOf("English", "Japanese", "French", "German", "Italian", "Spanish"), "English", "System", restart = true),
-        Option("melonds_randomize_mac_address", "Random MAC address", listOf("disabled", "enabled"), "disabled", "System", restart = true),
         // In the DSi group, so it is not drawn as a row: the DSi section switches it,
         // and only once all seven files are present. As a plain row it skipped that
         // check and a game could fail to boot (2026-09-27, audit).
@@ -237,8 +236,21 @@ object CoreOptions {
         if (!DsiMode.isOn(values)) {
             for (o in forPlatform(platform)) if (o.group == DSI_GROUP) out[o.key] = DsiMode.OFF[o.key] ?: o.default
         }
+        FORCED[platform]?.let { out.putAll(it) }
         return out.map { (k, v) -> k to v }
     }
+
+    /**
+     * Core options a boot always gets with one value, and that the settings page never shows (rc34.1, 2026-10-04).
+     * Random MAC address did nothing until the core's own firmware carried a Wi-Fi block (core patch 0003): every game
+     * read the address as FF:FF:FF:FF:FF:FF whatever the row said. Since then it gives the DS a new address every boot,
+     * and a Gen 4 Pokemon game takes a new address for another console and locks its daily events for a day, on every
+     * continue. The row is gone, a value saved before is dropped (the store keeps only the options it lists), and the
+     * core is told "disabled" on each boot, because a key left out keeps its last value inside the core.
+     */
+    val FORCED: Map<Platform, Map<String, String>> = mapOf(
+        Platform.NDS to mapOf("melonds_randomize_mac_address" to "disabled"),
+    )
 
     /** System files a console can take, by file name, with what they enable. */
     fun systemFiles(p: Platform): List<Pair<String, String>> = when (p) {

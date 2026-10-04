@@ -661,7 +661,6 @@ fun NdsTrackerPanel(
     onTypeDefenses: ((String, String, String) -> Unit)? = null,
     state: NdsTrackerState?,
     modifier: Modifier = Modifier,
-    onFlee: () -> Unit = {},
     enemyMarks: IntArray = IntArray(StatMarks.COUNT),
     enemyEncounters: Int = 0,
     onCycleMark: (Int) -> Unit = {},
@@ -728,7 +727,7 @@ fun NdsTrackerPanel(
     dsInfo?.let { (title, sub, body) -> PcInfoDialog(title, sub, body?.ifBlank { null }) { dsInfo = null } }
     PcCanvas(modifier.fillMaxWidth()) {
       // The Main background colour, and the player's image over it (TrackerBackdrop.kt).
-      Column(Modifier.fillMaxWidth().then(trackerBackdrop()).padding(PcRef.MARGIN.rp)) {
+      Column(Modifier.fillMaxWidth().then(trackerBackdrop()).padding(trackerMargin())) {
           // The reference's gear sits at the top of the tracker screen; SETUP is its NavigationMenu.ButtonSetup.
           // In a battle it ends the battle banner (2026-10-02, "wasted space"); otherwise it has the top bar.
           // The attempt, in a Kaizo IronMON run (2026-10-02: "the tracker needs attempt count").
@@ -813,7 +812,7 @@ fun NdsTrackerPanel(
                 val onSwap = if (view.canSwap(state, effectivenessReady, stackBoth)) { { view.swap(state, effectivenessReady, stackBoth) } } else null
                 val side = view.sideWords(state, stackBoth)
                 if (state.inBattle) {
-                    PcBattleBanner(state.isWildBattle, onFlee, viewingOwn = if (side == null) !showEnemy else view.offersFoe(state, stackBoth),
+                    PcBattleBanner(state.isWildBattle, viewingOwn = if (side == null) !showEnemy else view.offersFoe(state, stackBoth),
                         onSwapView = onSwap, onGear = onGear, trailing = headerTrailing, attempt = attemptShown,
                         side = side, swapSpoken = view.swapSpoken(state, stackBoth))
                     Spacer(Modifier.height(2.rp))

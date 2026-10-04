@@ -452,7 +452,6 @@ fun TrackerPanel(
     /** Type Defenses for a card: (name, type1, type2) in Gen 3 ids. */
     onTypeDefenses: ((String, Int, Int) -> Unit)? = null,
     state: TrackerState?,
-    onFlee: () -> Unit,
     modifier: Modifier = Modifier,
     ballCall: String? = null,
     favoriteLine: FavoritesShown? = null,
@@ -667,7 +666,7 @@ fun TrackerPanel(
     // happens to be. Reflowing is what wrapped "Golisopod-M" onto three lines.
     PcCanvas(modifier.fillMaxWidth()) {
       // The Main background colour, and the player's image over it (TrackerBackdrop.kt).
-      Column(Modifier.fillMaxWidth().then(trackerBackdrop()).padding(PcRef.MARGIN.rp)) {
+      Column(Modifier.fillMaxWidth().then(trackerBackdrop()).padding(trackerMargin())) {
           // The reference's gear sits at the top of the tracker screen; SETUP is its NavigationMenu.ButtonSetup.
           // In a battle it ends the battle banner; otherwise it shares a slim bar with the route the player is on.
           // It had a row to itself, empty but for it (2026-10-02, Blake: "Lots of wasted space").
@@ -695,7 +694,7 @@ fun TrackerPanel(
                       PixText("ATTEMPT $it", PcRef.FONT - 1, Pc.Text, weight = androidx.compose.ui.text.font.FontWeight.Medium)
                       Spacer(Modifier.width(6.rp))
                   }
-                  PixText(routeName.orEmpty(), PcRef.FONT, Pc.Dim, Modifier.weight(1f), weight = androidx.compose.ui.text.font.FontWeight.Medium)
+                  AreaName(routeName.orEmpty(), Modifier.weight(1f))
                   // Program.ActiveRepel:shouldDisplay - only while one is running, never in
                   // battle, off the map or in the Hall of Fame, and the reference puts it in the top right.
                   if (TrackerOptions.showRepel && state != null && state.repelVisible) {
@@ -824,10 +823,8 @@ fun TrackerPanel(
                 }
                 val viewingOwn = !state.inBattle || view.view.own
                 if (state.inBattle) {
-                    // Fleeing is a WILD-battle action only; a trainer battle
-                    // never offers it, so the banner hides RUN entirely.
                     PcBattleBanner(
-                        state.isWildBattle, onFlee,
+                        state.isWildBattle,
                         viewingOwn = view.offersFoe(state, stackBoth),
                         // A single battle has no swap when both are already on screen: it would toggle a view that
                         // is not hidden. A double battle's swap walks the Pokemon on the field (GbaViewState.next).

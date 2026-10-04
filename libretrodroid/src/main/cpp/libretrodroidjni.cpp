@@ -45,6 +45,7 @@
 #include "renderers/es3/imagerendereres3.h"
 #include "utils/jnistring.h"
 #include "streamtap.h"
+#include "triggertap.h"   // KaizoCore patch (2026-10-04)
 
 namespace libretrodroid {
 
@@ -257,6 +258,77 @@ JNIEXPORT jint JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_writeMemor
     env->GetByteArrayRegion(data, 0, length, reinterpret_cast<jbyte*>(buffer.data()));
     return static_cast<jint>(LibretroDroid::getInstance().writeMemory(
         static_cast<uint64_t>(address), static_cast<size_t>(length), buffer.data()));
+}
+
+// KaizoCore patch (2026-10-04): arm the ability trigger tap (triggertap.h). Returns the arming's token, or 0, and the tap
+// off, when the request is out of bounds: a negative or out-of-RAM address, no targets, or more ranges or bytes than the
+// tap holds. Everything is copied out of the Java arrays here, on the caller's thread, never in the frame loop.
+JNIEXPORT jlong JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_armTriggerTap(
+    JNIEnv* env,
+    jclass obj,
+    jlong watch,
+    jlongArray targets,
+    jlongArray rangeAddresses,
+    jintArray rangeLengths
+) {
+    auto& droid = LibretroDroid::getInstance();
+    if (watch < 0 || targets == nullptr || rangeAddresses == nullptr || rangeLengths == nullptr) {
+        droid.disarmTriggerTap(0);
+        return 0;
+    }
+    jsize targetCount = env->GetArrayLength(targets);
+    jsize rangeCount = env->GetArrayLength(rangeAddresses);
+    if (targetCount <= 0 || targetCount > (jsize) TriggerTap::MAX_TARGETS || rangeCount > (jsize) TriggerTap::MAX_RANGES ||
+        env->GetArrayLength(rangeLengths) != rangeCount) {
+        droid.disarmTriggerTap(0);
+        return 0;
+    }
+    std::vector<jlong> t(targetCount);
+    env->GetLongArrayRegion(targets, 0, targetCount, t.data());
+    std::vector<jlong> a(rangeCount);
+    std::vector<jint> l(rangeCount);
+    if (rangeCount > 0) {
+        env->GetLongArrayRegion(rangeAddresses, 0, rangeCount, a.data());
+        env->GetIntArrayRegion(rangeLengths, 0, rangeCount, l.data());
+    }
+    std::vector<uint32_t> values;
+    values.reserve(targetCount);
+    for (jlong v : t) {
+        if (v < 0 || v > 0xFFFFFFFFLL) { droid.disarmTriggerTap(0); return 0; }
+        values.push_back(static_cast<uint32_t>(v));
+    }
+    std::vector<std::pair<uint64_t, uint32_t>> ranges;
+    ranges.reserve(rangeCount);
+    for (jsize i = 0; i < rangeCount; i++) {
+        if (a[i] < 0 || l[i] <= 0) { droid.disarmTriggerTap(0); return 0; }
+        ranges.emplace_back(static_cast<uint64_t>(a[i]), static_cast<uint32_t>(l[i]));
+    }
+    return static_cast<jlong>(droid.armTriggerTap(static_cast<uint64_t>(watch), std::move(values), ranges));
+}
+
+// KaizoCore patch (2026-10-04): turn the ability trigger tap off and forget what it caught, if [token] is still the
+// current arming's (0: whatever is armed).
+JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_disarmTriggerTap(
+    JNIEnv* env,
+    jclass obj,
+    jlong token
+) {
+    if (token < 0 || token > 0xFFFFFFFFLL) return;
+    LibretroDroid::getInstance().disarmTriggerTap(static_cast<uint32_t>(token));
+}
+
+// KaizoCore patch (2026-10-04): what the ability trigger tap caught since the last call, packed as TriggerTap::drain
+// packs it; empty when it is off.
+JNIEXPORT jbyteArray JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_drainTriggerTap(
+    JNIEnv* env,
+    jclass obj
+) {
+    std::vector<unsigned char> bytes = LibretroDroid::getInstance().drainTriggerTap();
+    jbyteArray result = env->NewByteArray(static_cast<jsize>(bytes.size()));
+    if (result != nullptr && !bytes.empty()) {
+        env->SetByteArrayRegion(result, 0, static_cast<jsize>(bytes.size()), reinterpret_cast<jbyte*>(bytes.data()));
+    }
+    return result;
 }
 
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setCheat(
