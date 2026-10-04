@@ -75,6 +75,6 @@ Built on [LibretroDroid](https://github.com/Swordfish90/LibretroDroid) with the 
 
 KaizoCore is free software under the [GPL-3.0](LICENSE). It is not affiliated with Nintendo, Game Freak, The Pokémon Company, IronMON or RetroAchievements. Screenshots show the player's own copy of each game running in the app.
 
-A side project from [Willow Creek Group](https://willowcreek.group), St. Clairsville, Ohio. If it saved you an evening of setup, you can [chip in a few dollars](https://willowcreek.group/kaizocore#support). Nothing is unlocked; it is a thank-you.
+A side project from [Willow Creek Group](https://willowcreek.group), St. Clairsville, Ohio. KaizoCore is free, with nothing to buy.
 
 Build notes and the development log are in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
