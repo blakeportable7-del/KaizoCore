@@ -121,8 +121,10 @@ class SpriteIsMeLogicTest {
         // MaxDex's 1236 is Dragonite-M, where Nat. Dex keeps Battle Bond Greninja: it walks as Dragonite until its own is drawn.
         assertEquals(Pal(Pack.GEN3, "149"), L.choose(Who.LEAD, 0, Own.NONE, false, Lead(1236, 30, false, Dex.MAX_DEX), shipped).pal)
         assertEquals(Pal(Pack.NATIONAL, "998"), L.choose(Who.LEAD, 0, Own.NONE, false, Lead(1280, 30, false, Dex.MAX_DEX), shipped).pal, "Baxcalibur-M")
-        // One nobody has drawn yet leaves the trainer, as the line under the switch says: Miraidon, and Falinks-M.
-        assertEquals(Choice(Source.NONE), L.choose(Who.LEAD, 0, Own.NONE, false, Lead(1033, 30, false, Dex.MAX_DEX), shipped))
+        // One nobody has drawn yet leaves the trainer, as the line under the switch says: Iron Jugulis, and Falinks-M.
+        assertEquals(Choice(Source.NONE), L.choose(Who.LEAD, 0, Own.NONE, false, Lead(1018, 30, false, Dex.MAX_DEX), shipped))
+        // Miraidon walks as DarkusShadow's sheet, where Sprite Collab has none (2026-10-04).
+        assertEquals(Pal(Pack.DARKUS, "1008"), L.choose(Who.LEAD, 0, Own.NONE, false, Lead(1033, 30, false, Dex.MAX_DEX), shipped).pal)
         assertEquals(Choice(Source.NONE), L.choose(Who.LEAD, 0, Own.NONE, false, Lead(1276, 30, false, Dex.MAX_DEX), shipped))
     }
 
@@ -137,9 +139,9 @@ class SpriteIsMeLogicTest {
         // A Z-A Mega picked by its name walks as MaxDex's own does.
         assertEquals(ShippedPals.index.find(1236, Dex.MAX_DEX), L.choose(Who.ALWAYS, assertNotNull(Favorites.idOf("Dragonite-M")), Own.NONE, false, null, shipped).pal)
         // A pick with no sprite falls to the lead; with none for the lead either, the trainer stays.
-        val miraidon = assertNotNull(Favorites.idOf("Miraidon"))
-        assertEquals(Pal(Pack.GEN3, "149"), L.choose(Who.ALWAYS, miraidon, Own.NONE, false, dragoniteM, shipped).pal)
-        assertEquals(Choice(Source.NONE), L.choose(Who.ALWAYS, miraidon, Own.NONE, false, Lead(1033, 30, false, Dex.MAX_DEX), shipped))
+        val jugulis = assertNotNull(Favorites.idOf("Iron Jugulis"))
+        assertEquals(Pal(Pack.GEN3, "149"), L.choose(Who.ALWAYS, jugulis, Own.NONE, false, dragoniteM, shipped).pal)
+        assertEquals(Choice(Source.NONE), L.choose(Who.ALWAYS, jugulis, Own.NONE, false, Lead(1018, 30, false, Dex.MAX_DEX), shipped))
     }
 
     /** The picker lists the Nat. Dex table on every game: each MaxDex Pokemon that walks is in it by name, and draws the same. */

@@ -64,6 +64,12 @@ def replace_once(text, old, new, what):
     return text.replace(old, new)
 
 
+def names_old(page, old_version, version):
+    """Whether the page still names the old version once the new one is set aside: a point release's name holds its
+    parent's (1.0.0-rc34.1 holds 1.0.0-rc34), so a plain substring test refused every point release (rc34.1, 2026-10-04)."""
+    return old_version != version and old_version in page.replace(version, '')
+
+
 def badging(apk):
     """The APK's package, versionCode and versionName, as aapt2 reads them."""
     aapt2 = os.path.join(BUILD_TOOLS, 'aapt2.exe' if os.name == 'nt' else 'aapt2')
@@ -154,7 +160,7 @@ def main():
     page2, n2 = re.subn(r'APK &middot; \d+ MB &middot;', 'APK &middot; %d MB &middot;' % mb, page2)
     if (n1, n2) != (1, 1):
         fail('expected one of each size line on the page, found %d and %d' % (n1, n2))
-    if old_version != version and old_version in page2:
+    if names_old(page2, old_version, version):
         fail('the page still names %s somewhere after the edit: update that line by hand first' % old_version)
 
     manifest = {

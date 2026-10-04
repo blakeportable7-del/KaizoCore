@@ -20,6 +20,32 @@ class PalFormsTest {
     private val F = PalForms
     private val ix = ShippedPals.index
 
+    /** RC35-NOTICED rows 42 and 43: a DS Pokemon walks, and shows on the game over screen, in its own form. */
+    @Test
+    fun `a DS form with a walking sheet of its own walks in it`() {
+        fun pal(species: Int, form: Int, shiny: Boolean = false) = ix.find(species, Dex.NATIONAL, F.ds(species, form, shiny))
+        assertEquals(Pal(Pack.NATIONAL, "479-wash"), pal(479, 2), "Wash Rotom")
+        assertEquals(Pal(Pack.NATIONAL, "479-mow"), pal(479, 5), "Mow Rotom")
+        assertEquals(Pal(Pack.NATIONAL, "487-origin"), pal(487, 1), "Giratina Origin")
+        assertEquals(Pal(Pack.NATIONAL, "492-sky"), pal(492, 1), "Shaymin Sky")
+        assertEquals(Pal(Pack.NATIONAL, "386-speed"), pal(386, 3), "Deoxys Speed")
+        assertEquals(Pal(Pack.NATIONAL, "413-trash"), pal(413, 2), "Trash Wormadam")
+        assertEquals(Pal(Pack.NATIONAL, "646-black"), pal(646, 2), "Black Kyurem")
+        assertEquals(Pal(Pack.NATIONAL, "201-b"), pal(201, 1), "Unown B")
+        assertEquals(Pal(Pack.NATIONAL, "201-question"), pal(201, 27), "Unown ?")
+        assertEquals(Look(shiny = true), F.ds(479, 0, true), "the first form is the species")
+        assertEquals(Look(), F.ds(422, 1, false), "East Sea Shellos has no sheet: the species")
+        assertEquals(Look(), F.ds(479, 9, false), "a form past the list: the species")
+        // Both DS cards and the game over screen pass the form; none of them decodes a picture during composition.
+        val panel = java.io.File("src/main/kotlin/com/ironmonone/app/NdsTrackerPanel.kt").readText()
+        assertTrue("iconLook = PalForms.ds(m.species, m.form, m.shiny)," in panel && "iconLook = PalForms.ds(e.mon.species, e.mon.form, e.mon.shiny)," in panel)
+        val host = java.io.File("src/main/kotlin/com/ironmonone/app/GameOverHost.kt").readText()
+        assertTrue("it.mon.shiny, form = it.mon.form)" in host && "rememberDsPicture(m.species, m.form, m.shiny)" in host)
+        val log = java.io.File("src/main/kotlin/com/ironmonone/app/DsLogViewer.kt").readText()
+        assertTrue("withContext(Dispatchers.IO) { DsPictures.load(ctx, id, 0, false) }" in log)
+        for (src in listOf(panel, host, log)) assertTrue("PcAssets.dsSprite(" !in src && "RomFormSprites.sprite(" !in src)
+    }
+
     /** pokeemerald's GET_UNOWN_LETTER: bits 0-1 of each personality byte, the top byte's highest. */
     @Test
     fun `Unown's Gen 3 letter is two bits from each byte of its personality`() {
@@ -130,6 +156,10 @@ class PalFormsTest {
         assertEquals(Look(shiny = false), F.ofEnemy(enemy(25, pid = 7), party, 3, Dex.GEN3, "emerald"))
         assertEquals(Look(shiny = false), F.ofEnemy(enemy(25, pid = 0), party.map { it.copy(pid = 0) }, 3, Dex.GEN3, "emerald"), "no personality read: not shiny")
         assertEquals(Look("201-e"), F.ofEnemy(enemy(PalForms.UNOWN, pid = 0x100), emptyList(), 3, Dex.NAT_DEX, "firered"))
+        // An opposing Deoxys walks in its Normal form in every game, as the battle draws it (rc34 known issue).
+        for (game in listOf("firered", "leafgreen", "emerald")) {
+            assertEquals(Look(), F.ofEnemy(enemy(PalForms.DEOXYS_GEN3), emptyList(), 3, Dex.GEN3, game), "an opposing Deoxys in $game")
+        }
         // Gen 2 by its DVs (EnemyInfo.dvs, from the battle struct).
         assertEquals(Look("201-i", shiny = true), F.ofEnemy(enemy(PalForms.UNOWN, dvs = 0x2AAA), emptyList(), 2, Dex.NATIONAL, ""))
         assertEquals(Look(), F.ofEnemy(enemy(PalForms.UNOWN), emptyList(), 2, Dex.NATIONAL, ""), "no DVs read")

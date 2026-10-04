@@ -171,8 +171,8 @@ internal fun PcEffectGlyph(effect: Double, modifier: Modifier = Modifier) {
     }
 }
 
-/** Constants.PixelImages.SWORD_ATTACK, 14 by 13, exactly as the reference draws it. */
-private val SWORD = listOf(
+/** Constants.PixelImages.SWORD_ATTACK, 14 by 13, exactly as the reference draws it: the last attack and Trainers defeated. */
+internal val SWORD = listOf(
     "00000000000110",
     "00000000001010",
     "00000000010110",

@@ -23,6 +23,7 @@ class LicencesTest {
         "PublicDomain-mGBA" to listOf("MurmurHash3 was written by Austin Appleby, and is placed in the public", "Igor Pavlov : Public domain"),
         "OFL-1.1" to listOf("SIL OPEN FONT LICENSE"),
         "CC-BY-NC-4.0" to listOf("Attribution-NonCommercial 4.0 International"),
+        "DarkusShadow-Free-Use" to listOf("DarkusShadow's overworld sprites: free use with credit", "Give Credits If Used"),
     )
 
     @Test

@@ -116,10 +116,10 @@ class MelonDsCoreTest {
     }
 
     @Test
-    fun `the source is a pinned commit and four patches, with the hashes the record pins`() {
+    fun `the source is a pinned commit and five patches, with the hashes the record pins`() {
         assertEquals("https://github.com/libretro/melonDS.git", record["repo"])
         assertTrue(Regex("[0-9a-f]{40}").matches(record.getValue("commit")), "a full commit, not a branch")
-        assertEquals(listOf("0001-", "0002-", "0003-", "0004-"), patches.map { it.first.take(5) }, "applied in this order")
+        assertEquals(listOf("0001-", "0002-", "0003-", "0004-", "0005-"), patches.map { it.first.take(5) }, "applied in this order")
         for ((name, sha) in patches) {
             assertEquals(sha, sha256(patchText(name).toByteArray(Charsets.UTF_8)), "$name is the patch the record pins")
         }
@@ -213,6 +213,31 @@ class MelonDsCoreTest {
         for (line in listOf("if (NumPolygons > 2048) NumPolygons = 2048;", "u32 numopaque = 0;",
             "if (!CurPolygonRAM[i].Translucent) numopaque++;")) assertTrue(line in added, "VBlank: $line")
         assertEquals(0, patch.lines().count { it.startsWith("-") && !it.startsWith("---") }, "it only adds lines")
+    }
+
+    /**
+     * rc35: patch 0005 keeps the 3D engine's polygon state in a savestate (FUTURE-PROJECTS, the rc34.1 follow-up). The
+     * state version is 9.1, the new fields are read only from a 9.1 state, so a 9.0 one loads as before, and the
+     * polygon and vertex indices are written without the second division by the struct size.
+     */
+    @Test
+    fun `patch 0005 saves the polygon mode in state version 9_1 and still loads 9_0`() {
+        val patch = patchText(patches[4].first)
+        val added = patch.lines().filter { it.startsWith("+") && !it.startsWith("+++") }.map { it.drop(1).trim() }
+        val removed = patch.lines().filter { it.startsWith("-") && !it.startsWith("---") }.map { it.drop(1).trim() }
+        assertTrue("#define SAVESTATE_MINOR 1" in added && "#define SAVESTATE_MINOR 0" in removed, "the state version is 9.1")
+        val gate = added.indexOf("if (file->IsAtleastVersion(9, 1))")
+        assertTrue(gate >= 0, "the new fields are behind the 9.1 gate")
+        val fields = listOf("PolygonMode", "PolygonAttr", "CurPolygonAttr", "TexParam", "TexPalette").map { "file->Var32(&$it);" }
+        for (f in fields) assertTrue(added.indexOf(f) > gate, "saved and loaded: $f")
+        val abort = patch.indexOf("     file->Bool32(&AbortFrame);")
+        assertTrue(abort >= 0 && patch.indexOf("+    if (file->IsAtleastVersion(9, 1))") > abort, "at the section's end, after everything 9.0 reads")
+        assertTrue(removed.any { "/ sizeof(Polygon)" in it } && removed.any { "/ sizeof(Vertex)" in it }, "the second division goes")
+        assertTrue(added.any { it.startsWith("if (LastStripPolygon) id = (u32)(LastStripPolygon - (&PolygonRAM[0]));") })
+        assertTrue(added.any { it.startsWith("if (ptr) id = (u32)(ptr - (&VertexRAM[0]));") })
+        assertFalse(removed.any { "PolygonRAM[id]" in it || "VertexRAM[id]" in it }, "loading is unchanged, for 9.0 states")
+        // Both libraries were built with it: the record's hashes are this patch's build, and the app knows 9.1.
+        assertEquals(1, com.swordfish.libretrodroid.MelonState.MINOR)
     }
 
     private fun bytes(vararg v: Int) = ByteArray(v.size) { v[it].toByte() }

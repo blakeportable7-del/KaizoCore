@@ -143,6 +143,20 @@ class GbcTrackerTest {
      * Kanto's eight ride above Johto's for the badge row's second line.
      */
     @Test
+    fun `the Hall of Fame flag says the Johto League is beaten, for Survival's Kanto heals`() {
+        fun beaten(flags: Int, kanto: Int = 0): Boolean {
+            val w = overworld(); w.put(GbcTracker.JOHTO_BADGES - 11, flags); w.put(GbcTracker.JOHTO_BADGES, 0xFF); w.put(GbcTracker.KANTO_BADGES, kanto)
+            return GbcTracker(w, rom()).read().leagueBeaten
+        }
+        assertEquals(false, beaten(0))
+        assertEquals(false, beaten(0xBF), "every other status bit: not the Hall of Fame")
+        assertEquals(true, beaten(0x40), "wStatusFlags bit 6, STATUSFLAGS_HALL_OF_FAME_F")
+        assertEquals(true, beaten(0, kanto = 1), "a Kanto badge: the League was beaten")
+        assertEquals(Gen2Map.CRYSTAL.statusFlags, 0x184CL)
+        assertEquals(Gen2Map.GS.statusFlags, 0x1571L)
+    }
+
+    @Test
     fun `Johto badges come out in the art's order, Chuck's and Jasmine's swapped, Kanto above`() {
         fun badges(johto: Int, kanto: Int): Int {
             val w = overworld(); w.put(GbcTracker.JOHTO_BADGES, johto); w.put(GbcTracker.KANTO_BADGES, kanto)

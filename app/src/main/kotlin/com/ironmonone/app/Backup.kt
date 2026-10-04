@@ -42,6 +42,9 @@ object Backup {
         "prep/nuzlocke/",
         // Play as your Pokemon: the picture or sheets the player imported for their own sprite.
         "prep/spriteisme/",
+        // GachaMon (2026-10-03): the collection, this run's captures, the GachaDex and its options (GachaMon.DIR). The
+        // collection is the player's for good and exists nowhere else.
+        "prep/gachamon/",
         // "Save this attempt" (PrepStore.saveAttempt): the run's game, its log, a save state and the notes, one folder
         // per attempt. It said "Saved" and nothing backed it up, so an uninstall or a new phone lost every one
         // (2026-09-30, UX audit P0-5). Each holds a copy of the randomized game, as prep/runs/ does for the run in play.

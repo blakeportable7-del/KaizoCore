@@ -176,7 +176,7 @@ def rerun(failures):
             if r.returncode:
                 failures.append("%s failed:\n%s" % (args[0], r.stderr[-2000:]))
                 return
-        for pack in ("walkingpals-nat", "walkingpals"):
+        for pack in ("walkingpals-nat", "walkingpals", "walkingpals-darkus"):
             same_files(failures, made, pack)
 
 

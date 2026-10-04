@@ -26,7 +26,7 @@ gba-0090	DONE	TrackerGearDialog.kt:77; CoverageCalc.kt:60	Gear > COVERAGE CALC
 gba-0091	PARTIAL	MainActivity.kt:295; SaveStatesDialog.kt:78	No Crash Recovery button; launch crash dialog and File > States > RESUME instead
 gba-0092	MISSING	-	No play timer on the Gen 3 tracker, so nothing to edit
 gba-0093	MISSING	-	No IV potential estimate (the stats judge) for the lead
-gba-0094	MISSING	-	GachaMon not built
+gba-0094	DONE	TrackerGearDialog.kt:125	GachaMon Collection in Tracker Setup, on Game Boy Advance games
 gba-0095	MISSING	-	No Gen 3 play timer to move
 gba-0096	DONE	TrackerGearDialog.kt:83; TimeMachine.kt:91	Gear > TIME MACHINE
 gba-0097	PARTIAL	GameOverDialog.kt:145	The log opens only from the game-over screen (Blake, 2026-09-10); no mid-run Logs button
@@ -44,7 +44,7 @@ gba-0108	DONE	TrackerGearDialog.kt:104; TrackerPanel.kt:502	Off by default; repe
 gba-0109	DONE	TrackerGearDialog.kt:97	Extras options sit in the gear dialog's one Options list (no tabs)
 gba-0110	DONE	TrackerGearDialog.kt:77	Tools are the gear dialog's buttons (no tabs)
 gba-0111	MISSING	-	No Gen 3 timer to pause
-gba-0112	PARTIAL	TrackerGearDialog.kt:74	Folded into the gear dialog; IV estimate, play timer, GachaMon, mid-run log, crash recovery absent
+gba-0112	PARTIAL	TrackerGearDialog.kt:74	Folded into the gear dialog; IV estimate, play timer, mid-run log, crash recovery absent
 gba-0163	DONE	TrackerGearDialog.kt:78; SideScreens.kt:181	Gear > STATS
 gba-0164	MISSING	-	No load-time note under Open Book Play Mode
 gba-0165	DONE	TrackerGearDialog.kt:159	Same heading over the three conditions
@@ -142,7 +142,7 @@ gba-0307	DONE	LogSearch.kt:33	Sort, in the reference's tab contexts
 gba-0308	DONE	LogSearch.kt:160	A search bar inside the viewer rather than a separate titled screen
 gba-0559	DONE	AboutScreen.kt:441	MORE > INFO carries the credits
 gba-0560	NA	TrackerGearDialog.kt:91	Extension loader; the one extension ported (Auto Pokemon Themes) is a gear toggle
-gba-0561	PARTIAL	TrackerGearDialog.kt:74	Extras folded into the gear dialog; IV estimate, play timer, GachaMon, mid-run log absent
+gba-0561	PARTIAL	TrackerGearDialog.kt:74	Extras folded into the gear dialog; IV estimate, play timer, mid-run log absent
 gba-0562	PARTIAL	TrackerGearDialog.kt:74	Gameplay options folded into the gear dialog; 'Can click trainers on screen' absent
 gba-0563	MISSING	-	No help/wiki link anywhere in the app
 gba-0564	NA	-	Language packs; the app is English only
@@ -179,7 +179,7 @@ gba-0637	NA	-	touch, not buttons (Blake, 2026-09-29): no button bindings to edit
 gba-0638	PARTIAL	TrackerGearDialog.kt:191	Manage data holds Clear only; no save/load of tracked data, no auto-save switch
 gba-0639	DONE	TrackerGearDialog.kt:136; PcTracker.kt:1173	Carousel item toggle, shown under the reference's conditions
 gba-0640	DONE	BattleSummary; PcTracker.kt	the carousel's battle line is the first active effect (91d0426)
-gba-0641	MISSING	-	GachaMon not built; no carousel item or toggle
+gba-0641	DONE	TrackerGearDialog.kt:241	Carousel toggle "GachaMons captured", Game Boy Advance games
 gba-0642	DONE	TrackerGearDialog.kt:137; PcTracker.kt:1177	Carousel item toggle, shown under the reference's conditions
 gba-0643	DONE	TrackerGearDialog.kt:136; PcTracker.kt:1180	Carousel item toggle, shown under the reference's conditions
 gba-0644	DONE	TrackerGearDialog.kt:138; PcTracker.kt:1183	Carousel item toggle, shown under the reference's conditions
@@ -348,7 +348,7 @@ gba-1005	PARTIAL	LogViewer.kt:54	No warning shown; mid-run viewing is not offere
 gba-1006	NA	-	Language packs; the app is English only
 gba-1007	NA	-	Language packs; the app is English only
 gba-1008	DONE	TrackerOptions.kt:126; PcTracker.kt:1196	Default true, as the reference
-gba-1009	DONE	TrackerOptions.kt:124; PcTracker.kt:1173	Same default list and order; its GachaMon key does nothing (GachaMon not built)
+gba-1009	DONE	TrackerOptions.kt:124; PcTracker.kt:1173	Same default list and order; its GachaMon key shows "GachaMon captured!"
 gba-1010	DONE	TrackerOptions.kt:130; PcTracker.kt:1192	Default "1"; 1/2 to 4
 gba-1011	DONE	TrackerPanel.kt	swaps to each Pokemon the opponent sends out (fdb3c10)
 gba-1012	DONE	TrackerOptions.kt:22; TrackerPanel.kt:557	Default true
@@ -399,25 +399,25 @@ gba-1056	DONE	TrackerOptions.kt:40; LogViewer.kt:151	Default false
 gba-1057	PARTIAL	TrackerOptions.kt:118; InfoRules.kt:16	Default false; card and route levels only; Move History, Notebook, log pages do not follow
 gba-1058	DONE	TrackerOptions.kt:70; WalkingPals.kt:177	Default true
 gba-1059	PARTIAL	PrepStore.kt:432	No named profiles; the last game and settings file act as the implicit profile
-gba-1060	MISSING	-	GachaMon not built
-gba-1061	MISSING	-	GachaMon not built
-gba-1062	MISSING	-	GachaMon not built
-gba-1063	MISSING	-	GachaMon not built
-gba-1064	MISSING	-	GachaMon not built
-gba-1065	MISSING	-	GachaMon not built
-gba-1066	MISSING	-	GachaMon not built
+gba-1060	DONE	GachaMon.kt:139	Default "AutoDetect", as in the reference (prep/gachamon/options.txt)
+gba-1061	DONE	GachaMon.kt:141	Default false
+gba-1062	DONE	GachaMon.kt:143	Default true
+gba-1063	DONE	GachaMon.kt:145	Default true; labeled "Occasionally receive prize cards from Trainers"
+gba-1064	DONE	GachaMon.kt:147	Default true
+gba-1065	DONE	GachaMon.kt:149	Default false
+gba-1066	DONE	GachaMon.kt:151	Default true
 gba-1067	NA	-	Internal one-time settings migration flag, not user-facing
-gba-1068	NA	-	Internal one-time settings migration flag, not user-facing
+gba-1068	NA	-	The one-time step that adds GachaMon to an older carousel list; ours has held GachaMon from the start
 gba-1069	NA	-	Internal flag for a one-time notice about the LR option
 gba-1070	DONE	BattleDetails.kt:30	Every group listed at once instead of behind the team-ball picker
 gba-1071	DONE	CatchRates.kt:40	Gear > CATCH RATES
 gba-1072	DONE	CoverageCalc.kt:60	Gear > COVERAGE CALC
 gba-1073	PARTIAL	MainActivity.kt:295; SaveStatesDialog.kt:78	Launch crash dialog (report) and auto-save RESUME; no periodic backup or recovery screen
 gba-1074	NA	-	Extension loader
-gba-1075	PARTIAL	TrackerGearDialog.kt:74	Merged into the gear; IV estimate, play timer, GachaMon, mid-run log, crash recovery absent
-gba-1076	MISSING	-	GachaMon not built (collection, cards, ratings, pack opening)
+gba-1075	PARTIAL	TrackerGearDialog.kt:74	Merged into the gear; IV estimate, play timer, mid-run log, crash recovery absent
+gba-1076	DONE	GachaMonScreen.kt:116	GachaMon screen: Captures, Collection, View, GachaDex, Options, About; filters, cleanup, share codes
 gba-1077	PARTIAL	TrackerGearDialog.kt:74	Merged into the gear; trainer tapping missing; auto swap, hide stats and the info rules partial
-gba-1078	PARTIAL	GameOverDialog.kt:85	Continue, retry, save attempt, grade notes, log; no GachaMon prize card
+gba-1078	DONE	GameOverDialog.kt:85; GameOverDialog.kt:196	Continue, retry, save attempt, grade notes, log, and the GachaMon prize card
 gba-1079	DONE	HealsInBag.kt:33	Gear > HEALS IN BAG and the heals text
 gba-1080	DONE	PcTracker.kt:1288; RouteInfoScreen.kt:66	Pokemon, move, ability and route info with lookups
 gba-1081	NA	-	Language packs
@@ -449,7 +449,7 @@ gba-1106	PARTIAL	PlayScreen.kt:1494; RunScreen.kt:293	Favorites and an OBS serve
 gba-1107	DONE	TeamView.kt:31	Heads the panel instead of sitting under the game
 gba-1108	DONE	TimeMachine.kt:91	Restore points every 4 minutes, up to ten, with the return point
 gba-1109	PARTIAL	TrackerGearDialog.kt:191	Clear only; no save/load of tracked data, no auto-save switch
-gba-1110	PARTIAL	TrackerPanel.kt:296	Main panel ported; no GachaMon stars, shiny sparkle, log quick access (by decision)
+gba-1110	PARTIAL	TrackerPanel.kt:296	Main panel ported; GachaMon stars and carousel line done; no shiny sparkle, log quick access (by decision)
 gba-1111	DONE	TrainerScreens.kt:63	Opened from Trainers on Route and the battle banner
 gba-1112	DONE	TrainerScreens.kt:29	Gear > TRAINERS ON ROUTE and the carousel line
 gba-1113	DONE	PcTracker.kt:1635	Opened from the type icons

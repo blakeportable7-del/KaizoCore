@@ -75,6 +75,40 @@ class PcHealsTest {
     }
 
     @Test
+    fun `Gold, Silver and Crystal Survival add the rules' Kanto heals once the League is beaten, once`() {
+        // The number is the rules' own, on both Johto families (rulesets/<family>/survival.md, "10 Heal Limit").
+        for (family in listOf("GSC", "HGSS")) {
+            val rules = java.io.File("src/main/assets/rulesets/$family/survival.md").readText()
+            assertEquals(PcHeals.KANTO_HEALS, PcHeals.kantoHealsIn(rules), family)
+        }
+        assertEquals(null, PcHeals.kantoHealsIn("10 Heal Limit: Once you earn your 8th badge you earn a bonus 11th heal."))
+        PcHeals.arm(12, PcHeals.Limit.SURVIVAL)
+        PcHeals.observeLeague(12, false, PcHeals.Limit.SURVIVAL)
+        assertEquals(10, PcHeals.count(12), "the League not beaten yet")
+        PcHeals.observeLeague(12, true, PcHeals.Limit.SURVIVAL)
+        assertEquals(17, PcHeals.count(12))
+        PcHeals.observeLeague(12, true, PcHeals.Limit.SURVIVAL)
+        assertEquals(17, PcHeals.count(12), "once")
+        PcHeals.load(file)
+        PcHeals.observeLeague(12, true, PcHeals.Limit.SURVIVAL)
+        assertEquals(17, PcHeals.count(12), "once, after a restart too")
+        // Counting up, they come off the count.
+        PcHeals.arm(13, PcHeals.Limit.SURVIVAL)
+        TrackerOptions.pcHealsCountDownward = false     // the player turned the counter round after it armed
+        PcHeals.add(13, 9 - PcHeals.count(13))
+        PcHeals.observeLeague(13, true, PcHeals.Limit.SURVIVAL)
+        assertEquals(2, PcHeals.count(13))
+        TrackerOptions.pcHealsCountDownward = true
+        // Survival Revival grants none; a run first seen after the League had them by hand already.
+        PcHeals.arm(14, PcHeals.Limit.REVIVAL)
+        PcHeals.observeLeague(14, true, PcHeals.Limit.REVIVAL)
+        assertEquals(5, PcHeals.count(14))
+        PcHeals.arm(15, PcHeals.Limit.SURVIVAL, badges = 9, leagueBeaten = true)
+        PcHeals.observeLeague(15, true, PcHeals.Limit.SURVIVAL)
+        assertEquals(10, PcHeals.count(15))
+    }
+
+    @Test
     fun `colours follow the reference`() {
         assertEquals(Pc.Negative, PcHeals.color(0)); assertEquals(Pc.Gold, PcHeals.color(5)); assertEquals(Pc.Text, PcHeals.color(6))
         TrackerOptions.pcHealsCountDownward = false

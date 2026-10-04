@@ -48,7 +48,7 @@ class TrackerCardRulesTest {
         assertTrue("Gender3.of(" in helper)
         assertFalse("Gender3.of(" in panel.replace(helper, ""), "both cards go through CardGender")
         assertEquals(2, Regex("""CardGender\.of\(generation,""").findAll(panel).count(), "your card and the opponent's")
-        assertTrue("generation = generation,\n                        markMove = MoveRule.gbaMark(moveRules, p, state))" in panel, "your card is handed the generation")
+        assertTrue("generation = generation,\n                        markMove = MoveRule.gbaMark(moveRules, p, state, ruleRun)," in panel, "your card is handed the generation")
         assertTrue("onBstTap = { bstSheet = Triple(enemy.base?.bst ?: 0, bstLines?.wild ?: 0, null) },\n                        generation = generation)" in panel,
             "and the opponent's")
         assertTrue("if (scope.gen3) GearToggle(\"Display gender\"" in src("TrackerGearDialog.kt"), "the switch is the GBA trackers'")

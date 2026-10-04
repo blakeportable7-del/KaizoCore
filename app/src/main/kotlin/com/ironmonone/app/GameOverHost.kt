@@ -2,6 +2,8 @@ package com.ironmonone.app
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.ImageBitmap
 import com.swordfish.libretrodroid.GLRetroView
 
@@ -10,7 +12,7 @@ internal fun gameOverTeam(
     ndsState: com.ironmonone.tracker.nds.NdsTrackerState?,
     trackerState: com.ironmonone.tracker.TrackerState?,
 ): List<GameOverMon> =
-    ndsState?.party?.map { GameOverMon(it.mon.species, it.speciesName, it.mon.level, it.mon.curHp == 0, it.mon.shiny) }
+    ndsState?.party?.map { GameOverMon(it.mon.species, it.speciesName, it.mon.level, it.mon.curHp == 0, it.mon.shiny, form = it.mon.form) }
         ?: trackerState?.party?.map { GameOverMon(it.mon.species, it.speciesName, it.mon.level, it.mon.curHp == 0, it.mon.shiny, it.picture) }
         ?: emptyList()
 
@@ -60,12 +62,20 @@ internal fun GameOverHost(
     // The death card: the run as RunHistoryHook filed it. The staged screenshot modes show a
     // made-up one so the layout can be checked; never outside Demo.mode.
     val card = if (Demo.mode != null) Demo.deathCard(store.attempt()) else RunHistoryHook.card.takeIf { session.isRun }
+    // GachaMon's prize card (GameOverScreen.lua:198-242): offered once two common trainers are beaten, its pack opened over
+    // the popup, then its View tab; tapped again, the card made already.
+    var prizePack by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<GachaMonEntry?>(null) }
+    var prizeView by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<GachaMonEntry?>(null) }
+    val prizeOffered = remember(latch.team) { family == GameOverFamily.GEN3 && runCatching { GachaMon.prizeOffered() }.getOrDefault(false) }
+    prizePack?.let { e -> GachaMonPackDialog(e) { prizePack = null; prizeView = GachaMon.current(e) } }
+    prizeView?.let { e -> GachaMonScreen(GachaMonStart(GachaMonTab.VIEW, e)) { prizeView = null } }
     GameOverDialog(
         family = family,
         won = latch.outcome == com.ironmonone.tracker.RunOutcome.WON,
         attempt = store.attempt(),
         team = team,
-        spriteOf = { m -> if (ndsState != null) remember(m.species, m.shiny) { PcAssets.dsSprite(ctx, m.species, m.shiny) } else romPicture(m.picture) ?: spriteFor(m.species) },
+        // A DS Pokemon in its form's picture, as the card draws it, decoded off the main thread (DsPictures).
+        spriteOf = { m -> if (ndsState != null) rememberDsPicture(m.species, m.form, m.shiny) else romPicture(m.picture) ?: spriteFor(m.species) },
         dsCause = latch.dsCause,
         canRetry = (battleStartState != null || Demo.mode != null) && !raHardcore,
         onInspectLog = logFile?.let { f -> { onInspectLog(f) } },
@@ -97,6 +107,10 @@ internal fun GameOverHost(
         onGrade = onGrade,
         gameFrame = gameFrame,
         card = card,
+        onPrizeCard = if (prizeOffered) ({
+            val made = GachaMon.prizeCard
+            if (made != null) prizeView = GachaMon.current(made) else GachaMon.makePrize(ctx.applicationContext.filesDir)?.let { prizePack = it }
+        }) else null,
         onShare = card?.let { c ->
             {
                 runCatching {

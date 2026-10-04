@@ -325,8 +325,10 @@ class RomFormSpritesTest {
     @Test
     fun `both DS cards ask for the tracked Pokemon's form in one line, and the decode pass reads the forms`() {
         val panel = src("NdsTrackerPanel.kt")
-        assertTrue("    val sprite = remember(m.species, m.shiny, m.form) { RomFormSprites.sprite(context, m.species, m.form, m.shiny) ?: PcAssets.dsSprite(context, m.species, m.shiny) }\n" in panel)
-        assertTrue("    val sprite = remember(e.mon.species, e.mon.form) { RomFormSprites.sprite(context, e.mon.species, e.mon.form, false) ?: PcAssets.dsSprite(context, e.mon.species, false) }\n" in panel)
+        // Through DsPictures since rc35, which decodes off the main thread (RC35-NOTICED row 41).
+        assertTrue("    val sprite = rememberDsPicture(m.species, m.form, m.shiny)\n" in panel)
+        assertTrue("    val sprite = rememberDsPicture(e.mon.species, e.mon.form, false)\n" in panel)
+        assertTrue("RomFormSprites.sprite(context, species, form, shiny) ?: PcAssets.dsSprite(context, species, shiny)" in src("DsPictures.kt"))
         val decode = src("RomSprites.kt").substringAfter("fun decodeAll(")
         assertTrue("File(dir, \"1.png\").exists() && RomFormSprites.done(dir, kind)) return 0" in decode, "a cache from before the forms gets them")
         assertTrue("written += RomFormSprites.decodeAll(nds, dir, kind, ::writePng)" in decode)

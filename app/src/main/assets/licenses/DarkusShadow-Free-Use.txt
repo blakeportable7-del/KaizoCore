@@ -1,0 +1,21 @@
+DarkusShadow's overworld sprites: free use with credit
+
+The walking sprites KaizoCore draws for Pokemon that PMD Sprite Collab has not drawn
+(walkingpals-darkus) are DarkusShadow's overworld sprites, from his DeviantArt gallery,
+deviantart.com/darkusshadow. His terms, as his posts and his "Gen 9 (Paldea) Pokemon
+Overworld Sprites" sheet state them:
+
+  "Free Use. Give Credits If Used."
+  "This is free for everyone to use in their Pokemon projects! Please give credits if used!"
+
+Credits, as his credits list and each post name them:
+
+  DarkusShadow: Squawkabilly, Mabosstiff, Shroodle, Brambleghast, Toedscruel, Klawf,
+  Rabsca, Espathra, Bombirdier, Flamigo, Gimmighoul, Wo-Chien, Chien-Pao, Miraidon,
+  Okidogi, Iron Boulder and Iron Crown.
+  Brute Bonnet: original sprite by TyranitarDark, by DarkusShadow.
+  Mega Malamar: original sprite by princess-phoenix, by DarkusShadow ("Give credits to
+  both if used").
+
+Each sheet's post is listed in the app's assets, walkingpals-darkus/credits.tsv.
+Pokemon belongs to Game Freak and The Pokemon Company.

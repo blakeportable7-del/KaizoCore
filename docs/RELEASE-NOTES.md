@@ -2,6 +2,35 @@
 
 Short and plain, one list per release. Newest first.
 
+## rc35 (4 October 2026)
+
+**New**
+
+- **GachaMon is here:** the PC tracker's card game. In a Kaizo IronMON run on a Game Boy Advance game, each Pokémon that leads your party becomes a card, rated by its ability, moves, stats and nature the same way the PC tracker rates it. Your lead's stars show next to your heals.
+- **Collect them:** keep cards in your collection, favorite the ones you like, fill the GachaDex and open card packs. Lose a run and you can win a Prize card. Open it all from Tracker Setup, GachaMon Collection.
+- **Share codes work both ways with the PC tracker,** and you can bring your whole PC collection over: in GachaMon's options, Import a PC tracker collection reads its FullCollection.gccg. Cards you already have are skipped and favorites stay favorites.
+- **Rule marks:** in a Kaizo IronMON run, a held item or ability your mode bans gets a red X, the same as banned moves, with each mode's own exceptions. With Huge Power or Pure Power the X goes on your physical moves. Tap an X to read the rule. It is on by default; turn it off in Tracker Setup with Mark banned items, abilities and moves.
+- **19 more Pokémon walk:** Iron Boulder, Iron Crown, Squawkabilly (White too), Mabosstiff, Shroodle, Brambleghast, Toedscruel, Klawf, Rabsca, Espathra, Bombirdier, Flamigo, Brute Bonnet, Gimmighoul, Wo-Chien, Chien-Pao, Miraidon, Okidogi and Mega Malamar now walk in Play as your Pokémon and on the tracker, with overworld sprites by DarkusShadow. A shiny one walks in its plain colors for now.
+
+**Changed**
+
+- **Trainers defeated counts the whole area,** like the PC tracker, with its sword: Mt. Moon's floors, the S.S. Anne's cabins, Victory Road and the rest count as one place, and rivals you won't face this run are left out.
+- **Gold, Silver and Crystal Survival add the 7 Kanto heals on their own** once the Johto League is beaten, like HeartGold and SoulSilver already did.
+- **The support button is gone from About.**
+
+**Fixed**
+
+- **The route line and the battle's weather show right away** after a map change or a load, instead of a second or more later.
+- **An opponent's Deoxys shows in its Normal form,** the way the battle draws it.
+- **The run page's attempt number stays put:** after playing a Library game it could show another game's count next to your run's.
+- **DS forms walk as themselves:** Rotom's appliances, Giratina Origin, Shaymin Sky, Deoxys's forms, Wormadam's cloaks, Kyurem, Unown's letters and the rest. The game over screen shows them in their form too.
+- **DS pictures load smoother:** the tracker, the game over screen and the DS log load them in the background, so the screen no longer stalls.
+- **DS save states keep the 3D scene:** a state saved in the middle of drawing loads with the right shapes on its first frame. Your older DS states still load.
+
+**Known issues**
+
+- A DS save state made in rc35 can't be loaded by an older KaizoCore. In-game saves are not affected.
+
 ## rc34.1 (4 October 2026)
 
 **Changed**

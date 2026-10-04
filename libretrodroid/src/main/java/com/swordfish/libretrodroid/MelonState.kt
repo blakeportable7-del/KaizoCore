@@ -12,10 +12,18 @@ package com.swordfish.libretrodroid
  *
  * Every DMA the state has running is marked as a burst just started (Running = 2, what DMA::Start sets), so the core
  * picks its table again and counts from the first entry. The cost is one burst-start delay on a transfer already under
- * way. Only the layout this core writes is touched: "MELN" version 9.0, DMA sections of 72 bytes, Running at byte 40
- * of the section's data. Anything else is handed back as it came.
+ * way. Only the layout this core writes is touched: "MELN" version 9.0 or 9.1, DMA sections of 72 bytes, Running at
+ * byte 40 of the section's data. Anything else is handed back as it came.
+ *
+ * rc35: core patch 0005 writes version 9.1, which keeps the 3D engine's polygon state; a 9.0 state still loads. A
+ * melonDS state this core cannot load (another major, or a minor past [MINOR], from a newer core) is refused here
+ * ([loadable]), so the app says it could not load it: melonDS's own refusal still reported the load as done.
  */
 object MelonState {
+    /** The newest state version this core reads and writes: 9.1 (core patch 0005). */
+    const val MAJOR = 9
+    const val MINOR = 1
+
     private const val HEADER = 0x10
     private const val SECTION_HEADER = 16
     private const val DMA_SECTION = 72
@@ -24,7 +32,7 @@ object MelonState {
     /** [data] ready for melonDS to load: the same array when nothing needs changing, otherwise a changed copy. */
     fun safeToLoad(data: ByteArray): ByteArray {
         if (data.size < HEADER || !tag(data, 0, "MELN")) return data
-        if (u16(data, 4) != 9 || u16(data, 6) != 0) return data
+        if (u16(data, 4) != MAJOR || u16(data, 6) > MINOR) return data
         var out: ByteArray? = null
         var i = HEADER
         while (i + SECTION_HEADER <= data.size) {
@@ -38,6 +46,10 @@ object MelonState {
         }
         return out ?: data
     }
+
+    /** False for a melonDS state from another major version, or a newer minor, which this core cannot load. */
+    fun loadable(data: ByteArray): Boolean =
+        data.size < HEADER || !tag(data, 0, "MELN") || (u16(data, 4) == MAJOR && u16(data, 6) <= MINOR)
 
     private fun tag(b: ByteArray, at: Int, s: String): Boolean = s.indices.all { b[at + it] == s[it].code.toByte() }
 

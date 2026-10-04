@@ -1,5 +1,6 @@
 package com.ironmonone.app
 
+import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -35,6 +36,22 @@ class FeedbackTest {
         for (l in listOf(Feedback.Links.RELEASES, Feedback.Links.SUPPORT, Feedback.Links.BUG_FORM)) {
             assertTrue(l.isBlank() || l.startsWith("https://"), "a link is blank or https: $l")
         }
+    }
+
+    /**
+     * Blake, 2026-10-04: the IronMON community is free and KaizoCore asks for money nowhere. The support link is blank,
+     * so its button never shows, and no payment, donation or tip link ships in the app's code, strings or assets. The
+     * hack creators' own pages in HackLinks are theirs to link, and stay.
+     */
+    @Test
+    fun `the app offers no payment link`() {
+        assertTrue(Feedback.Links.SUPPORT.isBlank(), "no support button")
+        val pay = Regex("buy\\.stripe\\.com|checkout\\.stripe|paypal\\.(com|me)|patreon\\.com|ko-fi\\.com|buymeacoffee|github\\.com/sponsors|liberapay|cash\\.app|venmo\\.com|\\bdonat(e|ion)", RegexOption.IGNORE_CASE)
+        val roots = listOf("src/main/kotlin", "src/main/res", "src/main/assets").map { File(it) }
+        val hits = roots.flatMap { root -> root.walkTopDown().filter { it.isFile && it.extension in setOf("kt", "xml", "html", "js", "json", "md", "txt") } }
+            .filter { it.name != "HackLinks.kt" && "licenses" !in it.path.replace('\\', '/') }
+            .flatMap { f -> f.readLines().mapIndexedNotNull { i, line -> if (pay.containsMatchIn(line)) "${f.path}:${i + 1}: ${line.trim()}" else null } }
+        assertTrue(hits.isEmpty(), "payment links or wording in the app:\n" + hits.joinToString("\n"))
     }
 
     /** The last crash rides in the report, before the log tail, and only when there is one. */

@@ -1,0 +1,69 @@
+KaizoCore patch to libretro/melonDS 66b5d2634cd0a79030562811e6e05f5532f800ba (GPL-3.0, as melonDS is), on top of
+0001-0004: a savestate keeps the 3D engine's polygon state. melonDS 0.9.3's GP3D section left out PolygonMode,
+PolygonAttr, CurPolygonAttr, TexParam and TexPalette, and stored each polygon's vertex indices and LastStripPolygon
+divided once more by the struct size, so a state saved in the middle of a quad drew its first frame with the wrong mode
+and vertices (0004 stops the crash it caused on Black 2). Upstream saves those fields today and fixed the indices in PR
+#1864 (January 2024).
+
+The state version goes from 9.0 to 9.1, and the new fields are read only from a 9.1 state (IsAtleastVersion), so every
+9.0 state made before still loads as it did; the indices are written right and read as before. A core before this
+one refuses a 9.1 state ("state from the future"), and the app says it could not load it (MelonState.loadable).
+
+diff --git a/src/GPU3D.cpp b/src/GPU3D.cpp
+index c833060..9463b4e 100644
+--- a/src/GPU3D.cpp
++++ b/src/GPU3D.cpp
+@@ -482,7 +482,10 @@ void DoSavestate(Savestate* file)
+     if (file->Saving)
+     {
+         u32 id;
+-        if (LastStripPolygon) id = (u32)((LastStripPolygon - (&PolygonRAM[0])) / sizeof(Polygon));
++        // KaizoCore (0005): the polygon's index. The difference of two pointers is already one; dividing it by the
++        // struct size again stored a wrong one (melonDS fixed it upstream in PR #1864). Loading is unchanged: a state
++        // before 9.1 keeps the index it stored.
++        if (LastStripPolygon) id = (u32)(LastStripPolygon - (&PolygonRAM[0]));
+         else                  id = -1;
+         file->Var32(&id);
+     }
+@@ -528,7 +531,7 @@ void DoSavestate(Savestate* file)
+             {
+                 Vertex* ptr = poly->Vertices[j];
+                 u32 id;
+-                if (ptr) id = (u32)((ptr - (&VertexRAM[0])) / sizeof(Vertex));
++                if (ptr) id = (u32)(ptr - (&VertexRAM[0]));   // KaizoCore (0005): the index, as above
+                 else     id = -1;
+                 file->Var32(&id);
+             }
+@@ -627,6 +630,18 @@ void DoSavestate(Savestate* file)
+     file->VarArray(ShininessTable, 128*sizeof(u8));
+ 
+     file->Bool32(&AbortFrame);
++
++    // KaizoCore (0005): the state a polygon in progress needs, which 9.0 left out (melonDS saves it upstream). A state
++    // saved mid-quad came back in triangle mode with the last polygon's attributes and texture, and drew its first frame
++    // wrong (patch 0004 stops the crash that caused). States before 9.1 do not carry it and load as they did.
++    if (file->IsAtleastVersion(9, 1))
++    {
++        file->Var32(&PolygonMode);
++        file->Var32(&PolygonAttr);
++        file->Var32(&CurPolygonAttr);
++        file->Var32(&TexParam);
++        file->Var32(&TexPalette);
++    }
+ }
+ 
+ 
+diff --git a/src/Savestate.h b/src/Savestate.h
+index 2638cfa..3c0cb1e 100644
+--- a/src/Savestate.h
++++ b/src/Savestate.h
+@@ -23,7 +23,8 @@
+ #include "types.h"
+ 
+ #define SAVESTATE_MAJOR 9
+-#define SAVESTATE_MINOR 0
++// KaizoCore (0005): 9.1 adds the 3D engine's polygon state to GP3D; a 9.0 state still loads.
++#define SAVESTATE_MINOR 1
+ 
+ #ifdef __LIBRETRO__
+ #include <streams/memory_stream.h>

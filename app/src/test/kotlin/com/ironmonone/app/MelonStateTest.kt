@@ -6,6 +6,7 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotSame
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
@@ -19,7 +20,7 @@ class MelonStateTest {
     private val ndsg = 16 + 40
 
     /** A melonDS 9.0 state: its header, NDSG, DMA0 to DMA7 (72 bytes each, as the core writes them), GPUG. */
-    private fun state(running: IntArray, count: IntArray = IntArray(8), major: Int = 9): ByteArray {
+    private fun state(running: IntArray, count: IntArray = IntArray(8), major: Int = 9, minor: Int = 0): ByteArray {
         fun section(tag: String, data: ByteArray): ByteArray {
             val b = ByteBuffer.allocate(16 + data.size).order(ByteOrder.LITTLE_ENDIAN)
             b.put(tag.toByteArray(Charsets.US_ASCII)); b.putInt(16 + data.size); b.putLong(0); b.put(data)
@@ -37,7 +38,7 @@ class MelonStateTest {
         }
         body += section("GPUG", ByteArray(24) { 3 })
         val h = ByteBuffer.allocate(16).order(ByteOrder.LITTLE_ENDIAN)
-        h.put("MELN".toByteArray(Charsets.US_ASCII)); h.putShort(major.toShort()); h.putShort(0); h.putInt(16 + body.size); h.putInt(0)
+        h.put("MELN".toByteArray(Charsets.US_ASCII)); h.putShort(major.toShort()); h.putShort(minor.toShort()); h.putInt(16 + body.size); h.putInt(0)
         return h.array() + body
     }
 
@@ -83,6 +84,20 @@ class MelonStateTest {
         assertSame(cut, MelonState.safeToLoad(cut))
         val bad = state(running).also { it[16 + 4] = 3 }
         assertSame(bad, MelonState.safeToLoad(bad))
+    }
+
+    /** rc35: core patch 0005 writes 9.1. Its states get the same DMA fix, and a state this core cannot read is refused. */
+    @Test
+    fun `a 9_1 state is fixed the same way, and a newer one is refused, not reported as loaded`() {
+        val fixed = MelonState.safeToLoad(state(IntArray(8).also { it[3] = 1 }, minor = 1))
+        assertEquals(2, runningOf(fixed, 3))
+        assertTrue(MelonState.loadable(state(IntArray(8), minor = 0)), "a state from before patch 0005 still loads")
+        assertTrue(MelonState.loadable(state(IntArray(8), minor = 1)))
+        assertFalse(MelonState.loadable(state(IntArray(8), minor = 2)), "from a newer core")
+        assertFalse(MelonState.loadable(state(IntArray(8), major = 10)))
+        assertTrue(MelonState.loadable(ByteArray(4096) { 1 }), "not a melonDS state: the other cores decide")
+        val view = File("../libretrodroid/src/main/java/com/swordfish/libretrodroid/GLRetroView.kt").readText()
+        assertTrue("MelonState.loadable(data) && LibretroDroid.unserializeState(MelonState.safeToLoad(data))" in view)
     }
 
     @Test

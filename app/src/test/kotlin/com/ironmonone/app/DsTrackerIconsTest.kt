@@ -62,7 +62,7 @@ class DsTrackerIconsTest {
             drawn++
             val drawnAs = when (pal.pack) {
                 Pack.GEN3 -> Favorites.nationalOf(pal.key.toInt())
-                Pack.NATIONAL -> pal.key.toIntOrNull()
+                Pack.NATIONAL, Pack.DARKUS -> pal.key.toIntOrNull()
             }
             assertEquals(n, drawnAs, "national $n would draw $pal")
         }

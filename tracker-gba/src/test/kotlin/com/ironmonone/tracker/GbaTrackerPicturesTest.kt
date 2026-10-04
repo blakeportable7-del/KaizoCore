@@ -3,6 +3,7 @@ package com.ironmonone.tracker
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -81,11 +82,12 @@ class GbaTrackerPicturesTest {
         assertEquals(expected(25, true, foePid, true), e.picture)
         mem[map.enemyParty] = encodeMon(foePid, 0, 25, level = 7, hp = 22) + ByteArray(500)
         assertNull(t.read().enemy!!.picture, "not shiny: nothing of its own")
-        // An opposing Deoxys in FireRed's Attack form too, as its Walking Pals icon shows it (PalForms.ofEnemy).
+        // An opposing Deoxys in its Normal form, as FireRed's battle screen draws it (rc34 showed the Attack form).
         foe[0] = Gen3Pictures.DEOXYS.toByte(); foe[1] = (Gen3Pictures.DEOXYS shr 8).toByte()
         mem[map.enemyParty] = encodeMon(foePid, 0, Gen3Pictures.DEOXYS, level = 7, hp = 22) + ByteArray(500)
         val deoxysFoe = assertNotNull(t.read().enemy)
         assertEquals(Gen3Pictures.DEOXYS, deoxysFoe.species)
-        assertEquals(expected(Gen3Pictures.DEOXYS, false, foePid, true), deoxysFoe.picture)
+        assertEquals(Gen3Pictures.picture(m, tables, Gen3Pictures.DEOXYS, false, foePid, gameForm = false), deoxysFoe.picture)
+        assertNotEquals(expected(Gen3Pictures.DEOXYS, false, foePid, true), deoxysFoe.picture, "not the Attack form")
     }
 }

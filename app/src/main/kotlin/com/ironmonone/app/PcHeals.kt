@@ -54,8 +54,17 @@ object PcHeals {
      */
     enum class Limit(val start: Int) { SURVIVAL(10), REVIVAL(5) }
 
-    /** Survival's heals for Kanto after the Johto Elite Four, in a Johto game (the rules' "10 Heal Limit"). */
+    /**
+     * Survival's heals for Kanto after the Johto Elite Four, in a Johto game: the rules' "10 Heal Limit" line, "an
+     * additional 7 heals for Kanto" (rulesets/GSC/survival.md and rulesets/HGSS/survival.md, both line 117). The
+     * counter adds them itself on Gold, Silver and Crystal ([observeLeague]) as on HeartGold and SoulSilver
+     * (observeDsSurvival); PcHealsTest reads the number from both rules files with [kantoHealsIn].
+     */
     const val KANTO_HEALS = 7
+
+    /** The Kanto heals a Survival rules text grants ("an additional N heals for Kanto"), or null where it grants none. */
+    fun kantoHealsIn(rules: String): Int? =
+        Regex("additional (\\d+) heals for Kanto", RegexOption.IGNORE_CASE).find(rules)?.groupValues?.get(1)?.toIntOrNull()
 
     /** The limit a settings file's name asks for, the way the reference reads a profile's keywords. */
     fun limitFor(settingsName: String?): Limit? = when {
@@ -78,6 +87,7 @@ object PcHeals {
 
     private val armed = HashSet<Int>()
     private val bonusGiven = HashSet<Int>()
+    private val kantoGiven = HashSet<Int>()
 
     /**
      * A Survival run's first sight of its attempt switches the counter on, counting down from
@@ -85,12 +95,13 @@ object PcHeals {
      * keeps control; the gear switches it off). The heart stays the player's, as in the
      * reference: heals before the first trainer that is not the rival are free under the rules.
      */
-    fun arm(attempt: Int, limit: Limit?, badges: Int = 0) {
+    fun arm(attempt: Int, limit: Limit?, badges: Int = 0, leagueBeaten: Boolean = false) {
         if (limit == null || attempt in armed) return
         armed += attempt
         // A run already past the 8th badge when first armed (the app updated mid-run) had its
-        // bonus by hand or not at all: it is not added again.
+        // bonus by hand or not at all: it is not added again. The same for the Kanto heals of a League already beaten.
         if (badges >= 8) bonusGiven += attempt
+        if (leagueBeaten) kantoGiven += attempt
         TrackerOptions.trackPcHeals = true
         TrackerOptions.pcHealsCountDownward = true
         TrackerOptions.save()
@@ -106,7 +117,7 @@ object PcHeals {
     fun forgetAttempt(n: Int) {
         val had = counts.remove(n) != null
         baseline.remove(n)
-        if (had or armed.remove(n) or bonusGiven.remove(n)) save()
+        if (had or armed.remove(n) or bonusGiven.remove(n) or kantoGiven.remove(n)) save()
     }
 
     /** [limitForLastRun], read again only when prep/lastrun.txt changes: the DS side asks on every read. */
@@ -151,6 +162,18 @@ object PcHeals {
         add(attempt, if (TrackerOptions.pcHealsCountDownward) +1 else -1)
     }
 
+    /**
+     * Gold, Silver and Crystal Survival: the rules' [KANTO_HEALS] once the Johto League is beaten (the game's Hall of
+     * Fame flag, TrackerState.leagueBeaten), once per armed attempt, as the 8th badge's bonus is given. They used to be
+     * added by hand (rc34 known issue). Survival only: Survival Revival's rules grant none. A counter the player
+     * switched off is left alone.
+     */
+    fun observeLeague(attempt: Int, leagueBeaten: Boolean, limit: Limit?) {
+        if (limit != Limit.SURVIVAL || !leagueBeaten || attempt !in armed || attempt in kantoGiven || !TrackerOptions.trackPcHeals) return
+        kantoGiven += attempt
+        add(attempt, if (TrackerOptions.pcHealsCountDownward) KANTO_HEALS else -KANTO_HEALS)
+    }
+
     fun add(attempt: Int, delta: Int) {
         counts[attempt] = (count(attempt) + delta).coerceIn(0, 99)
         save()
@@ -189,11 +212,12 @@ object PcHeals {
 
     fun load(f: File) {
         file = f
-        counts.clear(); armed.clear(); bonusGiven.clear()
+        counts.clear(); armed.clear(); bonusGiven.clear(); kantoGiven.clear()
         runCatching {
             if (f.exists()) f.forEachLine { line ->
                 if (line.startsWith("armed:")) { line.substringAfter(':').trim().toIntOrNull()?.let { armed += it }; return@forEachLine }
                 if (line.startsWith("bonus:")) { line.substringAfter(':').trim().toIntOrNull()?.let { bonusGiven += it }; return@forEachLine }
+                if (line.startsWith("kanto:")) { line.substringAfter(':').trim().toIntOrNull()?.let { kantoGiven += it }; return@forEachLine }
                 val parts = line.split('=')
                 if (parts.size == 2) {
                     val a = parts[0].trim().toIntOrNull(); val n = parts[1].trim().toIntOrNull()
@@ -208,7 +232,8 @@ object PcHeals {
         runCatching {
             f.parentFile?.mkdirs()
             SafeWrite.text(f, counts.entries.joinToString("") { "${it.key}=${it.value}\n" } +
-                armed.joinToString("") { "armed:$it\n" } + bonusGiven.joinToString("") { "bonus:$it\n" })
+                armed.joinToString("") { "armed:$it\n" } + bonusGiven.joinToString("") { "bonus:$it\n" } +
+                kantoGiven.joinToString("") { "kanto:$it\n" })
         }
     }
 }

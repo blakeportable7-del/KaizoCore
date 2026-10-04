@@ -1,0 +1,16 @@
+# FullCollection.gccg, written by GachaMonFileManager.saveCollectionToFile (tools/gachamon/collection_fixture.py)
+golden-charizard	favorite=1
+case-1	favorite=0
+case-2	favorite=0
+case-3	favorite=0
+case-4	favorite=1
+case-5	favorite=0
+case-6	favorite=0
+case-7	favorite=1
+case-8	favorite=0
+case-9	favorite=0
+case-10	favorite=0
+case-11	favorite=0
+case-2 again	favorite=1
+version 9 record (31 bytes)
+stray tail (7 bytes)

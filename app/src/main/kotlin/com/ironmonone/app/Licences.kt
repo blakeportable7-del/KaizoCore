@@ -65,6 +65,7 @@ internal object Licences {
         Text("MIT-PokemonShowdown", "MIT license (Pokémon Showdown)", "licenses/MIT-PokemonShowdown.txt"),
         Text("OFL-1.1", "SIL Open Font License 1.1", "OFL_press_start_2p.txt"),
         Text("CC-BY-NC-4.0", "Creative Commons Attribution-NonCommercial 4.0", "licenses/CC-BY-NC-4.0.txt"),
+        Text("DarkusShadow-Free-Use", "Free use with credit (DarkusShadow's overworld sprites)", "licenses/DarkusShadow-Free-Use.txt"),
     )
 
     val parts = listOf(
@@ -91,6 +92,7 @@ internal object Licences {
         Part("rcheevos", "By RetroAchievements.org.", "MIT-rcheevos"),
         Part("libretro-common", "By the RetroArch team, inside LibretroDroid.", "MIT-libretro-common"),
         Part("IronMON Tracker", "By besteon and contributors: the Gen 3 tracker's rules, and its badges and sprites.", "MIT-Ironmon-Tracker"),
+        Part("GachaMon", "The IronMON Tracker's collectable card game, by besteon and contributors: its ratings and card format.", "MIT-Ironmon-Tracker"),
         Part("Gen 1 IronMON Tracker", "By Sannji (mollo010).", "MIT-Ironmon-gen-tracker"),
         Part("Gen 2 IronMON Tracker", "By seadogstingray, and its badges.", "MIT-Ironmon-gen-2-tracker"),
         Part("Calc Atk", "By UTDZac.", "MIT-CalcAtk"),
@@ -103,6 +105,9 @@ internal object Licences {
         Part("Press Start 2P", "The pixel font, by CodeMan38.", "OFL-1.1"),
         Part("PMD Sprite Collab", "The Walking Pals sprites, by the collab's artists, each under the terms its artist gave.",
             "CC-BY-NC-4.0", "sprites.pmdcollab.org"),
+        Part("DarkusShadow's overworld sprites", "The walking sprites of the Pokémon Sprite Collab has not drawn, by DarkusShadow, " +
+            "Brute Bonnet's from TyranitarDark's original and Mega Malamar's from princess-phoenix's.", "DarkusShadow-Free-Use",
+            "deviantart.com/darkusshadow"),
     )
 
     const val INTRO = "What KaizoCore carries, and the license each is under. Tap a license to read it whole."

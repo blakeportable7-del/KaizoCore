@@ -8,7 +8,7 @@ gba	FIXED	"Hide stats until summary shown" hides only your card	70410af, d8b8712
 gba	FIXED	Auto swap to the enemy only at battle start	fdb3c10
 gba	FIXED	Accuracy and evasion stage arrows never show	2d38183
 gba	FIXED	Evolution methods read as internal names	774bcf8
-gba	OPEN	Trainers defeated counts one map	The reference merges multi-map areas (Mt. Moon, S.S. Anne) and leaves out rivals you will not face.
+gba	FIXED	Trainers defeated counts one map	rc35 (fix/rc35-little-things): GbaTracker.trainersInArea counts a combined area's maps together (routeinfo-<version>.tsv's fifth column, RouteData.Info[key].area.name) and leaves out the rivals this run will not face (TrainerData.shouldUseTrainer); the line carries the reference's sword. TrainersByAreaTest
 gba	OPEN	No Gen 3 play timer	Game Stats reads "Play Time: not kept".
 gba	OPEN	No move or ability look-up	Only Pokemon and route look-ups exist.
 gba	FIXED	Calc Atk's math, native (estimate an enemy's attack from the damage it did); its screen is next	f2b5a68
@@ -20,7 +20,7 @@ gba	OPEN	Crash recovery saves only on pause or exit	The reference backs up every
 gba	OPEN	No manual ability setting	The note editor has no ability pickers or Clear Abilities.
 gba	OPEN	Theme codes and presets	The PC tracker's 11-colour theme codes are refused; no preset list.
 gba	OPEN	Attempts can't be set by hand; tracked data can't be saved or loaded as a file
-gba	OPEN	GachaMon	49 rows: cards, GachaDex, carousel, options, prize card. A feature in its own right.
+gba	FIXED	GachaMon: cards rated as on PC (checked against its Lua), collection, GachaDex, share codes, heals-box stars, carousel, prize card, the six options and the ruleset; the Battle tab stays hidden as in the reference	e4069c38
 gba	OPEN	Stream Connect chat commands	The OBS page exists; the Streamer.bot link does not.
 gba	FIXED	Encounter counts and Last seen saved with the run, wild and trainer apart	209c655
 gba	FIXED	Pokemon Tower ghost without the Silph Scope	4d4f587

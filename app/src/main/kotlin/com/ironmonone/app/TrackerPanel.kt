@@ -104,8 +104,13 @@ private fun PartyCard(
     onBstTap: (() -> Unit)? = null,
     /** This run's banned moves (MoveRule): the X on a move and the line on its card. */
     markMove: (PcMove) -> PcMove = { it },
+    /** This run bans its held item or its ability (RuleMarks): the line a tap on the X shows. */
+    itemBan: String? = null,
+    abilityBan: String? = null,
     /** The game's generation: "Display gender" is the Game Boy Advance trackers' (CardGender). */
     generation: Int = 3,
+    /** GachaMon's stars at the heals box's right edge (GachaMonHealsStars); null for none. */
+    gachaStars: (@Composable () -> Unit)? = null,
 ) {
     val m = p.mon
     val dash = "---"
@@ -129,6 +134,8 @@ private fun PartyCard(
             onTypesTap = p.base?.let { b -> onTypeDefenses?.let { cb -> { cb(p.speciesName, b.type1, b.type2) } } },
             itemLine = if (hidden) "" else p.itemName.takeIf { it != "-" } ?: "",
             abilityLine = if (hidden) dash else p.abilityName,
+            itemBan = itemBan.takeIf { !hidden },
+            abilityBan = abilityBan.takeIf { !hidden },
             hpText = dash.takeIf { hidden },
             onAbilityTap = onAbilityInfo?.let { cb -> abilityTapName(p.abilityName)?.let { name -> { cb(name) } } },
             onNameTap = onNameInfo,
@@ -148,7 +155,8 @@ private fun PartyCard(
             belowHead = if (healPercent >= 0) {
                 { val (pct, count, whole) = HiddenCard.heals(hidden, healPercent, healCount, healHp)
                   PcHealsBlock(pct, count, wholeHp = whole,
-                    pcHealsAttempt = attempt.takeIf { runScoped && TrackerOptions.trackPcHeals }, onTap = onHealsTap) }
+                    pcHealsAttempt = attempt.takeIf { runScoped && TrackerOptions.trackPcHeals }, onTap = onHealsTap,
+                    trailing = gachaStars.takeIf { !hidden }) }
             } else null,
         ) {
             PcStatRow("HP", if (hidden) dash else "${m.maxHp}", stages["HP"], nature = m.nature.takeIf { !hidden }, rightJustify = TrackerOptions.rightJustifiedNumbers, colorNumber = TrackerOptions.colorStatNumbers)
@@ -540,6 +548,8 @@ fun TrackerPanel(
     joinedForms: JoinedForms? = joinedFormsInPlay(attempt, bstLines),
     /** The run's banned moves (MoveRule), from the run in Play; a test hands its own. */
     moveRules: MoveRule.Rules? = moveRulesInPlay(attempt),
+    /** The run's mode for its banned items and abilities (RuleMarks); a test hands its own. */
+    ruleRun: RuleMarks.Run? = ruleRunInPlay(attempt),
     /** MaxDex 1.0 in Play (MaxDexInfo): its own numbering for the Walking Pals icons, and Freeze-Dry is super effective on Water. */
     maxDex: Boolean = maxDexInPlay(attempt),
 ) {
@@ -659,6 +669,9 @@ fun TrackerPanel(
     info?.let { (title, sub, body) ->
         PcInfoDialog(title, sub, body) { info = null }
     }
+    // GachaMon's windows: the screen from the heals box's stars, a card pack from the carousel or the tracker (GachaMonPack).
+    val gacha = rememberGachaMonUi()
+    GachaMonTrackerDialogs(gacha)
 
     // Everything below is measured in the reference's own 150-pixel-wide
     // coordinate system (see PcCanvas), so the panel is a scaled copy of the
@@ -805,9 +818,11 @@ fun TrackerPanel(
                     SpriteMotion.inBattle = state.inBattle
                     if (runScoped) {
                         // "Track PC Heals" auto-tracking watches the game's heal statistics.
-                        PcHeals.arm(attempt, pcHealsLimit, Integer.bitCount(state.badges))
+                        PcHeals.arm(attempt, pcHealsLimit, Integer.bitCount(state.badges), state.leagueBeaten)
                         PcHeals.observe(attempt, state.centerHealsStat)
                         PcHeals.observeBadges(attempt, Integer.bitCount(state.badges), pcHealsLimit)
+                        // Gold, Silver and Crystal Survival: the Kanto heals once the Johto League is beaten.
+                        PcHeals.observeLeague(attempt, state.leagueBeaten, pcHealsLimit)
                         // Program.lua:552: opening a summary in the game reveals the card for this attempt.
                         if (state.summaryOpen) SummaryChecks.mark(attempt)
                     } else if (state.summaryOpen) sessionSummary = true
@@ -853,7 +868,10 @@ fun TrackerPanel(
                 // not it after a switch (rc33 audit P1). The tracker puts its stat stages on it. In a double battle
                 // the one the view shows (GbaViewState.own), the right-hand one with its own stages and heals.
                 val ownHeals = view.heals(state)
-                listOfNotNull(view.own(state)).take(if (enemy != null && !stackBoth) 0 else 1).forEach { p ->
+                // "Show card pack opening before Pokemon stats": a new GachaMon's pack in your Pokemon's place until it is opened.
+                val packFirst = generation >= 3 && GachaMonShown.packOnTracker(GachaMonOptions.showPack, GachaMon.newest != null, state.inBattle)
+                if (packFirst) GachaMonPendingPack { gacha.pack = GachaMon.newest }
+                listOfNotNull(view.own(state)).take(if (packFirst || (enemy != null && !stackBoth)) 0 else 1).forEach { p ->
                     PartyCard(onMoveHistory = onMoveHistory, onTypeDefenses = onTypeDefenses, p, spriteFor,
                         healPercent = ownHeals.percent,
                         healCount = ownHeals.count,
@@ -879,9 +897,13 @@ fun TrackerPanel(
                         bstBroken = joinedVersion >= 0 && BstRule.ownBreaks(p.base?.bst, bstLines, joinedForms, BstRule.keyOf(p.mon, generation), p.mon.species, p.speciesName),
                         // A legendary past MaxDex's legendary line keeps its X whatever it evolved from: no "it evolved" button.
                         onBstTap = { bstSheet = Triple(p.base?.bst ?: 0, bstLines?.own ?: 0, BstRule.keyOf(p.mon, generation).takeUnless { BstRule.legendaryBreaks(p.base?.bst, bstLines, p.speciesName) }) },
+                        gachaStars = if (generation >= 3) ({ GachaMonHealsStars(p, state.inBattle) { gacha.screen = GachaMonStart(GachaMonTab.VIEW, it) } }) else null,
                         routeVersion = state.routeVersion,
                         generation = generation,
-                        markMove = MoveRule.gbaMark(moveRules, p, state))
+                        markMove = MoveRule.gbaMark(moveRules, p, state, ruleRun),
+                        itemBan = RuleMarks.itemLine(ruleRun.takeIf { TrackerOptions.ruleMarks }, p.itemName, p.moveNames),
+                        abilityBan = RuleMarks.abilityLine(ruleRun.takeIf { TrackerOptions.ruleMarks }, p.abilityName, p.base?.bst,
+                            ruleRun?.canEvolve(p.speciesName, p.evo != null) == true))
                 }
                 if (enemy != null) {
                     EnemyCard(onMoveHistory = onMoveHistory, onTypeDefenses = onTypeDefenses, enemy, revealedEnemyAbility, revealedEnemyAbility2, spriteFor,
@@ -937,6 +959,7 @@ fun TrackerPanel(
                     isWildBattle = state.isWildBattle,
                     leadLevel = state.lead?.mon?.level ?: 0,
                     routeTrainersDefeated = state.routeTrainersDefeated,
+                    routeTrainersTotal = state.routeTrainersTotal,
                     badges = state.badges,
                     badgeSet = state.badgeSet,
                     note = enemyNote,
@@ -960,6 +983,8 @@ fun TrackerPanel(
                     onBattleDetailsTap = onBattleDetails,
                     // Calc Atk is the Gen 3 tracker's extension and uses the Gen 3 formula: not on a Game Boy game.
                     onLastAttackTap = onCalcAtk?.takeIf { generation >= 3 && state.inBattle && (state.isWildBattle || !TrackerOptions.calcAtkWildOnly) },
+                    // GachaMon is the Gen 3 tracker's: "GachaMon captured!" opens the new card's pack.
+                    onGachaTap = if (generation >= 3) ({ gacha.pack = GachaMon.newest }) else null,
                 )
             }
         }

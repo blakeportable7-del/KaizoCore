@@ -300,27 +300,42 @@ object MoveRule {
     }
 
     /** The GBA and Game Boy panel's mark for your Pokemon [p]'s moves while the tracker reads [state]. */
-    internal fun gbaMark(rules: Rules?, p: com.ironmonone.tracker.TrackedMon, state: com.ironmonone.tracker.TrackerState): (PcMove) -> PcMove {
-        if (rules == null) return { it }
+    internal fun gbaMark(rules: Rules?, p: com.ironmonone.tracker.TrackedMon, state: com.ironmonone.tracker.TrackerState,
+                         run: RuleMarks.Run? = null, on: Boolean = TrackerOptions.ruleMarks): (PcMove) -> PcMove {
+        if (rules == null || !on) return { it }
         val battle = rules.battle(state.inBattle, state.isWildBattle, state.opponentTrainerId)
         val shared = sharedFor(p.mon.pid, state.party.filter { !it.mon.isEgg }.map { it.mon.pid to it.moveNames })
+        val power = RuleMarks.physicalBan(run, p.abilityName, p.base?.bst, canEvolve = run?.canEvolve(p.speciesName, p.evo != null) == true)
         return { mv ->
             // An accuracy the row hides ("Reveal info if randomized") is not read for Chaos Kaizo's rule either.
             mark(mv, rules.banOf(mv.name, mv.acc.takeIf { mv.accText != "?" }, p.abilityName, key(mv.name) in shared,
-                p.base?.bst, canEvolve = p.evo != null), battle, rules.note)
+                p.base?.bst, canEvolve = p.evo != null) ?: physical(mv, power), battle, rules.note)
         }
     }
 
+    /**
+     * Kaizo's "Using any physical move is banned while having Huge Power or Pure Power": [reason] from
+     * [RuleMarks.physicalBan], on a move the card shows as physical. Special and status moves never.
+     */
+    internal fun physical(mv: PcMove, reason: String?): Ban? =
+        if (reason != null && !mv.blank && mv.category == "PHY") Ban(reason) else null
+
     /** The DS panel's mark for your Pokemon [p]'s moves while the tracker reads [state]. */
-    internal fun ndsMark(rules: Rules?, p: com.ironmonone.tracker.nds.NdsTrackedMon, state: com.ironmonone.tracker.nds.NdsTrackerState): (PcMove) -> PcMove {
-        if (rules == null) return { it }
+    internal fun ndsMark(rules: Rules?, p: com.ironmonone.tracker.nds.NdsTrackedMon, state: com.ironmonone.tracker.nds.NdsTrackerState,
+                         run: RuleMarks.Run? = null, on: Boolean = TrackerOptions.ruleMarks): (PcMove) -> PcMove {
+        if (rules == null || !on) return { it }
         val battle = rules.battle(state.inBattle, state.isWildBattle, state.enemyTrainerId.takeIf { it != 0 })
         val shared = sharedFor(p.mon.pid, state.party.filter { !it.mon.isEgg }.map { it.mon.pid to it.moves.map { m -> m.name } })
+        val power = RuleMarks.physicalBan(run, p.abilityName, p.info?.bst, run?.canEvolve(p.speciesName, ndsCanEvolve(p.mon)) == true)
         return { mv ->
             mark(mv, rules.banOf(mv.name, mv.acc.takeIf { mv.accText != "?" }, p.abilityName, key(mv.name) in shared,
-                p.info?.bst), battle, rules.note)
+                p.info?.bst) ?: physical(mv, power), battle, rules.note)
         }
     }
+
+    /** A DS Pokemon that will evolve further: the DS tracker's evolution line for it is not empty (ndsEvoLabel). */
+    internal fun ndsCanEvolve(m: com.ironmonone.tracker.nds.Gen4.Mon): Boolean =
+        com.ironmonone.tracker.nds.NdsLogData.evoFor(m.species, m.isFemale).isNotEmpty()
 }
 
 /** The rules for the game in Play: a Kaizo IronMON run on any console; null otherwise, as for the BST X. */

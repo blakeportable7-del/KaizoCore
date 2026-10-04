@@ -197,6 +197,12 @@ object TrackerOptions {
     var displayGender by mutableStateOf(false)
     /** "Show experience points bar": a bar under your Pokemon's level. */
     var showExpBar by mutableStateOf(false)
+    /**
+     * Not a PC tracker option: the rules' X on a held item, ability or move your run's mode bans (RuleMarks, MoveRule).
+     * On by default (Blake, 2026-10-04: "rule marks are ON by default"), so rc34's banned-move X keeps showing: a file
+     * saved before the switch existed has no line for it and reads as on; a saved "false" stays off.
+     */
+    var ruleMarks by mutableStateOf(true)
     /** "Color stat numbers by nature": the number takes the nature colour as well as the label. */
     var colorStatNumbers by mutableStateOf(false)
     /** "Right justified numbers": off, the numbers start at their column, as the reference draws them. */
@@ -279,6 +285,8 @@ object TrackerOptions {
         lossBySettings.clear()   // the file is the whole record
         dsLossBySettings.clear()
         autoSwapChoice.value = null
+        // No line for it (a file from rc34 or before) is the default, on.
+        ruleMarks = true
         // Through the writer: what the last save handed over is read before the disk (DiskWriter.read).
         val lines = DiskWriter.read(f)?.lineSequence() ?: return
         runCatching {
@@ -339,6 +347,7 @@ object TrackerOptions {
                     "showNicknames" -> showNicknames = v == "true"
                     "displayGender" -> displayGender = v == "true"
                     "showExpBar" -> showExpBar = v == "true"
+                    "ruleMarks" -> ruleMarks = v == "true"
                     "colorStatNumbers" -> colorStatNumbers = v == "true"
                     "rightJustifiedNumbers" -> rightJustifiedNumbers = v == "true"
                     "trackPcHeals" -> trackPcHeals = v == "true"
@@ -368,7 +377,7 @@ object TrackerOptions {
         DiskWriter.write(f, text())
     }
 
-    fun text(): String = "showBallPicker=$showBallPicker\nshowCategoryIcons=$showCategoryIcons\nhealsWhole=$healsWhole\nshowTeamView=$showTeamView\nautoPokemonThemes=$autoPokemonThemes\nrestorePoints=$restorePoints\nshowTimer=$showTimer\ntourneyTracker=$tourneyTracker\nkantoBadgesFirst=$kantoBadgesFirst\nshowBothBadgeSets=$showBothBadgeSets\nlogCustomTrainerNames=$logCustomTrainerNames\nlogShowUnlearnableGymTms=$logShowUnlearnableGymTms\nlogShowPreEvolutions=$logShowPreEvolutions\nlossCondition=${lossCondition.key}\ndsLossCondition=${dsLossCondition.key}\nlandscapeTracker=${landscapeTracker.name}\nfloatingLocked=$floatingLocked\nshowRepel=$showRepel\nanimatedSprites=$animatedSprites\nspritesWalk=$spritesWalk\ndetermineFriendship=$determineFriendship\ndisplayPedometer=$displayPedometer\nshowMoveEffectiveness=$showMoveEffectiveness\nshowCatchRate=$showCatchRate\ncalculateVariableDamage=$calculateVariableDamage\ncountEnemyPp=$countEnemyPp\nshowLastDamage=$showLastDamage\ncalcAtkWildOnly=$calcAtkWildOnly\n${autoSwapChoice.value?.let { "autoSwapToEnemyChoice=$it\n" } ?: ""}showNicknames=$showNicknames\ndisplayGender=$displayGender\nshowExpBar=$showExpBar\ncolorStatNumbers=$colorStatNumbers\nrightJustifiedNumbers=$rightJustifiedNumbers\ntrackPcHeals=$trackPcHeals\npcHealsCountDownward=$pcHealsCountDownward\nhideStatsUntilSummary=$hideStatsUntilSummary\nshowDataForVanillaGame=$showDataForVanillaGame\nopenBookPlayMode=$openBookPlayMode\nrevealInfoIfRandomized=$revealInfoIfRandomized\nallowCarouselRotation=$allowCarouselRotation\ncarouselItems=$carouselItems\ncarouselSpeed=$carouselSpeed\nshowStarterBallInfo=$showStarterBallInfo\ndsPokecenterHeals=$dsPokecenterHeals\ndsExpBar=$dsExpBar\ndsAccEva=$dsAccEva\ndsAutoSwapToEnemy=$dsAutoSwapToEnemy\ndsEnemyLocking=$dsEnemyLocking\ntrackerOnSecondScreen=$trackerOnSecondScreen\nfrlgGuidePictures=$frlgGuidePictures\nshowTypeMatchups=$showTypeMatchups\nnuzlockeBallPicker=$nuzlockeBallPicker\n" +
+    fun text(): String = "showBallPicker=$showBallPicker\nshowCategoryIcons=$showCategoryIcons\nhealsWhole=$healsWhole\nshowTeamView=$showTeamView\nautoPokemonThemes=$autoPokemonThemes\nrestorePoints=$restorePoints\nshowTimer=$showTimer\ntourneyTracker=$tourneyTracker\nkantoBadgesFirst=$kantoBadgesFirst\nshowBothBadgeSets=$showBothBadgeSets\nlogCustomTrainerNames=$logCustomTrainerNames\nlogShowUnlearnableGymTms=$logShowUnlearnableGymTms\nlogShowPreEvolutions=$logShowPreEvolutions\nlossCondition=${lossCondition.key}\ndsLossCondition=${dsLossCondition.key}\nlandscapeTracker=${landscapeTracker.name}\nfloatingLocked=$floatingLocked\nshowRepel=$showRepel\nanimatedSprites=$animatedSprites\nspritesWalk=$spritesWalk\ndetermineFriendship=$determineFriendship\ndisplayPedometer=$displayPedometer\nshowMoveEffectiveness=$showMoveEffectiveness\nshowCatchRate=$showCatchRate\ncalculateVariableDamage=$calculateVariableDamage\ncountEnemyPp=$countEnemyPp\nshowLastDamage=$showLastDamage\ncalcAtkWildOnly=$calcAtkWildOnly\n${autoSwapChoice.value?.let { "autoSwapToEnemyChoice=$it\n" } ?: ""}showNicknames=$showNicknames\ndisplayGender=$displayGender\nshowExpBar=$showExpBar\nruleMarks=$ruleMarks\ncolorStatNumbers=$colorStatNumbers\nrightJustifiedNumbers=$rightJustifiedNumbers\ntrackPcHeals=$trackPcHeals\npcHealsCountDownward=$pcHealsCountDownward\nhideStatsUntilSummary=$hideStatsUntilSummary\nshowDataForVanillaGame=$showDataForVanillaGame\nopenBookPlayMode=$openBookPlayMode\nrevealInfoIfRandomized=$revealInfoIfRandomized\nallowCarouselRotation=$allowCarouselRotation\ncarouselItems=$carouselItems\ncarouselSpeed=$carouselSpeed\nshowStarterBallInfo=$showStarterBallInfo\ndsPokecenterHeals=$dsPokecenterHeals\ndsExpBar=$dsExpBar\ndsAccEva=$dsAccEva\ndsAutoSwapToEnemy=$dsAutoSwapToEnemy\ndsEnemyLocking=$dsEnemyLocking\ntrackerOnSecondScreen=$trackerOnSecondScreen\nfrlgGuidePictures=$frlgGuidePictures\nshowTypeMatchups=$showTypeMatchups\nnuzlockeBallPicker=$nuzlockeBallPicker\n" +
         lossBySettings.entries.joinToString("") { (name, c) -> "lossConditionFor.$name=${c.key}\n" } +
         dsLossBySettings.entries.joinToString("") { (name, c) -> "dsLossConditionFor.$name=${c.key}\n" }
 }

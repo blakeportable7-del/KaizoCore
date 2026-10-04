@@ -631,6 +631,17 @@ fun AboutScreen(modifier: Modifier = Modifier, onStats: () -> Unit = {}) {
         )
         CreditLink("https://github.com/UTDZac/SpriteIsMe-IronmonExtension") { openOrSay(it) }
 
+        Spacer(Modifier.height(12.dp))
+
+        // Added 2026-10-04 (rc35): DarkusShadow's sheets fill the gaps Sprite Collab leaves (walkingpals-darkus).
+        Text(
+            "Pokémon the Sprite Collab has not drawn yet, Iron Boulder and Iron Crown among them, walk as " +
+                "DarkusShadow's overworld sprites, free to use with credit. Brute Bonnet's is from TyranitarDark's " +
+                "original and Mega Malamar's from princess-phoenix's.",
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        CreditLink("https://www.deviantart.com/darkusshadow") { openOrSay(it) }
+
         Spacer(Modifier.height(16.dp))
 
         // Added 2026-09-29 (the rc30 credits check): the DS tracker, the two Gen 3 extensions
@@ -678,6 +689,16 @@ fun AboutScreen(modifier: Modifier = Modifier, onStats: () -> Unit = {}) {
         )
         CreditLink("https://github.com/Swordfish90/LibretroDroid") { openOrSay(it) }
         CreditLink("https://github.com/RetroAchievements/rcheevos") { openOrSay(it) }
+
+        Spacer(Modifier.height(12.dp))
+
+        // Added 2026-10-03 with GachaMon (NOTICE): the IronMON Tracker's own card game, its ratings unchanged.
+        Text(
+            "GachaMon, the collectable cards, is the IronMON Tracker's card game by besteon and " +
+                "contributors, used under the MIT license, its ratings unchanged.",
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        CreditLink(TRACKER_URL) { openOrSay(it) }
 
         Spacer(Modifier.height(12.dp))
 

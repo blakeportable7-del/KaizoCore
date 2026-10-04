@@ -24,7 +24,8 @@ class SpriteIsMeEverySheetTest {
     /** Every shipped sheet set a Pokemon is drawn with: Gen 3's own ids but its unused slots, and the second set's keys. */
     private val pals: List<WalkingPals.Pal> =
         ShippedPals.gen3.keys.filter { it.toInt() !in 252..276 }.sortedBy { it.toInt() }.map { WalkingPals.Pal(WalkingPals.Pack.GEN3, it) } +
-            ShippedPals.national.keys.sorted().map { WalkingPals.Pal(WalkingPals.Pack.NATIONAL, it) }
+            ShippedPals.national.keys.sorted().map { WalkingPals.Pal(WalkingPals.Pack.NATIONAL, it) } +
+            ShippedPals.darkus.keys.sorted().map { WalkingPals.Pal(WalkingPals.Pack.DARKUS, it) }
 
     /** A PNG's width and height, out of its header. */
     private fun size(f: File): Pair<Int, Int> = DataInputStream(f.inputStream().buffered()).use { it.skipBytes(16); it.readInt() to it.readInt() }

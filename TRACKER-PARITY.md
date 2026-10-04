@@ -42,14 +42,14 @@ missing, or does not apply to a phone. Screens were checked the same way
 - [x] Randomization check (PokemonData / MoveData checkIfDataIsRandomized), validated vanilla on the FireRed and Emerald dumps
 - [x] Open Book Play Mode
 - [x] Track PC Heals, and PC heals count downward: the heart toggle, the coloured count, +/-, auto-tracking from game statistics 15 and 16, per attempt
-- [ ] GachaMon stars in the heals box (the reference's default there when PC heals are off; part of GachaMon)
+- [x] GachaMon stars in the heals box (the reference's default there when PC heals are off): the lead's card now against as made; turning one on turns Track PC Heals off, and the other way
 - Not built by decision: the log viewer quick-access button in that spot. Blake: the log opens only after a loss.
 - [x] Show starter ball info: the offered starter's info screen while its ball is confirmed (FRLG special var, RSE confirm task + rival party); addresses audited, not yet seen on a live lab
 - [ ] Pokemon icon set: the other sets (Walking Pals is here)
 - [x] Pedometer step goal and reset (clock, Goal prompt, Reset/Total, green at the goal; in memory like the reference)
 
 ## Features
-- [ ] GachaMon: the overlay, the collection, the ratings, its carousel item and six options
+- [x] GachaMon: the overlay (Captures, Collection, View, GachaDex, Options, About; the Battle tab hidden as in the reference), the collection, the ratings checked against the reference's Lua, share codes both ways, its carousel item, the prize card and the six options with the ruleset
 
 ## Does not apply on a phone
 Language, Autodetect language from game, Refocus emulator after load, Warn of

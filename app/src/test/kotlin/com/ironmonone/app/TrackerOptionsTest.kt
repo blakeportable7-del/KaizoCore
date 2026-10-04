@@ -22,7 +22,7 @@ class TrackerOptionsTest {
         com.ironmonone.tracker.TrackerPrefs.determineFriendship = true
         TrackerOptions.showMoveEffectiveness = true; TrackerOptions.countEnemyPp = true
         com.ironmonone.tracker.TrackerPrefs.countEnemyPp = true
-        TrackerOptions.showExpBar = false; TrackerOptions.rightJustifiedNumbers = false
+        TrackerOptions.showExpBar = false; TrackerOptions.ruleMarks = false; TrackerOptions.rightJustifiedNumbers = false
     }
 
     @Test
@@ -38,16 +38,16 @@ class TrackerOptionsTest {
         TrackerOptions.showRepel = true
         TrackerOptions.determineFriendship = false; TrackerOptions.displayPedometer = true
         TrackerOptions.showMoveEffectiveness = false; TrackerOptions.countEnemyPp = false
-        TrackerOptions.showExpBar = true; TrackerOptions.rightJustifiedNumbers = true
+        TrackerOptions.showExpBar = true; TrackerOptions.ruleMarks = true; TrackerOptions.rightJustifiedNumbers = true
         TrackerOptions.save()
         DiskWriter.drain()   // written on the writer's thread (rc32 audit P3 #71)
-        assertEquals("showBallPicker=false\nshowCategoryIcons=true\nhealsWhole=true\nshowTeamView=false\nautoPokemonThemes=false\nrestorePoints=true\nshowTimer=false\ntourneyTracker=false\nkantoBadgesFirst=false\nshowBothBadgeSets=true\nlogCustomTrainerNames=false\nlogShowUnlearnableGymTms=true\nlogShowPreEvolutions=false\nlossCondition=EntirePartyFaints\ndsLossCondition=LeadPokemonFaints\nlandscapeTracker=FLOATING\nfloatingLocked=false\nshowRepel=true\nanimatedSprites=true\nspritesWalk=false\ndetermineFriendship=false\ndisplayPedometer=true\nshowMoveEffectiveness=false\nshowCatchRate=true\ncalculateVariableDamage=true\ncountEnemyPp=false\nshowLastDamage=true\ncalcAtkWildOnly=true\nshowNicknames=false\ndisplayGender=false\nshowExpBar=true\ncolorStatNumbers=false\nrightJustifiedNumbers=true\ntrackPcHeals=false\npcHealsCountDownward=true\nhideStatsUntilSummary=false\nshowDataForVanillaGame=true\nopenBookPlayMode=false\nrevealInfoIfRandomized=true\nallowCarouselRotation=true\ncarouselItems=Badges,Notes,RouteInfo,Trainers,LastAttack,BattleDetails,Pedometer,GachaMon\ncarouselSpeed=1\nshowStarterBallInfo=false\ndsPokecenterHeals=false\ndsExpBar=true\ndsAccEva=true\ndsAutoSwapToEnemy=false\ndsEnemyLocking=false\ntrackerOnSecondScreen=false\nfrlgGuidePictures=false\nshowTypeMatchups=false\nnuzlockeBallPicker=false\n", f.readText())
+        assertEquals("showBallPicker=false\nshowCategoryIcons=true\nhealsWhole=true\nshowTeamView=false\nautoPokemonThemes=false\nrestorePoints=true\nshowTimer=false\ntourneyTracker=false\nkantoBadgesFirst=false\nshowBothBadgeSets=true\nlogCustomTrainerNames=false\nlogShowUnlearnableGymTms=true\nlogShowPreEvolutions=false\nlossCondition=EntirePartyFaints\ndsLossCondition=LeadPokemonFaints\nlandscapeTracker=FLOATING\nfloatingLocked=false\nshowRepel=true\nanimatedSprites=true\nspritesWalk=false\ndetermineFriendship=false\ndisplayPedometer=true\nshowMoveEffectiveness=false\nshowCatchRate=true\ncalculateVariableDamage=true\ncountEnemyPp=false\nshowLastDamage=true\ncalcAtkWildOnly=true\nshowNicknames=false\ndisplayGender=false\nshowExpBar=true\nruleMarks=true\ncolorStatNumbers=false\nrightJustifiedNumbers=true\ntrackPcHeals=false\npcHealsCountDownward=true\nhideStatsUntilSummary=false\nshowDataForVanillaGame=true\nopenBookPlayMode=false\nrevealInfoIfRandomized=true\nallowCarouselRotation=true\ncarouselItems=Badges,Notes,RouteInfo,Trainers,LastAttack,BattleDetails,Pedometer,GachaMon\ncarouselSpeed=1\nshowStarterBallInfo=false\ndsPokecenterHeals=false\ndsExpBar=true\ndsAccEva=true\ndsAutoSwapToEnemy=false\ndsEnemyLocking=false\ntrackerOnSecondScreen=false\nfrlgGuidePictures=false\nshowTypeMatchups=false\nnuzlockeBallPicker=false\n", f.readText())
         TrackerOptions.showBallPicker = true; TrackerOptions.healsWhole = false; TrackerOptions.lossCondition = LossCondition.LEAD
         TrackerOptions.spritesWalk = true
         TrackerOptions.showRepel = false
         TrackerOptions.determineFriendship = true; TrackerOptions.displayPedometer = false
         TrackerOptions.showMoveEffectiveness = true; TrackerOptions.countEnemyPp = true
-        TrackerOptions.showExpBar = false; TrackerOptions.rightJustifiedNumbers = false
+        TrackerOptions.showExpBar = false; TrackerOptions.ruleMarks = false; TrackerOptions.rightJustifiedNumbers = false
         TrackerOptions.load(f)
         assertFalse(TrackerOptions.spritesWalk)
         assertTrue(TrackerOptions.showRepel)
@@ -55,11 +55,31 @@ class TrackerOptionsTest {
         // The tracker module sees the loaded value, not just the app.
         assertFalse(com.ironmonone.tracker.TrackerPrefs.determineFriendship)
         assertFalse(TrackerOptions.showMoveEffectiveness); assertFalse(TrackerOptions.countEnemyPp)
-        assertTrue(TrackerOptions.showExpBar); assertTrue(TrackerOptions.rightJustifiedNumbers)
+        assertTrue(TrackerOptions.showExpBar); assertTrue(TrackerOptions.ruleMarks); assertTrue(TrackerOptions.rightJustifiedNumbers)
         assertFalse(com.ironmonone.tracker.TrackerPrefs.countEnemyPp, "the tracker sees the enemy PP switch")
         assertFalse(TrackerOptions.showBallPicker); assertTrue(TrackerOptions.healsWhole)
         assertEquals(LossCondition.ENTIRE_PARTY, TrackerOptions.lossCondition)
         assertEquals(LandscapeTracker.FLOATING, TrackerOptions.landscapeTracker)
+    }
+
+    /** Rule marks are on by default: an rc34 file has no line for them and reads as on; a saved off stays off. */
+    @Test
+    fun `rule marks are on for an upgrade with no saved value, and a saved off stays off`() {
+        val f = java.io.File(dir, "tracker-options.txt")
+        f.writeText("showBallPicker=true\nshowExpBar=false\n")   // as rc34 wrote it: no ruleMarks line
+        TrackerOptions.ruleMarks = false
+        TrackerOptions.load(f)
+        assertTrue(TrackerOptions.ruleMarks, "no saved value: on")
+        TrackerOptions.ruleMarks = false
+        TrackerOptions.save()
+        DiskWriter.drain()
+        assertTrue("ruleMarks=false" + "\n" in f.readText())
+        TrackerOptions.ruleMarks = true
+        TrackerOptions.load(f)
+        assertFalse(TrackerOptions.ruleMarks, "a saved off stays off")
+        TrackerOptions.ruleMarks = true
+        TrackerOptions.load(java.io.File(dir, "no-such-file.txt"))
+        assertTrue(TrackerOptions.ruleMarks, "no file at all: on")
     }
 
     /**

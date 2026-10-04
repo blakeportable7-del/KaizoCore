@@ -31,7 +31,9 @@ confirmed discrepancy unless marked UNSURE. Status: OPEN, FIXED (with the commit
 - OPEN: enemy card has no way to open its Pokemon info.
 - OPEN: carousel Trainers line opens Trainers on Route; Battle Details line opens Battle Details (and its text
   is not the reference summary).
-- OPEN: GachaMon (carousel item, heals-box stars, collection, prize card, 6 options) absent.
+- FIXED e4069c38: GachaMon (carousel item, heals-box stars, collection, prize card, 6 options): the PC tracker's
+  rating, stars, Battle Power and share codes, checked against its own Lua on 466 cards; the Battle tab stays hidden
+  as the reference hides it. Its chat command and capture event wait on Stream Connect.
 - OPEN: info screen lookup (Pokemon, move, ability), previous/next Pokemon; Move History "Lookup Pokemon".
 - OPEN: info screen note not editable there; no Move History / Type Defenses buttons on it.
 - OPEN: Trainer Info lacks the trainer's bag items and icon.

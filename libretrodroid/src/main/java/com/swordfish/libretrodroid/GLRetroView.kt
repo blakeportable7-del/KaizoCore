@@ -282,8 +282,9 @@ class GLRetroView(
         val listener = stateLoadListener
         runCatching { listener?.beforeStateLoad() }
         val loaded = runOnEmulationThread(useEmulationThread, false) {
-            // A melonDS state with a DMA mid-burst crashed a core that had just booted (MelonState, rc33).
-            LibretroDroid.unserializeState(MelonState.safeToLoad(data))
+            // A melonDS state with a DMA mid-burst crashed a core that had just booted (MelonState, rc33); one from a
+            // newer core is refused rather than reported as loaded (rc35).
+            MelonState.loadable(data) && LibretroDroid.unserializeState(MelonState.safeToLoad(data))
         }
         runCatching { listener?.afterStateLoad(loaded) }
         return loaded

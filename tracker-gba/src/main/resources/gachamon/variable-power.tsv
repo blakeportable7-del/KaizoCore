@@ -1,0 +1,26 @@
+# move id	power text  (MoveData.lua variablepower moves; tools/gachamon/extract_gachamon_data.py)
+12	0
+32	0
+49	0
+67	WT
+68	0
+69	0
+82	0
+90	0
+101	0
+117	0
+149	0
+162	0
+175	<HP
+179	<HP
+216	>FR
+217	RNG
+218	<FR
+222	RNG
+237	VAR
+243	0
+255	100x
+283	0
+284	>HP
+323	>HP
+329	0

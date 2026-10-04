@@ -816,9 +816,7 @@ fun PlayScreen(
                 kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
                     repeat(8) { kotlinx.coroutines.delay(31); t?.pollAbilityTrigger() }
                 }
-            } else kotlinx.coroutines.delay(
-                if (trackerState?.inBattle == true) 250 else 700
-            )
+            } else kotlinx.coroutines.delay(TrackerPoll.gbaWait(trackerState))
             if (tracker == null) {
                 tracker = kotlinx.coroutines.withContext(
                     kotlinx.coroutines.Dispatchers.Default
@@ -855,6 +853,7 @@ fun PlayScreen(
                 // The Nuzlocke ledger follows every poll, not only the ones a tracker panel draws (hidden, clean view).
                 NuzlockeTracking.observe(context.applicationContext.filesDir, trackerState)
                 KeptSave.observe(store, session, trackerState, runNow.attempt)
+                GachaMon.observe(context.applicationContext.filesDir, session, trackerState, t, runNow) // the run's GachaMon cards
                 if (trackerState != null) RunClock.tick(session.kind?.id?.takeIf { session.isRun }, { runNow.attempt }, gameActive && Demo.mode == null && lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED))
             }
         }

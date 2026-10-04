@@ -84,6 +84,8 @@ fun TrackerGearDialog(
     var ivText by remember { mutableStateOf("") }
     // The game over lines screen (DeathQuotes) is opened from here so PlayScreen, at the verifier's limit, carries nothing for it.
     var linesOpen by remember { mutableStateOf(false) }
+    // GachaMon's collection (ExtrasScreen's "GachaMon Collection"), opened from here for the same reason.
+    var gachaOpen by remember { mutableStateOf(false) }
     // The game and the mode in Play, so each row shows only where it does something (GearScope; Blake, 2026-10-01: "the
     // setup menu should be variable depending on the mode, and the game").
     val appFiles = androidx.compose.ui.platform.LocalContext.current.applicationContext.filesDir
@@ -119,6 +121,8 @@ fun TrackerGearDialog(
             // Written when a Kaizo IronMON run ends, so they belong to one, as the Tourney tracker's scores do (2026-10-01).
             if (scope.ironmon) onPastRuns?.let { GearButton("PAST RUNS") { it() } }
             if (scope.ironmon) onStatistics?.let { GearButton("STATISTICS") { it() } }
+            // ExtrasScreen's "GachaMon Collection": the Gen 3 tracker's card game (GachaMonScreen).
+            if (scope.gen3) GearButton("GachaMon Collection", raw = true) { gachaOpen = true }
             onEvoData?.let { GearButton("EVO DATA") { it() } }
             onTrackedPokemon?.let { GearButton("TRACKED POKEMON") { it() } }
             if (scope.ironmon) onTourney?.let { GearButton("TOURNEY TRACKER") { it() } }
@@ -188,7 +192,11 @@ fun TrackerGearDialog(
             if (!ds) GearToggle("Right justified numbers", TrackerOptions.rightJustifiedNumbers) { TrackerOptions.rightJustifiedNumbers = it; TrackerOptions.save() }
             // The DS tracker's own counter (AppearanceOptionsScreen's SHOW_POKECENTER_HEALS, labelled from its key).
             if (ds) GearToggle("Show Pok\u00e9center heals", TrackerOptions.dsPokecenterHeals) { TrackerOptions.dsPokecenterHeals = it; TrackerOptions.save() }
-            else GearToggle("Track PC Heals", TrackerOptions.trackPcHeals) { TrackerOptions.trackPcHeals = it; TrackerOptions.save() }
+            else GearToggle("Track PC Heals", TrackerOptions.trackPcHeals) {
+                TrackerOptions.trackPcHeals = it; TrackerOptions.save()
+                // SetupScreen.lua:484-487: both use the heals box's right edge, so GachaMon's stars go off.
+                if (it && GachaMonOptions.showStars) { GachaMonOptions.showStars = false; GachaMon.saveOptions() }
+            }
             // No summary screen is read on a Game Boy game (SummaryChecks.hidesStats), so no switch there.
             // Clean library games have nothing randomized to hide or reveal (2026-10-01): these three act on randomized games.
             if (!gameBoy && !ds && scope.randomized) GearToggle("Hide stats until summary shown", TrackerOptions.hideStatsUntilSummary) { TrackerOptions.hideStatsUntilSummary = it; if (it) SummaryChecks.forgetAll(); TrackerOptions.save() }
@@ -203,6 +211,9 @@ fun TrackerGearDialog(
             // FireRed and LeafGreen only (Blake, 2026-10-01: "if you are playing emerald, and the set up menu mentions fire
             // red maps, that's a problem").
             if (scope.frlg) GearToggle("FireRed and LeafGreen dungeon maps (routes and item spots)", TrackerOptions.frlgGuidePictures) { TrackerOptions.frlgGuidePictures = it; TrackerOptions.save() }
+            // Not a PC tracker option: the rules' X on a banned held item, ability or move (RuleMarks), in a Kaizo IronMON
+            // run only, where the rules are; on by default (Blake, 2026-10-04), so rc34's banned-move X keeps showing.
+            if (scope.ironmon) GearToggle("Mark banned items, abilities and moves", TrackerOptions.ruleMarks) { TrackerOptions.ruleMarks = it; TrackerOptions.save() }
             // Not a PC tracker option either: the type chart under a move's info, off until turned on (2026-09-30).
             if (!ds) GearToggle("Type matchups in move info", TrackerOptions.showTypeMatchups) { TrackerOptions.showTypeMatchups = it; TrackerOptions.save() }
 
@@ -230,10 +241,10 @@ fun TrackerGearDialog(
             for ((key, label) in listOf(
                 "Badges" to "Gym badges", "Notes" to "Notes on Pok" + "\u00E9" + "mon", "RouteInfo" to "Wild encounters in area",
                 "Trainers" to "Trainers defeated in area", "LastAttack" to "Last attack damage",
-                "BattleDetails" to "Additional battle details", "Pedometer" to "Step pedometer",
+                "BattleDetails" to "Additional battle details", "Pedometer" to "Step pedometer", "GachaMon" to "GachaMons captured",
             ).filter { (key, _) ->
-                // What each game's carousel can show: the area, trainer, battle and step items are the Gen 3 tracker's.
-                when (key) { "RouteInfo", "Trainers", "BattleDetails", "Pedometer" -> scope.gen3; "LastAttack" -> !ds; else -> true }
+                // What each game's carousel can show: the area, trainer, battle, step and GachaMon items are the Gen 3 tracker's.
+                when (key) { "RouteInfo", "Trainers", "BattleDetails", "Pedometer", "GachaMon" -> scope.gen3; "LastAttack" -> !ds; else -> true }
             }) GearToggle(label, TrackerOptions.carouselShows(key)) { TrackerOptions.setCarouselItem(key, it); TrackerOptions.save() }
             if (TrackerOptions.trackPcHeals && !ds) GearToggle("PC heals count downward", TrackerOptions.pcHealsCountDownward) { TrackerOptions.pcHealsCountDownward = it; TrackerOptions.save() }
             GearToggle("Animated Pok\u00e9mon (Walking Pals)", TrackerOptions.animatedSprites) { TrackerOptions.animatedSprites = it; TrackerOptions.save() }
@@ -297,6 +308,7 @@ fun TrackerGearDialog(
         }
     }
     if (linesOpen) DeathQuotesDialog { linesOpen = false }
+    if (gachaOpen) GachaMonScreen(GachaMonStart()) { gachaOpen = false }
 }
 
 /**

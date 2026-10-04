@@ -13,6 +13,7 @@ import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.unit.dp
@@ -72,6 +73,7 @@ class TrackerLookTest {
         joined: JoinedForms? = null,
         // Handed in, never read from the device's own run, so no other shot here picks up its rules.
         moveRules: MoveRule.Rules? = null,
+        ruleRun: RuleMarks.Run? = null,
         onGear: (() -> Unit)? = null,
         trailing: (@androidx.compose.runtime.Composable () -> Unit)? = null,
     ) {
@@ -90,7 +92,7 @@ class TrackerLookTest {
                         // actually loads and lands in the sprite box.
                         spriteFor = { sp -> PcAssets.gbaSprite(ctx, sp) },
                         stackBoth = stackBoth,
-                        bstLines = bstLines, joinedForms = joined, moveRules = moveRules,
+                        bstLines = bstLines, joinedForms = joined, moveRules = moveRules, ruleRun = ruleRun,
                         onGear = onGear, headerTrailing = trailing,
                     )
                 }
@@ -374,6 +376,7 @@ class TrackerLookTest {
         name: String, widthDp: Int, state: com.ironmonone.tracker.nds.NdsTrackerState,
         bstLines: BstRule.Lines? = null, joined: JoinedForms? = null, stackBoth: Boolean = false,
         moveRules: MoveRule.Rules? = null,
+        ruleRun: RuleMarks.Run? = null,
         onGear: (() -> Unit)? = null,
         trailing: (@androidx.compose.runtime.Composable () -> Unit)? = null,
     ) {
@@ -382,7 +385,7 @@ class TrackerLookTest {
             Box(Modifier.background(Color.Black)) {
                 Box(Modifier.width(widthDp.dp).fillMaxHeight()) {
                     NdsTrackerPanel(state = state, attempt = 2, stackBoth = stackBoth, bstLines = bstLines, joinedForms = joined, moveRules = moveRules,
-                        onGear = onGear, headerTrailing = trailing)
+                        ruleRun = ruleRun, onGear = onGear, headerTrailing = trailing)
                 }
             }
         }
@@ -438,8 +441,15 @@ class TrackerLookTest {
      * Banned moves (Blake, 2026-10-02: "just like the x on bst of 600+"): FireRed Kaizo in a wild battle, where Giga
      * Drain, Recover and Surf (an HM) are banned and Tackle is not. Each banned name goes red with the X after it.
      */
+    /** The rules' X follows Tracker Setup's switch, off until turned on (RuleMarks): these shots turn it on. */
+    private fun marksOn(block: () -> Any?) {
+        val was = TrackerOptions.ruleMarks
+        TrackerOptions.ruleMarks = true
+        try { block() } finally { TrackerOptions.ruleMarks = was }
+    }
+
     @Test
-    fun banned_moves() {
+    fun banned_moves() = marksOn {
         val mon = tracked("Bulbasaur", 1, 12).copy(
             moveNames = listOf("Giga Drain", "Recover", "Surf", "Tackle"),
             moveRows = listOf(
@@ -459,7 +469,7 @@ class TrackerLookTest {
 
     /** Platinum Kaizo: Roost, U-turn and Defog (Platinum's HM) banned, Brave Bird not. */
     @Test
-    fun ds_banned_moves() {
+    fun ds_banned_moves() = marksOn {
         val bird = ndsTracked("Staraptor", 398, 40).copy(moves = listOf(
             com.ironmonone.tracker.nds.NdsMoveInfo("Roost", 0, 0, "FLYING", 10, "STA"),
             com.ironmonone.tracker.nds.NdsMoveInfo("U-turn", 70, 100, "BUG", 20, "PHY"),
@@ -471,6 +481,66 @@ class TrackerLookTest {
         ), moveRules = MoveRule.rules("kaizo", "DPPt", natDex = false, kindId = "platinum-u"))
         assert(compose.onAllNodesWithContentDescription("Banned in this run", useUnmergedTree = true)
             .fetchSemanticsNodes().size == 3) { "Roost, U-turn and Defog, not Brave Bird" }
+    }
+
+    /**
+     * Banned held items and abilities (Blake, 2026-10-04): FireRed Kaizo, a 450 BST Pokemon with Huge Power holding
+     * Leftovers. The item gets the X and so does its physical move (Huge Power bans physical moves; the ability itself is not marked), its
+     * special move does not. A tap on the item's X says which rule.
+     */
+    @Test
+    fun rule_marks() = marksOn {
+        val mon = tracked("Marill", 183, 20).copy(
+            base = BaseStats(100, 90, 90, 60, 60, 50, 11, 11, 1, 2),
+            abilityName = "HUGE POWER", itemName = "LEFTOVERS",
+            moveNames = listOf("Tackle", "Water Gun"),
+            moveRows = listOf(
+                MoveRow(33, "Tackle", 35, 35, 35, 95, 0, "PHY"),
+                MoveRow(55, "Water Gun", 25, 25, 40, 100, 11, "SPE"),
+            ),
+        )
+        shoot("look-rule-marks.png", paneDp, TrackerState(
+            partyCount = 1, party = listOf(mon), inBattle = false, isWildBattle = false, healPercent = 0, healCount = 0, enemyTeam = emptyList(), routeName = "Route 1",
+        ), moveRules = MoveRule.rules("kaizo", "FRLG", natDex = false, kindId = "firered-u-v10"),
+            ruleRun = RuleMarks.Run("kaizo", natDex = false, family = "FRLG"))
+        assert(compose.onAllNodesWithContentDescription("Held item banned in this run", useUnmergedTree = true).fetchSemanticsNodes().size == 1)
+        assert(compose.onAllNodesWithContentDescription("Ability banned in this run", useUnmergedTree = true).fetchSemanticsNodes().isEmpty()) { "Huge Power itself is not marked" }
+        assert(compose.onAllNodesWithContentDescription("Banned in this run", useUnmergedTree = true).fetchSemanticsNodes().size == 1) { "Tackle, not Water Gun" }
+        compose.onAllNodesWithContentDescription("Held item banned in this run", useUnmergedTree = true)[0].performClick()
+        compose.mainClock.advanceTimeBy(500)
+        compose.onNodeWithText("Banned in this run: holding LEFTOVERS. You may hold it in the lab fight.").assertExists()
+    }
+
+    /** Off, the switch's default: the same card carries no X at all. */
+    @Test
+    fun rule_marks_off() {
+        TrackerOptions.ruleMarks = false
+        val mon = tracked("Marill", 183, 20).copy(
+            base = BaseStats(100, 90, 90, 60, 60, 50, 11, 11, 1, 2),
+            abilityName = "HUGE POWER", itemName = "LEFTOVERS",
+            moveNames = listOf("Recover"),
+            moveRows = listOf(MoveRow(105, "Recover", 20, 20, 0, 0, 0, "STA")),
+        )
+        shoot("look-rule-marks-off.png", paneDp, TrackerState(
+            partyCount = 1, party = listOf(mon), inBattle = false, isWildBattle = false, healPercent = 0, healCount = 0, enemyTeam = emptyList(), routeName = "Route 1",
+        ), moveRules = MoveRule.rules("kaizo", "FRLG", natDex = false, kindId = "firered-u-v10"),
+            ruleRun = RuleMarks.Run("kaizo", natDex = false, family = "FRLG"))
+        for (d in listOf("Held item banned in this run", "Ability banned in this run", "Banned in this run"))
+            assert(compose.onAllNodesWithContentDescription(d, useUnmergedTree = true).fetchSemanticsNodes().isEmpty()) { d }
+    }
+
+    /** Platinum Super Kaizo: Battle Armor at 500 BST and a Life Orb, both marked. */
+    @Test
+    fun ds_rule_marks() = marksOn {
+        val crab = ndsTracked("Drapion", 452, 40).let { t ->
+            t.copy(mon = t.mon.copy(heldItem = 270), info = t.info?.copy(type1 = "POISON", type2 = "DARK", bst = 500),
+                abilityName = "Battle Armor", itemName = "Life Orb") }
+        shootNds("look-ds-rule-marks.png", paneDp, com.ironmonone.tracker.nds.NdsTrackerState(
+            partyCount = 1, party = listOf(crab), located = true, healPercent = 0, healCount = 0,
+        ), moveRules = MoveRule.rules("superkaizo", "DPPt", natDex = false, kindId = "platinum-u"),
+            ruleRun = RuleMarks.Run("superkaizo", natDex = false, family = "DPPt"))
+        assert(compose.onAllNodesWithContentDescription("Held item banned in this run", useUnmergedTree = true).fetchSemanticsNodes().size == 1)
+        assert(compose.onAllNodesWithContentDescription("Ability banned in this run", useUnmergedTree = true).fetchSemanticsNodes().size == 1)
     }
 
     @Test

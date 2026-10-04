@@ -60,6 +60,7 @@ import com.ironmonone.tracker.nds.NdsMoveInfo
 import com.ironmonone.tracker.nds.NdsTrackedMon
 import com.ironmonone.tracker.nds.NdsTracker
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import androidx.compose.foundation.lazy.grid.items as gridItems
@@ -120,9 +121,19 @@ internal fun DsLogViewer(file: File, tracker: NdsTracker, party: List<NdsTracked
     val log = loaded?.log
     val ds = loaded?.ds
     val ctx = LocalContext.current
-    val sprites = remember { HashMap<Int, ImageBitmap?>() }
+    // Each species' picture decoded off the main thread the first time it is asked for (DsPictures, RC35-NOTICED
+    // row 41); the page draws again when it lands.
+    val sprites = remember { androidx.compose.runtime.mutableStateMapOf<Int, ImageBitmap?>() }
+    val asked = remember { HashSet<Int>() }
+    val pictureScope = androidx.compose.runtime.rememberCoroutineScope()
     val spriteOf: (Int) -> ImageBitmap? = { id ->
-        if (sprites.containsKey(id)) sprites[id] else PcAssets.dsSprite(ctx, id, false).also { sprites[id] = it }
+        sprites[id] ?: DsPictures.peek(id, 0, false) ?: run {
+            if (asked.add(id)) pictureScope.launch {
+                val picture = withContext(Dispatchers.IO) { DsPictures.load(ctx, id, 0, false) }
+                sprites[id] = picture
+            }
+            null
+        }
     }
     val moves = loaded?.moves ?: emptyMap()
     // Program.openLogFromPath: with a Pokemon in the party the viewer opens on its page.

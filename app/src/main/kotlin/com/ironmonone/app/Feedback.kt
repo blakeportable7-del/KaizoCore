@@ -18,8 +18,11 @@ object Feedback {
     object Links {
         /** Latest build, changelog and checksum. Set when the repository is public. */
         const val RELEASES = "https://github.com/blakeportable7-del/KaizoCore/releases"
-        /** Ko-fi / GitHub Sponsors. Set when Blake has created the account. */
-        const val SUPPORT = "https://buy.stripe.com/8x2cN7b1Q8AG2VLczE67S00"
+        /**
+         * Blank for good (Blake, 2026-10-04): the IronMON community is free, and KaizoCore asks for money nowhere, so
+         * there is no support button. FeedbackTest holds it blank and checks that no payment link ships in the app.
+         */
+        const val SUPPORT = ""
         /** The bug form on the site. Set when the site is up. */
         const val BUG_FORM = "https://willowcreek.group/kaizocore#report"
         /** Blake's inbox for bug reports, 2026-09-07: the EMAIL A BUG button addresses this. */

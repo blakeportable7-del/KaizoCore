@@ -1747,6 +1747,8 @@ data class TrackerState(
     /** Gym badges as 8 bits, badge 1 in bit 0. */
     val badges: Int = 0,
     val badgeSet: String = "FRLG",
+    /** Gold, Silver and Crystal: the Johto League is beaten (wStatusFlags' Hall of Fame bit), for Survival's Kanto heals. */
+    val leagueBeaten: Boolean = false,
     /**
      * The game, as GameMap.routeVersion names it ("firered", "leafgreen", "emerald", "ruby", "sapphire"; a Nat. Dex build's
      * base game; empty where unknown), for the form a retail game draws Deoxys in on the Walking Pals icon (PalForms).
@@ -1765,14 +1767,28 @@ data class TrackerState(
     val healHp: Int = 0,
     /** Current map id, or null when it cannot be read. */
     val mapId: Int? = null,
+    /**
+     * Something the tracker is about to show waits on the next read: a map id seen once and not yet adopted (it is
+     * adopted on its second read), or a battle that has begun whose data is not ready yet (the reference's DataStart
+     * moment, gBattleMainFunc at the intro's party summary or the action menu). The app reads again soon
+     * (TrackerPoll.gbaWait) so the route line and the battle's weather show as soon as the game has them.
+     */
+    val settling: Boolean = false,
     /** The map's name, from the reference's RouteData. */
     val routeName: String? = null,
     /** Species that can be encountered here, from the same table. */
     val routeSpecies: List<Int> = emptyList(),
     /** Trainer ids stationed on this map, from the reference's route data. */
     val routeTrainers: List<Int> = emptyList(),
-    /** How many of those are beaten (Program.getDefeatedTrainersByLocation), for the carousel. */
+    /**
+     * The carousel's Trainers defeated line, as TrackerScreen.lua:879-896 counts it: the trainers beaten and the total
+     * across the map's whole combined area (Mt. Moon's three floors, the S.S. Anne...) or the map alone, leaving out the
+     * rivals this run will not face (Program.getDefeatedTrainersByCombinedArea and getDefeatedTrainersByLocation,
+     * Program.lua:1546-1581; TrainerData.shouldUseTrainer, TrainerData.lua:304-316). See [GbaTracker.trainersInArea].
+     */
     val routeTrainersDefeated: Int = 0,
+    /** The total for [routeTrainersDefeated]: 0 where the tracker counts none (the carousel then falls back to [routeTrainers]). */
+    val routeTrainersTotal: Int = 0,
     /** How many of those are gym leaders, Elite 4 or bosses. */
     val routeBosses: Int = 0,
     /** gTrainerBattleOpponent_A during a trainer battle, for the Trainer Info screen. */
@@ -2179,8 +2195,9 @@ class GbaTracker(
 
     /**
      * The card's picture of a Pokemon where the game draws it otherwise than its species' plain picture (Gen3Pictures):
-     * shiny, Unown's letter, Deoxys's form where [gameForm]. Both cards ask for the form, as the Walking Pals icon shows it
-     * (PalForms), though the battle itself draws an opponent's Deoxys in its Normal form.
+     * shiny, Unown's letter, Deoxys's form where [gameForm]. Your own card asks for the form, as the game draws your
+     * Deoxys; the opponent's does not, as the battle draws an opponent's Deoxys in its Normal form and the PC tracker has
+     * one Deoxys picture for both (Ironmon-Tracker PokemonData.lua:3723).
      * Null for every other Pokemon, and wherever the ROM gives none: the card then draws what it always has. Cached per
      * species, letter, shininess and form.
      */
@@ -2396,11 +2413,14 @@ class GbaTracker(
         val encounterArea = if (inBattle && !trainer && !ghost) battleEncounterArea() else { currentArea = null; null }
         if (enemy != null && encounterArea != null && mapId != null) trackSafariEncounter(mapId, enemy, encounterArea)
         val enemyParty = if (inBattle) readEnemyParty() else emptyList()
-        // The opponent: shiny by its own party entry, found by its personality, Unown's letter, Deoxys's form (PalForms.ofEnemy too).
+        // The opponent: shiny by its own party entry, found by its personality, and Unown's letter. Deoxys in its Normal
+        // form, as the battle screen draws an opponent's whatever the game (PalForms.ofEnemy too).
         val enemyCard = enemy?.let { e ->
             if (e.isGhost) e
-            else e.copy(picture = picture(e.species, enemyParty.firstOrNull { it.pid != 0L && it.pid == e.pid }?.shiny == true, e.pid, gameForm = true))
+            else e.copy(picture = picture(e.species, enemyParty.firstOrNull { it.pid != 0L && it.pid == e.pid }?.shiny == true, e.pid, gameForm = false))
         }
+        // The Trainers defeated line's trainers: the map's combined area, less the rivals this run will not face.
+        val areaTrainers = mapId?.let { trainersInArea(it) } ?: emptyList()
 
         return TrackerState(
             partyCount = count,
@@ -2450,13 +2470,15 @@ class GbaTracker(
             healCount = heals.count,
             healHp = heals.hp,
             mapId = mapId,
+            settling = (inBattleScreen && !battleDataReady) || (rawMapId != null && rawMapId != stableMapId),
             inLab = mapId != null && mapId in map.labMapIds,
             starterOffered = if (count == 0 && mapId != null && mapId in map.labMapIds) starterOffered() else null,
             starterBase = if (count == 0 && mapId != null && mapId in map.labMapIds) starterOffered()?.let { baseStats(it) } else null,
             routeName = mapId?.let { routeInfo(it)?.first },
             routeSpecies = mapId?.let { routeInfo(it)?.second } ?: emptyList(),
             routeTrainers = mapId?.let { trainersOnRoute(it) } ?: emptyList(),
-            routeTrainersDefeated = mapId?.let { m -> trainersOnRoute(m).count { trainerDefeated(it) } } ?: 0,
+            routeTrainersDefeated = areaTrainers.count { trainerDefeated(it) },
+            routeTrainersTotal = areaTrainers.size,
             opponentTrainerId = if (inBattle && trainer) readOpponentTrainerId()?.also { id -> learnRival(id) } else null,
             routeBosses = mapId?.let { m ->
                 trainersOnRoute(m).count { trainerGroup(it) in BOSS_GROUPS }
@@ -2703,6 +2725,7 @@ class GbaTracker(
     private val routeInfoTable: Map<Int, Pair<String, List<Int>>> by lazy {
         val out = HashMap<Int, Pair<String, List<Int>>>()
         if (map.routeVersion.isEmpty()) return@lazy out
+        val areas = HashMap<Int, String>()
         javaClass.getResourceAsStream("/gen3/routeinfo-${map.routeVersion}.tsv")
             ?.bufferedReader(Charsets.UTF_8)?.useLines { lines ->
                 lines.forEach { line ->
@@ -2711,9 +2734,37 @@ class GbaTracker(
                     val id = p.getOrNull(0)?.toIntOrNull() ?: return@forEach
                     out[id] = (p.getOrNull(2) ?: "") to
                         (p.getOrNull(3) ?: "").split(',').mapNotNull { it.trim().toIntOrNull() }
+                    p.getOrNull(4)?.trim()?.takeIf { it.isNotEmpty() }?.let { areas[id] = it }
                 }
             }
+        combinedAreaOf = areas
         out
+    }
+
+    /** RouteData.Info[mapId].area.name, from the same table's fifth column: the combined area a map belongs to. */
+    @Volatile private var combinedAreaOf: Map<Int, String> = emptyMap()
+
+    /** RouteData.combineRouteAreas (RouteData.lua:380-399): every map of each combined area, by its name, sorted. */
+    private val combinedAreaMaps: Map<String, List<Int>> by lazy {
+        routeInfoTable.size   // fills combinedAreaOf
+        combinedAreaOf.entries.groupBy({ it.value }, { it.key }).mapValues { it.value.sorted() }
+    }
+
+    /** The combined area [mapId] belongs to (Mt. Moon, S.S. Anne, Victory Road...), or null for a map of its own. */
+    fun combinedArea(mapId: Int): String? { routeInfoTable.size; return combinedAreaOf[mapId] }
+
+    /** The maps the Trainers defeated line counts for [mapId]: its combined area's, or itself alone. */
+    fun areaMaps(mapId: Int): List<Int> = combinedArea(mapId)?.let { combinedAreaMaps[it] } ?: listOf(mapId)
+
+    /**
+     * The trainers the carousel's Trainers defeated line counts for [mapId], as the PC tracker does: every map of its
+     * combined area (Program.getDefeatedTrainersByCombinedArea, Program.lua:1567-1581) or the map alone
+     * (getDefeatedTrainersByLocation, :1546-1561), each trainer only when TrainerData.shouldUseTrainer holds
+     * (TrainerData.lua:304-316): a trainer the game's tables have, and not a rival this run will not face (every rival
+     * counts until the first rival battle says which). Full Clearzo counts areas the same way.
+     */
+    fun trainersInArea(mapId: Int): List<Int> = areaMaps(mapId).flatMap { trainersOnRoute(it) }.filter { id ->
+        (trainerClass.isEmpty() || id in trainerClass) && rivalOf[id].let { r -> r == null || rivalChoice == null || r == rivalChoice }
     }
 
     /** The maps that have trainers, each list in the reference's order. */
@@ -4074,6 +4125,16 @@ class GbaTracker(
         val c = memory.read(map.battleCommunication, 1)
         return c.isNotEmpty() && c.u8(0) == map.actionMenuState
     }
+
+    /** A species this game has (PokemonData.getNatDexCompatible is not BlankPokemon): GachaMon's prize card asks. */
+    fun speciesExists(id: Int): Boolean = speciesIsValid(id) && id !in 252..276
+
+    /**
+     * The name of the place [trainerId] stands (TrainerData.getTrainerInfo(id).routeId in RouteData.Info), from this
+     * version's route table: the first map whose trainers hold it. Null where none does. GachaMon's prize card shows it.
+     */
+    fun routeNameOfTrainer(trainerId: Int): String? =
+        routeInfoTable.entries.firstOrNull { trainerId in it.value.second }?.value?.first?.takeIf { it.isNotBlank() }
 
     /** A species id that this game could actually have. */
     private fun speciesIsValid(id: Int): Boolean {

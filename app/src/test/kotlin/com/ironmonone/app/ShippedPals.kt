@@ -14,6 +14,7 @@ object ShippedPals {
 
     val gen3: Map<String, Map<WalkingPals.Anim, WalkingPals.Sheet>> by lazy { WalkingPals.parse(lines("walkingpals/walkingpals.tsv")) }
     val national: Map<String, Map<WalkingPals.Anim, WalkingPals.Sheet>> by lazy { WalkingPals.parse(lines("walkingpals-nat/walkingpals-nat.tsv")) }
+    val darkus: Map<String, Map<WalkingPals.Anim, WalkingPals.Sheet>> by lazy { WalkingPals.parse(lines("walkingpals-darkus/walkingpals-darkus.tsv")) }
     val natDex: Map<Int, WalkingPals.Pal?> by lazy { WalkingPals.parseNatDexMap(lines("walkingpals-nat/natdex-map.tsv")) }
     val maxDex: Map<Int, Int> by lazy { WalkingPals.maxDexIds() }
     /** Each set's shinies, as WalkingPals.index reads them. */
@@ -22,7 +23,7 @@ object ShippedPals {
             WalkingPals.Shinies(WalkingPals.parseShinyColors(lines("${p.dir}/shiny-colors.tsv")), WalkingPals.parse(lines("${p.dir}/shiny.tsv")))
         }
     }
-    val index: WalkingPals.Index by lazy { WalkingPals.Index(gen3, national, natDex, maxDex, shinies = shinies) }
+    val index: WalkingPals.Index by lazy { WalkingPals.Index(gen3, national, natDex, maxDex, shinies = shinies, darkus = darkus) }
 
     /** The sheet file for one animation of [pal]. */
     fun file(pal: WalkingPals.Pal, anim: WalkingPals.Anim) = File("$ASSETS/${pal.path(anim)}")

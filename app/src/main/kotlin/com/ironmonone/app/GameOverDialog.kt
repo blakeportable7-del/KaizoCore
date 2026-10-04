@@ -52,6 +52,8 @@ data class GameOverMon(
     val species: Int, val name: String, val level: Int, val fainted: Boolean, val shiny: Boolean = false,
     /** The GBA game's own picture where it is not the species' plain one (TrackedMon.picture). */
     val picture: com.ironmonone.tracker.Gen3Pictures.Picture? = null,
+    /** A DS Pokemon's form (Gen4.Mon.form), for its form's picture (RC35-NOTICED row 43); 0 elsewhere. */
+    val form: Int = 0,
 )
 
 /**
@@ -136,6 +138,11 @@ fun GameOverDialog(
     card: DeathCard? = null,
     /** Sends the run's line to another app. Null hides the button. */
     onShare: (() -> Unit)? = null,
+    /**
+     * GameOverScreen.Buttons.GachaMonPrizeCard: a GachaMon card from a beaten trainer (GachaMon.makePrize). Null hides
+     * it: not a Game Boy Advance run, the option off, or fewer than two common trainers beaten.
+     */
+    onPrizeCard: (() -> Unit)? = null,
 ) {
     var teamIndex by remember { mutableIntStateOf(0) }
     // The built-in lines for how the run ended, and the player's own on top of them (DeathQuotes): one line
@@ -188,6 +195,7 @@ fun GameOverDialog(
         )
         if (onGrade != null) add(TileSpec(Glyph.STAR, "Grade my notes", Tone.PLAIN, onGrade))
         if (onInspectLog != null) add(TileSpec(Glyph.MAGNIFIER, if (family == GameOverFamily.DS) "Open the log" else "Inspect the log", Tone.PLAIN, onInspectLog))
+        if (onPrizeCard != null) add(TileSpec(Glyph.CARD, "Prize card", Tone.GOOD, onPrizeCard))
         add(TileSpec(Glyph.PLUS, "New game (new seed)", Tone.GOLD, onNewGame))
     }
     // Blake, 2026-09-10: "game over is a popup over the game screen". It covers the
@@ -339,7 +347,7 @@ private fun MonImage(bmp: ImageBitmap, name: String, fainted: Boolean, modifier:
     )
 }
 
-private enum class Glyph { ARROW, SWORD, INSTALL, MAGNIFIER, PLUS, STAR, SHARE }
+private enum class Glyph { ARROW, SWORD, INSTALL, MAGNIFIER, PLUS, STAR, SHARE, CARD }
 
 private enum class Tone { PRIMARY, PLAIN, GOLD, GOOD, DANGER }
 
@@ -405,6 +413,12 @@ private fun GlyphIcon(glyph: Glyph, color: Color, modifier: Modifier) {
                 val a = Offset(w * 0.78f, h * 0.18f); val b = Offset(w * 0.22f, h * 0.5f); val c = Offset(w * 0.78f, h * 0.82f)
                 drawLine(color, a, b, s * 0.8f); drawLine(color, b, c, s * 0.8f)
                 listOf(a, b, c).forEach { drawCircle(color, radius = w * 0.14f, center = it) }
+            }
+            // Constants.PixelImages.GACHAMON_CARD: a card with a star on it.
+            Glyph.CARD -> {
+                drawRect(color, Offset(w * 0.18f, 0f), androidx.compose.ui.geometry.Size(w * 0.64f, h), style = Stroke(s))
+                drawCircle(color, radius = w * 0.13f, center = Offset(w / 2, h * 0.42f))
+                drawLine(color, Offset(w * 0.32f, h * 0.78f), Offset(w * 0.68f, h * 0.78f), s * 0.8f)
             }
             Glyph.STAR -> {
                 val pts = (0 until 10).map { k ->

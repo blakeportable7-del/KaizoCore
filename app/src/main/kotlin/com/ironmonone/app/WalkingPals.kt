@@ -46,6 +46,10 @@ import kotlinx.coroutines.withContext
  * map for each shiny that is an exact recolor of its plain sheet; shiny.tsv
  * and shiny/, the rest as sheets of their own), and the second set Unown's
  * letters. A [Look] says which to draw; PalForms works it out from the game.
+ *
+ * Blake, 2026-10-04: "i want iron boulder, find the missing sprites". A third set, walkingpals-darkus/ ([Pack.DARKUS]),
+ * holds DarkusShadow's overworld sprites for Pokemon Sprite Collab has not drawn (Iron Boulder, Iron Crown, Chien-Pao,
+ * Mega Malamar and the rest natdex-map.tsv names there); Sprite Collab's own sheet always wins.
  */
 object WalkingPals {
     enum class Anim(val key: String) { IDLE("idle"), WALK("walk"), SLEEP("sleep"), FAINT("faint") }
@@ -59,6 +63,13 @@ object WalkingPals {
         GEN3("walkingpals", "walkingpals.tsv"),
         /** Gen 4-9 and the forms, keyed by national number or "<national>-<form>" ("387" is Turtwig, "6-mega-x"). */
         NATIONAL("walkingpals-nat", "walkingpals-nat.tsv"),
+        /**
+         * DarkusShadow's overworld sprites, keyed as [NATIONAL] is ("1022" is Iron Boulder), only where Sprite Collab has
+         * no sheet of its own (Blake, 2026-10-04: "use the ones i gave you if they fill in sprite collabs gap"). Idle and
+         * walk only, no shinies; natdex-map.tsv names this set for the ids it covers (convert_walking_pals_nat.py,
+         * DARKUSSHADOW). Free use with credit, credited on the About screen.
+         */
+        DARKUS("walkingpals-darkus", "walkingpals-darkus.tsv"),
     }
 
     /** Where one Pokemon's sheets are: a set, its key in that set's table, and whether it is the shiny ([Index.look]). */
@@ -127,10 +138,11 @@ object WalkingPals {
         private val maxDex: Map<Int, Int> = emptyMap(),
         private val internalOf: (Int) -> Int? = Favorites::fromNational,
         private val shinies: Map<Pack, Shinies> = emptyMap(),
+        private val darkus: Map<String, Map<Anim, Sheet>> = emptyMap(),
     ) {
         /** [pal]'s sheets; a shiny's own sheets in place of the plain ones for the animations that have them. */
         fun sheets(pal: Pal): Map<Anim, Sheet>? {
-            val plain = (if (pal.pack == Pack.GEN3) gen3 else national)[pal.key] ?: return null
+            val plain = when (pal.pack) { Pack.GEN3 -> gen3; Pack.NATIONAL -> national; Pack.DARKUS -> darkus }[pal.key] ?: return null
             val own = if (pal.shiny) shinies[pal.pack]?.sheets?.get(pal.key) else null
             return if (own == null) plain else plain + own.filterKeys { it in plain }
         }
@@ -341,6 +353,7 @@ object WalkingPals {
                 shinies = Pack.entries.associateWith { p ->
                     Shinies(asset(ctx, "${p.dir}/shiny-colors.tsv", emptyMap()) { parseShinyColors(it) }, asset(ctx, "${p.dir}/shiny.tsv", emptyMap()) { parse(it) })
                 },
+                darkus = asset(ctx, "${Pack.DARKUS.dir}/${Pack.DARKUS.table}", emptyMap()) { parse(it) },
             ).also { index = it }
         }
 

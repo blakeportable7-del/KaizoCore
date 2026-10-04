@@ -67,6 +67,12 @@ def main():
     expect('the pins come from tools/release-certs.txt by default', check(pins=None), refused=sb.rc.pinned_certs()[1] is not None)
     expect('another package', check(package='com.example'), refused=True)
     expect('a site with no latest.json yet', check(site_code=None, site_sha=None), refused=False)
+    # The page check after the edit (rc34.1): a point release's own name holds its parent's.
+    for name, page, old, new, refused in (('a point release', 'Download KaizoCore 1.0.0-rc34.1 for Android', '1.0.0-rc34', '1.0.0-rc34.1', False),
+                                          ('a point release with the old name left', 'KaizoCore 1.0.0-rc34.1, was 1.0.0-rc34', '1.0.0-rc34', '1.0.0-rc34.1', True),
+                                          ('a release with the old name left', 'rc35, was 1.0.0-rc34', '1.0.0-rc34', '1.0.0-rc35', True),
+                                          ('a respin', 'Download KaizoCore 1.0.0-rc34', '1.0.0-rc34', '1.0.0-rc34', False)):
+        expect(name, 'names the old version' if sb.names_old(page, old, new) else None, refused=refused)
     for f in failures:
         print('FAIL', f)
     print('site_bump checks: %d failed' % len(failures))

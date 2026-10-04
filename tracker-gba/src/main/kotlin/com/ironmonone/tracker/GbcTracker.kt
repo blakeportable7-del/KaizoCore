@@ -565,6 +565,8 @@ class GbcTracker(
             // Johto's eight in the art's order, Kanto's eight above them (the badge row draws all sixteen).
             badges = johtoInArtOrder(johto) or (kanto shl 8),
             badgeSet = "GSC",
+            // The Hall of Fame flag; a Kanto badge says the same, as Kanto's gyms open only after the League.
+            leagueBeaten = kanto != 0 || (m.statusFlags != 0L && ram(m.statusFlags, 1).let { it.isNotEmpty() && (it.u8(0) and 0x40) != 0 }),
             healPercent = heals.percent,
             healCount = heals.count,
             healHp = heals.hp,
@@ -640,6 +642,13 @@ data class Gen2Map(
     val menu2D: Long = 0L,
     /** wCurBattleMon, the party slot of the player's Pokemon in battle: pokecrystal 0xD0D4, pokegold 0xCFC6. */
     val curBattleMon: Long = 0L,
+    /**
+     * wStatusFlags, whose bit 6 is STATUSFLAGS_HALL_OF_FAME_F, set when the Johto League is beaten
+     * (engine/events/halloffame.asm:15): eleven bytes below wJohtoBadges in both games (wStatusFlags, wStatusFlags2,
+     * wMoney 3, wMomsMoney 3, wMomSavingMoney, wCoins 2: pokecrystal ram/wram.asm:3071-3105, pokegold :2487-2504),
+     * pokecrystal 0xD84C, pokegold 0xD571. Survival's Kanto heals wait on it.
+     */
+    val statusFlags: Long = 0L,
 ) {
     companion object {
         val CRYSTAL = Gen2Map(
@@ -659,6 +668,7 @@ data class Gen2Map(
             trainerTable = 0x39999,
             menu2D = 0x0FA1L,
             curBattleMon = 0x10D4L,
+            statusFlags = GbcTracker.JOHTO_BADGES - 11,
         )
 
         /** pokegold: wPartyCount DA22, wPartySpecies DA23, wPartyMons DA2A, wEnemyMon D0EF, wBattleMode D116,
@@ -679,6 +689,7 @@ data class Gen2Map(
             trainerTable = 0x3993E,
             menu2D = 0x0ED8L,
             curBattleMon = 0x0FC6L,
+            statusFlags = 0x157CL - 11,
         )
 
         /**

@@ -621,6 +621,24 @@ internal fun RuleCross(description: String) {
 }
 
 /**
+ * The item or ability line of the card. With a [ban] (RuleMarks) the X follows it in the rules' red, and a tap on the
+ * X shows the rule in one plain line; a tap on the words still opens what the item or ability does.
+ */
+@Composable
+private fun RuleMarkedLine(text: String, ban: String?, what: String, onTap: (() -> Unit)?) {
+    val words = if (onTap != null) Modifier.clickable { onTap() } else Modifier
+    if (ban == null) { PixText(text, PcRef.FONT, Pc.Gold, words); return }
+    var open by remember { mutableStateOf(false) }
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        PixText(text, PcRef.FONT, Pc.Gold, words.weight(1f, fill = false))
+        Box(Modifier.clickable(role = Role.Button, onClickLabel = "Why it is banned") { open = true }.padding(horizontal = 2.rp)) {
+            RuleCross("$what banned in this run")
+        }
+    }
+    if (open) InfoSheet(text, { open = false }) { InfoParagraph(null, ban) }
+}
+
+/**
  * The enemy stat column as notes. Tapping cycles blank → + → − → =, the
  * reference tracker's four states, stored per species by the caller.
  */
@@ -694,6 +712,10 @@ fun PcHeadBlock(
     onAbilityTap: (() -> Unit)? = null,
     /** The upper of the two lines: the held item on your own card, the first ability on the enemy's. */
     onItemTap: (() -> Unit)? = null,
+    /** This run bans the held item (RuleMarks): the X after it, and the line a tap on the X shows. */
+    itemBan: String? = null,
+    /** This run bans the ability, or the physical moves it makes banned (RuleMarks): the X and its line. */
+    abilityBan: String? = null,
     onNameTap: (() -> Unit)? = null,
     /** TrackerScreen.lua:76: tapping the type icons opens TypeDefensesScreen for this Pokemon. */
     onTypesTap: (() -> Unit)? = null,
@@ -817,16 +839,10 @@ fun PcHeadBlock(
                     // into one "A / B" string is why "Pressure / Inner Focus"
                     // ran off the edge of a 96-unit box.
                     if (itemLine.isNotBlank())
-                        PixText(itemLine, PcRef.FONT, Pc.Gold,
-                            if (onItemTap != null) Modifier.clickable { onItemTap() } else Modifier)
+                        RuleMarkedLine(itemLine, itemBan, "Held item", onItemTap)
                     if (abilityLine.isNotBlank()) {
                         Spacer(Modifier.height(1.rp))
-                        PixText(
-                            abilityLine, PcRef.FONT, Pc.Gold,
-                            if (onAbilityTap != null)
-                                Modifier.clickable { onAbilityTap() }
-                            else Modifier,
-                        )
+                        RuleMarkedLine(abilityLine, abilityBan, "Ability", onAbilityTap)
                     }
                 }
             }
@@ -1372,6 +1388,11 @@ fun PcCarousel(
     /** The lead's level: under 13, the route's wild encounters replace the badges. */
     leadLevel: Int = 0,
     routeTrainersDefeated: Int = 0,
+    /**
+     * The Trainers defeated line's total: the map's combined area less the rivals not faced (TrackerState.routeTrainersTotal).
+     * 0 where the tracker counts none; the map's own [routeTrainers] then stands in.
+     */
+    routeTrainersTotal: Int = 0,
     badges: Int,
     badgeSet: String,
     note: String,
@@ -1408,10 +1429,12 @@ fun PcCarousel(
     onLastAttackTap: (() -> Unit)? = null,
     /** HGSS: the League is beaten, so a single badge row is Kanto's (hgssBadgeRows). */
     leagueBeaten: Boolean = false,
+    /** TrackerScreen.Buttons.GachaMonSummary: "GachaMon captured!" opens the new card's pack; null hides the item. */
+    onGachaTap: (() -> Unit)? = null,
 ) {
     // TrackerScreen.getCurrentCarouselItem, item for item. The order is
     // CarouselTypes': BADGES, TRAINERS, LAST_ATTACK, ROUTE_INFO, NOTES,
-    // BATTLE_DETAILS, PEDOMETER. Each shows only while its Setup toggle is on
+    // BATTLE_DETAILS, PEDOMETER, GACHAMON. Each shows only while its Setup toggle is on
     // and its own condition holds; the current one stays until its frames run
     // out (with rotation allowed) or it can no longer show.
     val now = remember { mutableStateOf(System.currentTimeMillis()) }
@@ -1444,6 +1467,9 @@ fun PcCarousel(
         // TrackerScreen.lua:772-777: in battle, while the viewed battler has a detail to summarize.
         Triple("battleDetails", 180, TrackerOptions.carouselShows("BattleDetails") && inBattle && battleDetailsSummary != null),
         Triple("pedometer", 210, pedometerShows),
+        // TrackerScreen.lua:910-935: a new card waiting, outside a battle, unless the pack shows on the tracker itself.
+        Triple("gachamon", 210, GachaMonShown.carousel(onGachaTap != null && TrackerOptions.carouselShows("GachaMon"),
+            GachaMonOptions.showPack, GachaMon.newest != null, inBattle)),
     )
     fun rotate() {
         for (step in 1..items.size) {
@@ -1473,7 +1499,11 @@ fun PcCarousel(
     when (shown.first) {
         "badges" -> PcBadgeRow(badges, badgeSet, leagueBeaten)
         "pedometer" -> PcPedometerLine(steps)
-        "trainers" -> PcCarouselLine("Trainers defeated:", "$routeTrainersDefeated/$routeTrainers", Pc.LowerText, onTap = onTrainersTap)
+        // TrackerScreen.lua:498-511 and :879-896: the sword in the positive color, then "Trainers defeated: 3/12".
+        "trainers" -> PcCarouselLine(
+            "Trainers defeated:", "$routeTrainersDefeated/${if (routeTrainersTotal > 0) routeTrainersTotal else routeTrainers}", Pc.LowerText,
+            onTap = onTrainersTap, icon = { PcPixelImage(SWORD, Pc.Positive) },
+        )
         "notes" -> PcNoteRow(note, onEditNote)
         "lastAttack" -> PcLastAttackLine(lastAttack ?: "", lastAttackLethal, onLastAttackTap)
         // "%s: %s %s": the area, seen/total (just seen when a seed puts more there), "Seen Pokemon".
@@ -1484,6 +1514,7 @@ fun PcCarousel(
             onTap = onRouteTap,
         )
         "battleDetails" -> PcBattleSummaryLine(battleDetailsSummary ?: "", onBattleDetailsTap)
+        "gachamon" -> GachaMonCarouselLine { onGachaTap?.invoke() }
     }
 }
 
@@ -1494,6 +1525,8 @@ private fun PcCarouselLine(
     value: String,
     valueColor: Color,
     onTap: (() -> Unit)? = null,
+    /** A pixel image before the label, as the reference's carousel buttons carry one (the sword on Trainers defeated). */
+    icon: (@Composable () -> Unit)? = null,
 ) {
     Row(
         Modifier.fillMaxWidth().clip(androidx.compose.foundation.shape.RoundedCornerShape(TrackerLook.RADIUS.rp))
@@ -1502,6 +1535,7 @@ private fun PcCarouselLine(
             .padding(horizontal = 6.dp, vertical = 5.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        icon?.let { it(); Spacer(Modifier.width(4.dp)) }
         PixText(label, 8, Pc.LowerText)
         Spacer(Modifier.width(6.dp))
         PixText(value, 8, valueColor)
@@ -1786,6 +1820,8 @@ fun PcHealsBlock(
     percent: Int, count: Int, wholeHp: Int? = null, pcHealsAttempt: Int? = null,
     /** TrackerScreen.Buttons.HealsInBag: the heals text opens Heals in Bag on its All tab. */
     onTap: (() -> Unit)? = null,
+    /** What the box's right edge shows when "Track PC Heals" does not: GachaMon's stars (GachaMonHealsStars). */
+    trailing: (@Composable () -> Unit)? = null,
 ) {
     // TrackerScreen.lua:1276 draws both lines in Default text. The colour
     // ramp here was invented, and it painted "0% HP (0)" bright red as though
@@ -1796,8 +1832,8 @@ fun PcHealsBlock(
             // "Show heals as whole number": the HP the bag would restore, instead of the share of max HP.
             PixText(if (TrackerOptions.healsWhole && wholeHp != null) "$wholeHp HP ($count)" else "$percent% HP ($count)", PcRef.FONT, Pc.Text)
         }
-        // "Track PC Heals": the counter at the box's right edge.
-        if (pcHealsAttempt != null) PcHealCounter(pcHealsAttempt)
+        // "Track PC Heals": the counter at the box's right edge; otherwise GachaMon's stars, as TrackerScreen.lua:1291 draws them.
+        if (pcHealsAttempt != null) PcHealCounter(pcHealsAttempt) else trailing?.invoke()
     }
 }
 

@@ -295,7 +295,7 @@ fun RunScreen(
                 Column {
                     Text("Run", style = MaterialTheme.typography.bodySmall, color = Shell.hintOnNight)
                     Text(
-                        "Attempt ${store.attemptOf(rom.id, selectedSettings?.name)}",
+                        "Attempt ${RunHeader.attempt(inPlay?.attempt, store.attemptOf(rom.id, selectedSettings?.name))}",
                         fontSize = 26.sp,
                         fontWeight = FontWeight.Medium,
                         color = Shell.textOnNight,
@@ -678,6 +678,17 @@ fun RunScreen(
  * second half, the run to go back to while Play is on a Library game, so the screen had no way to continue a run that
  * Play already had up.
  */
+/**
+ * The run page's big "Attempt N" (QA rc34.1: it moved from 789 to 790 with no new run). It is the run in play's number
+ * whenever there is one, the number the Continue button and the tracker show, and the picked game's count only when no
+ * run is in play. It used to be the picked game and mode's count, so a pick that changed while Play was on a Library
+ * game (another game, or a mode never run on this one, which counts from the game's total) showed a different number
+ * beside "Continue attempt 789", though no attempt had been made. The next attempt's number stays on the Start button.
+ */
+internal object RunHeader {
+    fun attempt(inPlay: Int?, picked: Int): Int = inPlay ?: picked
+}
+
 private class RunInPlay(val attempt: Int, val game: String, val libraryGame: String?, val nuzlocke: Boolean = false)
 
 @Composable

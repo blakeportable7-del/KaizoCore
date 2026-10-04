@@ -65,68 +65,68 @@ gba-0063	DONE	CoverageCalc.kt:136	each bucket tab carries its total
 gba-0064	DONE	CoverageCalc.kt:109	skips anything that still evolves
 gba-0065	DONE	CoverageCalc.kt:83	opened from the gear
 gba-0066	DONE	CoverageCalc.kt:115	inline type picker instead of a titled screen
-gba-0113	MISSING	-	GachaMon card-pack opening animation not implemented
-gba-0114	MISSING	-	GachaMon trainer prize cards not implemented
-gba-0115	MISSING	-	GachaMon 'NEW' marker not implemented
-gba-0116	MISSING	-	GachaMon cards (battle power) not implemented
-gba-0117	MISSING	-	GachaMon collection not implemented
-gba-0118	MISSING	-	GachaMon card battles not implemented
-gba-0119	MISSING	-	GachaMon collection cleanup not implemented
-gba-0120	MISSING	-	GachaMon favourite cards not implemented
-gba-0121	MISSING	-	GachaMon help link not implemented
-gba-0122	MISSING	-	GachaMon collection not implemented
-gba-0123	MISSING	-	GachaMon about tab not implemented
-gba-0124	MISSING	-	GachaMon about tab not implemented
-gba-0125	MISSING	-	GachaMon about tab not implemented
-gba-0126	MISSING	-	GachaMon about tab not implemented
-gba-0127	MISSING	-	GachaMon card view not implemented
-gba-0128	MISSING	-	GachaMon about tab not implemented
-gba-0129	MISSING	-	GachaMon about tab not implemented
-gba-0130	MISSING	-	GachaDex not implemented
-gba-0131	MISSING	-	GachaMon card view not implemented
-gba-0132	MISSING	-	GachaMon options not implemented
-gba-0133	MISSING	-	GachaMon about tab not implemented
-gba-0134	MISSING	-	GachaMon auto-add rules not implemented
-gba-0135	MISSING	-	GachaMon card rating not implemented
-gba-0136	MISSING	-	GachaMon rating rulesets not implemented
-gba-0137	MISSING	-	GachaMon card view not implemented
-gba-0138	MISSING	-	GachaDex not implemented
-gba-0139	MISSING	-	GachaMon collection sort not implemented
-gba-0140	MISSING	-	GachaMon about tab not implemented
-gba-0141	MISSING	-	GachaMon card view not implemented
-gba-0142	MISSING	-	GachaMon rating rulesets not implemented
-gba-0143	NA	-	BizHawk Lua-console fallback for the help link (GachaMon itself is missing)
-gba-0144	MISSING	-	GachaMon option; no GachaMon
-gba-0145	MISSING	-	GachaMon option; no GachaMon
-gba-0146	MISSING	-	GachaMon option; no GachaMon
-gba-0147	MISSING	-	GachaMon option; no GachaMon
-gba-0148	MISSING	-	GachaMon option; no GachaMon
-gba-0149	MISSING	-	no GachaMon stars next to heals
-gba-0150	MISSING	-	GachaMon captures tab not implemented
-gba-0151	MISSING	-	GachaMon captures tab not implemented
-gba-0152	MISSING	-	GachaMon about tab not implemented
-gba-0153	MISSING	-	GachaMon about tab not implemented
-gba-0154	MISSING	-	GachaMon overlay tabs not implemented
-gba-0155	MISSING	-	GachaMon overlay tabs not implemented
-gba-0156	MISSING	-	GachaMon overlay tabs not implemented
-gba-0157	MISSING	-	GachaMon overlay tabs not implemented
-gba-0158	MISSING	-	GachaMon overlay tabs not implemented
-gba-0159	MISSING	-	GachaMon overlay tabs not implemented
-gba-0160	MISSING	-	GachaMon overlay tabs not implemented
-gba-0161	MISSING	-	GachaMon card rating not implemented
-gba-0162	MISSING	-	GachaMon card rating not implemented
+gba-0113	DONE	GachaMonPack.kt:68	The pack says "Tap the pack to open it" (a tap here, where the reference names its Next page button)
+gba-0114	DONE	GachaMonPack.kt:70	"Prize Card from Trainer:" heads a prize card's reveal, with the trainer and the place
+gba-0115	DONE	GachaMonPack.kt:67	NEW under a revealed card of a species not yet collected, and "NEW! GachaMon captured!" in the carousel
+gba-0116	DONE	GachaMonScreen.kt:181	BP sort and "8000 BP" on the View tab; Battle Power on every card
+gba-0117	DONE	GachaMonScreen.kt:79	Add to Collection on the View tab
+gba-0118	NA	-	The reference hides its Battle button and tab ("not ready yet", isVisible returns false); not shown here either
+gba-0119	DONE	GachaMonScreen.kt:590	Clean up collection (Options): stars, Battle Power, favorite, shiny; favorites never removed
+gba-0120	DONE	GachaMonScreen.kt:77	Favorite on the View tab; a favorited capture is kept, as in the reference
+gba-0121	DONE	GachaMonScreen.kt:103	About tab: Help opens the tracker's GachaMon page in the browser
+gba-0122	DONE	GachaMonScreen.kt:78	In Collection on the View tab; taking a collection card out asks first
+gba-0123	DONE	GachaMonScreen.kt:661	About tab
+gba-0124	DONE	GachaMonScreen.kt:661	About tab
+gba-0125	DONE	GachaMonScreen.kt:98	About tab, How it works
+gba-0126	DONE	GachaMonScreen.kt:98	About tab, step 4, "Battle! (coming soon)" as the reference says
+gba-0127	DONE	GachaMonScreen.kt:322	View tab
+gba-0128	DONE	GachaMonScreen.kt:101	About tab, What's on a card
+gba-0129	DONE	GachaMonScreen.kt:98	About tab, How it works
+gba-0130	DONE	GachaMonScreen.kt:106	GachaDex: "Collected: N / total" and the percentage
+gba-0131	DONE	GachaMonScreen.kt:322	View tab: date (07/22/26), game, seed
+gba-0132	DONE	GachaMonScreen.kt:92	Options tab
+gba-0133	DONE	GachaMonScreen.kt:98	About tab, How it works
+gba-0134	DONE	GachaMonScreen.kt:83	Options tab, with its two switches
+gba-0135	DONE	GachaMonScreen.kt:312	View tab: "69 points (5 stars)", "5+" for the top card
+gba-0136	DONE	GachaMonScreen.kt:565	Options tab: auto from the run's settings or a ruleset; Ascension 1-3 on Nat. Dex
+gba-0137	DONE	GachaMonScreen.kt:322	View tab: "Seed 1,220"
+gba-0138	DONE	GachaMonScreen.kt:105	GachaDex tab
+gba-0139	DONE	GachaMonScreen.kt:181	Captures and Collection: Stars, BP, Date; a second tap goes back to the tab's order
+gba-0140	DONE	GachaMonScreen.kt:100	About tab, What's on a card
+gba-0141	DONE	GachaMonScreen.kt:322	View tab: the six stats, nature + and - colored as on PC
+gba-0142	DONE	GachaMonScreen.kt:87	Options tab: "Kaizo (Auto)"
+gba-0143	NA	-	BizHawk Lua-console fallback for the help link; the Help link here opens the page itself
+gba-0144	DONE	GachaMon.kt:151	Options tab; on by default, as in the reference
+gba-0145	DONE	GachaMon.kt:145	Options tab; gates the game over's Prize card and keeps the card; on by default
+gba-0146	DONE	GachaMon.kt:141	Options tab; off by default
+gba-0147	DONE	GachaMon.kt:143	Options tab; on by default; a trainer battle won by a standing lead counts
+gba-0148	DONE	GachaMon.kt:149	Options tab; the pack takes your Pokemon's place until opened; off by default
+gba-0149	DONE	GachaMonPack.kt:270	Stars next to heals: the card now against as made, gains orange, losses hollow; Track PC Heals takes turns with it
+gba-0150	DONE	GachaMonScreen.kt:67	Captures tab, while three or fewer cards
+gba-0151	DONE	GachaMonScreen.kt:67	Captures tab ("Tap Add to Collection")
+gba-0152	DONE	GachaMonScreen.kt:661	About tab
+gba-0153	DONE	GachaMonScreen.kt:661	About tab
+gba-0154	DONE	GachaMonScreen.kt:60	The tab reads About
+gba-0155	NA	-	The reference leaves its Battle tab out ("not ready yet"); so does this
+gba-0156	DONE	GachaMonScreen.kt:60	GachaMon screen tabs
+gba-0157	DONE	GachaMonScreen.kt:60	GachaMon screen tabs
+gba-0158	DONE	GachaMonScreen.kt:60	GachaMon screen tabs
+gba-0159	DONE	GachaMonScreen.kt:60	GachaMon screen tabs
+gba-0160	DONE	GachaMonScreen.kt:60	GachaMon screen tabs
+gba-0161	DONE	GachaMonScreen.kt:312	"69 points (5 stars)"
+gba-0162	DONE	GachaMonScreen.kt:312	"69 points (5 stars)"
 gba-0190	DONE	GameOverDialog.kt:124	closes the popup, run continues
 gba-0191	DONE	GameOverDialog.kt:144	opens the score sheet
 gba-0192	DONE	GameOverDialog.kt:145	opens the run's randomizer log
 gba-0193	MISSING	-	no way to open an outside log file; only the app's own run log (GameOverHost.kt)
-gba-0194	MISSING	-	GachaMon prize card not implemented
+gba-0194	DONE	GameOverDialog.kt:196	Prize card on the game over popup once two common trainers are beaten; its pack, then its View tab (GachaMon.kt:718)
 gba-0195	DONE	GameOverDialog.kt:126	restores the battle-start state
 gba-0196	DONE	GameOverDialog.kt:126	two-tap confirm
 gba-0197	DONE	GameOverDialog.kt:133	copies ROM, log, state and notes
 gba-0198	DONE	GameOverDialog.kt:135	reported in place
 gba-0199	DONE	GameOverDialog.kt:134	'Saved to the attempts folder'
 gba-0200	NA	-	key unused by reference code
-gba-0201	DONE	GameOverDialog.kt:145	same action; the small 'View log' only exists beside the GachaMon prize card
+gba-0201	DONE	GameOverDialog.kt:145	same action; the reference's small View log beside the prize card is our Inspect the log tile beside it
 gba-0202	DONE	GameOverDialog.kt:188	attempt number
 gba-0203	MISSING	-	no play timer on Gen 3 (Stats row says 'not kept'); the reference shows Play Time
 gba-0204	DONE	GameOverDialog.kt:215	on a win
@@ -249,7 +249,7 @@ gba-0928	DONE	GbaTracker.kt:1044	rod read from the used item
 gba-0929	DONE	GbaTracker.kt:1044	terrain 4/5
 gba-0930	DONE	GbaTracker.kt:1044	terrain 3
 gba-0931	DONE	GbaTracker.kt:1044	default area
-gba-0932	MISSING	-	GachaMon carousel item not implemented
+gba-0932	DONE	PcTracker.kt:1492	The carousel's GachaMon line (GachaMonPack.kt:288); tap opens the pack
 gba-0933	DONE	PcTracker.kt:604	HP: cur/max coloured at 50%/20%
 gba-0934	DONE	PcTracker.kt:713	moves header
 gba-0935	DONE	PcTracker.kt:669	'Moves 3/11 (17)', opens Move History

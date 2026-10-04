@@ -406,10 +406,14 @@ private fun NdsPartyCard(
     onBstTap: (() -> Unit)? = null,
     /** This run's banned moves (MoveRule): the X on a move and the line on its card. */
     markMove: (PcMove) -> PcMove = { it },
+    /** This run bans its held item or its ability (RuleMarks): the line a tap on the X shows. */
+    itemBan: String? = null,
+    abilityBan: String? = null,
 ) {
     val m = p.mon
     val context = androidx.compose.ui.platform.LocalContext.current
-    val sprite = remember(m.species, m.shiny, m.form) { RomFormSprites.sprite(context, m.species, m.form, m.shiny) ?: PcAssets.dsSprite(context, m.species, m.shiny) }
+    // Its form's picture from the ROM, else its species', decoded off the main thread (DsPictures).
+    val sprite = rememberDsPicture(m.species, m.form, m.shiny)
     // MainScreen.lua:860-889: GEN_5_ITEMS[heldItem].name, "---" for no item (entry 0)
     // and blank for an id the table lacks.
     val lines = ndsHeadLines(m, enemy = false, itemName = p.itemName, abilityName = p.abilityName)
@@ -423,6 +427,7 @@ private fun NdsPartyCard(
             hpText = lines.hp, showHp = lines.hp != null,
             itemLine = lines.item,
             abilityLine = lines.ability,
+            itemBan = itemBan, abilityBan = abilityBan,
             onAbilityTap = onInfo?.let { cb -> { cb(p.abilityName, "Ability",
                 com.ironmonone.tracker.nds.NdsLogData.abilityDescription(m.abilityId, gen)) } },
             onItemTap = onInfo?.takeIf { m.heldItem != 0 && p.itemName.isNotBlank() }?.let { cb -> { cb(p.itemName, "Held item",
@@ -435,8 +440,8 @@ private fun NdsPartyCard(
             // with them off, with no sheet, or for an egg (whose species is what will hatch).
             iconSpecies = if (m.isEgg) 0 else m.species,
             iconDex = WalkingPals.Dex.NATIONAL,
-            // A shiny walks as its shiny (Blake, 2026-10-03).
-            iconLook = WalkingPals.Look(shiny = m.shiny),
+            // A shiny walks as its shiny (Blake, 2026-10-03), a form with a sheet of its own in it (Rotom's appliances).
+            iconLook = PalForms.ds(m.species, m.form, m.shiny),
             belowHead = heals?.let { v -> { NdsHealsBlock(v, onHealsList, onPokecenter) } },
         ) {
             PcStatRow("HP", "${m.maxHp}", p.statStages["HP"], nature = m.nature)
@@ -489,7 +494,7 @@ private fun NdsEnemyCard(
     onBstTap: (() -> Unit)? = null,
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
-    val sprite = remember(e.mon.species, e.mon.form) { RomFormSprites.sprite(context, e.mon.species, e.mon.form, false) ?: PcAssets.dsSprite(context, e.mon.species, false) }
+    val sprite = rememberDsPicture(e.mon.species, e.mon.form, false)
     // MainScreen.setEnemySpecificControls: no HP row, the item line reads "Total seen"
     // and the ability line "Last level" (an ability it reveals goes into its note,
     // Tracker.trackAbilityNote).
@@ -510,7 +515,7 @@ private fun NdsEnemyCard(
             sprite = sprite,
             iconSpecies = if (e.mon.isEgg) 0 else e.mon.species,
             iconDex = WalkingPals.Dex.NATIONAL,
-            iconLook = WalkingPals.Look(shiny = e.mon.shiny),
+            iconLook = PalForms.ds(e.mon.species, e.mon.form, e.mon.shiny),
         ) {
             // Enemy stats are unknown: this column is the notebook.
             PcMarkColumn(marks, onCycleMark)
@@ -705,6 +710,8 @@ fun NdsTrackerPanel(
     joinedForms: JoinedForms? = joinedFormsInPlay(attempt, bstLines),
     /** The run's banned moves (MoveRule), from the run in Play; a test hands its own. */
     moveRules: MoveRule.Rules? = moveRulesInPlay(attempt),
+    /** The run's mode for its banned items and abilities (RuleMarks); a test hands its own. */
+    ruleRun: RuleMarks.Run? = ruleRunInPlay(attempt),
 ) {
     // The run-over card is a Kaizo IronMON run's only (PlayRules, 2026-09-30).
     val ironmonOver = ironmonGameOverCard(state?.runOver != null)
@@ -837,7 +844,10 @@ fun NdsTrackerPanel(
                         gen = if (state.badgeSet.startsWith("BW")) 5 else 4,
                         bstBroken = joinedVersion >= 0 && BstRule.ownBreaks(p.info?.bst, bstLines, joinedForms, p.mon.pid, p.mon.species),
                         onBstTap = { bstSheet = Triple(p.info?.bst ?: 0, bstLines?.own ?: 0, p.mon.pid) },
-                        markMove = MoveRule.ndsMark(moveRules, p, state))
+                        markMove = MoveRule.ndsMark(moveRules, p, state, ruleRun),
+                        itemBan = RuleMarks.itemLine(ruleRun.takeIf { TrackerOptions.ruleMarks }, p.itemName.takeIf { p.mon.heldItem != 0 }, p.moves.map { it.name }),
+                        abilityBan = RuleMarks.abilityLine(ruleRun.takeIf { TrackerOptions.ruleMarks }, p.abilityName, p.info?.bst,
+                            ruleRun?.canEvolve(p.speciesName, MoveRule.ndsCanEvolve(p.mon)) == true))
                 }
                 if (showEnemy) shownEnemy?.let {
                     // readTrackedEncountersIntoLabel: only in a wild battle, and only where the

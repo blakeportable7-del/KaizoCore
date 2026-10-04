@@ -30,6 +30,9 @@ share a key, straight from PMD Sprite Collab (github.com/PMDCollab/SpriteCollab,
     <assets>/walkingpals-nat/shiny-colors.tsv, shiny.tsv, shiny/{idle,walk,sleep,faint}/<key>.png
         The shinies (Blake, 2026-10-03: "If they are shiny you should be able to play as shiny"). See
         THE SHINIES below.
+    <assets>/walkingpals-darkus/walkingpals-darkus.tsv, credits.tsv, {idle,walk}/<key>.png
+        DarkusShadow's overworld sprites where Sprite Collab has no sheet of its own, keyed as this set is,
+        with empty shiny tables. See DARKUSSHADOW below.
 
 UNOWN'S LETTERS. Besides the Nat. Dex's own forms, every letter Sprite Collab has drawn for Unown ships
 as "201-<letter>" ("201-b" to "201-z", "201-exclamation", "201-question"): no Nat. Dex id names them,
@@ -80,13 +83,35 @@ Lugia, Rayquaza), placed by eye with no pattern a clamp on how far they rise or 
 every side, as on PC. Idle and walk share a ground point for 88% of the new sheets (52% of the
 hand-placed ones).
 
+DARKUSSHADOW. Where Sprite Collab has no sheet of its own for a Nat. Dex id (a species nobody has drawn, or a Mega or
+form whose slot is empty), DarkusShadow's overworld sprite fills the gap (Blake, 2026-10-04: "use the ones i gave you if
+they fill in sprite collabs gap"). His sheets are build inputs in tools/trainer-data/sources/darkusshadow/, each listed in
+its sources.tsv with the post, the dates, its sha256 (checked every run), the artists his credits name and his terms
+("Free Use, Give Credits If Used"); nothing is fetched here. His format: 4 x 4 square frames (32 x 32, Miraidon's
+64 x 64) drawn at twice their pixels, the rows facing down, left, right and up, a four-frame walk in each (frames 0 and 2
+on the ground, 1 and 3 a pixel up). Each becomes a sheet of this set's kind in walkingpals-darkus/:
+    pixels  every 2 x 2 block is checked to be one color and taken as one pixel, so the sprite is drawn at his own
+            pixels. On the 8 species both sources draw, that is 0.80 of Sprite Collab's height (median; 0.83 by area),
+            where the posted size would be 1.6. Nothing is resampled: a sheet that is not an exact doubling is refused.
+    rows    this set's eight facings from his four: down, right, up and left as drawn, and each diagonal as the side
+            view, since he draws none (DARKUS_ROWS).
+    walk    his four frames from the first step (1, 2, 3, 0), 8 game frames each: 32 a cycle, the two tiles the
+            player's own walk takes for its four, and Sprite Collab's median walk frame.
+    idle    his two grounded poses (0, 2), 32 game frames each; Sprite Collab's median idle cycle is 65.
+    offset  THE OFFSET RULE on the idle sheet, and the same for walk: one frame grid, and the step's lift is in the art.
+    sleep and faint: none; the app shows idle (SheetSet.substitute, WalkingPalsIcon).
+    shinies: none. Every post's shiny is on his full "SHINY Gen 9 (Paldea)" sheet, whose public copy is a scaled JPEG
+            (the original needs a login); a shiny walks in plain colors, as where Sprite Collab has no shiny.
+natdex-map.tsv names the set and the note says why. The first run after Sprite Collab draws one of them uses that sheet
+instead, and prints the sources it no longer needs; a form with no sheet of either kind walks as its base species.
+
 --check-rule  also checks out the Gen 1-3 base folders and prints that agreement.
 --preview     writes <cache>/contact.png (Gen 4-9 idle frames beside shipped Gen 1-3 ones, each in a
               32x32 box at its offset, and the Gen 1-3 ones again as the rule places them) and
               <cache>/walk-<key>.gif.
 Needs: git, Python 3 with Pillow and numpy.
 """
-import argparse, collections, io, json, math, pathlib, re, struct, subprocess, sys, unicodedata, zlib
+import argparse, collections, hashlib, io, json, math, pathlib, re, struct, subprocess, sys, unicodedata, zlib
 import xml.etree.ElementTree as ET
 
 import numpy as np
@@ -328,8 +353,9 @@ class Target:
         self.key = str(national) + ("-" + form if form else "")
 
 
-def plan(col, names):
-    """Every sheet to write, and the Nat. Dex map rows (id -> (national, form, set, key, note))."""
+def plan(col, names, darkus=None, skipped=None):
+    """Every sheet to write, and the Nat. Dex map rows (id -> (national, form, set, key, note)). [darkus]: the
+    DARKUSSHADOW sources (sources.tsv when None); [skipped], a list, gets the ones a Sprite Collab sheet makes unneeded."""
     by_name = {norm(v["name"]): int(k) for k, v in col.tracker.items()}
     targets, rows = {}, {}
 
@@ -405,6 +431,9 @@ def plan(col, names):
         t = Target(nat, fk, folder, "%s %s" % (base, real.replace("_", " ")), note)
         targets.setdefault(t.key, t)
         rows[i] = (nat, fk, "walkingpals-nat", t.key, note)
+    rows, unneeded = fill_gaps(rows, names, darkus_sources() if darkus is None else darkus)
+    if skipped is not None:
+        skipped += unneeded
     return targets, stand_in(rows, names, by_name)
 
 
@@ -447,6 +476,129 @@ def gen3_internal(nat, names, by_name):
         if by_name.get(norm(names.get(i, ""))) == nat:
             return i
     raise ValueError("no Gen 3 internal id for national %d" % nat)
+
+
+# ---------------------------------------------------------------- DARKUSSHADOW: the second source
+
+DARKUS_DIR = REPO / "tools/trainer-data/sources/darkusshadow"
+DARKUS_SET = "walkingpals-darkus"
+DARKUS_NOTE = "no Sprite Collab sheet; DarkusShadow's overworld sprite fills the gap until one is drawn"
+# This set's eight facings top to bottom (down, down-right, right, up-right, up, up-left, left, down-left), each from one
+# of his four rows (down, left, right, up). He draws no diagonal, so the side view stands in for each.
+DARKUS_ROWS = (0, 2, 2, 2, 3, 1, 1, 1)
+DARKUS_WALK, DARKUS_WALK_FRAMES = (1, 2, 3, 0), 8  # his walk from its first step; game frames each
+DARKUS_IDLE, DARKUS_IDLE_FRAMES = (0, 2), 32  # his two grounded poses
+DARKUS_COLUMNS = ["file", "natdex", "name", "key", "title", "post", "posted", "fetched", "sha256", "artists", "terms"]
+
+
+class DarkusSource:
+    """One row of sources.tsv: one of his sheets and the Nat. Dex id it is drawn for."""
+
+    def __init__(self, cols):
+        for k, v in zip(DARKUS_COLUMNS, cols):
+            setattr(self, k, v)
+        self.natdex = int(self.natdex)
+
+    def sprite(self):
+        """What the post calls it, less "Overworld Sprite": "Gimmighoul Chest Form", "Mega Malamar"."""
+        return re.sub(r"(?i)\s*overworld sprites?\s*$", "", self.title).strip()
+
+
+def darkus_sources(folder=DARKUS_DIR):
+    p = folder / "sources.tsv"
+    out = []
+    for line in p.read_text(encoding="utf-8").splitlines() if p.exists() else []:
+        if line.startswith("#") or not line.strip():
+            continue
+        c = line.split(TAB)
+        if len(c) != len(DARKUS_COLUMNS):
+            sys.exit("%s: a row of %d columns, not %d: %s" % (p, len(c), len(DARKUS_COLUMNS), line))
+        out.append(DarkusSource(c))
+    return out
+
+
+def fill_gaps(rows, names, sources):
+    """DARKUSSHADOW: a Nat. Dex id whose row has no sheet (a species nobody has drawn, or a Mega or form whose slot is
+    empty) takes the DarkusShadow sheet drawn for it. A row with a Sprite Collab sheet of its own keeps it, so a sheet
+    drawn there later takes over on the next run with no change here; such a source comes back in the second list, with
+    the sheet that won. It runs before stand_in, so a form with no sheet of either kind walks as its base species."""
+    unneeded = []
+    for s in sources:
+        r = rows.get(s.natdex)
+        if r is None or names.get(s.natdex) != s.name:
+            sys.exit("sources.tsv: %s is for Nat. Dex %d %s, which species.tsv names %r" % (
+                s.file, s.natdex, s.name, names.get(s.natdex)))
+        nat, form, kit, key, _ = r
+        if s.key != str(nat) + ("-" + form if form else ""):
+            sys.exit("sources.tsv: %s says key %s, and Nat. Dex %d %s is national %d form %r" % (
+                s.file, s.key, s.natdex, s.name, nat, form))
+        if kit:
+            unneeded.append((s, "%s/%s" % (kit, key)))
+            continue
+        rows[s.natdex] = (nat, form, DARKUS_SET, s.key, DARKUS_NOTE)
+    return rows, unneeded
+
+
+def darkus_pixels(data, name):
+    """One of his sheets at its own pixels: every 2 x 2 block one color, taken as one pixel, and the frame size. Exits on
+    anything else (partly clear pixels, frames not square, a block of two colors): nothing is resampled."""
+    a = np.array(Image.open(io.BytesIO(data)).convert("RGBA"))
+    if not np.isin(a[..., 3], (0, 255)).all():
+        sys.exit("%s: partly clear pixels" % name)
+    a[a[..., 3] == 0] = 0
+    h, w = a.shape[:2]
+    if w != h or w % 8:
+        sys.exit("%s: %d x %d is not 4 x 4 square frames drawn at twice their pixels" % (name, w, h))
+    n = a[0::2, 0::2]
+    if not (n.repeat(2, 0).repeat(2, 1) == a).all():
+        sys.exit("%s: not drawn at exactly twice its pixels, and it would have to be resampled" % name)
+    return n, n.shape[0] // 4
+
+
+def darkus_cut(native, f, cols):
+    """Frames [cols] of each of his rows, in this set's eight facings (DARKUS_ROWS)."""
+    return np.vstack([np.hstack([native[src * f:(src + 1) * f, c * f:(c + 1) * f] for c in cols]) for src in DARKUS_ROWS])
+
+
+def darkus_sheets(data, name):
+    """DARKUSSHADOW for one sheet: (frame size, offset x, y, {anim: (sheet, durations)})."""
+    native, f = darkus_pixels(data, name)
+    out = {}
+    for anim, cols, length in (("idle", DARKUS_IDLE, DARKUS_IDLE_FRAMES), ("walk", DARKUS_WALK, DARKUS_WALK_FRAMES)):
+        sheet = darkus_cut(native, f, cols)
+        for r in range(len(DARKUS_ROWS)):
+            for c in range(len(cols)):
+                if not sheet[r * f:(r + 1) * f, c * f:(c + 1) * f, 3].any():
+                    sys.exit("%s: %s row %d frame %d is empty" % (name, anim, r, c))
+        out[anim] = (sheet, [length] * len(cols))
+    x, y = place("idle", out["idle"][0], f, f, len(DARKUS_IDLE))
+    return f, x, y, out
+
+
+def convert_darkus(sources, keys, out):
+    """The sheets of [keys] (those natdex-map.tsv names in DARKUS_SET) into [out], from [sources]: their table rows, their
+    credits and the bytes written. A rerun replaces the set, so a sheet no longer needed does not linger."""
+    for anim in ANIMS:
+        for p in (out / anim).glob("*.png") if (out / anim).is_dir() else []:
+            p.unlink()
+    by_key = {s.key: s for s in sources}
+    table, credits, nbytes = [], [], 0
+    for key in sorted(keys, key=lambda k: (int(k.split("-")[0]), k)):
+        s = by_key[key]
+        data = (DARKUS_DIR / s.file).read_bytes()
+        if hashlib.sha256(data).hexdigest() != s.sha256:
+            sys.exit("sources.tsv: %s is not the file fetched (sha256 differs)" % s.file)
+        f, x, y, sheets = darkus_sheets(data, s.file)
+        for anim, (sheet, durs) in sheets.items():
+            png = encode_png(sheet)
+            if not same_pixels(sheet, np.array(Image.open(io.BytesIO(png)).convert("RGBA"))):
+                sys.exit("re-encoding changed %s %s" % (key, anim))
+            (out / anim).mkdir(parents=True, exist_ok=True)
+            (out / anim / (key + ".png")).write_bytes(png)
+            nbytes += len(png)
+            table.append([key, anim, f, f, x, y, ",".join(map(str, durs))])
+        credits.append([key, s.sprite(), s.post, s.artists, s.terms])
+    return table, credits, nbytes
 
 
 # ---------------------------------------------------------------- credits
@@ -887,7 +1039,8 @@ def main():
     col = Collab(args.cache, args.update, args.offline)
     names = natdex_names()
     print("SpriteCollab", col.commit[:12], col.date)
-    targets, rows = plan(col, names)
+    darkus, unneeded = darkus_sources(), []
+    targets, rows = plan(col, names, darkus, unneeded)
     out = args.assets / "walkingpals-nat"
     for anim in ANIMS:  # a rerun replaces the set, so a sheet SpriteCollab dropped does not linger
         for p in (out / anim).glob("*.png") if (out / anim).is_dir() else []:
@@ -914,10 +1067,35 @@ def main():
     write_tsv(out / "natdex-map.tsv", ["natdex", "name", "national", "form", "set", "key", "note"], [
         "The Nat. Dex Extension's species ids 412-1283 (tracker-gba/src/main/resources/natdex/species.tsv) to a",
         "Walking Pals sheet. set walkingpals-nat: key is <national>[-<form>] in this folder; set walkingpals: key is",
-        "the Gen 3 internal id in walkingpals/. Blank set and key: no sheet, and the note says why. A Mega or form",
-        "with no sheet of its own has its base species' set and key until its own is drawn, and the note says so.",
-        "Ids 1-411 are Gen 3's own internal ids and walkingpals/ already covers them.",
+        "the Gen 3 internal id in walkingpals/; set walkingpals-darkus: key is <national>[-<form>] in walkingpals-darkus/,",
+        "DarkusShadow's overworld sprites, only where Sprite Collab has no sheet of its own. Blank set and key: no sheet,",
+        "and the note says why. A Mega or form with no sheet of its own has its base species' set and key until its own",
+        "is drawn, and the note says so. Ids 1-411 are Gen 3's own internal ids and walkingpals/ already covers them.",
     ], map_rows)
+    dout = args.assets / DARKUS_SET
+    dtable, dcredits, dbytes = convert_darkus(darkus, {r[3] for r in rows.values() if r[2] == DARKUS_SET}, dout)
+    dsrc = "DarkusShadow's overworld sprites (deviantart.com/darkusshadow), tools/trainer-data/sources/darkusshadow"
+    write_tsv(dout / (DARKUS_SET + ".tsv"), ["key", "animation", "w", "h", "x", "y", "durations"], [
+        "Walking Pals from " + dsrc + ",",
+        "only where PMD Sprite Collab has no sheet of its own (natdex-map.tsv). Keyed as walkingpals-nat is: <national>",
+        "or <national>-<form>. Written by tools/trainer-data/convert_walking_pals_nat.py (DARKUSSHADOW): his frames at his",
+        "own pixels, half the posted size; the eight facings of walkingpals-nat, each diagonal drawn as the side view; walk",
+        "his four frames from the first step, idle his two grounded poses. No sleep or faint: the app shows idle.",
+        "Free use with credit (credits.tsv). x,y: offset from a 32x32 icon's corner; durations in game frames (60 a second).",
+    ], dtable)
+    write_tsv(dout / "credits.tsv", ["key", "sprite", "post", "artists", "terms"], [
+        "Who drew each sheet in this folder, from " + dsrc + "/sources.tsv:",
+        "the artists as his \"Gen 9 (Paldea) Pokemon Overworld Sprites\" credits and each post name them, and the terms",
+        "each post states. His sheet: \"This is free for everyone to use in their Pokemon projects! Please give credits",
+        "if used!\"",
+    ], dcredits)
+    write_tsv(dout / "shiny-colors.tsv", ["key", "animations", "colors"], [
+        "No shinies ship in this folder: every DarkusShadow shiny is on his full \"SHINY Gen 9 (Paldea)\" sheet, whose",
+        "public copy is a scaled JPEG. A shiny walks in plain colors. The same columns as walkingpals-nat/shiny-colors.tsv.",
+    ], [])
+    write_tsv(dout / "shiny.tsv", ["key", "animation", "w", "h", "x", "y", "durations"], [
+        "No shinies ship in this folder (see shiny-colors.tsv). The same columns as walkingpals-darkus.tsv.",
+    ], [])
     per = collections.Counter(r[1] for r in table)
     print("sheets: %d for %d keys (%s), %.2f MB" % (stats["sheets"], len(targets), ", ".join("%s %d" % (a, per[a]) for a in ANIMS), stats["bytes"] / 1e6))
     for anim in ANIMS:
@@ -925,6 +1103,10 @@ def main():
             print("  no %s: %s" % (anim, " ".join(missing[anim]) or "-"))
     print("  no faint: %d keys" % len(missing["faint"]))
     shinies.report("walkingpals-nat")
+    print("%s: %d sheets for %d keys, %.2f MB, from %d sources" % (
+        DARKUS_SET, len(dtable), len(dcredits), dbytes / 1e6, len(darkus)))
+    for s, won in unneeded:
+        print("  not needed, Sprite Collab has it: %s (Nat. Dex %d %s, %s)" % (s.file, s.natdex, s.name, won))
     unmapped = [r for r in map_rows if not r[5]]
     standing = [r for r in map_rows if STANDS_IN in r[6]]
     print("nat. dex ids 412-1283: %d mapped (%d of them a Mega or form walking as its base species), %d without a sheet" % (

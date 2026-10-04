@@ -186,6 +186,17 @@ MaxDex randomizer, ported - GPL-3.0         CyanSMP64/universal-pokemon-randomiz
 
 besteon / Ironmon-Tracker — MIT              https://github.com/besteon/Ironmon-Tracker
   Used as the source of truth for tracker constants and as a specification.
+  GachaMon, its collectable card game (9.3.x, read 2026-10-03 at 9.3.1; its LICENSE.txt is the MIT
+  license, copyright 2022-2023 Besteon): data/GachaMonRatingSystem.json is copied byte for
+  byte into tracker-gba/src/main/resources/gachamon, and the rating, stars, Battle Power, the
+  31-byte card record and its share code (data/GachaMonData.lua, GachaMonFileManager.lua,
+  StructEncoder.lua) are ported to Kotlin in tracker-gba's gachamon package, checked against the
+  tracker's own Lua on 466 cards (tools/gachamon/reference_fixtures.py). The static base stat
+  totals and variable move powers the rating reads are extracted from its PokemonData.lua and
+  MoveData.lua, and the Nat. Dex totals from CyanSixFour's NatDexExtension under the permission
+  above (tools/gachamon/extract_gachamon_data.py). The cards, packs and screens are drawn in
+  KaizoCore's own code; none of the tracker's GachaMon images is used. Credited on the About
+  screen and the Licenses page.
 
 Sannji (mollo010) / Ironmon-gen-tracker - MIT   https://github.com/mollo010/Ironmon-gen-tracker
   The Gen 1 IronMON tracker for Red, Blue and Yellow, a fork of besteon's
@@ -304,6 +315,19 @@ PMD Sprite Collab - CC BY-NC 4.0              https://sprites.pmdcollab.org
   walkingpals-nat/credits.tsv. Sheets credited to CHUNSOFT are Spike Chunsoft's own sprites
   from the Mystery Dungeon games, outside the collab's license, as most of the Gen 1-3 set is.
 
+DarkusShadow's overworld sprites - free use with credit   https://www.deviantart.com/darkusshadow
+  Walking Pals for the Pokemon PMD Sprite Collab has not drawn (app/src/main/assets/walkingpals-darkus,
+  added 2026-10-04 for rc35): Squawkabilly, Mabosstiff, Shroodle, Brambleghast, Toedscruel, Klawf,
+  Rabsca, Espathra, Bombirdier, Flamigo, Brute Bonnet, Gimmighoul, Wo-Chien, Chien-Pao, Miraidon,
+  Okidogi, Iron Boulder, Iron Crown and Mega Malamar. His terms: "Free Use. Give Credits If Used."
+  and "This is free for everyone to use in their Pokemon projects! Please give credits if used!"
+  Drawn by DarkusShadow; Brute Bonnet from TyranitarDark's original sprite, Mega Malamar from
+  princess-phoenix's ("Give credits to both if used"). Each post's own image, as fetched, is in
+  tools/trainer-data/sources/darkusshadow with its link, dates and sha256 (sources.tsv), cut by
+  tools/trainer-data/convert_walking_pals_nat.py at his own pixels, never resampled; each sheet's
+  artists are in walkingpals-darkus/credits.tsv. Used only where Sprite Collab has no sheet of its
+  own. No shinies: his are only on his full shiny sheet, whose public copy is a scaled JPEG.
+
 LibretroDroid 0.13.2 — GPL-3.0                Swordfish90/LibretroDroid
   ** VENDORED IN THIS REPO ** at libretrodroid/, with its LICENSE. Oboe (Apache-2.0)
   and libretro-common are vendored within it as upstream ships them. This project's
@@ -361,10 +385,14 @@ melonDS libretro core — GPL-3.0               libretro/melonDS
   0003-generated-firmware-carries-wifi-calibration.patch, the Wi-Fi calibration,
   MAC address and access point blocks melonDS 0.9.4 writes into the firmware it
   makes when none is imported (github.com/melonDS-emu/melonDS, src/SPI.cpp),
-  brought back to this source, so a game's wireless library starts; and
+  brought back to this source, so a game's wireless library starts;
   0004-3d-a-loaded-state-never-writes-past-the-vertex-buffer.patch, ours, so a
   saved state loaded in the middle of a 3D scene can no longer write past the 3D
-  engine's vertex buffer and leave holes in the list of polygons it sorts.
+  engine's vertex buffer and leave holes in the list of polygons it sorts; and
+  0005-savestates-keep-the-3d-polygon-mode.patch, ours after melonDS's own later
+  savestate (and its PR #1864), so a saved state keeps the 3D engine's polygon
+  mode, attributes and texture and the right polygon and vertex indices (state
+  version 9.1; a 9.0 state still loads).
   libretrodroid/cores/melonds/PINNED.txt records the commit, the patches and the
   hashes of the libraries that ship, and `python tools/cores/build_core.py melonds`
   builds them again from that source. The source of the core in the APK is that

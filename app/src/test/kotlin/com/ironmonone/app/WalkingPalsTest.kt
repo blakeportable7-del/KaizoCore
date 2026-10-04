@@ -150,7 +150,7 @@ class WalkingPalsTest {
     @Test
     fun `every frame of every sheet fits the overworld once cut to what shows`() {
         var big = 0
-        for ((pack, set) in listOf(Pack.GEN3 to ShippedPals.gen3, Pack.NATIONAL to ShippedPals.national)) {
+        for ((pack, set) in listOf(Pack.GEN3 to ShippedPals.gen3, Pack.NATIONAL to ShippedPals.national, Pack.DARKUS to ShippedPals.darkus)) {
             for ((key, anims) in set) for ((anim, sheet) in anims) {
                 if (sheet.w <= SpriteArt.MAX_FRAME && sheet.h <= SpriteArt.MAX_FRAME) continue
                 big++
@@ -212,7 +212,8 @@ class WalkingPalsTest {
         assertEquals(Pal(Pack.GEN3, "277"), ix.find(277, Dex.MAX_DEX), "Treecko")
         assertEquals(Pal(Pack.NATIONAL, "387"), ix.find(412, Dex.MAX_DEX), "Turtwig")
         assertEquals(Pal(Pack.NATIONAL, "1007"), ix.find(1032, Dex.MAX_DEX), "Koraidon")
-        assertNull(ix.find(1033, Dex.MAX_DEX), "Miraidon: nobody has drawn it yet")
+        assertNull(ix.find(1018, Dex.MAX_DEX), "Iron Jugulis: nobody has drawn it yet")
+        assertEquals(Pal(Pack.DARKUS, "1008"), ix.find(1033, Dex.MAX_DEX), "Miraidon: DarkusShadow's sheet fills the gap")
         // Past MaxDex's last Pokemon (where its egg and ghost stand-ins sit), and Gen 3's unused slots: nothing.
         for (id in listOf(1281, 1282, 1283, 1285, 260, 0, -1)) assertNull(ix.find(id, Dex.MAX_DEX), "$id")
     }

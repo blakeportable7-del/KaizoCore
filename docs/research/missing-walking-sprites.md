@@ -4,7 +4,11 @@ Blake (2026-10-02): "i want to find the missing sprites". The Walking Pals after
 and the tracker's animated icons) come from PMD Sprite Collab, and on 2026-10-02 natdex-map.tsv left 111 of the Nat.
 Dex's 872 ids with no sheet. This is what was found, what came in, and what each gap would take.
 
-**Where it stands.**
+**Update 2026-10-04: DarkusShadow's overworld sprites fill 19 of the 46.** Blake: "i want iron boulder, find the missing
+sprites", then, of DarkusShadow's sheets, "yes use them" and "use the ones i gave you if they fill in sprite collabs
+gap". So Sprite Collab's sheet always wins, and his fills only a gap (section 9).
+
+**Where it stood on 2026-10-03.**
 
 - The converter ran against Sprite Collab's newest commit, d2ceb96254fb (2026-10-03). Nothing has been drawn since
   211e689353e1 (2026-09-30): every sheet and every credit came out the same, byte for byte. The tables now name the
@@ -246,3 +250,34 @@ drawn in them; Play as your Pokemon's Always use has a Shiny switch.
   of their own there.
 - **Not done:** the DS tracker's icons use shininess but not the form (Unown's letter, Deoxys) yet; the DS form index
   would need its own table per species.
+
+## 9. DarkusShadow's overworld sprites (2026-10-04)
+
+Section 5 turned these down for their format and look; Blake chose them for the gaps. They ship as a third set,
+walkingpals-darkus/, written by convert_walking_pals_nat.py (DARKUSSHADOW, its docstring has the details) from the
+post images kept in tools/trainer-data/sources/darkusshadow/ (sources.tsv: post, dates, sha256, artists, terms).
+
+- **Covered (19):** Squawkabilly (and White Squawkabilly, which walks as it), Mabosstiff, Shroodle, Brambleghast,
+  Toedscruel, Klawf, Rabsca, Espathra, Bombirdier, Flamigo, Brute Bonnet, Gimmighoul (Chest Form; the Roaming Form keeps
+  Sprite Collab's), Wo-Chien, Chien-Pao, Miraidon, Okidogi, Iron Boulder, Iron Crown. Also Mega Malamar, which walked as
+  Malamar, has its own now.
+- **Still missing (27):** the 13 Gen 5 ones, the 4 Gen 7, the 7 Gen 8 and Mega Falinks (he draws Paldea, and a few
+  Hisui and Megas); and **Maschiff** (by CarmaNekko) and **Iron Jugulis** (TooManyLuigis, Mortedesu, Billla and
+  Wolfang62), which are only on his full Paldea sheet.
+- **No shinies.** Every post's shiny link goes to his full "SHINY Gen 9 (Paldea) Pokemon Overworld Sprites" sheet. Its
+  public copy is a 632 x 1264 JPEG and the plain sheet's a 632 x 1264 resampled preview; the originals need a login, so
+  neither was used. He also says the full sheet holds newer versions than the single posts. A shiny walks in plain
+  colors. If Blake downloads the two originals with his own account, the shinies, Maschiff and Iron Jugulis can follow.
+- **Blake's pasted sheets,** matched byte for byte to their posts: Chien-Pao, Iron Boulder, Iron Crown and Mega Malamar
+  are used; Slither Wing, Roaring Moon, Gouging Fire, Ogerpon (Teal Mask), Terapagos (Terastal), Hisuian Avalugg and
+  Fezandipiti are not, since Sprite Collab draws them.
+- **How the format maps.** His 256 x 256 sheets are 4 x 4 frames of 32 x 32 drawn at twice their pixels (Miraidon 512,
+  64 x 64): each 2 x 2 block is checked to be one color and taken as one pixel, never resampled. At that size they are
+  0.80 of Sprite Collab's height (median of the 8 species both draw; 0.83 by area), the nearest whole scale. His rows
+  face down, left, right and up; the eight facings take them as drawn, each diagonal as the side view. Walk: his four
+  frames from the first step, 8 game frames each. Idle: his two grounded poses, 32 each. The anchor is the offset rule's,
+  on the standing pose. No sleep or faint: the app shows idle.
+- **Credits:** walkingpals-darkus/credits.tsv per sheet, NOTICE, About and the Licenses page (DarkusShadow-Free-Use).
+- **His other drawings that would fill stand-ins** (not fetched): Mega Clefable, Mega Victreebel, Mega Starmie, Mega
+  Dragonite, Stellar Terapagos.
+- Section 5's row for DarkusShadow, and section 6's "Another source. None today", are as they were on 2026-10-03.

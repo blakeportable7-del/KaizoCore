@@ -269,10 +269,10 @@ gba-0748	PARTIAL	app/src/main/kotlin/com/ironmonone/app/Notebook.kt:126; tracker
 gba-0749	PARTIAL	app/src/main/kotlin/com/ironmonone/app/Notebook.kt:126; tracker-gba/src/main/kotlin/com/ironmonone/tracker/GbaTracker.kt:2403	Notebook lists defeated/total per map; dungeon floors not merged into one area; no chat
 gba-0750	DONE	app/src/main/kotlin/com/ironmonone/app/RunScreen.kt:300; app/src/main/kotlin/com/ironmonone/app/Favorites.kt:13	Favorites on the Run tab and the no-party card; no chat
 gba-0751	DONE	app/src/main/kotlin/com/ironmonone/app/RunScreen.kt:300; app/src/main/kotlin/com/ironmonone/app/Favorites.kt:13	Favorites on the Run tab and the no-party card; no chat
-gba-0752	MISSING	-	No GachaMon (cards, GachaDex collection)
-gba-0753	MISSING	-	No GachaMon (cards, GachaDex collection)
-gba-0754	MISSING	-	No GachaMon (cards, GachaDex collection)
-gba-0755	MISSING	-	No GachaMon (cards, GachaDex collection)
+gba-0752	MISSING	-	GachaMon is built (rc35); this is Stream Connect's chat command or event, which is not (gaps.tsv)
+gba-0753	MISSING	-	GachaMon is built (rc35); this is Stream Connect's chat command or event, which is not (gaps.tsv)
+gba-0754	MISSING	-	GachaMon is built (rc35); this is Stream Connect's chat command or event, which is not (gaps.tsv)
+gba-0755	MISSING	-	GachaMon is built (rc35); this is Stream Connect's chat command or event, which is not (gaps.tsv)
 gba-0756	PARTIAL	app/src/main/kotlin/com/ironmonone/app/MoveHistoryStats.kt:118	In-app Game Stats; Play Time is 'not kept'; no chat
 gba-0757	PARTIAL	app/src/main/kotlin/com/ironmonone/app/MoveHistoryStats.kt:118	In-app Game Stats; Play Time is 'not kept'; no chat
 gba-0758	DONE	app/src/main/kotlin/com/ironmonone/app/HealsInBag.kt:33	In-app Heals in Bag by HP/PP/Status/Battle/All; no chat
@@ -315,8 +315,8 @@ gba-0794	MISSING	-	No tracker languages to switch to
 gba-0795	PARTIAL	app/src/main/kotlin/com/ironmonone/app/Theme.kt:87	A theme can be imported in-app; viewers can't change it, no preset names
 gba-0796	MISSING	app/src/main/kotlin/com/ironmonone/app/PcTracker.kt:915	Viewers can't pick the starter ball; only the tracker's own random ball call
 gba-0797	MISSING	app/src/main/kotlin/com/ironmonone/app/PcTracker.kt:915	Viewers can't pick a ball that must last until it gets out
-gba-0798	MISSING	-	No GachaMon
-gba-0799	MISSING	-	No GachaMon
+gba-0798	MISSING	-	GachaMon is built (rc35); this is Stream Connect's chat command or event, which is not (gaps.tsv)
+gba-0799	MISSING	-	GachaMon is built (rc35); this is Stream Connect's chat command or event, which is not (gaps.tsv)
 gba-0800	PARTIAL	app/src/main/assets/stream/tracker.html:86; app/src/main/kotlin/com/ironmonone/app/stream/StreamSnapshot.kt:64	Overlay shows RUN WON/OVER and the SSE state carries the outcome; no bot trigger
 gba-0801	PARTIAL	app/src/main/kotlin/com/ironmonone/app/stream/StreamSnapshot.kt:64; app/src/main/kotlin/com/ironmonone/app/stream/StreamServer.kt:106	state.json/SSE carry outcome and party species; not a WON/LOSS id pushed to a bot
 gba-0802	NA	-	Streamer.bot text-file connection folder

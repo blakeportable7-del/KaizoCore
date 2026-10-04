@@ -12,7 +12,10 @@ setupRouteInfoAsFRLG / setupRouteInfoAsRSE once per version instead, so each ver
 trainers in the reference's order, and its own names (Ruby's Magma Hideout comes from
 RouteData.swapRubySapphireTeamTrainers, RouteData.lua:5909-5947).
 
-Line format: map id, TAB, the reference's key, TAB, name, TAB, trainer ids joined by ",".
+Line format: map id, TAB, the reference's key, TAB, name, TAB, trainer ids joined by ",", TAB, the name of the
+combined area the map belongs to (RouteData.Info[key].area.name: Mt. Moon, S.S. Anne, Victory Road...), empty when it
+belongs to none. The carousel's Trainers defeated line and Full Clearzo count a combined area as one, as
+Program.getDefeatedTrainersByCombinedArea does (Program.lua:1567-1581; RouteData.combineRouteAreas, RouteData.lua:380).
 
 The map id is the tracker's own (GbaTracker.mapId): the id the game reports, except that Ruby and
 Sapphire ids above 108 come down one (GameMap.rsMapShift), since R/S carries an empty Lilycove layout
@@ -66,11 +69,13 @@ def run(game, color, probe=False):
       for mapId, route in pairs(RouteData.Info) do
         local ids = {}
         for _, id in ipairs(route.trainers or {}) do table.insert(ids, tostring(id)) end
-        table.insert(rows, { mapId, route.name or "", table.concat(ids, ",") })
+        local area = ""
+        if type(route.area) == "table" and route.area.name then area = route.area.name end
+        table.insert(rows, { mapId, route.name or "", table.concat(ids, ","), area })
       end
       return rows
     end""")()
-    return {int(r[1]): (str(r[2]), str(r[3])) for r in rows.values()}
+    return {int(r[1]): (str(r[2]), str(r[3]), str(r[4])) for r in rows.values()}
 
 probe = run(1, "Sapphire", probe=True)
 literal = {k for k in probe if 108 <= k < 1000}
@@ -82,18 +87,18 @@ for version, game, color in (("firered", 3, "FireRed"), ("leafgreen", 3, "LeafGr
                              ("ruby", 1, "Ruby"), ("sapphire", 1, "Sapphire"), ("emerald", 2, "Emerald")):
     info = run(game, color)
     rows = {}
-    for key, (name, trainers) in info.items():
+    for key, (name, trainers, area) in info.items():
         if game != 1 or key < 108 or key in RS_KEYED_AS_EMERALD:
             ours = key
         else:
             ours = key - 1
         assert ours not in rows, "%s: two maps land on %d" % (version, ours)
-        rows[ours] = (key, name, trainers)
+        rows[ours] = (key, name, trainers, area)
     with open(out / ("routeinfo-%s.tsv" % version), "w", encoding="utf-8", newline=nl) as f:
-        f.write("# map id" + tab + "reference key" + tab + "name" + tab + "trainers  (RouteData.Info[key].name and .trainers via tools/trainer-data/convert_route_info.py)" + nl)
+        f.write("# map id" + tab + "reference key" + tab + "name" + tab + "trainers" + tab + "combined area  (RouteData.Info[key].name, .trainers and .area.name via tools/trainer-data/convert_route_info.py)" + nl)
         for ours in sorted(rows):
-            key, name, trainers = rows[ours]
-            f.write(str(ours) + tab + str(key) + tab + name + tab + trainers + nl)
-    moved = sorted(k for k, (key, _, _) in rows.items() if game == 1 and key in RS_KEYED_AS_EMERALD)
+            key, name, trainers, area = rows[ours]
+            f.write(str(ours) + tab + str(key) + tab + name + tab + trainers + tab + area + nl)
+    moved = sorted(k for k, (key, _, _, _) in rows.items() if game == 1 and key in RS_KEYED_AS_EMERALD)
     print(version, len(rows), "maps,", sum(1 for r in rows.values() if r[2]), "with trainers",
           ("; reference keys corrected: %s" % moved) if moved else "")

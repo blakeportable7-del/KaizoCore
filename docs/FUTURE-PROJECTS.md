@@ -25,7 +25,7 @@ questions and said "i want rc34 to include rc35 updates": what was planned for r
   turning for every sheet (playas-resume); play as shiny and the forms' walking sprites (shiny-pals); shiny and form
   pictures on the GBA tracker from the player's ROM, and HeartGold forms (rom-icons); the swap walking all four
   Pokemon in doubles (doubles-view); MaxDex on the Nat. Dex 1.1.3 rules, a 600 BST starter legal, and Favorites As
-  Sources for OBS (maxdex-rules-favsources). GachaMon is not built; rc35 suggested, Blake's answer pending.
+  Sources for OBS (maxdex-rules-favsources). GachaMon went to rc35 (below).
 - Then the full suite, the device checks the packages list (opening Play on a Game Boy, GBA and DS game in both
   orientations first; P2 #81 is settled only on a device), new screenshots (P2 #1), and Blake's go.
 
@@ -45,6 +45,8 @@ packages are merged, so its branches begin from the rc34 that ships)
   SameBoy), with the Gen 1 and 2 trackers proved on it. A Game Boy save state made before cannot load after, so the
   release notes say so; in-game saves carry over (to prove).
 - Google Play stays "not yet" (P3 #9, #13).
+- GachaMon, built (feat/gachamon; Blake, 2026-10-03, after it was explained: "Build it"): the PC tracker's card game,
+  its ratings unchanged and checked against its Lua, on every Game Boy Advance run, Nat. Dex and MaxDex included.
 - **A description for every move** (Blake, 2026-10-03: "fairy wind didn't have a description in emerald, need to add
   descriptions to all moves"). **Done for Nat. Dex and MaxDex in rc34.1:** GbaTracker.moveDescription reads
   natdex/movedesc.tsv (tools/trainer-data/convert_natdex_move_desc.py) past 354, by id on Nat. Dex and by name on
@@ -58,9 +60,12 @@ packages are merged, so its branches begin from the rc34 that ships)
   for every move.
 - Read Nat. Dex and MaxDex move descriptions from the player's own ROM (the game's summary-screen text table), so the
   tracker matches the game word for word; Showdown's lines stay as the fallback.
-- **The bottom strip is slow to show the route and weather** (Blake, 2026-10-03: "the bottom of tracker bar that says
-  walking and weather, it's very slow to start displaying data"). Find what holds the carousel's route line ("Walking" until routeArea is known, PcTracker.kt "route") and the weather pill back after a load or a map change, and show them as soon as the game's data is read.
-- **No repel bar on Nat. Dex Emerald** (Blake, 2026-10-03: "I also don't see my repel icon in natl dex emerald"). The steps are read the PC extension's way (GbaTracker.kt about line 1205: gameVarsOffset from 0x08000154 plus the repel offset from 0x080003EE, NatDexExtension.lua:17538), so check that read on a real Nat. Dex Emerald run with a Repel active, then RepelRules (Nat. Dex item ids), then where the bar draws in landscape.
+- **The bottom strip is slow to show the route and weather** (Blake, 2026-10-03). **Done on fix/rc35-little-things:**
+  out of battle the GBA tracker read every 700 ms; a map id is adopted on its second read, and a battle's data counts as
+  ready only when a read lands on the intro's party summary or the opponent's send-out (the reference's DataStart,
+  checked every 10 frames), so the route line waited up to 1.4 s after a map change and the battle's lines usually
+  waited for the action menu. TrackerState.settling makes the loop read again after 100 ms (TrackerPoll).
+- **Nat. Dex 1.2.2** (Blake, 2026-10-04: CyanSixFour showed a v1.2.2 preview with an "accelerator" and contextual random battle music). When it is public: get the patch and the matching NatDexExtension, check the header slots the tracker reads, the randomizer settings, the bundled patch list and Set up a game, and whether the accelerator clashes with KaizoCore's own speed control or the tracker's timing.
 - **Random MAC address stays hidden** (rc34.1, 2026-10-04). Until rc34.1 the DS settings row did nothing: the core's
   own firmware had no Wi-Fi block, so every game read the address as FF:FF:FF:FF:FF:FF whatever the row said. Core
   patch 0003 gave that firmware a real Wi-Fi block, and from then on the row would give the DS a new address every
@@ -72,8 +77,17 @@ packages are merged, so its branches begin from the rc34 that ships)
   indices and LastStripPolygon divided once more by the struct size (upstream melonDS saves those fields today, and
   fixed the indices in PR #1864, January 2024). rc34.1's core patch 0004 stops the crash that caused (a state
   loaded mid-quad wrote past the vertex buffer: Black 2's resume crash), but such a state still draws its first frame
-  with the wrong mode and vertices. Saving them changes the state format, and an older core refuses a newer minor
-  version ("state from the future"), so it waits for a release that can take that, with old states still loading.
+  with the wrong mode and vertices. **Done on fix/rc35-little-things:** core patch 0005 saves the five fields in state
+  version 9.1 and writes the indices right; a 9.0 state still loads as before, and a state from a newer core is refused
+  in words (MelonState.loadable). The core was rebuilt from the pinned source with patches 0001-0005 (MelonDsCoreTest).
+- **DS ability messages every frame** (rc35 list, 2026-10-04; not done, sized). Feasible on Gen 4: the message id is a
+  u16 at the battle's heap block (0x02000000 + versionRel + battleSubscriptMsgs, NdsTracker.pollAbilityTrigger), fixed
+  for a battle, so the native trigger tap can watch it. It needs: triggertap's RAM_SIZE per arm (DS main RAM is 4 MB,
+  the tap accepts 256 KB) and a 16-bit watch (it compares a u32), through the JNI, GLRetroView and RetroTriggerTap;
+  NdsTracker arming the tap when a battle's versionRel is known and again when it moves, disarming out of battle, and
+  draining into pendingMsgs, which its reads already resolve; TriggerTapSim in the tests to match; then a DS battle with
+  an ability message at 8x on a device. Gen 5 reads a per-battler word that stays set, so the wall clock already sees
+  nearly every reveal there. The reference itself looks every 8 frames on Gen 4 (BattleHandlerGen4.lua:110).
 
 **Built or started, waiting on others**
 - Play as your Pokemon on Game Boy: feat/gb-play-as, 7 commits not merged.
@@ -142,6 +156,16 @@ Nat. Dex tracker icons (gbasprites/, 1,285) and the DS species icons. What is mi
        covers 67 of the 111 at once (a Mega Venusaur would walk as Venusaur). Size S.
     3. The 44 species have to be drawn. Sprite Collab takes contributions through its own process; any other source is
        credited in credits.tsv and NOTICE, and PARITY-FINDINGS.md's rule stands: no ripped game art.
+  - **2026-10-04 (rc35, feat/darkus-walking-sprites):** DarkusShadow's overworld sprites are a second source, only where
+    Sprite Collab has no sheet of its own (Blake: "use the ones i gave you if they fill in sprite collabs gap"). 18 of
+    the 44 walk now, White Squawkabilly with Squawkabilly, and Mega Malamar has its own sheet (walkingpals-darkus/,
+    convert_walking_pals_nat.py DARKUSSHADOW). Still open, each needing Blake:
+    1. **Shinies, Maschiff, Iron Jugulis and his newer versions.** All are only on his two full Paldea sheets, whose
+       public copies are scaled previews (the shiny one a JPEG); the originals need a DeviantArt login. If Blake
+       downloads both originals with his own account, the converter can cut them. Size S once the files exist.
+    2. **More stand-ins he has drawn** (not downloaded, outside the approved list): Mega Clefable, Mega Victreebel,
+       Mega Starmie, Mega Dragonite and Stellar Terapagos, which walk as their base species today. Size S with a yes.
+    3. The other 25 (Gen 5, 7 and 8, Mega Falinks) have no source; waiting on Sprite Collab stays the plan.
 - **DS tracker icons for forms.** gen4sprites/ holds the 649 species, plain and shiny (1,298 files), and RomSprites
   decodes one front sprite per species from the player's own ROM (Platinum, HeartGold, SoulSilver and the four Black
   and White games; Diamond and Pearl have no path yet). The DS tracker already reads the form (Gen4.kt's `form`), but
@@ -152,6 +176,15 @@ Nat. Dex tracker icons (gbasprites/, 1,285) and the DS species icons. What is mi
 - **MaxDex.** Its tracker icons are complete: the extension has one for every id 412 to 1280 (869), and the MaxDex
   build bundles them. Walking Pals and Play as your Pokemon on MaxDex shipped in rc34 (5c32d6a5): MaxDex ids map by
   name through natdex-map.tsv, so they share the gaps above and every fill reaches MaxDex too.
+
+## 2026-10-04: Banned items and abilities marked on the tracker (from Blake: "should there be an X next to the item on the tracker if your pokemon is holding a banned item? ... and then banned abilities and exceptions")
+
+**Built 2026-10-04** (feat/rule-marks): `app/.../RuleMarks.kt` holds each mode's banned held items and abilities, quoted from
+the bundled rulesets; your Pokemon's item and ability get the X and a tap on it says the rule. Huge Power and Pure Power are never marked themselves: the X goes on each physical move (the category the card shows), unless Kaizo's exceptions apply, with "will evolve" read from the seed's randomizer log (Blake, 2026-10-04). One Tracker Setup switch,
+"Mark banned items, abilities and moves", on by default (Blake, 2026-10-04), also covers the move X. Left for later: Mega Stones and other items not on RuleMarks' list are never marked; Chaos
+Kaizo's ability rule (allowed while not fully evolved or when it evolved into it) needs the joined form, so it marks
+nothing; Nat. Dex Survival's "Cut but no HM01 yet" is not read; Gen 6 and later item names are by their usual spelling,
+unchecked against the Nat. Dex ROM's table. RuleMarksTest; look tests rule_marks, rule_marks_off, ds_rule_marks.
 
 ## 2026-10-01: Banned moves marked on the tracker (from Blake: "notate on the tracker the banned moves with some-kind of annotation depending on the game mode you are playing and game")
 

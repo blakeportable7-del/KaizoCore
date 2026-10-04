@@ -72,6 +72,33 @@ object PalForms {
             shiny = shiny,
         )
 
+    /**
+     * A DS Pokemon by the form its data carries (Gen4.Mon.form, the byte at +0x18 shifted down three, 0 its first form),
+     * for the walking sheets a form has of its own (RC35-NOTICED row 42): it walked as its species on DS. The form
+     * numbers are the games' own, Gen 4's and Gen 5's alike (pokeplatinum and pokeheartgold's FORM constants; Gen 5
+     * keeps Gen 4's and numbers its own new forms from 1). A form with no sheet of its own walks as its species
+     * (WalkingPals.Index.find), as Burmy's cloaks and Shellos's East Sea do.
+     */
+    fun ds(species: Int, form: Int, shiny: Boolean): WalkingPals.Look =
+        WalkingPals.Look(form = if (form <= 0) null else DS_FORMS[species]?.getOrNull(form - 1) ?: if (species == UNOWN) unownForm(form) else null, shiny = shiny)
+
+    /** Each species' forms past its first, in the games' order: form 1 is the first entry. */
+    private val DS_FORMS: Map<Int, List<String>> = mapOf(
+        351 to listOf("351-sunny", "351-rainy", "351-snowy"),          // Castform
+        386 to listOf("386-attack", "386-defense", "386-speed"),       // Deoxys
+        412 to listOf("412-sand", "412-trash"),                        // Burmy
+        413 to listOf("413-sand", "413-trash"),                        // Wormadam
+        421 to listOf("421-sunshine"),                                 // Cherrim
+        479 to listOf("479-heat", "479-wash", "479-frost", "479-fan", "479-mow"),   // Rotom
+        487 to listOf("487-origin"),                                   // Giratina
+        492 to listOf("492-sky"),                                      // Shaymin
+        550 to listOf("550-blue"),                                     // Basculin
+        555 to listOf("555-zen"),                                      // Darmanitan
+        645 to listOf("645-therian"),                                  // Landorus
+        646 to listOf("646-white", "646-black"),                       // Kyurem
+        648 to listOf("648-pirouette"),                                // Meloetta
+    )
+
     /** A Gold, Silver or Crystal Pokemon by its 16-bit DV word (Attack, Defense, Speed, Special, high nibble first). */
     fun gen2(species: Int, dvs: Int): WalkingPals.Look {
         if (dvs < 0) return WalkingPals.Look()
@@ -95,10 +122,12 @@ object PalForms {
 
     /**
      * The opponent on the same card: Gen 3 by its personality, shiny when its party slot is (found as the Nuzlocke reads
-     * it, by personality); Gen 2 by its DVs (EnemyInfo.dvs).
+     * it, by personality); Gen 2 by its DVs (EnemyInfo.dvs). An opponent's Deoxys walks in its Normal form, as the battle
+     * draws it whatever the game, so no game is passed on for it ([routeVersion] stays in the signature for the callers).
      */
+    @Suppress("UNUSED_PARAMETER")
     fun ofEnemy(e: EnemyInfo, party: List<EnemyPartyMon>, generation: Int, dex: WalkingPals.Dex, routeVersion: String): WalkingPals.Look = when (generation) {
-        3 -> gen3(e.species, dex, e.pid, party.firstOrNull { it.pid != 0L && it.pid == e.pid }?.shiny == true, routeVersion)
+        3 -> gen3(e.species, dex, e.pid, party.firstOrNull { it.pid != 0L && it.pid == e.pid }?.shiny == true, routeVersion = "")
         2 -> gen2(e.species, e.dvs)
         else -> WalkingPals.Look()
     }

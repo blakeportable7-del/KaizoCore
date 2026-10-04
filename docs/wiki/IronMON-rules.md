@@ -1,6 +1,6 @@
 # How KaizoCore follows the IronMON rules
 
-This page describes 1.0.0-rc34.1, the current download.
+This page describes 1.0.0-rc35, the current download.
 
 The IronMON dev team asked that the app not break the rules, not show players what they should not see, and not
 tell them how to play. This is what KaizoCore does about each.

@@ -132,7 +132,8 @@ class AttemptsPerFileTest {
     fun `the Kaizo screen counts the file picked, and a Nuzlocke in play says so`() {
         val run = File("src/main/kotlin/com/ironmonone/app/RunScreen.kt").readText()
         assertTrue("store.attemptOf(it, selectedSettings?.name)" in run, "Start attempt N is the picked file's next")
-        assertTrue("\"Attempt \${store.attemptOf(rom.id, selectedSettings?.name)}\"" in run)
+        // The big number is the run in play's while there is one, the picked file's otherwise (RunHeader, RunRestartsTest).
+        assertTrue("\"Attempt \${RunHeader.attempt(inPlay?.attempt, store.attemptOf(rom.id, selectedSettings?.name))}\"" in run)
         assertEquals("Continue the Nuzlocke", RunCopy.CONTINUE_NUZLOCKE)
         assertEquals("End the Nuzlocke on Emerald and start attempt 5 on Emerald, Kaizo?",
             RunCopy.confirmNewAttempt(RunCopy.EndingRun(0, "Emerald", nuzlocke = true), 5, "Emerald", "Kaizo"))

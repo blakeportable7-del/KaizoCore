@@ -1,8 +1,9 @@
 # The Nat. Dex Extension's species ids 412-1283 (tracker-gba/src/main/resources/natdex/species.tsv) to a
 # Walking Pals sheet. set walkingpals-nat: key is <national>[-<form>] in this folder; set walkingpals: key is
-# the Gen 3 internal id in walkingpals/. Blank set and key: no sheet, and the note says why. A Mega or form
-# with no sheet of its own has its base species' set and key until its own is drawn, and the note says so.
-# Ids 1-411 are Gen 3's own internal ids and walkingpals/ already covers them.
+# the Gen 3 internal id in walkingpals/; set walkingpals-darkus: key is <national>[-<form>] in walkingpals-darkus/,
+# DarkusShadow's overworld sprites, only where Sprite Collab has no sheet of its own. Blank set and key: no sheet,
+# and the note says why. A Mega or form with no sheet of its own has its base species' set and key until its own
+# is drawn, and the note says so. Ids 1-411 are Gen 3's own internal ids and walkingpals/ already covers them.
 # natdex	name	national	form	set	key	note
 412	Turtwig	387		walkingpals-nat	387	
 413	Grotle	388		walkingpals-nat	388	
@@ -548,7 +549,7 @@
 953	Smoliv	928		walkingpals-nat	928	
 954	Dolliv	929		walkingpals-nat	929	
 955	Arboliva	930		walkingpals-nat	930	
-956	Squawkabilly	931				no sheet: SpriteCollab has no Squawkabilly sprite yet
+956	Squawkabilly	931		walkingpals-darkus	931	no Sprite Collab sheet; DarkusShadow's overworld sprite fills the gap until one is drawn
 957	Nacli	932		walkingpals-nat	932	
 958	Naclstack	933		walkingpals-nat	933	
 959	Garganacl	934		walkingpals-nat	934	
@@ -560,26 +561,26 @@
 965	Wattrel	940		walkingpals-nat	940	
 966	Kilowattrel	941		walkingpals-nat	941	
 967	Maschiff	942				no sheet: SpriteCollab has no Maschiff sprite yet
-968	Mabosstiff	943				no sheet: SpriteCollab has no Mabosstiff sprite yet
-969	Shroodle	944				no sheet: SpriteCollab has no Shroodle sprite yet
+968	Mabosstiff	943		walkingpals-darkus	943	no Sprite Collab sheet; DarkusShadow's overworld sprite fills the gap until one is drawn
+969	Shroodle	944		walkingpals-darkus	944	no Sprite Collab sheet; DarkusShadow's overworld sprite fills the gap until one is drawn
 970	Grafaiai	945		walkingpals-nat	945	
 971	Bramblin	946		walkingpals-nat	946	
-972	Brambleghast	947				no sheet: SpriteCollab has no Brambleghast sprite yet
+972	Brambleghast	947		walkingpals-darkus	947	no Sprite Collab sheet; DarkusShadow's overworld sprite fills the gap until one is drawn
 973	Toedscool	948		walkingpals-nat	948	
-974	Toedscruel	949				no sheet: SpriteCollab has no Toedscruel sprite yet
-975	Klawf	950				no sheet: SpriteCollab has no Klawf sprite yet
+974	Toedscruel	949		walkingpals-darkus	949	no Sprite Collab sheet; DarkusShadow's overworld sprite fills the gap until one is drawn
+975	Klawf	950		walkingpals-darkus	950	no Sprite Collab sheet; DarkusShadow's overworld sprite fills the gap until one is drawn
 976	Capsakid	951		walkingpals-nat	951	
 977	Scovillain	952		walkingpals-nat	952	
 978	Rellor	953		walkingpals-nat	953	
-979	Rabsca	954				no sheet: SpriteCollab has no Rabsca sprite yet
+979	Rabsca	954		walkingpals-darkus	954	no Sprite Collab sheet; DarkusShadow's overworld sprite fills the gap until one is drawn
 980	Flittle	955		walkingpals-nat	955	
-981	Espathra	956				no sheet: SpriteCollab has no Espathra sprite yet
+981	Espathra	956		walkingpals-darkus	956	no Sprite Collab sheet; DarkusShadow's overworld sprite fills the gap until one is drawn
 982	Tinkatink	957		walkingpals-nat	957	
 983	Tinkatuff	958		walkingpals-nat	958	
 984	Tinkaton	959		walkingpals-nat	959	
 985	Wiglett	960		walkingpals-nat	960	
 986	Wugtrio	961		walkingpals-nat	961	
-987	Bombirdier	962				no sheet: SpriteCollab has no Bombirdier sprite yet
+987	Bombirdier	962		walkingpals-darkus	962	no Sprite Collab sheet; DarkusShadow's overworld sprite fills the gap until one is drawn
 988	Finizen	963		walkingpals-nat	963	
 989	Palafin	964		walkingpals-nat	964	
 990	Varoom	965		walkingpals-nat	965	
@@ -590,7 +591,7 @@
 995	Glimmora	970		walkingpals-nat	970	
 996	Greavard	971		walkingpals-nat	971	
 997	Houndstone	972		walkingpals-nat	972	
-998	Flamigo	973				no sheet: SpriteCollab has no Flamigo sprite yet
+998	Flamigo	973		walkingpals-darkus	973	no Sprite Collab sheet; DarkusShadow's overworld sprite fills the gap until one is drawn
 999	Cetoddle	974		walkingpals-nat	974	
 1000	Cetitan	975		walkingpals-nat	975	
 1001	Veluza	976		walkingpals-nat	976	
@@ -603,7 +604,7 @@
 1008	Kingambit	983		walkingpals-nat	983	
 1009	Great Tusk	984		walkingpals-nat	984	
 1010	Scream Tail	985		walkingpals-nat	985	
-1011	Brute Bonnet	986				no sheet: SpriteCollab has no Brute Bonnet sprite yet
+1011	Brute Bonnet	986		walkingpals-darkus	986	no Sprite Collab sheet; DarkusShadow's overworld sprite fills the gap until one is drawn
 1012	Flutter Mane	987		walkingpals-nat	987	
 1013	Slither Wing	988		walkingpals-nat	988	
 1014	Sandy Shocks	989		walkingpals-nat	989	
@@ -616,22 +617,22 @@
 1021	Frigibax	996		walkingpals-nat	996	
 1022	Arctibax	997		walkingpals-nat	997	
 1023	Baxcalibur	998		walkingpals-nat	998	
-1024	Gimmighoul	999				no sheet: SpriteCollab has no Gimmighoul sprite yet
+1024	Gimmighoul	999		walkingpals-darkus	999	no Sprite Collab sheet; DarkusShadow's overworld sprite fills the gap until one is drawn
 1025	Gholdengo	1000		walkingpals-nat	1000	
-1026	Wo-Chien	1001				no sheet: SpriteCollab has no Wo-Chien sprite yet
-1027	Chien-Pao	1002				no sheet: SpriteCollab has no Chien-Pao sprite yet
+1026	Wo-Chien	1001		walkingpals-darkus	1001	no Sprite Collab sheet; DarkusShadow's overworld sprite fills the gap until one is drawn
+1027	Chien-Pao	1002		walkingpals-darkus	1002	no Sprite Collab sheet; DarkusShadow's overworld sprite fills the gap until one is drawn
 1028	Ting-Lu	1003		walkingpals-nat	1003	
 1029	Chi-Yu	1004		walkingpals-nat	1004	
 1030	Roaring Moon	1005		walkingpals-nat	1005	
 1031	Iron Valiant	1006		walkingpals-nat	1006	
 1032	Koraidon	1007		walkingpals-nat	1007	
-1033	Miraidon	1008				no sheet: SpriteCollab has no Miraidon sprite yet
+1033	Miraidon	1008		walkingpals-darkus	1008	no Sprite Collab sheet; DarkusShadow's overworld sprite fills the gap until one is drawn
 1034	Walking Wake	1009		walkingpals-nat	1009	
 1035	Iron Leaves	1010		walkingpals-nat	1010	
 1036	Dipplin	1011		walkingpals-nat	1011	
 1037	Poltchageist	1012		walkingpals-nat	1012	
 1038	Sinistcha	1013		walkingpals-nat	1013	
-1039	Okidogi	1014				no sheet: SpriteCollab has no Okidogi sprite yet
+1039	Okidogi	1014		walkingpals-darkus	1014	no Sprite Collab sheet; DarkusShadow's overworld sprite fills the gap until one is drawn
 1040	Munkidori	1015		walkingpals-nat	1015	
 1041	Fezandipiti	1016		walkingpals-nat	1016	
 1042	Ogerpon	1017		walkingpals-nat	1017	
@@ -639,8 +640,8 @@
 1044	Hydrapple	1019		walkingpals-nat	1019	
 1045	Gouging Fire	1020		walkingpals-nat	1020	
 1046	Raging Bolt	1021		walkingpals-nat	1021	
-1047	Iron Boulder	1022				no sheet: SpriteCollab has no Iron Boulder sprite yet
-1048	Iron Crown	1023				no sheet: SpriteCollab has no Iron Crown sprite yet
+1047	Iron Boulder	1022		walkingpals-darkus	1022	no Sprite Collab sheet; DarkusShadow's overworld sprite fills the gap until one is drawn
+1048	Iron Crown	1023		walkingpals-darkus	1023	no Sprite Collab sheet; DarkusShadow's overworld sprite fills the gap until one is drawn
 1049	Terapagos	1024		walkingpals-nat	1024	
 1050	Pecharunt	1025		walkingpals-nat	1025	
 1051	Venusaur-M	3	mega	walkingpals	3	SpriteCollab's Venusaur Mega slot is empty; Venusaur's sheet stands in until its own is drawn
@@ -829,7 +830,7 @@
 1234	Terapagos-T	1024	terastal	walkingpals-nat	1024-terastal	
 1235	Terapagos-S	1024	stellar	walkingpals-nat	1024	SpriteCollab's Terapagos Stellar slot is empty; Terapagos's sheet stands in until its own is drawn
 1236	Greninja-B	658		walkingpals-nat	658	Battle Bond Greninja looks like Greninja until it transforms
-1237	Squawkabilly-W	931	white			no sheet: SpriteCollab's Squawkabilly White slot is empty
+1237	Squawkabilly-W	931	white	walkingpals-darkus	931	SpriteCollab's Squawkabilly White slot is empty; Squawkabilly's sheet stands in until its own is drawn
 1238	Clefable-M	36	mega	walkingpals	36	SpriteCollab's Clefable Mega slot is empty; Clefable's sheet stands in until its own is drawn
 1239	Victreebel-M	71	mega	walkingpals	71	SpriteCollab's Victreebel Mega slot is empty; Victreebel's sheet stands in until its own is drawn
 1240	Starmie-M	121	mega	walkingpals	121	SpriteCollab's Starmie Mega slot is empty; Starmie's sheet stands in until its own is drawn
@@ -849,7 +850,7 @@
 1254	Greninja-M	658	mega	walkingpals-nat	658	SpriteCollab's Greninja Mega slot is empty; Greninja's sheet stands in until its own is drawn
 1255	Pyroar-M	668	mega	walkingpals-nat	668-female	SpriteCollab's Pyroar Mega slot is empty; Pyroar's sheet stands in until its own is drawn
 1256	Floette-M	670	mega	walkingpals-nat	670-mega	
-1257	Malamar-M	687	mega	walkingpals-nat	687	SpriteCollab's Malamar Mega slot is empty; Malamar's sheet stands in until its own is drawn
+1257	Malamar-M	687	mega	walkingpals-darkus	687-mega	no Sprite Collab sheet; DarkusShadow's overworld sprite fills the gap until one is drawn
 1258	Barbaracle-M	689	mega	walkingpals-nat	689	SpriteCollab's Barbaracle Mega slot is empty; Barbaracle's sheet stands in until its own is drawn
 1259	Dragalge-M	691	mega	walkingpals-nat	691-mega	
 1260	Hawlucha-M	701	mega	walkingpals-nat	701-mega	
