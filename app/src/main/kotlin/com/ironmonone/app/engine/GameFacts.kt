@@ -58,6 +58,8 @@ object GameFacts {
             com.ironmonone.core.Engine.NATDEX -> readNatDex(rom)
             com.ironmonone.core.Engine.MAXDEX -> readMaxDex(rom)
             com.ironmonone.core.Engine.ZX -> readZx(kind, rom)
+            // Build your own reads and writes the UPR settings formats for UPR's own games; Heart & Soul is not offered it yet.
+            com.ironmonone.core.Engine.HNS -> throw IllegalArgumentException("Build your own is not offered for Heart & Soul yet.")
         }
         synchronized(cache) {
             cache[key] = facts

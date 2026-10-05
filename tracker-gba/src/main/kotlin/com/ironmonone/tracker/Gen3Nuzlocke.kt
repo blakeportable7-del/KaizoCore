@@ -64,13 +64,22 @@ object Gen3Nuzlocke {
 
     private fun types(a: Int, b: Int): List<Int> = if (a == b) listOf(a) else listOf(a, b)
 
+    /**
+     * The species number the engine keeps for [species]: the game's own, except on Heart & Soul, whose ids are the
+     * expansion's (1 to 1572) and are kept as the Nat. Dex build's id of the same Pokemon (HnsSpecies.natDexId), the
+     * numbering the evolution lines and the typed names are in (nuzlocke/families-gen3.tsv, natdex/species.tsv), so the
+     * dupes clause sees Heart & Soul's lines (2026-10-05).
+     */
+    internal fun engineSpecies(species: Int, hns: Boolean): Int = if (hns) HnsSpecies.natDexId(species) ?: species else species
+
     /** The engine's view of this state, or null when it has none to give: a Game Boy state, a failed read, an unreadable ROM. */
     fun snapshot(s: TrackerState): Snapshot? {
         val n = s.nuz ?: return null
         if (s.unreadable) return null
+        val hns = n.staticsGame == "hns"
         val party = s.party.map { p ->
             NzMon(
-                id = p.mon.pid, species = p.mon.species, speciesName = p.speciesName, nickname = p.mon.nickname,
+                id = p.mon.pid, species = engineSpecies(p.mon.species, hns), speciesName = p.speciesName, nickname = p.mon.nickname,
                 level = p.mon.level, hp = p.mon.curHp, maxHp = p.mon.maxHp, isEgg = p.mon.isEgg,
                 gender = gender(p.base?.genderRatio, p.mon.pid),
                 types = p.base?.let { types(it.type1, it.type2) } ?: emptyList(),
@@ -79,7 +88,7 @@ object Gen3Nuzlocke {
         }
         val enemy = s.enemy?.takeIf { !it.isGhost }?.let { e ->
             NzEnemy(
-                id = e.pid, species = e.species, speciesName = e.speciesName, level = e.level, hp = e.curHp, maxHp = e.maxHp,
+                id = e.pid, species = engineSpecies(e.species, hns), speciesName = e.speciesName, level = e.level, hp = e.curHp, maxHp = e.maxHp,
                 gender = gender(e.base?.genderRatio, e.pid), types = types(e.type1, e.type2), shiny = n.enemyShiny,
             )
         }

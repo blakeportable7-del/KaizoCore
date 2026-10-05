@@ -26,7 +26,10 @@ import java.io.File
  * cannot hold, when it was made, and a prize card's trainer. Saved on the card's line after its code.
  */
 data class GachaMonNotes(
-    /** How the card's ids are numbered: "" for the five games and Nat. Dex (one numbering), "maxdex" for MaxDex's own. */
+    /**
+     * How the card's ids are numbered: "" for the five games and Nat. Dex (one numbering), "maxdex" for MaxDex's own,
+     * "hns" for Heart & Soul's (Treecko 252, the forms to 1572; HnsNumbers).
+     */
     val dex: String = "",
     val name: String = "",
     val ability: String = "",
@@ -122,8 +125,13 @@ internal object GachaMonNames {
     private val gen3Abilities by lazy { load("/gen3/abilitydesc.tsv") }
     private val maxDexAbilities by lazy { load("/maxdex/abilities.tsv") }
 
-    fun species(id: Int, dex: String): String = (if (dex == "maxdex") maxDexSpecies[id] else null)
-        ?: gen3Species[id] ?: natDexSpecies[id] ?: "#$id"
+    fun species(id: Int, dex: String): String = when (dex) {
+        "maxdex" -> maxDexSpecies[id]
+        // Heart & Soul's own numbering, read through the Nat. Dex table's id of the same Pokemon. Its moves and abilities
+        // are numbered as the expansion numbers them, which is the Nat. Dex tables' order, so those need no map.
+        GachaMon.HNS_DEX -> HnsNumbers.toPack(id)?.let { natDexSpecies[it] }
+        else -> null
+    } ?: gen3Species[id] ?: natDexSpecies[id] ?: "#$id"
     fun move(id: Int, dex: String): String = (if (dex == "maxdex") maxDexMoves[id] else null)
         ?: gen3Moves[id] ?: natDexMoves[id] ?: "#$id"
     fun ability(id: Int, dex: String): String = if (id <= 0) "---" else (if (dex == "maxdex") maxDexAbilities[id] else null)
@@ -215,6 +223,8 @@ interface GachaMonGame {
     val expandedSpeciesIds: Boolean
     /** "maxdex" on MaxDex, whose numbering and move split are its own; "" otherwise. */
     val nameSet: String
+    /** Heart & Soul, whose species are numbered its own way: its listed BST is the Nat. Dex id's of the same Pokemon (HnsSpecies). */
+    val heartSoul: Boolean get() = false
     val lastMoveId: Int
     fun baseStats(species: Int): com.ironmonone.tracker.BaseStats?
     fun moveRowFor(id: Int): com.ironmonone.tracker.MoveRow?
@@ -238,6 +248,7 @@ interface GachaMonGame {
 class GbaGachaMonGame(val tracker: GbaTracker) : GachaMonGame {
     override val expandedSpeciesIds get() = tracker.expandedSpeciesIds
     override val nameSet get() = tracker.nameSet
+    override val heartSoul get() = tracker.heartSoul
     override val lastMoveId get() = tracker.lastMoveId
     override fun baseStats(species: Int) = tracker.baseStats(species)
     override fun moveRowFor(id: Int) = tracker.moveRowFor(id)
@@ -425,7 +436,7 @@ object GachaMon {
 
     /** A card from a share code, into the collection (the PC tracker's codes too). It is not a favorite. */
     fun import(card: GachaMonCard): GachaMonEntry {
-        val e = GachaMonEntry(card.copy(favorite = 0, keep = 1))
+        val e = GachaMonEntry(card.copy(favorite = 0, keep = 1), notesForCode(card))
         collection += e
         saveCollection()
         markSeen(e)
@@ -443,12 +454,41 @@ object GachaMon {
             val i = collection.indexOfFirst { it.card == held }
             if (i >= 0) collection[i] = collection[i].copy(card = held.copy(favorite = 1))
         }
-        r.added.forEach { c -> GachaMonEntry(c).also { collection += it; markSeen(it) } }
+        r.added.forEach { c -> GachaMonEntry(c, notesForCode(c)).also { collection += it; markSeen(it) } }
         if (r.added.isNotEmpty() || r.favorited.isNotEmpty()) saveCollection()
         return r.line + "."
     }
 
     fun seen(dex: String): Set<Int> = seen[dex].orEmpty()
+
+    /** The numbering a card's game puts it in ([GachaMonNotes.dex]): Heart & Soul's own, else the one numbering. */
+    const val HNS_DEX = "hns"
+
+    /** The notes a card read from a code or a file starts with: only its numbering, which a Heart & Soul card's game says. */
+    internal fun notesForCode(card: GachaMonCard): GachaMonNotes =
+        if (card.gameVersion == GachaMonCard.HEART_SOUL) GachaMonNotes(dex = HNS_DEX) else GachaMonNotes()
+
+    /**
+     * The GachaDex's species, 1 to [total]: Gen 3's and Nat. Dex's empty ids 252 to 276 left out, and none of Heart &
+     * Soul's, whose 252 is Treecko.
+     */
+    internal fun dexIds(total: Int, dex: String): List<Int> =
+        if (dex == HNS_DEX) (1..total).toList() else (1..total).filter { it !in 252..276 }
+
+    /** The numbering of the game [tracker] reads ([GachaMonNotes.dex]). */
+    internal fun dexOf(tracker: GachaMonGame?): String = when {
+        tracker == null -> ""
+        tracker.nameSet == "maxdex" -> "maxdex"
+        tracker.heartSoul -> HNS_DEX
+        else -> ""
+    }
+
+    /**
+     * The card's game ([GachaMonCard.gameVersion]): the tracker's route version (gameVersionToNumber), and Heart & Soul,
+     * whose map has none, by its own number.
+     */
+    internal fun gameVersion(state: TrackerState, tracker: GachaMonGame): Int =
+        if (tracker.heartSoul) GachaMonCard.HEART_SOUL else GachaMonCard.gameVersionOf(state.routeVersion)
 
     private fun markSeen(e: GachaMonEntry) {
         val set = seen.getOrPut(e.notes.dex) { HashSet() }
@@ -559,11 +599,17 @@ object GachaMon {
         if (last < 0 || b == last) return
         val changed = b xor last
         // updateBadgesObtained: the highest badge whose state changed
-        val badge = (7 downTo 0).firstOrNull { (changed shr it) and 1 == 1 } ?: return
+        val badge = ((if (tracker.heartSoul) 15 else 7) downTo 0).firstOrNull { (changed shr it) and 1 == 1 } ?: return
         val map = state.mapId ?: return
-        val frlg = state.badgeSet == "FRLG"
-        val canObtain = if (frlg) map in FRLG_BADGE_MAPS else tracker.rawMapId(map) in RSE_BADGE_MAPS
-        if (!canObtain) return
+        if (tracker.heartSoul) {
+            // Heart & Soul gives its sixteen badges only from the leaders' own scripts, so any map counts. A card holds
+            // eight badges (the PC tracker's record): the Johto ones, drawn in HeartGold and SoulSilver's art.
+            if (badge >= 8) return
+        } else {
+            val frlg = state.badgeSet == "FRLG"
+            val canObtain = if (frlg) map in FRLG_BADGE_MAPS else tracker.rawMapId(map) in RSE_BADGE_MAPS
+            if (!canObtain) return
+        }
         markParty(state) { it.copy(badges = it.badges or (1 shl badge)) }
     }
 
@@ -614,7 +660,7 @@ object GachaMon {
         val natDex = tracker.expandedSpeciesIds
         val mon = monOf(p, tracker, natDex) ?: return null
         val date = java.time.LocalDate.now()
-        val card = GachaMonMaker.make(mon, natDex, GachaMonCard.gameVersionOf(state.routeVersion), attempt,
+        val card = GachaMonMaker.make(mon, natDex, gameVersion(state, tracker), attempt,
             date.year, date.monthValue, date.dayOfMonth, rulesetKey(filesDir, natDex), random = random)
         return GachaMonEntry(card, notesFor(mon, card, p.speciesName, tracker, at))
     }
@@ -679,9 +725,20 @@ object GachaMon {
             },
             shiny = m.shiny, types = types,
             baseStats = SixStats(base.hp, base.atk, base.def, base.spAtk, base.spDef, base.spe),
-            listedBst = GachaMonBst.listed(m.species, natDex).takeIf { tracker.nameSet != "maxdex" } ?: base.bst,
+            listedBst = listedBst(m.species, natDex, tracker) ?: base.bst,
             evolves = tracker.evolution(m.species) != null,
         )
+    }
+
+    /**
+     * The BST the dex lists for [species] (GachaMonBst), or null where the game's own is used: MaxDex, and a species no
+     * list knows. Heart & Soul numbers its species its own way, so its are looked up by the Nat. Dex id of the same
+     * Pokemon (HnsSpecies.natDexId): read by its own id, Treecko (252) was one of Gen 3's empty slots.
+     */
+    internal fun listedBst(species: Int, natDex: Boolean, tracker: GachaMonGame): Int? = when {
+        tracker.nameSet == "maxdex" -> null
+        tracker.heartSoul -> com.ironmonone.tracker.HnsSpecies.natDexId(species)?.let { GachaMonBst.listed(it, true) }
+        else -> GachaMonBst.listed(species, natDex)
     }
 
     /** One move as the reference's MoveData holds it, from the ROM's move table. */
@@ -696,7 +753,7 @@ object GachaMon {
     private fun notesFor(mon: GachaMonMaker.Mon, card: GachaMonCard, name: String, tracker: GachaMonGame, at: Long): GachaMonNotes {
         val ids = List(4) { mon.moves.getOrNull(it)?.id ?: 0 }
         return GachaMonNotes(
-            dex = if (tracker.nameSet == "maxdex") "maxdex" else "",
+            dex = dexOf(tracker),
             name = name,
             ability = if (mon.abilityId > 0) tracker.abilityName(mon.abilityId) else "---",
             moves = mon.moves.map { tracker.moveName(it.id) },
@@ -712,9 +769,13 @@ object GachaMon {
 
     // ---------------------------------------------------------------- the prize card
 
-    /** The game's number for its common trainers (GameSettings.game): 1 Ruby/Sapphire, 2 Emerald, 3 FireRed/LeafGreen. */
-    private fun gameNumber(state: TrackerState): Int = when (state.routeVersion) {
-        "ruby", "sapphire" -> 1; "emerald" -> 2; "firered", "leafgreen" -> 3; else -> 0
+    /**
+     * The game's number for its common trainers (GameSettings.game): 1 Ruby/Sapphire, 2 Emerald, 3 FireRed/LeafGreen,
+     * and KaizoCore's 6 for Heart & Soul (GachaMonPrize.HEART_SOUL).
+     */
+    private fun gameNumber(state: TrackerState): Int = when {
+        game?.heartSoul == true -> GachaMonCard.HEART_SOUL
+        else -> when (state.routeVersion) { "ruby", "sapphire" -> 1; "emerald" -> 2; "firered", "leafgreen" -> 3; else -> 0 }
     }
 
     /** GameOverScreen.numDefeatedTrainers: the common trainers beaten this run. */
@@ -738,7 +799,7 @@ object GachaMon {
         val natDex = t.expandedSpeciesIds
         val source = object : GachaMonPrize.Source {
             override fun party(trainerId: Int) = t.trainerParty(trainerId)
-            override fun listedBst(species: Int) = GachaMonBst.listed(species, natDex)?.takeIf { t.nameSet != "maxdex" } ?: t.baseStats(species)?.bst ?: 0
+            override fun listedBst(species: Int) = GachaMon.listedBst(species, natDex, t) ?: t.baseStats(species)?.bst ?: 0
             override fun valid(species: Int) = t.speciesExists(species)
             override fun learnset(species: Int) = t.learnset(species)
             override fun baseStats(species: Int) = t.baseStats(species)?.let { SixStats(it.hp, it.atk, it.def, it.spAtk, it.spDef, it.spe) }
@@ -758,7 +819,7 @@ object GachaMon {
             listedBst = source.listedBst(pick.species), evolves = t.evolution(pick.species) != null,
         )
         val date = java.time.LocalDate.now()
-        val card = GachaMonMaker.make(mon, natDex, GachaMonCard.gameVersionOf(s.routeVersion), attempt,
+        val card = GachaMonMaker.make(mon, natDex, gameVersion(s, t), attempt,
             date.year, date.monthValue, date.dayOfMonth, rulesetKey(filesDir, natDex), random = random)
         val trainerName = t.trainerTitle(pick.trainerId) ?: "???"
         val notes = notesFor(mon, card, t.speciesName(pick.species), t, System.currentTimeMillis())

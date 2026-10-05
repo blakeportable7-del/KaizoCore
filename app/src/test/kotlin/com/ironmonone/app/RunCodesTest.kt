@@ -54,7 +54,7 @@ class RunCodesTest {
             assertIs<RunCodes.Plan.Refused>(RunCodes.plan(text, prep, s) { RunCode.sha256(it) }).why
         val good = RunCodes.shareCodeFor(recipe(), 1L, 2L)
         assertTrue("starts with KC1" in why("seed 5261db990e333467"))
-        assertTrue("newer KaizoCore" in why(good.copy(passes = 4).text()))
+        assertTrue("newer KaizoCore" in why(good.copy(passes = 8).text()), "4 is Heart & Soul's pool since 2026-10-05")
         assertTrue("does not know" in why(good.copy(game = "sapphire-jp").text()))
         // A game as it is comes in under My games; a patched build is made on Patched versions (2026-09-30, UX audit P0-10).
         assertEquals(

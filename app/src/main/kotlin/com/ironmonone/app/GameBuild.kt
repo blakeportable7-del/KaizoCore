@@ -63,7 +63,7 @@ object GameBuild {
     private fun a(field: String, value: String) = Assign(field, value)
 
     /** The most the randomizer's own level slider goes to: 50 for ZX, 60 for the Nat. Dex fork (NewRandomizerGUI.form of each). */
-    fun maxLevelBoost(kind: RomKind): Int = if (kind.isNatDex) 60 else 50
+    fun maxLevelBoost(kind: RomKind): Int = if (kind.isNatDex || kind.isHns) 60 else 50
 
     /**
      * The choices that make sense for [kind], in the order the pages show them. [facts] leaves out
@@ -275,7 +275,7 @@ object GameBuild {
     class Built(val cls: Class<*>, val settings: Any, val bytes: ByteArray)
 
     /** The engine's Settings class for a game: the Nat. Dex fork's for a Nat. Dex build, ZX's for the rest. */
-    fun settingsClass(kind: RomKind): Class<*> = if (kind.isNatDex) NdSettings::class.java else ZxSettings::class.java
+    fun settingsClass(kind: RomKind): Class<*> = if (kind.isNatDex || kind.isHns) NdSettings::class.java else ZxSettings::class.java
 
     private val optionCache = HashMap<Class<*>, Map<String, Option>>()
 

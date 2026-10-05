@@ -80,7 +80,8 @@ class LogNames(
                 if (k.isNotEmpty()) ids.putIfAbsent(k, id)
             }
             for ((name, id) in t.logSpeciesIds()) add(name, id)
-            for (id in 1..(if (t.expandedSpeciesIds) 1300 else 411)) add(t.speciesName(id), id)
+            // Heart & Soul's run to 1572, past the Nat. Dex build's 1300 (GbaTracker.speciesIdCount).
+            for (id in 1..t.speciesIdCount) add(t.speciesName(id), id)
             val moves = HashMap<String, String>()
             for (id in 1..t.lastMoveId) {
                 val n = t.moveName(id)

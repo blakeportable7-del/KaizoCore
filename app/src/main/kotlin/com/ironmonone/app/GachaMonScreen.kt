@@ -185,7 +185,7 @@ enum class GachaSort(val label: String) { DEFAULT(""), STARS("Stars"), POWER("BP
 /** openFilterSettingsWindow's choices: stars, games, favorites, shiny, and a Pokemon's name. */
 data class GachaFilter(
     val stars: Set<Int> = (1..6).toSet(),
-    val games: Set<Int> = (1..5).toSet(),
+    val games: Set<Int> = (1..GachaMonCard.GAME_NAMES.size).toSet(),
     val favorites: Set<Int> = setOf(0, 1),
     val shiny: Set<Int> = setOf(0, 1),
     val name: String = "",
@@ -263,7 +263,7 @@ private fun GachaFilterDialog(state: GachaMonListState, onDismiss: () -> Unit) {
         }
         Text("Game", color = Shell.hintOnPaper, fontSize = 13.sp)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            for (g in 1..5) GachaCheckChip(GachaMonCard.GAME_NAMES[g - 1], g in f.games) { f = f.copy(games = toggle(f.games, g)) }
+            for (g in 1..GachaMonCard.GAME_NAMES.size) GachaCheckChip(GachaMonCard.GAME_NAMES[g - 1], g in f.games) { f = f.copy(games = toggle(f.games, g)) }
         }
         Text("Favorite and shiny", color = Shell.hintOnPaper, fontSize = 13.sp)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -473,15 +473,17 @@ private fun GachaShareDialog(e: GachaMonEntry, onDismiss: () -> Unit) {
 @Composable
 private fun GachaMonDexTab(onCollected: (Int) -> Unit) {
     val t = GachaMon.game
-    val dex = if (t?.nameSet == "maxdex") "maxdex" else ""
+    val dex = GachaMon.dexOf(t)
     val total = when {
         t == null -> 411
         t.nameSet == "maxdex" -> 1280
+        // Heart & Soul numbers its own way, to 1572, with Treecko and the rest of Hoenn at 252 on (HnsNumbers).
+        t.heartSoul -> com.ironmonone.tracker.HnsSpecies.TOTAL
         t.expandedSpeciesIds -> 1283
         else -> 411
     }
     @Suppress("UNUSED_VARIABLE") val version = GachaMon.dexVersion
-    val ids = remember(total) { (1..total).filter { it !in 252..276 } }
+    val ids = remember(total, dex) { GachaMon.dexIds(total, dex) }
     val collectedIds = (GachaMon.collection.map { it.card.pokemonId } + GachaMon.recent.filter { it.card.keep == 1 }.map { it.card.pokemonId }).toSet()
     val seenIds = GachaMon.seen(dex) + collectedIds
     var showAll by remember { mutableStateOf(false) }

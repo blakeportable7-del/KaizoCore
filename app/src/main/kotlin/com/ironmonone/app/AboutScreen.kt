@@ -578,6 +578,13 @@ fun AboutScreen(modifier: Modifier = Modifier, onStats: () -> Unit = {}) {
         CreditLink("https://github.com/Tripc423/Maxdex") { openOrSay(it) }
         CreditLink("https://github.com/rh-hideout/pokeemerald-expansion") { openOrSay(it) }
 
+        Spacer(Modifier.height(12.dp))
+
+        // Heart & Soul (HnsSetup, NOTICE): the team's game, on RHH's expansion; KaizoCore carries only its comfort patch.
+        Text(HnsSetup.ABOUT_CREDIT, style = MaterialTheme.typography.bodyMedium)
+        CreditLink(HnsSetup.REPO_URL) { openOrSay(it) }
+        CreditLink(HnsSetup.HACKDEX_URL) { openOrSay(it) }
+
         Spacer(Modifier.height(16.dp))
 
         Text(

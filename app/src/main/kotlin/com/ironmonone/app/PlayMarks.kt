@@ -17,7 +17,16 @@ import java.io.File
 internal fun rememberStatMarks(store: PrepStore, session: GameSession): StatMarks? {
     val file = store.marksFile(session)
     val loaded by produceState<Pair<File, StatMarks>?>(null, file) {
-        value = file to withContext(Dispatchers.IO) { StatMarks(file) }
+        value = file to withContext(Dispatchers.IO) { StatMarks(file) }.also { if (session.isRun) RunMarks.current = it }
     }
     return loaded?.takeIf { it.first == file }?.second
+}
+
+/**
+ * The run's notes as Play holds them, for the log viewer, which Play opens with no way to hand them over (its call is
+ * part of PlayScreen, which is at the verifier's size limit): a note left from the log goes into the same StatMarks the
+ * tracker draws from, never a second copy whose next save would drop the other's. Set when Play reads a run's notes.
+ */
+internal object RunMarks {
+    @Volatile var current: StatMarks? = null
 }

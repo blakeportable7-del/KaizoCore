@@ -58,6 +58,9 @@ object HackLinks {
             PC + "457039/", setOf("emerald-u"), "Emerald (US)"),
         HackLink("Emerald Imperium", "iriv24", "A difficulty hack with modern mechanics and reusable TMs.",
             PC + "534582/", setOf("emerald-u"), "Emerald (US)"),
+        HackLink("Pokémon Heart & Soul", "Lil Dill and the Heart & Soul team", "Johto and Kanto on Emerald, with Pokémon through Gen 9. " +
+            "KaizoCore makes it from your Emerald: tap Pokémon Heart & Soul on Home.",
+            HnsSetup.GITHUB_URL, setOf("emerald-u"), "Emerald (US)"),
         HackLink("Emerald Rogue", "Pokabbie", "A roguelite: every run through Hoenn is different.",
             PC + "479406/", setOf("emerald-u"), "Emerald (US)"),
         HackLink("Emerald Legacy", "TheSmithPlays", "Emerald polished and rebalanced, with better bosses and a postgame.",

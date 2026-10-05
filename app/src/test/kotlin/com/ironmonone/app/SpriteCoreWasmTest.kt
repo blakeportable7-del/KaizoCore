@@ -213,7 +213,8 @@ class SpriteCoreWasmTest {
             a.playerAvatar, a.sprites, a.coordOffsetX, a.coordOffsetY, a.plttUnfaded, a.plttFaded, a.objectEvents) == 1L
         val natDex = natDexTables()
         if (System.getenv("IRONMON_ROMS") != null) assertEquals(2, natDex.size, "both Nat. Dex dumps are read")
-        for (a in Overworld.ALL + natDex) {
+        // Heart & Soul's table is its build's symbols (OverworldHnsTest), not a retail one: run through the same scenario.
+        for (a in Overworld.ALL + Overworld.HEARTSOUL_KAIZO + natDex) {
             assertTrue(plausible(a), "${a.name}: the native side refuses this table")
             standingPlayer(c, a)
         }

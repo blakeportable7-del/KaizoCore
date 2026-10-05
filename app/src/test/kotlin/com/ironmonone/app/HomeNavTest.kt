@@ -34,6 +34,7 @@ class HomeNavTest {
                 "Kaizo IronMON" to "A randomized game with the IronMON tracker. A loss means a new game.",
                 "Nuzlocke" to "Catch the first Pok\u00e9mon in each area. One that faints is gone.",
                 "ROM Hacks" to "Patch a fan-made hack onto a game you own, then play it.",
+                "Pok\u00e9mon Heart & Soul" to "Turn your Emerald into Heart & Soul, then play it as it is, in Kaizo IronMON or as a Nuzlocke.",
             ),
             HomeMode.entries.map { it.title to it.line },
         )
@@ -116,13 +117,13 @@ class HomeNavTest {
 
     @Test
     fun `Kaizo IronMON, Nuzlocke and ROM Hacks each open their own screen on Home`() {
-        for (m in listOf(HomeMode.KAIZO, HomeMode.NUZLOCKE, HomeMode.HACKS)) {
+        for (m in listOf(HomeMode.KAIZO, HomeMode.NUZLOCKE, HomeMode.HACKS, HomeMode.HEARTSOUL)) {
             val n = AppNav().open(m)
             assertEquals(Tab.HOME, n.tab, "$m stays on the Home tab")
             assertEquals(m, n.mode, "$m is the screen open")
         }
-        // Three different screens, not one screen three times.
-        assertEquals(3, listOf(HomeMode.KAIZO, HomeMode.NUZLOCKE, HomeMode.HACKS).map { AppNav().open(it).mode }.toSet().size)
+        // Four different screens, not one screen four times.
+        assertEquals(4, listOf(HomeMode.KAIZO, HomeMode.NUZLOCKE, HomeMode.HACKS, HomeMode.HEARTSOUL).map { AppNav().open(it).mode }.toSet().size)
     }
 
     @Test
@@ -148,7 +149,7 @@ class HomeNavTest {
 
     @Test
     fun `Back from a mode screen is Home`() {
-        for (m in listOf(HomeMode.KAIZO, HomeMode.NUZLOCKE, HomeMode.HACKS)) {
+        for (m in listOf(HomeMode.KAIZO, HomeMode.NUZLOCKE, HomeMode.HACKS, HomeMode.HEARTSOUL)) {
             val back = AppNav().open(m).back()
             assertNotNull(back)
             assertEquals(AppNav(), back, "$m goes back to the menu itself")
@@ -192,7 +193,7 @@ class HomeNavTest {
         val home = AppNav()
         val places = listOf(
             home, home.openStats(), home.play(), home.pick(Tab.LIBRARY), home.openPatchedVersions(), home.pick(Tab.MORE),
-            home.pick(Tab.MORE).withMorePage(1), home.open(HomeMode.KAIZO), home.open(HomeMode.NUZLOCKE), home.open(HomeMode.HACKS),
+            home.pick(Tab.MORE).withMorePage(1), home.open(HomeMode.KAIZO), home.open(HomeMode.NUZLOCKE), home.open(HomeMode.HACKS), home.open(HomeMode.HEARTSOUL),
             home.open(HomeMode.PLAY_ANY), home.play().pick(Tab.LIBRARY).withLibraryPage(AppNav.PATCHED_PAGE), home.play().pick(Tab.MORE).openStats(),
         )
         for (p in places) {

@@ -84,6 +84,8 @@ object MoveRule {
         "HGSS" to listOf("Cut", "Fly", "Surf", "Strength", "Whirlpool", "Rock Smash", "Waterfall", "Rock Climb"),
         "BW" to listOf("Cut", "Fly", "Surf", "Strength", "Waterfall", "Dive"),
         "B2W2" to listOf("Cut", "Fly", "Surf", "Strength", "Waterfall", "Dive"),
+        // Heart & Soul's own eight (HM01-HM08 in its TM table, as the run's log lists them).
+        "HnS" to listOf("Cut", "Fly", "Surf", "Strength", "Flash", "Rock Smash", "Waterfall", "Whirlpool"),
     )
 
     internal val HP_HEALING = listOf(
@@ -267,9 +269,11 @@ object MoveRule {
             "HGSS" -> "hgss"
             "BW" -> "bw"
             "B2W2" -> "b2w2"
+            // Heart & Soul's gyms, League and Kanto in levelcaps-gen3.tsv, by its own trainer ids.
+            com.ironmonone.core.RomKind.HNS_FAMILY -> "hns"
             else -> return emptyMap()
         }
-        val system = when (family) { "FRLG", "RSE" -> NuzlockeSystem.GEN3; "BW", "B2W2" -> NuzlockeSystem.GEN5; else -> NuzlockeSystem.GEN4 }
+        val system = when (family) { "FRLG", "RSE", com.ironmonone.core.RomKind.HNS_FAMILY -> NuzlockeSystem.GEN3; "BW", "B2W2" -> NuzlockeSystem.GEN5; else -> NuzlockeSystem.GEN4 }
         return runCatching {
             LevelCapTable.standard(key, system).bosses.flatMap { b -> b.trainerIds.map { it to b.kind } }.toMap()
         }.getOrDefault(emptyMap())
@@ -349,7 +353,7 @@ fun moveRulesInPlay(attempt: Int): MoveRule.Rules? {
             val session = store.session()
             val kind = session.kind
             if (PlayRules.kind(session, filesDir) != PlayRules.Kind.IRONMON || kind == null) null
-            else MoveRule.rules(FavoriteBall.modeOf(store), kind.family, kind.isNatDex, kind.baseId ?: kind.id)
+            else MoveRule.rules(FavoriteBall.modeOf(store), kind.family, HnsPool.rulesNatDex(kind, filesDir), kind.baseId ?: kind.id)
         }.getOrNull()
     }
 }

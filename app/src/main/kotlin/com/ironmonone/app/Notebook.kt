@@ -62,8 +62,21 @@ internal object NotebookSpecies {
     fun ids(tracker: GbaTracker?, badgeSet: String?): List<Int> = when {
         tracker == null && badgeSet == "RBY" -> (1..151).toList()
         tracker == null && badgeSet == "GSC" -> (1..251).toList()
+        tracker?.heartSoul == true -> heartSoul
         else -> (1 until 412).filter { it !in 252..276 }
     }
+
+    /**
+     * Heart & Soul's own (2026-10-05): its ids run to 1572 in its own order, Treecko at 252, with empty slots and forms
+     * among them. One id per Pokemon or form the sprite pack draws (HnsNumbers), the lowest, so the count is of real
+     * Pokemon and the list never shows an empty slot or a form drawn as its base twice.
+     */
+    val heartSoul: List<Int> by lazy {
+        (1..com.ironmonone.tracker.HnsSpecies.TOTAL).filter { id -> HnsNumbers.toPack(id)?.let { HnsNumbers.fromPack(it) } == id }
+    }
+
+    /** Whether the "Include Sevii Islands" switch means anything: FireRed and LeafGreen only (Heart & Soul has no route table). */
+    fun frlg(tracker: GbaTracker?): Boolean = tracker != null && !tracker.isRse && !tracker.heartSoul
 }
 
 /**
@@ -97,7 +110,7 @@ fun NotebookDialog(
     var includeUnseen by remember { mutableStateOf(false) }
     var showCompleted by remember { mutableStateOf(false) }
     var includeSevii by remember { mutableStateOf(false) }
-    val frlg = tracker?.let { !it.isRse } ?: false
+    val frlg = NotebookSpecies.frlg(tracker)
     val tracked: Set<Int> = remember(marks, seenSpecies) {
         (marks.markedSpecies() + marks.notedSpecies() + marks.movesSeenSpecies() + marks.abilitySeenSpecies() + seenSpecies).filter { it > 0 }.toSet()
     }

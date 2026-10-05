@@ -120,6 +120,10 @@ internal fun LogPokemonDetail(
     evoMethodsOf: ((RandomizerLog.Pokemon) -> List<String>)? = null,
     /** Walking Pals for the icons that stand idle on PC: this one and its evolutions (LogTabPokemonDetails). */
     palOf: ((RandomizerLog.Pokemon) -> WalkingPals.Pal?)? = null,
+    /** The game's gym TMs in badge order (LogTrainerRules.gymTms); null is the five games' by [frlg]. */
+    gymTms: List<Int>? = null,
+    /** The PC tracker's Pokemon info panel for this species (LogPokemonInfoPanel), under the header. */
+    infoPanel: (@Composable () -> Unit)? = null,
 ) {
     val types = p.types.mapNotNull { Gen3Types.idOf(it) }
     fun stab(move: String) = moveTypes[move.uppercase()]?.let { it in types } == true
@@ -134,6 +138,7 @@ internal fun LogPokemonDetail(
             DialogText(names.species(p.name), 17, Pc.Gold, Modifier.weight(1f), heading = true)
             Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) { p.types.forEach { PcTypeChip(it.uppercase(), pcTypeColorByName(it)) } }
         }
+        if (infoPanel != null) { Spacer(Modifier.height(6.dp)); infoPanel() }
         Spacer(Modifier.height(6.dp))
         // ABILITIES, the second dropped when it repeats the first.
         Column(Modifier.fillMaxWidth().background(Pc.Page).border(1.dp, Pc.Border).padding(10.dp)) {
@@ -215,7 +220,7 @@ internal fun LogPokemonDetail(
                 p.moves.forEach { (lv, mv) -> moveRow("Lv %d".format(lv), names.move(mv), if (stab(mv)) Pc.Positive else Pc.Text) }
                 if (p.moves.isEmpty() && p.evoMoves.isEmpty()) DialogText("The log lists no level-up moves for it.", 13, Pc.Dim)
             } else {
-                LogSearch.tmRows(p, log, frlg, TrackerOptions.logShowUnlearnableGymTms).forEach { r ->
+                LogSearch.tmRows(p, log, frlg, TrackerOptions.logShowUnlearnableGymTms, gymTms ?: LogTms.gymTmNumbers(frlg)).forEach { r ->
                     val label = r.label
                     if (label != null) {
                         DialogText(label, 13, Pc.Gold, Modifier.padding(top = 8.dp, bottom = 2.dp))

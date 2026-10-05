@@ -210,7 +210,8 @@ fun SideScreenDialogs(
             canShowTeams = InfoRules.canShowTrainerTeams(gba?.trainerTeamsRandomized()),
             // TrainerInfoScreen.lua:325: in the battle against this trainer, a fainted Pokemon shows.
             faintedSlots = if (st != null && st.inBattle && st.opponentTrainerId == t.id) st.enemyParty.filter { !it.alive }.map { it.slot }.toSet() else emptySet(),
-            giovanni = TrainerInfoView.isGiovanni(gba?.isRse == false, t.id),
+            // FireRed and LeafGreen's Giovanni: Heart & Soul has no route table either, and its 348 to 350 are other trainers.
+            giovanni = TrainerInfoView.isGiovanni(gba != null && !gba.isRse && !gba.heartSoul, t.id),
             // Resources.Game.ItemNames has no entry for 0 (TrainerInfoScreen.lua:293).
             itemName = { id -> gba?.itemName(id)?.takeIf { id != 0 && it.isNotBlank() && !it.startsWith("#") } },
             spriteFor = spriteFor,

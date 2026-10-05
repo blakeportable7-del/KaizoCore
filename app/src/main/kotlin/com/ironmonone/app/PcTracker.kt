@@ -333,9 +333,14 @@ object PcAssets {
      * as numbers here. GSC_J is the Johto half of Crystal's two rows.
      */
     fun badgePath(set: String, index: Int, earned: Boolean): String {
+        // Heart & Soul's sixteen badges, one to sixteen, in HeartGold and SoulSilver's art: Johto's, then Kanto's.
+        if (set == HNS_BADGES) return badgePath(if (index <= 8) "HGSS" else "HGSS_K", if (index <= 8) index else index - 8, earned)
         val art = when (set) { "RBY" -> "FRLG"; "GSC_J" -> "GSC"; else -> set }
         return "badges/${art}_badge$index${if (earned) "" else "_OFF"}.png"
     }
+
+    /** The art set of Heart & Soul's badges 1 to 16 ([badgePath]): the log viewer's gyms. */
+    const val HNS_BADGES = "HNS"
 
     /**
      * Status condition art, the reference's images/status (BRN, FNT, FRZ, PAR,
@@ -379,7 +384,10 @@ object PcAssets {
      * 1.2.1's to 1235 and part ways after, where the Nat. Dex pack drew another Pokemon. Everything else is [gbaSprite].
      */
     fun gbaSprite(context: android.content.Context, species: Int, nameSet: String?): ImageBitmap? =
-        if (nameSet == "maxdex" && species in 412..1280) load(context, "gbasprites-maxdex/$species.png") else gbaSprite(context, species)
+        // Heart & Soul numbers its species the expansion's way (National Dex order, then forms): the pack's picture
+        // for the same Pokemon (com.ironmonone.tracker.HnsSprites, by National Dex number and form).
+        if (nameSet == "hns") com.ironmonone.tracker.HnsSprites.packId(species)?.let { gbaSprite(context, it) }
+        else if (nameSet == "maxdex" && species in 412..1280) load(context, "gbasprites-maxdex/$species.png") else gbaSprite(context, species)
 
     /** DS sprite by national dex id; [shiny] picks the alternate palette. */
     /**

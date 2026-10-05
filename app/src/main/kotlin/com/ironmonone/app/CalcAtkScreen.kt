@@ -166,5 +166,6 @@ fun calcAtkFill(t: com.ironmonone.tracker.GbaTracker, s: com.ironmonone.tracker.
         enemyBaseFriendship = enemy.base?.baseFriendship, wild = s.isWildBattle, weatherWord = s.weatherWord,
         natDex = t.expandedSpeciesIds,
         maxDex = t.nameSet == "maxdex",
+        weatherName = s.weather,
     )
 }

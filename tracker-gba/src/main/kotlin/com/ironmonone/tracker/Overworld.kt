@@ -112,6 +112,23 @@ object Overworld {
     val ALL: List<OverworldAddresses> = listOf(FIRERED_U_V10, FIRERED_U_V11, LEAFGREEN_U, EMERALD_U, RUBY_U, SAPPHIRE_U)
 
     /**
+     * Heart & Soul 2.0.6, KaizoCore's comfort build (2026-10-05): every address is the build's own symbol, exported by
+     * tools/hns/layout.py into HnsLayout, never typed here. Its code is compiled by GCC, not agbcc, so [OverworldScan]
+     * cannot read it (the patterns are agbcc's), and it needs none: [GameMap.resolve] only names this map for this
+     * build (its title and its own tables), and these are that build's addresses. The structs the native side reads are
+     * Emerald's sizes and offsets here too; OverworldHnsTest holds sprite_core.h's constants to the build's.
+     */
+    val HEARTSOUL_KAIZO = OverworldAddresses(
+        name = HnsMaps.NAME,
+        main = HnsLayout.gMain, oamBufferOffset = HnsLayout.Main.oamBuffer.offset,
+        cb2Overworld = HnsLayout.CB2_Overworld, cb2OverworldBasic = HnsLayout.CB2_OverworldBasic,
+        playerAvatar = HnsLayout.gPlayerAvatar, sprites = HnsLayout.gSprites,
+        coordOffsetX = HnsLayout.gSpriteCoordOffsetX, coordOffsetY = HnsLayout.gSpriteCoordOffsetY,
+        plttUnfaded = HnsLayout.gPlttBufferUnfaded, plttFaded = HnsLayout.gPlttBufferFaded,
+        objectEvents = HnsLayout.gObjectEvents,
+    )
+
+    /**
      * The table's addresses for the game [map] identifies, or null: Nat. Dex (see [resolve]) and
      * anything else the tracker cannot name. The tracker's [GameMap.resolve] picks the map from the
      * ROM's header, so a hack that keeps its base game's header code gets the base game's overworld.
@@ -130,6 +147,7 @@ object Overworld {
      * refuses it.
      */
     fun resolve(map: GameMap, read: MemoryReader): OverworldAddresses? {
+        if (map.hns) return HEARTSOUL_KAIZO
         val table = forMap(map) ?: return if (isNatDex(map)) OverworldScan.find(read, scanName(map)) else null
         if (OverworldScan.callbacksAt(read, table)) return table
         return OverworldScan.find(read, "${table.name}, read from the game")
@@ -139,11 +157,12 @@ object Overworld {
     private fun scanName(map: GameMap): String = if (map.nameSet == "maxdex") "${map.name} (read from the game)" else OverworldScan.NAME
 
     /** A game this has a table for: one of the retail games, or a hack that kept one's header. */
-    fun hasTable(map: GameMap): Boolean = forMap(map) != null
+    fun hasTable(map: GameMap): Boolean = map.hns || forMap(map) != null
 
     /** Why [resolve] has nothing for [map], in a line a player can read. */
     fun whyNot(map: GameMap): String = when {
         map.nameSet == "maxdex" -> "Play as your Pokemon could not find its way around this MaxDex build."
+        map.hns -> "Play as your Pokemon could not find its way around this Heart & Soul build."
         isNatDex(map) -> "Play as your Pokemon could not find its way around this Nat. Dex build."
         hasTable(map) -> "Play as your Pokemon could not find its way around this game, so you stay the trainer."
         else -> "This game is not one Play as your Pokemon knows."

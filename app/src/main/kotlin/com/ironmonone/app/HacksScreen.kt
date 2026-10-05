@@ -139,7 +139,7 @@ fun HacksScreen(modifier: Modifier = Modifier, onPlay: () -> Unit = {}) {
             r.onSuccess { e ->
                 made = e
                 status = "Made ${stripKnownExt(e.name)}. Your original ${stripKnownExt(base.name)} is unchanged." +
-                    if (e.verified) " It is also ready in Kaizo IronMON to randomize." else ""
+                    if (e.tracked) " It is also ready in Kaizo IronMON to randomize." else ""
             }.onFailure {
                 made = null
                 status = patchFailure(it)
@@ -318,7 +318,7 @@ fun HacksScreen(modifier: Modifier = Modifier, onPlay: () -> Unit = {}) {
 }
 
 @Composable
-private fun StepTitle(number: String, title: String) {
+internal fun StepTitle(number: String, title: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(24.dp).clip(androidx.compose.foundation.shape.CircleShape).background(Shell.accent), contentAlignment = Alignment.Center) {
             Text(number, fontWeight = androidx.compose.ui.text.font.FontWeight.Medium, fontSize = 13.sp, color = Shell.onAccent)
@@ -329,7 +329,7 @@ private fun StepTitle(number: String, title: String) {
 }
 
 @Composable
-private fun StepHeader(number: String, title: String, action: String, enabled: Boolean, onAction: () -> Unit) {
+internal fun StepHeader(number: String, title: String, action: String, enabled: Boolean, onAction: () -> Unit) {
     Row(Modifier.fillMaxWidth().padding(top = 10.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.weight(1f)) { StepTitle(number, title) }
         Gen3Button(action, enabled = enabled, onClick = onAction)
@@ -337,13 +337,13 @@ private fun StepHeader(number: String, title: String, action: String, enabled: B
 }
 
 @Composable
-private fun Hint(text: String) {
+internal fun Hint(text: String) {
     Text(text, style = MaterialTheme.typography.bodySmall, color = Shell.hintOnNight, modifier = Modifier.padding(vertical = 2.dp))
 }
 
 /** One choice in a step: a card with a round marker; the picked one carries the accent outline. At least 48dp tall. */
 @Composable
-private fun ChoiceRow(title: String, detail: String, selected: Boolean, enabled: Boolean, onClick: () -> Unit) {
+internal fun ChoiceRow(title: String, detail: String, selected: Boolean, enabled: Boolean, onClick: () -> Unit) {
     val ink = if (enabled) Shell.inkOnPaper else Shell.inkOnPaper.copy(alpha = 0.45f)
     val shape = androidx.compose.foundation.shape.RoundedCornerShape(Shell.cardRadius)
     Row(

@@ -40,7 +40,17 @@ internal object SaveCheck {
      * stores the count at those offsets, only the party slots grew (104 bytes, not 100), and their sections hold 0xFEC
      * bytes of data instead of 0xF80 with SaveBlock1 still opening section 1 and the footer where vanilla has it.
      */
-    fun gen3PartyCount(bytes: ByteArray, frlg: Boolean): Int? {
+    fun gen3PartyCount(bytes: ByteArray, frlg: Boolean): Int? = gen3PartyCount(bytes, if (frlg) 0x34 else 0x234)
+
+    /**
+     * Heart & Soul's SaveBlock1.playerPartyCount (layout-kaizo.json, 2026-10-05): 4 bytes later than Emerald's. Its save
+     * keeps Emerald's 14 sections and footer (include/save.h: 0xF80 bytes of data, 116 of SaveBlock3, then the id,
+     * checksum, signature and counter), so the same reading finds its party.
+     */
+    const val HNS_PARTY_COUNT = 0x238
+
+    /** [gen3PartyCount] with the party count [countOffset] bytes into SaveBlock1 (section 1). */
+    fun gen3PartyCount(bytes: ByteArray, countOffset: Int): Int? {
         var newest = -1L
         var party: Int? = null
         for (copy in 0 until 2) {
@@ -51,7 +61,7 @@ internal object SaveCheck {
                 if (u16(bytes, at + 0xFF4) != 1) continue
                 val counter = u32(bytes, at + 0xFFC)
                 if (counter < newest) continue
-                val count = u32(bytes, at + if (frlg) 0x34 else 0x234)
+                val count = u32(bytes, at + countOffset)
                 newest = counter
                 party = if (count in 0..6) count.toInt() else null
             }

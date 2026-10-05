@@ -400,7 +400,7 @@ object RomIdentity {
     private fun summaryOf(r: Result): String {
         val game = r.gameName()
         return when (verdictOf(r)) {
-            Verdict.EXACT -> r.kind!!.displayName
+            Verdict.EXACT -> if (r.kind!!.playOnly) "${r.kind.displayName}. $WITHOUT_TRACKER" else r.kind.displayName
             Verdict.UNCHECKED -> "This is ${r.kind!!.displayName}, a copy KaizoCore has not checked yet. $WITHOUT_TRACKER"
             Verdict.OTHER_LANGUAGE -> {
                 val adjective = r.region()?.let(::releaseOf)

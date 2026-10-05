@@ -2,6 +2,29 @@
 
 Short and plain, one list per release. Newest first.
 
+## rc36 (5 October 2026)
+
+**New**
+
+- **Heart & Soul Kaizo IronMON:** Lil Dill and the Heart & Soul team's Johto on Emerald, now a Kaizo IronMON game with the full tracker, the randomizer log, rule marks and NEW RUN, like every other game here.
+- **How to get it:** on Home, tap Pokémon Heart & Soul. Add your Emerald (USA) dump, then get the official 2.0.6 patch from GitHub or Hackdex with one tap and pick the file you downloaded. KaizoCore patches it, adds its own comforts on top and puts the game in your Library. KaizoCore never ships their patch or a game.
+- **Two versions:** Vanilla, with the Pokémon of Gens 1 to 3 as the hack ships, and Nat. Dex, with every Pokémon through Gen 9. Every IronMON mode works on both, and so does KaizoCore's Nuzlocke.
+- **The comforts:** hidden items sparkle, an HM entry in the start menu, instant healing at the Pokémon Center (it just says "Healed"), run from wild battles with B, and the PC item waits in the trash can in Elm's lab, random like in every other Kaizo game.
+- **A faster start:** from New Game to your first rival battle, the talking is cut to the essentials and the walks between errands are skipped: Elm's lab, the starter, Mr. Pokémon's house, then Cherrygrove's Pokémon Center.
+- **The challenge menu is set for you:** Heart & Soul's own challenge settings come set and locked for your mode, Kaizo or Nuzlocke.
+- **Name Raters in every Pokémon Center,** as a Meowth in each Johto and Kanto center. Fly and Flash show in the party menu only once you have the HM and its badge.
+- **How a run ends:** Kaizo IronMON is won by beating Red on Mt. Silver. A Nuzlocke ends at Lance, the Champion.
+- **The tracker knows it:** the ball picker and your favorites at Elm's table, the starter's held item, Heart & Soul's own sixteen gyms, its rules page, GachaMon cards, Play as your Pokémon, and its own Pokémon pictures on the card and in the log.
+- **Thanks** to Lil Dill, the Heart & Soul team and RHH. The official game stays playable in your Library too.
+
+**Fixed**
+
+- **Seen counts no longer go up when you restart the app** in the middle of a battle.
+- **Randomizer log, every game:** a Pokémon that does not evolve, like a final stage, now shows its moves. It used to say the log listed no level-up moves for it.
+- **Randomizer log:** opening a trainer or a Pokémon shows the PC tracker's info at the top: a trainer's route, team levels, average IVs, items and double battle; a Pokémon's weaknesses, its history this run, its resistances and your note.
+- **Randomizer log pictures:** the log uses your game's own pictures everywhere the PC tracker's log does, Game Boy games included, and the route page's wild Pokémon stand idle like the rest.
+- **A patch that ships inside KaizoCore is updated with the app,** instead of an older copy being reused.
+
 ## rc35.2 (4 October 2026)
 
 **Fixed**

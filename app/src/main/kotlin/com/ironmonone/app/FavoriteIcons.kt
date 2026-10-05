@@ -53,9 +53,11 @@ internal object FavoriteIcons {
     fun of(names: List<String>, kind: RomKind?): List<FavoriteIcon> {
         val max = Favorites.maxDex(kind)
         val ds = kind?.platform == Platform.NDS
+        val hns = kind?.isHns == true
         return names.map { it.trim() }.filter { it.isNotEmpty() }.map { typed ->
             val id = Favorites.idOf(typed, kind)?.takeIf { Favorites.inGame(typed, max, kind) }
-            FavoriteIcon(id?.let { Favorites.nameOf(it, kind) } ?: typed, if (ds) id?.let(Favorites::nationalOf) else id)
+            // Heart & Soul's card draws by the game's own species (PcAssets.gbaSprite "hns"): Treecko is 252 there, 277 here.
+            FavoriteIcon(id?.let { Favorites.nameOf(it, kind) } ?: typed, if (ds) id?.let(Favorites::nationalOf) else if (hns) id?.let(HnsNumbers::fromPack) else id)
         }
     }
 }
@@ -97,7 +99,7 @@ internal fun FavoriteIconRow(icons: List<FavoriteIcon>, spriteOf: @Composable (I
  *  - a game with no tracker: none, as the card has none to draw from.
  */
 internal object StreamFavoritePictures {
-    enum class From { DS_SPRITE, PACK, MAXDEX_PACK, ROM_SPRITE, NONE }
+    enum class From { DS_SPRITE, PACK, MAXDEX_PACK, HNS_PACK, ROM_SPRITE, NONE }
 
     /** Where the card of a [platform] game of [kind] draws its favorites from. */
     fun from(platform: Platform, kind: RomKind?): From = when {
@@ -105,6 +107,8 @@ internal object StreamFavoritePictures {
         platform == Platform.GBC -> From.PACK
         kind?.isMaxDex == true -> From.MAXDEX_PACK
         kind?.isNatDex == true -> From.PACK                 // the tracker's expandedSpeciesIds
+        // Heart & Soul's ROM pictures are its own compressed format; the card draws the pack by the game's species (nameSet "hns").
+        kind?.isHns == true -> From.HNS_PACK
         kind != null && platform == Platform.GBA -> From.ROM_SPRITE
         else -> From.NONE
     }
@@ -119,6 +123,7 @@ internal object StreamFavoritePictures {
         From.DS_SPRITE -> PcAssets.dsSprite(context, species, false)
         From.PACK -> PcAssets.gbaSprite(context, species, null)
         From.MAXDEX_PACK -> PcAssets.gbaSprite(context, species, "maxdex")
+        From.HNS_PACK -> PcAssets.gbaSprite(context, species, "hns")
         From.ROM_SPRITE -> romSprite(s.file, species)?.let { px ->
             android.graphics.Bitmap.createBitmap(px, 64, 64, android.graphics.Bitmap.Config.ARGB_8888).asImageBitmap()
         }

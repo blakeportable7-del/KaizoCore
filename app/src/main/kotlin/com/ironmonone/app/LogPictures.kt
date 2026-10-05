@@ -66,6 +66,24 @@ internal object LogPictures {
     }
 }
 
+/**
+ * Which species a log page's picture is asked for (LogViewer's logSprite and logPal), the way the tracker's own screens
+ * number it, so a page draws that game's picture: on a Gen 3 run the tracker's id for the log's name (LogNames: vanilla,
+ * Nat. Dex and MaxDex), whose still is read from the player's ROM on vanilla and from the bundled pack on the Nat. Dex
+ * and MaxDex builds (Play's spriteFor); on a Game Boy run, which has no Gen 3 tracker, the log's own number, the
+ * national dex number its tracker and its pack (Gen 3's first 251) use. A DS run has its own viewer (DsLogViewer,
+ * DsPictures).
+ */
+internal object LogPictureIds {
+    fun species(p: RandomizerLog.Pokemon, names: LogNames, gameBoy: Boolean): Int? =
+        names.speciesId(p.name) ?: p.id.takeIf { gameBoy && it in 1..251 }
+
+    /** How the Walking Pals are numbered for this log: the Gen 3 tracker's way, or national on a Game Boy run. */
+    fun palDex(tracker: com.ironmonone.tracker.GbaTracker?): WalkingPals.Dex =
+        tracker?.let { WalkingPals.trackerDex(3, if (it.expandedSpeciesIds) 1283 else 411, it.nameSet == "maxdex", hns = it.heartSoul) }
+            ?: WalkingPals.Dex.NATIONAL
+}
+
 /** 64x64 or any ARGB pixels as a picture (the tracker's ROM pictures). */
 internal fun argbImage(px: IntArray, w: Int, h: Int): ImageBitmap =
     android.graphics.Bitmap.createBitmap(px, w, h, android.graphics.Bitmap.Config.ARGB_8888).asImageBitmap()

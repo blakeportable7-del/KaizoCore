@@ -46,10 +46,11 @@ class NuzlockeStartsTest {
 
     @Test
     fun `every game the app can check is offered, so no supported game is left out`() {
-        // All but MaxDex, which has no Nuzlocke in its first version (MaxDexPrepareTest).
-        val checked = RomKind.all.filter { it.expectedCrc != RomKind.CRC_UNKNOWN && !it.isMaxDex }
+        // All but MaxDex, which has no Nuzlocke in its first version (MaxDexPrepareTest), and a game the app only plays
+        // (the official Heart & Soul 2.0.6: no tracker reads it, so its Nuzlocke is the KaizoCore build's).
+        val checked = RomKind.all.filter { it.expectedCrc != RomKind.CRC_UNKNOWN && !it.isMaxDex && !it.playOnly }
         assertTrue(checked.size >= 25, "the app knows only ${checked.size} checked games")
-        val got = NuzlockeStarts.plainGames((checked + RomKind.FIRERED_MAXDEX_10).map { verified(it) }).map { it.kind }
+        val got = NuzlockeStarts.plainGames((checked + RomKind.FIRERED_MAXDEX_10 + RomKind.HEARTSOUL_206).map { verified(it) }).map { it.kind }
         assertEquals(checked, got)
     }
 
@@ -178,7 +179,7 @@ class NuzlockeStartsTest {
         assertEquals("Pick the type.", problem(mono, NuzlockeRules.forPreset(mono, null)))
         assertNull(problem(mono, NuzlockeRules.forPreset(mono, 10)))
         val fairy = NuzlockeRules.forPreset(mono, NuzlockeStarts.FAIRY)
-        assertEquals("Fairy only exists in the Nat. Dex builds.", problem(mono, fairy, natDex = false))
+        assertEquals("Fairy only exists in the Nat. Dex builds and Heart & Soul.", problem(mono, fairy, natDex = false))
         assertNull(problem(mono, fairy, natDex = true))
     }
 

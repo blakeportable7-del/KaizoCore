@@ -41,10 +41,11 @@ data class GameSession(
         /**
          * The kind a library file may be tracked as. Only a CRC match: a kind
          * whose CRC is not pinned yet, or a header match on a modified file,
-         * gives null, and the game plays untracked rather than mis-tracked.
+         * gives null, and the game plays untracked rather than mis-tracked. So does a kind the app only plays
+         * (RomKind.playOnly, the official Heart & Soul 2.0.6).
          */
         fun trackerKind(kind: RomKind?, crc: Long): RomKind? =
-            kind?.takeIf { it.expectedCrc != RomKind.CRC_UNKNOWN && it.expectedCrc == crc }
+            kind?.takeIf { it.expectedCrc != RomKind.CRC_UNKNOWN && it.expectedCrc == crc && !it.playOnly }
 
         fun forRun(file: File, kind: RomKind?): GameSession = GameSession(
             file = file,

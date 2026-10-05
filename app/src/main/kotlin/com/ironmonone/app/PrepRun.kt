@@ -23,7 +23,7 @@ internal object PrepRun {
 
     /** The built-ins for a library game, or none when the library does not hold an exact copy of a known game. */
     fun builtIns(entry: LibraryStore.Entry): List<PrepOptions.Option> =
-        entry.kind?.takeIf { entry.verified }?.let { builtIns(it) }.orEmpty()
+        entry.kind?.takeIf { entry.tracked }?.let { builtIns(it) }.orEmpty()
 
     /**
      * Where one run writes its patched game: a file of its own in [cacheDir]. The name was fixed per build, so two runs
@@ -54,7 +54,7 @@ internal object PrepRun {
             PrepOptions.Mode.STANDARD -> {
                 progress.start("Saving", 0L)
                 store.savePrepared(kind, file, crc)
-                if (kind.isNatDex || kind.patchTag != null) "Already patched. Stored as is." else "Stored as a standard (vanilla) base."
+                if (kind.isNatDex || kind.patchTag != null || kind.isHns) "Already patched. Stored as is." else "Stored as a standard (vanilla) base."
             }
 
             PrepOptions.Mode.PATCH -> {

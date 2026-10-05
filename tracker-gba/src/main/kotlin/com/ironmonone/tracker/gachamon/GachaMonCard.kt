@@ -26,7 +26,7 @@ data class GachaMonCard(
     val stats: SixStats,
     /** Up to four move ids in slot order, 0 for none. */
     val moveIds: List<Int>,
-    /** 1 Ruby, 2 Emerald, 3 FireRed, 4 Sapphire, 5 LeafGreen (gameVersionToNumber); 0 unknown. */
+    /** 1 Ruby, 2 Emerald, 3 FireRed, 4 Sapphire, 5 LeafGreen (gameVersionToNumber), KaizoCore's 6 Heart & Soul; 0 unknown. */
     val gameVersion: Int,
     /** 1: keep in the collection (a capture marked to keep, or a card already there). */
     val keep: Int = 0,
@@ -48,7 +48,14 @@ data class GachaMonCard(
     val gameName: String get() = GAME_NAMES.getOrNull(gameVersion - 1) ?: "?"
 
     companion object {
-        val GAME_NAMES = listOf("Ruby", "Emerald", "FireRed", "Sapphire", "LeafGreen")
+        val GAME_NAMES = listOf("Ruby", "Emerald", "FireRed", "Sapphire", "LeafGreen", "Heart & Soul")
+
+        /**
+         * Heart & Soul's number (2026-10-05): KaizoCore's own, after the PC tracker's five, in the record's 3-bit game
+         * field (0 to 7), so its cards say their game and draw its badges. The PC tracker names it "?" as any number it
+         * does not know.
+         */
+        const val HEART_SOUL = 6
 
         /** gameVersionToNumber, from the tracker's routeVersion ("firered", "emerald"): 0 when unknown. */
         fun gameVersionOf(routeVersion: String): Int = when (routeVersion.lowercase()) {

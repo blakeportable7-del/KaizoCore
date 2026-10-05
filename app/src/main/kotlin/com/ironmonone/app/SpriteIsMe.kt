@@ -282,6 +282,7 @@ fun SpriteIsMeHost(retro: GLRetroView?, platform: Platform) {
         onDispose {
             runCatching { SpriteIsMeRunner.stopNative() }
             SpriteIsMeSupport.state = SpriteIsMeSupport.State.Unknown
+            AutoTheme.heartSoul = false
         }
     }
 }
@@ -304,6 +305,8 @@ internal object SpriteIsMeRunner {
     suspend fun run(ctx: Context, retro: GLRetroView) {
         val reader = MemoryReader { a, n -> retro.readMemory(a, n) }
         val map = resolve(reader) ?: return
+        // Which numbering the auto themes read the lead by (AutoTheme.heartSoul); this is where Play names its game.
+        AutoTheme.heartSoul = map.hns
         // The table for a retail game; for Nat. Dex and MaxDex, whose layouts are in no table, the addresses read out of the
         // game's own code (tracker-gba's OverworldScan, once, off the main thread).
         val addresses = withContext(Dispatchers.Default) { runCatching { Overworld.resolve(map, reader) }.getOrNull() }
@@ -360,6 +363,7 @@ internal object SpriteIsMeRunner {
      */
     internal fun refusal(map: GameMap): String = when {
         map.nameSet == "maxdex" -> SpriteIsMeCopy.MAX_DEX
+        map.hns -> SpriteIsMeCopy.HEART_SOUL
         Overworld.isNatDex(map) -> SpriteIsMeCopy.NAT_DEX
         Overworld.hasTable(map) -> SpriteIsMeCopy.NO_OVERWORLD
         else -> SpriteIsMeCopy.NOT_KNOWN

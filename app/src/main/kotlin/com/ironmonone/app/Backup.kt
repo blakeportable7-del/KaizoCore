@@ -71,6 +71,8 @@ object Backup {
         "prep/run-progress.txt",
         // The player's choices over the passes the rules add (ExtraPasses).
         "prep/extra-passes.txt",
+        // Heart & Soul's pool, Vanilla or Nat. Dex (HnsPool), the player's choice.
+        "prep/hns-pool.txt",
         // The player's own game over lines and their switches (DeathQuotes), typed in by hand and nowhere else.
         "prep/death-quotes.txt",
         // Tracker themes (2026-09-29): the colours they saved under a name, and the image behind the tracker

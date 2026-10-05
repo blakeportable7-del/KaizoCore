@@ -110,7 +110,16 @@ object MoveRules {
      * Defenses. [natDex]: the Nat. Dex expansion's chart (Gen3Types.effect).
      */
     fun effectiveness(id: Int, type: Int?, category: String?, targetTypes: List<Int>, gen1: Boolean = false, power: String? = null, natDex: Boolean = false,
-                      maxDex: Boolean = false): Double {
+                      maxDex: Boolean = false,
+                      /** The battle's weather (TrackerState.weather): Heart & Soul's strong winds and primal weathers change this (HnsWeather). */
+                      weather: String? = null): Double {
+        val plain = effectivenessInClearSkies(id, type, category, targetTypes, gen1, power, natDex, maxDex)
+        if (type == null || targetTypes.isEmpty() || id in TYPELESS) return plain
+        return HnsWeather.effectiveness(weather, type, category, targetTypes, plain) { Gen3Types.effect(type, it, gen1, natDex) }
+    }
+
+    private fun effectivenessInClearSkies(id: Int, type: Int?, category: String?, targetTypes: List<Int>, gen1: Boolean, power: String?, natDex: Boolean,
+                      maxDex: Boolean): Double {
         if (type == null || targetTypes.isEmpty() || id in TYPELESS) return 1.0
         if (category == "STA") {
             val immune = STATUS_WILL_FAIL[id] ?: return 1.0

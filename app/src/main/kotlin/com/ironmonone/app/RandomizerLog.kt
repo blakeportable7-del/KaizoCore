@@ -45,6 +45,11 @@ class RandomizerLog private constructor(
      * are unchanged too (rc32 audit P2 #71).
      */
     val statsUnchanged: Boolean = false,
+    /**
+     * Item sections an engine adds beside UPR's (Heart & Soul's HnsRandomizer: "Starter Held Item", "PC Item",
+     * "Field Items"), as (section name, its lines) in the log's order; empty for a log with none.
+     */
+    val items: List<Pair<String, List<String>>> = emptyList(),
 ) {
     /**
      * One pass of a run made in more than one: its file, its seed as Premade Seed takes it (decimal), and its
@@ -139,7 +144,9 @@ class RandomizerLog private constructor(
         private val SETTINGS = Regex("^Settings String:\\s*(.+)$")
         private val GAME = Regex("^Randomization of\\s*(.+?)\\s+completed")
         private val EVOLUTION = Regex("^(.+?)\\s*->\\s*(.+)$")
-        private val MOVESET_OPEN = Regex("^(\\d+)\\s+(.+?)\\s*->")
+        // A block's header: "092 GASTLY -> HAUNTER", or "094 GENGAR (no evolution)" for a Pokemon that does not evolve. The
+        // second form did not match, so a final stage's moves were read into the block before it (2026-10-05).
+        private val MOVESET_OPEN = Regex("^(\\d+)\\s+(.+?)\\s*(?:->|\\(no evolution\\))")
         private val MOVESET_STAT = Regex("^(HP|ATK|DEF|SPA|SPD|SPE|SPEC)\\s+(\\d+)$")
         private val LEVEL_MOVE = Regex("^Level\\s+(\\d+)\\s*:\\s*(.+)$")
         private val EVO_MOVE = Regex("^Learned upon evolution:\\s*(.+)$")
@@ -151,6 +158,8 @@ class RandomizerLog private constructor(
         private val WILD_SET = Regex("^Set #(\\d+)\\s*-\\s*(.+?)\\s*\\(rate=(\\d+)\\)")
         private val WILD_MON = Regex("^(.+?)\\s+Lvs?\\s*(\\d+)(?:-(\\d+))?")
         private val STARTER = Regex("^Set starter \\d+ to (.+)$")
+        /** The item sections [items] reads, in the order the Misc page shows them. */
+        private val ITEM_SECTIONS = listOf("Starter Held Item", "PC Item", "Field Items")
         private val STATIC = Regex("^(.+?)\\s*=>\\s*(.+)$")
         // The passes (Randomizers.twoPass and withPrePass): their markers, and the 60% levels' trailer sentence.
         private val PART_TWO = Regex("^== PART 2: (.+) \\(seed ([0-9a-fA-F]{16})\\) ==$")
@@ -369,11 +378,17 @@ class RandomizerLog private constructor(
                 STATIC.find(row.trim())?.let { it.groupValues[1].trim() to it.groupValues[2].trim() }
             }
             val pickup = body(section("Pickup Items")).map { it.trim() }.filter { it.isNotEmpty() }
+            val items = ITEM_SECTIONS.mapNotNull { h ->
+                // A section's lines run to its first blank line; UPR's "...: Unchanged." lines can follow without a header.
+                body(section(h)).map { it.trim() }.dropWhile { it.isEmpty() }.takeWhile { it.isNotEmpty() }
+                    .takeIf { it.isNotEmpty() }?.let { h to it }
+            }
 
             return RandomizerLog(
                 version, seed, settings, game, pokemon, tms, trainers, routes, starters, statics, pickup,
                 passes = passes(lines), notes = notes,
                 statsUnchanged = fromMovesets && lines.any { it.trim().equals(STATS_UNCHANGED, ignoreCase = true) },
+                items = items,
             )
         }
 

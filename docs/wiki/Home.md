@@ -6,7 +6,7 @@ games you own, and plain play.
 
 KaizoCore contains no games. You add game files you own, and they stay on your phone.
 
-> These pages describe 1.0.0-rc35.2, the current download.
+> These pages describe 1.0.0-rc36, the current download.
 
 ## Start here
 

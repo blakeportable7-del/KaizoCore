@@ -62,20 +62,39 @@ data class RomKind(
      * 1.2.1 in particular checks this first.
      */
     val isMaxDex: Boolean = false,
+    /**
+     * A known build the app plays and nothing more: no tracker, no randomizer, no rules (2026-10-05). The official
+     * Heart & Soul 2.0.6 is one: KaizoCore can name it and patch it, but its addresses come from another compiler than
+     * the build the tracker has symbols for, so only the KaizoCore build ([HEARTSOUL_KAIZO_206]) is tracked.
+     */
+    val playOnly: Boolean = false,
 ) {
+    /** Pokemon Heart & Soul (family "HnS"): its own randomizer (HnsEngine), presets and Nuzlocke areas. */
+    val isHns: Boolean get() = family == HNS_FAMILY
+
+    /**
+     * The type chart has Fairy (the Nat. Dex expansion, MaxDex, Heart & Soul): what the type-defenses dialog and the
+     * move rows key the chart on. Heart & Soul is not a Nat. Dex build, but it carries the modern chart.
+     */
+    val fairyTypes: Boolean get() = isNatDex || isHns
+
     /** The console, and with it the core and the turbo cap. Never the extension. */
     val platform: Platform get() = generation.platform
 
     /** The randomizer fork this ROM belongs to. The one place that decision is made. */
     val engine: Engine get() = when {
+        isHns -> Engine.HNS
         isMaxDex -> Engine.MAXDEX
         isNatDex -> Engine.NATDEX
         else -> Engine.ZX
     }
 
     companion object {
+        /** The settings-file family of Heart & Soul: its own, so no other game's preset is offered for it by name. */
+        const val HNS_FAMILY = "HnS"
+
         /** Every kind the app knows, so a stored id can be turned back into one. */
-        val all: List<RomKind> get() = allV1 + allNatDex + allMaxDex + allPatched
+        val all: List<RomKind> get() = allV1 + allNatDex + allMaxDex + allPatched + allHns
 
         fun byId(id: String?): RomKind? = id?.let { k -> all.firstOrNull { it.id == k } }
 
@@ -344,6 +363,43 @@ data class RomKind(
             isMaxDex = true,
         )
         val allMaxDex = listOf(FIRERED_MAXDEX_10)
+
+        /**
+         * Pokemon Heart & Soul 2.0.6 with KaizoCore's comfort patch (docs/HNS-KAIZO.md): the official 2.0.6 (01713508)
+         * plus our BPS, CRC C993EB6E. The header is Heart & Soul's own ("POKEMON HNS", game code BPEE); the tracker
+         * picks its map by that title and the build's tables (GameMap.resolve, HnsMaps). Minimal on purpose
+         * (feat/hns-tracker, 2026-10-05): recognition for the Library and the tracker only; the randomizer for it is
+         * HnsEngine's to wire, and another branch may define this kind too.
+         */
+        val HEARTSOUL_KAIZO_206 = RomKind(
+            id = "heartsoul-kaizo-206",
+            family = HNS_FAMILY,
+            displayName = "Pokémon Heart & Soul (KaizoCore)",
+            generation = Generation.GBA3,
+            fileExtension = "gba",
+            expectedCrc = 0xC993EB6EL,
+            titleDetect = "POKEMON HNS",
+            natDexCapable = false,
+        )
+
+        /**
+         * The official Pokemon Heart & Soul 2.0.6 (pokehns-expansion Release-v2.0.6): Emerald (USA) patched with the
+         * team's own pokemonHnS_v2.0.6.ups, CRC 01713508, 32 MB. The player makes it with the Heart & Soul button and it
+         * plays as a normal game (Blake, 2026-10-05: "the user should be able to play a normal heart and soul"); the
+         * KaizoCore build is made from it. [playOnly]: no tracker reads it (docs/HNS-KAIZO.md).
+         */
+        val HEARTSOUL_206 = RomKind(
+            id = "heartsoul-206",
+            family = HNS_FAMILY,
+            displayName = "Pokémon Heart & Soul 2.0.6",
+            generation = Generation.GBA3,
+            fileExtension = "gba",
+            expectedCrc = 0x01713508L,
+            titleDetect = "POKEMON HNS",
+            natDexCapable = false,
+            playOnly = true,
+        )
+        val allHns = listOf(HEARTSOUL_KAIZO_206, HEARTSOUL_206)
 
         // ---- Ruleset patches, 2026-09-08. CRCs: the BPS target CRC carried by the
         // patch itself (Gen 1 and 2), or measured by applying the IPS / xdelta to

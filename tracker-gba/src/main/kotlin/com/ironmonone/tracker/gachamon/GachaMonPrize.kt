@@ -18,7 +18,25 @@ object GachaMonPrize {
         1, 4 -> RS
         2 -> EMERALD
         3, 5 -> FRLG
+        GachaMonCard.HEART_SOUL -> HEART_SOUL
         else -> emptyMap()
+    }
+
+    /**
+     * Heart & Soul's (KaizoCore's, 2026-10-05): the story's rivals, gym leaders, Elite Four, Champion and Red, and the
+     * Rocket executives, from the build's own trainer constants (hns/commontrainers.tsv, tools/hns/gen_tracker.py).
+     */
+    private val HEART_SOUL: Map<String, List<Int>> by lazy {
+        val out = LinkedHashMap<String, List<Int>>()
+        GachaMonPrize::class.java.getResourceAsStream("/hns/commontrainers.tsv")?.bufferedReader(Charsets.UTF_8)?.useLines { lines ->
+            for (l in lines) {
+                if (l.startsWith("#")) continue
+                val t = l.indexOf('\t')
+                if (t <= 0) continue
+                out[l.substring(0, t)] = l.substring(t + 1).split(',').mapNotNull { it.trim().toIntOrNull() }
+            }
+        }
+        out
     }
 
     private val RS: Map<String, List<Int>> = linkedMapOf(
@@ -76,7 +94,7 @@ object GachaMonPrize {
         return Regex("[A-Za-z0-9]+").find(name)?.value ?: name
     }
 
-    /** The common trainers of [gameNumber] (1 Ruby/Sapphire, 2 Emerald, 3 FireRed/LeafGreen) that are beaten. */
+    /** The common trainers of [gameNumber] (1 Ruby/Sapphire, 2 Emerald, 3 FireRed/LeafGreen, 6 Heart & Soul) that are beaten. */
     fun defeated(gameNumber: Int, isDefeated: (Int) -> Boolean): List<Int> =
         commonTrainers(gameNumber).values.flatten().filter(isDefeated)
 

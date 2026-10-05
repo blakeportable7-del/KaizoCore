@@ -66,7 +66,7 @@ class SpriteIsMeWiringTest {
         assertFalse("in 1..411" in head, "no Gen 1-3 cap on the animated icon")
         val panel = src("TrackerPanel.kt")
         // MaxDex in Play numbers its own way past 1235 (MaxDexPlayTest), told by the session; every game goes through trackerDex.
-        assertEquals(2, Regex("iconDex = WalkingPals\\.trackerDex\\(generation, speciesTotal, maxDex\\)").findAll(panel).count(), "your card and the enemy's")
+        assertEquals(2, Regex("iconDex = WalkingPals\\.trackerDex\\(generation, speciesTotal, maxDex, hns = hnsGame\\)").findAll(panel).count(), "your card and the enemy's")
         assertEquals(2, Regex("iconDex = iconDex,").findAll(panel).count())
     }
     private fun cpp(name: String) = File("../libretrodroid/src/main/cpp/$name").readText().replace("\r\n", "\n")

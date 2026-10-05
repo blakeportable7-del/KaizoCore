@@ -149,7 +149,8 @@ internal fun TrackerStatusPill(code: String, modifier: Modifier = Modifier) {
 /**
  * The battle's weather as a pill under the battle banner's label (Blake, 2026-10-02, showing the Gen 3 tracker's
  * "Weather: Sunlight": "that's helpful to the player to know if there's any current weather effects in play").
- * TrackerState.weather's four values, named as the PC tracker's Battle Details names them; null for any other.
+ * TrackerState.weather's four values, named as the PC tracker's Battle Details names them, and Heart & Soul's strong
+ * winds, heavy rain and extreme sun; null for any other.
  */
 internal object TrackerWeather {
     fun name(code: String): String? = when (code.uppercase()) {
@@ -157,12 +158,17 @@ internal object TrackerWeather {
         "RAIN" -> "Rain"
         "SANDSTORM" -> "Sandstorm"
         "HAIL" -> "Hail"
+        // Heart & Soul's three that change what a move does (HnsWeather).
+        com.ironmonone.tracker.HnsWeather.STRONG_WINDS -> "Strong winds"
+        com.ironmonone.tracker.HnsWeather.HEAVY_RAIN -> "Heavy rain"
+        com.ironmonone.tracker.HnsWeather.EXTREME_SUN -> "Extreme sun"
         else -> null
     }
 
     fun color(code: String): Color = when (code.uppercase()) {
-        "SUN" -> Color(0xFFF0A030)
-        "RAIN" -> Color(0xFF4C8DE8)
+        "SUN", com.ironmonone.tracker.HnsWeather.EXTREME_SUN -> Color(0xFFF0A030)
+        "RAIN", com.ironmonone.tracker.HnsWeather.HEAVY_RAIN -> Color(0xFF4C8DE8)
+        com.ironmonone.tracker.HnsWeather.STRONG_WINDS -> Color(0xFFB8C4CC)
         "SANDSTORM" -> Color(0xFFC9A45C)
         else -> Color(0xFF9ED8EA)   // HAIL
     }

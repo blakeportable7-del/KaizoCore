@@ -53,6 +53,7 @@ class RunScreenKaizoTest {
         // Whatever a game offers: Standard, Ultimate, Kaizo, then Super Kaizo where it has it, then the variants.
         // MaxDex offers its one mode, Kaizo, as Trip ships it.
         assertEquals(listOf("kaizo"), RulesetCatalog.forRom(RomKind.FIRERED_MAXDEX_10, presets).map { it.key })
+        // Heart & Soul plays the Emerald Nat. Dex v1.2 files (HnsEngine reads them), in the same order.
         for (k in RomKind.all.filterNot { it.isMaxDex }) {
             val keys = RulesetCatalog.forRom(k, presets).map { it.key }
             assertTrue(keys.take(3) == listOf("standard", "ultimate", "kaizo"), "${k.id}: $keys")
@@ -73,7 +74,7 @@ class RunScreenKaizoTest {
 
     @Test
     fun `every game opens on Kaizo, and a Nat Dex game on its own Nat Dex Kaizo file`() {
-        for (k in RomKind.all) {
+        for (k in RomKind.all.filterNot { it.family == "HnS" }) {
             val f = RulesetCatalog.openingFile(k, presets, null, null)
             assertTrue(f != null, "${k.id} opens on nothing")
             val info = RnqsInfo.of(f!!)
@@ -81,6 +82,8 @@ class RunScreenKaizoTest {
             assertEquals(k.family, info.gameTag, "${k.id}: ${f.name}")
             assertEquals(k.isNatDex, info.natDex, "${k.id}: ${f.name}")
         }
+        // Heart & Soul opens on Emerald's Nat. Dex Kaizo, the file HnsEngine reads for its Kaizo.
+        assertEquals("RSE NatDex v1.2 Kaizo.rnqs", RulesetCatalog.openingFile(RomKind.HEARTSOUL_KAIZO_206, presets, null, null)!!.name)
         assertEquals("RSE Kaizo.rnqs", RulesetCatalog.openingFile(RomKind.EMERALD_U, presets, null, null)!!.name)
         assertEquals("RSE NatDex v1.2 Kaizo.rnqs", RulesetCatalog.openingFile(RomKind.EMERALD_NATDEX_121, presets, null, null)!!.name)
         assertEquals("FRLG NatDex v1.2 Kaizo.rnqs", RulesetCatalog.openingFile(RomKind.FIRERED_NATDEX_121, presets, null, null)!!.name)
@@ -214,7 +217,8 @@ class RunScreenKaizoTest {
         val note = "Ultimate and harder: HM moves are allowed to be used in battle, as long as the moves are not taught with the HM items."
         val dirs = rulesets.listFiles()!!.filter { File(it, "ultimate.md").isFile }
         assertTrue(dirs.count { it.name.endsWith("-NatDex") } == 2 && dirs.size >= 10)
-        for (d in dirs) assertEquals(d.name.endsWith("-NatDex"), note in File(d, "ultimate.md").readText(), d.name)
+        // Heart & Soul's book carries the Nat. Dex ruleset changes too (rulesets/HnS), and its Mode line follows.
+        for (d in dirs) assertEquals(d.name.endsWith("-NatDex") || d.name == "HnS", note in File(d, "ultimate.md").readText(), d.name)
         // The other lines are the same for either kind of game.
         for (key in RulesetCatalog.keys - "ultimate") assertEquals(RulesetCatalog.modeLine(key), RulesetCatalog.modeLine(key, natDex = true), key)
     }

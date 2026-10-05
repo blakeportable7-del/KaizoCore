@@ -716,6 +716,21 @@ https://github.com/Tripc423/Maxdex
   (tools/upr-settings/community/MaxDex-Ruleset.md).
 
 
+Lil Dill and the Heart & Soul team / pokehns-expansion (Pokemon Heart & Soul)
+https://github.com/PokemonHnS-Development/pokehns-expansion
+
+  Pokemon Heart & Soul 2.0.6 (tag Release-v2.0.6), built on RHH's pokeemerald-expansion
+  (https://github.com/rh-hideout/pokeemerald-expansion). KaizoCore never ships their patch
+  or any ROM: the player downloads the official patch from the team's GitHub release or
+  Hackdex (https://www.hackdex.app/hack/pokemon-heart-and-soul) in their own browser and
+  patches their own Emerald (USA) on the Pokemon Heart & Soul screen (HnsSetup). The team's
+  Hackdex page invites improvements on their open source; Blake took that as the go
+  (2026-10-04, docs/HNS-KAIZO.md). They take no donations and KaizoCore asks for none.
+  The one Heart & Soul file in the APK is KaizoCore's own comfort patch, made by
+  tools/hns/build.sh from the official 2.0.6 (CRC 01713508) to the KaizoCore build
+  (C993EB6E) out of the patch series in tools/hns/patches. SHA-256:
+    cb8eba60d90d2b15df1e248c276779ed5d6fc5df0d891de5f708641bf0b2bcfd  hns-kaizo-heartsoul-206.bps
+
 BINDING RELEASE CONDITIONS — verify every one before any public build
 ---------------------------------------------------------------------
 

@@ -50,6 +50,8 @@ internal fun RunCodeSection(
     var confirm by remember { mutableStateOf<RunCodes.Plan.Ready?>(null) }
 
     fun build(plan: RunCodes.Plan.Ready) {
+        // A Heart & Soul code names its pool: the run is made from it, and the pool row shows it (the next run's choice).
+        if (plan.kind.isHns) HnsPool.choose(context.filesDir, RunCodes.hnsPoolOf(plan.code))
         // The code's passes for this one build; the player's switches for the file stay as they are (R4, 2026-09-30).
         if (!RunJob.randomize(context, plan.kind to plan.prepared, plan.settings, seed = plan.code.seed, expect = plan.code,
                 prePassOn = plan.code.prePass.takeIf { ExtraPasses.prePassName(plan.kind) != null },

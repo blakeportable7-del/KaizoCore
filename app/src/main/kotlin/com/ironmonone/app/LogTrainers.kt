@@ -70,8 +70,14 @@ internal fun logTitle(s: String): String = refUpperEachWord(s.trim().lowercase()
  * TrainerData's, per game family.
  */
 class LogTrainerRules(private val tracker: GbaTracker, private val frlg: Boolean) {
-    /** TrainerData.getExcludedTrainers: dummy trainers and VS Seeker rematches, per game. */
-    private val excluded: Set<Int> = ranges(if (frlg) FRLG_EXCLUDED else RSE_EXCLUDED)
+    /** Heart & Soul (2026-10-05): its own trainers, sixteen gyms and gym TMs, none of the five games' tables. */
+    private val hns: Boolean = tracker.heartSoul
+
+    /** TrainerData.getExcludedTrainers: dummy trainers and VS Seeker rematches, per game; Heart & Soul's post-game rematches. */
+    private val excluded: Set<Int> = ranges(if (hns) HNS_EXCLUDED else if (frlg) FRLG_EXCLUDED else RSE_EXCLUDED)
+
+    /** The gym TMs in badge order (TrainerData.GymTMs): eight on the five games, sixteen on Heart & Soul. */
+    val gymTms: List<Int> get() = if (hns) LogTms.HNS_GYM_TMS else LogTms.gymTmNumbers(frlg)
 
     fun group(id: Int): String = tracker.trainerGroup(id)
     /** The reference's TrainerGroups value: the tables say "Elite4", the reference sorts by "Elite 4". */
@@ -87,14 +93,14 @@ class LogTrainerRules(private val tracker: GbaTracker, private val frlg: Boolean
     }
 
     /** DataHelper.buildTrainerLogDisplay: a gym leader's badge number, from its class ("gymleader-N"). */
-    fun gymNumber(id: Int): Int? = if (group(id) != "Gym") null else
+    fun gymNumber(id: Int): Int? = if (group(id) != "Gym") null else if (hns) HNS_GYMS[id] else
         classKey(id)?.let { Regex("^GymLeader(\\d)$").find(it)?.groupValues?.get(1)?.toInt() }
 
     /** TrainerData.shouldUseClassName: FireRed/LeafGreen's rivals are shown by class, their name being the player's choice. */
-    fun useClassName(id: Int): Boolean = frlg && (id in 326..334 || id in 426..440 || id in 739..741)
+    fun useClassName(id: Int): Boolean = frlg && !hns && (id in 326..334 || id in 426..440 || id in 739..741)
 
     /** TrainerData.isGiovanni: his team is drawn as Master Balls. */
-    fun isGiovanni(id: Int): Boolean = frlg && id in 348..350
+    fun isGiovanni(id: Int): Boolean = frlg && !hns && id in 348..350
 
     /** Grunts have no unique names, so the reference appends the trainer id. */
     fun isGrunt(id: Int): Boolean = classKey(id) in GRUNT_CLASSES
@@ -188,6 +194,26 @@ class LogTrainerRules(private val tracker: GbaTracker, private val frlg: Boolean
 
         /** The same, GameSettings.game 3 (FireRed, LeafGreen). */
         internal const val FRLG_EXCLUDED = "1-88,101,147,200,263,454-461,492-515,530,621-741"
+
+        /** Heart & Soul's: TRAINER_NONE and the post-game rematches (TRAINER_*_POSTOBC_HNS, layout-kaizo.json). */
+        internal const val HNS_EXCLUDED = "0,631-652"
+
+        /**
+         * Heart & Soul's gym leaders to their badge, 1 to 16, from the tracker's own level cap rows (nuzlocke/levelcaps-gen3.tsv,
+         * "hns": each leader's story battles and the badge flag it sets), every variant of a leader's battle included.
+         */
+        internal val HNS_GYMS: Map<Int, Int> by lazy {
+            val out = HashMap<Int, Int>()
+            GbaTracker::class.java.getResourceAsStream("/nuzlocke/levelcaps-gen3.tsv")?.bufferedReader(Charsets.UTF_8)?.useLines { lines ->
+                for (l in lines) {
+                    val c = l.split('\t')
+                    if (c.size < 9 || c[0] != "hns") continue
+                    val bit = c[8].trim().toIntOrNull() ?: continue
+                    c[7].split(',').mapNotNull { it.trim().toIntOrNull() }.forEach { out[it] = bit + 1 }
+                }
+            }
+            out
+        }
 
         internal fun ranges(spec: String): Set<Int> = spec.split(',').flatMap { part ->
             val p = part.trim().split('-').map { it.toInt() }
@@ -299,6 +325,8 @@ internal fun LogTrainerDetail(
     portrait: ImageBitmap? = null,
     /** Walking Pals for the team, which stand idle on PC (SpriteData.Types.Idle). */
     palOf: ((RandomizerLog.Pokemon) -> WalkingPals.Pal?)? = null,
+    /** The PC tracker's Trainer Info panel for this trainer (LogTrainerInfoPanel), under the header. */
+    infoPanel: (@Composable () -> Unit)? = null,
 ) {
     val ctx = LocalContext.current
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
@@ -314,6 +342,7 @@ internal fun LogTrainerDetail(
                 if (art != null) Image(art, "badge $g", Modifier.size(24.dp), filterQuality = FilterQuality.None)
             }
         }
+        if (infoPanel != null) { Spacer(Modifier.height(4.dp)); infoPanel() }
         Spacer(Modifier.height(4.dp))
         t.party.chunked(2).forEach { pair ->
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {

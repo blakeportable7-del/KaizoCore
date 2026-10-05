@@ -117,6 +117,12 @@ internal fun LogMiscTab(log: RandomizerLog, names: LogNames = LogNames.PLAIN) {
             DialogText("Pickup items", 13, Pc.Gold)
             log.pickup.forEach { DialogText(it, 12, Pc.Text) }
         }
+        // Heart & Soul's own item sections: the starter's held item, the lab trash can's item, item balls and hidden items.
+        for ((heading, rows) in log.items) {
+            Spacer(Modifier.height(6.dp))
+            DialogText(heading, 13, Pc.Gold)
+            rows.forEach { DialogText(it, 12, Pc.Text) }
+        }
     }
     if (share) ShareSeedDialog(log) { share = false }
 }

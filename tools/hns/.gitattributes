@@ -1,0 +1,4 @@
+# build.sh runs in WSL bash and the patches go through git am, so neither may gain CRLF on a Windows checkout.
+*.patch -text
+*.sh text eol=lf
+*.py text eol=lf

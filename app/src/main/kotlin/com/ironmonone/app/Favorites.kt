@@ -109,6 +109,9 @@ object Favorites {
     fun slotCount(kind: com.ironmonone.core.RomKind?): Int = when {
         // Every Nat. Dex rulebook: "You may have up to 9 favourites" (Blake, 2026-10-01: the game's own rules).
         kind?.isNatDex == true -> NAT_DEX_SLOTS
+        // Heart & Soul's book carries the Nat. Dex ruleset changes for a Nat. Dex pool run (rulesets/HnS): nine boxes, of
+        // which a Vanilla pool run counts the first three (FavoriteBall), as Emerald's rules do.
+        kind?.isHns == true -> NAT_DEX_SLOTS
         kind?.generation == com.ironmonone.core.Generation.NDS5 -> 5
         kind?.generation == com.ironmonone.core.Generation.NDS4 -> 4
         else -> SLOTS
@@ -123,6 +126,8 @@ object Favorites {
     fun maxDex(kind: com.ironmonone.core.RomKind?): Int = when {
         kind == null -> Int.MAX_VALUE
         kind.isNatDex -> Int.MAX_VALUE
+        // Heart & Soul has every Pokemon through Gen 9 (species-kaizo.json: National Dex 1 to 1025 all there).
+        kind.isHns -> Int.MAX_VALUE
         else -> when (kind.generation) {
             com.ironmonone.core.Generation.GB1 -> 151
             com.ironmonone.core.Generation.GBC2 -> 251

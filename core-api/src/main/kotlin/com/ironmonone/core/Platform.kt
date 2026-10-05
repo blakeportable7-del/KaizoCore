@@ -54,7 +54,8 @@ enum class Platform(
 /**
  * Which randomizer fork owns a ROM. Never mixed: a vanilla ROM goes to ZX,
  * a Nat. Dex ROM to the Nat. Dex fork, a MaxDex ROM to the MaxDex randomizer
- * (Nat. Dex 1.1.3 with Trip's changes, engine-maxdex). The pairing guard in
+ * (Nat. Dex 1.1.3 with Trip's changes, engine-maxdex), Heart & Soul to KaizoCore's own (HnsEngine: UPR's rules on
+ * Heart & Soul's tables, read from the same settings files). The pairing guard in
  * RunScreen exists because crossing them crashes the intro.
  */
-enum class Engine { ZX, NATDEX, MAXDEX }
+enum class Engine { ZX, NATDEX, MAXDEX, HNS }

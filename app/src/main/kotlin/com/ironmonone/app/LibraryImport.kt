@@ -240,6 +240,10 @@ internal class LibraryImport(
          * of a line that would not name it. [forHacks] points at the ROM Hacks list instead of at Play.
          */
         fun addedLine(e: LibraryStore.Entry, several: Boolean = false, forHacks: Boolean = false): String {
+            if (e.playOnly) {
+                return "Added ${e.kind!!.displayName}. It plays without a tracker." +
+                    if (several || forHacks || !e.kind.isHns) "" else " For Kaizo IronMON and Nuzlocke, use Pokémon Heart & Soul on Home."
+            }
             if (e.verified) {
                 return "Added ${e.kind!!.displayName}. The tracker reads it." +
                     if (several) "" else if (forHacks) " It is in the list under step 1." else " Start a run from Kaizo IronMON on Home, or tap Play to just play."

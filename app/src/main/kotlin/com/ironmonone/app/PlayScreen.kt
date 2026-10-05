@@ -1602,7 +1602,7 @@ fun PlayScreen(
                       onGradeNotes = { side.scoreSheet = true },
                       onRandomEvos = { sp -> side.randomEvos = sp }, hasRandomEvos = { sp -> trackerRef?.hasRandomEvos(sp) == true },
                       onMoveHistory = { sp, n, lv -> side.moveHistory = Triple(sp, n, lv) },
-                      onTypeDefenses = { n, a, b -> typeDefenses = n to com.ironmonone.tracker.Gen3Types.defenses(a, b, gen1 = session.kind?.generation == com.ironmonone.core.Generation.GB1, natDex = session.kind?.isNatDex == true) },
+                      onTypeDefenses = { n, a, b -> typeDefenses = n to com.ironmonone.tracker.Gen3Types.defenses(a, b, gen1 = session.kind?.generation == com.ironmonone.core.Generation.GB1, natDex = session.kind?.fairyTypes == true) },
                       trackerState, ballCall = ballCall, onGear = { gearDialog = true }, headerTrailing = corner,
                 onRerollBall = { ballReroll++ },
                 movesSeenRunWide = gbaView.foe(trackerState)
@@ -2173,7 +2173,7 @@ fun PlayScreen(
                       onGradeNotes = { side.scoreSheet = true },
                       onRandomEvos = { sp -> side.randomEvos = sp }, hasRandomEvos = { sp -> trackerRef?.hasRandomEvos(sp) == true },
                 onMoveHistory = { sp, n, lv -> side.moveHistory = Triple(sp, n, lv) },
-                onTypeDefenses = { n, a, b -> typeDefenses = n to com.ironmonone.tracker.Gen3Types.defenses(a, b, gen1 = session.kind?.generation == com.ironmonone.core.Generation.GB1, natDex = session.kind?.isNatDex == true) },
+                onTypeDefenses = { n, a, b -> typeDefenses = n to com.ironmonone.tracker.Gen3Types.defenses(a, b, gen1 = session.kind?.generation == com.ironmonone.core.Generation.GB1, natDex = session.kind?.fairyTypes == true) },
                 trackerState, ballCall = ballCall, onGear = { gearDialog = true },
                 onRerollBall = { ballReroll++ },
                 movesSeenRunWide = gbaView.foe(trackerState)

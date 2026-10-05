@@ -29,6 +29,8 @@ data class RunCode(
 ) {
     val prePass: Boolean get() = passes and PRE_PASS != 0
     val part2: Boolean get() = passes and PART_2 != 0
+    /** A Heart & Soul run of the Nat. Dex pool ([HNS_NATDEX_POOL]). */
+    val hnsNatDexPool: Boolean get() = passes and HNS_NATDEX_POOL != 0
 
     /** A pass this app does not know: the code came from a newer KaizoCore, and its run cannot be made here. */
     val unknownPasses: Boolean get() = passes and KNOWN_PASSES.inv() != 0
@@ -44,7 +46,13 @@ data class RunCode(
         const val PRE_PASS = 1
         /** Gen 1's second pass, PART 2. */
         const val PART_2 = 2
-        private const val KNOWN_PASSES = PRE_PASS or PART_2
+        /**
+         * Not a pass: a Heart & Soul run randomized from the Nat. Dex pool (HnsPool; without it, the Vanilla pool). The same
+         * settings and seed make another game from the other pool, so the code says which (2026-10-05). An older app reads
+         * it as a pass it does not know and asks for an update, which is right: it cannot make the run.
+         */
+        const val HNS_NATDEX_POOL = 4
+        private const val KNOWN_PASSES = PRE_PASS or PART_2 or HNS_NATDEX_POOL
 
         fun passesOf(prePass: Boolean, part2: Boolean): Int = (if (prePass) PRE_PASS else 0) or (if (part2) PART_2 else 0)
 

@@ -200,7 +200,7 @@ class LogNamesTest {
         }
         val viewer = File(src, "LogViewer.kt").readText()
         assertTrue("LogNames.of(tracker)" in viewer)
-        assertTrue("names.speciesId(p.name)?.let(sf)" in viewer, "the sprites")
+        assertTrue("LogPictureIds.species(p, names, gameBoy)?.let(sf)" in viewer, "the sprites, by names.speciesId (LogPictureIds)")
         assertTrue("names.speciesId(lp.name)?.let { com.ironmonone.tracker.EvoText.short(t.evolution(it)) }" in viewer, "the evolution words")
         assertTrue("byName.speciesId(w.name)" in File(src, "OpenBookRoutes.kt").readText(), "Open Book's icons")
     }

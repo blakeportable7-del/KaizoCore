@@ -33,7 +33,7 @@ class RunCodeTest {
         assertTrue(back.part2); assertFalse(back.prePass); assertFalse(back.unknownPasses)
         val crystal = RunCode.parse(RunCode("crystal-u", 2L, 3L, RunCode.PRE_PASS, 4L, "GSC Kaizo.rnqs").text())!!
         assertTrue(crystal.prePass); assertFalse(crystal.part2)
-        assertTrue(RunCode.parse("KC1-emerald-u-3f2a9c1e-5261db990e333467-4-a1b2c3d4-x")!!.unknownPasses, "a pass from a newer app")
+        assertTrue(RunCode.parse("KC1-emerald-u-3f2a9c1e-5261db990e333467-8-a1b2c3d4-x")!!.unknownPasses, "a pass from a newer app (4 is Heart & Soul's pool)")
     }
 
     @Test fun `anything else is not a code`() {

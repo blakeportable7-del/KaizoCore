@@ -92,7 +92,7 @@ class MaxDexRunTest {
     @Test
     fun `the Kaizo IronMON screen names MaxDex's engine and offers no builder for it`() {
         val run = File("src/main/kotlin/com/ironmonone/app/RunScreen.kt").readText()
-        assertTrue("selectedRom?.takeUnless { it.first.isMaxDex }?.let { rom -> BuildYourGameEntry" in run)
+        assertTrue("selectedRom?.takeUnless { it.first.isMaxDex || it.first.isHns }?.let { rom -> BuildYourGameEntry" in run)
         assertTrue("Randomizers.engineName(it)" in run)
         assertTrue("kind.isMaxDex -> \"MaxDex build\"" in run)
     }

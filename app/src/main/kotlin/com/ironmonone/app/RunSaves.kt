@@ -73,8 +73,13 @@ internal object RunSaves {
         val bytes = runCatching { save.takeIf { it.isFile }?.readBytes() }.getOrNull() ?: return Plan.NONE
         if (!SaveCheck.hasProgress(bytes, kind.platform)) return Plan.NONE
         // Nat. Dex builds too: their save keeps vanilla's sections and party count (SaveCheck.gen3PartyCount).
-        val party = if (kind.platform == Platform.GBA && kind.family in GEN3_FAMILIES)
-            SaveCheck.gen3PartyCount(bytes, frlg = kind.family == "FRLG") else null
+        val party = when {
+            kind.platform != Platform.GBA -> null
+            kind.family in GEN3_FAMILIES -> SaveCheck.gen3PartyCount(bytes, frlg = kind.family == "FRLG")
+            // Heart & Soul's save keeps Emerald's sections; its party count sits a little later (SaveCheck.HNS_PARTY_COUNT).
+            kind.isHns -> SaveCheck.gen3PartyCount(bytes, SaveCheck.HNS_PARTY_COUNT)
+            else -> null
+        }
         return when {
             party == 0 -> Plan.NO_TEAM
             party != null -> Plan.HOLDS_TEAM

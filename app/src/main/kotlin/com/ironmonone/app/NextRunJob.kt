@@ -211,7 +211,8 @@ object NextRunJob {
                 // Asked again under the stage's lock: a NEW RUN that came in since
                 // has its own stage to take, and this one must not start over it.
                 val staged = store.nextRun.make(recipe, java.security.SecureRandom().nextLong(), { dest, s ->
-                    Randomizers.randomize(kind, prepared, settings, dest, s, secondPass = secondPass, prePass = prePass)
+                    Randomizers.randomize(kind, prepared, settings, dest, s, secondPass = secondPass, prePass = prePass,
+                        pool = Randomizers.hnsPoolOf(recipe.engine))
                     // Stopped after its last draw, or by an engine that caught the stop and
                     // carried on: either way not a whole run, and never kept (release).
                     if (Thread.currentThread().isInterrupted) throw java.util.concurrent.CancellationException("stage stopped")

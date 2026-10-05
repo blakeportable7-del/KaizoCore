@@ -207,7 +207,7 @@ fun ruleRunInPlay(attempt: Int): RuleMarks.Run? {
             val kind = session.kind
             val mode = FavoriteBall.modeOf(store)
             if (PlayRules.kind(session, filesDir) != PlayRules.Kind.IRONMON || kind == null || mode == null) null
-            else Triple(RuleMarks.Run(mode, kind.isNatDex, kind.family), store, kind)
+            else Triple(RuleMarks.Run(mode, HnsPool.rulesNatDex(kind, filesDir), kind.family), store, kind)
         }.getOrNull()
     }
     val evolves = androidx.compose.runtime.produceState<((String) -> Boolean?)?>(null, found) {

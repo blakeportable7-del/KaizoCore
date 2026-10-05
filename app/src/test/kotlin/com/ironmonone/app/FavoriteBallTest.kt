@@ -195,6 +195,29 @@ class FavoriteBallTest {
     }
 
     @Test
+    fun `a Kaizo run on Heart and Soul names Elm's balls as FireRed's are named`() {
+        val rom = com.ironmonone.app.engine.HnsEngineTest.romFile ?: run { println("SKIP: hns-kaizo.gba missing"); return }
+        val bytes = rom.readBytes()
+        val mem = MemoryReader { address, length ->
+            val off = (address - 0x08000000L).toInt()
+            if (address >= 0x08000000L && off >= 0 && off + length <= bytes.size) bytes.copyOfRange(off, off + length) else ByteArray(0)
+        }
+        val t = GbaTracker(mem, GameMap.resolve(mem))
+        assertEquals(listOf("LEFT", "MIDDLE", "RIGHT"), t.starters().map { it.ball })
+        NuzlockeTracking.reset()
+        val kind = RomKind.HEARTSOUL_KAIZO_206
+        val dir = Files.createTempDirectory("favball-hns").toFile()
+        val store = PrepStore(dir)
+        store.saveFavorites(kind.id, "Cyndaquil,Totodile,Chikorita")
+        store.saveLastRun(kind.id, "RSE NatDex v1.2 Kaizo.rnqs")
+        val shown = FavoriteBall.shown(store, GameSession.forRun(File(dir, "run.gba"), kind), t, dir)
+        assertEquals(
+            listOf("FAVORITE! CHIKORITA IN THE LEFT BALL", "FAVORITE! CYNDAQUIL IN THE MIDDLE BALL", "FAVORITE! TOTODILE IN THE RIGHT BALL"),
+            shown.balls,
+        )
+    }
+
+    @Test
     fun `Journey, a build of your own, a library game and a Nuzlocke get no ball line`() {
         val t = tracker() ?: run { println("SKIP: FireRed v1.0 missing"); return }
         NuzlockeTracking.reset()

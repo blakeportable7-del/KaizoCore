@@ -54,7 +54,8 @@ data class RnqsInfo(
             "diamondpearlplatinum" to "DPPt", "heartgoldsoulsilver" to "HGSS",
             "goldsilvercrystal" to "GSC", "redblueyellow" to "RBY",
             "blackwhite2" to "B2W2", "blackwhite" to "BW",
-            "dppt" to "DPPt", "hgss" to "HGSS", "b2w2" to "B2W2",
+            "heartandsoul" to "HnS", "heartsoul" to "HnS",
+            "dppt" to "DPPt", "hgss" to "HGSS", "b2w2" to "B2W2", "hns" to "HnS",
             "frlg" to "FRLG", "rse" to "RSE", "gsc" to "GSC", "rby" to "RBY", "bw" to "BW",
         )
         private val RULESET_LABELS = mapOf(

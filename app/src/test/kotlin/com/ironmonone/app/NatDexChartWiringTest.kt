@@ -16,7 +16,7 @@ class NatDexChartWiringTest {
 
     @Test
     fun `every chart on a Nat Dex game takes its chart`() {
-        assertEquals(2, count(src("MoveDecor.kt"), "power = adj.power, natDex = ctx.natDex, maxDex = ctx.maxDex)"), "both move rows")
+        assertEquals(2, count(src("MoveDecor.kt"), "power = adj.power, natDex = ctx.natDex, maxDex = ctx.maxDex, weather = ctx.weather)"), "both move rows")
         val panel = src("TrackerPanel.kt")
         assertTrue("natDex: Boolean = speciesTotal > 411," in panel, "the panel knows the expansion by its species")
         assertEquals(2, count(panel, "generation = generation, natDex = natDex, maxDex = maxDex),"), "your card and the opponent's")
@@ -24,7 +24,8 @@ class NatDexChartWiringTest {
         assertTrue("MoveMatchup.general(mv.type, gen1, natDex)" in panel)
         val play = src("PlayScreen.kt")
         assertTrue("trackerRef?.expandedSpeciesIds == true -> 1283" in play, "Play hands the expansion's species count")
-        assertEquals(2, count(play, "natDex = session.kind?.isNatDex == true) },"), "Type Defenses, both layouts")
+        // RomKind.fairyTypes: the Nat. Dex builds and Heart & Soul, whose chart has Fairy too.
+        assertEquals(2, count(play, "natDex = session.kind?.fairyTypes == true) },"), "Type Defenses, both layouts")
         assertTrue("allTypes = gba.typeNames," in play, "the Coverage Calculator offers Fairy")
         assertTrue("natDex = t.expandedSpeciesIds," in src("CalcAtkScreen.kt"))
     }

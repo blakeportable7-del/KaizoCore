@@ -74,10 +74,17 @@ class LibraryStore(private val root: File, private val savesDir: File? = savesDi
         val verified: Boolean get() = kind != null && kind.expectedCrc != RomKind.CRC_UNKNOWN && kind.expectedCrc == crc
         /** Header says a supported game but the CRC is not pinned yet: shelved with Other versions, labelled unverified. */
         val unverified: Boolean get() = kind != null && kind.expectedCrc == RomKind.CRC_UNKNOWN
+        /**
+         * A known build the app only plays (RomKind.playOnly: the official Heart & Soul 2.0.6): checked by its CRC, but
+         * no tracker reads it and Kaizo IronMON and Nuzlocke do not list it.
+         */
+        val playOnly: Boolean get() = verified && kind!!.playOnly
         /** The tracker reads this file: the same test GameSession.trackerKind makes. */
-        val tracked: Boolean get() = verified
+        val tracked: Boolean get() = verified && !kind!!.playOnly
         val category: Category get() = when {
-            verified && (kind!!.isNatDex || kind.patchTag != null) -> Category.PATCHED
+            playOnly -> Category.HACK
+            // Heart & Soul (KaizoCore): a known build made from the player's Emerald, as Nat. Dex is.
+            verified && (kind!!.isNatDex || kind.patchTag != null || kind.isHns) -> Category.PATCHED
             // Made by a patch and not a known build: a hack, even if the header
             // still names a game whose CRC is not pinned.
             patchName != null -> if (platform != null) Category.HACK else Category.OTHER
@@ -100,6 +107,7 @@ class LibraryStore(private val root: File, private val savesDir: File? = savesDi
          * summary itself, which says what it is and that it still plays.
          */
         val subtitle: String get() = when {
+            playOnly -> kind!!.displayName + " · No tracker"
             verified && (kind!!.isNatDex || kind.patchTag != null) -> kind.displayName + " · Tracker works"
             // Names without their file extensions, and no checksum talk (audit, 2026-09-27).
             patchName != null -> "${stripKnownExt(patchName)} on ${baseName?.let(::stripKnownExt) ?: "?"} · " + if (verified) "Tracker works" else "No tracker"
@@ -430,6 +438,8 @@ class LibraryStore(private val root: File, private val savesDir: File? = savesDi
         val k = e.kind
         when {
             k != null && e.verified && k.isNatDex -> { out += k.displayName; out += k.displayName.replace(" + ", " ") }
+            // Heart & Soul's two copies are patched builds, never "clean": the official 2.0.6 and the KaizoCore build.
+            k != null && e.verified && k.isHns -> out += k.displayName
             k != null && e.verified -> { out += k.displayName + " clean"; out += k.displayName }
             k != null && e.unverified -> { out += k.displayName; out += k.displayName + " (unverified)" }
             e.patchName != null -> {

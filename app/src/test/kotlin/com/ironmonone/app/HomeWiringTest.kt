@@ -59,13 +59,13 @@ class HomeWiringTest {
     @Test
     fun `the four buttons lead where AppNav says, and each mode screen is the right one`() {
         val branches = homeBranches()
-        assertEquals(setOf("null, HomeMode.PLAY_ANY", "HomeMode.KAIZO", "HomeMode.NUZLOCKE", "HomeMode.HACKS"), branches.keys)
+        assertEquals(setOf("null, HomeMode.PLAY_ANY", "HomeMode.KAIZO", "HomeMode.NUZLOCKE", "HomeMode.HACKS", "HomeMode.HEARTSOUL"), branches.keys)
         val home = branches.getValue("null, HomeMode.PLAY_ANY")
         assertTrue("HomeScreen(" in home && "onMode = { nav = nav.open(it) }" in home, "every button goes through AppNav.open")
         assertTrue("onContinue = { nav = nav.play() }" in home)
         assertTrue("onLibrary = { nav = nav.pick(Tab.LIBRARY) }" in home && "onMore = { nav = nav.pick(Tab.MORE) }" in home)
         // Each of the three screens under a top bar whose back control goes Home.
-        for (mode in listOf("KAIZO", "NUZLOCKE", "HACKS")) {
+        for (mode in listOf("KAIZO", "NUZLOCKE", "HACKS", "HEARTSOUL")) {
             assertTrue("ModeScreen(HomeMode.$mode.title, onBack = { nav = nav.home() })" in branches.getValue("HomeMode.$mode"), "$mode has the back control to Home")
         }
         // The two screens that already existed are the ones that open, each only from its own button.
@@ -109,8 +109,9 @@ class HomeWiringTest {
 
     @Test
     fun `everything that used to jump to the Play tab still lands on Play`() {
-        // Run's onPlay (a new run, and Back to attempt N), Library's PLAY, Hacks' PLAY, Nuzlocke's started run, and Continue.
-        assertEquals(4, count(main, "onPlay = { nav = nav.play() }"))
+        // Run's onPlay (a new run, and Back to attempt N), Library's PLAY, Hacks' PLAY, Nuzlocke's started run, Heart &
+        // Soul's Play Heart & Soul, and Continue.
+        assertEquals(5, count(main, "onPlay = { nav = nav.play() }"))
         assertEquals(1, count(main, "onContinue = { nav = nav.play() }"))
         // Play sits inside the provider of its empty screen's navigation (PlayNothing, 2026-09-30).
         // A run being made holds Play in its wait first (rc33 audit P0-5, PlayWaitsForNewRunTest).

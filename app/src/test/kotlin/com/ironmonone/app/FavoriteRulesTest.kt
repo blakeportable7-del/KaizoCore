@@ -20,13 +20,13 @@ class FavoriteRulesTest {
         "RBY" to RomKind.RED_U, "GSC" to RomKind.CRYSTAL_U, "FRLG" to RomKind.FIRERED_U_V11, "RSE" to RomKind.EMERALD_U,
         "DPPt" to RomKind.PLATINUM_U, "HGSS" to RomKind.HEARTGOLD_U, "BW" to RomKind.BLACK_U, "B2W2" to RomKind.BLACK2_U,
         "FRLG-NatDex" to RomKind.FIRERED_NATDEX_121, "RSE-NatDex" to RomKind.EMERALD_NATDEX_121,
-        "FRLG-MaxDex" to RomKind.FIRERED_MAXDEX_10,
+        "FRLG-MaxDex" to RomKind.FIRERED_MAXDEX_10, "HnS" to RomKind.HEARTSOUL_KAIZO_206,
     )
     private val generation = mapOf("RBY" to 1, "GSC" to 2, "FRLG" to 3, "RSE" to 3, "DPPt" to 4, "HGSS" to 4, "BW" to 5, "B2W2" to 5)
 
     @Test
     fun `every book's favorites count is the one the app gives its game`() {
-        assertEquals(72, allBooks().size, "the books bundled today")
+        assertEquals(82, allBooks().size, "the books bundled today (Heart & Soul's ten since 2026-10-05)")
         for (f in allBooks()) {
             val text = f.readText()
             val family = f.parentFile.name

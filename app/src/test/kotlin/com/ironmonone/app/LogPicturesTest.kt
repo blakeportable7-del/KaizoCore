@@ -116,7 +116,7 @@ class LogPicturesTest {
         val viewer = read("LogViewer.kt")
         assertTrue("LogTabIcon(t, tabPals, playerHead, if (on) Pc.Gold else Pc.Text)" in viewer, "the tabs' pictures")
         assertTrue("portraitOf = portraitOf)" in viewer && "portrait = portraitOf(td), palOf = logPal)" in viewer, "the trainers' portraits")
-        assertEquals(3, Regex("""palOf = logPal""").findAll(viewer).count(), "the Pokemon tab, a Pokemon's page and a trainer's team")
+        assertEquals(5, Regex("""palOf = logPal""").findAll(viewer).count(), "the Pokemon tab, a Pokemon's page, a trainer's team, a route page's wild Pokemon and a Game Boy Pokemon page")
         assertTrue("!TrackerOptions.animatedSprites) null" in viewer, "still pictures with Animated sprites off")
         val pokemon = read("LogPokemon.kt")
         assertEquals(3, Regex("""LogMonIcon\(""").findAll(pokemon).count(), "the grid, the page and its evolutions")

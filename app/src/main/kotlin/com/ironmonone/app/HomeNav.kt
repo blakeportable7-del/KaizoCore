@@ -13,12 +13,16 @@ import java.io.File
  * only holds the state.
  */
 
-/** The four buttons on Home, in the order they are drawn, each with its one plain line (2026-09-29). */
+/**
+ * The buttons on Home, in the order they are drawn, each with its one plain line (2026-09-29). Heart & Soul joined them
+ * on 2026-10-05 (Blake: "Pokemon Heart and Soul will get its own button on the main menu").
+ */
 internal enum class HomeMode(val title: String, val line: String) {
     PLAY_ANY("Play any game", "Pick a game from your library and play it. No rules, no randomizer."),
     KAIZO("Kaizo IronMON", "A randomized game with the IronMON tracker. A loss means a new game."),
     NUZLOCKE("Nuzlocke", "Catch the first Pok\u00e9mon in each area. One that faints is gone."),
     HACKS("ROM Hacks", "Patch a fan-made hack onto a game you own, then play it."),
+    HEARTSOUL("Pok\u00e9mon Heart & Soul", "Turn your Emerald into Heart & Soul, then play it as it is, in Kaizo IronMON or as a Nuzlocke."),
     ;
 
     /** What a screen reader says for the button: the title, then its line. */
@@ -65,10 +69,10 @@ internal data class AppNav(
     /** To the game: Continue, a new run, a Library game's Play, a hack just made. */
     fun play(): AppNav = pick(Tab.PLAY)
 
-    /** One of the four buttons on Home. */
+    /** One of the buttons on Home. */
     fun open(m: HomeMode): AppNav = when (m) {
         HomeMode.PLAY_ANY -> copy(tab = Tab.LIBRARY, mode = null, stats = false, libraryPage = MY_GAMES_PAGE, anchor = Tab.HOME)
-        HomeMode.KAIZO, HomeMode.NUZLOCKE, HomeMode.HACKS -> copy(tab = Tab.HOME, mode = m, stats = false, anchor = Tab.HOME)
+        HomeMode.KAIZO, HomeMode.NUZLOCKE, HomeMode.HACKS, HomeMode.HEARTSOUL -> copy(tab = Tab.HOME, mode = m, stats = false, anchor = Tab.HOME)
     }
 
     /** Home's "Your stats" link, and More's card: the stats screen on Home, from wherever the player is. */
@@ -262,7 +266,7 @@ internal object HomeCopy {
         "Backup and info, and it comes straight to me. Thank you. Blake"
 
 
-    /** Everything above, the four buttons' words and More's How it works, for the copy-rule test. */
+    /** Everything above, the buttons' words and More's How it works, for the copy-rule test. */
     val all: List<String> = HowItWorksCopy.all + listOf(
         PICK_A_MODE, LEFT_OFF, CONTINUE, continueSpoken("Pokemon Emerald"), LIBRARY_DETAIL, RUN_DETAIL, nuzlockeDetail("Standard"),
         nuzlockeDetail("Standard", com.ironmonone.tracker.nuzlocke.RunStatus.OVER), nuzlockeDetail("Standard", com.ironmonone.tracker.nuzlocke.RunStatus.OVER, "Whiteout"),
@@ -281,7 +285,7 @@ internal object HomeCopy {
  */
 internal object HowItWorksCopy {
     const val INTRO = HomeCopy.WELCOME_WHAT
-    const val MODES_HEAD = "Home has four ways to play:"
+    const val MODES_HEAD = "Home has five ways to play:"
     val STEPS: List<Pair<String, String>> = listOf(
         "1" to "Library: add your own game files. KaizoCore never downloads games.",
         "2" to "Home: pick a way to play, then a game.",

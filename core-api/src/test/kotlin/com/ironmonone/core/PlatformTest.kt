@@ -57,7 +57,8 @@ class PlatformTest {
 
     @Test
     fun `every kind names a preset family, and a Nat Dex kind keeps its base family`() {
-        val known = setOf("FRLG", "RSE", "DPPt", "HGSS", "BW", "B2W2", "GSC", "RBY")
+        // HnS: Heart & Soul, its own family (no .rnqs; HnsEngine's modes).
+        val known = setOf("FRLG", "RSE", "DPPt", "HGSS", "BW", "B2W2", "GSC", "RBY", "HnS")
         assertEquals("GSC", RomKind.CRYSTAL_U.family)
         assertEquals("libgambatte_libretro_android.so", RomKind.CRYSTAL_U.platform.core)
         assertEquals(160f / 144f, Platform.GBC.aspect)

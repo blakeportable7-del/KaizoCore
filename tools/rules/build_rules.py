@@ -287,6 +287,16 @@ NOTE_60_NATDEX = "In KaizoCore, the Nat. Dex settings files for Kaizo and harder
 # Super Kaizo's README asks for a smart AI patch; the Nat. Dex randomizer has it built in (rules check, 2026-10-01).
 NOTE_SMART_AI_NATDEX = ("In KaizoCore, the Nat. Dex Super Kaizo settings file turns on the Nat. Dex randomizer's Smart AI Mode, "
                         "so every trainer has smart AI and no patch is needed.")
+# Heart & Soul's book (main()): its folder and title, and the line that says whose rules it is held to.
+HNS_TAG = "HnS"
+HNS_LABEL = "Heart & Soul"
+HNS_INTRO = ["In KaizoCore, Heart & Soul is held to the rules of the game it retells and the build it runs on. It is HeartGold "
+             "and SoulSilver's story, Johto and then Kanto with sixteen badges, so HeartGold and SoulSilver's game rules below "
+             "apply to it. It runs the Emerald Nat. Dex settings files, so a run with the Nat. Dex pool (Pokémon through "
+             "Gen 9) is held to the Nat. Dex ruleset changes below as well. A run with the Vanilla pool (Gen 1 to 3 Pokémon) "
+             "is held to the rules above without them, as Emerald is: the Gen 3 BST limits and three favorites.", "",
+             "In KaizoCore, the item that starts in your PC is in the trash can in Elm's lab instead, and it is random "
+             "in every mode that randomizes field items, as the other Kaizo games' PC item is.", ""]
 # Where the settings page's notes on the growth patch meet the app.
 PATCH_NOTES = {
     "RED / BLUE / YELLOW": "In KaizoCore, PREPARE's pseudo-fluctuating growth patch is the first way, and a run on the patched game takes PART 1 only. "
@@ -462,64 +472,82 @@ def main():
     matrix = preset_matrix()
     today = datetime.date.today().isoformat()
     written = []
+    by_chain = lambda m: list(CHAIN).index(m) if m in CHAIN else 99
+
+    def book(mode, family, fam_label, label, folder, updates, natdex_build, build, intro=(), sk_family=None):
+        """One mode's file: the chain, the game's own updates, the Nat. Dex changes, MaxDex's section, the sources."""
+        out = [f"# {label}: {MODE_LABEL[mode]}", "",
+               "Every ruleset builds on the ones before it, so they are all here in order, then this game's own updates.", ""]
+        out += list(intro)
+        used = ["rules", "games"]
+        for step in CHAIN[mode]:
+            if step in base:
+                title, lines = base[step]
+                out += [f"## {title}", ""] + lines + [""]
+                if step == "ultimate" and family == "FRLG":
+                    out += ["### FireRed and LeafGreen, Ultimate", ""] + frlg_ultimate + [""]
+            elif step == "superkaizo":
+                out += ["## Super Kaizo IronMON", "", *sk_disclaimer, "", *sk_general, ""]
+                g = sk_game(sk_family or family)
+                if g: out += [f"### Super Kaizo, {fam_label}", ""] + g + [""]
+                if natdex_build: out += [NOTE_SMART_AI_NATDEX, ""]
+                used.append("super")
+            elif step == "kaizodoubles":
+                out += ["## Kaizo Doubles", ""] + doubles + [""]
+            elif step in community:
+                title, lines, per_game = community[step]
+                out += [f"## {title}", ""] + lines + [""]
+                g = per_game.get(family)
+                if g: out += [f"### {MODE_LABEL[step]}, {fam_label}", ""] + g + [""]
+                elif per_game: out += [f"Its game-specific rules are written for {' and '.join(TAG_LABEL[t] for t in per_game)} only.", ""]
+                # Evo Kaizo's source has no game sections, but its gyms and checkpoints are FireRed's (rules check, 2026-10-01).
+                elif step == "evokaizo" and family != "FRLG": out += ["Its rules are written for FireRed and LeafGreen: the gyms and places it names are in those games.", ""]
+                # The Nat. Dex page has an Evo Kaizo part of its own: no evo loops, so no checkpoint pivots (Blake asked, 2026-10-01).
+                if step == "evokaizo" and natdex_build: out += ["On a Nat. Dex build, the Evo Kaizo part of the Nat. Dex ruleset changes below replaces rules 4 and 11: pivots are banned, with no checkpoints.", ""]
+                used.append(step)
+        own = [(t, ls) for t, ls in updates if t == "Settings notes" or applies(t, mode)]
+        if own:
+            out += [f"## {fam_label}: game-specific rules", ""]
+            for t, ls in own:
+                out += [f"### {t}", ""] + ls + [""]
+        if natdex_build:
+            out += ["## Nat. Dex ruleset changes", ""] + (natdex_maxdex if build == "MaxDex" else natdex) + [""]
+            used.append("natdex")
+        if build == "MaxDex":
+            out += ["## MaxDex", ""] + maxdex + [""]
+            used.append("maxdex")
+        out += ["## Sources", ""]
+        for k in used:
+            n, u, d = SOURCES[k]; out.append(f"- {n}: {u} ({d})")
+        out += ["", f"Generated {today} by tools/rules/build_rules.py. Rulesets get revised; if this reads behind a source, regenerate."]
+        text = american(re.sub(r"\n{3,}", "\n\n", "\n".join(out)).rstrip() + "\n")
+        assert "—" not in text, (family, mode)
+        d = OUT / folder
+        d.mkdir(parents=True, exist_ok=True)
+        (d / f"{mode}.md").write_text(text, encoding="utf-8")
+        written.append(f"{d.name}/{mode}")
+
     for heading, (family, fam_label) in FAMILIES.items():
         # The game, its Nat. Dex build, and MaxDex (FireRed's, from Trip's own preset): Nat. Dex plus its own section.
         for build in ("", "NatDex", "MaxDex"):
             natdex_build = build != ""
             updates = game_updates(games_md, heading, natdex_build)
-            modes = sorted(matrix.get((family, build), set()), key=lambda m: list(CHAIN).index(m) if m in CHAIN else 99)
+            modes = sorted(matrix.get((family, build), set()), key=by_chain)
             label = fam_label + {"": "", "NatDex": ", Nat. Dex", "MaxDex": ", MaxDex"}[build]
             for mode in modes:
                 if mode not in CHAIN: continue
-                out = [f"# {label}: {MODE_LABEL[mode]}", "",
-                       "Every ruleset builds on the ones before it, so they are all here in order, then this game's own updates.", ""]
-                used = ["rules", "games"]
-                for step in CHAIN[mode]:
-                    if step in base:
-                        title, lines = base[step]
-                        out += [f"## {title}", ""] + lines + [""]
-                        if step == "ultimate" and family == "FRLG":
-                            out += ["### FireRed and LeafGreen, Ultimate", ""] + frlg_ultimate + [""]
-                    elif step == "superkaizo":
-                        out += ["## Super Kaizo IronMON", "", *sk_disclaimer, "", *sk_general, ""]
-                        g = sk_game(family)
-                        if g: out += [f"### Super Kaizo, {fam_label}", ""] + g + [""]
-                        if natdex_build: out += [NOTE_SMART_AI_NATDEX, ""]
-                        used.append("super")
-                    elif step == "kaizodoubles":
-                        out += ["## Kaizo Doubles", ""] + doubles + [""]
-                    elif step in community:
-                        title, lines, per_game = community[step]
-                        out += [f"## {title}", ""] + lines + [""]
-                        g = per_game.get(family)
-                        if g: out += [f"### {MODE_LABEL[step]}, {fam_label}", ""] + g + [""]
-                        elif per_game: out += [f"Its game-specific rules are written for {' and '.join(TAG_LABEL[t] for t in per_game)} only.", ""]
-                        # Evo Kaizo's source has no game sections, but its gyms and checkpoints are FireRed's (rules check, 2026-10-01).
-                        elif step == "evokaizo" and family != "FRLG": out += ["Its rules are written for FireRed and LeafGreen: the gyms and places it names are in those games.", ""]
-                        # The Nat. Dex page has an Evo Kaizo part of its own: no evo loops, so no checkpoint pivots (Blake asked, 2026-10-01).
-                        if step == "evokaizo" and natdex_build: out += ["On a Nat. Dex build, the Evo Kaizo part of the Nat. Dex ruleset changes below replaces rules 4 and 11: pivots are banned, with no checkpoints.", ""]
-                        used.append(step)
-                own = [(t, ls) for t, ls in updates if t == "Settings notes" or applies(t, mode)]
-                if own:
-                    out += [f"## {fam_label}: game-specific rules", ""]
-                    for t, ls in own:
-                        out += [f"### {t}", ""] + ls + [""]
-                if natdex_build:
-                    out += ["## Nat. Dex ruleset changes", ""] + (natdex_maxdex if build == "MaxDex" else natdex) + [""]
-                    used.append("natdex")
-                if build == "MaxDex":
-                    out += ["## MaxDex", ""] + maxdex + [""]
-                    used.append("maxdex")
-                out += ["## Sources", ""]
-                for k in used:
-                    n, u, d = SOURCES[k]; out.append(f"- {n}: {u} ({d})")
-                out += ["", f"Generated {today} by tools/rules/build_rules.py. Rulesets get revised; if this reads behind a source, regenerate."]
-                text = american(re.sub(r"\n{3,}", "\n\n", "\n".join(out)).rstrip() + "\n")
-                assert "—" not in text, (family, mode)
-                d = OUT / (family + ("-" + build if build else ""))
-                d.mkdir(parents=True, exist_ok=True)
-                (d / f"{mode}.md").write_text(text, encoding="utf-8")
-                written.append(f"{d.name}/{mode}")
+                book(mode, family, fam_label, label, family + ("-" + build if build else ""), updates, natdex_build, build)
+
+    # Heart & Soul (docs/HNS-KAIZO.md): HeartGold and SoulSilver's story, Johto then Kanto with sixteen badges, on Emerald's
+    # engine with the modern Pokemon and type chart, run with the Emerald Nat. Dex v1.2 settings files (HnsEngine). No
+    # ruleset is written for it, so its book is each mode's chain, HeartGold and SoulSilver's game rules, and the Nat. Dex
+    # ruleset changes, with a KaizoCore line that says so. Its modes are the files the app offers it (RulesetCatalog).
+    hgss_heading = next(h for h, (f, _) in FAMILIES.items() if f == "HGSS")
+    hgss_updates = [(t, ls) for t, ls in game_updates(games_md, hgss_heading, True) if t != "Settings notes"]
+    hns_modes = sorted(matrix.get(("RSE", "NatDex"), set()) | matrix.get((HNS_TAG, ""), set()), key=by_chain)
+    for mode in hns_modes:
+        if mode not in CHAIN: continue
+        book(mode, HNS_TAG, TAG_LABEL["HGSS"], HNS_LABEL, HNS_TAG, hgss_updates, True, "NatDex", intro=HNS_INTRO, sk_family="HGSS")
     print(len(written), "files:", ", ".join(written))
 
 if __name__ == "__main__":

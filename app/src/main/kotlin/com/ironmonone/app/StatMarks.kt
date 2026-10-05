@@ -28,6 +28,8 @@ class StatMarks(private val file: File) {
         /** Move 165. The reference never tracks it (Tracker.TrackMove). */
         const val STRUGGLE = 165
         const val COUNT = 6
+        /** encounters.txt's prefix for EncounterBook's battle in progress ([battleLatch]). */
+        private const val BATTLE_LINE = "battle-"
         /** The DS tracker's PokemonData.TYPE_LIST (PokemonData.lua:3-20): Hidden Power's types, in the arrows' order. */
         val DS_HIDDEN_POWER_TYPES = listOf(
             "BUG", "DARK", "DRAGON", "ELECTRIC", "FIGHTING", "FIRE", "FLYING", "GHOST",
@@ -106,6 +108,14 @@ class StatMarks(private val file: File) {
     private val encTrainer = HashMap<Int, Int>()
     private val lastLevels = HashMap<Int, Int>()
     private val encountersFile = File(file.parentFile, "encounters.txt")
+    /**
+     * EncounterBook's battle in progress, by tracker kind ("gba", "ds"), as the book writes it: which opposing Pokemon
+     * this battle has already counted. Kept in encounters.txt beside the counts, one "battle-<kind>:<latch>" line each,
+     * so both land in one write and a restart resumed into the same battle does not count it again (rc35.2 QA: Seen
+     * (Trainer) went up by one on every app start in Lorelei's battle). An older build skips the line: its part before
+     * the colon is not a species.
+     */
+    private val battleLatches = HashMap<String, String>()
     // Tracker.TrackSafariEncounter: each Safari Zone map's wild Pokemon, met order, with the
     // highest level each was met at. "mapId:species/level,species/level" per line.
     private val safari = HashMap<Int, LinkedHashMap<Int, Int>>()
@@ -327,12 +337,16 @@ class StatMarks(private val file: File) {
             ?.sortedWith(compareByDescending<Pair<Int, Int>> { it.second }.thenBy { it.first }) ?: emptyList()
 
     private fun loadEncounters() {
-        encWild.clear(); encTrainer.clear(); lastLevels.clear()
+        encWild.clear(); encTrainer.clear(); lastLevels.clear(); battleLatches.clear()
         val lines = linesOf(encountersFile) ?: return
         runCatching {
             lines.forEach { line ->
                 val cut = line.indexOf(':')
                 if (cut <= 0) return@forEach
+                if (line.startsWith(BATTLE_LINE)) {
+                    line.substring(BATTLE_LINE.length, cut).takeIf { it.isNotEmpty() }?.let { battleLatches[it] = line.substring(cut + 1) }
+                    return@forEach
+                }
                 val sp = line.substring(0, cut).toIntOrNull() ?: return@forEach
                 val v = line.substring(cut + 1).split(',').map { it.trim().toIntOrNull() ?: 0 }
                 v.getOrNull(0)?.takeIf { it > 0 }?.let { encWild[sp] = it }
@@ -349,6 +363,7 @@ class StatMarks(private val file: File) {
                     w.write("$sp:${encWild[sp] ?: 0},${encTrainer[sp] ?: 0},${lastLevels[sp] ?: 0}")
                     w.newLine()
                 }
+                battleLatches.toSortedMap().forEach { (kind, latch) -> w.write("$BATTLE_LINE$kind:$latch"); w.newLine() }
             }
         }
     }
@@ -361,6 +376,18 @@ class StatMarks(private val file: File) {
         if (species <= 0) return
         val m = if (wild) encWild else encTrainer
         m[species] = (m[species] ?: 0) + 1
+        if (save) saveEncounters()
+    }
+
+    /** EncounterBook's battle in progress for [kind] ("gba" or "ds"), as last committed; null when none. */
+    fun battleLatch(kind: String): String? = battleLatches[kind]
+
+    /**
+     * Sets (or, null, ends) EncounterBook's battle in progress for [kind] and, with [save], writes it together with the
+     * counts and levels changed since the last write, in one write of encounters.txt.
+     */
+    fun commitBattle(kind: String, latch: String?, save: Boolean = true) {
+        if (latch == null) battleLatches.remove(kind) else battleLatches[kind] = latch
         if (save) saveEncounters()
     }
 
@@ -733,7 +760,7 @@ class StatMarks(private val file: File) {
         runCatching { dsEncounterFile.delete() }
         movesSeen.clear()
         abilitiesSeen.clear()
-        encWild.clear(); encTrainer.clear(); lastLevels.clear()
+        encWild.clear(); encTrainer.clear(); lastLevels.clear(); battleLatches.clear()
         if (!keepRunCounters) {
             dsTracked.clear()
             runCatching { dsTrackedFile.delete() }

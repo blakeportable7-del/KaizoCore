@@ -215,6 +215,10 @@ internal fun LogRouteDetail(
     names: LogNames = LogNames.PLAIN,
     /** Each trainer's portrait from the ROM, as on the Trainers tab. */
     portraitOf: (RandomizerLog.Trainer) -> ImageBitmap? = { null },
+    /** The wild Pokemon's Walking Pals (LogTabRouteDetails.lua:367-412 draws each one's icon). */
+    palOf: ((RandomizerLog.Pokemon) -> WalkingPals.Pal?)? = null,
+    /** The player's head from the ROM, on the Trainers choice (LogTabRouteDetails.lua:136-140, getPlayerIconHead). */
+    playerHead: ImageBitmap? = null,
 ) {
     fun count(t: LogEncType) = if (t == LogEncType.TRAINERS) route.trainers.size else route.areas[t]?.size ?: 0
     val tabs = LogEncType.entries.filter { count(it) > 0 }
@@ -232,6 +236,9 @@ internal fun LogRouteDetail(
         // 48dp choices that flow onto a second line on a narrow phone (rc32 audit P2 #26).
         FlowRow(Modifier.fillMaxWidth().padding(vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             DialogText("Encounters:", 12, Pc.Dim, Modifier.align(Alignment.CenterVertically))
+            // Trainers is the first choice when the route has any: the head sits right before it.
+            if (playerHead != null && LogEncType.TRAINERS in tabs)
+                Image(playerHead, null, Modifier.size(18.dp).align(Alignment.CenterVertically), filterQuality = FilterQuality.None)
             tabs.forEach { t -> LogChoice("${t.label} ${count(t)}", t == tab) { tab = t } }
         }
         LazyVerticalGrid(
@@ -253,9 +260,7 @@ internal fun LogRouteDetail(
                     ) {
                         val shown = names.species(w.name)
                         DialogText(shown, 12, Pc.Text, Modifier.fillMaxWidth(), TextAlign.Center)
-                        val art = w.pokemon?.let { spriteOf?.invoke(it) }
-                        if (art != null) Image(art, shown, Modifier.size(36.dp), filterQuality = FilterQuality.None)
-                        else Spacer(Modifier.size(36.dp))
+                        LogMonIcon(w.pokemon?.let { spriteOf?.invoke(it) }, w.pokemon?.let { palOf?.invoke(it) }, 36.dp, shown)
                         DialogText(if (w.levelMin == w.levelMax) "Lv ${w.levelMin}" else "Lv ${w.levelMin} -- ${w.levelMax}", 12, Pc.Text, Modifier.fillMaxWidth(), TextAlign.Center)
                         DialogText("(${floor(w.rate * 100).toInt()}%)", 12, Pc.Dim, Modifier.fillMaxWidth(), TextAlign.Center)
                     }

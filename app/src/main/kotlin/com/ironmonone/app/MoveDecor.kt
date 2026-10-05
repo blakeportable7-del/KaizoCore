@@ -128,7 +128,7 @@ internal fun MoveRow.toPcMove(ctx: MoveContext?): PcMove {
             // :1535-1541 clear its green only where the move types themselves are hidden; with them shown it stays green
             // on the real power, whatever the column prints (rc32 audit P3 #32).
             stab = battling && t != null && MoveRules.isStab(id, t, cat, adj.power, ctx.attackerTypes),
-            effect = if (battling && t != null && TrackerOptions.showMoveEffectiveness && !ctx.hideEffectiveness) MoveRules.effectiveness(id, t, cat, ctx.targetTypes, gen1 = ctx.generation == 1, power = adj.power, natDex = ctx.natDex, maxDex = ctx.maxDex).takeIf { it != 1.0 } else null,
+            effect = if (battling && t != null && TrackerOptions.showMoveEffectiveness && !ctx.hideEffectiveness) MoveRules.effectiveness(id, t, cat, ctx.targetTypes, gen1 = ctx.generation == 1, power = adj.power, natDex = ctx.natDex, maxDex = ctx.maxDex, weather = ctx.weather).takeIf { it != 1.0 } else null,
         )
     }
     return PcMove(
@@ -139,7 +139,7 @@ internal fun MoveRow.toPcMove(ctx: MoveContext?): PcMove {
         priority = priority, contact = contact,
         powerText = adj.power, accText = adj.acc,
         stab = battling && MoveRules.isStab(id, adj.type, cat, adj.power, ctx!!.attackerTypes),
-        effect = if (battling && TrackerOptions.showMoveEffectiveness && !ctx!!.hideEffectiveness) MoveRules.effectiveness(id, adj.type, cat, ctx.targetTypes, gen1 = ctx.generation == 1, power = adj.power, natDex = ctx.natDex, maxDex = ctx.maxDex).takeIf { it != 1.0 } else null,
+        effect = if (battling && TrackerOptions.showMoveEffectiveness && !ctx!!.hideEffectiveness) MoveRules.effectiveness(id, adj.type, cat, ctx.targetTypes, gen1 = ctx.generation == 1, power = adj.power, natDex = ctx.natDex, maxDex = ctx.maxDex, weather = ctx.weather).takeIf { it != 1.0 } else null,
     )
 }
 

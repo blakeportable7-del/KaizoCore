@@ -59,3 +59,33 @@ frlg	10	e4-2	e4	Bruno	56	Machamp	411
 frlg	11	e4-3	e4	Agatha	58	Gengar	412
 frlg	12	e4-4	e4	Lance	60	Dragonite	413
 frlg	13	champion	champion	Blue	63	his starter's last stage	438,439,440
+# Heart & Soul 2.0.6 (KaizoCore build, 2026-10-05): every cap read from the comfort build's gTrainers[DIFFICULTY_NORMAL]
+# (the boss's highest level in the first-run fight), with the trainer ids of layout-kaizo.json's TRAINER enum. The ROM's
+# own levels replace these once the tracker reads them, as for every game. badge: FLAG_BADGE01..16_GET as the tracker
+# reads them (bit N-1 is FLAG_BADGEN), set in each leader's own map script: Johto Falkner 0 to Clair 7, then Kanto Brock
+# (Pewter) 8, Misty 9, Lt. Surge 10, Erika 11, Sabrina (Saffron) 12, Janine (Fuchsia) 13, Blaine (Seafoam) 14, Blue
+# (Viridian) 15. Chuck, Jasmine and Pryce each have three first-run teams, picked by how many badges you hold when you
+# arrive (_1, _1_2, _1_3); the row lists all three, and the cap is the highest of them. The run ends at Lance; the
+# Kanto gyms and Red are post fights.
+hns	1	gym1	gym	Falkner	11	Noctowl	402	0
+hns	2	gym2	gym	Bugsy	16	Scyther	404	1
+hns	3	gym3	gym	Whitney	21	Miltank	406	2
+hns	4	gym4	gym	Morty	25	Gengar	408	3
+hns	5	gym5	gym	Chuck	38	Poliwrath	418,420,421	4
+hns	6	gym6	gym	Jasmine	38	Scizor	414,416,417	5
+hns	7	gym7	gym	Pryce	38	Piloswine or Mamoswine	410,412,413	6
+hns	8	gym8	gym	Clair	45	Kingdra	422	7
+hns	9	e4-1	e4	Will	50	Xatu	433
+hns	10	e4-2	e4	Koga	52	Crobat	439
+hns	11	e4-3	e4	Bruno	54	Machamp	435
+hns	12	e4-4	e4	Karen	55	Houndoom	437
+hns	13	champion	champion	Lance	56	Dragonite	441
+hns	14	brock	post	Brock	66	Golem	424	8	Kanto gyms
+hns	15	misty	post	Misty	63	Starmie	425	9	Kanto gyms
+hns	16	surge	post	Lt. Surge	60	Raichu	426	10	Kanto gyms
+hns	17	erika	post	Erika	62	Victreebel	427	11	Kanto gyms
+hns	18	sabrina	post	Sabrina	66	Alakazam	428	12	Kanto gyms
+hns	19	janine	post	Janine	64	Venomoth	429	13	Kanto gyms
+hns	20	blaine	post	Blaine	67	Torkoal	430	14	Kanto gyms
+hns	21	blue	post	Blue	69	Rhyperior	431	15	Kanto gyms
+hns	22	red	post	Red	93	Pikachu	464		Mt. Silver

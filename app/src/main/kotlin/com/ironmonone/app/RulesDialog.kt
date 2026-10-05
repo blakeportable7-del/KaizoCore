@@ -37,8 +37,13 @@ object Rules {
     /** The folder a game's rules are in. */
     fun dirFor(family: String, natDex: Boolean): String = if (natDex) "$family-NatDex" else family
     /** The same for [kind], which may be MaxDex's: FRLG-MaxDex, the Nat. Dex rules with MaxDex's own section. */
-    fun dirFor(family: String, natDex: Boolean, kind: com.ironmonone.core.RomKind?): String =
-        if (kind?.isMaxDex == true) "$family-MaxDex" else dirFor(family, natDex)
+    fun dirFor(family: String, natDex: Boolean, kind: com.ironmonone.core.RomKind?): String = when {
+        kind?.isMaxDex == true -> "$family-MaxDex"
+        // Heart & Soul's own book (tools/rules/build_rules.py): each mode's chain, HeartGold and SoulSilver's game rules
+        // (it is their story, Johto and Kanto, sixteen badges) and the Nat. Dex ruleset changes (it runs those settings).
+        kind?.isHns == true -> com.ironmonone.core.RomKind.HNS_FAMILY
+        else -> dirFor(family, natDex)
+    }
     fun modesFor(context: android.content.Context, dir: String): List<String> =
         order(runCatching { context.assets.list("$DIR/$dir")?.map { it.removeSuffix(".md") } ?: emptyList() }.getOrDefault(emptyList()))
     fun text(context: android.content.Context, dir: String, mode: String): String? =

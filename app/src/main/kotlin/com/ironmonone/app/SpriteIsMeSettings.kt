@@ -155,6 +155,8 @@ object SpriteIsMeCopy {
     const val NAT_DEX = "Play as your Pokemon could not find its way around this Nat. Dex build."
     /** MaxDex 1.0's overworld is read out of its own code, as Nat. Dex's is; this is said only when that finds nothing. */
     const val MAX_DEX = "Play as your Pokemon could not find its way around this MaxDex build."
+    /** Heart & Soul's overworld is its build's own symbols (Overworld.HEARTSOUL_KAIZO); this is said only if the emulator side refuses them. */
+    const val HEART_SOUL = "Play as your Pokemon could not find its way around this Heart & Soul build."
     /** A game named by its header whose code moved (a hack built from the decompilations), and that could not be read (rc32 audit P2 #87). */
     const val NO_OVERWORLD = "Play as your Pokemon could not find its way around this game, so you stay the trainer."
     const val LOOKING = "Looking at this game..."
@@ -194,7 +196,7 @@ object SpriteIsMeCopy {
 
     val all: List<String> = listOf(
         TITLE, GENS, WHAT, WHO, LEAD, ALWAYS, OWN, CHOOSE, SHINY, CHOOSE_PICTURE, CHOOSE_SHEETS, REMOVE, SHEET_SETTINGS, SAVE, CLOSE, SEARCH, NO_MATCH,
-        NOT_GBA, NOT_KNOWN, NAT_DEX, MAX_DEX, NO_OVERWORLD, LOOKING, NO_OWN_YET, IN_BACKUPS, OWN_PICTURE, OWN_SHEETS, SHEET_HELP, FRAME_WIDTH, FRAME_HEIGHT, LENGTHS_HINT,
+        NOT_GBA, NOT_KNOWN, NAT_DEX, MAX_DEX, HEART_SOUL, NO_OVERWORLD, LOOKING, NO_OWN_YET, IN_BACKUPS, OWN_PICTURE, OWN_SHEETS, SHEET_HELP, FRAME_WIDTH, FRAME_HEIGHT, LENGTHS_HINT,
         IDLE, WALK, SLEEP, FAINT, picked("Pikachu"), PICTURE_FAILED, SHEETS_FAILED, SHEETS_NOT_SAVED, sheetsFound(1), sheetsFound(3), SHEET_TOO_BIG, OWN_UNREADABLE,
         sheetsSaved(2, tooBig = true),
     )

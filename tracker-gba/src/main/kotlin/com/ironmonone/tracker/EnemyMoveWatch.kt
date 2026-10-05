@@ -20,10 +20,18 @@ data class MoveScripts(
     val isFrozen3: Long,
     val unfroze: Long,
     val unfroze2: Long,
+    /**
+     * The same pauses as whole scripts, for a build whose script labels are known but not the reference's offsets into
+     * them (Heart & Soul: from the ELF, each label to the next symbol). The pointer anywhere inside one counts.
+     */
+    val delayedRanges: List<LongRange> = emptyList(),
 ) {
     /** Battle.moveDelayed's scripts. */
     val delayed: Set<Long> = setOf(isConfused, isConfused2, isConfusedNoMore, wokeUp, isInLove, isInLove2,
         isFrozen, isFrozen2, isFrozen3, unfroze, unfroze2) - 0L
+
+    /** Whether the battle script at [script] is one of those pauses. */
+    fun isDelayed(script: Long): Boolean = script in delayed || delayedRanges.any { script in it }
 
     companion object {
         val EMERALD = MoveScripts(0x082DB20F, 0x082DB1B6, 0x082DB2C0, 0x082DB2C9, 0x082DB303, 0x082DB22E,
@@ -116,7 +124,7 @@ class EnemyMoveWatch {
         val last = lastBy(f.attacker)
         // "Handles this value not being cleared from the previous battle" (Battle.lua:381-387).
         if (f.actionNumber <= 1 && (last != 0 || f.action != 0)) firstActionTaken = true
-        if (scripts != null && f.script in scripts.delayed) return null
+        if (scripts != null && scripts.isDelayed(f.script)) return null
         if (scripts != null && scripts.focusPunchSetUp != 0L && f.script == scripts.focusPunchSetUp)
             return if (f.attacker % 2 == 1 && FOCUS_PUNCH in knew(f.attacker)) f.attacker to FOCUS_PUNCH else null
         if (f.actionNumber >= f.battlers || !firstActionTaken || f.confirmedCount != 0 || f.action != 0) return null

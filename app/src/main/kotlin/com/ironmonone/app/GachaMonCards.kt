@@ -129,14 +129,28 @@ fun gachaStatBars(e: GachaMonEntry): List<Int> {
     }
 }
 
-/** Gym badge art set for a card's game: Ruby, Sapphire and Emerald share theirs, as do FireRed and LeafGreen. */
-fun gachaBadgeSet(gameVersion: Int): String = if (gameVersion == 3 || gameVersion == 5) "FRLG" else "RSE"
+/**
+ * Gym badge art set for a card's game: Ruby, Sapphire and Emerald share theirs, as do FireRed and LeafGreen. Heart & Soul's
+ * card holds its Johto badges, drawn in HeartGold and SoulSilver's art (the game it retells).
+ */
+fun gachaBadgeSet(gameVersion: Int): String = when (gameVersion) {
+    3, 5 -> "FRLG"
+    com.ironmonone.tracker.gachamon.GachaMonCard.HEART_SOUL -> "HGSS"
+    else -> "RSE"
+}
+
+/** The sprite pack's numbering for a card's [dex] (GachaMonNotes.dex): MaxDex's and Heart & Soul's own, else the pack's. */
+internal fun gachaSpriteSet(dex: String): String? = when (dex) {
+    "maxdex" -> "maxdex"
+    GachaMon.HNS_DEX -> "hns"
+    else -> null
+}
 
 /** The shipped icon set's picture for a card's Pokemon (the pack the PC trackers draw); null where there is none. */
 @Composable
 internal fun gachaSprite(e: GachaMonEntry): androidx.compose.ui.graphics.ImageBitmap? {
     val ctx = LocalContext.current
-    return remember(e.card.pokemonId, e.notes.dex) { PcAssets.gbaSprite(ctx, e.card.pokemonId, if (e.notes.dex == "maxdex") "maxdex" else null) }
+    return remember(e.card.pokemonId, e.notes.dex) { PcAssets.gbaSprite(ctx, e.card.pokemonId, gachaSpriteSet(e.notes.dex)) }
 }
 
 /**
@@ -305,7 +319,7 @@ private fun GachaShine(modifier: Modifier) {
 @Composable
 fun GachaMiniCard(species: Int, type1: Int?, type2: Int?, seen: Boolean, collected: Boolean, reveal: Boolean, width: Dp, dex: String, modifier: Modifier = Modifier) {
     val ctx = LocalContext.current
-    val sprite = if (seen || collected || reveal) remember(species, dex) { PcAssets.gbaSprite(ctx, species, if (dex == "maxdex") "maxdex" else null) } else null
+    val sprite = if (seen || collected || reveal) remember(species, dex) { PcAssets.gbaSprite(ctx, species, gachaSpriteSet(dex)) } else null
     val c1 = type1?.let { pcTypeColor(it) } ?: pcTypeColor(-1)
     val c2 = type2?.let { pcTypeColor(it) } ?: c1
     Box(

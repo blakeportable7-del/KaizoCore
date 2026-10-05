@@ -40,7 +40,7 @@ class MaxDexPlayTest {
         assertNotNull(ix.find(412, WalkingPals.Dex.NAT_DEX))
         // Both of the panel's cards number their icons the game's way, MaxDex in Play included.
         val panel = read("TrackerPanel.kt")
-        assertEquals(2, Regex("""iconDex = WalkingPals\.trackerDex\(generation, speciesTotal, maxDex\)""").findAll(panel).count())
+        assertEquals(2, Regex("""iconDex = WalkingPals\.trackerDex\(generation, speciesTotal, maxDex, hns = hnsGame\)""").findAll(panel).count())
         assertTrue("maxDex: Boolean = maxDexInPlay(attempt)," in panel)
         assertEquals(2, Regex("""natDex = natDex, maxDex = maxDex\)""").findAll(panel).count(), "both move contexts carry it")
         // Prepare no longer says they are not on MaxDex.
@@ -65,7 +65,7 @@ class MaxDexPlayTest {
         assertEquals(4.0, r.effectiveness(578, ice, "SPE", listOf(water, grass), natDex = true, maxDex = true))
         assertEquals(0.5, r.effectiveness(58, ice, "SPE", listOf(water), natDex = true, maxDex = true), "Ice Beam is still resisted")
         // Wired where the move rows and Calc Atk work it out.
-        assertEquals(2, Regex("""natDex = ctx\.natDex, maxDex = ctx\.maxDex\)""").findAll(read("MoveDecor.kt")).count())
+        assertEquals(2, Regex("""natDex = ctx\.natDex, maxDex = ctx\.maxDex, weather = ctx\.weather\)""").findAll(read("MoveDecor.kt")).count())
         assertTrue("maxDex = t.nameSet == \"maxdex\"," in read("CalcAtkScreen.kt"))
     }
 

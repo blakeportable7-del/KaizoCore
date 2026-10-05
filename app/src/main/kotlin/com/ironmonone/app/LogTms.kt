@@ -40,10 +40,18 @@ object LogTms {
     fun gymTmNumbers(frlg: Boolean): List<Int> =
         if (frlg) listOf(39, 3, 34, 19, 6, 4, 38, 26) else listOf(39, 8, 34, 50, 42, 40, 4, 3)
 
+    /**
+     * Heart & Soul's sixteen, in badge order (2026-10-05): the TM each leader's script gives (data/maps/<town>_Gym_hns,
+     * Clair's in Dragon's Den), numbered as the build numbers its machines (layout-kaizo.json "machines"): Roost, U-turn,
+     * Attract, Shadow Ball, Focus Punch, Iron Tail, Hail, Dragon Pulse; Rock Slide, Water Pulse, Shock Wave, Giga Drain,
+     * Skill Swap, Poison Jab, Overheat, Trick Room. A randomized game keeps the numbers and changes the moves.
+     */
+    val HNS_GYM_TMS = listOf(51, 89, 45, 30, 1, 23, 7, 59, 80, 3, 34, 19, 48, 84, 50, 92)
+
     /** The Gym TMs filter's rows, by gym number. The leader is the gym's leader in the log (its original, not a rematch). */
     fun gymRows(log: RandomizerLog, rules: LogTrainerRules, frlg: Boolean): List<LogGymTm> {
         val byNumber = log.tms.associateBy { it.number }
-        return gymTmNumbers(frlg).mapIndexed { i, n ->
+        return rules.gymTms.mapIndexed { i, n ->
             val gym = i + 1
             val leader = log.trainers.filter { rules.use(it.number) && rules.gymNumber(it.number) == gym }.minByOrNull { it.number }
             LogGymTm(gym, n, byNumber[n]?.move ?: "", leader)

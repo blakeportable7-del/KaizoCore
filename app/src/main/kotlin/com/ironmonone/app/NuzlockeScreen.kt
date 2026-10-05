@@ -313,7 +313,7 @@ fun NuzlockeScreen(
                 Gen3Header("Type")
                 Spacer(Modifier.height(4.dp))
                 ShellSegmented(
-                    values = NuzlockeStarts.types(chosenKind?.isNatDex == true, NuzlockeStarts.systemOf(chosenKind)).map { it.toString() },
+                    values = NuzlockeStarts.types(chosenKind?.fairyTypes == true, NuzlockeStarts.systemOf(chosenKind)).map { it.toString() },
                     selected = rules.monotypeType?.toString() ?: "",
                     label = { k -> Gen3Types.name(k.toInt()) },
                     onSelect = { k -> typePick = k.toInt(); rules = rules.copy(monotypeType = typePick) },
@@ -330,6 +330,7 @@ fun NuzlockeScreen(
                     when {
                         kind in RomKind.allPatched -> "Patched game"
                         kind.isNatDex -> "Nat. Dex build"
+                        kind.isHns -> "KaizoCore build"
                         else -> "Original game"
                     },
                     kind.platform,
@@ -384,6 +385,8 @@ fun NuzlockeScreen(
                 Spacer(Modifier.height(4.dp))
                 Text(if (fairPicked) NuzlockeFair.LINE else NuzlockeFair.IRONMON_LINE,
                     style = MaterialTheme.typography.bodySmall, color = Shell.hintOnNight)
+                // Heart & Soul: which Pokemon it is randomized from (HnsPool), as on the Kaizo IronMON screen.
+                if (pickedPrepared.first.isHns) HnsPoolRow()
             }
             Spacer(Modifier.height(16.dp))
 
@@ -482,7 +485,7 @@ fun NuzlockeScreen(
                 Spacer(Modifier.height(8.dp))
             }
             val problem = NuzlockeStarts.problem(
-                preset, rules, game = chosenKind != null, mode = fairPicked || mode != null, busy = busy, natDex = chosenKind?.isNatDex == true,
+                preset, rules, game = chosenKind != null, mode = fairPicked || mode != null, busy = busy, natDex = chosenKind?.fairyTypes == true,
                 system = NuzlockeStarts.systemOf(chosenKind),
             )
             if (problem != null) {
@@ -562,6 +565,8 @@ internal object NuzlockeStarts {
      * Super Kaizo, Faster) is the game it was patched from. Gen 3 runs carry none: their page has no per-game notes.
      */
     fun gameKeyOf(kind: RomKind?): String {
+        // Heart & Soul, a Gen 3 game, has notes of its own (NuzlockeNotes.HEART_SOUL).
+        if (kind?.isHns == true) return com.ironmonone.tracker.nuzlocke.NuzlockeNotes.HEART_SOUL
         if (kind == null || systemOf(kind) == NuzlockeSystem.GEN3) return ""
         return (kind.baseId ?: kind.id).substringBefore("-u")
     }
@@ -576,7 +581,7 @@ internal object NuzlockeStarts {
 
     /** Library games a plain run can start on: a copy the app has checked, which is what lets the tracker read it. Every console the app tracks. */
     fun plainGames(entries: List<LibraryStore.Entry>): List<LibraryStore.Entry> =
-        entries.filter { it.verified && it.kind != null && !it.kind.isMaxDex }   // no Nuzlocke on MaxDex in its first version
+        entries.filter { it.tracked && it.kind != null && !it.kind.isMaxDex }   // no Nuzlocke on MaxDex in its first version; none on a game it only plays
 
     /** Prepared games a randomized run can start on. */
     fun randomGames(prepared: List<Pair<RomKind, File>>): List<Pair<RomKind, File>> = prepared.filter { !it.first.isMaxDex }   // as plainGames
@@ -598,7 +603,7 @@ internal object NuzlockeStarts {
     ): String? = when {
         !game -> "Pick a game."
         preset == NuzlockePreset.MONOTYPE && rules.monotypeType == null -> "Pick the type."
-        preset == NuzlockePreset.MONOTYPE && rules.monotypeType == FAIRY && !natDex -> "Fairy only exists in the Nat. Dex builds."
+        preset == NuzlockePreset.MONOTYPE && rules.monotypeType == FAIRY && !natDex -> "Fairy only exists in the Nat. Dex builds and Heart & Soul."
         preset == NuzlockePreset.MONOTYPE && rules.monotypeType !in types(natDex, system) ->
             "This game has no ${rules.monotypeLabel}-type Pokémon. Pick another type."
         preset == NuzlockePreset.RANDOMIZER && !mode -> "This game has no randomizer mode to pick."

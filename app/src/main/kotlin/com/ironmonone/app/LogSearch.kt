@@ -145,16 +145,18 @@ object LogSearch {
      * gym TMs it cannot learn added when that box is ticked), "Other TMs", then
      * the rest by number.
      */
-    fun tmRows(p: RandomizerLog.Pokemon, log: RandomizerLog, frlg: Boolean, showUnlearnable: Boolean): List<LogTmRow> {
-        val gymNumbers = LogTms.gymTmNumbers(frlg)
+    fun tmRows(p: RandomizerLog.Pokemon, log: RandomizerLog, frlg: Boolean, showUnlearnable: Boolean,
+               gymNumbers: List<Int> = LogTms.gymTmNumbers(frlg)): List<LogTmRow> {
         val byNumber = log.tms.associateBy { it.number }
-        fun gymOf(n: Int) = gymNumbers.indexOf(n).let { if (it >= 0) it + 1 else 9 }
+        // Heart & Soul has sixteen gyms (LogTrainerRules.gymTms): every other TM sorts after the last.
+        val others = gymNumbers.size + 1
+        fun gymOf(n: Int) = gymNumbers.indexOf(n).let { if (it >= 0) it + 1 else others }
         val rows = p.tmsLearnable.map { n -> LogTmRow(null, n, byNumber[n]?.move ?: "", gymOf(n)) }.toMutableList()
         if (showUnlearnable) gymNumbers.forEachIndexed { i, n ->
             if (rows.none { it.number == n }) rows += LogTmRow(null, n, byNumber[n]?.move ?: "", i + 1, unlearnable = true)
         }
         rows.sortBy { it.gym * 1000 + it.number }
-        val numGym = rows.takeWhile { it.gym <= 8 }.size
+        val numGym = rows.takeWhile { it.gym <= gymNumbers.size }.size
         rows.add(0, LogTmRow(label = "Gym TMs"))
         rows.add(numGym + 1, LogTmRow(label = "Other TMs"))
         return rows

@@ -172,6 +172,7 @@ object SpriteLead {
      * Pokemon at those ids), a Nat. Dex build the Nat. Dex Extension's way, any other Gen 3 game Gen 3's.
      */
     fun dexOf(map: GameMap): WalkingPals.Dex = when {
+        map.hns -> WalkingPals.Dex.HNS
         map.nameSet == "maxdex" -> WalkingPals.Dex.MAX_DEX
         map.expandedSpeciesIds -> WalkingPals.Dex.NAT_DEX
         else -> WalkingPals.Dex.GEN3

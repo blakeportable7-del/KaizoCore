@@ -172,7 +172,10 @@ class PrepStore(private val filesDir: File) {
     /** A ruleset patch shipped in the APK (assets/patches/<name>), materialised on first use and whole. */
     fun bundledPatch(context: Context, name: String): File? {
         val dest = File(patches, name)
-        if (BundledCopy.whole(dest)) return dest
+        // A copy from before the APK was updated may be another version of the patch (2026-10-05: Heart & Soul's comfort
+        // BPS moved from E08DD128 to F0C6236C, and the old copy, whole by its length, kept failing the new CRC).
+        val installed = runCatching { context.packageManager.getPackageInfo(context.packageName, 0).lastUpdateTime }.getOrDefault(0L)
+        if (BundledCopy.whole(dest) && dest.lastModified() >= installed) return dest
         return BundledCopy.extract(context, "patches/$name", dest)
     }
 
@@ -310,7 +313,7 @@ class PrepStore(private val filesDir: File) {
         // Library entries fill in for kinds PREP has not stored.
         val have = prepared.map { it.first.id }.toSet()
         val fromLibrary = runCatching { library.list() }.getOrDefault(emptyList())
-            .filter { it.verified && it.kind != null && it.kind.id !in have }
+            .filter { it.tracked && it.kind != null && it.kind.id !in have }
             .distinctBy { it.kind!!.id }
             .map { it.kind!! to it.file }
         return prepared + fromLibrary

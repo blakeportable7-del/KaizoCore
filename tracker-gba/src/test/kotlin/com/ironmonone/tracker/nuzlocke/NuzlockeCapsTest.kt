@@ -51,7 +51,7 @@ class NuzlockeCapsTest {
 
     @Test
     fun `the bosses come in the order they are met, every id is one trainer, and the data names its source`() {
-        for (game in listOf("rs", "e", "frlg")) {
+        for (game in listOf("rs", "e", "frlg", "hns")) {
             val t = caps(game)
             assertEquals(t.bosses.indices.map { it + 1 }, t.bosses.map { it.seq }, "$game order")
             assertEquals(t.bosses.map { it.key }.toSet().size, t.bosses.size, "$game keys")
@@ -62,7 +62,23 @@ class NuzlockeCapsTest {
         }
         val text = LevelCapTable.readResource()
         assertTrue("docs/research/nuzlocke-gen1-3.md" in text && "pret" in text && "Bulbapedia" in text, "the data file must name where the numbers came from")
-        assertEquals(3, LevelCapTable.parse(text).map { it.first }.toSet().size)
+        assertEquals(4, LevelCapTable.parse(text).map { it.first }.toSet().size)
+    }
+
+    @Test
+    fun `Heart and Soul has its sixteen gyms on their own badges, the League, and Red after it`() {
+        val t = caps("hns")
+        assertEquals(listOf("Falkner", "Bugsy", "Whitney", "Morty", "Chuck", "Jasmine", "Pryce", "Clair"),
+            t.bosses.filter { it.kind == "gym" }.map { it.label })
+        assertEquals((0..7).toList(), t.bosses.filter { it.kind == "gym" }.map { it.badge })
+        val kanto = t.bosses.filter { it.group == "Kanto gyms" }
+        assertEquals((8..15).toList(), kanto.map { it.badge }, "FLAG_BADGE09..16: Pewter, Cerulean, Vermilion, Celadon, Saffron, Fuchsia, Seafoam, Viridian")
+        assertEquals(listOf("Brock", "Misty", "Lt. Surge", "Erika", "Sabrina", "Janine", "Blaine", "Blue"), kanto.map { it.label })
+        assertEquals("Lance", t.byKey("champion")!!.label)
+        assertEquals(listOf(441), t.byKey("champion")!!.trainerIds, "TRAINER_LANCE_1_HNS")
+        // The three first-run teams of each of the order-dependent leaders.
+        assertEquals(listOf(418, 420, 421), t.byKey("gym5")!!.trainerIds)
+        assertEquals(93, t.byKey("red")!!.cap)
     }
 
     @Test

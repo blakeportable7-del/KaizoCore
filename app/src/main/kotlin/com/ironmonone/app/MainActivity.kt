@@ -180,6 +180,9 @@ class MainActivity : ComponentActivity() {
         // A new run knows whether its settings file is one KaizoCore comes with (CustomRuns, IronMON rules check R2).
         val appContext = applicationContext
         CustomRuns.bundled = { ExtraPasses.bundled(appContext) }
+        // Heart & Soul's randomizer reads its tables from the APK, and the pool the player chose (HnsPool).
+        com.ironmonone.app.engine.HnsEngine.assetText = { path -> appContext.assets.open(path).use { it.readBytes().toString(Charsets.UTF_8) } }
+        com.ironmonone.app.engine.Randomizers.hnsPoolChosen = { HnsPool.chosen(appContext.filesDir) }
         HiddenPowerTypes.load(java.io.File(filesDir, "prep/hidden-power.txt"))
         PcHeals.load(java.io.File(filesDir, "prep/pc-heals.txt"))
         RunClock.load(java.io.File(filesDir, "prep/run-clock.txt"))
@@ -561,6 +564,14 @@ private fun App() {
                     HomeMode.HACKS -> ModeScreen(HomeMode.HACKS.title, onBack = { nav = nav.home() }) {
                         ScreenBackground(null) {
                             HacksScreen(Modifier.fillMaxSize(), onPlay = { nav = nav.play() })
+                        }
+                    }
+                    // Pokemon Heart & Soul (2026-10-05): the player's Emerald and the team's patch in, both games in the
+                    // Library out, then on to Kaizo IronMON or Nuzlocke (HeartSoulScreen, HnsSetup).
+                    HomeMode.HEARTSOUL -> ModeScreen(HomeMode.HEARTSOUL.title, onBack = { nav = nav.home() }) {
+                        ScreenBackground(null) {
+                            HeartSoulScreen(Modifier.fillMaxSize(), onPlay = { nav = nav.play() },
+                                onKaizo = { nav = nav.open(HomeMode.KAIZO) }, onNuzlocke = { nav = nav.open(HomeMode.NUZLOCKE) })
                         }
                     }
                 }

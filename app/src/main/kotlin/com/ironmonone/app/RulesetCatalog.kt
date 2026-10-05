@@ -59,6 +59,9 @@ object RulesetCatalog {
     fun isCompatible(kind: RomKind, preset: File): Boolean {
         val i = RnqsInfo.of(preset)
         if (i.appliedByApp) return false   // applied by Randomizers, not picked
+        // Heart & Soul plays the Emerald Nat. Dex v1.2 modes, which HnsEngine reads (it is Emerald underneath, with the
+        // modern Pokemon, moves and type chart), and a file made for it by name (Nuzlocke fair: "HnS ...").
+        if (kind.isHns) return isHnsMode(i)
         // MaxDex is a Nat. Dex build with its own randomizer: its file and Nat. Dex 1.2's never cross (version 902 against 908).
         return i.gameTag == kind.family && i.natDex == kind.isNatDex && i.maxDex == kind.isMaxDex
     }
@@ -71,8 +74,14 @@ object RulesetCatalog {
      */
     fun listedFor(kind: RomKind, preset: File): Boolean {
         val i = RnqsInfo.of(preset)
+        // Heart & Soul's engine reads both settings formats, so a file that names no game is listed for it either way.
+        if (kind.isHns) return (i.gameTag == null && !i.appliedByApp && !i.maxDex) || isCompatible(kind, preset)
         return (i.gameTag == null && !i.appliedByApp && i.natDex == kind.isNatDex) || isCompatible(kind, preset)
     }
+
+    /** A Heart & Soul mode: an Emerald Nat. Dex v1.2 file, or one made for Heart & Soul itself. */
+    private fun isHnsMode(i: RnqsInfo): Boolean =
+        !i.maxDex && ((i.gameTag == "RSE" && i.natDex) || i.gameTag == RomKind.HNS_FAMILY)
 
     /**
      * Games a mode's own rules leave out, though they share its settings
@@ -96,7 +105,8 @@ object RulesetCatalog {
      * A warning, never a refusal: the player's choice stands.
      */
     fun superKaizoWarning(kind: RomKind, key: String?): String? {
-        if (key != "superkaizo" || kind.isNatDex || kind.patchTag == "smartai" || kind.patchTag == "superkaizo") return null
+        // Heart & Soul takes the Nat. Dex Super Kaizo file, whose smart AI HnsEngine applies (Trainer.aiFlags).
+        if (key != "superkaizo" || kind.isNatDex || kind.isHns || kind.patchTag == "smartai" || kind.patchTag == "superkaizo") return null
         val base = RomKind.byId(kind.baseId) ?: kind
         if (!defined(kind, "superkaizo")) return when (base.family) {
             "RSE" -> "Super Kaizo's rules are written for Emerald, and there is no Smart AI patch for Ruby or Sapphire."
@@ -170,7 +180,8 @@ object RulesetCatalog {
      * Super Kaizo file, and [superKaizoWarning] says so, right under the line, for the builds that lack it.
      */
     fun modeLine(key: String, natDex: Boolean = false, family: String? = null): String =
-        if (key == "ultimate" && natDex) ULTIMATE_NAT_DEX else FAMILY_LINES[key to family] ?: LINES[key] ?: OTHER_LINE
+        // Heart & Soul's book carries the Nat. Dex ruleset changes (rulesets/HnS), so its Ultimate reads as Nat. Dex's.
+        if (key == "ultimate" && (natDex || family == RomKind.HNS_FAMILY)) ULTIMATE_NAT_DEX else FAMILY_LINES[key to family] ?: LINES[key] ?: OTHER_LINE
 
     /**
      * Where a game's own rules file changes a mode's line (2026-10-01, rules check): Black and White count Survival's
@@ -182,6 +193,9 @@ object RulesetCatalog {
         ("survival" to "GSC") to "Harder than Kaizo. Ten Pok\u00e9mon Center heals from your first trainer battle after the rival, " +
             "an eleventh at your eighth badge and seven more for Kanto.",
         ("survival" to "HGSS") to "Harder than Kaizo. Ten Pok\u00e9mon Center heals from your first trainer battle after the rival, " +
+            "an eleventh at your eighth badge and seven more for Kanto.",
+        // Heart & Soul is a Johto game too: the Survival rules' "complete the Elite 4 in a Johto game" reaches it.
+        ("survival" to RomKind.HNS_FAMILY) to "Harder than Kaizo. Ten Pok\u00e9mon Center heals from your first trainer battle after the rival, " +
             "an eleventh at your eighth badge and seven more for Kanto.",
     )
 

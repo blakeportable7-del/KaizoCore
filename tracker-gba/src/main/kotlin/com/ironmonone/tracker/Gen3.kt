@@ -68,6 +68,11 @@ object PokemonDecoder {
          * (rc32 audit P3 #112).
          */
         val nickLen: Int = 10,
+        /**
+         * Heart & Soul (pokeemerald-expansion): the same 100 bytes and the same key and substructure order, but every
+         * substructure bit-packed, so [decode] hands the record to HnsMon (2026-10-05).
+         */
+        val packed: Boolean = false,
     ) {
         companion object { val VANILLA = Layout() }
     }
@@ -115,6 +120,7 @@ object PokemonDecoder {
     fun isEmpty(mon: ByteArray): Boolean = mon.u32(PID) == 0L
 
     fun decode(mon: ByteArray, layout: Layout = Layout.VANILLA): Mon {
+        if (layout.packed) return HnsMon.decode(mon)
         val pid = mon.u32(PID)
         val key = pid xor mon.u32(OTID)
         val plain = ByteArray(ENC_LEN)

@@ -19,10 +19,15 @@ object RunCodes {
         game = recipe.kind,
         settingsHash = RunCode.settingsHashOf(recipe.settingsSha),
         seed = seed,
-        passes = RunCode.passesOf(prePass = recipe.prePass.isNotEmpty(), part2 = recipe.secondPass.isNotEmpty()),
+        passes = RunCode.passesOf(prePass = recipe.prePass.isNotEmpty(), part2 = recipe.secondPass.isNotEmpty()) or
+            (if (com.ironmonone.app.engine.Randomizers.hnsPoolOf(recipe.engine) == com.ironmonone.app.engine.HnsEngine.Pool.NATDEX) RunCode.HNS_NATDEX_POOL else 0),
         romCrc = romCrc,
         settingsName = recipe.settings,
     )
+
+    /** The Heart & Soul pool a code's run was made from ([RunCode.HNS_NATDEX_POOL]). */
+    fun hnsPoolOf(code: RunCode): com.ironmonone.app.engine.HnsEngine.Pool =
+        if (code.hnsNatDexPool) com.ironmonone.app.engine.HnsEngine.Pool.NATDEX else com.ironmonone.app.engine.HnsEngine.Pool.VANILLA
 
     /** The text Share sends: the code on a line of its own, then what it is. */
     fun shareText(code: RunCode, gameTitle: String, attempt: Int): String =
@@ -59,7 +64,8 @@ object RunCodes {
         val base = prepared.firstOrNull { it.first.id == kind.id }
             // A patched build is made on Patched versions; a game as it is comes in under My games (2026-09-30, UX audit P0-10).
             ?: return Plan.Refused(
-                if (kind.isNatDex || kind.patchTag != null) "Make ${kind.displayName} first (Library, Patched versions), then paste the code again."
+                if (kind.isHns) "Make ${kind.displayName} first (Pok\u00e9mon Heart & Soul on Home), then paste the code again."
+                else if (kind.isNatDex || kind.patchTag != null) "Make ${kind.displayName} first (Library, Patched versions), then paste the code again."
                 else "Add ${kind.displayName} first (Library, My games), then paste the code again.",
             )
         // Randomizer settings (advanced) is above Run codes, and this is said in the footer under both: "below" sent the

@@ -68,10 +68,19 @@ internal object FavoriteBall {
         val favorites = Favorites.slots(store, session.kind?.id, Favorites.slotCount(session.kind)).filter { it.isNotBlank() }
         val balls = runCatching {
             if (tracker == null || favorites.isEmpty() || PlayRules.kind(session, filesDir) != PlayRules.Kind.IRONMON) emptyList()
+            else if (session.kind?.isHns == true) hnsLines(favorites, modeOf(store), HnsPool.natDexRun(filesDir), tracker.starters()) { tracker.baseStats(it)?.bst }
             else lines(favorites, modeOf(store), session.kind?.isNatDex == true, tracker.starters(), maxDex = session.kind?.isMaxDex == true) { tracker.baseStats(it)?.bst }
         }.getOrDefault(emptyList())
         return FavoritesShown.Parts(Favorites.line(favorites), balls, FavoriteIcons.of(favorites, session.kind))
     }
+
+    /**
+     * [lines] for a Heart & Soul run: the balls hold the game's own species, matched to the names through HnsNumbers. A
+     * Nat. Dex pool run is held to the Nat. Dex rules and its nine favorites; a Vanilla pool run (Gen 1 to 3) to the
+     * plain rules and its first three favorites, as Emerald's book has it (rulesets/HnS).
+     */
+    fun hnsLines(favorites: List<String>, mode: String?, natDexPool: Boolean, balls: List<GbaTracker.BallOption>, bst: (Int) -> Int?): List<String> =
+        lines(if (natDexPool) favorites else favorites.take(Favorites.SLOTS), mode, natDexPool, balls, tableId = HnsNumbers::toPack, bst = bst)
 
     /** The run's mode ("kaizo", "survival"), from its settings file and sidecar; null when neither names one. */
     fun modeOf(store: PrepStore): String? =
@@ -82,13 +91,15 @@ internal object FavoriteBall {
      * [maxDex]: MaxDex 1.0, held to the Nat. Dex 1.1.3 limits ([takeable]).
      */
     fun lines(
-        favorites: List<String>, mode: String?, natDex: Boolean, balls: List<GbaTracker.BallOption>, maxDex: Boolean = false, bst: (Int) -> Int?,
+        favorites: List<String>, mode: String?, natDex: Boolean, balls: List<GbaTracker.BallOption>, maxDex: Boolean = false,
+        tableId: (Int) -> Int? = { it }, bst: (Int) -> Int?,
     ): List<String> {
         val legendaries = favorites.count { FavoriteRules.isLegendary(it) }
         return balls.mapNotNull { b ->
             // By the game's own id: a Nat. Dex favourite counts for its own form only, as those books say. MaxDex's ids are
-            // its own past 1235 (its Z-A Megas), so its names are read from its own table.
-            val favorite = favorites.firstOrNull { Favorites.idOf(it, maxDex) == b.species } ?: return@mapNotNull null
+            // its own past 1235 (its Z-A Megas), so its names are read from its own table. [tableId] turns the game's id
+            // into the name table's (Heart & Soul's own numbering, HnsNumbers).
+            val favorite = favorites.firstOrNull { Favorites.idOf(it, maxDex) == tableId(b.species) } ?: return@mapNotNull null
             val stats = bst(b.species) ?: return@mapNotNull null
             val c = Candidate(stats, FavoriteRules.isLegendary(favorite), FavoriteRules.isStrongOrMythical(favorite), FavoriteRules.nationalOfName(favorite))
             if (takeable(mode, natDex, c, legendaries, maxDex)) "FAVORITE! ${favorite.trim().uppercase()} IN THE ${b.ball} BALL" else null

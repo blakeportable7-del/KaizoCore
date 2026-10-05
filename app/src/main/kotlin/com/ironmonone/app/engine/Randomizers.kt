@@ -60,11 +60,14 @@ object Randomizers {
         secondPass: File? = null,
         /** The 60% levels pre-pass to run first (ExtraPasses.prePassFor), or null for none. Not for Gen 1. */
         prePass: File? = null,
+        /** Heart & Soul's pool (Vanilla Gen 1-3 or Nat. Dex Gen 1-9); null takes the one chosen now ([hnsPoolNow]). Ignored for other games. */
+        pool: HnsEngine.Pool? = null,
     ): NatDexEngine.Outcome = synchronized(engineLock) {
         val engine: (File, File, File, Long) -> NatDexEngine.Outcome = whole(kind, when (kind.engine) {
             Engine.NATDEX -> { src, st, d, sd -> NatDexEngine.randomize(src, st, d, sd) }
             Engine.MAXDEX -> { src, st, d, sd -> MaxDexEngine.randomize(src, st, d, sd) }
             Engine.ZX -> { src, st, d, sd -> ZxEngine.randomize(src, st, d, sd, kind.generation) }
+            Engine.HNS -> { src, st, d, sd -> HnsEngine.randomize(src, st, d, sd, pool ?: hnsPoolNow(), HnsEngine.appAssets()) }
         })
         val outcome = inEngineLocale {
             when {
@@ -143,11 +146,16 @@ object Randomizers {
      */
     fun sidecarFor(dest: File): File = File(dest.parentFile, dest.nameWithoutExtension + ".species.tsv")
 
-    /** The engine that randomizes [kind], by its version id: part of what a run made ahead was made with (NextRun). */
-    fun engineId(kind: RomKind): String = when (kind.engine) {
+    /**
+     * The engine that randomizes [kind], by its version id: part of what a run made ahead was made with (NextRun). For
+     * Heart & Soul the pool is part of it ("hns-1.0 natdex"): a run made ahead with one pool is never taken for the other,
+     * and the recipe of the run in play says which pool it has ([hnsPoolOf]).
+     */
+    fun engineId(kind: RomKind, pool: HnsEngine.Pool? = null): String = when (kind.engine) {
         Engine.NATDEX -> NatDexEngine.ID
         Engine.MAXDEX -> MaxDexEngine.ID
         Engine.ZX -> ZxEngine.ID
+        Engine.HNS -> HnsEngine.ID + " " + (pool ?: hnsPoolNow()).name.lowercase(Locale.ROOT)
     }
 
     /** The engine that randomizes [kind], by the name a player reads (the Kaizo IronMON screen's settings line). */
@@ -155,6 +163,22 @@ object Randomizers {
         Engine.NATDEX -> NatDexEngine.DISPLAY_NAME
         Engine.MAXDEX -> MaxDexEngine.DISPLAY_NAME
         Engine.ZX -> ZxEngine.DISPLAY_NAME
+        Engine.HNS -> HnsEngine.DISPLAY_NAME
+    }
+
+    /**
+     * Heart & Soul's pool as the player has it chosen now (HnsPool, on the Kaizo IronMON and Nuzlocke screens).
+     * MainActivity sets it; without it (a test, a tool) it is Nat. Dex.
+     */
+    @Volatile var hnsPoolChosen: (() -> HnsEngine.Pool)? = null
+
+    fun hnsPoolNow(): HnsEngine.Pool = runCatching { hnsPoolChosen?.invoke() }.getOrNull() ?: HnsEngine.Pool.NATDEX
+
+    /** The pool an [engineId] names, or null for an id that is not Heart & Soul's. */
+    fun hnsPoolOf(engineId: String?): HnsEngine.Pool? {
+        if (engineId == null || !engineId.startsWith(HnsEngine.ID + " ")) return null
+        val p = engineId.substringAfter(' ').trim().uppercase(Locale.ROOT)
+        return HnsEngine.Pool.entries.firstOrNull { it.name == p }
     }
 
     /** PART 2's seed: derived from the run's so one seed reproduces both passes. */

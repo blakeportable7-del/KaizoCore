@@ -124,6 +124,8 @@ object WalkingPals {
          * in an order of its own, each found as the Nat. Dex id of the same name ([maxDexToNatDex]).
          */
         MAX_DEX,
+        /** Heart & Soul's own ids (1 to 1572, the expansion's order), each drawn as the Nat. Dex id of the same Pokemon (HnsSpecies). */
+        HNS,
     }
 
     /**
@@ -178,6 +180,7 @@ object WalkingPals {
             Dex.GEN3 -> if (id in 1..GEN3_LAST) Pal(Pack.GEN3, id.toString()).takeIf { it.key in gen3 } else null
             Dex.NAT_DEX -> if (id <= GEN3_LAST) find(id, Dex.GEN3) else natDex[id]?.takeIf { sheets(it) != null }
             Dex.MAX_DEX -> maxDex[id]?.let { find(it, Dex.NAT_DEX) }
+            Dex.HNS -> com.ironmonone.tracker.HnsSpecies.natDexId(id)?.let { find(it, Dex.NAT_DEX) }
             Dex.NATIONAL -> when {
                 id in 1..251 -> find(id, Dex.GEN3)
                 id in 252..386 -> internalOf(id)?.let { find(it, Dex.GEN3) }
@@ -192,8 +195,9 @@ object WalkingPals {
      * ([maxDex], MaxDexInfo's maxDexInPlay) by its own ids, a Nat. Dex build (which knows more than Gen 3's 411) by
      * its own ids, any other Gen 3 game by Gen 3's.
      */
-    fun trackerDex(generation: Int, speciesTotal: Int, maxDex: Boolean = false): Dex = when {
+    fun trackerDex(generation: Int, speciesTotal: Int, maxDex: Boolean = false, hns: Boolean = false): Dex = when {
         generation < 3 -> Dex.NATIONAL
+        hns -> Dex.HNS
         maxDex -> Dex.MAX_DEX
         speciesTotal > GEN3_LAST -> Dex.NAT_DEX
         else -> Dex.GEN3

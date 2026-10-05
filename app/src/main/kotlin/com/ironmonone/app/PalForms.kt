@@ -31,6 +31,9 @@ object PalForms {
     /** Castform in Gen 3's own numbering, and its weather forms in a Nat. Dex or MaxDex build (Castform-F, -W, -I). */
     const val CASTFORM_GEN3 = 385
     val CASTFORM_WEATHER = 1162..1164
+    /** Heart & Soul's Castform and its weather forms (layout-kaizo.json SPECIES_CASTFORM, _SUNNY, _RAINY, _SNOWY). */
+    const val CASTFORM_HNS = 351
+    val CASTFORM_WEATHER_HNS = 1051..1053
 
     /** pokeemerald's GET_UNOWN_LETTER: 0 = A, 25 = Z, 26 = !, 27 = ?. */
     fun unownLetterGen3(personality: Long): Int = (
@@ -136,6 +139,9 @@ object PalForms {
      * The species to walk as on the overworld: Castform's weather forms, where a Nat. Dex or MaxDex build numbers them as
      * Pokemon of their own, are Castform; every other species is itself. A retail game's Castform is always Normal there.
      */
-    fun overworld(species: Int, dex: WalkingPals.Dex): Int =
-        if (dex != WalkingPals.Dex.GEN3 && dex != WalkingPals.Dex.NATIONAL && species in CASTFORM_WEATHER) CASTFORM_GEN3 else species
+    fun overworld(species: Int, dex: WalkingPals.Dex): Int = when {
+        (dex == WalkingPals.Dex.NAT_DEX || dex == WalkingPals.Dex.MAX_DEX) && species in CASTFORM_WEATHER -> CASTFORM_GEN3
+        dex == WalkingPals.Dex.HNS && species in CASTFORM_WEATHER_HNS -> CASTFORM_HNS
+        else -> species
+    }
 }

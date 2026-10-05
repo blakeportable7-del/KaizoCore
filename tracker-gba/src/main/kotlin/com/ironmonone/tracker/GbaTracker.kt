@@ -434,6 +434,35 @@ data class GameMap(
     val battleMonTypes: Int = 0x21,
     val battleMonPp: Int = 0x24,
     val battleMonHp: Int = 0x28,
+    /**
+     * Heart & Soul (pokeemerald-expansion, the KaizoCore comfort build; HnsMaps.KAIZO): names, base stats, moves,
+     * learnsets, evolutions, items, maps and trainers are read through HnsData, the party through HnsMon, and the type
+     * chart has Fairy. Every address and offset is the build's own (HnsLayout, generated from its layout export).
+     */
+    val hns: Boolean = false,
+    /** gBattlerAbility: the battler whose ability pop-up is showing (Heart & Soul's ability reveals). 0 = none. */
+    val battlerAbility: Long = 0,
+    /** gBattleResults' lastUsedMovePlayer, lastUsedMoveOpponent right after it: 0x22 in the five games. */
+    val battleResultsLastMovesOffset: Int = 0x22,
+    /**
+     * Where a battler's "used Transform" bit is: a u32 at this offset in the battle struct, masked with
+     * [transformedMask]. -1 is the five games' status2 ([status2Offset], STATUS2_TRANSFORMED).
+     */
+    val transformedOffset: Int = -1,
+    val transformedMask: Long = 0x00200000L,
+    /** The badges as save flags: the first badge's flag in SaveBlock1's flags at [badgeOffset], [badgeCount] of them. 0 = [badgeIsWord]'s way. */
+    val badgeFlagStart: Int = 0,
+    val badgeCount: Int = 8,
+    /** A Medicine pocket (Heart & Soul keeps every potion there). 0 = none. */
+    val bagMedicineOffset: Long = 0,
+    val bagMedicineSlots: Int = 0,
+    /** SaveBlock1.location (WarpData: mapGroup, mapNum): where the map id comes from when non-zero, as (group << 8) | num. */
+    val mapLocationOffset: Long = 0,
+    /**
+     * gBattleEnvironment, a byte numbered as gBattleTerrain (grass, long grass, sand, underwater, water, pond...), for
+     * the encounter area and the Dive Ball where [battleTerrain] is not read (Heart & Soul, whose Battle Details are off).
+     */
+    val battleEnvironment: Long = 0,
 ) {
     companion object {
         val EMERALD_U = GameMap(
@@ -975,6 +1004,12 @@ data class GameMap(
                 val v = if (b.size < 2) -1 else b.u16(0)
                 return if (v in ok) v else fallback
             }
+            // Heart & Soul keeps Emerald's game code (BPEE) and its own title. Only the KaizoCore comfort build's
+            // layout is known; any other Heart & Soul is refused rather than read with these addresses.
+            if (HnsMaps.isHns(memory)) {
+                require(HnsMaps.isKaizoBuild(memory)) { "A Heart & Soul ROM that is not the KaizoCore build (C993EB6E): its addresses would read the wrong memory." }
+                return HnsMaps.KAIZO
+            }
             val magic = ptr(NATDEX_MAGIC_ADDR)
             if (magic == MAXDEX_SPECIES) return maxDex(memory)
             if (magic != NATDEX_MAGIC) {
@@ -1321,7 +1356,21 @@ data class BaseStats(
     /** Gen 1: one Special stat, carried in both spAtk and spDef so damage code reads it either way.
      *  The panel shows it once and the BST counts it once, as the Gen 1 reference tracker does. */
     val singleSpecial: Boolean = false,
-) { val bst: Int get() = hp + atk + def + spe + spAtk + (if (singleSpecial) 0 else spDef) }
+    /** The hidden ability (the expansion's abilities[2], Heart & Soul); 0 where the game has none. */
+    val ability3: Int = 0,
+) {
+    val bst: Int get() = hp + atk + def + spe + spAtk + (if (singleSpecial) 0 else spDef)
+
+    /**
+     * The ability an ability slot gives: slot 1 the second when there is one, slot 2 the hidden one (Heart & Soul), the
+     * first otherwise. A slot whose ability is none falls back to the first, as the expansion's GetAbilityBySpecies does.
+     */
+    fun abilityFor(slot: Int): Int = when {
+        slot == 2 && ability3 != 0 -> ability3
+        slot == 1 && ability2 != 0 -> ability2
+        else -> ability1
+    }
+}
 
 /** One move row for the panel: PP is live (decrypted from the party struct);
  *  power/accuracy/max PP come from the ROM's move table, null when unknown. */
@@ -1560,6 +1609,18 @@ internal val AREA_LABELS = mapOf(
     "GOODROD" to "Good Rod",
     "OLDROD" to "Old Rod",
 )
+
+/** Gen 3 weather bitmasks as the tracker names them; unknown bits name nothing, so a wrong address shows nothing. */
+internal fun gen3WeatherName(w: Int): String? {
+    if (w == 0 || w > 0xFF) return null   // unknown bits: show nothing
+    return when {
+        (w and 0x07) != 0 -> "RAIN"
+        (w and 0x18) != 0 -> "SANDSTORM"
+        (w and 0x60) != 0 -> "SUN"
+        (w and 0x80) != 0 -> "HAIL"
+        else -> null
+    }
+}
 
 object Gen3Types {
     /** Gen 3 internal type ids — verified against the ROM (Bulbasaur reads 12,3 =
@@ -1920,6 +1981,8 @@ class GbaTracker(
         const val GHOST_ID = 413
         /** The same, as the Nat. Dex extension sets it (NatDexExtension.lua:16912). */
         const val NATDEX_GHOST_ID = 1285
+        /** Heart & Soul has no ghost battle (FireRed's Pokemon Tower); an id past every species, so none is named Ghost. */
+        const val HNS_GHOST_ID = 0x7FFF
         /** Resources.TrackerScreen.UnidentifiedGhost, English. */
         const val GHOST_NAME = "Ghost"
         /** Gen 3's "???" type, PokemonData.Types.UNKNOWN in the reference's TypeIndexMap. */
@@ -1981,7 +2044,7 @@ class GbaTracker(
     }
 
     /** This game's types by name, Fairy last on the Nat. Dex expansion (Gen3Types.typesFor): the Coverage Calculator's. */
-    val typeNames: List<String> get() = Gen3Types.typesFor(map.expandedSpeciesIds).map(Gen3Types::name)
+    val typeNames: List<String> get() = Gen3Types.typesFor(fairyChart).map(Gen3Types::name)
 
     // Filled from more than one thread: the poll and the stream's dex walk on background threads, the panel's lookups on
     // the main one. Plain HashMaps filled with getOrPut there could lose or corrupt entries (rc32 audit P3 #51); the
@@ -1993,6 +2056,27 @@ class GbaTracker(
     private val itemNameCache = java.util.concurrent.ConcurrentHashMap<Int, String>()
     private val moveDataCache = java.util.concurrent.ConcurrentHashMap<Int, IntArray>()
     private val learnsetCache = java.util.concurrent.ConcurrentHashMap<Int, List<Pair<Int, Int>>>()
+
+    /** Heart & Soul's ROM, read in pages (RomPages): its tables and pictures. Null on every other game. */
+    internal val hnsRom: RomPages? = if (map.hns) RomPages(memory) else null
+
+    /** Heart & Soul's ROM reads (GameMap.hns); null on every other game. */
+    private val hns: HnsData? = if (map.hns) HnsData(hnsRom!!) else null
+
+    /**
+     * Whether this game's type chart is the expansion's (Fairy, Gen 6 Steel): the Nat. Dex builds and Heart & Soul.
+     * The app reads it for the matchups it draws.
+     */
+    val fairyChart: Boolean get() = map.expandedSpeciesIds || map.hns
+
+    /** Heart & Soul (GameMap.hns): its species are numbered its own way (HnsSpecies), which the app's screens ask about. */
+    val heartSoul: Boolean get() = map.hns
+
+    /** How far the game's species ids run, for a screen that walks them all: Heart & Soul's 1572, a Nat. Dex build's 1300, Gen 3's 411. */
+    val speciesIdCount: Int get() = if (map.hns) HnsSpecies.TOTAL else if (map.expandedSpeciesIds) 1300 else 411
+
+    /** Heart & Soul's species id for the bundled sprite pack, which is numbered the Nat. Dex build's way; the id itself elsewhere. */
+    fun packSpriteId(species: Int): Int? = if (map.hns) HnsSpecies.natDexId(species) else species
 
     // Enemy moves revealed this encounter; keyed off the enemy species so a new
     // encounter (or a switch) starts a fresh page.
@@ -2020,7 +2104,8 @@ class GbaTracker(
      * list comes through its name set, still stopped there, and its log's U-turn read "U-Turn" (rc34).
      */
     val lastMoveId: Int =
-        if (map.namesFromLists || map.nameSet == "maxdex") moveNameCache.keys.maxOrNull() ?: VANILLA_LAST_MOVE else VANILLA_LAST_MOVE
+        if (map.hns) HnsLayout.MOVES_COUNT - 1
+        else if (map.namesFromLists || map.nameSet == "maxdex") moveNameCache.keys.maxOrNull() ?: VANILLA_LAST_MOVE else VANILLA_LAST_MOVE
 
     private fun loadList(resource: String, into: MutableMap<Int, String>) {
         javaClass.getResourceAsStream(resource)?.bufferedReader(Charsets.UTF_8)?.useLines { lines ->
@@ -2037,6 +2122,7 @@ class GbaTracker(
         // The GhostId is past the species table on every build: vanilla 413
         // reads the move name table's "POUND", Nat. Dex 1285 has no list entry.
         if (species == ghostSpeciesId) return@getOrPut GHOST_NAME
+        hns?.let { return@getOrPut it.speciesName(species) ?: "#$species" }
         if (map.speciesNames == 0L) return@getOrPut "#$species"
         val b = memory.read(map.speciesNames + species.toLong() * 11, 11)
         if (b.isEmpty()) "#$species" else Gen3Text.decode(b).ifBlank { "#$species" }
@@ -2044,6 +2130,7 @@ class GbaTracker(
 
     fun moveName(move: Int): String = moveNameCache.getOrPut(move) {
         if (move == 0) return@getOrPut "-"
+        hns?.let { return@getOrPut it.moveName(move) ?: "#$move" }
         if (map.moveNames == 0L) return@getOrPut "#$move"
         val b = memory.read(map.moveNames + move.toLong() * 13, 13)
         if (b.isEmpty()) "#$move" else Gen3Text.decode(b).ifBlank { "#$move" }
@@ -2051,6 +2138,7 @@ class GbaTracker(
 
     fun abilityName(id: Int): String = abilityNameCache.getOrPut(id) {
         if (id == 0) return@getOrPut "-"
+        hns?.let { return@getOrPut it.abilityName(id) ?: "#$id" }
         if (map.abilityNames == 0L) return@getOrPut "#$id"
         val b = memory.read(map.abilityNames + id.toLong() * map.abilityStride, map.abilityStride)
         if (b.isEmpty()) "#$id" else Gen3Text.decode(b).ifBlank { "#$id" }
@@ -2058,6 +2146,7 @@ class GbaTracker(
 
     fun itemName(id: Int): String = itemNameCache.getOrPut(id) {
         if (id == 0) return@getOrPut "-"
+        hns?.let { return@getOrPut it.itemName(id) ?: "#$id" }
         if (map.itemNames == 0L) return@getOrPut "#$id"
         val b = memory.read(map.itemNames + id.toLong() * map.itemStride, 14)
         if (b.isEmpty()) "#$id" else Gen3Text.decode(b).ifBlank { "#$id" }
@@ -2066,6 +2155,7 @@ class GbaTracker(
     /** [power, type, accuracy, basePP] from the ROM move table, or null. */
     private fun moveData(move: Int): IntArray? {
         if (map.battleMoves == 0L || move == 0) return null
+        hns?.let { h -> return moveDataCache.getOrPut(move) { h.moveData(move) ?: intArrayOf(-1) }.takeIf { it[0] >= 0 } }
         if (map.moveCategoryByte) return splitMoveData(move)
         return moveDataCache.getOrPut(move) {
             // gBattleMoves entry (pret BattleMove, 12-byte stride): effect,
@@ -2141,8 +2231,7 @@ class GbaTracker(
     /** The rolled ability for a party mon: slot bit against the base-stats pair. */
     private fun abilityOf(mon: PokemonDecoder.Mon, base: BaseStats?): String {
         base ?: return "?"
-        val id = if (mon.abilitySlot == 1 && base.ability2 != 0) base.ability2 else base.ability1
-        return abilityName(id)
+        return abilityName(base.abilityFor(mon.abilitySlot))
     }
 
     /**
@@ -2161,6 +2250,7 @@ class GbaTracker(
     }
 
     fun baseStats(species: Int): BaseStats? = baseStatsCache.getOrPut(species) {
+        hns?.let { return@getOrPut it.baseStats(species) ?: BaseStats(0, 0, 0, 0, 0, 0, 0, 0, 0, 0) }
         val stride = map.baseStatsStride
         val b = memory.read(map.baseStats + species.toLong() * stride, stride)
         if (b.size < stride) return@getOrPut BaseStats(0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
@@ -2181,6 +2271,7 @@ class GbaTracker(
 
     /** 64x64 ARGB front sprite from the ROM, or null. Cached per species. */
     fun sprite(species: Int): IntArray? = spriteCache.getOrPut(species) {
+        if (map.hns) return@getOrPut hnsPicture(species, false, 0L)?.argb
         runCatching { SpriteDecoder.frontSprite(memory, map, species) }.getOrNull()
     }
 
@@ -2202,6 +2293,9 @@ class GbaTracker(
      * species, letter, shininess and form.
      */
     fun picture(species: Int, shiny: Boolean, personality: Long, gameForm: Boolean): Gen3Pictures.Picture? {
+        // Heart & Soul: every Pokemon's own picture from the ROM (HnsPics), so the card never needs the icon pack; the
+        // app falls back to the pack where one does not decode.
+        if (map.hns) return hnsPicture(species, shiny, personality)
         val t = pictureTables ?: return null
         val letter = if (species == Gen3Pictures.UNOWN) Gen3Pictures.unownLetter(personality) else 0
         val key = (species.toLong() shl 8) or (letter.toLong() shl 2) or (if (gameForm) 2L else 0L) or (if (shiny) 1L else 0L)
@@ -2210,6 +2304,21 @@ class GbaTracker(
         return runCatching { Gen3Pictures.picture(memory, t, species, shiny, personality, gameForm) }.getOrNull()
             .also { pictureCache[key] = it }
     }
+
+    /** Heart & Soul's front picture of [species] (HnsPics): female where it has its own, shiny where [shiny]. Cached. */
+    private fun hnsPicture(species: Int, shiny: Boolean, personality: Long): Gen3Pictures.Picture? {
+        if (species <= 0) return null
+        val female = baseStats(species)?.let { Gender3.of(it.genderRatio, personality) == Gender3.FEMALE } == true
+        val key = (species.toLong() shl 8) or (if (female) 2L else 0L) or (if (shiny) 1L else 0L) or (1L shl 40)
+        if (key in pictureCache) return pictureCache[key]
+        return runCatching { HnsPics.front(hnsRom ?: memory, species, shiny, female) }.getOrNull().also { pictureCache[key] = it }
+    }
+
+    /**
+     * A species' plain picture out of the game, where this build has its own (Heart & Soul, HnsPics): the log viewer's.
+     * Null on every other build, whose log draws what the card draws.
+     */
+    fun frontPicture(species: Int): Gen3Pictures.Picture? = if (map.hns) hnsPicture(species, false, 0L) else null
 
     data class BallOption(val ball: String, val species: Int, val name: String)
 
@@ -2225,6 +2334,7 @@ class GbaTracker(
      * that are neither (a build these addresses were not found in) give no balls.
      */
     fun starters(): List<BallOption> {
+        if (map.hns) return hnsStarters()
         if (map.startersBase == 0L) return emptyList()
         val at = listOf(map.startersBase, map.startersBase + map.starter2Off, map.startersBase + map.starter3Off)
         val places = if (memory.read(map.startersBase - 12, 6).contentEquals(HOENN_BALL_PLACES)) listOf(0, 1, 2)
@@ -2283,7 +2393,8 @@ class GbaTracker(
         val party = ArrayList<TrackedMon>(count)
         val slots = ArrayList<Int>(count)   // the party slot of each entry of [party]
         var bagIds: Set<Int>? = null
-        val evoBag = { bagIds ?: readBag().keys.also { bagIds = it } }
+        // EvoText knows the stones by the shared ids (vanilla Gen 3, Nat. Dex's for the newer items): Heart & Soul's are mapped.
+        val evoBag = { bagIds ?: readBag().keys.let { k -> if (map.hns) k.mapNotNullTo(HashSet()) { HnsLayout.VANILLA_ITEM[it] } else k }.also { bagIds = it } }
         if (count > 0) {
             // Stride is the ROM's own struct size, not a constant: Nat. Dex
             // is 104 bytes, so a 100-byte stride walked into the middle of
@@ -2336,7 +2447,12 @@ class GbaTracker(
         // (pokeemerald and pokefirered global.fieldmap.h): the Nuzlocke ledger counts a gift in a building for the town
         // or route it stands in (rc32 audit P2 #140).
         val header = if (map.mapHeader == 0L) null else memory.read(map.mapHeader + 0x12, 6)
-        val rawMapId = if (header == null || header.size < 2) null else header.u16(0)
+        // Heart & Soul: the map itself, (mapGroup << 8) | mapNum from SaveBlock1.location, not the layout id, which its
+        // towns share (every Pokemon Center has one layout); the route line, the trainers and the wild table are by map.
+        val rawMapId = if (map.mapLocationOffset != 0L) {
+            if (header == null || header.size < 6) null
+            else saveBlock1()?.let { memory.read(it + map.mapLocationOffset, 2) }?.takeIf { it.size == 2 }?.let { (it.u8(0) shl 8) or it.u8(1) }
+        } else if (header == null || header.size < 2) null else header.u16(0)
         // A map id must be seen on TWO consecutive polls before it is adopted.
         //
         // The header pointer is read mid-transition during map loads, and a
@@ -2382,10 +2498,13 @@ class GbaTracker(
                 facilityHeld = false; facilityParty = null
             }
         }
-        if (inBattle && !lastInBattle) damageWatch.reset()
+        if (inBattle && !lastInBattle) { damageWatch.reset(); hnsTaken.reset() }
         lastInBattle = inBattle
         if (inBattle && map.takenDmg != 0L && map.battleResults != 0L && map.battlerAttacker != 0L) {
-            damageWatch.tick(rb(map.battleResults + map.battleResultsTurnOffset), rb(map.battlerAttacker), rw(map.takenDmg), rw(map.battleResults + 0x24))
+            damageWatch.tick(rb(map.battleResults + map.battleResultsTurnOffset), rb(map.battlerAttacker), rw(map.takenDmg), rw(map.battleResults + map.battleResultsLastMovesOffset + 2))
+        } else if (inBattle && map.hns) {
+            // Heart & Soul has no gTakenDmg: battler 0's HP lost to hits stands in for it (HnsBattle.Taken).
+            damageWatch.tick(rb(map.battleResults + map.battleResultsTurnOffset), rb(map.battlerAttacker), hnsTaken.tick(memory), rw(map.battleResults + map.battleResultsLastMovesOffset + 2))
         }
         // In battle, battler 0's stage block belongs to the player's active
         // mon; the panel shows chevrons on both sides like the reference.
@@ -2458,7 +2577,7 @@ class GbaTracker(
             playerX = px,
             playerY = py,
             weather = if (inBattle) readWeather() else null,
-            weatherWord = if (inBattle && map.weather != 0L) memory.read(map.weather, 2).takeIf { it.size == 2 }?.u16(0) else null,
+            weatherWord = if (inBattle && map.weather != 0L) memory.read(map.weather, 2).takeIf { it.size == 2 }?.u16(0)?.let { if (map.hns) hnsWeatherWord(it) else it } else null,
             battleSummaries = if (inBattle) runCatching { battleDetails()?.let { d -> (0..3).map { d.summary(it).trim() } } }.getOrNull() ?: emptyList() else emptyList(),
             badges = readBadges(),
             badgeSet = map.badgeSet,
@@ -2555,6 +2674,13 @@ class GbaTracker(
      * 2026-09-28).
      */
     fun routeInfo(mapId: Int): Pair<String, List<Int>>? {
+        // Heart & Soul: the map's region map section's name, and the ROM's own wild table for it.
+        hns?.let { h ->
+            val name = h.mapName(mapId)
+            val enc = h.wild[mapId]
+            if (name == null && enc == null) return null
+            return (name ?: "") to (enc?.values?.flatten()?.map { it.id }?.distinct() ?: emptyList())
+        }
         val info = routeInfoTable[mapId]
         val old = routes[mapId]
         val enc = routeKey(mapId)?.let { routeEnc[it] }
@@ -2661,16 +2787,16 @@ class GbaTracker(
 
     /** RouteData.Info[mapId][area] for every area the map has, in RouteData.OrderedEncounters order. */
     fun routeEncounters(mapId: Int): Map<String, List<RouteMon>> =
-        routeKey(mapId)?.let { routeEnc[it] }?.second ?: emptyMap()
+        hns?.let { return it.wild[mapId] ?: emptyMap() } ?: routeKey(mapId)?.let { routeEnc[it] }?.second ?: emptyMap()
 
     /** The same, by RouteData key (the route look-up lists those). */
-    fun routeEncountersRaw(raw: Int): Map<String, List<RouteMon>> = routeEnc[raw]?.second ?: emptyMap()
+    fun routeEncountersRaw(raw: Int): Map<String, List<RouteMon>> = hns?.let { return it.wild[raw] ?: emptyMap() } ?: routeEnc[raw]?.second ?: emptyMap()
 
-    fun routeNameRaw(raw: Int): String? = routeEnc[raw]?.first
+    fun routeNameRaw(raw: Int): String? = hns?.let { return it.mapName(raw) } ?: routeEnc[raw]?.first
 
     /** RouteData.AvailableRoutes: maps with any encounter area, by map id, as (raw id, name). */
     fun routeLookupList(): List<Pair<Int, String>> =
-        routeEnc.entries.filter { it.value.second.isNotEmpty() && it.value.first.isNotBlank() }
+        hns?.let { h -> h.wild.keys.sorted().mapNotNull { id -> h.mapName(id)?.let { id to it } } } ?: routeEnc.entries.filter { it.value.second.isNotEmpty() && it.value.first.isNotBlank() }
             .sortedBy { it.key }.map { it.key to it.value.first }
 
     /**
@@ -2769,13 +2895,14 @@ class GbaTracker(
 
     /** The maps that have trainers, each list in the reference's order. */
     private val routeTrainerIds: Map<Int, List<Int>> by lazy {
+        hns?.let { return@lazy it.mapTrainers }
         routeInfoTable.filterValues { it.second.isNotEmpty() }.mapValues { it.value.second }
     }
 
     fun trainersOnRoute(mapId: Int): List<Int> = routeTrainerIds[mapId] ?: emptyList()
 
     /** Every map in this version's RouteData.Info, with wild data, trainers or neither (the reference's keys). */
-    fun routeMapIds(): Set<Int> = routeInfoTable.keys.ifEmpty { routes.keys }
+    fun routeMapIds(): Set<Int> = hns?.let { it.wild.keys + it.mapTrainers.keys } ?: routeInfoTable.keys.ifEmpty { routes.keys }
 
     /**
      * RandomizerLog.RouteSetNumToIdMap: the map each "Set #N" of a randomizer log's
@@ -2804,14 +2931,16 @@ class GbaTracker(
     }
 
     /** "Gym", "Elite4", "Rival", "Boss" or "Other". */
-    fun trainerGroup(trainerId: Int): String = trainerClass[trainerId]?.second ?: "Other"
+    fun trainerGroup(trainerId: Int): String =
+        hns?.let { HnsLayout.CLASS_GROUPS[it.trainerClass(trainerId)] ?: "Other" } ?: trainerClass[trainerId]?.second ?: "Other"
 
-    fun trainerClassName(trainerId: Int): String? = trainerClass[trainerId]?.first
+    fun trainerClassName(trainerId: Int): String? = hns?.let { it.trainerClassName(it.trainerClass(trainerId)) } ?: trainerClass[trainerId]?.first
 
     // ---- Trainer Info and Trainers On Route (TrainerInfoScreen.lua, TrainersOnRouteScreen.lua) ----
 
     /** TrainerData.Trainers[id].whichRival, from rivals-<[trainerTable]>.tsv (tools/trainer-data/convert_rivals.py). */
     private val rivalOf: Map<Int, String> by lazy {
+        if (map.hns) return@lazy HnsLayout.RIVALS
         val out = HashMap<Int, String>()
         if (map.routeTable.isEmpty()) return@lazy out
         javaClass.getResourceAsStream("/gen3/rivals-$trainerTable.tsv")
@@ -2834,7 +2963,7 @@ class GbaTracker(
     val hasCatchRates: Boolean get() = map.bagBallsOffset != 0L
 
     /** Whether BattleDetailsScreen's addresses are pinned for this build. */
-    val hasBattleDetails: Boolean get() = map.battleTerrain != 0L
+    val hasBattleDetails: Boolean get() = map.battleTerrain != 0L || map.hns
 
     /** Whether this build's ROM map carries gTrainers, so the trainer screens can open. */
     val hasTrainerData: Boolean get() = map.gTrainers != 0L
@@ -2913,6 +3042,7 @@ class GbaTracker(
      */
     fun trainer(trainerId: Int): TrainerInfo? {
         if (map.gTrainers == 0L || trainerId <= 0) return null
+        hns?.let { return it.trainer(trainerId, trainerDefeated(trainerId)) }
         // Every size and offset from the layout: the Nat. Dex entry is 44 bytes
         // with 16-byte names, and reading it as the vanilla 40 put Brock's name,
         // party and flags at the wrong place (Program.readTrainerGameData).
@@ -3009,6 +3139,7 @@ class GbaTracker(
     /** revos.tsv: base id -> (target id, or 0 for a single evolution) -> (evo id, percent) in the reference's order. */
     private val revos: Map<Int, Map<Int, List<Pair<Int, Double>>>> by lazy {
         val out = HashMap<Int, LinkedHashMap<Int, List<Pair<Int, Double>>>>()
+        if (map.hns) return@lazy out
         javaClass.getResourceAsStream(if (map.nameSet == "maxdex") "/gen3/revos-maxdex.tsv" else "/gen3/revos.tsv")?.bufferedReader(Charsets.UTF_8)?.useLines { lines ->
             lines.forEach { line ->
                 if (line.startsWith("#")) return@forEach
@@ -3044,12 +3175,20 @@ class GbaTracker(
 
     data class BagRow(val id: Int, val name: String, val quantity: Int, val category: String, val helpful: Boolean, val sortValue: Int)
 
+    /** An item's HP healing as (amount, isPercentage): MiscData.HealingItems, or on Heart & Soul the item's own effect bytes. */
+    private fun healItem(id: Int): Pair<Double, Boolean>? = hns?.healItems?.get(id) ?: HEAL_ITEMS[id].takeIf { hns == null }
+
+    /** A catch-rate row's ball, named as the game names it: Heart & Soul's own item for that vanilla ball id. */
+    private fun ballName(ball: Int): String =
+        if (map.hns) HnsLayout.VANILLA_ITEM.entries.firstOrNull { it.value == ball }?.let { itemName(it.key) } ?: "#$ball" else itemName(ball)
+
     /** Program.updateBagItems: Items, Berries and Poke Balls pockets, decrypted, id to quantity. */
     fun readBag(): Map<Int, Int> {
         val sb1 = saveBlock1() ?: return emptyMap()
         val key = readSecurityKey()
         val out = LinkedHashMap<Int, Int>()
-        for ((offset, slots) in listOf(map.bagItemsOffset to map.bagItemsSlots, map.bagBerriesOffset to map.bagBerriesSlots, map.bagBallsOffset to map.bagBallsSlots)) {
+        for ((offset, slots) in listOf(map.bagItemsOffset to map.bagItemsSlots, map.bagMedicineOffset to map.bagMedicineSlots,
+                map.bagBerriesOffset to map.bagBerriesSlots, map.bagBallsOffset to map.bagBallsSlots)) {
             if (offset == 0L) continue
             for (slot in 0 until slots) {
                 val b = memory.read(sb1 + offset + slot * 4L, 4)
@@ -3078,8 +3217,8 @@ class GbaTracker(
         val ppEmpty = lead != null && lead.mon.moves.indices.any { i -> lead.mon.moves[i] != 0 && lead.mon.moves[i] != 166 && (lead.mon.pp.getOrNull(i) ?: 99) <= 1 }
         val rows = ArrayList<BagRow>()
         for ((id, qty) in bag) {
-            val heal = HEAL_ITEMS[id]
-            val statusKind = STATUS_ITEMS[id]
+            val heal = healItem(id)
+            val statusKind = hns?.statusItems?.get(id) ?: STATUS_ITEMS[id].takeIf { hns == null }
             val category: String; var helpful = false; var sort: Int
             when {
                 heal != null -> {
@@ -3093,6 +3232,11 @@ class GbaTracker(
                     helpful = statusType.isNotEmpty() && (statusKind == statusType || statusKind == "All")
                     sort = 40000 + (if (statusKind == "All") 2 else 1)
                 }
+                hns != null && id in hns.ppItems -> { category = "PP"; helpful = ppEmpty; sort = 30000 }
+                hns != null && id in hns.battleItems -> { category = "Battle"; sort = 20000 }
+                hns != null && id in hns.balls -> { category = "Balls"; sort = 0 }
+                hns != null && id in HnsLayout.EVO_ITEM_METHOD -> { category = "Evo"; sort = 0 }
+                hns != null -> { category = "Other"; sort = 0 }
                 id in PP_ITEMS -> { category = "PP"; helpful = ppEmpty; sort = 30000 }
                 id in BATTLE_ITEMS || (map.expandedSpeciesIds && id == NATDEX_X_SP_DEF) -> { category = "Battle"; sort = 20000 }
                 // calcSortValue gives balls, stones and everything else 0 (HealsInBagScreen.lua:182-204).
@@ -3173,7 +3317,7 @@ class GbaTracker(
     /** The species' two possible abilities from the base stats table, for the note view. */
     fun possibleAbilities(species: Int): List<String> {
         val b = baseStats(species) ?: return emptyList()
-        return listOf(b.ability1, b.ability2).filter { it != 0 }.distinct().map { abilityName(it) }
+        return listOf(b.ability1, b.ability2, b.ability3).filter { it != 0 }.distinct().map { abilityName(it) }
     }
 
     // ---- Catch Rates (CatchRatesScreen.lua, PokemonData.calcCatchRate) ----
@@ -3197,15 +3341,23 @@ class GbaTracker(
         for (slot in 0 until map.bagBallsSlots) {
             val b = memory.read(sb1 + map.bagBallsOffset + slot * 4L, 4)
             if (b.size < 4) break
-            val id = b.u16(0); if (id !in 1..12) continue
+            // Heart & Soul's balls by the vanilla id their catch rule is written for (the Poke Ball is 4 there too).
+            val id = b.u16(0).let { if (map.hns) HnsLayout.VANILLA_ITEM[it] ?: 0 else it }; if (id !in 1..12) continue
             val qty = b.u16(2) xor key
-            if (qty in 1..999) out[id] = qty
+            if (qty in 1..999) out[id] = (out[id] ?: 0) + qty
         }
         return out
     }
 
     /** Program.Addresses.offsetPokedex + offsetPokedexOwned: whether the species has been caught before, for the Repeat Ball. */
     fun dexOwned(species: Int): Boolean {
+        // Heart & Soul keeps the caught bits in SaveBlock1, by National Dex number.
+        hns?.let { h ->
+            val n = h.natDexNum(species).takeIf { it > 0 } ?: return false
+            val sb1 = saveBlock1() ?: return false
+            val b = memory.read(sb1 + HnsLayout.SaveBlock1.dexCaught.offset + (n - 1) / 8, 1)
+            return b.size == 1 && ((b[0].toInt() shr ((n - 1) % 8)) and 1) == 1
+        }
         val sb2 = saveBlock2() ?: return false
         val b = memory.read(sb2 + map.pokedexOwnedOffset + ((species - 1) / 8), 1)
         return b.size == 1 && ((b[0].toInt() shr ((species - 1) % 8)) and 1) == 1
@@ -3277,13 +3429,13 @@ class GbaTracker(
         val estimatedCurrHp = Math.floor(Math.ceil(hpCur.toDouble() / hpMax * 10) / 10 * hpMax)
         val hpPercent = Math.floor(estimatedCurrHp / hpMax * 100).toInt()
         val estimatedHp = Math.floor(hpMax * (hpPercent + hpAdjust) / 100.0 + 0.5).toInt()
-        val terrain = if (map.battleTerrain == 0L) 0 else rw(map.battleTerrain)
+        val terrain = battleTerrainId()
         val turn = if (map.battleResults == 0L) 0 else rb(map.battleResults + map.battleResultsTurnOffset)
         val waterOrBug = base != null && (base.type1 == 11 || base.type2 == 11 || base.type1 == 6 || base.type2 == 6)
         val owned = dexOwned(species)
         val bag = bagBalls()
         val rows = (1..12).map { ball ->
-            CatchRow(ball, itemName(ball), bag[ball] ?: 0,
+            CatchRow(ball, ballName(ball), bag[ball] ?: 0,
                 calcCatchRate(base?.catchRate ?: 0, hpMax, estimatedHp, level, status, ball, waterOrBug, terrain, owned, turn))
         }.sortedWith(compareByDescending<CatchRow> { it.quantity > 0 }.thenByDescending { it.rate }.thenBy { it.ballId })
         return CatchRates(speciesName(species), hpPercent, statusName(status), rows)
@@ -3335,6 +3487,7 @@ class GbaTracker(
      * not in a battle or the addresses are not pinned for this build.
      */
     fun battleDetails(): BattleDetails? {
+        if (map.hns && inBattleNow()) return hnsBattleDetails()
         if (map.battleTerrain == 0L || !inBattleNow()) return null
         val battlers = if (map.battlersCount != 0L) rb(map.battlersCount).coerceIn(2, 4) else 2
         val field = ArrayList<BattleDetail>()
@@ -3460,6 +3613,20 @@ class GbaTracker(
     }
 
     /**
+     * Heart & Soul's three balls on Elm's table, left to right: each ball's species is the word its choice script sets
+     * (HnsLayout.STARTER_BALL_SPECIES, from the lab's map and scripts), which KaizoCore's randomizer rewrites with the
+     * starter table. None where a word is not a species this build has.
+     */
+    private fun hnsStarters(): List<BallOption> {
+        val balls = HnsLayout.STARTER_BALL_SPECIES.mapIndexed { i, a ->
+            val b = memory.read(a, 2)
+            val species = if (b.size == 2) b.u16(0) else 0
+            BallOption(BALL_NAMES[i], species, if (speciesIsValid(species)) speciesName(species) else "")
+        }
+        return if (balls.all { speciesIsValid(it.species) }) balls else emptyList()
+    }
+
+    /**
      * Program.checkForStarterSelection: the species in the ball the player is
      * being asked to confirm, or null. FRLG reads it from a game var while the
      * yes/no is open (result 1 or 255); RSE finds the confirm task running and
@@ -3468,6 +3635,13 @@ class GbaTracker(
      */
     fun starterOffered(): Int? {
         val species = when {
+            // Heart & Soul: the ball's choice script sets PLAYER_STARTER_SPECIES (VAR_TEMP_2) and asks with a yes/no,
+            // which holds VAR_RESULT at 255 while it is open (1 once YES is taken), as FireRed's does.
+            map.hns -> {
+                val r = rw(HnsLayout.gSpecialVar_Result)
+                val v = saveBlock1()?.let { rw(it + HnsLayout.SaveBlock1.vars.offset + 2L * (HnsLayout.VAR_TEMP_2 - HnsLayout.VARS_START)) }
+                if ((r == 1 || r == 255) && v != null && v in hnsStarters().map { it.species }) v else null
+            }
             map.confirmStarterTask != 0L && map.gTasks != 0L -> {
                 val func = rd(map.gTasks)
                 if (func >= map.confirmStarterTask && func < map.confirmStarterTask + 10) {
@@ -3533,6 +3707,7 @@ class GbaTracker(
      */
     private val speciesExtra: Map<Int, Triple<String, String, String>> by lazy {
         val out = HashMap<Int, Triple<String, String, String>>()
+        if (map.hns) return@lazy out
         javaClass.getResourceAsStream(if (map.nameSet == "maxdex") "/gen3/species-extra-maxdex.tsv" else if (map.expandedSpeciesIds) "/gen3/species-extra-natdex.tsv" else "/gen3/species-extra.tsv")
             ?.bufferedReader(Charsets.UTF_8)?.useLines { lines ->
                 lines.forEach { line ->
@@ -3546,9 +3721,27 @@ class GbaTracker(
     }
 
     /** Evolution method, or null when this species does not evolve. */
-    fun evolution(species: Int): String? = EvoText.clean(speciesExtra[species]?.second)
+    fun evolution(species: Int): String? = hns?.let { h -> return evoCache.getOrPut(species) { h.evolutionText(species) ?: "" }.ifEmpty { null } }
+        ?: EvoText.clean(speciesExtra[species]?.second)
+
+    private val evoCache = java.util.concurrent.ConcurrentHashMap<Int, String>()
 
     private val damageWatch = DamageWatch()
+    private val hnsTaken = HnsBattle.Taken()
+
+    /** Heart & Soul's Battle Details: its own volatiles, side, field and BattleStruct reads (HnsBattle). */
+    private fun hnsBattleDetails(): BattleDetails {
+        val names = object : HnsBattle.Names {
+            override fun move(id: Int) = moveName(id)
+            override fun battler(battler: Int) = battlerSpeciesName(battler)
+            override fun truantTracked(battler: Int): Boolean {
+                val sp = rw(map.battleMons + battler.toLong() * map.battleMonSize)
+                return speciesIsValid(sp) && abilityName(54) in trackedAbilities(sp)
+            }
+        }
+        val turn = rb(map.battleResults + map.battleResultsTurnOffset) + 1
+        return HnsBattle.details(memory, names, rb(map.battlersCount), turn)
+    }
     private var randomizedCache: RandomizedFlags? = null
 
     /**
@@ -3583,6 +3776,7 @@ class GbaTracker(
      */
     fun friendshipRequired(): Int {
         if (friendshipRequiredCache != 0) return friendshipRequiredCache
+        hns?.let { friendshipRequiredCache = it.friendshipThreshold; return friendshipRequiredCache }
         if (map.friendshipRequiredAddr == 0L) return EvoText.DEFAULT_REQUIRED
         val b = memory.read(map.friendshipRequiredAddr, 1)
         val v = if (b.isEmpty()) 0 else (b[0].toInt() and 0xFF)
@@ -3594,7 +3788,7 @@ class GbaTracker(
 
     /** Weight in kg, as the reference records it. */
     fun weight(species: Int): String? =
-        speciesExtra[species]?.third?.takeIf { it.isNotBlank() }
+        hns?.let { return it.weight(species) } ?: speciesExtra[species]?.third?.takeIf { it.isNotBlank() }
 
     /**
      * What hits this species hard, computed from the live types and the shared
@@ -3606,7 +3800,7 @@ class GbaTracker(
     fun effectivenessAgainst(species: Int): Map<Double, List<String>> {
         val b = baseStats(species) ?: return emptyMap()
         val out = sortedMapOf<Double, MutableList<String>>(compareByDescending { it })
-        val natDex = map.expandedSpeciesIds
+        val natDex = fairyChart
         for (atk in Gen3Types.typesFor(natDex)) {
             val e = Gen3Types.effect(atk, b.type1, b.type2, natDex)
             if (e != 1.0) out.getOrPut(e) { mutableListOf() }.add(Gen3Types.name(atk))
@@ -3636,6 +3830,7 @@ class GbaTracker(
     fun moveDescription(moveId: Int): String? {
         val text = when {
             moveId <= 0 -> null
+            hns != null -> hns.moveDescription(moveId)
             moveId <= VANILLA_LAST_MOVE -> moveDescs[moveId]?.second
             map.nameSet == "maxdex" -> natDexMoveDescsByName[moveKey(moveName(moveId))]
             map.namesFromLists -> natDexMoveDescs[moveId]?.second
@@ -3658,6 +3853,7 @@ class GbaTracker(
      * (parity audit, 2026-09-28).
      */
     fun abilityDescription(abilityId: Int): String? {
+        hns?.let { return it.abilityDescription(abilityId) }
         val d = abilityDescs[abilityId] ?: return null
         val base = d.second.takeIf { it.isNotBlank() }
         val emerald = d.third.takeIf { it.isNotBlank() }?.let { "In Emerald:\n$it" }
@@ -3666,7 +3862,7 @@ class GbaTracker(
 
     /** Ability id for a name, so the panel can look up what it is showing. */
     fun abilityIdOf(name: String): Int? =
-        abilityDescs.entries.firstOrNull { it.value.first.equals(name, true) }?.key
+        if (hns != null) hns.abilityId(name) else abilityDescs.entries.firstOrNull { it.value.first.equals(name, true) }?.key
 
     /**
      * Coverage: how many species in this game each of your move types can hit,
@@ -3691,20 +3887,20 @@ class GbaTracker(
         for (id in 1..last) {
             // The Gen 3 species table has a block of unused slots between the
             // Johto dex and the Hoenn dex; they decode as garbage types.
-            if (id in 252..276) continue
+            if (!map.hns && id in 252..276) continue
             val b = baseStats(id) ?: continue
             if (b.bst == 0) continue
             // CoverageCalcScreen's OptionOnlyFullyEvolved: skip anything that still evolves.
             if (fullyEvolvedOnly && evolution(id) != null) continue
             var best = 0.0
             for (t in moveTypes) {
-                val e = Gen3Types.effect(t, b.type1, b.type2, map.expandedSpeciesIds)
+                val e = Gen3Types.effect(t, b.type1, b.type2, fairyChart)
                 if (e > best) best = e
             }
             // Shedinja: Wonder Guard blocks anything under 2x, so unless a
             // move is super effective it counts as unhittable - the
             // reference's CoverageCalcScreen rule, which raw type math misses.
-            if (id == 303 && best < 2.0) best = 0.0
+            if (id == (if (map.hns) HnsLayout.SPECIES_SHEDINJA else 303) && best < 2.0) best = 0.0
             out[best]?.add(id)
         }
         return out
@@ -3809,6 +4005,8 @@ class GbaTracker(
      * bits 9-15. Read live because randomizers rewrite it.
      */
     fun learnset(species: Int): List<Pair<Int, Int>> = learnsetCache.getOrPut(species) {
+        // Heart & Soul: each species' own pointer (SpeciesInfo.levelUpLearnset), {u16 move, u16 level} entries.
+        hns?.let { return@getOrPut if (speciesIsValid(species)) it.learnset(species) else emptyList() }
         if (map.levelUpLearnsets == 0L) return@getOrPut emptyList()
         // An id past the table (the GhostId, 413 or 1285) would read the pointer after its end.
         if (!speciesIsValid(species)) return@getOrPut emptyList()
@@ -3888,6 +4086,7 @@ class GbaTracker(
         // Items and Berries are two different pockets; both hold healing.
         val pockets = listOf(
             map.bagItemsOffset to map.bagItemsSlots,
+            map.bagMedicineOffset to map.bagMedicineSlots,
             map.bagBerriesOffset to map.bagBerriesSlots,
         )
         for ((offset, slots) in pockets) {
@@ -3899,10 +4098,10 @@ class GbaTracker(
                 if (id == 0) continue
                 val qty = b.u16(2) xor key
                 if (qty <= 0 || qty > 999) continue
-                if (id in HEAL_ITEMS) items[id] = (items[id] ?: 0) + qty
+                if (healItem(id) != null) items[id] = (items[id] ?: 0) + qty
             }
         }
-        return HealTotals.of(items, maxHp) { HEAL_ITEMS[it] }
+        return HealTotals.of(items, maxHp) { healItem(it) }
     }
 
     /**
@@ -3930,6 +4129,17 @@ class GbaTracker(
     internal fun readBadges(): Int {
         if (map.badgeOffset == 0L) return 0
         val sb1 = saveBlock1() ?: return 0
+        // Save flags, badge 1 in bit 0 (Heart & Soul: FLAG_BADGE01_GET..16, Johto 1-8 then Kanto 9-16).
+        if (map.badgeFlagStart > 0) {
+            val first = map.badgeFlagStart
+            val b = memory.read(sb1 + map.badgeOffset + first / 8, (first % 8 + map.badgeCount + 7) / 8)
+            var bits = 0
+            for (i in 0 until map.badgeCount) {
+                val f = first % 8 + i
+                if (f / 8 < b.size && (b.u8(f / 8) shr (f % 8)) and 1 == 1) bits = bits or (1 shl i)
+            }
+            return bits
+        }
         return if (map.badgeIsWord) {
             val b = memory.read(sb1 + map.badgeOffset, 2)
             if (b.size < 2) 0 else (b.u16(0) shr 7) and 0xFF
@@ -3945,16 +4155,18 @@ class GbaTracker(
         if (map.weather == 0L) return null
         val b = memory.read(map.weather, 2)
         if (b.size < 2) return null
-        val w = b.u16(0)
-        if (w == 0 || w > 0xFF) return null   // unknown bits: show nothing
-        return when {
-            (w and 0x07) != 0 -> "RAIN"
-            (w and 0x18) != 0 -> "SANDSTORM"
-            (w and 0x60) != 0 -> "SUN"
-            (w and 0x80) != 0 -> "HAIL"
-            else -> null
-        }
+        if (map.hns) return HnsWeather.line(b.u16(0))
+        return gen3WeatherName(b.u16(0))
     }
+
+    /**
+     * Heart & Soul's gBattleWeather as the five games' bits, which the panel and Calc Atk read: rain 1, sandstorm 8, sun
+     * 0x20, hail and snow 0x80 (the expansion's own bits are its B_WEATHER_* constants). Fog and strong winds have no
+     * Gen 3 bit and read as clear here; strong winds and the two primal weathers are named on their own ([HnsWeather]),
+     * since they change what a move does. Heavy rain is rain and extreme sun is sun for everything else (Weather Ball,
+     * Calc Atk's 1.5x and 0.5x). Fog never happens in a battle of this build (B_OVERWORLD_FOG is GEN_3).
+     */
+    private fun hnsWeatherWord(w: Int): Int = HnsWeather.word(w)
 
     /** Battler 1 = the opponent in singles. Pret BattlePokemon offsets. */
     // Battle screen state, latched exactly as the reference latches it.
@@ -4077,17 +4289,39 @@ class GbaTracker(
     private var fishingStat = -1
     private var rockSmashStat = -1
 
+    /** gBattleTerrain, or gBattleEnvironment's byte where the map reads that; 0 (grass) where neither is known. */
+    private fun battleTerrainId(): Int = when {
+        map.battleTerrain != 0L -> rw(map.battleTerrain)
+        map.battleEnvironment != 0L -> rb(map.battleEnvironment)
+        else -> 0
+    }
+
+    /** RouteData.Rods for this game's item ids: Heart & Soul's rods are its own items. */
+    private fun rodName(item: Int): String? = if (map.hns) when (item) {
+        HnsLayout.ITEM_OLD_ROD -> "Old Rod"; HnsLayout.ITEM_GOOD_ROD -> "Good Rod"; HnsLayout.ITEM_SUPER_ROD -> "Super Rod"; else -> null
+    } else RODS[item]
+
+    /** Heart & Soul: whether the battle on goes back through CB2_EndScriptedWildBattle (gMain.savedCallback). */
+    private fun hnsScriptedWildBattle(): Boolean {
+        val b = memory.read(HnsLayout.gMain + HnsLayout.Main.savedCallback.offset, 4)
+        return b.size == 4 && b.u32(0) == HnsLayout.CB2_EndScriptedWildBattle
+    }
+
     private fun battleEncounterArea(): String? {
         currentArea?.let { return it }
         // Only when the tracker started in the middle of a battle: there was no read outside one to take them from.
         if (fishingStat < 0) { fishingStat = readGameStat(12); rockSmashStat = readGameStat(19) }
-        val terrain = if (map.battleTerrain != 0L) rw(map.battleTerrain) else 0
+        val terrain = battleTerrainId()
         val flags = rd(map.battleTypeFlags)
         var area = encounterAreaByTerrain(terrain, flags, rsFirstBattle = map.badgeSet != "FRLG")
+        // Heart & Soul: a battle a script started (setwildbattle with dowildbattle, a legendary, a boss) leaves
+        // gBattleTypeFlags 0 like a walking one, but returns through CB2_EndScriptedWildBattle: a static, as the
+        // other Gen 3 games' set battles are (their flags, or nuzlocke/statics-gen3.tsv).
+        if (map.hns && area == "Walking" && hnsScriptedWildBattle()) area = "Static"
         val fishing = readGameStat(12)                        // FISHING_CAPTURES
         if (fishing != fishingStat) {
             fishingStat = fishing
-            if (map.specialVarItemId != 0L) RODS[rw(map.specialVarItemId)]?.let { area = it }
+            if (map.specialVarItemId != 0L) rodName(rw(map.specialVarItemId))?.let { area = it }
         }
         val rockSmash = readGameStat(19)                      // USED_ROCK_SMASH
         if (rockSmash > rockSmashStat) {
@@ -4127,14 +4361,14 @@ class GbaTracker(
     }
 
     /** A species this game has (PokemonData.getNatDexCompatible is not BlankPokemon): GachaMon's prize card asks. */
-    fun speciesExists(id: Int): Boolean = speciesIsValid(id) && id !in 252..276
+    fun speciesExists(id: Int): Boolean = speciesIsValid(id) && (if (map.hns) baseStats(id) != null else id !in 252..276)
 
     /**
      * The name of the place [trainerId] stands (TrainerData.getTrainerInfo(id).routeId in RouteData.Info), from this
      * version's route table: the first map whose trainers hold it. Null where none does. GachaMon's prize card shows it.
      */
     fun routeNameOfTrainer(trainerId: Int): String? =
-        routeInfoTable.entries.firstOrNull { trainerId in it.value.second }?.value?.first?.takeIf { it.isNotBlank() }
+        hns?.let { h -> h.mapTrainers.entries.firstOrNull { trainerId in it.value }?.let { h.mapName(it.key) } } ?: routeInfoTable.entries.firstOrNull { trainerId in it.value.second }?.value?.first?.takeIf { it.isNotBlank() }
 
     /** A species id that this game could actually have. */
     private fun speciesIsValid(id: Int): Boolean {
@@ -4287,7 +4521,7 @@ class GbaTracker(
      * is the id the ghost stand-in carries, and the bundled sprite pack's 1285
      * is the reference's ghost icon.
      */
-    val ghostSpeciesId: Int get() = if (map.expandedSpeciesIds) NATDEX_GHOST_ID else GHOST_ID
+    val ghostSpeciesId: Int get() = if (map.hns) HNS_GHOST_ID else if (map.expandedSpeciesIds) NATDEX_GHOST_ID else GHOST_ID
 
     /**
      * Battle.lua:371, Battle.isGhost: BATTLE_TYPE_GHOST (bit 15) set and
@@ -4341,9 +4575,22 @@ class GbaTracker(
 
     /** The Pokemon in [battler]'s party slot when its battle struct has used Transform; null otherwise or when unreadable. */
     private fun transformedMon(battler: Int, struct: ByteArray): PokemonDecoder.Mon? {
-        if (struct.size < map.status2Offset + 4 || (struct.u32(map.status2Offset) and STATUS2_TRANSFORMED) == 0L) return null
+        if (!isTransformed(struct)) return null
         return partyMonOf(battler)
     }
+
+    /** The battle struct's "used Transform" bit: status2's STATUS2_TRANSFORMED, or where the map puts it (Heart & Soul's volatiles). */
+    private fun isTransformed(struct: ByteArray): Boolean {
+        val at = if (map.transformedOffset >= 0) map.transformedOffset else map.status2Offset
+        return struct.size >= at + 4 && (struct.u32(at) and map.transformedMask) != 0L
+    }
+
+    /** A battle struct's type byte as Gen 3 numbers types (Heart & Soul's are one higher, Fairy 19). */
+    private fun battleType(t: Int): Int = if (map.hns) HnsMon.gen3Type(t) else t
+
+    /** The ability slot in a battle struct's IV word (+0x14): bit 31, or bits 30-31 on Heart & Soul (abilityNum, 2 the hidden one). */
+    private fun battleAbilitySlot(battle: ByteArray): Int =
+        if (map.hns) HnsLayout.BattlePokemon.abilityNum.at(battle) else ((battle.u32(0x14) ushr 31) and 1L).toInt()
 
     /** gBattlerPartyIndexes[battler] into the player's party (even battlers) or the enemy's (odd), decoded; null when unreadable. */
     private fun partyMonOf(battler: Int): PokemonDecoder.Mon? {
@@ -4391,9 +4638,8 @@ class GbaTracker(
         // reveals it activating, and the panel follows the same rule.
         val abilityId = b.u8(0x20)
         val possible = base?.let {
-            if (it.ability2 != 0 && it.ability2 != it.ability1)
-                abilityName(it.ability1) + " / " + abilityName(it.ability2)
-            else abilityName(it.ability1)
+            listOf(it.ability1, it.ability2, it.ability3).filter { a -> a != 0 }.distinct().joinToString(" / ") { a -> abilityName(a) }
+                .ifEmpty { abilityName(it.ability1) }
         } ?: "?"
         return EnemyInfo(
             species = species,
@@ -4407,8 +4653,8 @@ class GbaTracker(
             level = b.u8(map.battleMonHp + 2),
             curHp = b.u16(map.battleMonHp),
             maxHp = b.u16(map.battleMonHp + 4),
-            type1 = b.u8(map.battleMonTypes),
-            type2 = b.u8(map.battleMonTypes + 1),
+            type1 = battleType(b.u8(map.battleMonTypes)),
+            type2 = battleType(b.u8(map.battleMonTypes + 1)),
             base = base,
             movesSeen = movesSeen.map { moveName(it) },
             moveRows = movesSeen.map { id ->
@@ -4516,6 +4762,14 @@ class GbaTracker(
     internal val abilityScripts: Map<Long, List<Triple<String, Set<Int>, String>>> by lazy {
         val out = HashMap<Long, MutableList<Triple<String, Set<Int>, String>>>()
         if (map.abilityScriptTable.isEmpty()) return@lazy out
+        // Heart & Soul shows every ability in a pop-up, and the only scripts that show one are BattleScript_AbilityPopUp
+        // and BattleScript_AbilityPopUpOverwriteThenNormal (data/battle_scripts_1.s; Cmd_showabilitypopup is the one
+        // CreateAbilityPopUp outside the interface code). Any byte of them is a pop-up on screen for gBattlerAbility.
+        if (map.hns) {
+            for (r in listOf(HnsLayout.BattleScript_AbilityPopUp, HnsLayout.BattleScript_AbilityPopUpOverwriteThenNormal))
+                for (a in r) out.getOrPut(a) { mutableListOf() }.add(Triple("ABILITY", emptySet(), ""))
+            return@lazy out
+        }
         javaClass.getResourceAsStream(
             "/gen3/abilityscripts-" + map.abilityScriptTable + ".tsv")
             ?.bufferedReader(Charsets.UTF_8)?.useLines { lines ->
@@ -4576,11 +4830,11 @@ class GbaTracker(
             val b = memory.read(map.battleMons + i.toLong() * map.battleMonSize, map.battleMonSize)
             if (b.size < 0x18) continue
             val own = partyMonOf(i)
-            if (own == null && b.size >= map.status2Offset + 4 && (b.u32(map.status2Offset) and STATUS2_TRANSFORMED) != 0L) continue
+            if (own == null && isTransformed(b)) continue
             val sp = own?.species ?: b.u16(0)
             val base = baseStats(sp) ?: continue
-            val slot = own?.abilitySlot ?: ((b.u32(0x14) ushr 31) and 1L).toInt()
-            val id = if (slot == 1 && base.ability2 != 0) base.ability2 else base.ability1
+            val slot = own?.abilitySlot ?: battleAbilitySlot(b)
+            val id = base.abilityFor(slot)
             if (sp != 0 && id != 0) out += sp to abilityName(id)
         }
         return out
@@ -4646,6 +4900,7 @@ class GbaTracker(
         fun copy(address: Long, length: Int) { if (TapPlan.inRam(address, length)) { addresses += address; lengths += length } }
         copy(map.battlersCount, 1)
         copy(map.scriptingBattler, 1)
+        copy(map.battlerAbility, 1)
         copy(map.battlerAttacker, 1)
         copy(map.battlerTarget, 1)
         copy(map.battleOutcome, 1)
@@ -4653,7 +4908,7 @@ class GbaTracker(
         copy(map.battleTextBuff1.let { if (it == 0L) 0L else it + 2 }, 1)
         copy(map.battlerPartyIndexes, 8)
         // Species at 0, the IV word with the ability bit at 0x14, the live ability byte at 0x20.
-        for (i in 0 until 4) copy(map.battleMons + i.toLong() * map.battleMonSize, 0x21)
+        for (i in 0 until 4) copy(map.battleMons + i.toLong() * map.battleMonSize, if (map.hns) 0x18 else 0x21)
         TapPlan(map.scriptCurrInstr, abilityScripts.keys.sorted().toLongArray(), addresses.toLongArray(), lengths.toIntArray())
     }
 
@@ -4693,7 +4948,7 @@ class GbaTracker(
         if (isGhostBattle()) return
         val n = rb(map.battlersCount).coerceIn(2, 4)
         val actionNumber = rb(map.currentTurnActionNumber)
-        val last = memory.read(map.battleResults + 0x22, 4)
+        val last = memory.read(map.battleResults + map.battleResultsLastMovesOffset, 4)
         if (last.size < 4) return
         val frame = EnemyMoveWatch.Frame(
             battlers = n,
@@ -4702,14 +4957,26 @@ class GbaTracker(
             actionNumber = actionNumber,
             action = rb(map.actionsByTurnOrder + actionNumber),
             confirmedCount = rb(map.battleCommunication + 4),
-            hitMarker = rd(map.hitMarker),
+            hitMarker = if (map.hns) hnsUnableToUseMove() else rd(map.hitMarker),
             script = if (map.scriptCurrInstr != 0L) rd(map.scriptCurrInstr) else 0L,
             lastMovePlayer = last.u16(0),
             lastMoveOpponent = last.u16(2),
         )
-        val (battler, move) = moveWatch.tick(frame, map.moveScripts, if (map.expandedSpeciesIds) 2000 else 354, ::partyMovesOf) ?: return
+        val (battler, move) = moveWatch.tick(frame, map.moveScripts, if (map.hns) HnsLayout.MOVES_COUNT_ALL else if (map.expandedSpeciesIds) 2000 else 354, ::partyMovesOf) ?: return
         val slot = enemySlotOf(battler) ?: return
         synchronized(battleMoves) { battleMoves.getOrPut(slot) { LinkedHashSet() }.add(move) }
+    }
+
+    /**
+     * Heart & Soul has no HITMARKER_UNABLE_TO_USE_MOVE: the expansion marks a move that did not happen in
+     * gBattleStruct->unableToUseMove (DoAttackCanceler). As the hit marker's bit, for EnemyMoveWatch.
+     */
+    private fun hnsUnableToUseMove(): Long {
+        val p = rd(HnsLayout.gBattleStruct)
+        if (p !in 0x02000000L..0x0203FFFFL) return 0L
+        val f = HnsLayout.BattleStruct.unableToUseMove
+        val b = memory.read(p + f.offset, f.size)
+        return if (b.size == f.size && f.at(b, -f.offset) == 1) EnemyMoveWatch.UNABLE_TO_USE_MOVE else 0L
     }
 
     private fun clearBattleMoves() {
@@ -4763,7 +5030,7 @@ class GbaTracker(
         if (battle.size < 0x18) return 0
         val battleSpecies = battle.u16(0)
         var species = battleSpecies
-        var slot = ((battle.u32(0x14) ushr 31) and 1L).toInt()
+        var slot = battleAbilitySlot(battle)
         if (map.battlerPartyIndexes != 0L) {
             val idxB = mem.read(map.battlerPartyIndexes + i * 2L, 2)
             val idx = if (idxB.size == 2) idxB.u16(0) else -1
@@ -4778,7 +5045,7 @@ class GbaTracker(
             }
         }
         val base = baseStats(species) ?: return 0
-        return if (slot == 1 && base.ability2 != 0) base.ability2 else base.ability1
+        return base.abilityFor(slot)
     }
 
     /** The first of [readAbilityTriggers], or null. */
@@ -4854,6 +5121,8 @@ class GbaTracker(
                     TRACE in ids && partyAbility(battler, mem) == TRACE -> traced(battler)?.let { reveal(it) }
                     abilityOf(battler) in ids -> reveal(battler)
                 }
+                // Heart & Soul's ability pop-up: the battler it shows, gBattlerAbility, whatever the ability.
+                "ABILITY" -> if (map.battlerAbility != 0L) battlerByte(map.battlerAbility).takeIf { abilityOf(it) != 0 }?.let { reveal(it) }
                 // Battle.lua:656-663: the target's ability stopped the battler's, and both are tracked.
                 "REVERSE_BATTLER" -> if (abilityOf(target) in ids) { reveal(target); reveal(battler) }
                 "ATTACKER" -> if (abilityOf(target) in ids) reveal(target)
@@ -4877,6 +5146,8 @@ class GbaTracker(
     // ---- The Nuzlocke reads (2026-09-29): the rules engine's extra facts, all cheap or cached ----
 
     private var nuzPrevInBattle = false
+    /** Heart & Soul's rows in nuzlocke/levelcaps-gen3.tsv. */
+    private val HNS_CAPS = "hns"
     private var nuzCaps: com.ironmonone.tracker.nuzlocke.LevelCapTable? = null
     private var nuzCapTries = 0
     /** The rival [nuzCaps] was worked out for. */
@@ -4896,7 +5167,8 @@ class GbaTracker(
         val rival = rivalChoice
         if (rival != nuzCapsRival) { nuzCaps = null; nuzCapTries = 0; nuzCapsRival = rival }
         nuzCaps?.let { if (it.fromRom || nuzCapTries >= 20 || !hasTrainerData) return it }
-        val key = com.ironmonone.tracker.nuzlocke.LevelCapTable.gameKey(map.routeVersion) ?: return null
+        // Heart & Soul has no route version of its own (its routes are its ROM's); its rows are "hns".
+        val key = (if (map.hns) HNS_CAPS else com.ironmonone.tracker.nuzlocke.LevelCapTable.gameKey(map.routeVersion)) ?: return null
         val standard = com.ironmonone.tracker.nuzlocke.LevelCapTable.standard(key)
         if (standard.bosses.isEmpty()) return null
         if (!hasTrainerData) { nuzCaps = standard; return standard }
@@ -4941,7 +5213,8 @@ class GbaTracker(
         val sb1 = saveBlock1() ?: return null
         val key = readSecurityKey()
         val out = LinkedHashMap<Int, BagItem>()
-        for ((offset, slots) in listOf(map.bagItemsOffset to map.bagItemsSlots, map.bagBerriesOffset to map.bagBerriesSlots)) {
+        for ((offset, slots) in listOf(map.bagItemsOffset to map.bagItemsSlots, map.bagMedicineOffset to map.bagMedicineSlots,
+                map.bagBerriesOffset to map.bagBerriesSlots)) {
             if (offset == 0L || slots <= 0) continue
             val b = memory.read(sb1 + offset, slots * 4)
             if (b.size < slots * 4) return null
@@ -4991,7 +5264,7 @@ class GbaTracker(
                 beaten = nuzBeaten(badges),
                 lesson = inBattle && lessonBattle,
                 facility = facilityHeld,
-                staticsGame = when (map.routeVersion) { "ruby", "sapphire" -> "rs"; "emerald" -> "e"; else -> "frlg" },
+                staticsGame = if (map.hns) "hns" else when (map.routeVersion) { "ruby", "sapphire" -> "rs"; "emerald" -> "e"; else -> "frlg" },
                 mapSection = stableMapSection?.first ?: -1,
                 mapType = stableMapSection?.second ?: -1,
             )

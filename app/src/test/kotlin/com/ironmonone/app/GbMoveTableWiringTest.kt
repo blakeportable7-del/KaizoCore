@@ -57,8 +57,8 @@ class GbMoveTableWiringTest {
         // rc33 audit P1 #77: without it Seismic Toss and the rest took the chart's 2x and 1/2 marks.
         val decor = java.io.File("src/main/kotlin/com/ironmonone/app/MoveDecor.kt").readText()
         // MaxDex's flag rides along since its Freeze-Dry hits Water (MaxDexPlayTest).
-        kotlin.test.assertEquals(2, Regex(Regex.escape("gen1 = ctx.generation == 1, power = adj.power, natDex = ctx.natDex, maxDex = ctx.maxDex)")).findAll(decor).count())
+        kotlin.test.assertEquals(2, Regex(Regex.escape("gen1 = ctx.generation == 1, power = adj.power, natDex = ctx.natDex, maxDex = ctx.maxDex, weather = ctx.weather)")).findAll(decor).count())
         val calc = java.io.File("../tracker-gba/src/main/kotlin/com/ironmonone/tracker/CalcAtk.kt").readText()
-        kotlin.test.assertTrue("MoveRules.effectiveness(moveId, moveType, category, ownTypes, power = power, natDex = natDex, maxDex = maxDex)" in calc)
+        kotlin.test.assertTrue("MoveRules.effectiveness(moveId, moveType, category, ownTypes, power = power, natDex = natDex, maxDex = maxDex, weather = weatherName)" in calc)
     }
 }

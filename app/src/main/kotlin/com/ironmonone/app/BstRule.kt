@@ -191,7 +191,9 @@ fun bstLinesInPlay(attempt: Int): BstRule.Lines? {
             val store = PrepStore(filesDir)
             val session = store.session()
             if (PlayRules.kind(session, filesDir) != PlayRules.Kind.IRONMON) null
-            else BstRule.lines(FavoriteBall.modeOf(store), session.kind?.isNatDex == true, gen1 = session.kind?.generation == Generation.GB1,
+            // Heart & Soul's line follows the run's pool: 600 for Nat. Dex, the vanilla line for Gen 1-3 (HnsEngine.bstLine).
+            else BstRule.lines(FavoriteBall.modeOf(store), session.kind?.let { HnsPool.rulesNatDex(it, filesDir) } == true,
+                gen1 = session.kind?.generation == Generation.GB1,
                 maxDex = session.kind?.isMaxDex == true)
         }.getOrNull()
     }

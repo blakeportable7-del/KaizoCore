@@ -14,10 +14,33 @@ object NuzlockeNotes {
     fun forGame(system: NuzlockeSystem, gameKey: String): Notes = when (system) {
         NuzlockeSystem.GEN1 -> gen1()
         NuzlockeSystem.GEN2 -> gen2(gameKey)
-        NuzlockeSystem.GEN3 -> Notes(emptyList(), emptyList())
+        NuzlockeSystem.GEN3 -> if (gameKey == HEART_SOUL) heartSoul() else Notes(emptyList(), emptyList())
         NuzlockeSystem.GEN4 -> gen4(gameKey)
         NuzlockeSystem.GEN5 -> gen5(gameKey)
     }
+
+    /** Heart & Soul's key (NuzlockeStarts.gameKeyOf): a Gen 3 game, with Johto, Kanto and sixteen badges of its own. */
+    const val HEART_SOUL = "hns"
+
+    /**
+     * Heart & Soul (2026-10-05): the Gen 3 tracker reads it through its own build's layout (tracker-gba Hns.kt), so most of
+     * Gen 3 holds, and what it is told is said here: its areas, its sixteen badges and Red, its own Nuzlocke option.
+     */
+    private fun heartSoul() = Notes(
+        automatic = listOf(
+            "Each area is the place name the game shows on its map (Route 29, Union Cave), so every floor of a cave or tower is one area.",
+            "Wild Pokemon come from the encounter tables in your copy of the game, for every time of day, walking, surfing, Rock Smash and the three rods.",
+            "Level caps: the eight Johto leaders, the Elite Four and Lance, then the eight Kanto leaders and Red on Mt. Silver. The levels are the ones in your copy of the game, so a randomized game has its own caps.",
+            "The dupes clause numbers Heart & Soul's Pokemon as the National Dex does, so a randomized species from any generation is matched to its own line.",
+            "Faints and whiteouts are seen the moment they happen. Nicknames are read from the party, all twelve letters.",
+            "Set battles (Sudowoodo, the red Gyarados, the legendaries) are statics, told apart from wild Pokemon by the way the game ends them. A Pokemon given to you, Elm's included, is a gift of its town.",
+        ),
+        byHand = listOf(
+            "The dupes clause knows the evolution lines of Gens 1 to 3 and their later evolutions. A line from Gen 4 on counts each of its Pokemon on its own, so fix such a dupe by hand.",
+            "Heart & Soul has a Nuzlocke option of its own in its challenge menu. KaizoCore's ledger does not read it. With both on, the game's own rules apply too, and with its hardcore setting a lost rival battle in Cherrygrove City deletes the save before the Nuzlocke has started.",
+            "A catch with a full party goes to a box, which the tracker cannot see inside.",
+        ),
+    )
 
     private fun gen1() = Notes(
         automatic = listOf(

@@ -58,6 +58,16 @@ object AutoTheme {
     fun gbaTheme(species: Int): String? = gba[species]
 
     /**
+     * Heart & Soul is in Play (2026-10-05): its species are its own numbers (Treecko 252), and the themes are keyed by
+     * Gen 3's (Treecko 277), so a lead is looked up by the same Pokemon's id (HnsNumbers). Play's own method is at the
+     * verifier's limit, so SpriteIsMeRunner, which names the game of every GBA session in Play, sets this.
+     */
+    @Volatile var heartSoul: Boolean = false
+
+    /** The theme for the lead [species] of the game in Play. */
+    fun gbaThemeInPlay(species: Int): String? = if (heartSoul) HnsNumbers.toPack(species)?.let { gba[it] } else gba[species]
+
+    /**
      * AutoThemes.lua afterProgramDataUpdate for a Gen 3 or Game Boy game.
      * [party] is (species, isEgg) in slot order.
      */
@@ -68,7 +78,7 @@ object AutoTheme {
         if (party.isEmpty()) return
         // Slot 1, or the next non-egg slot after it; all eggs: slot 1.
         val lead = party.firstOrNull { !it.second } ?: party[0]
-        val code = gba[lead.first]
+        val code = gbaThemeInPlay(lead.first)
         if (code == null) { release(); return }
         if (code != current) apply(code)
     }

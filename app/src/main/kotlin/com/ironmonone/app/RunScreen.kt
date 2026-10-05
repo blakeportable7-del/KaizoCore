@@ -432,7 +432,8 @@ fun RunScreen(
         }
         // Build your own (2026-09-29): starters and plain-word choices, saved as a settings file (BuildYourGame.kt).
         // Not on MaxDex in its first version: the builder reads and writes the Nat. Dex 1.2 and ZX settings formats only.
-        selectedRom?.takeUnless { it.first.isMaxDex }?.let { rom -> BuildYourGameEntry { buildGame = rom } }
+        // Nor on Heart & Soul, whose randomizer is KaizoCore's own (HnsEngine), not one of the two the builder knows.
+        selectedRom?.takeUnless { it.first.isMaxDex || it.first.isHns }?.let { rom -> BuildYourGameEntry { buildGame = rom } }
         // RUN used to open on three empty favourite boxes, the engine's name and
         // a list of raw settings file names, before the game and mode: the
         // choices every run needs came last (audit, 2026-09-27). The optional
@@ -637,6 +638,7 @@ private fun runInPlay(store: PrepStore, key: Int): RunInPlay? = remember(key) {
 @Composable
 private fun ExtraPassRows(rom: RomKind, settings: File) {
     val context = LocalContext.current
+    if (rom.isHns) { HnsPoolRow(); return }
     if (ExtraPasses.takesPart2(rom)) {
         var version by remember { mutableIntStateOf(0) }
         val on = remember(rom.id, settings.absolutePath, settings.lastModified(), version) { ExtraPasses.part2On(context, rom, settings) }
@@ -664,6 +666,30 @@ private fun ExtraPassRows(rom: RomKind, settings: File) {
     val official = remember(settings.absolutePath, settings.lastModified()) { ExtraPasses.isOfficial(context, settings) }
     val ruleset = remember(settings.absolutePath, settings.lastModified()) { RnqsInfo.of(settings).ruleset }
     PassSwitch("Official 60% levels", on, ExtraPasses.prePassLine(rom, ruleset, official)) { ExtraPasses.choosePrePass(context, rom, settings, !on); version++ }
+}
+
+/**
+ * Heart & Soul's pool (HnsPool): Vanilla (Gen 1-3) or Nat. Dex (Gen 1-9), under the Mode row of the Kaizo IronMON
+ * screen and the randomized Nuzlocke's. Every new run takes the pool chosen here; the run in play keeps its own.
+ */
+@Composable
+internal fun HnsPoolRow() {
+    val context = LocalContext.current
+    var version by remember { mutableIntStateOf(0) }
+    val pool = remember(version) { HnsPool.chosen(context.filesDir) }
+    Spacer(Modifier.height(4.dp))
+    Text("Pok\u00e9mon pool", style = MaterialTheme.typography.bodyMedium, color = Shell.inkOnPaper)
+    Spacer(Modifier.height(4.dp))
+    ShellSegmented(
+        values = HnsPool.LABELS.map { it.first.name },
+        selected = pool.name,
+        label = { k -> HnsPool.LABELS.first { it.first.name == k }.second },
+        onSelect = { k ->
+            HnsPool.LABELS.firstOrNull { it.first.name == k }?.first?.let { HnsPool.choose(context.filesDir, it) }
+            version++
+        },
+    )
+    Text(HnsPool.LINE, style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper, modifier = Modifier.padding(vertical = 4.dp))
 }
 
 /** One switch row: a check box, a title and one plain line, the whole row the target. */
@@ -729,6 +755,7 @@ private fun GameCard(kind: com.ironmonone.core.RomKind, selected: Boolean, onCli
                     kind in com.ironmonone.core.RomKind.allPatched -> "Patched game"
                     kind.isMaxDex -> "MaxDex build"
                     kind.isNatDex -> "Nat. Dex build"
+                    kind.isHns -> "KaizoCore build"
                     else -> "Original game"
                 },
                 style = MaterialTheme.typography.bodySmall,
@@ -875,6 +902,8 @@ internal object RunPairing {
     /** MaxDex is a Nat. Dex build with its own randomizer and its own Kaizo file, which no other game takes. */
     const val MAXDEX_GAME = "That mode is not for MaxDex, and this game is the MaxDex version. Pick MaxDex's own Kaizo mode."
     const val NOT_MAXDEX_GAME = "That mode is for the MaxDex version of FireRed. Pick a mode for this game, or make the MaxDex version in Library, Patched versions."
+    /** Heart & Soul plays the Emerald Nat. Dex modes; MaxDex's file is the one it cannot read. */
+    const val HNS_GAME = "That mode is for the MaxDex version of FireRed. Pick one of Heart & Soul's modes."
 
     fun problem(rom: Pair<RomKind, File>?, settings: File?): String? {
         val game = rom?.first ?: return NO_GAME
@@ -882,6 +911,8 @@ internal object RunPairing {
         // The file's sidecar counts too: a preset saved under a plain name
         // keeps its Nat. Dex flag there (2026-09-27, audit).
         return when {
+            // Heart & Soul's engine reads the Nat. Dex fork's files and ZX's alike (HnsEngine.readSettings).
+            game.isHns -> if (RnqsInfo.of(file).maxDex) HNS_GAME else null
             RnqsInfo.of(file).maxDex != game.isMaxDex -> if (game.isMaxDex) MAXDEX_GAME else NOT_MAXDEX_GAME
             RnqsInfo.of(file).natDex == game.isNatDex -> null
             game.isNatDex -> NAT_DEX_GAME

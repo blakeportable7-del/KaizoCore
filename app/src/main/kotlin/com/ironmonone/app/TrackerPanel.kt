@@ -438,11 +438,12 @@ internal object CardGender {
  * InfoScreen.showNextPokemon: the species [delta] ids on from [from], wrapping at [total],
  * over Gen 3's empty 252-276 slots (only a Gen 3 game has them; Gold/Silver/Crystal end at 251).
  */
-internal fun stepSpeciesId(from: Int, delta: Int, total: Int): Int {
+internal fun stepSpeciesId(from: Int, delta: Int, total: Int, gen3Gap: Boolean = true): Int {
     var n = from + delta
     if (n < 1) n = total
     else if (n > total) n = 1
-    if (total > 276 && n in 252..276) n = if (delta > 0) 277 else 251
+    // Gen 3's unused slots 252-276; Heart & Soul has real Pokemon there ([gen3Gap] false).
+    if (gen3Gap && total > 276 && n in 252..276) n = if (delta > 0) 277 else 251
     return n
 }
 
@@ -555,6 +556,10 @@ fun TrackerPanel(
 ) {
     // The tracker's own game-over card is a Kaizo IronMON run's only (PlayRules, 2026-09-30).
     val ironmonOver = ironmonGameOverCard(state?.gameOver != null)
+    // Heart & Soul numbers its species its own way, 1 to 1572 (HnsSpecies): the lookups, the egg and the Walking Pals
+    // follow it. Play hands the Nat. Dex build's 1283 for it, and is not changed for this (its method is at the ART limit).
+    val hnsGame = hnsInPlay(attempt)
+    @Suppress("NAME_SHADOWING") val speciesTotal = if (hnsGame) com.ironmonone.tracker.HnsSpecies.TOTAL else speciesTotal
     // What the info screen is currently explaining, if anything.
     var info by remember {
         mutableStateOf<Triple<String, String?, String?>?>(null)
@@ -581,7 +586,7 @@ fun TrackerPanel(
             picturesFor = FrlgPictures.lookupFor(state?.badgeSet),
         ) { routeInfoOpen = false }
     }
-    fun stepSpecies(from: Int, delta: Int): Int = stepSpeciesId(from, delta, speciesTotal)
+    fun stepSpecies(from: Int, delta: Int): Int = stepSpeciesId(from, delta, speciesTotal, gen3Gap = !hnsGame)
     // DataHelper.lua:432: the info screen's types, or "?" where InfoRules.infoScreenHidesTypes says so.
     fun infoTypes(base: com.ironmonone.tracker.BaseStats?, species: Int) = InfoRules.typeIcons(
         listOfNotNull(
@@ -596,7 +601,7 @@ fun TrackerPanel(
     // still attaching, so every name read "#id", and PlayScreen's name lambda never changes
     // identity, so it was never rebuilt: the lookup showed no names at all.
     val lookupNames: () -> List<Pair<Int, String>> = {
-        (1..speciesTotal).filter { it !in 252..276 }
+        (1..speciesTotal).filter { hnsGame || it !in 252..276 }
             .map { it to (onSpeciesName?.invoke(it) ?: "#$it") }
             .filter { !it.second.startsWith("#") && it.second.isNotBlank() && it.second != "?" }
             .sortedBy { it.second.lowercase() }
@@ -734,7 +739,7 @@ fun TrackerPanel(
                   onTypes = onTypeDefenses?.let { cb -> { p -> p.base?.let { b -> cb(p.speciesName, b.type1, b.type2) } } },
                   onAbility = { p -> info = Triple(p.abilityName, "Ability", onAbilityDescription?.invoke(p.abilityName)) },
                   // PokemonData.Values.EggId, 412; past Gen 3's 411 species (Nat. Dex) the bundled pack's egg is 1284.
-                  eggSpecies = if (speciesTotal > 411) 1284 else 412,
+                  eggSpecies = if (hnsGame) com.ironmonone.tracker.HnsSpecies.EGG else if (speciesTotal > 411) 1284 else 412,
               )
               Spacer(Modifier.height(3.dp))
           }
@@ -900,7 +905,7 @@ fun TrackerPanel(
                             .copy(hideEffectiveness = InfoRules.hideEffectiveness(state.randomized, state.isGhostBattle, own = true), generation = generation, natDex = natDex, maxDex = maxDex),
                         attempt = attempt,
                         hidden = hideStats,
-                        iconDex = WalkingPals.trackerDex(generation, speciesTotal, maxDex),
+                        iconDex = WalkingPals.trackerDex(generation, speciesTotal, maxDex, hns = hnsGame),
                         inBattle = state.inBattle,
                         runScoped = runScoped,
                         bstBroken = joinedVersion >= 0 && BstRule.ownBreaks(p.base?.bst, bstLines, joinedForms, BstRule.keyOf(p.mon, generation), p.mon.species, p.speciesName),
@@ -956,7 +961,7 @@ fun TrackerPanel(
                         onMoveInfo = { mv ->
                             moveInfo = detailOf(mv, onMoveDescription?.invoke(mv.id), noRomData = moveRowFor(mv.id)?.let { it.pp == 0 && (it.power ?: 0) == 0 } == true, gen1 = generation == 1, natDex = natDex)
                         },
-                        iconDex = WalkingPals.trackerDex(generation, speciesTotal, maxDex),
+                        iconDex = WalkingPals.trackerDex(generation, speciesTotal, maxDex, hns = hnsGame),
                         bstLines = bstLines,
                         onBstTap = { bstSheet = Triple(enemy.base?.bst ?: 0, bstLines?.wild ?: 0, null) },
                         generation = generation)

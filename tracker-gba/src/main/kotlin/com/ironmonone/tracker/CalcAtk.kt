@@ -122,6 +122,8 @@ object CalcAtk {
         natDex: Boolean = false,
         /** MaxDex 1.0, whose Freeze-Dry is super effective on Water (MoveRules.effectiveness). */
         maxDex: Boolean = false,
+        /** The battle's weather as the tracker names it (TrackerState.weather): Heart & Soul's strong winds (HnsWeather). */
+        weatherName: String? = null,
     ): Fill {
         var guessed = false
         var moveType = type
@@ -165,7 +167,7 @@ object CalcAtk {
             level = enemyLevel, damage = damage,
             defense = if (physical) ownDef else ownSpd,
             power = movePower,
-            effectiveness = MoveRules.effectiveness(moveId, moveType, category, ownTypes, power = power, natDex = natDex, maxDex = maxDex),
+            effectiveness = MoveRules.effectiveness(moveId, moveType, category, ownTypes, power = power, natDex = natDex, maxDex = maxDex, weather = weatherName),
             // Utils.isSTAB(move, move.type, enemyTypes): the move's own type and power.
             stab = MoveRules.isStab(moveId, type, category, power, enemyTypes),
             weather = weather,
