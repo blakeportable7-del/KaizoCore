@@ -290,7 +290,7 @@ fun GachaMonCarouselLine(onTap: () -> Unit) {
     val isNew = remember(e.uid) { GachaMon.isNewSpecies(e) }
     Row(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(TrackerLook.RADIUS.rp))
-            .background(TrackerBackground.boxFill(Pc.LowerGroundX ?: Pc.Ground))
+            .background(trackerBoxFill(Pc.LowerGroundX ?: Pc.Ground))
             .border(1.dp, Pc.LowerBorder.copy(alpha = 0.55f), RoundedCornerShape(TrackerLook.RADIUS.rp))
             .clickable(role = Role.Button, onClickLabel = "Open the card pack") { onTap() }
             .padding(horizontal = 6.dp, vertical = 5.dp),

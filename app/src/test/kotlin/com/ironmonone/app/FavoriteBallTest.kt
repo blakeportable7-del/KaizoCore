@@ -225,9 +225,10 @@ class FavoriteBallTest {
         // Under the favorites, drawn as their icons since 2026-10-02 (FavoriteIconsTest).
         assertTrue(panel.indexOf("FavoriteIconRow(it, { sp -> spriteFor(sp) })") in noParty until line, "under the favorites")
         assertTrue("DsBallAndFavorites(randomBall, hgss = state.badgeSet == \"HGSS\", favoriteLine?.icons.orEmpty())" in File("src/main/kotlin/com/ironmonone/app/NdsTrackerPanel.kt").readText())
-        // The Kaizo IronMON screen says so on a Game Boy Advance game, in any mode but Journey.
-        val run = File("src/main/kotlin/com/ironmonone/app/RunScreen.kt").readText()
-        assertTrue("val favBall = selectedRom?.first?.platform == com.ironmonone.core.Platform.GBA && favMode != null && favMode != FavoriteBall.JOURNEY" in run)
+        // The favorites editor says so on a Game Boy Advance game, in any mode but Journey: on the Kaizo IronMON screen and
+        // in Tracker Setup, which share it since rc35.1 (FavoritesEditor.kt).
+        val run = File("src/main/kotlin/com/ironmonone/app/FavoritesEditor.kt").readText()
+        assertTrue("val favBall = kind?.platform == com.ironmonone.core.Platform.GBA && mode != null && mode != FavoriteBall.JOURNEY" in run)
         assertTrue("if (favBall) \" \" + RunCopy.FAVORITE_BALL else \"\"" in run)
         assertFalse(Char(0x2014) in RunCopy.FAVORITE_BALL || Char(0x2013) in RunCopy.FAVORITE_BALL)
     }

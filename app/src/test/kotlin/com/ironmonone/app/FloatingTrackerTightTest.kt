@@ -100,14 +100,15 @@ class FloatingTrackerTightTest {
         assertTrue("private val FLOAT_MARGIN = PaddingValues(FloatGrabs.IN.dp)" in src)
         // Only the floating window sets it: docked, portrait and the second display keep the panel's own margin.
         for (f in dir.listFiles { x -> x.extension == "kt" }!!) {
-            if (f.name == "FloatingTracker.kt") continue
+            // The Tracker HUD is the floating window's other face (TrackerHud.kt).
+            if (f.name == "FloatingTracker.kt" || f.name == "TrackerHud.kt") continue
             assertFalse("LocalTrackerMargin provides" in f.readText(), "${f.name} must not change the margin")
         }
         assertTrue("LocalTrackerMargin.current ?: PaddingValues(PcRef.MARGIN.rp)" in src, "the panel's own margin otherwise")
         for (panel in listOf("TrackerPanel.kt", "NdsTrackerPanel.kt"))
             assertTrue(".then(trackerBackdrop()).padding(trackerMargin())" in read(panel), panel)
         // The window fits the tracker, with nothing under the cards.
-        assertTrue("val fitH = if (contentH > 0f) (BAR_DP + contentH).coerceIn(FloatFrame.MIN_H, shown.h) else shown.h" in src)
+        assertTrue("val fitH = if (contentH > 0f) (barDp + contentH).coerceIn(FloatFrame.MIN_H, shown.h) else shown.h" in src)
         // The grabs are placed from FloatGrabs, outside the window, and only while it is unlocked.
         val raw = read("FloatingTracker.kt")
         assertTrue("if (!locked) {\n            // The grabs" in raw)
@@ -118,22 +119,24 @@ class FloatingTrackerTightTest {
     }
 
     @Test
-    fun `the lock, the grip, the title and the menu sit together at the bar's left, with 44 dp to touch`() {
+    fun `the lock, the grip, the text slot, the swap, the gear and the menu sit in one row, with 44 dp to touch`() {
         val src = code(read("FloatingTracker.kt"))
         val bar = src.substringAfter("verticalAlignment = Alignment.CenterVertically,\n                ) {").substringBefore("\n                }\n")
         val lock = bar.indexOf("LockButton(locked)")
         val dots = bar.indexOf("if (!locked) GripDots()")
-        val title = bar.indexOf("if (attemptTitle) \"ATTEMPT \$attempt\" else \"TRACKER\"")
-        val menu = bar.indexOf("PcCanvas(Modifier.width(PcMin.TOUCH_DP.dp)) { menu(onDock) }")
-        assertTrue(lock in 0 until dots && dots < title && title < menu, "in that order")
-        assertTrue("Modifier.weight(1f, fill = false)" in bar, "the title takes what it needs and no more")
-        assertFalse("Modifier.weight(1f).padding" in bar, "nothing stretches between the title and the menu")
-        assertFalse("Spacer(" in bar.substring(lock, menu), "and no gap is put between them")
-        assertTrue("color = if (attemptTitle) Pc.Text else Pc.Dim, fontSize = if (attemptTitle) 13.sp else 11.sp" in bar, "the attempt keeps its size and colour")
+        val title = bar.indexOf("WindowBarTextSlot(segs")
+        val swap = bar.indexOf("parts?.swap?.let { SwapIconButton(it) }")
+        val gear = bar.indexOf("parts?.onGear?.let { TrackerGearButton(onClick = it) }")
+        val menu = bar.indexOf("PcCanvas(Modifier.width(PcMin.TOUCH_DP.dp)) { menu(dock) }")
+        assertTrue(lock in 0 until dots && dots < title && title < swap && swap < gear && gear < menu, "in that order")
+        // The text slot takes the room the buttons leave (2026-10-04, one row): its words scroll there when they do not fit.
+        assertTrue("WindowBarTextSlot(segs, parts?.onTextTap, parts?.tapLabel, Modifier.weight(1f)" in bar)
+        // Only the narrow window's second row leaves a gap where the words were (WindowBarFit).
+        assertFalse(Regex("Spacer\\((?!Modifier.weight\\(1f\\)\\))").containsMatchIn(bar.substring(lock, menu)), "and no other gap is put between them")
         assertTrue("private const val BAR_DP = 44" in src && 44 >= PcMin.TOUCH_DP, "the bar, and the lock's box, are a touch target tall")
         assertTrue("Modifier.size(BAR_DP.dp).clickable(role = Role.Button)" in src, "the lock's box is the bar's height both ways")
         // The rest of the bar is the handle: the drag and the double tap are on the whole row.
-        assertTrue("Modifier.fillMaxWidth().height(BAR_DP.dp).background(Pc.Ground)" in src)
+        assertTrue("Modifier.fillMaxWidth().height(BAR_DP.dp).background(windowFill(Pc.Ground))" in src)
         assertTrue("detectTapGestures(onDoubleTap = { move(FloatFrame.default(areaW, areaH)) })" in src)
     }
 }

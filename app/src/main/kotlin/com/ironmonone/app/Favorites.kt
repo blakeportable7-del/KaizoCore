@@ -194,7 +194,17 @@ object Favorites {
     fun slots(store: PrepStore, romId: String?, count: Int = SLOTS): List<String> = slots(store.favoritesText(romId), count)
 
     fun text(slots: List<String>): String = slots.joinToString(",") { it.trim() }
-    fun save(store: PrepStore, romId: String?, slots: List<String>) = store.saveFavorites(romId, text(slots))
+    fun save(store: PrepStore, romId: String?, slots: List<String>) {
+        store.saveFavorites(romId, text(slots))
+        edits.intValue++
+    }
+
+    /**
+     * Counts every [save]. The tracker's favorites row and its ball line read it (FavoritesShown), so an edit made in
+     * Tracker Setup during a run (FavoritesEditor) shows there at once. The stream's pictures read the saved file on each
+     * look anyway (StreamFavoritesSource).
+     */
+    val edits = androidx.compose.runtime.mutableIntStateOf(0)
 
     /** "FAVORITES: SCYTHER / GENGAR", or null when none are set. */
     fun line(names: Collection<String>): String? =

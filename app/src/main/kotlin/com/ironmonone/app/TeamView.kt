@@ -72,7 +72,7 @@ fun PcTeamView(
             val box = TeamBox.of(p, eggSpecies)
             // Through boxFill like every other tracker box, so a picture behind the tracker shows through it (rc32 audit P3 #21).
             Column(
-                Modifier.width(boxW.rp).background(TrackerBackground.boxFill(Pc.Ground)).border(1.rp, Pc.Border).padding(1.rp),
+                Modifier.width(boxW.rp).background(trackerBoxFill(Pc.Ground)).border(1.rp, Pc.Border).padding(1.rp),
             ) {
                 PixText(box.name, PcRef.FONT - 1, Pc.Text)
                 Row(verticalAlignment = Alignment.CenterVertically) {

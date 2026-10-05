@@ -24,14 +24,14 @@ class TrackerScrollTest {
         assertTrue("Modifier.width(panes.width(windowW).dp).fillMaxHeight()" in docked)
         assertTrue("TrackerScroll(Modifier.fillMaxSize()) { content() }" in docked)
         assertTrue("TrackerScroll(modifier.size(w, h))" in read("DsDock.kt"))
-        assertTrue("TrackerScroll(Modifier.fillMaxSize(), background = null)" in read("FloatingTracker.kt"))
+        assertTrue("TrackerScroll(Modifier.fillMaxSize(), background = null" in read("FloatingTracker.kt"))
     }
 
     @Test
     fun `the arrow shows only while there is more, and only it takes touches`() {
         val src = read("TrackerScroll.kt")
         assertTrue("if (scroll.canScrollForward) MoreBelow(" in src)
-        assertTrue("modifier.size(PcMin.TOUCH_DP.dp)" in src && "contentDescription = \"More below. Scroll down\"" in src)
+        assertTrue("modifier.size(PcMin.TOUCH_DP.dp)" in src && "\"More below. Scroll down\"" in src)
         val box = src.substringAfter("internal fun TrackerScroll(").substringBefore("\n}\n")
         assertFalse("pointerInput" in box, "nothing over the column but the arrow")
     }

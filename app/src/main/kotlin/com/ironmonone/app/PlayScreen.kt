@@ -1815,7 +1815,7 @@ fun PlayScreen(
                 AndroidView(
                     modifier = Modifier.fillMaxSize()
                         .holdSizeWhileLoading(ui, loading = retro == null || ui.coreUp !== retro)
-                        .onGloballyPositioned { gameFrame = it.boundsInWindow() }
+                        .onGloballyPositioned { gameFrame = it.boundsInWindow(); TrackerHud.game = gameFrame }
                         // DS bottom-screen collapse: scale 2x about the top edge
                         // and clip, so the top screen fills the frame. The core
                         // still renders both; this only changes what is shown,

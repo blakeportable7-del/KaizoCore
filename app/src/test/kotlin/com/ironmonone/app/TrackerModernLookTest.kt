@@ -101,7 +101,7 @@ class TrackerModernLookTest {
         assertTrue("val outline: Color get() =" in look && "val divider: Color get() =" in look && "val inset: Color get() =" in look)
         val pc = read("PcTracker.kt")
         val card = pc.substringAfter("fun PcCard(content").substringBefore("\n}\n")
-        assertTrue("TrackerBackground.boxFill(Pc.Ground)" in card && "TrackerLook.outline" in card)
+        assertTrue("trackerBoxFill(Pc.Ground)" in card && "TrackerLook.outline" in card)
         val marks = pc.substringAfter("fun PcMarkColumn(").substringBefore("\n}\n")
         assertTrue("TrackerLook.inset" in marks && "markColor.copy(alpha = 0.22f)" in marks, "a mark chip is washed in its mark's colour")
     }

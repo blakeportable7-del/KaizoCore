@@ -216,7 +216,7 @@ internal fun PcPixelImage(rows: List<String>, color: Color, modifier: Modifier =
 internal fun PcLastAttackLine(text: String, lethal: Boolean, onTap: (() -> Unit)? = null) {
     Row(
         // Through boxFill like every other tracker box, so a picture behind the tracker shows through it (rc32 audit P3 #21).
-        Modifier.fillMaxWidth().background(TrackerBackground.boxFill(Pc.Ground)).border(1.dp, Pc.Border)
+        Modifier.fillMaxWidth().background(trackerBoxFill(Pc.Ground)).border(1.dp, Pc.Border)
             .then(if (onTap != null) Modifier.clickable(onClick = onTap) else Modifier)
             .padding(horizontal = 6.dp, vertical = 5.dp),
         verticalAlignment = Alignment.CenterVertically,

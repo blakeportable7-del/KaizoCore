@@ -2,6 +2,15 @@
 
 Newest first. Each build's GitHub release has the same list, with the APK and its checksum.
 
+## 1.0.0-rc35.1
+
+**New**
+
+- **See-through floating window:** in Tracker Setup, the Window see-through slider fades the floating tracker's background down to 30%, so the game shows through. Words, numbers, pictures and buttons stay solid. Lock the window and a tap on its empty space goes to the game.
+- **Wide view:** stretch the floating tracker wide and it lays out in columns: your Pokémon, its stats and heals, then its moves, with the opponent on the right in battle. Make it taller and it goes back to one stack.
+- **A slimmer window top:** the floating tracker's top is one row now. One line of text (your attempt, the battle, the weather, or the area) scrolls when it doesn't fit, and a swap icon flips between your Pokémon and the foe. Hold it to see which one it shows.
+- **Edit favorites mid-run:** in a Kaizo IronMON run, Tracker Setup has Edit favorites, with your mode's rules. Save a change and the tracker's favorites row shows it right away.
+
 ## 1.0.0-rc35
 
 **New**

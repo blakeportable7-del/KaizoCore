@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -35,6 +36,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
@@ -163,6 +165,15 @@ fun FloatingTracker(
     attempt: Int = 0,
     content: @Composable () -> Unit,
 ) {
+    // Leaving the HUD or the window for the dock leaves the HUD off, so the next Float is a window again.
+    val dock = { TrackerOptions.trackerHud = false; onDock() }
+    if (TrackerHud.ENABLED && TrackerOptions.trackerHud) {
+        // The Tracker HUD rides on this path, so Play lays the game out as for the window: never moved, never smaller.
+        CompositionLocalProvider(LocalHudMenu provides HudMenuItem(TrackerHud.MENU_FLOAT) { TrackerOptions.trackerHud = false; TrackerOptions.save() }) {
+            TrackerHudLayer(menu = { menu(dock) }, attempt = attempt, content = content)
+        }
+        return
+    }
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val areaW = maxWidth.value
         val areaH = maxHeight.value
@@ -173,24 +184,36 @@ fun FloatingTracker(
         // instead of following the finger (2026-09-27, audit).
         val live by rememberUpdatedState(frame.clamped(areaW, areaH))
         val locked = TrackerOptions.floatingLocked
+        // See-through (FloatingSeeThrough): the fills fade, the words take an outline, and locked, the empty space
+        // takes no touch, so a tap there reaches the game.
+        val solid = TrackerOptions.floatingSolid
+        val fade = FloatingSeeThrough.fade(solid)
+        val outline = if (FloatingSeeThrough.seeThrough(solid)) trackerTextOutline(2.5f * density) else null
+        // The panel's first row, handed up to the bar (WindowBar.kt).
+        val barSlot = remember { WindowBarSlot() }
+        val parts = barSlot.parts
+        // A window too narrow for the words beside the buttons puts them on a row of their own (WindowBarFit).
+        val twoRows = WindowBarFit.twoRows(live.w, listOfNotNull(parts?.swap, parts?.onGear).size + 1, grip = !locked)
+        val barDp = if (twoRows) 2 * BAR_DP else BAR_DP
         fun move(f: FloatFrame) = onFrame(f.clamped(areaW, areaH))
         val shown = live
         // The tracker's own height, as last laid out. The window fits it: the height the player sets is the most it
         // may take, and blank space under the cards is not drawn (Blake, 2026-10-02: "Wasted space").
         var contentH by remember { mutableStateOf(0f) }
-        val fitH = if (contentH > 0f) (BAR_DP + contentH).coerceIn(FloatFrame.MIN_H, shown.h) else shown.h
+        val fitH = if (contentH > 0f) (barDp + contentH).coerceIn(FloatFrame.MIN_H, shown.h) else shown.h
         Box(
             Modifier
                 .offset { IntOffset((shown.x * density).roundToInt(), (shown.y * density).roundToInt()) }
                 .size(shown.w.dp, fitH.dp)
-                // The Main background colour and the player's image, once behind the whole window; the panel
-                // inside it paints nothing of its own (TrackerBackdrop.kt).
-                .hostBackdrop()
                 .border(1.dp, Pc.Border),
         ) {
+            // The Main background colour and the player's image, once behind the whole window; the panel inside it
+            // paints nothing of its own (TrackerBackdrop.kt). Its own layer, so see-through fades it alone.
+            Box(Modifier.matchParentSize().graphicsLayer { alpha = fade }.hostBackdrop())
+            CompositionLocalProvider(LocalWindowFade provides fade, LocalTrackerTextShadow provides outline, LocalWindowBar provides barSlot) {
             Column(Modifier.fillMaxSize()) {
                 Row(
-                    Modifier.fillMaxWidth().height(BAR_DP.dp).background(Pc.Ground)
+                    Modifier.fillMaxWidth().height(BAR_DP.dp).background(windowFill(Pc.Ground))
                         .then(if (locked) Modifier else Modifier
                             .pointerInput(areaW, areaH) {
                                 detectDragGestures { change, drag ->
@@ -210,38 +233,54 @@ fun FloatingTracker(
                     LockButton(locked) { TrackerOptions.floatingLocked = !locked; TrackerOptions.save() }
                     // Six dots: the bar is a handle while it can move.
                     if (!locked) GripDots()
+                    // One row (Blake, 2026-10-04, "less bulky"): the panel's first row, the battle banner or the
+                    // area's bar, is drawn here (WindowBar.kt): one text slot, the swap, the gear, then the menu.
                     val attemptTitle = ironmonRunInPlay(attempt)
-                    Text(
-                        if (attemptTitle) "ATTEMPT $attempt" else "TRACKER",
-                        color = if (attemptTitle) Pc.Text else Pc.Dim, fontSize = if (attemptTitle) 13.sp else 11.sp,
-                        fontWeight = FontWeight.Medium, maxLines = 1, softWrap = false,
-                        modifier = Modifier.weight(1f, fill = false).padding(start = 6.dp, end = 2.dp),
-                    )
+                    val segs = WindowBarText.withAttempt(attempt.takeIf { attemptTitle }, parts?.segments ?: emptyList())
+                        .ifEmpty { listOf(BarSegment("TRACKER", Pc.Dim, 0)) }
+                    if (!twoRows) {
+                        WindowBarTextSlot(segs, parts?.onTextTap, parts?.tapLabel, Modifier.weight(1f).padding(start = 6.dp, end = 2.dp))
+                        parts?.extra?.invoke()
+                    } else Spacer(Modifier.weight(1f))
+                    parts?.swap?.let { SwapIconButton(it) }
+                    if (!twoRows) parts?.onGear?.let { TrackerGearButton(onClick = it) }
                     // The attempt, FILE, the screens and DOCK: one menu, beside the title (Blake, 2026-10-02).
-                    PcCanvas(Modifier.width(PcMin.TOUCH_DP.dp)) { menu(onDock) }
+                    CompositionLocalProvider(LocalHudMenu provides HudMenuItem(TrackerHud.MENU_HUD) { TrackerOptions.trackerHud = true; TrackerOptions.save() }.takeIf { TrackerHud.ENABLED }) {
+                        PcCanvas(Modifier.width(PcMin.TOUCH_DP.dp)) { menu(dock) }
+                    }
+                }
+                if (twoRows) Row(Modifier.fillMaxWidth().height(BAR_DP.dp).background(windowFill(Pc.Ground)), verticalAlignment = Alignment.CenterVertically) {
+                    val segs = WindowBarText.withAttempt(attempt.takeIf { ironmonRunInPlay(attempt) }, parts?.segments ?: emptyList())
+                        .ifEmpty { listOf(BarSegment("TRACKER", Pc.Dim, 0)) }
+                    WindowBarTextSlot(segs, parts?.onTextTap, parts?.tapLabel, Modifier.weight(1f).padding(start = 6.dp, end = 2.dp))
+                    parts?.extra?.invoke()
+                    parts?.onGear?.let { TrackerGearButton(onClick = it) }
                 }
                 // The room is the height the player gave the window, not the fitted one: fitted to one card it would
                 // never again have room for two.
-                val room = (shown.h - BAR_DP).coerceAtLeast(0f).dp
+                val room = (shown.h - barDp).coerceAtLeast(0f).dp
+                // Wide enough for columns (TrackerWideView): both cards side by side, so the room is no reason to swap.
+                val wideView = TrackerWideView.applies(shown.w, room.value)
                 Box(
                     Modifier.weight(1f).fillMaxWidth()
-                        .then(if (locked) Modifier else Modifier.background(Pc.Ground.copy(alpha = 0.6f))),
+                        .then(if (locked) Modifier else Modifier.background(windowFill(Pc.Ground.copy(alpha = 0.6f)))),
                 ) {
-                    TrackerScroll(Modifier.fillMaxSize(), background = null) {
+                    TrackerScroll(Modifier.fillMaxSize(), background = null, swipe = FloatingSeeThrough.swipeScrolls(locked, solid)) {
                         Column(Modifier.fillMaxWidth().onSizeChanged { contentH = it.height / density }) {
                             CompositionLocalProvider(
-                                LocalBackdropHosted provides true, LocalTrackerRoom provides room, LocalAttemptInTitle provides true,
-                                LocalTrackerMargin provides FLOAT_MARGIN,
+                                LocalBackdropHosted provides true, LocalTrackerRoom provides room.takeUnless { wideView },
+                                LocalAttemptInTitle provides true, LocalTrackerMargin provides FLOAT_MARGIN, LocalTrackerWideView provides wideView,
                             ) { content() }
                         }
                     }
                 }
             }
+            }
         }
         if (!locked) {
             // The grabs, outside the edge (FloatGrabs): each side and the bottom resize one way, the bottom corners both
             // at once. The corners come last, so they are on top where they meet a side.
-            val g = FloatGrabs.of(shown, fitH, BAR_DP.toFloat(), areaW, areaH)
+            val g = FloatGrabs.of(shown, fitH, barDp.toFloat(), areaW, areaH)
             EdgeHandle(g.right, areaW, areaH) { dx, _ -> move(live.copy(w = live.w + dx)) }
             EdgeHandle(g.left, areaW, areaH) { dx, _ -> move(live.leftEdge(dx, areaW - FloatGrabs.OUT)) }
             EdgeHandle(g.bottom, areaW, areaH) { _, dy -> move(live.copy(h = live.h + dy)) }

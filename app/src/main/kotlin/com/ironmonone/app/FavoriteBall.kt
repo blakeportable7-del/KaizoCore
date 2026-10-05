@@ -6,8 +6,38 @@ import java.io.File
 /**
  * The no-party card's favorites: the list, as the PC tracker shows it, and in the lab each ball holding one to take.
  * The card draws [icons], each favorite's picture (FavoriteIcons).
+ *
+ * Made by [FavoriteBall.shown], it works itself out again after any save of the favorites (Favorites.edits), the first
+ * time it is read after one: so an edit in Tracker Setup during a run (FavoritesEditor) shows on the card and in the ball
+ * line at once. Reading it in a composable is what makes that composable redraw; Play, at the verifier's limit, keeps
+ * its one remember line.
  */
-data class FavoritesShown(val list: String?, val balls: List<String> = emptyList(), val icons: List<FavoriteIcon> = emptyList())
+class FavoritesShown private constructor(first: Parts, private val again: (() -> Parts)?) {
+    constructor(list: String?, balls: List<String> = emptyList(), icons: List<FavoriteIcon> = emptyList()) :
+        this(Parts(list, balls, icons), null)
+
+    internal constructor(again: () -> Parts) : this(again(), again)
+
+    internal data class Parts(val list: String?, val balls: List<String>, val icons: List<FavoriteIcon>)
+
+    private var parts = first
+    // Read without observing: made inside Play's remember, a tracked read here would redraw all of Play on every save.
+    private var madeAt = androidx.compose.runtime.snapshots.Snapshot.withoutReadObservation { Favorites.edits.intValue }
+
+    private fun now(): Parts {
+        val at = Favorites.edits.intValue
+        val make = again
+        if (make != null && at != madeAt) {
+            parts = make()
+            madeAt = at
+        }
+        return parts
+    }
+
+    val list: String? get() = now().list
+    val balls: List<String> get() = now().balls
+    val icons: List<FavoriteIcon> get() = now().icons
+}
 
 /**
  * The favorite in a starter ball (Blake, 2026-10-01: "The note is on the tracker, I believe. As long as it fits in the
@@ -31,13 +61,16 @@ internal object FavoriteBall {
     data class Candidate(val bst: Int, val legendary: Boolean, val strongOrMythical: Boolean, val national: Int?)
 
     /** What the no-party card shows for the game in Play: its favorites, and in a run's lab the balls holding one. */
-    fun shown(store: PrepStore, session: GameSession, tracker: GbaTracker?, filesDir: File): FavoritesShown {
+    fun shown(store: PrepStore, session: GameSession, tracker: GbaTracker?, filesDir: File): FavoritesShown =
+        FavoritesShown { parts(store, session, tracker, filesDir) }
+
+    private fun parts(store: PrepStore, session: GameSession, tracker: GbaTracker?, filesDir: File): FavoritesShown.Parts {
         val favorites = Favorites.slots(store, session.kind?.id, Favorites.slotCount(session.kind)).filter { it.isNotBlank() }
         val balls = runCatching {
             if (tracker == null || favorites.isEmpty() || PlayRules.kind(session, filesDir) != PlayRules.Kind.IRONMON) emptyList()
             else lines(favorites, modeOf(store), session.kind?.isNatDex == true, tracker.starters(), maxDex = session.kind?.isMaxDex == true) { tracker.baseStats(it)?.bst }
         }.getOrDefault(emptyList())
-        return FavoritesShown(Favorites.line(favorites), balls, FavoriteIcons.of(favorites, session.kind))
+        return FavoritesShown.Parts(Favorites.line(favorites), balls, FavoriteIcons.of(favorites, session.kind))
     }
 
     /** The run's mode ("kaizo", "survival"), from its settings file and sidecar; null when neither names one. */

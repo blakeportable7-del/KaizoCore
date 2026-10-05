@@ -206,7 +206,7 @@ fun PcCanvas(
         // 2026-10-02: "Lots of wasted space in our current tracker"). Where the
         // pane holds a head and a moves box side by side at a readable size,
         // the card is drawn that way instead (PcMonCard).
-        val (rpx, wide) = canvasUnit(maxWidth, LocalCanvasMax.current)
+        val (rpx, wide) = if (LocalTrackerWideView.current) TrackerWideView.unit(maxWidth) to true else canvasUnit(maxWidth, LocalCanvasMax.current)
         androidx.compose.runtime.CompositionLocalProvider(LocalRpx provides rpx, LocalTrackerWide provides wide) {
             content()
         }
@@ -488,6 +488,8 @@ fun PixText(
                 alignment = androidx.compose.ui.text.style.LineHeightStyle.Alignment.Center,
                 trim = androidx.compose.ui.text.style.LineHeightStyle.Trim.None,
             ),
+            // A see-through floating window's outline, so the words read over the game (FloatingSeeThrough).
+            shadow = LocalTrackerTextShadow.current,
         ),
         textAlign = align, modifier = modifier, fontWeight = weight,
         maxLines = if (wrap) Int.MAX_VALUE else 1,
@@ -919,7 +921,7 @@ fun PcMovesSection(
     if (!LocalMovesBeside.current) Box(Modifier.fillMaxWidth().height(1.dp).background(Pc.LowerBorder.copy(alpha = 0.28f)))
     Row(
         Modifier.fillMaxWidth()
-            .then(Pc.HeaderGroundX?.let { Modifier.background(TrackerBackground.boxFill(it)) } ?: Modifier.background(TrackerLook.inset))
+            .then(Pc.HeaderGroundX?.let { Modifier.background(trackerBoxFill(it)) } ?: Modifier.background(TrackerLook.inset))
             .padding(vertical = 1.rp, horizontal = 2.rp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -943,7 +945,7 @@ fun PcMovesSection(
     }
     Box(Modifier.fillMaxWidth().height(1.rp).background(Pc.LowerBorder.copy(alpha = 0.28f)))
     Column(
-        (Pc.LowerGroundX?.let { Modifier.fillMaxWidth().background(TrackerBackground.boxFill(it)) } ?: Modifier)
+        (Pc.LowerGroundX?.let { Modifier.fillMaxWidth().background(trackerBoxFill(it)) } ?: Modifier)
             .padding(vertical = 1.rp)
     ) {
         // FOUR rows, always. DataHelper.lua:256 starts from four placeholders
@@ -1530,7 +1532,7 @@ private fun PcCarouselLine(
 ) {
     Row(
         Modifier.fillMaxWidth().clip(androidx.compose.foundation.shape.RoundedCornerShape(TrackerLook.RADIUS.rp))
-            .background(TrackerBackground.boxFill(Pc.LowerGroundX ?: Pc.Ground)).border(1.dp, Pc.LowerBorder.copy(alpha = 0.55f), androidx.compose.foundation.shape.RoundedCornerShape(TrackerLook.RADIUS.rp))
+            .background(trackerBoxFill(Pc.LowerGroundX ?: Pc.Ground)).border(1.dp, Pc.LowerBorder.copy(alpha = 0.55f), androidx.compose.foundation.shape.RoundedCornerShape(TrackerLook.RADIUS.rp))
             .then(if (onTap != null) Modifier.clickable { onTap() } else Modifier)
             .padding(horizontal = 6.dp, vertical = 5.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -1772,7 +1774,7 @@ fun PcBadgeRow(badges: Int, set: String, leagueBeaten: Boolean = false) {
     val artSet = if (set == "HGSS_J") "HGSS" else set
     Row(
         Modifier.fillMaxWidth().clip(androidx.compose.foundation.shape.RoundedCornerShape(TrackerLook.RADIUS.rp))
-            .background(TrackerBackground.boxFill(Pc.Ground)).border(1.dp, TrackerLook.outline, androidx.compose.foundation.shape.RoundedCornerShape(TrackerLook.RADIUS.rp))
+            .background(trackerBoxFill(Pc.Ground)).border(1.dp, TrackerLook.outline, androidx.compose.foundation.shape.RoundedCornerShape(TrackerLook.RADIUS.rp))
             .padding(horizontal = 4.dp, vertical = 3.dp),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically,
@@ -1859,7 +1861,7 @@ fun PcCard(content: @Composable () -> Unit) {
     val shape = androidx.compose.foundation.shape.RoundedCornerShape(TrackerLook.RADIUS.rp)
     Column(
         Modifier.fillMaxWidth().padding(bottom = 3.rp).then(Modifier.clip(shape))
-            .background(TrackerBackground.boxFill(Pc.Ground), shape).border(1.rp, TrackerLook.outline, shape),
+            .background(trackerBoxFill(Pc.Ground), shape).border(1.rp, TrackerLook.outline, shape),
     ) { content() }
 }
 
@@ -2133,10 +2135,17 @@ fun PcBattleBanner(
     /** The swap button's spoken label, naming where its next Pokemon stands; null for the plain one. */
     swapSpoken: String? = null,
 ) {
+    // In the floating window the banner is not a row of its own: the window's bar draws it (WindowBar.kt).
+    if (publishToWindowBar(WindowBarParts(
+        segments = WindowBarText.withAttempt(attempt, WindowBarText.battle(isWild, side?.full, weather)),
+        onTextTap = if (isWild) null else onTrainerTap, tapLabel = PcBannerCopy.TRAINER_SPOKEN,
+        swap = onSwapView?.let { SwapAction(PcBannerCopy.see(viewingOwn), swapSpoken ?: PcBannerCopy.seeSpoken(viewingOwn), it) },
+        onGear = onGear, extra = trailing,
+    ))) return
     val titleColor = if (isWild) Pc.Positive else Pc.Negative
     val weatherShown = weather != null && TrackerWeather.name(weather) != null
     PcBannerBand(
-        fill = TrackerBackground.boxFill(Pc.Ground),
+        fill = trackerBoxFill(Pc.Ground),
         buttons = onSwapView != null || onGear != null || trailing != null,
         label = { PixText(if (isWild) "WILD BATTLE" else "TRAINER BATTLE", PcRef.FONT, titleColor, weight = FontWeight.Medium) },
         // "TRAINER" or "WILD" where the whole words do not fit: in a narrow window the buttons left the label a single

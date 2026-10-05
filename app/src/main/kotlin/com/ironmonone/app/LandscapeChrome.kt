@@ -144,7 +144,11 @@ internal fun TrackerCornerMenu(
                 onClick = { open = false; onScreens() },
             )
             if (onShow != null) DropdownMenuItem(text = { Text("Show the tracker") }, onClick = { open = false; onShow() })
-            if (onFloat != null) DropdownMenuItem(text = { Text("Float the tracker (move and resize it)") }, onClick = { open = false; onFloat() })
+            if (onFloat != null) DropdownMenuItem(text = { Text("Float the tracker (move and resize it)") }, onClick = { open = false; TrackerOptions.trackerHud = false; onFloat() })
+            // The Tracker HUD beside Dock and Float (TrackerHud.kt): from the dock or a hidden tracker it floats, as a HUD.
+            if (TrackerHud.ENABLED && onFloat != null) DropdownMenuItem(text = { Text(TrackerHud.MENU_HUD) }, onClick = { open = false; TrackerOptions.trackerHud = true; onFloat(); TrackerOptions.save() })
+            // From the window, the HUD; from the HUD, the window.
+            LocalHudMenu.current?.let { item -> DropdownMenuItem(text = { Text(item.label) }, onClick = { open = false; item.action() }) }
             if (onDock != null) DropdownMenuItem(text = { Text("Dock the tracker beside the game") }, onClick = { open = false; onDock() })
             if (onHide != null) DropdownMenuItem(text = { Text("Hide the tracker") }, onClick = { open = false; onHide() })
         }
@@ -180,6 +184,8 @@ internal fun ScreenTapMenu(
         !(trackerOpen && (TrackerOptions.landscapeTracker == LandscapeTracker.DOCKED || ui.trackerPeek)))
     val enabled = allowed && off
     androidx.compose.runtime.SideEffect {
+        // The pad as drawn, for the Tracker HUD to keep clear of (TrackerHud.kt).
+        TrackerHud.pad = pad; TrackerHud.padSkin = padSkin; TrackerHud.ds = dsLayout != null
         ui.tapMenuEnabled = enabled
         ui.tapDsLayout = dsLayout
         if (!enabled && ui.tapMenuShown) ui.tapMenuShown = false

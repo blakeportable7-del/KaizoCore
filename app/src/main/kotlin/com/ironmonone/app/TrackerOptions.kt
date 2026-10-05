@@ -22,6 +22,21 @@ object TrackerOptions {
     var landscapeTracker by mutableStateOf(LandscapeTracker.DOCKED)
     /** The floating window pinned where it is, size and place (FloatingTracker's lock, Blake, 2026-10-02). */
     var floatingLocked by mutableStateOf(false)
+    /**
+     * Tracker Setup's "Window see-through": how solid the floating window's fills are, 30 to 100 percent
+     * (FloatingSeeThrough). 100, the default, is the window as it always was; a file from rc35 or before has no line
+     * for it and reads as 100.
+     */
+    var floatingSolid by mutableStateOf(FloatingSeeThrough.SOLID)
+    /**
+     * The Tracker HUD (TrackerHud.kt): with [landscapeTracker] at FLOATING, the tracker's panels round the game instead
+     * of one window. Off by default; a file from rc35 or before has no line for it and reads as off.
+     */
+    var trackerHud by mutableStateOf(false)
+    /** The HUD's panel for your Pokemon; off puts your card back in the other panel. */
+    var hudShowMine by mutableStateOf(true)
+    /** The HUD's panel for the battle, the opponent and the route; off leaves only its title line and menu. */
+    var hudShowRest by mutableStateOf(true)
     var showBallPicker by mutableStateOf(true)
     /** "Show random ball picker" in a Nuzlocke: its own switch, off by default (Blake, 2026-09-30). */
     var nuzlockeBallPicker by mutableStateOf(false)
@@ -287,6 +302,8 @@ object TrackerOptions {
         autoSwapChoice.value = null
         // No line for it (a file from rc34 or before) is the default, on.
         ruleMarks = true
+        floatingSolid = FloatingSeeThrough.SOLID
+        trackerHud = false; hudShowMine = true; hudShowRest = true
         // Through the writer: what the last save handed over is read before the disk (DiskWriter.read).
         val lines = DiskWriter.read(f)?.lineSequence() ?: return
         runCatching {
@@ -362,6 +379,10 @@ object TrackerOptions {
                     "carouselSpeed" -> if (v in listOf("1/2", "1", "2", "3", "4")) carouselSpeed = v
                     "landscapeTracker" -> landscapeTracker = LandscapeTracker.entries.firstOrNull { it.name == v } ?: LandscapeTracker.DOCKED
                     "floatingLocked" -> floatingLocked = v == "true"
+                    "floatingSolid" -> v.toIntOrNull()?.let { floatingSolid = FloatingSeeThrough.clamp(it) }
+                    "trackerHud" -> trackerHud = TrackerHud.ENABLED && v == "true"
+                    "hudShowMine" -> hudShowMine = v == "true"
+                    "hudShowRest" -> hudShowRest = v == "true"
                 }
             }
         }
@@ -377,7 +398,7 @@ object TrackerOptions {
         DiskWriter.write(f, text())
     }
 
-    fun text(): String = "showBallPicker=$showBallPicker\nshowCategoryIcons=$showCategoryIcons\nhealsWhole=$healsWhole\nshowTeamView=$showTeamView\nautoPokemonThemes=$autoPokemonThemes\nrestorePoints=$restorePoints\nshowTimer=$showTimer\ntourneyTracker=$tourneyTracker\nkantoBadgesFirst=$kantoBadgesFirst\nshowBothBadgeSets=$showBothBadgeSets\nlogCustomTrainerNames=$logCustomTrainerNames\nlogShowUnlearnableGymTms=$logShowUnlearnableGymTms\nlogShowPreEvolutions=$logShowPreEvolutions\nlossCondition=${lossCondition.key}\ndsLossCondition=${dsLossCondition.key}\nlandscapeTracker=${landscapeTracker.name}\nfloatingLocked=$floatingLocked\nshowRepel=$showRepel\nanimatedSprites=$animatedSprites\nspritesWalk=$spritesWalk\ndetermineFriendship=$determineFriendship\ndisplayPedometer=$displayPedometer\nshowMoveEffectiveness=$showMoveEffectiveness\nshowCatchRate=$showCatchRate\ncalculateVariableDamage=$calculateVariableDamage\ncountEnemyPp=$countEnemyPp\nshowLastDamage=$showLastDamage\ncalcAtkWildOnly=$calcAtkWildOnly\n${autoSwapChoice.value?.let { "autoSwapToEnemyChoice=$it\n" } ?: ""}showNicknames=$showNicknames\ndisplayGender=$displayGender\nshowExpBar=$showExpBar\nruleMarks=$ruleMarks\ncolorStatNumbers=$colorStatNumbers\nrightJustifiedNumbers=$rightJustifiedNumbers\ntrackPcHeals=$trackPcHeals\npcHealsCountDownward=$pcHealsCountDownward\nhideStatsUntilSummary=$hideStatsUntilSummary\nshowDataForVanillaGame=$showDataForVanillaGame\nopenBookPlayMode=$openBookPlayMode\nrevealInfoIfRandomized=$revealInfoIfRandomized\nallowCarouselRotation=$allowCarouselRotation\ncarouselItems=$carouselItems\ncarouselSpeed=$carouselSpeed\nshowStarterBallInfo=$showStarterBallInfo\ndsPokecenterHeals=$dsPokecenterHeals\ndsExpBar=$dsExpBar\ndsAccEva=$dsAccEva\ndsAutoSwapToEnemy=$dsAutoSwapToEnemy\ndsEnemyLocking=$dsEnemyLocking\ntrackerOnSecondScreen=$trackerOnSecondScreen\nfrlgGuidePictures=$frlgGuidePictures\nshowTypeMatchups=$showTypeMatchups\nnuzlockeBallPicker=$nuzlockeBallPicker\n" +
+    fun text(): String = "showBallPicker=$showBallPicker\nshowCategoryIcons=$showCategoryIcons\nhealsWhole=$healsWhole\nshowTeamView=$showTeamView\nautoPokemonThemes=$autoPokemonThemes\nrestorePoints=$restorePoints\nshowTimer=$showTimer\ntourneyTracker=$tourneyTracker\nkantoBadgesFirst=$kantoBadgesFirst\nshowBothBadgeSets=$showBothBadgeSets\nlogCustomTrainerNames=$logCustomTrainerNames\nlogShowUnlearnableGymTms=$logShowUnlearnableGymTms\nlogShowPreEvolutions=$logShowPreEvolutions\nlossCondition=${lossCondition.key}\ndsLossCondition=${dsLossCondition.key}\nlandscapeTracker=${landscapeTracker.name}\nfloatingLocked=$floatingLocked\nshowRepel=$showRepel\nanimatedSprites=$animatedSprites\nspritesWalk=$spritesWalk\ndetermineFriendship=$determineFriendship\ndisplayPedometer=$displayPedometer\nshowMoveEffectiveness=$showMoveEffectiveness\nshowCatchRate=$showCatchRate\ncalculateVariableDamage=$calculateVariableDamage\ncountEnemyPp=$countEnemyPp\nshowLastDamage=$showLastDamage\ncalcAtkWildOnly=$calcAtkWildOnly\n${autoSwapChoice.value?.let { "autoSwapToEnemyChoice=$it\n" } ?: ""}showNicknames=$showNicknames\ndisplayGender=$displayGender\nshowExpBar=$showExpBar\nruleMarks=$ruleMarks\ncolorStatNumbers=$colorStatNumbers\nrightJustifiedNumbers=$rightJustifiedNumbers\ntrackPcHeals=$trackPcHeals\npcHealsCountDownward=$pcHealsCountDownward\nhideStatsUntilSummary=$hideStatsUntilSummary\nshowDataForVanillaGame=$showDataForVanillaGame\nopenBookPlayMode=$openBookPlayMode\nrevealInfoIfRandomized=$revealInfoIfRandomized\nallowCarouselRotation=$allowCarouselRotation\ncarouselItems=$carouselItems\ncarouselSpeed=$carouselSpeed\nshowStarterBallInfo=$showStarterBallInfo\ndsPokecenterHeals=$dsPokecenterHeals\ndsExpBar=$dsExpBar\ndsAccEva=$dsAccEva\ndsAutoSwapToEnemy=$dsAutoSwapToEnemy\ndsEnemyLocking=$dsEnemyLocking\ntrackerOnSecondScreen=$trackerOnSecondScreen\nfrlgGuidePictures=$frlgGuidePictures\nshowTypeMatchups=$showTypeMatchups\nnuzlockeBallPicker=$nuzlockeBallPicker\nfloatingSolid=$floatingSolid\ntrackerHud=$trackerHud\nhudShowMine=$hudShowMine\nhudShowRest=$hudShowRest\n" +
         lossBySettings.entries.joinToString("") { (name, c) -> "lossConditionFor.$name=${c.key}\n" } +
         dsLossBySettings.entries.joinToString("") { (name, c) -> "dsLossConditionFor.$name=${c.key}\n" }
 }

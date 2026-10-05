@@ -105,6 +105,7 @@ fun TrackerGearDialog(
             }
             // A library game has no run and no Nuzlocke, so no rules of its own to read.
             if (!scope.plain) GearButton("RULES FOR THIS RUN") { onRules() }
+            if (FavoritesInPlay.offered(scope)) EditFavoritesRow()   // the run's favorites, changed mid-run (FavoritesEditor.kt)
             // Coverage calc reads Gen 3 and DS type data; on a Game Boy game it opened nothing (2026-09-30, feature check).
             if (!gameBoy) GearButton("COVERAGE CALC") { onCoverage() }
             // No Game Boy tracker reads these statistics: eight of the ten rows read 0 there (2026-10-01).
@@ -257,10 +258,19 @@ fun TrackerGearDialog(
 
             GearHead("Landscape tracker")
             LandscapeTracker.entries.forEach { m ->
-                GearToggle(m.label, TrackerOptions.landscapeTracker == m, radio = true) {
-                    if (it) { TrackerOptions.landscapeTracker = m; TrackerOptions.save() }
+                GearToggle(m.label, TrackerOptions.landscapeTracker == m && !(m == LandscapeTracker.FLOATING && TrackerOptions.trackerHud), radio = true) {
+                    if (it) { TrackerOptions.landscapeTracker = m; TrackerOptions.trackerHud = false; TrackerOptions.save() }
+                }
+                // The Tracker HUD, after the window it rides on (TrackerHud.kt).
+                if (TrackerHud.ENABLED && m == LandscapeTracker.FLOATING) GearToggle(TRACKER_HUD_LABEL, TrackerOptions.landscapeTracker == m && TrackerOptions.trackerHud, radio = true) {
+                    if (it) { TrackerOptions.landscapeTracker = m; TrackerOptions.trackerHud = true; TrackerOptions.save() }
                 }
             }
+            if (TrackerHud.ENABLED && TrackerOptions.trackerHud && TrackerOptions.landscapeTracker == LandscapeTracker.FLOATING) {
+                GearToggle("HUD: show your Pok\u00e9mon's panel", TrackerOptions.hudShowMine) { TrackerOptions.hudShowMine = it; TrackerOptions.save() }
+                GearToggle("HUD: show the battle and route panel", TrackerOptions.hudShowRest) { TrackerOptions.hudShowRest = it; TrackerOptions.save() }
+            }
+            WindowSeeThroughSlider()
 
             GearHead("Notebook")
             onNotebook?.let { GearButton("OPEN NOTEBOOK") { it() }; Spacer(Modifier.height(4.dp)) }
@@ -428,4 +438,31 @@ internal fun PcTap(
             .semantics { contentDescription = spoken },
         contentAlignment = Alignment.Center,
     ) { PixText(text, size, color) }
+}
+
+/**
+ * "Window see-through" (FloatingSeeThrough): how solid the floating window's fills are, 30 to 100 percent in steps of
+ * 10. Only the floating window reads it; the line under it says what a locked, see-through window does with a tap.
+ */
+/** The HUD's line among the landscape choices. */
+internal const val TRACKER_HUD_LABEL = "Tracker HUD around the game"
+
+@Composable
+private fun WindowSeeThroughSlider() {
+    val solid = TrackerOptions.floatingSolid
+    DialogText("Window see-through: $solid% solid", GEAR_LABEL_SP, Pc.Text, Modifier.padding(top = 8.dp))
+    androidx.compose.material3.Slider(
+        value = solid.toFloat(),
+        onValueChange = { TrackerOptions.floatingSolid = FloatingSeeThrough.clamp(kotlin.math.round(it).toInt()) },
+        onValueChangeFinished = { TrackerOptions.save() },
+        valueRange = FloatingSeeThrough.MIN.toFloat()..FloatingSeeThrough.SOLID.toFloat(),
+        steps = (FloatingSeeThrough.SOLID - FloatingSeeThrough.MIN) / FloatingSeeThrough.STEP - 1,
+        colors = androidx.compose.material3.SliderDefaults.colors(
+            thumbColor = Pc.Gold, activeTrackColor = Pc.Gold, inactiveTrackColor = Pc.Border,
+            activeTickColor = androidx.compose.ui.graphics.Color.Transparent,
+            inactiveTickColor = androidx.compose.ui.graphics.Color.Transparent,
+        ),
+        modifier = Modifier.fillMaxWidth().semantics { contentDescription = "Window see-through, percent solid" },
+    )
+    DialogText(FloatingSeeThrough.NOTE, 12, Pc.Dim)
 }

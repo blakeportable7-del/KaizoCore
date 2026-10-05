@@ -84,7 +84,7 @@ internal fun PcPedometerLine(totalSteps: Int) {
     val reached = Pedometer.goalSteps != 0 && steps >= Pedometer.goalSteps
     // Through boxFill like every other tracker box, so a picture behind the tracker shows through it (rc32 audit P3 #21).
     Row(
-        Modifier.fillMaxWidth().background(TrackerBackground.boxFill(Pc.Ground)).border(1.dp, Pc.Border)
+        Modifier.fillMaxWidth().background(trackerBoxFill(Pc.Ground)).border(1.dp, Pc.Border)
             .padding(horizontal = 6.dp, vertical = 3.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

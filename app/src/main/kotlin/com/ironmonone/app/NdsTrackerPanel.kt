@@ -754,6 +754,13 @@ fun NdsTrackerPanel(
           val bannerShows = state != null && state.inBattle &&
               !(state.runOver != null && state.runOver != com.ironmonone.tracker.nds.NdsRunOver.WON && ironmonOver)
           onGear?.takeIf { !bannerShows }?.let { g ->
+              // In the floating window this row is the window's bar (WindowBar.kt): the area, the repel and the gear.
+              val repelShown = TrackerOptions.showRepel && state != null && !state.inBattle && state.repelSteps > 0
+              if (publishToWindowBar(WindowBarParts(
+                  segments = WindowBarText.withAttempt(attemptShown, WindowBarText.overworld(state?.areaName)), onTextTap = null, tapLabel = null,
+                  swap = null, onGear = g,
+                  extra = if (repelShown) { { PcRepelBar(state!!.repelSteps, state.repelDuration, dsIcons = true) } } else null,
+              ))) return@let
               Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
                   attemptShown?.let {
                       PixText("ATTEMPT $it", PcRef.FONT - 1, Pc.Text, weight = androidx.compose.ui.text.font.FontWeight.Medium)
@@ -828,6 +835,8 @@ fun NdsTrackerPanel(
                     DsLockedBanner(viewingOwn = !showEnemy, onSwap)
                     Spacer(Modifier.height(4.dp))
                 }
+                // The wide view (TrackerWideView): your card on the left, the rest beside it; in the stack, one after the other.
+                WideCards(left = {
                 if (stackBoth || !showEnemy) shownPlayer?.let { p ->
                     NdsPartyCard(onMoveHistory = onMoveHistory, onTypeDefenses = onTypeDefenses, p,
                         heals = ndsHealsView(state, p, TrackerOptions.healsWhole, TrackerOptions.dsPokecenterHeals,
@@ -849,6 +858,7 @@ fun NdsTrackerPanel(
                         abilityBan = RuleMarks.abilityLine(ruleRun.takeIf { TrackerOptions.ruleMarks }, p.abilityName, p.info?.bst,
                             ruleRun?.canEvolve(p.speciesName, MoveRule.ndsCanEvolve(p.mon)) == true))
                 }
+                }, right = {
                 if (showEnemy) shownEnemy?.let {
                     // readTrackedEncountersIntoLabel: only in a wild battle, and only where the
                     // area has vanilla data.
@@ -876,6 +886,7 @@ fun NdsTrackerPanel(
                     encounters = enemyEncounters,
                     leagueBeaten = state.leagueBeaten,
                 )
+                })
             }
         }
     }

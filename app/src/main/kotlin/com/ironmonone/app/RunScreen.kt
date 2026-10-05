@@ -439,87 +439,13 @@ fun RunScreen(
         // parts now sit folded below, each saying what is inside.
         Spacer(Modifier.height(10.dp))
         var showFavorites by remember { mutableStateOf(false) }
-        val favFilled = Favorites.slots(store, selectedRom?.first?.id, Favorites.slotCount(selectedRom?.first)).count { it.isNotBlank() }
+        val favFilled = Favorites.edits.intValue.let { Favorites.slots(store, selectedRom?.first?.id, Favorites.slotCount(selectedRom?.first)).count { s -> s.isNotBlank() } }
         RunDisclosure("Startup favorites (optional)",
             if (favFilled == 0) RunCopy.FAVORITES_LINE else "$favFilled set.",
             showFavorites) { showFavorites = !showFavorites }
         if (showFavorites) {
-            // The PC tracker's startup favorites: three Pokémon it shows on the
-            // new-game screen. Typed by name here; the tracker's no-party card
-            // repeats them before a party exists, as the PC trackers' startup and title screens do.
-            Text("Startup favorites", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-            // As many boxes as the game's PC tracker keeps, and only that game's dex in the list.
-            val favCount = Favorites.slotCount(selectedRom?.first)
-            val favMax = Favorites.maxDex(selectedRom?.first)
-            // The game's own names: MaxDex's on MaxDex 1.0, whose Z-A Megas have ids of their own (Favorites.idOf with a game).
-            val favKind = selectedRom?.first
-            val favRomId = selectedRom?.first?.id
-            var favSlots by remember(favCount, favRomId) { mutableStateOf(Favorites.slots(store, favRomId, favCount)) }
-            // Which box is being typed in: its suggestions show under the row.
-            var favActive by remember { mutableStateOf(-1) }
-            // One full-width box per slot, stacked. Four or five boxes in one
-            // row left about 27dp of text each on a DS game (2026-09-27, audit).
-            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                favSlots.forEachIndexed { i, v ->
-                    // Known FOR THIS GAME: a name past its dex (a Gen 5 species on a standard Emerald) is as wrong as a typo.
-                    val known = v.isBlank() || Favorites.inGame(v, favMax, favKind)
-                    androidx.compose.material3.OutlinedTextField(
-                        value = v,
-                        onValueChange = { t ->
-                            favSlots = favSlots.toMutableList().also { it[i] = t }
-                            favActive = i
-                            Favorites.save(store, favRomId, favSlots)
-                        },
-                        modifier = Modifier.fillMaxWidth().onFocusChanged { if (it.isFocused) favActive = i },
-                        singleLine = true,
-                        isError = !known,
-                        placeholder = { Text("Favorite ${i + 1}") },
-                        textStyle = MaterialTheme.typography.bodyMedium,
-                    )
-                }
-            }
-            // The names that start with what is typed in the active box, narrowing
-            // with every letter; a tap fills the box. Dex order, eight at most.
-            val favHints = if (favActive in favSlots.indices) Favorites.suggest(favSlots[favActive], maxId = favMax, kind = favKind) else emptyList()
-            if (favHints.isNotEmpty()) {
-                Row(
-                    Modifier.fillMaxWidth().padding(top = 6.dp).horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    favHints.forEach { name ->
-                        // As the name is written: upper-casing it and passing it
-                        // through Shell.label mangled "Mr. Mime" and "Ho-Oh".
-                        com.ironmonone.app.gen3.Gen3Button(name, raw = true) {
-                            favSlots = favSlots.toMutableList().also { it[favActive] = name }
-                            Favorites.save(store, favRomId, favSlots)
-                            favActive = -1
-                        }
-                    }
-                }
-            }
-            val favDs = selectedRom?.first?.platform == com.ironmonone.core.Platform.NDS
-            // The mode picked: its rules for favorites below, and whether the tracker names a favorite's ball (FavoriteBall).
-            val favMode = RulesetCatalog.modeOf(modes, selectedSettings)?.key
-            val favBall = selectedRom?.first?.platform == com.ironmonone.core.Platform.GBA && favMode != null && favMode != FavoriteBall.JOURNEY
-            Text(
-                // The NDS tracker's title screen shows four: a Gen 5 game's five take turns, a Gen 4 game's four stand still.
-                if (favSlots.all { it.isBlank() || Favorites.inGame(it, favMax, favKind) }) (when {
-                    favDs && favCount > 4 -> "The DS tracker keeps $favCount and shows four at a time on its title screen, in turn."
-                    favDs -> "The DS tracker keeps four and shows them on its title screen."
-                    favCount > 3 -> "A Nat. Dex game allows $favCount. The tracker shows them all before your first Pokémon."
-                    else -> "Shown on the tracker before your first Pokémon, as the PC tracker's startup screen shows them."
-                } + if (favBall) " " + RunCopy.FAVORITE_BALL else "")
-                else "A name in red is not a Pokémon this game has.",
-                style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper,
-            )
-            // The run's own rules for favorites, from the book for this game and mode (Blake, 2026-10-01: "base it on
-            // whatever game is doing a run because different kaizo's have different rules"). MaxDex's is its own book,
-            // with the Nat. Dex 1.1.3 lines; it was reading the Nat. Dex 1.2.1 book.
-            val favBook = remember(selectedRom?.first?.id, favMode) {
-                val k = selectedRom?.first
-                if (k == null || favMode == null) null else Rules.text(context, Rules.dirFor(k.family, k.isNatDex, k), favMode)
-            }
-            FavoriteRulesBlock(favBook, favMode, favSlots)
+            // The editor itself is shared with Tracker Setup's EDIT FAVORITES during a run (FavoritesEditor.kt).
+            FavoritesEditor(store, selectedRom?.first, RulesetCatalog.modeOf(modes, selectedSettings)?.key)
             Spacer(Modifier.height(12.dp))
 
 

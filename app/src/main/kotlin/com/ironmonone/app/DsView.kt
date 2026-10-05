@@ -266,7 +266,7 @@ internal fun DsLockedBanner(viewingOwn: Boolean, onSwap: () -> Unit) {
     // The same strip and touch band as the battle banner (PcBannerBand, 2026-09-30, UX audit P0-14): SEE FOE and
     // SEE MINE have a 44dp touch box round the drawn button. This strip stays solid, as it always was.
     PcBannerBand(
-        fill = Pc.Ground, buttons = true,
+        fill = windowFill(Pc.Ground), buttons = true,
         label = { PixText("ENEMY LOCKED", PcRef.FONT, Pc.Text) },
     ) {
         PcButton(PcBannerCopy.see(viewingOwn), spoken = PcBannerCopy.seeSpoken(viewingOwn), onClick = onSwap)

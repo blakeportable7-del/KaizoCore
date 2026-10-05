@@ -138,7 +138,7 @@ class TrackerTouchTest {
             "}.first().measure(androidx.compose.ui.unit.Constraints(maxWidth = w))" in band &&
             "val room = (w - controlsP.width).coerceAtLeast(0)" in band, "the label gives way, the buttons never do")
         // DS keeps its solid strip: only the battle banner lets the tracker's image show through.
-        assertTrue("fill = Pc.Ground, buttons = true" in read("DsView.kt"))
+        assertTrue("fill = windowFill(Pc.Ground), buttons = true" in read("DsView.kt"))
     }
 
     // ---------------------------------------------------------------- dialog text

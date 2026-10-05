@@ -384,7 +384,7 @@ class TrackerBackgroundTest {
     @Test
     fun `see-through reaches the tracker's boxes and not its dialogs`() {
         val pc = src("PcTracker.kt")
-        assertEquals(6, Regex(Regex.escape("TrackerBackground.boxFill(")).findAll(pc).count(),
+        assertEquals(6, Regex(Regex.escape("trackerBoxFill(")).findAll(pc).count(),
             "card, battle banner, carousel line, badge row, move header, move list")
         val dialog = pc.substringAfter("fun PcInfoDialog(").substringBefore("\n}\n")
         assertTrue(dialog.length < 4000, "the dialog body was cut out, not the rest of the file")
@@ -403,13 +403,13 @@ class TrackerBackgroundTest {
     @Test
     fun `the carousel's own lines and the Team View let the picture through too`() {
         val summary = src("BattleSummary.kt").substringAfter("fun PcBattleSummaryLine(").substringBefore("\n}\n")
-        assertTrue("background(TrackerBackground.boxFill(Pc.LowerGroundX ?: Pc.Ground))" in summary)
+        assertTrue("background(trackerBoxFill(Pc.LowerGroundX ?: Pc.Ground))" in summary)
         val steps = src("Pedometer.kt").substringAfter("fun PcPedometerLine(").substringBefore("\n}\n")
-        assertTrue("background(TrackerBackground.boxFill(Pc.Ground))" in steps)
+        assertTrue("background(trackerBoxFill(Pc.Ground))" in steps)
         val team = src("TeamView.kt")
-        assertTrue("Modifier.width(boxW.rp).background(TrackerBackground.boxFill(Pc.Ground))" in team)
+        assertTrue("Modifier.width(boxW.rp).background(trackerBoxFill(Pc.Ground))" in team)
         val attack = src("MoveDecor.kt").substringAfter("fun PcLastAttackLine(").substringBefore("\n}\n")
-        assertTrue("background(TrackerBackground.boxFill(Pc.Ground))" in attack)
+        assertTrue("background(trackerBoxFill(Pc.Ground))" in attack)
         for ((name, body) in listOf("summary" to summary, "steps" to steps, "attack" to attack)) {
             assertFalse(Regex("\\.background\\(Pc\\.(Ground|LowerGroundX)").containsMatchIn(body), "$name draws no solid fill")
         }

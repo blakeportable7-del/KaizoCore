@@ -46,7 +46,7 @@ private val SPARKLES = listOf(
 internal fun PcBattleSummaryLine(text: String, onTap: (() -> Unit)?) {
     // Through boxFill like every other tracker box, so a picture behind the tracker shows through it (rc32 audit P3 #21).
     Row(
-        Modifier.fillMaxWidth().background(TrackerBackground.boxFill(Pc.LowerGroundX ?: Pc.Ground)).border(1.dp, Pc.LowerBorder)
+        Modifier.fillMaxWidth().background(trackerBoxFill(Pc.LowerGroundX ?: Pc.Ground)).border(1.dp, Pc.LowerBorder)
             .then(if (onTap != null) Modifier.clickable { onTap() } else Modifier)
             .padding(horizontal = 6.dp, vertical = 5.dp),
         verticalAlignment = Alignment.CenterVertically,

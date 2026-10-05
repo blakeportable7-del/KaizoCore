@@ -52,8 +52,8 @@ class LandscapeChromeTest {
         assertTrue("if (!locked) {\n            // The grabs" in src, "no resizing while locked")
         assertTrue("TrackerOptions.floatingLocked = !locked; TrackerOptions.save()" in src)
         assertTrue("floatingLocked=\$floatingLocked" in read("TrackerOptions.kt"), "the lock is saved")
-        assertTrue("(BAR_DP + contentH).coerceIn(FloatFrame.MIN_H, shown.h)" in src, "the height set is the most it takes")
-        assertTrue("val room = (shown.h - BAR_DP)" in src, "room is the height given, not the fitted one")
+        assertTrue("(barDp + contentH).coerceIn(FloatFrame.MIN_H, shown.h)" in src, "the height set is the most it takes")
+        assertTrue("val room = (shown.h - barDp)" in src, "room is the height given, not the fitted one")
     }
 
     @Test
@@ -66,7 +66,7 @@ class LandscapeChromeTest {
         val play = read("PlayScreen.kt")
         assertFalse("OverlayChip(if (menuOpen) \"HIDE\" else \"FILE\")" in play, "the row of chips is gone")
         assertTrue("headerTrailing = corner" in play)
-        assertTrue("PcCanvas(Modifier.width(PcMin.TOUCH_DP.dp)) { menu(onDock) }" in read("FloatingTracker.kt"), "the window's menu is in its title bar")
+        assertTrue("PcCanvas(Modifier.width(PcMin.TOUCH_DP.dp)) { menu(dock) }" in read("FloatingTracker.kt"), "the window's menu is in its title bar")
     }
 
     @Test

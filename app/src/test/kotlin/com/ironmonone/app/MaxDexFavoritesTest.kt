@@ -80,11 +80,11 @@ class MaxDexFavoritesTest {
         assertEquals(Favorites.suggest("gren"), Favorites.suggest("gren", kind = natDex))
         assertTrue(Favorites.inGame("Greninja-B", Favorites.maxDex(natDex), natDex))
         assertEquals(Favorites.idOf("Dragonite-M"), Favorites.idOf("Dragonite-M", natDex))
-        // The screen asks with the game picked.
-        val run = File("src/main/kotlin/com/ironmonone/app/RunScreen.kt").readText().replace("\r\n", "\n")
-        assertTrue("val favKind = selectedRom?.first" in run)
-        assertTrue("Favorites.suggest(favSlots[favActive], maxId = favMax, kind = favKind)" in run)
-        assertEquals(2, Regex("""Favorites\.inGame\((v|it), favMax, favKind\)""").findAll(run).count(), "both red-name checks")
+        // The screen asks with the game picked: the Run screen hands its game to the shared editor (FavoritesEditor.kt).
+        assertTrue("FavoritesEditor(store, selectedRom?.first, " in File("src/main/kotlin/com/ironmonone/app/RunScreen.kt").readText())
+        val run = File("src/main/kotlin/com/ironmonone/app/FavoritesEditor.kt").readText().replace("\r\n", "\n")
+        assertTrue("Favorites.suggest(favSlots[favActive], maxId = favMax, kind = kind)" in run)
+        assertEquals(2, Regex("""Favorites\.inGame\((v|it), favMax, kind\)""").findAll(run).count(), "both red-name checks")
         assertFalse(Regex("""Favorites\.inGame\((v|it), favMax\)""").containsMatchIn(run))
     }
 

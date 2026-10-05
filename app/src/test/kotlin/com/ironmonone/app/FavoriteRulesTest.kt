@@ -97,10 +97,12 @@ class FavoriteRulesTest {
 
     @Test
     fun `the screen reads the book of the game and mode picked`() {
+        // The editor is FavoritesEditor.kt since rc35.1, shared with Tracker Setup; the Run screen hands it the mode picked.
         val run = File("src/main/kotlin/com/ironmonone/app/RunScreen.kt").readText().replace("\r\n", "\n")
+        val editor = File("src/main/kotlin/com/ironmonone/app/FavoritesEditor.kt").readText().replace("\r\n", "\n")
         // With the game itself, so MaxDex reads its own book (FRLG-MaxDex, the Nat. Dex 1.1.3 lines), not Nat. Dex 1.2.1's.
-        assertTrue("Rules.text(context, Rules.dirFor(k.family, k.isNatDex, k), favMode)" in run)
-        assertTrue("FavoriteRulesBlock(favBook, favMode, favSlots)" in run)
-        assertTrue("val favMode = RulesetCatalog.modeOf(modes, selectedSettings)?.key" in run)
+        assertTrue("Rules.text(context, Rules.dirFor(kind.family, kind.isNatDex, kind), mode)" in editor)
+        assertTrue("FavoriteRulesBlock(favBook, mode, favSlots)" in editor)
+        assertTrue("FavoritesEditor(store, selectedRom?.first, RulesetCatalog.modeOf(modes, selectedSettings)?.key)" in run)
     }
 }

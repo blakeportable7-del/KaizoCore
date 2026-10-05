@@ -688,4 +688,58 @@ class TrackerLookTest {
         compose.onNodeWithText("MINE ON THE RIGHT").assertIsDisplayed()
         dsView.clear()
     }
+
+    /**
+     * The floating window's wide view (TrackerWideView): your card wide on the left, the opponent's stacked beside it.
+     * It draws the same cards, so a Tracker Setup switch turned off is gone here too: the catch rate is the proof.
+     */
+    @Test
+    fun wide_view_honours_the_switches() {
+        val battle = TrackerState(
+            partyCount = 1,
+            party = listOf(tracked("Golisopod", 793, 6)),
+            inBattle = true, isWildBattle = true, catchPercent = 33,
+            enemy = com.ironmonone.tracker.EnemyInfo(
+                species = 245, speciesName = "Suicune", level = 42,
+                curHp = 118, maxHp = 155, type1 = 11, type2 = 11,
+                base = BaseStats(100, 75, 115, 85, 90, 115, 11, 11, 1, 2),
+                movesSeen = listOf("Surf"),
+                moveRows = listOf(MoveRow(57, "Surf", 15, null, 95, 100, 11, "SPE")),
+                abilityGuess = "Pressure / Inner Focus",
+            ),
+            healPercent = 44, healCount = 7, routeName = "Route 24",
+        )
+        val catchOn = mutableStateOf(true)
+        compose.mainClock.autoAdvance = false
+        compose.setContent {
+            TrackerOptions.showCatchRate = catchOn.value
+            Box(Modifier.background(Color.Black)) {
+                Box(Modifier.fillMaxHeight()) {
+                    val ctx = androidx.compose.ui.platform.LocalContext.current
+                    // A phone held upright is 411 dp wide; at this density the 760 dp window fits on its screen.
+                    androidx.compose.runtime.CompositionLocalProvider(LocalTrackerWideView provides true,
+                        androidx.compose.ui.platform.LocalDensity provides androidx.compose.ui.unit.Density(1.3f, 1f)) {
+                        Box(Modifier.width(760.dp)) {
+                            TrackerPanel(state = battle, attempt = 2, routeName = "Route 24",
+                                spriteFor = { sp -> PcAssets.gbaSprite(ctx, sp) }, stackBoth = true)
+                        }
+                    }
+                }
+            }
+        }
+        compose.mainClock.advanceTimeBy(1_000)
+        compose.onNodeWithText("Golisopod", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("Suicune", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("to catch", substring = true).assertIsDisplayed()
+        val bmp = compose.onRoot().captureToImage().asAndroidBitmap()
+        File(InstrumentationRegistry.getInstrumentation().targetContext.filesDir, "look-wide.png").outputStream().use {
+            bmp.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it)
+        }
+        catchOn.value = false
+        compose.mainClock.advanceTimeBy(500)
+        check(compose.onAllNodes(androidx.compose.ui.test.hasText("to catch", substring = true)).fetchSemanticsNodes().isEmpty()) {
+            "the catch rate is switched off but the wide view still shows it"
+        }
+        TrackerOptions.showCatchRate = true
+    }
 }

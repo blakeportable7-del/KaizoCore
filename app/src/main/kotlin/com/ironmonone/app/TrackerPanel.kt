@@ -702,6 +702,13 @@ fun TrackerPanel(
           val bannerShows = state != null && unsupportedNote == null && !state.unreadable && state.partyCount != 0 &&
               !(ironmonOver && state.gameOver != null) && state.inBattle
           onGear?.takeIf { !bannerShows }?.let { g ->
+              // In the floating window this row is the window's bar (WindowBar.kt): the area, the repel and the gear.
+              val repelShown = TrackerOptions.showRepel && state != null && state.repelVisible
+              if (publishToWindowBar(WindowBarParts(
+                  segments = WindowBarText.withAttempt(attemptShown, WindowBarText.overworld(routeName)), onTextTap = null, tapLabel = null,
+                  swap = null, onGear = g,
+                  extra = if (repelShown) { { PcRepelBar(state!!.repelSteps, state.repelDuration) } } else null,
+              ))) return@let
               Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                   attemptShown?.let {
                       PixText("ATTEMPT $it", PcRef.FONT - 1, Pc.Text, weight = androidx.compose.ui.text.font.FontWeight.Medium)
@@ -871,6 +878,8 @@ fun TrackerPanel(
                 // "Show card pack opening before Pokemon stats": a new GachaMon's pack in your Pokemon's place until it is opened.
                 val packFirst = generation >= 3 && GachaMonShown.packOnTracker(GachaMonOptions.showPack, GachaMon.newest != null, state.inBattle)
                 if (packFirst) GachaMonPendingPack { gacha.pack = GachaMon.newest }
+                // The wide view (TrackerWideView): your card on the left, the rest beside it; in the stack, one after the other.
+                WideCards(left = {
                 listOfNotNull(view.own(state)).take(if (packFirst || (enemy != null && !stackBoth)) 0 else 1).forEach { p ->
                     PartyCard(onMoveHistory = onMoveHistory, onTypeDefenses = onTypeDefenses, p, spriteFor,
                         healPercent = ownHeals.percent,
@@ -905,6 +914,7 @@ fun TrackerPanel(
                         abilityBan = RuleMarks.abilityLine(ruleRun.takeIf { TrackerOptions.ruleMarks }, p.abilityName, p.base?.bst,
                             ruleRun?.canEvolve(p.speciesName, p.evo != null) == true))
                 }
+                }, right = {
                 if (enemy != null) {
                     EnemyCard(onMoveHistory = onMoveHistory, onTypeDefenses = onTypeDefenses, enemy, revealedEnemyAbility, revealedEnemyAbility2, spriteFor,
                         enemyMarks, onCycleMark, movesSeenRunWide, moveRowFor,
@@ -986,6 +996,7 @@ fun TrackerPanel(
                     // GachaMon is the Gen 3 tracker's: "GachaMon captured!" opens the new card's pack.
                     onGachaTap = if (generation >= 3) ({ gacha.pack = GachaMon.newest }) else null,
                 )
+                })
             }
         }
 
