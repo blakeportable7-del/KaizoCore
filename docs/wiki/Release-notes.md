@@ -7,6 +7,7 @@ Newest first. Each build's GitHub release has the same list, with the APK and it
 **Fixed**
 
 - **Floating window:** locked and see-through, swipe to scroll it; a tap on its empty space still goes to the game. The up and down arrows are gone, and the top is one slim row at any width (in a narrow window the gear is in the menu).
+- **Randomizer log:** on a Game Boy Advance game it opens on your lead Pokémon's page, as the PC tracker does. Back shows the full list.
 
 ## 1.0.0-rc35.1
 

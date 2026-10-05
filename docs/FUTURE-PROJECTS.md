@@ -65,6 +65,7 @@ packages are merged, so its branches begin from the rc34 that ships)
   ready only when a read lands on the intro's party summary or the opponent's send-out (the reference's DataStart,
   checked every 10 frames), so the route line waited up to 1.4 s after a map change and the battle's lines usually
   waited for the action menu. TrackerState.settling makes the loop read again after 100 ms (TrackerPoll).
+- **Seen (Trainer) goes up by one on each app restart** (found in rc35.2 QA, 2026-10-04; not fixed). In attempt 791, paused in Lorelei's battle, the floating tracker's "Seen (Trainer)" line for Leafeon read 17, then 18, then 19 after three app starts with no new battle. Likely the resumed battle is counted again on load; check where the seen count is bumped and whether it is saved per battle.
 - **Nat. Dex 1.2.2** (Blake, 2026-10-04: CyanSixFour showed a v1.2.2 preview with an "accelerator" and contextual random battle music). When it is public: get the patch and the matching NatDexExtension, check the header slots the tracker reads, the randomizer settings, the bundled patch list and Set up a game, and whether the accelerator clashes with KaizoCore's own speed control or the tracker's timing.
 - **Random MAC address stays hidden** (rc34.1, 2026-10-04). Until rc34.1 the DS settings row did nothing: the core's
   own firmware had no Wi-Fi block, so every game read the address as FF:FF:FF:FF:FF:FF whatever the row said. Core

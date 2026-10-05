@@ -106,6 +106,15 @@ fun LogViewer(
     val moveTypes = loaded?.moveTypes ?: emptyMap()
     val names = loaded?.names ?: LogNames.PLAIN
     val logRoutes = loaded?.routes ?: emptyList()
+    // Program.openLogFromPath (LogOverlay.lua): the log opens on the Pokemon tab with the search and sort reset, then on
+    // the lead's page when the run has one, as DsLogViewer does (Blake, 2026-10-04). Back from it is the grid.
+    var openedOnLead by remember { mutableStateOf(false) }
+    androidx.compose.runtime.LaunchedEffect(log) {
+        if (log != null && !openedOnLead) {
+            openedOnLead = true
+            detail = LogOpen.leadPage(log.pokemon, party?.firstOrNull()?.mon?.species, names::speciesId)
+        }
+    }
     val logSprite: ((RandomizerLog.Pokemon) -> androidx.compose.ui.graphics.ImageBitmap?)? =
         spriteFor?.let { sf -> { p: RandomizerLog.Pokemon -> names.speciesId(p.name)?.let(sf) } }
     // The pictures (LogPictures): Walking Pals standing idle where the PC tracker animates its icons, numbered the tracker's
@@ -417,3 +426,9 @@ private fun PokemonDetail(p: RandomizerLog.Pokemon, log: RandomizerLog, onBack: 
 
 /** Tab rows fit a phone; nothing to do at the widths this ships at. Kept as one place to change. */
 private fun Modifier.horizontalScrollIfNeeded(): Modifier = this
+
+/** Where the Gen 3 log opens (Program.openLogFromPath): the lead's page, or null for the grid. */
+internal object LogOpen {
+    fun leadPage(pokemon: List<RandomizerLog.Pokemon>, lead: Int?, speciesId: (String) -> Int?): RandomizerLog.Pokemon? =
+        lead?.takeIf { it > 0 }?.let { id -> pokemon.firstOrNull { speciesId(it.name) == id } }
+}
