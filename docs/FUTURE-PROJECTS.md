@@ -97,6 +97,35 @@ packages are merged, so its branches begin from the rc34 that ships)
   and rule marks can be built now, switched off.
 - IronmonConnect on Twitch: waits on WaffleSmacker and the extension going public.
 
+**Log viewer parity check** (Blake, 2026-10-04, with PC log screenshots of Nat. Dex FireRed): compare our GBA log page by page with the PC LogOverlay and fix gaps. Likely missing: the trainer info panel (Avg. IVs, AI Script, Usable Items) and the Pokemon info panel's History, Show resistances and Leave a note. 1-2 h to check, plus fixes.
+
+**Streamer features** (Blake, 2026-10-04: "put 1-6 on the future list"; no desktop version, the phone-to-OBS path is the focus)
+1. Game-over card for stream: an OBS source that animates what ended the run, the attempt, badges, time and the GachaMon card (3-4 h).
+2. OBS reacts by itself through obs-websocket: switch scenes on battle start and game over, save the replay buffer at the moment of a loss (4-6 h).
+3. Run timer and splits source: time per badge and gym (3-5 h).
+4. Run history page for viewers: past attempts, how far each got, best run, most common killers, as a link or a source (4-6 h).
+5. Stream Connect: Twitch chat commands like the PC tracker (!pokemon, !moves, !attempts, !gachamon), the player signs in on the phone (15-30 h).
+6. Overlay themes for the tracker source, including the HUD cockpit look (3 h).
+
+**Ideas** (Blake, 2026-10-04: "put it all on the future plan"; Blake ruled out importing PC tracker notes, which are per seed)
+- Race a friend's seed: paste a shared seed (the log's Share Seed) and play the exact same game. Small.
+- Your own run stats in the app: attempts over time, best runs, how far you usually get, what ends your runs.
+- Bigger text option for the tracker, for small phones or eyesight.
+- Tablet layouts that use the extra room.
+- Personal milestones: first Elite Four, 100 attempts, every gym leader beaten. For fun, no tips.
+- Seed of the week: opt-in, everyone plays the same seed and compares how far they got. Ask the IronMON mods first.
+- Battery saver for long sessions: lower frame pacing when idle, screen-dim awareness.
+- Run card to share: after a game over, one tap makes an image (attempt, how far, what ended it, seed, a clean-run line).
+- Save the last 30 seconds: an on-phone replay buffer, one tap saves the death clip to the gallery, no OBS needed.
+- Two-screen handhelds (AYN Thor and similar): DS on both screens like a real DS, or the tracker on the second screen.
+- Auto speed: fast-forward while walking, normal speed the moment a battle starts.
+- Handheld presets: button layouts and controller maps for AYN Odin and Thor, Retroid, Anbernic.
+- Nuzlocke graveyard: every Pokemon lost this run, with where and to what.
+- First-run walkthrough: add your game, pick a mode, start a run.
+- Spanish and other languages.
+- Low-end phone mode: lighter graphics and a lower DS resolution for older phones.
+- Home screen widget: current attempt and game, one tap continues the run.
+
 **Later**
 - PC tracker parity: docs/parity's verify tables still mark about 350 rows missing, some of them PC-only. The visible
   ones: the Game Boy log viewer, View log from Extras, Time Machine points on Game Boy.

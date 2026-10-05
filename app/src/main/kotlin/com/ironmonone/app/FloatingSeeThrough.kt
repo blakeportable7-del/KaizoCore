@@ -35,8 +35,9 @@ object FloatingSeeThrough {
         locked && seeThrough(percent) && !interactive
 
     /**
-     * Whether a swipe on the window scrolls it. A scrolling column takes every touch on it, so while taps pass through
-     * the column scrolls by its arrows instead (TrackerScroll's swipe = false).
+     * Whether the window's column scrolls itself. A scrolling column takes every touch on it, so while taps pass through
+     * the column takes none, and the activity tells a swipe from a tap and scrolls it (TrackerScroll's swipe = false,
+     * WindowSwipe).
      */
     fun swipeScrolls(locked: Boolean, percent: Int): Boolean = !passesThrough(locked, percent, interactive = false)
 

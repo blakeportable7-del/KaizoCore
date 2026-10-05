@@ -123,20 +123,26 @@ class FloatingTrackerTightTest {
         val src = code(read("FloatingTracker.kt"))
         val bar = src.substringAfter("verticalAlignment = Alignment.CenterVertically,\n                ) {").substringBefore("\n                }\n")
         val lock = bar.indexOf("LockButton(locked)")
-        val dots = bar.indexOf("if (!locked) GripDots()")
+        val dots = bar.indexOf("if (top.grip) GripDots()")
         val title = bar.indexOf("WindowBarTextSlot(segs")
-        val swap = bar.indexOf("parts?.swap?.let { SwapIconButton(it) }")
-        val gear = bar.indexOf("parts?.onGear?.let { TrackerGearButton(onClick = it) }")
+        val swap = bar.indexOf("parts?.swap?.let { Box(Modifier.overhang()) { SwapIconButton(it) } }")
+        val gear = bar.indexOf("if (top.gearInRow) parts?.onGear?.let { Box(Modifier.overhang()) { TrackerGearButton(onClick = it) } }")
         val menu = bar.indexOf("PcCanvas(Modifier.width(PcMin.TOUCH_DP.dp)) { menu(dock) }")
         assertTrue(lock in 0 until dots && dots < title && title < swap && swap < gear && gear < menu, "in that order")
         // The text slot takes the room the buttons leave (2026-10-04, one row): its words scroll there when they do not fit.
-        assertTrue("WindowBarTextSlot(segs, parts?.onTextTap, parts?.tapLabel, Modifier.weight(1f)" in bar)
-        // Only the narrow window's second row leaves a gap where the words were (WindowBarFit).
-        assertFalse(Regex("Spacer\\((?!Modifier.weight\\(1f\\)\\))").containsMatchIn(bar.substring(lock, menu)), "and no other gap is put between them")
-        assertTrue("private const val BAR_DP = 44" in src && 44 >= PcMin.TOUCH_DP, "the bar, and the lock's box, are a touch target tall")
-        assertTrue("Modifier.size(BAR_DP.dp).clickable(role = Role.Button)" in src, "the lock's box is the bar's height both ways")
+        assertTrue("Box(Modifier.weight(1f).padding(start = 6.dp, end = 2.dp).overhang()) {\n                        WindowBarTextSlot(segs, parts?.onTextTap, parts?.tapLabel, Modifier.fillMaxWidth())" in bar)
+        assertFalse("Spacer(" in bar.substring(lock, menu), "no gap is put between them")
+        // The row is drawn slim (rc35.2); each button keeps a 44 dp box that reaches past it above and below (overhang).
+        assertTrue("private const val BAR_DP = 44" in src && 44 >= PcMin.TOUCH_DP, "the lock's box is a touch target tall")
+        assertTrue("Modifier.size(BAR_DP.dp).clickable(role = Role.Button)" in src, "the lock's box is 44 dp both ways")
+        for (b in listOf("LockButton(locked)", "SwapIconButton(it)", "TrackerGearButton(onClick = it)", "PcCanvas(Modifier.width(PcMin.TOUCH_DP.dp)) { menu(dock) }")) {
+            assertTrue("Box(Modifier.overhang()) { $b" in bar, "$b keeps its whole box")
+        }
+        val over = src.substringAfter("private fun Modifier.overhang()").substringBefore("\n}\n")
+        assertTrue("maxHeight = Constraints.Infinity" in over && "minOf(p.height, c.maxHeight)" in over && "(h - p.height) / 2" in over,
+            "measured whole, laid out at the row's height, centred on it")
         // The rest of the bar is the handle: the drag and the double tap are on the whole row.
-        assertTrue("Modifier.fillMaxWidth().height(BAR_DP.dp).background(windowFill(Pc.Ground))" in src)
+        assertTrue("Modifier.fillMaxWidth().height(barDp.dp).background(windowFill(Pc.Ground))" in src)
         assertTrue("detectTapGestures(onDoubleTap = { move(FloatFrame.default(areaW, areaH)) })" in src)
     }
 }

@@ -38,7 +38,9 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -143,6 +145,16 @@ private val FLOAT_MARGIN = PaddingValues(FloatGrabs.IN.dp)
 private const val BAR_DP = 44
 
 /**
+ * Lays a button out at its full touch box but takes only the row's height: the box reaches past the slim row above and
+ * below, centred on it, so the row is drawn thin and every target stays [PcMin.TOUCH_DP] tall.
+ */
+private fun Modifier.overhang(): Modifier = layout { measurable, c ->
+    val p = measurable.measure(c.copy(minHeight = 0, maxHeight = Constraints.Infinity))
+    val h = if (c.hasBoundedHeight) minOf(p.height, c.maxHeight) else p.height
+    layout(p.width, h) { p.place(0, (h - p.height) / 2) }
+}
+
+/**
  * 2.2: the tracker as a window over the game in landscape. One draggable Box: the title bar moves it, grabs round its
  * sides, its bottom and its bottom corners resize it, and a double tap on the bar puts it back where the dock would be.
  * The lock at the bar's left pins it, size and place, until it is unlocked (Blake, 2026-10-02: "Undocked, I want to be
@@ -192,9 +204,9 @@ fun FloatingTracker(
         // The panel's first row, handed up to the bar (WindowBar.kt).
         val barSlot = remember { WindowBarSlot() }
         val parts = barSlot.parts
-        // A window too narrow for the words beside the buttons puts them on a row of their own (WindowBarFit).
-        val twoRows = WindowBarFit.twoRows(live.w, listOfNotNull(parts?.swap, parts?.onGear).size + 1, grip = !locked)
-        val barDp = if (twoRows) 2 * BAR_DP else BAR_DP
+        // One row at every width (WindowBarFit.top): narrow, the grip marks go, then the gear moves into the menu.
+        val top = WindowBarFit.top(live.w, swap = parts?.swap != null, gear = parts?.onGear != null, locked = locked)
+        val barDp = WindowBarFit.ROW_DP
         fun move(f: FloatFrame) = onFrame(f.clamped(areaW, areaH))
         val shown = live
         // The tracker's own height, as last laid out. The window fits it: the height the player sets is the most it
@@ -213,7 +225,7 @@ fun FloatingTracker(
             CompositionLocalProvider(LocalWindowFade provides fade, LocalTrackerTextShadow provides outline, LocalWindowBar provides barSlot) {
             Column(Modifier.fillMaxSize()) {
                 Row(
-                    Modifier.fillMaxWidth().height(BAR_DP.dp).background(windowFill(Pc.Ground))
+                    Modifier.fillMaxWidth().height(barDp.dp).background(windowFill(Pc.Ground))
                         .then(if (locked) Modifier else Modifier
                             .pointerInput(areaW, areaH) {
                                 detectDragGestures { change, drag ->
@@ -228,33 +240,33 @@ fun FloatingTracker(
                 ) {
                     // One group at the bar's left: the lock, the grip, the title and the menu side by side, and the
                     // rest of the bar a handle to drag by (Blake, 2026-10-03: "the hamburger menu and lock and attempt
-                    // will be moved closer together"). The title takes what it needs and no more, and gives way first in
-                    // a narrow window.
-                    LockButton(locked) { TrackerOptions.floatingLocked = !locked; TrackerOptions.save() }
+                    // will be moved closer together"). Every button keeps its touch box, which reaches past the slim
+                    // row above and below (overhang).
+                    Box(Modifier.overhang()) { LockButton(locked) { TrackerOptions.floatingLocked = !locked; TrackerOptions.save() } }
                     // Six dots: the bar is a handle while it can move.
-                    if (!locked) GripDots()
+                    if (top.grip) GripDots()
                     // One row (Blake, 2026-10-04, "less bulky"): the panel's first row, the battle banner or the
                     // area's bar, is drawn here (WindowBar.kt): one text slot, the swap, the gear, then the menu.
-                    val attemptTitle = ironmonRunInPlay(attempt)
-                    val segs = WindowBarText.withAttempt(attempt.takeIf { attemptTitle }, parts?.segments ?: emptyList())
-                        .ifEmpty { listOf(BarSegment("TRACKER", Pc.Dim, 0)) }
-                    if (!twoRows) {
-                        WindowBarTextSlot(segs, parts?.onTextTap, parts?.tapLabel, Modifier.weight(1f).padding(start = 6.dp, end = 2.dp))
-                        parts?.extra?.invoke()
-                    } else Spacer(Modifier.weight(1f))
-                    parts?.swap?.let { SwapIconButton(it) }
-                    if (!twoRows) parts?.onGear?.let { TrackerGearButton(onClick = it) }
-                    // The attempt, FILE, the screens and DOCK: one menu, beside the title (Blake, 2026-10-02).
-                    CompositionLocalProvider(LocalHudMenu provides HudMenuItem(TrackerHud.MENU_HUD) { TrackerOptions.trackerHud = true; TrackerOptions.save() }.takeIf { TrackerHud.ENABLED }) {
-                        PcCanvas(Modifier.width(PcMin.TOUCH_DP.dp)) { menu(dock) }
-                    }
-                }
-                if (twoRows) Row(Modifier.fillMaxWidth().height(BAR_DP.dp).background(windowFill(Pc.Ground)), verticalAlignment = Alignment.CenterVertically) {
                     val segs = WindowBarText.withAttempt(attempt.takeIf { ironmonRunInPlay(attempt) }, parts?.segments ?: emptyList())
                         .ifEmpty { listOf(BarSegment("TRACKER", Pc.Dim, 0)) }
-                    WindowBarTextSlot(segs, parts?.onTextTap, parts?.tapLabel, Modifier.weight(1f).padding(start = 6.dp, end = 2.dp))
+                    Box(Modifier.weight(1f).padding(start = 6.dp, end = 2.dp).overhang()) {
+                        WindowBarTextSlot(segs, parts?.onTextTap, parts?.tapLabel, Modifier.fillMaxWidth())
+                    }
                     parts?.extra?.invoke()
-                    parts?.onGear?.let { TrackerGearButton(onClick = it) }
+                    parts?.swap?.let { Box(Modifier.overhang()) { SwapIconButton(it) } }
+                    if (top.gearInRow) parts?.onGear?.let { Box(Modifier.overhang()) { TrackerGearButton(onClick = it) } }
+                    // What the row has no room for is in the menu: Tracker Setup, and the text's tap.
+                    val moved = listOfNotNull(
+                        parts?.onGear?.takeIf { !top.gearInRow }?.let { HudMenuItem("Tracker Setup", it) },
+                        parts?.onTextTap?.takeIf { top.textTapInMenu }?.let { HudMenuItem(parts.tapLabel ?: "Trainer info", it) },
+                    )
+                    // The attempt, FILE, the screens and DOCK: one menu, beside the title (Blake, 2026-10-02).
+                    CompositionLocalProvider(
+                        LocalHudMenu provides HudMenuItem(TrackerHud.MENU_HUD) { TrackerOptions.trackerHud = true; TrackerOptions.save() }.takeIf { TrackerHud.ENABLED },
+                        LocalWindowMenuItems provides moved,
+                    ) {
+                        Box(Modifier.overhang()) { PcCanvas(Modifier.width(PcMin.TOUCH_DP.dp)) { menu(dock) } }
+                    }
                 }
                 // The room is the height the player gave the window, not the fitted one: fitted to one card it would
                 // never again have room for two.

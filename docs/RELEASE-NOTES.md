@@ -2,6 +2,12 @@
 
 Short and plain, one list per release. Newest first.
 
+## rc35.2 (4 October 2026)
+
+**Fixed**
+
+- **Floating window:** locked and see-through, swipe to scroll it; a tap on its empty space still goes to the game. The up and down arrows are gone, and the top is one slim row at any width (in a narrow window the gear is in the menu).
+
 ## rc35.1 (4 October 2026)
 
 **New**

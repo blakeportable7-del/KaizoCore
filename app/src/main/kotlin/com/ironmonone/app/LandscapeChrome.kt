@@ -137,6 +137,8 @@ internal fun TrackerCornerMenu(
                 "ATTEMPT $attempt", color = Pc.Dim, fontSize = 12.sp, fontWeight = FontWeight.Medium,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             )
+            // The floating window's own lines when its row is narrow: Tracker Setup and the text's tap (WindowBarFit).
+            for (item in LocalWindowMenuItems.current) DropdownMenuItem(text = { Text(item.label) }, onClick = { open = false; item.action() })
             // Red, as Blake asked (2026-10-03: "I want the file button to be red"): the colour that reads on the dark menu.
             DropdownMenuItem(text = { Text(if (menuOpen) "Hide the file menu" else "File", color = Shell.dangerOnNight) }, onClick = { open = false; onMenu() })
             if (dsTopOnly != null) DropdownMenuItem(
@@ -154,6 +156,9 @@ internal fun TrackerCornerMenu(
         }
     }
 }
+
+/** Lines the floating window adds to its menu when its one row has no room for them (WindowBarFit.top). */
+val LocalWindowMenuItems = androidx.compose.runtime.compositionLocalOf<List<HudMenuItem>> { emptyList() }
 
 /**
  * The tracker's menu when the tracker is off screen: hidden, or on a second display (Blake, 2026-10-02: "a screen tap

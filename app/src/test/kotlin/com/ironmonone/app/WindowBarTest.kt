@@ -60,7 +60,7 @@ class WindowBarTest {
         }
         // The bar: lock, grip, the drag and double tap while unlocked, the trainer tap, the swap, the gear, the menu.
         val ft = code("FloatingTracker.kt")
-        for (part in listOf("LockButton(locked)", "if (!locked) GripDots()", "detectDragGestures", "detectTapGestures(onDoubleTap",
+        for (part in listOf("LockButton(locked)", "if (top.grip) GripDots()", "detectDragGestures", "detectTapGestures(onDoubleTap",
             "WindowBarTextSlot(segs, parts?.onTextTap, parts?.tapLabel", "SwapIconButton(it)", "TrackerGearButton(onClick = it)", "menu(dock)", "parts?.extra?.invoke()")) {
             assertTrue(part in ft, part)
         }
@@ -91,15 +91,41 @@ class WindowBarTest {
     }
 
     @Test
-    fun `a narrow window gives the words a row of their own, and no button is ever cut off`() {
-        // The rc35 minimum width, a battle: lock, grip, swap, gear, menu.
-        assertTrue(WindowBarFit.twoRows(FloatFrame.MIN_W, buttons = 3, grip = true))
-        assertFalse(WindowBarFit.twoRows(360f, buttons = 3, grip = true), "the usual window: one row")
-        assertFalse(WindowBarFit.twoRows(250f, buttons = 2, grip = false), "locked, out of battle")
-        // Whichever, the first row's buttons fit the narrowest window: the lock, the grip, the swap and the menu.
-        assertTrue(PcMin.TOUCH_DP * 3 + WindowBarFit.GRIP + WindowBarFit.PAD <= FloatFrame.MIN_W)
+    fun `the top is one row at every width, and the gear, menu, lock, swap and text tap all stay reachable`() {
+        // Blake, 2026-10-04: "The tracker still has too much space on top" (rc35.1's second row in a narrow window).
+        var w = FloatFrame.MIN_W
+        while (w <= 1200f) {
+            for (swap in listOf(true, false)) for (gear in listOf(true, false)) for (locked in listOf(true, false)) {
+                val t = WindowBarFit.top(w, swap = swap, gear = gear, locked = locked)
+                val at = "w=$w swap=$swap gear=$gear locked=$locked: $t"
+                // The lock, the menu, the swap in a battle and the gear while it is in the row: every button whole, in one row.
+                val buttons = 2 + (if (swap) 1 else 0) + (if (t.gearInRow) 1 else 0)
+                val used = PcMin.TOUCH_DP * buttons + (if (t.grip) WindowBarFit.GRIP else 0f) + WindowBarFit.PAD + t.text
+                assertTrue(used <= w + 0.01f, "one row holds it all, $at")
+                assertTrue(t.text >= 0f, at)
+                // The gear is in the row or in the menu, never lost; the text's tap is a fair target or in the menu too.
+                if (gear && !t.gearInRow) assertTrue(t.text < WindowBarFit.MIN_TEXT + PcMin.TOUCH_DP, "the gear leaves only when it must, $at")
+                assertTrue(t.text >= WindowBarFit.MIN_TEXT || t.textTapInMenu, at)
+                if (locked) assertFalse(t.grip, "no grip on a locked window, $at")
+            }
+            w += 1f
+        }
+        // The narrowest window in a battle: lock, swap and menu stay, the gear goes in the menu.
+        val narrow = WindowBarFit.top(FloatFrame.MIN_W, swap = true, gear = true, locked = false)
+        assertFalse(narrow.gearInRow); assertFalse(narrow.grip)
+        // The usual window keeps them all in the row.
+        val usual = WindowBarFit.top(360f, swap = true, gear = true, locked = false)
+        assertTrue(usual.gearInRow && usual.grip && !usual.textTapInMenu)
+        // And the window draws it so: one Row, the menu gets what the row has no room for.
         val ft = code("FloatingTracker.kt")
-        assertTrue("if (twoRows) Row(" in ft && "val barDp = if (twoRows) 2 * BAR_DP else BAR_DP" in ft)
-        assertTrue("FloatGrabs.of(shown, fitH, barDp.toFloat()" in ft, "the second row drags the window like the first")
+        assertFalse("twoRows" in ft || "2 * BAR_DP" in ft, "no second row")
+        assertEquals(1, Regex("""\bRow\(""").findAll(ft.substringAfter("val barSlot").substringBefore("val room =")).count(), "one Row on top")
+        assertTrue("val barDp = WindowBarFit.ROW_DP" in ft && WindowBarFit.ROW_DP < PcMin.TOUCH_DP, "the row is drawn slimmer than a touch box")
+        assertTrue("if (top.gearInRow) parts?.onGear?.let" in ft)
+        assertTrue("parts?.onGear?.takeIf { !top.gearInRow }?.let { HudMenuItem(\"Tracker Setup\", it) }" in ft)
+        assertTrue("parts?.onTextTap?.takeIf { top.textTapInMenu }" in ft && "LocalWindowMenuItems provides moved" in ft)
+        assertTrue("parts?.swap?.let { Box(Modifier.overhang()) { SwapIconButton(it) } }" in ft, "the swap is never moved off the row")
+        assertTrue("for (item in LocalWindowMenuItems.current) DropdownMenuItem(" in code("LandscapeChrome.kt"), "the menu draws them")
+        assertTrue("FloatGrabs.of(shown, fitH, barDp.toFloat()" in ft)
     }
 }

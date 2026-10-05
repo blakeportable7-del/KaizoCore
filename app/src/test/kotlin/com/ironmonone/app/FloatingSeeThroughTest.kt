@@ -107,8 +107,9 @@ class FloatingSeeThroughTest {
         // And the window uses that rule, with no touch handler of its own over the content.
         val ft = code(read("FloatingTracker.kt"))
         assertTrue("swipe = FloatingSeeThrough.swipeScrolls(locked, solid)" in ft)
-        val arrow = code(read("TrackerScroll.kt")).substringAfter("private fun ArrowScroll").substringBefore("private fun MoreBelow")
-        assertFalse(Regex("verticalScroll|pointerInput|scrollable|draggable|clickable").containsMatchIn(arrow),
-            "the arrow-only column takes no touch but its arrows'")
+        val column = code(read("TrackerScroll.kt")).substringAfter("private fun SwipeColumn").substringBefore("private fun MoreBelow")
+        assertFalse(Regex("verticalScroll|pointerInput|scrollable|draggable|clickable|MoreBelow").containsMatchIn(column),
+            "the pass-through column takes no touch and draws no arrow")
+        assertTrue("WindowSwipe.target = t" in column, "a swipe moves it, through the activity")
     }
 }

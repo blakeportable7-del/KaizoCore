@@ -307,6 +307,9 @@ class MainActivity : ComponentActivity() {
         return super.dispatchKeyEvent(event)
     }
 
+    /** A locked, see-through floating window: a swipe on it scrolls it, a tap goes on to the game (WindowSwipe). */
+    override fun dispatchTouchEvent(ev: MotionEvent): Boolean = WindowSwipe.dispatch(this, ev) { super.dispatchTouchEvent(it) }
+
     /** Sticks and d-pad hats arrive as motion; fold them into d-pad presses. */
     override fun dispatchGenericMotionEvent(event: MotionEvent): Boolean {
         val joy = (event.source and InputDevice.SOURCE_JOYSTICK) ==
