@@ -10,7 +10,7 @@ import kotlin.test.assertTrue
 
 /**
  * The Heart & Soul tracker profile (HnsMaps, HnsData, HnsMon, HnsLayout) against the real comfort build,
- * hns-kaizo.gba (CRC E35A0E40), read where it lies: IRONMON_HNS, else this checkout's .vendor/hns, else the main
+ * hns-kaizo.gba (CRC C218FD9E), read where it lies: IRONMON_HNS, else this checkout's .vendor/hns, else the main
  * checkout's (a worktree can carry a newer build than the main checkout). Without it
  * every test here returns; under IRONMON_REQUIRE_DUMPS a missing ROM fails instead. The RAM is synthetic: parties,
  * save blocks and battles are written into it with the game's own algorithm and offsets, then read back.
@@ -510,6 +510,16 @@ class HnsTrackerTest {
     }
 
     @Test
+    fun `beating Lance is the League beaten, for Survival's Kanto heals`() {
+        val (mem, t) = game() ?: return
+        assertFalse(t.read().leagueBeaten)
+        val f = HnsLayout.FLAG_END_NUZLOCKE
+        val a = sb1 + HnsLayout.SaveBlock1.flags.offset + f / 8
+        mem.w8(a, mem.read(a, 1)[0].toInt() or (1 shl (f % 8)))
+        assertTrue(t.read().leagueBeaten, "patch 0038 sets FLAG_END_NUZLOCKE when Lance falls, in every mode")
+    }
+
+    @Test
     fun `the Safari Zone is known by its flag and its maps`() {
         val (mem, t) = game() ?: return
         assertFalse(t.isInSafariZone())
@@ -592,5 +602,96 @@ class HnsTrackerTest {
             assertEquals(area, s.encounterArea)
             assertEquals(method, Gen3Nuzlocke.snapshot(s)!!.method)
         }
+    }
+
+    /**
+     * The game's own Kaizo cycle, restated from src/wild_encounter.c KaizoCore_CycleSlot (rc37) over the raw tables: for
+     * one header and kind, its tables in time-of-day order (each pointer once), each table's slots of that kind in order,
+     * each species once. The tracker builds its Kaizo list another way (per-table maps merged), so the two must agree.
+     */
+    private fun romCycle(r: ByteArray, header: Int, kind: String): List<Int> {
+        fun u8(a: Long) = r[(a - 0x08000000L).toInt()].toInt() and 0xFF
+        fun u16(a: Long) = u8(a) or (u8(a + 1) shl 8)
+        fun u32(a: Long) = u16(a).toLong() or (u16(a + 2).toLong() shl 16)
+        val H = HnsLayout.WildPokemonHeader; val T = HnsLayout.WildEncounterTypes
+        val (field, range) = when (kind) {
+            "Walking" -> T.landMonsInfo to (0 until HnsLayout.LAND_WILD_COUNT)
+            "Surfing" -> T.waterMonsInfo to (0 until HnsLayout.WATER_WILD_COUNT)
+            "RockSmash" -> T.rockSmashMonsInfo to (0 until HnsLayout.ROCK_WILD_COUNT)
+            "Old Rod" -> T.fishingMonsInfo to 0..1
+            "Good Rod" -> T.fishingMonsInfo to 2..4
+            else -> T.fishingMonsInfo to 5..9
+        }
+        val h = HnsLayout.gWildMonHeaders + header.toLong() * H.SIZE
+        val tables = ArrayList<Long>()
+        for (t in 0 until HnsLayout.TIMES_OF_DAY_COUNT) {
+            val info = u32(h + H.encounterTypes.offset + t * T.SIZE + field.offset)
+            if (info !in 0x08000000L..0x09FFFFFFL) continue
+            val mons = u32(info + HnsLayout.WildPokemonInfo.wildPokemon.offset)
+            if (mons !in 0x08000000L..0x09FFFFFFL || info in tables) continue
+            tables += info
+        }
+        val out = ArrayList<Int>()
+        for (info in tables) {
+            val mons = u32(info + HnsLayout.WildPokemonInfo.wildPokemon.offset)
+            for (s in range) {
+                val sp = u16(mons + s * HnsLayout.WildPokemon.SIZE + HnsLayout.WildPokemon.species.offset)
+                if (sp != 0 && sp !in out) out += sp
+            }
+        }
+        return out
+    }
+
+    @Test
+    fun `a Kaizo run lists exactly the species the game cycles through, every time of day together`() {
+        val r = (rom ?: return).copyOf()
+        val mem = Mem(r)
+        // The build carries the Nuzlocke preset; HnsEngine.writePreset(KAIZO) writes this byte into every Kaizo run.
+        mem.w8(HnsLayout.gHnsChallengePreset + HnsLayout.HNS_PRESET_MODE, HnsLayout.HNS_PRESET_MODE_KAIZO)
+        val d = HnsData(mem)
+        assertTrue(d.kaizoCycle)
+        // Every area of every header: the tracker's Kaizo list is the ROM's cycle, same species, same order.
+        var areas = 0
+        val mapOf = HashMap<Int, Int>()
+        for (i in 0 until HnsLayout.gWildMonHeaders_COUNT) {
+            val h = mem.read(HnsLayout.gWildMonHeaders + i.toLong() * HnsLayout.WildPokemonHeader.SIZE, 2)
+            if ((h[0].toInt() and 0xFF) == 0xFF) break
+            val id = ((h[0].toInt() and 0xFF) shl 8) or (h[1].toInt() and 0xFF)
+            mapOf.putIfAbsent(id, i)
+        }
+        for ((mapId, header) in mapOf) for (kind in HnsData.WILD_AREAS) {
+            val rom = romCycle(r, header, kind)
+            val listed = d.wild[mapId]?.get(kind)?.map { it.id } ?: emptyList()
+            assertEquals(rom, listed, "map $mapId $kind")
+            if (rom.isNotEmpty()) areas++
+        }
+        assertTrue(areas > 300, "areas checked: $areas")
+        fun names(mapId: Int, kind: String = "Walking") = d.wild.getValue(mapId).getValue(kind).map { d.speciesName(it.id)!!.uppercase() }
+        // Areas with other species by night (MAP_ROUTE29_HNS 0.11, ROUTE30 0.12, ROUTE31 0.13): the cycle order the
+        // emulator showed on Route 29 (17 encounters, night and day, rc37 dev build): the day table's species, then the
+        // night table's new ones.
+        assertEquals(listOf("PIDGEY", "SENTRET", "HOPPIP", "RATTATA", "HOOTHOOT"), names(11))
+        assertEquals(8, names(12).size, "Route 30: four by day, four by night: ${names(12)}")
+        assertEquals(11, names(13).size, "Route 31: ${names(13)}")
+        // Mt. Silver's snowfield has a night table only: still listed in a Kaizo run.
+        val snow = mapOf.keys.first { header -> d.mapName(header)?.uppercase()?.contains("SILVER") == true && romCycle(r, mapOf.getValue(header), "Walking").size == 9 }
+        assertEquals(9, names(snow).size)
+    }
+
+    @Test
+    fun `a Nuzlocke run lists the current time's table, with the game's fallback`() {
+        val r = (rom ?: return).copyOf()
+        val mem = Mem(r)
+        val d = HnsData(mem)
+        assertFalse(d.kaizoCycle, "the build's own preset is the Nuzlocke's")
+        fun walking(time: Int): Set<String> {
+            mem.w8(HnsLayout.gTimeOfDay, time)
+            return d.wild.getValue(11).getValue("Walking").map { d.speciesName(it.id)!!.uppercase() }.toSet()
+        }
+        val day = setOf("PIDGEY", "SENTRET", "HOPPIP", "RATTATA", "HOOTHOOT")
+        assertEquals(setOf("HOOTHOOT", "RATTATA"), walking(3), "Route 29 by night")
+        assertEquals(day, walking(1), "by day")
+        assertEquals(day, walking(0), "morning has no table of its own: the day's (OW_TIME_OF_DAY_FALLBACK)")
+        assertEquals(day, walking(2), "evening too")
     }
 }

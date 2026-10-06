@@ -83,9 +83,10 @@ class MaxDexFavoritesTest {
         // The screen asks with the game picked: the Run screen hands its game to the shared editor (FavoritesEditor.kt).
         assertTrue("FavoritesEditor(store, selectedRom?.first, " in File("src/main/kotlin/com/ironmonone/app/RunScreen.kt").readText())
         val run = File("src/main/kotlin/com/ironmonone/app/FavoritesEditor.kt").readText().replace("\r\n", "\n")
-        assertTrue("Favorites.suggest(favSlots[favActive], maxId = favMax, kind = kind)" in run)
-        assertEquals(2, Regex("""Favorites\.inGame\((v|it), favMax, kind\)""").findAll(run).count(), "both red-name checks")
-        assertFalse(Regex("""Favorites\.inGame\((v|it), favMax\)""").containsMatchIn(run))
+        // Each box's list and red mark go by the run's scope, which carries the game (Favorites.Scope.kind).
+        assertTrue("Favorites.suggestIds(value, limit = FavoriteNames.LIMIT, maxId = scope.maxDex, kind = scope.kind)" in run)
+        assertTrue("Favorites.inGame(value, scope.maxDex, scope.kind)" in run && "Favorites.inGame(it, scope.maxDex, kind)" in run, "both red-name checks")
+        assertFalse(Regex("""Favorites\.inGame\((value|it), [a-zA-Z.]+\)""").containsMatchIn(run))
     }
 
     @Test

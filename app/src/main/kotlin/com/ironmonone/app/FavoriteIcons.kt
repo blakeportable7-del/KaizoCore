@@ -49,9 +49,9 @@ internal object FavoriteIcons {
     /**
      * [names] as typed, in order, for a game of [kind], by that game's own table: on MaxDex 1.0, MaxDex's numbering
      * (Favorites.idOf with a game), so a Z-A Mega draws its own icon and Greninja-B, which MaxDex lacks, draws none.
+     * [max]: the run's last dex number (Favorites.Scope): a Vanilla Heart & Soul run draws no Gen 4 to 9 favorite.
      */
-    fun of(names: List<String>, kind: RomKind?): List<FavoriteIcon> {
-        val max = Favorites.maxDex(kind)
+    fun of(names: List<String>, kind: RomKind?, max: Int = Favorites.maxDex(kind)): List<FavoriteIcon> {
         val ds = kind?.platform == Platform.NDS
         val hns = kind?.isHns == true
         return names.map { it.trim() }.filter { it.isNotEmpty() }.map { typed ->
@@ -117,6 +117,31 @@ internal object StreamFavoritePictures {
     fun source(context: android.content.Context): com.ironmonone.app.stream.StreamFavoritesSource {
         val app = context.applicationContext
         return com.ironmonone.app.stream.StreamFavoritesSource.of(PrepStore(app.filesDir)) { s, sp -> draw(app, s, sp)?.let(::streamPng) }
+    }
+
+    /**
+     * A species' picture for the stream's game over card (/mon/25.png, StreamHub.monPicture; 2026-10-05): drawn as the
+     * game Play opens draws its favorites, for a GBA or DS game only (a Game Boy tracker's species are its own numbers,
+     * which the bundled pack does not follow). The last few drawn are kept, so a card's two or three pictures, asked
+     * again by every page that loads, are drawn once.
+     */
+    fun monSource(context: android.content.Context): (Int) -> ByteArray? {
+        val app = context.applicationContext
+        val store = PrepStore(app.filesDir)
+        val kept = object : LinkedHashMap<String, ByteArray?>(16, .75f, true) {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, ByteArray?>?) = size > 12
+        }
+        return { species ->
+            synchronized(kept) {
+                val s = runCatching { store.session() }.getOrNull()
+                if (s == null || (s.platform != Platform.GBA && s.platform != Platform.NDS)) null
+                else {
+                    val key = s.file.path + "|" + s.file.lastModified() + "|" + species
+                    if (kept.containsKey(key)) kept[key]
+                    else runCatching { draw(app, s, species)?.let(::streamPng) }.getOrNull().also { kept[key] = it }
+                }
+            }
+        }
     }
 
     private fun draw(context: android.content.Context, s: GameSession, species: Int): ImageBitmap? = when (from(s.platform, s.kind)) {

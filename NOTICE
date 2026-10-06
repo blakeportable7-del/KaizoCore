@@ -374,7 +374,7 @@ NDS-Ironmon-Tracker (Brian0255) - GPL-3.0   Brian0255/NDS-Ironmon-Tracker
 melonDS libretro core — GPL-3.0               libretro/melonDS
   Built here from source since rc34, the .so per ABI in app/src/main/jniLibs:
   https://github.com/libretro/melonDS (melonDS 0.9.3) at commit
-  66b5d2634cd0a79030562811e6e05f5532f800ba, with four patches, all in
+  66b5d2634cd0a79030562811e6e05f5532f800ba, with six patches, all in
   libretrodroid/cores/melonds/:
   0001-unload-stops-the-render-thread-and-frees-the-screen-buffer.patch, ours,
   which stops the core's 3D render thread and frees its screen buffer when a game
@@ -392,7 +392,10 @@ melonDS libretro core — GPL-3.0               libretro/melonDS
   0005-savestates-keep-the-3d-polygon-mode.patch, ours after melonDS's own later
   savestate (and its PR #1864), so a saved state keeps the 3D engine's polygon
   mode, attributes and texture and the right polygon and vertex indices (state
-  version 9.1; a 9.0 state still loads).
+  version 9.1; a 9.0 state still loads); and
+  0006-radio-init-never-closes-a-descriptor-it-did-not-open.patch, ours, so a
+  game turning the Wi-Fi radio on finds no link partners instead of the core
+  closing a file descriptor it never opened.
   libretrodroid/cores/melonds/PINNED.txt records the commit, the patches and the
   hashes of the libraries that ship, and `python tools/cores/build_core.py melonds`
   builds them again from that source. The source of the core in the APK is that
@@ -728,8 +731,8 @@ https://github.com/PokemonHnS-Development/pokehns-expansion
   (2026-10-04, docs/HNS-KAIZO.md). They take no donations and KaizoCore asks for none.
   The one Heart & Soul file in the APK is KaizoCore's own comfort patch, made by
   tools/hns/build.sh from the official 2.0.6 (CRC 01713508) to the KaizoCore build
-  (E35A0E40) out of the patch series in tools/hns/patches. SHA-256:
-    b3def4bd0b34ad29a59a5b8fe8aaf87952e00100bf81a45b8f2452cb90f25b7c  hns-kaizo-heartsoul-206.bps
+  (C218FD9E) out of the patch series in tools/hns/patches. SHA-256:
+    5b0b87794595d5c3287b6e64f8af529b3c3558603e32117f1a92b24a1fb0f1e5  hns-kaizo-heartsoul-206.bps
 
 BINDING RELEASE CONDITIONS — verify every one before any public build
 ---------------------------------------------------------------------

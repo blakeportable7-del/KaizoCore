@@ -34,6 +34,17 @@ object Favorites {
         /** Name -> id (the Gen 3 build's internal ids past 251, which is what the sprite packs are keyed by). */
         val idByName: Map<String, Int> = rows.associate { (id, name) -> name.lowercase() to id }
 
+        /**
+         * The same by the name as the suggestions compare it (LogSuggest.normalize): "mr mime" and "farfetchd" are Mr. Mime
+         * and Farfetch'd. A spelling two names share is left out, so it never picks one of them.
+         */
+        val idByNormal: Map<String, Int> by lazy {
+            idByName.entries.groupBy { LogSuggest.normalize(it.key) }.filterValues { g -> g.map { it.value }.distinct().size == 1 }
+                .mapValues { it.value.first().value }
+        }
+
+        fun lookup(name: String): Int? = idByName[name.trim().lowercase()] ?: idByNormal[LogSuggest.normalize(name)]
+
         /** Every name in dex order, spelled as the table spells it; a name the table writes in lower case gets capitals. */
         val namesInOrder: List<Pair<Int, String>> by lazy {
             val spelled = rows.toMap()
@@ -65,12 +76,12 @@ object Favorites {
     /** Name -> id from the Nat. Dex table, the one every game but MaxDex uses (see [idOf] with a game). */
     val idByName: Map<String, Int> get() = natDexTable.idByName
 
-    fun idOf(name: String): Int? = idByName[name.trim().lowercase()]
+    fun idOf(name: String): Int? = natDexTable.lookup(name)
 
     /** The id [name] has in the game [kind]: MaxDex's own numbering on MaxDex 1.0, the Nat. Dex table's otherwise. */
     fun idOf(name: String, kind: com.ironmonone.core.RomKind?): Int? = idOf(name, maxDex = kind?.isMaxDex == true)
 
-    fun idOf(name: String, maxDex: Boolean): Int? = tableOf(maxDex).idByName[name.trim().lowercase()]
+    fun idOf(name: String, maxDex: Boolean): Int? = tableOf(maxDex).lookup(name)
 
     /**
      * Every known name in dex order, spelled for display as the table spells it (Bulbasaur, Mr. Mime, Ho-Oh, and the
@@ -86,19 +97,36 @@ object Favorites {
     fun nameOf(id: Int, kind: com.ironmonone.core.RomKind?): String? = tableOf(kind?.isMaxDex == true).spelledById[id]
 
     /**
-     * Blake, 2026-09-07: "as you type the first letter, the name of the pokemon
-     * comes up, and the list narrows as you type more." Names that START with
-     * what was typed, in dex order, at most [limit]; nothing for an empty box
-     * or an exact match already typed. [kind]: the game's own names (MaxDex's
-     * on MaxDex 1.0), the Nat. Dex table's when none is given.
+     * Blake, 2026-09-07: "as you type the first letter, the name of the pokemon comes up, and the list narrows as you
+     * type more"; 2026-10-06: "have a way to predict what the player will type as they start typing just like we have
+     * on the log". The log search's matching (LogSuggest.rank): the whole name, then a name that starts with what was
+     * typed, then one of its words that does, then a name that contains it, then one a slip away; case, accents, spaces,
+     * punctuation and gender symbols do not count, so "mr mime", "hooh", "farfetchd" and "nidoranf" all find theirs.
+     * National Dex order within each rank (a form after every species), at most [limit]; nothing for an empty box or
+     * when the one name left is the one typed, as written. Only the names of the game [kind] (MaxDex's own on MaxDex 1.0, the Nat.
+     * Dex table's when none is given) up to [maxId].
      */
-    fun suggest(typed: String, limit: Int = 8, maxId: Int = Int.MAX_VALUE, kind: com.ironmonone.core.RomKind? = null): List<String> {
-        val q = typed.trim().lowercase()
-        if (q.isEmpty()) return emptyList()
-        val hits = namesInOrder(kind).filter { (id, n) -> fits(id, maxId) && n.lowercase().startsWith(q) }.map { it.second }
-        if (hits.size == 1 && hits[0].lowercase() == q) return emptyList()
-        return hits.take(limit)
+    fun suggest(typed: String, limit: Int = 8, maxId: Int = Int.MAX_VALUE, kind: com.ironmonone.core.RomKind? = null): List<String> =
+        suggestIds(typed, limit, maxId, kind).map { it.second }
+
+    /** [suggest] with each name's id in the game's table, for its picture. */
+    fun suggestIds(typed: String, limit: Int = 8, maxId: Int = Int.MAX_VALUE, kind: com.ironmonone.core.RomKind? = null): List<Pair<Int, String>> {
+        if (LogSuggest.normalize(typed).isEmpty()) return emptyList()
+        val hits = namesInOrder(kind).asSequence()
+            .filter { (id, _) -> fits(id, maxId) }
+            .mapNotNull { p -> LogSuggest.rank(p.second, typed)?.let { it to p } }
+            .sortedWith(compareBy({ it.first }, { nationalOf(it.second.first) ?: (FORMS_AFTER + it.second.first) }))
+            .map { it.second }
+            .take(limit)
+            .toList()
+        // The one name left is the one in the box, as the list would put it there: nothing to offer. A loose spelling
+        // ("hooh") still offers the name as written.
+        if (hits.size == 1 && hits[0].second.equals(typed.trim(), ignoreCase = true)) return emptyList()
+        return hits
     }
+
+    /** Where a form, which has no National Dex number of its own, sorts: after every species. */
+    private const val FORMS_AFTER = 100_000
 
     /**
      * How many favorites the game's PC tracker keeps (read 2026-09-07). The
@@ -118,6 +146,33 @@ object Favorites {
     }
 
     const val NAT_DEX_SLOTS = 9
+
+    /**
+     * How a game's favorites are held for one run: [shown], the boxes the editor shows and the run counts (the card, the
+     * ball line, the Run screen's count); [stored], the boxes kept in the favorites file; [maxDex], the last dex number
+     * offered and accepted.
+     */
+    data class Scope(val kind: com.ironmonone.core.RomKind?, val shown: Int, val stored: Int, val maxDex: Int) {
+        /** The favorites the run counts, from the [stored] boxes as saved. */
+        fun used(slots: List<String>): List<String> = slots.take(shown)
+
+        /** A Vanilla pool Heart & Soul run: fewer boxes used than kept, held to Emerald's rules, not the Nat. Dex ones. */
+        val hnsVanilla: Boolean get() = kind?.isHns == true && shown < stored
+    }
+
+    /**
+     * The [Scope] of [kind]. Every game shows and keeps [slotCount] and offers its own dex ([maxDex]). Heart & Soul keeps
+     * nine and follows the run's pool ([hnsNatDex]): Nat. Dex shows all nine and offers every Pokemon through Gen 9, as
+     * the Emerald Nat. Dex rules allow; Vanilla (Gen 1 to 3 base forms) is held to Emerald's rules, three favorites from
+     * Gen 1 to 3 (rulesets/HnS). A Vanilla run with favorites 4 to 9 saved from a Nat. Dex run keeps them in the file,
+     * unshown and unused, so going back to Nat. Dex finds them again.
+     */
+    fun scope(kind: com.ironmonone.core.RomKind?, hnsNatDex: Boolean = true): Scope =
+        if (kind?.isHns == true && !hnsNatDex) Scope(kind, SLOTS, slotCount(kind), GEN3_DEX)
+        else Scope(kind, slotCount(kind), slotCount(kind), maxDex(kind))
+
+    /** The last National Dex number of Gen 3: Deoxys. */
+    const val GEN3_DEX = 386
 
     /**
      * The last dex number the game knows, for the suggestion list: 151, 251,

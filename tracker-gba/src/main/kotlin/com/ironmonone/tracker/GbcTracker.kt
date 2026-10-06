@@ -387,6 +387,20 @@ class GbcTracker(
         return GbEgg(slot, (b.u8(6) shl 8) or b.u8(7), (b.u8(21) shl 8) or b.u8(22), species, level)
     }
 
+    /**
+     * [p], your Pokemon on the field, with the types in wBattleMon (battle_struct +30, +31), which Conversion and
+     * Conversion 2 rewrite (pokecrystal engine/battle/move_effects/conversion.asm, conversion2.asm): the opponent's card
+     * has always read wEnemyMon's. Only while wBattleMon holds [p]'s species (Transform puts the target's there).
+     */
+    private fun withBattleTypes(p: TrackedMon): TrackedMon {
+        val base = p.base ?: return p
+        if (m.battleMon == 0L) return p
+        val b = ram(m.battleMon, 32)
+        if (b.size < 32 || b.u8(0) != p.mon.species) return p
+        val t1 = gen3Type(b.u8(30)); val t2 = gen3Type(b.u8(31))
+        return p.copy(base = base.copy(type1 = t1, type2 = t2), battleTypes = listOf(t1, t2))
+    }
+
     /** battle_struct (wEnemyMon): species 0, item 1, moves 2, dvs 6, pp 8, happiness 12, level 13, status 14, hp 16, maxhp 18, stats 20.., types 30-31. */
     private fun readEnemy(): EnemyInfo? {
         val b = ram(m.enemyMon, 32)
@@ -536,7 +550,7 @@ class GbcTracker(
         // Battle.updateStatStagesGen2 (Gen 2 reference Battle.lua:699-722): the active battlers' stages,
         // drawn only in battle, yours on the Pokemon on the field as the reference views it (Battle.getViewedPokemon).
         if (battling && party.isNotEmpty()) {
-            party = party.mapIndexed { i, p -> if (i == onField) p.copy(statStages = gbStatStages(ram(m.statLevels, 7), GEN2_STAGES)) else p }
+            party = party.mapIndexed { i, p -> if (i == onField) withBattleTypes(p.copy(statStages = gbStatStages(ram(m.statLevels, 7), GEN2_STAGES))) else p }
             enemy = enemy?.copy(statStages = gbStatStages(ram(m.statLevels + 8, 7), GEN2_STAGES))
         }
         lastMove.read(battling, turn = ram(m.playerTurns, 1).let { if (it.isEmpty()) 0 else it.u8(0) },
@@ -649,6 +663,8 @@ data class Gen2Map(
      * pokecrystal 0xD84C, pokegold 0xD571. Survival's Kanto heals wait on it.
      */
     val statusFlags: Long = 0L,
+    /** wBattleMon, the player's Pokemon in battle (tools/wram_layout.py): pokecrystal 0xC62C, pokegold 0xCB0C. */
+    val battleMon: Long = 0L,
 ) {
     companion object {
         val CRYSTAL = Gen2Map(
@@ -669,6 +685,7 @@ data class Gen2Map(
             menu2D = 0x0FA1L,
             curBattleMon = 0x10D4L,
             statusFlags = GbcTracker.JOHTO_BADGES - 11,
+            battleMon = 0x062CL,
         )
 
         /** pokegold: wPartyCount DA22, wPartySpecies DA23, wPartyMons DA2A, wEnemyMon D0EF, wBattleMode D116,
@@ -690,6 +707,7 @@ data class Gen2Map(
             menu2D = 0x0ED8L,
             curBattleMon = 0x0FC6L,
             statusFlags = 0x157CL - 11,
+            battleMon = 0x0B0CL,
         )
 
         /**

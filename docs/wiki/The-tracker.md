@@ -15,10 +15,15 @@ works in every mode: a Kaizo IronMON run, a Nuzlocke, a ROM hack or a game from 
 ## Where it sits
 
 - **Portrait**: under the game, with the moves beside the stats so the whole card fits on the screen.
-- **Landscape**: pick under Landscape tracker in Tracker Setup.
-  - **Docked beside the game**, with no bar between them: drag the tracker's left edge to make it wider or narrower.
-  - **Floating window over the game**: drag and resize it; **DOCK** puts it back.
-  - **Hidden, game full screen**.
+- **Landscape**: pick in **VIEW** on the File bar, or under Landscape tracker in Tracker Setup.
+  - **Docked** beside the game, with no bar between them: drag the tracker's left edge to make it wider or narrower.
+  - **Floating**, a window over the game. It stays locked in place; hold it for half a second to unlock it, then drag
+    it or pull its corner button to resize it. Hold it again to lock it. It locks itself when the File bar opens and
+    after six seconds untouched.
+  - **HUD**: the tracker in panels round the game, which stays its full size.
+  - **Hidden**: the game alone.
+
+The tracker has no buttons of its own: Tracker Setup and its screens are under **TRACKER** on the File bar.
 
 ## What it shows
 

@@ -193,12 +193,14 @@ class PlayRulesAndSavesTest {
         assertTrue("latch.applies = PlayRules.ironmonGameOver(PlayRules.kind(session, filesDir))" in host)
         assertTrue(host.indexOf("latch.applies =") < host.indexOf("if (!latch.open || hidden) return"), "set before the early return, every time")
         val play = File("src/main/kotlin/com/ironmonone/app/PlayScreen.kt").readText()
-        assertEquals(2, Regex("""if \(NuzlockeTracking\.inPlay\(\)\) NuzlockeLedgerRequest\.openRules\(\) else rulesDialog = true""").findAll(play).count(),
-            "RULES in the File menu and Rules in Tracker Setup")
+        // One link (TrackerLinks.onRules) for Rules on the FILE bar's TRACKER sheet and in Tracker Setup alike.
+        assertEquals(1, Regex("""if \(NuzlockeTracking\.inPlay\(\)\) NuzlockeLedgerRequest\.openRules\(\) else rulesDialog = true""").findAll(play).count(),
+            "Rules on the FILE bar and in Tracker Setup")
+        assertTrue("onRules = { if (NuzlockeTracking.inPlay()) NuzlockeLedgerRequest.openRules() else rulesDialog = true }" in play)
         // The running game's battery save is written before the dialog reads it (Blake, 2026-09-30: it said "no save").
         assertTrue("NewRunConfirmDialog(beforeRead = { persistSram() }, onConfirm = { confirmNewRun = false; newRun() }" in play)
         val side = File("src/main/kotlin/com/ironmonone/app/SideScreens.kt").readText()
-        val dialog = side.substringAfter("fun NewRunConfirmDialog(").substringBefore("internal object NewRunCopy")
+        val dialog = side.substringAfter("fun rememberNewRunWords(").substringBefore("internal object NewRunCopy")
         assertTrue(dialog.indexOf("beforeRead()") in 1 until dialog.indexOf("RunSaves.planOnNewSeed("), "written, then read")
         assertTrue("NuzlockeLedgerRequested()" in side, "the ledger opens from SideScreenDialogs, tracker shown or not")
         val prep = File("src/main/kotlin/com/ironmonone/app/PrepStore.kt").readText().replace("\r\n", "\n")
@@ -218,8 +220,9 @@ class PlayRulesAndSavesTest {
         assertFalse(PlayRules.newRunOffered(library), "a library game has no run to start")
         assertTrue(PlayRules.newRunOffered(run))
         fun src(name: String) = File("src/main/kotlin/com/ironmonone/app/$name").readText().replace("\r\n", "\n")
-        val dialog = src("SideScreens.kt").substringAfter("fun NewRunConfirmDialog(").substringBefore("internal object NewRunCopy")
-        val gate = dialog.indexOf("if (session == null || !PlayRules.newRunOffered(session)) {")
+        // The dialog and the FILE bar's NEW sheet share the question's words (rememberNewRunWords).
+        val dialog = src("SideScreens.kt").substringAfter("fun rememberNewRunWords(").substringBefore("internal object NewRunCopy")
+        val gate = dialog.indexOf("if (session == null || !PlayRules.newRunOffered(session)) return null")
         assertTrue(gate in 1 until dialog.indexOf("beforeRead()"), "refused before anything is read or written")
         assertTrue("return" in dialog.substring(gate, dialog.indexOf("beforeRead()")), "and the refusal returns")
         val play = src("PlayScreen.kt")
@@ -230,7 +233,7 @@ class PlayRulesAndSavesTest {
         assertTrue("val ironmonOver = ironmonGameOverCard(state?.runOver != null)" in src("NdsTrackerPanel.kt"))
         assertTrue("&& ironmonOver -> {" in src("NdsTrackerPanel.kt"))
         // P0-8: NEW NUZLOCKE gives the next game its ledger, inside newRun.
-        val newRun = play.substringAfter("    fun newRun() {").substringBefore("\n    }\n")
+        val newRun = play.substringAfter("    fun newRun(move: Boolean = false) {").substringBefore("\n    }\n")
         assertTrue("NuzlockeStore(context.applicationContext.filesDir).startNextRandomized(it, k, started.seed, System.currentTimeMillis())" in newRun)
         // P0-4: back where the game was left. The core coming up reads the marker, and leaving Play clears it.
         assertTrue("CrashResume.atCoreUp(store.playMarker, session, StateSlots.auto(context.filesDir, session), store.stateStamp(session)," in play)

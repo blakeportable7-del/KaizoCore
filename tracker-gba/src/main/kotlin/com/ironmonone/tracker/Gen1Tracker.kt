@@ -294,6 +294,20 @@ class Gen1Tracker(
         return out
     }
 
+    /**
+     * [p], your Pokemon on the field, with the types in wBattleMon (+5, +6), which Conversion rewrites (pokered
+     * ConversionEffect copies the target's types there): the opponent's card has always read wEnemyMon's. Only while
+     * wBattleMon holds [p]'s species (Transform puts the target's there).
+     */
+    private fun withBattleTypes(p: TrackedMon): TrackedMon {
+        val base = p.base ?: return p
+        if (m.battleMon == 0L) return p
+        val b = ram(m.battleMon, 7)
+        if (b.size < 7 || dexOf(b.u8(0)) != p.mon.species) return p
+        val t1 = GbcTracker.gen3Type(b.u8(5)); val t2 = GbcTracker.gen3Type(b.u8(6))
+        return p.copy(base = base.copy(type1 = t1, type2 = t2), battleTypes = listOf(t1, t2))
+    }
+
     private fun readEnemy(): EnemyInfo? {
         val b = ram(m.enemyMon, ENEMY_SIZE)
         if (b.size < ENEMY_SIZE) return null
@@ -415,7 +429,7 @@ class Gen1Tracker(
         // Battle.updateStatStages (Battle.lua:735-761): the active battlers' stages, drawn only in battle,
         // yours on the Pokemon on the field as the reference views it (Battle.getViewedPokemon).
         if (battling && party.isNotEmpty()) {
-            party = party.mapIndexed { i, p -> if (i == onField) p.copy(statStages = gbStatStages(ram(m.statMods, 6), GEN1_STAGES)) else p }
+            party = party.mapIndexed { i, p -> if (i == onField) withBattleTypes(p.copy(statStages = gbStatStages(ram(m.statMods, 6), GEN1_STAGES))) else p }
             enemy = enemy?.copy(statStages = gbStatStages(ram(m.statMods + 0x14, 6), GEN1_STAGES))
         }
         lastMove.read(battling, turn = ram(m.aiTurns, 1).let { if (it.isEmpty()) 0 else it.u8(0) },
@@ -497,6 +511,8 @@ data class Gen1Map(
     val playerMove: Long = 0L,
     /** The randomizer's TrainerDataTableOffset ([Red (U)] and [Yellow (U)] in gen1_offsets.ini), and the game's data key. */
     val trainerTable: Int = 0, val gameKey: String = "rb",
+    /** wBattleMon, the player's Pokemon in battle (tools/wram_layout.py): pokered 0xD014, pokeyellow 0xD013. */
+    val battleMon: Long = 0L,
 ) {
     companion object {
         val RED_BLUE = Gen1Map(
@@ -513,6 +529,7 @@ data class Gen1Map(
             trainerClass = 0x1031L, trainerNo = 0x105DL, battleType = 0x105AL, surfState = 0x1700L,
             enemyDvs = 0x0FF1L, nicks = 0x12B5L, trainerTable = 0x39D3B, gameKey = "rb",
             playerMove = 0x0FD2L,   // wPlayerMoveNum CFD2
+            battleMon = 0x1014L,
         )
         val YELLOW = Gen1Map(
             name = "Yellow",
@@ -528,6 +545,7 @@ data class Gen1Map(
             trainerClass = 0x1030L, trainerNo = 0x105CL, battleType = 0x1059L, surfState = 0x16FFL,
             enemyDvs = 0x0FF0L, nicks = 0x12B4L, trainerTable = 0x39DD1, gameKey = "y",
             playerMove = 0x0FD1L,   // wPlayerMoveNum CFD1
+            battleMon = 0x1013L,
         )
 
         /** From the cartridge header title: "POKEMON RED", "POKEMON BLUE" (pokered's rgbfix titles) or "POKEMON YELLOW". */

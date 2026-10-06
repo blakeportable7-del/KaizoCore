@@ -18,6 +18,17 @@ import androidx.compose.ui.unit.dp
 internal class ShellNav(
     val openMyGames: () -> Unit,
     val openKaizo: () -> Unit,
+    /** Home's Pokemon Heart & Soul screen, where the KaizoCore build is made again (RunBuild). */
+    val openHeartSoul: () -> Unit = {},
+    /** Library's Patched versions, where a patched build is made again (RunBuild), and the FILE bar's HOME sheet. */
+    val openPatched: () -> Unit = {},
+    // The FILE bar's HOME and SETTINGS sheets (2026-10-06): the app's tabs, which full screen hides.
+    val openHome: () -> Unit = {},
+    val openStats: () -> Unit = {},
+    val openControls: () -> Unit = {},
+    val openBackup: () -> Unit = {},
+    /** More, Stream, where the shell has it; null leaves the FILE bar's Stream settings line off. */
+    val openStreamSettings: (() -> Unit)? = null,
 )
 
 internal val LocalShellNav = staticCompositionLocalOf<ShellNav?> { null }

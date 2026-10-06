@@ -440,13 +440,17 @@ fun RunScreen(
         // parts now sit folded below, each saying what is inside.
         Spacer(Modifier.height(10.dp))
         var showFavorites by remember { mutableStateOf(false) }
-        val favFilled = Favorites.edits.intValue.let { Favorites.slots(store, selectedRom?.first?.id, Favorites.slotCount(selectedRom?.first)).count { s -> s.isNotBlank() } }
+        // The boxes the next run counts: a Vanilla Heart & Soul run's first three, whatever else is kept (HnsPool.favoritesScope).
+        val favFilled = Favorites.edits.intValue.let { HnsPool.edits.intValue }.let {
+            val scope = HnsPool.favoritesScope(selectedRom?.first, context.filesDir, nextRun = true)
+            scope.used(Favorites.slots(store, selectedRom?.first?.id, scope.stored)).count { s -> s.isNotBlank() }
+        }
         RunDisclosure("Startup favorites (optional)",
             if (favFilled == 0) RunCopy.FAVORITES_LINE else "$favFilled set.",
             showFavorites) { showFavorites = !showFavorites }
         if (showFavorites) {
             // The editor itself is shared with Tracker Setup's EDIT FAVORITES during a run (FavoritesEditor.kt).
-            FavoritesEditor(store, selectedRom?.first, RulesetCatalog.modeOf(modes, selectedSettings)?.key)
+            FavoritesEditor(store, selectedRom?.first, RulesetCatalog.modeOf(modes, selectedSettings)?.key, nextRun = true)
             Spacer(Modifier.height(12.dp))
 
 

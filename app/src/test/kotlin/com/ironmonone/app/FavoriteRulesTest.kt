@@ -102,7 +102,8 @@ class FavoriteRulesTest {
         val editor = File("src/main/kotlin/com/ironmonone/app/FavoritesEditor.kt").readText().replace("\r\n", "\n")
         // With the game itself, so MaxDex reads its own book (FRLG-MaxDex, the Nat. Dex 1.1.3 lines), not Nat. Dex 1.2.1's.
         assertTrue("Rules.text(context, Rules.dirFor(kind.family, kind.isNatDex, kind), mode)" in editor)
-        assertTrue("FavoriteRulesBlock(favBook, mode, favSlots)" in editor)
-        assertTrue("FavoritesEditor(store, selectedRom?.first, RulesetCatalog.modeOf(modes, selectedSettings)?.key)" in run)
+        // The boxes the run uses: a Vanilla Heart & Soul run's first three (HnsPoolFavoritesTest).
+        assertTrue("FavoriteRulesBlock(favBook, mode, shownSlots)" in editor)
+        assertTrue("FavoritesEditor(store, selectedRom?.first, RulesetCatalog.modeOf(modes, selectedSettings)?.key, nextRun = true)" in run)
     }
 }

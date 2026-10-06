@@ -180,8 +180,7 @@ object RulesetCatalog {
      * Super Kaizo file, and [superKaizoWarning] says so, right under the line, for the builds that lack it.
      */
     fun modeLine(key: String, natDex: Boolean = false, family: String? = null): String =
-        // Heart & Soul's book carries the Nat. Dex ruleset changes (rulesets/HnS), so its Ultimate reads as Nat. Dex's.
-        if (key == "ultimate" && (natDex || family == RomKind.HNS_FAMILY)) ULTIMATE_NAT_DEX else FAMILY_LINES[key to family] ?: LINES[key] ?: OTHER_LINE
+        if (key == "ultimate" && natDex) ULTIMATE_NAT_DEX else FAMILY_LINES[key to family] ?: LINES[key] ?: OTHER_LINE
 
     /**
      * Where a game's own rules file changes a mode's line (2026-10-01, rules check): Black and White count Survival's
@@ -194,6 +193,10 @@ object RulesetCatalog {
             "an eleventh at your eighth badge and seven more for Kanto.",
         ("survival" to "HGSS") to "Harder than Kaizo. Ten Pok\u00e9mon Center heals from your first trainer battle after the rival, " +
             "an eleventh at your eighth badge and seven more for Kanto.",
+        // Heart & Soul's book holds both pools (rulesets/HnS): a Vanilla pool run keeps Ultimate's ban on HM moves in battle,
+        // a Nat. Dex pool run takes the Nat. Dex change, so its line says both (it read as Nat. Dex's for either until rc36.1).
+        ("ultimate" to RomKind.HNS_FAMILY) to "Standard, plus no HM moves in battle (with the Nat. Dex pool, none taught by an " +
+            "HM item), no leaving a gym until you beat every trainer in it, one visit per dungeon, and six Pokémon in all.",
         // Heart & Soul is a Johto game too: the Survival rules' "complete the Elite 4 in a Johto game" reaches it.
         ("survival" to RomKind.HNS_FAMILY) to "Harder than Kaizo. Ten Pok\u00e9mon Center heals from your first trainer battle after the rival, " +
             "an eleventh at your eighth badge and seven more for Kanto.",

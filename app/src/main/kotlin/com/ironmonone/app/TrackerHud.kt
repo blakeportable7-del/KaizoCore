@@ -65,14 +65,16 @@ import kotlin.math.roundToInt
  */
 object TrackerHud {
     /**
-     * Off for rc35.1 (Blake, 2026-10-04: keep the HUD hidden until its second pass). With it off no menu or Tracker Setup
-     * line offers the HUD, and a saved HUD choice loads as the floating window. The code stays; this one switch brings it back.
+     * On since 2026-10-06 (Blake: "one file bar, semi transparent, the docked tracker, floating tracker, and hud
+     * tracker"): VIEW on the FILE bar offers it beside Docked, Floating and Hidden. It was off for rc35.1 (2026-10-04:
+     * keep the HUD hidden until its second pass); with this switch off no line offers the HUD, and a saved HUD choice
+     * loads as the floating window.
      */
-    const val ENABLED = false
+    const val ENABLED = true
 
     /** The game picture in window pixels, as Play last laid it out (PlayScreen's gameFrame). */
     var game by mutableStateOf<Rect?>(null)
-    /** The pad as drawn over the game, and its skin (ScreenTapMenu, which Play hands both every frame); null with no pad. */
+    /** The pad as drawn over the game, and its skin (the FILE bar's host, which Play hands both every frame); null with no pad. */
     var pad by mutableStateOf<PadLayout?>(null)
     var padSkin by mutableStateOf(PadSkin.OUTLINE)
     /** Two DS screens on the phone: the game's right part is a touch screen, and nothing may lie over it. */
@@ -82,10 +84,6 @@ object TrackerHud {
     val CYAN = Color(0xFF3FE0FF)
     private val DEFAULT_BORDER = Color(0xFFAAAAAA)
     fun accent(border: Color): Color = if (border == DEFAULT_BORDER) CYAN else border
-
-    /** Said in the menus. */
-    const val MENU_HUD = "Tracker HUD (info around the game)"
-    const val MENU_FLOAT = "Float the tracker (move and resize it)"
 }
 
 /**
@@ -113,11 +111,9 @@ object HudLayout {
     const val WANT_W = 230f
     /** The widest a panel grows in a wide bar. */
     const val MAX_W = 320f
-    /** The menu's round button. */
-    const val MENU = 44f
 
-    /** [mine] and [rest] are the two panels; [menu] is the square the tracker's menu button sits in. */
-    data class Plan(val mine: R?, val rest: R?, val menu: R? = null)
+    /** [mine] and [rest] are the two panels. The HUD has no menu of its own: the FILE bar is every view's. */
+    data class Plan(val mine: R?, val rest: R?)
 
     fun plan(areaW: Float, areaH: Float, game: R?, controls: List<R>, ds: Boolean): Plan {
         val g = game ?: R(areaW * 0.2f, 0f, areaW * 0.8f, areaH)
@@ -128,29 +124,12 @@ object HudLayout {
         // scored by the room it frees less the game it covers. A DS's right side is its touch screen: no panel there.
         val left = bestColumn(true, leftBar, areaW, areaH, g, keep)
         val right = if (ds) null else bestColumn(false, rightBar, areaW, areaH, g, keep)
-        var plan = when {
+        val plan = when {
             left != null && right != null -> Plan(left, right)
             left != null || right != null -> single((left ?: right)!!, keep)
             else -> Plan(null, null)
         }
-        // The menu: a corner of the game first (its top left, then its top right), then a corner of the screen, else the
-        // top of a panel with room to give it up.
-        fun sq(x: Float, y: Float) = R(x, y, x + MENU, y + MENU)
-        val corners = listOf(
-            sq(g.l + EDGE, g.t + EDGE), sq(g.r - EDGE - MENU, g.t + EDGE), sq(g.l + EDGE, g.b - EDGE - MENU), sq(g.r - EDGE - MENU, g.b - EDGE - MENU),
-            sq(EDGE, EDGE), sq(areaW - EDGE - MENU, EDGE), sq(EDGE, areaH - EDGE - MENU), sq(areaW - EDGE - MENU, areaH - EDGE - MENU),
-        )
-        val taken = listOfNotNull(plan.mine, plan.rest)
-        var menu = corners.firstOrNull { c -> keep.none { it.meets(c) } && taken.none { it.meets(c) } && c.l >= 0f && c.r <= areaW && c.t >= 0f && c.b <= areaH }
-        if (menu == null) for (which in listOf(plan.rest, plan.mine)) {
-            val r = which ?: continue
-            if (r.h - MENU - EDGE < MIN_H) continue
-            menu = R(r.r - MENU, r.t, r.r, r.t + MENU)
-            val cut = R(r.l, r.t + MENU + EDGE, r.r, r.b)
-            plan = if (which === plan.rest) plan.copy(rest = cut) else plan.copy(mine = cut)
-            break
-        }
-        return plan.copy(menu = menu)
+        return plan
     }
 
     private fun bestColumn(isLeft: Boolean, bar: Float, areaW: Float, areaH: Float, g: R, keep: List<R>): R? {
@@ -201,9 +180,13 @@ class HudPortal { var left by mutableStateOf<(@Composable () -> Unit)?>(null) }
 /** Set inside the HUD while it has a panel for your card; null everywhere else, where the card is drawn in place. */
 val LocalHudPortal = compositionLocalOf<HudPortal?> { null }
 
-/** A menu line the floating window or the HUD adds to the tracker's menu: the way to the other of the two. */
-class HudMenuItem(val label: String, val action: () -> Unit)
-val LocalHudMenu = compositionLocalOf<HudMenuItem?> { null }
+/**
+ * A panel under the open FILE bar: the panels are placed as for a closed bar, so opening it never moves one to another
+ * side; it only trims a panel's top down to [top], and a panel left shorter than [min] is hidden until the bar closes
+ * (the prototype's rule, 2026-10-05).
+ */
+internal fun HudLayout.R.underBar(top: Float, min: Float = 72f): HudLayout.R? =
+    if (t >= top) this else HudLayout.R(l, top, r, b).takeIf { it.h >= min }
 
 /** How solid a panel's glass is at most where it lies over the game. */
 private const val OVER_GAME_FADE = 0.6f
@@ -211,9 +194,9 @@ private const val OVER_GAME_FADE = 0.6f
 /** The least share of its width a panel's cards are drawn at, to fit its height. */
 private const val MIN_FIT = 0.45f
 
-/** The HUD itself, in the box the floating window would have used. [menu] is the tracker's menu, handed the way to the dock. */
+/** The HUD itself, in the box the floating window would have used. Its menu is the FILE bar's, like every view's. */
 @Composable
-internal fun TrackerHudLayer(menu: @Composable () -> Unit, attempt: Int, content: @Composable () -> Unit) {
+internal fun TrackerHudLayer(@Suppress("UNUSED_PARAMETER") attempt: Int, content: @Composable () -> Unit) {
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val density = LocalDensity.current.density
         val areaW = maxWidth.value
@@ -226,7 +209,10 @@ internal fun TrackerHudLayer(menu: @Composable () -> Unit, attempt: Int, content
         val controls = TrackerHud.pad?.let { p ->
             PadGeometry.rects(p, areaW, areaH, landscape = true, skin = TrackerHud.padSkin).values.flatten().map { HudLayout.R(it.l, it.t, it.r, it.b) }
         } ?: emptyList()
-        val plan = HudLayout.plan(areaW, areaH, g, controls, TrackerHud.ds)
+        val placed = HudLayout.plan(areaW, areaH, g, controls, TrackerHud.ds)
+        // Under an open FILE bar the panels keep their places and lose only their tops.
+        val barTop = FileBar.UNDER_DP.toFloat()
+        val plan = if (FileBar.open) HudLayout.Plan(placed.mine?.underBar(barTop), placed.rest?.underBar(barTop)) else placed
         val solid = TrackerOptions.floatingSolid
         val fade = FloatingSeeThrough.fade(solid)
         val outline = trackerTextOutline(2.5f * density)
@@ -254,15 +240,6 @@ internal fun TrackerHudLayer(menu: @Composable () -> Unit, attempt: Int, content
                 HudPanel(r, accent, alpha, overGame = g?.meets(r) == true) {
                     FitWidth { PcCanvas(Modifier.fillMaxWidth()) { CompositionLocalProvider(LocalTrackerWide provides false) { portal.left?.invoke() } } }
                 }
-            }
-            // The tracker's menu, the way back to the window or the dock: a dark disc in a corner no control is near.
-            plan.menu?.let { m ->
-                Box(
-                    Modifier.offset { IntOffset((m.l * density).roundToInt(), (m.t * density).roundToInt()) }.size(m.w.dp, m.h.dp)
-                        .graphicsLayer { this.alpha = alpha }
-                        .drawBehind { drawCircle(Color.Black.copy(alpha = 0.55f)); drawCircle(accent.copy(alpha = 0.8f), style = Stroke(1.dp.toPx())) },
-                    contentAlignment = Alignment.Center,
-                ) { PcCanvas(Modifier.size(m.w.dp)) { menu() } }
             }
         }
     }

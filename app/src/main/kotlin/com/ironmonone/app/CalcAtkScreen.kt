@@ -73,6 +73,12 @@ fun CalcAtkDialog(fill: CalcAtk.Fill?, onClose: () -> Unit) {
                 GearButton("CLEAR", Modifier) { inputs = empty }
             }
             if (fill?.guessed == true) DialogText("The move's power is a guess.", 12, Pc.Dim)
+            // Survival chances (2026-10-06): the same move again, at the attack this worked out and your HP now. Only
+            // what this hit showed goes in: the enemy's real stats are never read.
+            if (found && fill != null) calcAtkSurvival(inputs, estimate, fill.ownHp, fill.ownMaxHp)?.let {
+                DialogText(it, 12, Pc.Text)
+                DialogText("Every damage roll counted, and a critical hit 1 time in 16.", 12, Pc.Dim)
+            }
 
             @Composable
             fun value(key: String, label: String, text: String) {
@@ -156,12 +162,19 @@ fun calcAtkFill(t: com.ironmonone.tracker.GbaTracker, s: com.ironmonone.tracker.
     // yours the view shows (GbaViewState), as the opponent is.
     val own = gbaView.own(s) ?: return null
     val enemy = gbaView.foe(s) ?: return null
+    return calcAtkAutoFill(t, s, id, row, own, enemy)?.copy(ownHp = own.mon.curHp, ownMaxHp = own.mon.maxHp)
+}
+
+private fun calcAtkAutoFill(
+    t: com.ironmonone.tracker.GbaTracker, s: com.ironmonone.tracker.TrackerState, id: Int, row: com.ironmonone.tracker.MoveRow,
+    own: com.ironmonone.tracker.TrackedMon, enemy: com.ironmonone.tracker.EnemyInfo,
+): CalcAtk.Fill? {
     return CalcAtk.autoFill(
         moveId = id, power = com.ironmonone.tracker.MoveRules.basePower(id, row.power), type = row.type, category = row.category,
         damage = s.lastAttackDamage,
-        ownTypes = listOfNotNull(own.base?.type1, own.base?.type2), ownDef = own.mon.def, ownSpd = own.mon.spDef,
+        ownTypes = typesOf(own), ownDef = own.mon.def, ownSpd = own.mon.spDef,
         ownWeightKg = t.weight(own.mon.species)?.toDoubleOrNull(),
-        enemyTypes = listOf(enemy.type1, enemy.type2), enemyLevel = enemy.level,
+        enemyTypes = typesOf(enemy), enemyLevel = enemy.level,
         enemyCurHp = enemy.curHp, enemyMaxHp = enemy.maxHp, enemyBurned = enemy.statusCondition == "BRN",
         enemyBaseFriendship = enemy.base?.baseFriendship, wild = s.isWildBattle, weatherWord = s.weatherWord,
         natDex = t.expandedSpeciesIds,

@@ -485,61 +485,133 @@ internal class HnsData(private val memory: MemoryReader) {
     fun mapName(mapId: Int): String? = mapSectionName(mapSection(mapId))
 
     /**
-     * gWildMonHeaders, by map: each area's species with the chance of its slots (summed per species) and its levels,
-     * over all four times of day (each species at its best time's chance). Areas as RouteData names them: Walking,
-     * Surfing, RockSmash, Old Rod, Good Rod, Super Rod.
+     * gWildMonHeaders, by map: each area's species with the chance of its slots (summed per species) and its levels.
+     * Areas as RouteData names them: Walking, Surfing, RockSmash, Old Rod, Good Rod, Super Rod.
+     *
+     * What the list holds follows what the game will hand out (Blake, 2026-10-06, rc37):
+     * - A Kaizo IronMON run (the ROM's challenge preset is KAIZO, [kaizoCycle]): the game cycles through every species the
+     *   area has at ANY time of day (src/wild_encounter.c KaizoCore_CycleSlot), and the list is exactly that set in that
+     *   order: the area's tables of that kind in time-of-day order, each table once, its slots in order, each species
+     *   once. Each species shows its best chance and its levels over all its tables.
+     * - Otherwise (a Nuzlocke run, the plain build): the game rolls only the current time's table (gTimeOfDay; a time with
+     *   no table falls back to OW_TIME_OF_DAY_FALLBACK's, as GetTimeOfDayForEncounters does), so the list is that
+     *   table's, by chance.
      */
-    val wild: Map<Int, LinkedHashMap<String, List<GbaTracker.RouteMon>>> by lazy {
-        val out = LinkedHashMap<Int, LinkedHashMap<String, List<GbaTracker.RouteMon>>>()
+    val wild: Map<Int, LinkedHashMap<String, List<GbaTracker.RouteMon>>>
+        get() = if (kaizoCycle) wildCycle else wildAt(timeOfDay())
+
+    /** The ROM's challenge preset mode is KAIZO: a Kaizo IronMON run, whose wild encounters cycle (HnsEngine.writePreset). */
+    val kaizoCycle: Boolean by lazy {
+        val b = memory.read(HnsLayout.gHnsChallengePreset + HnsLayout.HNS_PRESET_MODE, 1)
+        b.size == 1 && (b[0].toInt() and 0xFF) == HnsLayout.HNS_PRESET_MODE_KAIZO
+    }
+
+    /** gTimeOfDay (the overworld updates it every minute), or the fallback time when it reads out of range. */
+    fun timeOfDay(): Int {
+        val b = memory.read(HnsLayout.gTimeOfDay, 1)
+        val t = if (b.size == 1) b[0].toInt() and 0xFF else -1
+        return if (t in 0 until HnsLayout.TIMES_OF_DAY_COUNT) t else HnsLayout.OW_TIME_OF_DAY_FALLBACK
+    }
+
+    /** One wild table of an area kind: its slots' species (slot order, 0 for an empty slot), levels and chances. */
+    private class WildTable(val ptr: Long, val species: IntArray, val minLv: IntArray, val maxLv: IntArray, val rates: IntArray)
+
+    /** A wild header's map id and, per area name, its table at each time of day (null = none). */
+    private class WildHeader(val mapId: Int, val tables: Map<String, Array<WildTable?>>)
+
+    private val wildHeaders: List<WildHeader> by lazy {
+        val out = ArrayList<WildHeader>()
         val H = HnsLayout.WildPokemonHeader
         val T = HnsLayout.WildEncounterTypes
         val I = HnsLayout.WildPokemonInfo
         val W = HnsLayout.WildPokemon
-        val count = HnsLayout.gWildMonHeaders_COUNT
-        for (i in 0 until count) {
+        fun table(info: Long, slots: IntRange, rates: IntArray): WildTable? {
+            if (!rom(info)) return null
+            val ib = memory.read(info, I.SIZE)
+            if (ib.size < I.SIZE) return null
+            val mons = I.wildPokemon.u32(ib)
+            if (!rom(mons)) return null
+            val n = slots.count()
+            val sp = IntArray(n); val lo = IntArray(n); val hi = IntArray(n)
+            for ((k, s) in slots.withIndex()) {
+                val w = memory.read(mons + s.toLong() * W.SIZE, W.SIZE)
+                if (w.size < W.SIZE) continue
+                sp[k] = W.species.at(w).coerceAtLeast(0); lo[k] = W.minLevel.at(w); hi[k] = W.maxLevel.at(w)
+            }
+            return WildTable(info, sp, lo, hi, rates)
+        }
+        for (i in 0 until HnsLayout.gWildMonHeaders_COUNT) {
             val h = memory.read(HnsLayout.gWildMonHeaders + i.toLong() * H.SIZE, H.SIZE)
             if (h.size < H.SIZE) break
             val group = H.mapGroup.at(h); val num = H.mapNum.at(h)
             if (group == 0xFF) break
-            val best = LinkedHashMap<String, LinkedHashMap<Int, GbaTracker.RouteMon>>()
-            fun area(name: String, info: Long, slots: IntRange, rates: IntArray) {
-                if (!rom(info)) return
-                val ib = memory.read(info, I.SIZE)
-                if (ib.size < I.SIZE) return
-                val mons = I.wildPokemon.u32(ib)
-                if (!rom(mons)) return
-                val per = HashMap<Int, GbaTracker.RouteMon>()
-                for ((k, s) in slots.withIndex()) {
-                    val w = memory.read(mons + s.toLong() * W.SIZE, W.SIZE)
-                    if (w.size < W.SIZE) continue
-                    val sp = W.species.at(w)
-                    if (sp <= 0) continue
-                    val lo = W.minLevel.at(w); val hi = W.maxLevel.at(w)
-                    val old = per[sp]
-                    per[sp] = if (old == null) GbaTracker.RouteMon(sp, rates[k].toDouble(), lo, hi)
-                    else GbaTracker.RouteMon(sp, old.rate + rates[k], minOf(old.minLv, lo), maxOf(old.maxLv, hi))
-                }
-                val into = best.getOrPut(name) { LinkedHashMap() }
-                for ((sp, m) in per) {
-                    val o = into[sp]
-                    into[sp] = if (o == null) m else GbaTracker.RouteMon(sp, maxOf(o.rate, m.rate), minOf(o.minLv, m.minLv), maxOf(o.maxLv, m.maxLv))
-                }
-            }
+            val tables = LinkedHashMap<String, Array<WildTable?>>()
+            for (name in WILD_AREAS) tables[name] = arrayOfNulls(HnsLayout.TIMES_OF_DAY_COUNT)
             for (t in 0 until HnsLayout.TIMES_OF_DAY_COUNT) {
                 val base = H.encounterTypes.offset + t * T.SIZE
-                area("Walking", T.landMonsInfo.u32(h, base), 0 until HnsLayout.LAND_WILD_COUNT, LAND_RATES)
-                area("Surfing", T.waterMonsInfo.u32(h, base), 0 until HnsLayout.WATER_WILD_COUNT, WATER_RATES)
-                area("RockSmash", T.rockSmashMonsInfo.u32(h, base), 0 until HnsLayout.ROCK_WILD_COUNT, WATER_RATES)
+                tables.getValue("Walking")[t] = table(T.landMonsInfo.u32(h, base), 0 until HnsLayout.LAND_WILD_COUNT, LAND_RATES)
+                tables.getValue("Surfing")[t] = table(T.waterMonsInfo.u32(h, base), 0 until HnsLayout.WATER_WILD_COUNT, WATER_RATES)
+                tables.getValue("RockSmash")[t] = table(T.rockSmashMonsInfo.u32(h, base), 0 until HnsLayout.ROCK_WILD_COUNT, WATER_RATES)
                 val fish = T.fishingMonsInfo.u32(h, base)
-                area("Old Rod", fish, 0..1, intArrayOf(70, 30))
-                area("Good Rod", fish, 2..4, intArrayOf(60, 20, 20))
-                area("Super Rod", fish, 5..9, intArrayOf(40, 40, 15, 4, 1))
+                tables.getValue("Old Rod")[t] = table(fish, 0..1, OLD_ROD_RATES)
+                tables.getValue("Good Rod")[t] = table(fish, 2..4, GOOD_ROD_RATES)
+                tables.getValue("Super Rod")[t] = table(fish, 5..9, SUPER_ROD_RATES)
             }
-            val areas = LinkedHashMap<String, List<GbaTracker.RouteMon>>()
-            for (a in ORDERED_ENCOUNTERS) best[a]?.values?.sortedByDescending { it.rate }?.takeIf { it.isNotEmpty() }?.let { areas[a] = it }
-            if (areas.isNotEmpty()) out[(group shl 8) or num] = areas
+            out += WildHeader((group shl 8) or num, tables)
         }
         out
+    }
+
+    /** One table's species in slot order, each once, with its summed chance and its level range. */
+    private fun perSpecies(t: WildTable): LinkedHashMap<Int, GbaTracker.RouteMon> {
+        val per = LinkedHashMap<Int, GbaTracker.RouteMon>()
+        for (k in t.species.indices) {
+            val sp = t.species[k]
+            if (sp <= 0) continue
+            val old = per[sp]
+            per[sp] = if (old == null) GbaTracker.RouteMon(sp, t.rates[k].toDouble(), t.minLv[k], t.maxLv[k])
+            else GbaTracker.RouteMon(sp, old.rate + t.rates[k], minOf(old.minLv, t.minLv[k]), maxOf(old.maxLv, t.maxLv[k]))
+        }
+        return per
+    }
+
+    private fun byMap(build: (Array<WildTable?>) -> List<GbaTracker.RouteMon>): Map<Int, LinkedHashMap<String, List<GbaTracker.RouteMon>>> {
+        val out = LinkedHashMap<Int, LinkedHashMap<String, List<GbaTracker.RouteMon>>>()
+        for (h in wildHeaders) {
+            val areas = LinkedHashMap<String, List<GbaTracker.RouteMon>>()
+            for (a in ORDERED_ENCOUNTERS) h.tables[a]?.let(build)?.takeIf { it.isNotEmpty() }?.let { areas[a] = it }
+            // The game takes a map's first header (GetCurrentMapWildMonHeaderId), so a later one for the same map is not it.
+            if (areas.isNotEmpty() && h.mapId !in out) out[h.mapId] = areas
+        }
+        return out
+    }
+
+    /** The Kaizo cycle's list per map and area: KaizoCore_CycleSlot's set, in its order. */
+    val wildCycle: Map<Int, LinkedHashMap<String, List<GbaTracker.RouteMon>>> by lazy {
+        byMap { times ->
+            val seen = ArrayList<WildTable>()
+            for (t in times) if (t != null && seen.none { it.ptr == t.ptr }) seen += t
+            val out = LinkedHashMap<Int, GbaTracker.RouteMon>()
+            for (t in seen) for ((sp, m) in perSpecies(t)) {
+                val o = out[sp]
+                out[sp] = if (o == null) m else GbaTracker.RouteMon(sp, maxOf(o.rate, m.rate), minOf(o.minLv, m.minLv), maxOf(o.maxLv, m.maxLv))
+            }
+            out.values.toList()
+        }
+    }
+
+    private val wildByTime = arrayOfNulls<Map<Int, LinkedHashMap<String, List<GbaTracker.RouteMon>>>>(HnsLayout.TIMES_OF_DAY_COUNT)
+
+    /** What the game rolls from at time of day [time]: that time's table, or the fallback time's when it has none. */
+    fun wildAt(time: Int): Map<Int, LinkedHashMap<String, List<GbaTracker.RouteMon>>> {
+        val t = time.coerceIn(0, HnsLayout.TIMES_OF_DAY_COUNT - 1)
+        wildByTime[t]?.let { return it }
+        val m = byMap { times ->
+            val table = times[t] ?: if (HnsLayout.OW_TIME_OF_DAY_DISABLE_FALLBACK == 0) times[HnsLayout.OW_TIME_OF_DAY_FALLBACK] else null
+            table?.let { perSpecies(it).values.sortedByDescending { m -> m.rate } } ?: emptyList()
+        }
+        wildByTime[t] = m
+        return m
     }
 
     /** The trainers each map's scripts battle (hns/maptrainers.tsv, from the build's map scripts). */
@@ -604,6 +676,11 @@ internal class HnsData(private val memory: MemoryReader) {
         /** Gen 3's encounter slot chances: land, and the water / Rock Smash tables. */
         val LAND_RATES = intArrayOf(20, 20, 10, 10, 10, 10, 5, 5, 4, 4, 1, 1)
         val WATER_RATES = intArrayOf(60, 30, 5, 4, 1)
+        val OLD_ROD_RATES = intArrayOf(70, 30)
+        val GOOD_ROD_RATES = intArrayOf(60, 20, 20)
+        val SUPER_ROD_RATES = intArrayOf(40, 40, 15, 4, 1)
+        /** The area kinds KaizoCore_CycleSlot cycles (land, water, rock smash, each rod), by RouteData name. */
+        val WILD_AREAS = listOf("Walking", "Surfing", "RockSmash", "Old Rod", "Good Rod", "Super Rod")
         const val POCKET_POKE_BALLS = 2
     }
 }
@@ -611,6 +688,8 @@ internal class HnsData(private val memory: MemoryReader) {
 /** The Heart & Soul map, its addresses and offsets all HnsLayout's (the build's own). */
 internal object HnsMaps {
     const val NAME = "Heart & Soul 2.0.6 (KaizoCore)"
+    /** The game, as UnreadableBuild names it. */
+    const val GAME = "Heart & Soul"
     private val sb1 = HnsLayout.SaveBlock1
     private val bag = HnsLayout.Bag
 
@@ -720,6 +799,7 @@ internal object HnsMaps {
         finalTrainers = HnsLayout.FINAL_TRAINERS,
         labMapIds = setOf(HnsLayout.LAB_MAP_ID),
         safariModeFlag = HnsLayout.FLAG_SYS_SAFARI_MODE,
+        leagueFlag = HnsLayout.FLAG_END_NUZLOCKE,
         safariMapIds = HnsLayout.SAFARI_MAP_IDS,
         encryptionKeyOffset = HnsLayout.SaveBlock2.encryptionKey.offset.toLong(),
         spriteCount = HnsLayout.NUM_SPECIES,

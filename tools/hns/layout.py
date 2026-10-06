@@ -55,6 +55,8 @@ STRUCTS = [
     # kObjectEventBytes, gMain.oamBuffer, gPlayerAvatar's spriteId and objectEventId), so a test can hold its
     # constants to this build's.
     ("Main", None), ("Sprite", None), ("ObjectEvent", None), ("PlayerAvatar", None),
+    # The Survival heal counter (2026-10-06): the field script running now and its call stack (tracker-gba HnsHeals).
+    ("ScriptContext", None),
 ]
 
 HEADERS = [
@@ -67,6 +69,8 @@ HEADERS = [
     "constants/region_map_sections.h", "constants/trainer_types.h", "constants/tms_hms.h",
     "constants/form_change_types.h", "constants/item_effects.h", "pokemon_storage_system.h",
     "region_map.h", "constants/battle_script_commands.h", "battle_script_commands.h", "constants/game_stat.h", "constants/map_types.h", "constants/event_bg.h", "main.h", "sprite.h", "kaizocore_tables.h",
+    # The script engine (2026-10-06): the heals outside a Pokemon Center (tracker-gba HnsHeals).
+    "script.h",
 ]
 
 SYMBOLS = [
@@ -88,6 +92,8 @@ SYMBOLS = [
     "gChosenMoveByBattler", "gTrainerBattleParameter", "gSaveBlock1Ptr", "gSaveBlock2Ptr",
     "gSaveBlock3Ptr", "gPokemonStoragePtr", "gMapHeader", "gMain", "gSpecialVar_Result",
     "gRngValue", "gFollowerSteps",
+    # The time of day the wild encounters use (src/overworld.c, updated every minute; the tracker's wild list, rc37).
+    "gTimeOfDay",
     # The tracker's reads (2026-10-05): the battle engine's state, the map tables, and the code addresses
     # gBattleMainFunc holds (raw st_value, thumb bit included).
     "gBattlescriptCurrInstr", "gBattleScripting", "gBattlerAbility", "gCurrentTurnActionNumber",
@@ -106,6 +112,8 @@ SYMBOLS = [
     # callbacks as raw st_value (thumb bit included), as the native side compares gMain.callback2 with them.
     "CB2_Overworld", "CB2_OverworldBasic", "gPlayerAvatar", "gSprites", "gSpriteCoordOffsetX",
     "gSpriteCoordOffsetY", "gPlttBufferUnfaded", "gPlttBufferFaded", "gObjectEvents",
+    # The Survival heal counter (2026-10-06): the field script engine's context (src/script.c, static).
+    "sGlobalScriptContext",
 ]
 
 # Battle script labels: plain asm labels carry no size, so each gets "end", the next symbol's address. The tracker
@@ -117,6 +125,12 @@ LABELS = [
     "BattleScript_MoveUsedIsConfused", "BattleScript_MoveUsedIsConfusedRet", "BattleScript_MoveUsedIsConfusedNoMore",
     "BattleScript_MoveUsedWokeUp", "BattleScript_MoveUsedIsInLove", "BattleScript_MoveUsedIsInLoveCantAttack",
     "BattleScript_MoveUsedIsFrozen", "BattleScript_BattlerDefrosted",
+    # Field script labels (2026-10-06): the free heals outside a Pokemon Center that Survival counts as one (tracker-gba
+    # HnsHeals): the shared heal every bed and healer calls, the callers of it that count, and the Alola benches' own heal.
+    "Common_EventScript_OutOfCenterPartyHeal", "NewBarkTown_Lab_EventScript_HealingMachine2",
+    "NationalPark_Normal_EventScript_Teacher2", "Route26_House1_EventScript_HealWoman", "SSAquaRooms_EventScript_Bed",
+    "Route111_OldLadysRestStop_EventScript_Rest", "SSTidalRooms_EventScript_Bed", "Alola_Akala_Bench_Heal_2",
+    "Alola_Poni_Bench_Heal_2", "Alola_Ulaula_Bench_Heal_2",
 ]
 
 # Tables: symbol -> struct name, or uN for plain integer arrays.
@@ -170,6 +184,7 @@ SCALARS = [
     "BG_EVENT_HIDDEN_ITEM", "FLAG_HIDDEN_ITEMS_START", "FLAG_HNS_LAB_TRASH_ITEM_TAKEN",
     # The Safari Zone (2026-10-05): the flag the game sets while the player is in it.
     "FLAG_SYS_SAFARI_MODE",
+    "FLAG_END_NUZLOCKE",  # set by beating Lance (patch 0038) in every mode: the League is beaten
     # Play as your Pokemon (2026-10-05).
     "MAX_SPRITES", "OBJECT_EVENTS_COUNT",
     # The challenge menu's preset per KaizoCore mode (kaizocore_tables.h, 2026-10-05).

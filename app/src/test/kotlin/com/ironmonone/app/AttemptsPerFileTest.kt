@@ -138,7 +138,7 @@ class AttemptsPerFileTest {
         assertEquals("End the Nuzlocke on Emerald and start attempt 5 on Emerald, Kaizo?",
             RunCopy.confirmNewAttempt(RunCopy.EndingRun(0, "Emerald", nuzlocke = true), 5, "Emerald", "Kaizo"))
         val play = File("src/main/kotlin/com/ironmonone/app/PlayScreen.kt").readText()
-        assertTrue("secondPassFor(context, store, k, settings), countAttempt = nuzlocke == null)" in play, "Play's NEW RUN in a Nuzlocke counts none")
+        assertTrue("secondPassFor(context, store, k, settings), countAttempt = nuzlocke == null && !store.lastRunNuzlocke()," in play, "Play's NEW RUN in a Nuzlocke counts none")
         assertTrue("RunJob.randomize(context, prepared, settingsFile, seed, nuzlocke = true)" in File("src/main/kotlin/com/ironmonone/app/NuzlockeScreen.kt").readText())
     }
 

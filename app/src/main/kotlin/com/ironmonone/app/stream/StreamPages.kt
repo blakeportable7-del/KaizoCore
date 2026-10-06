@@ -22,14 +22,18 @@ import java.net.URLEncoder
 object StreamPages {
 
     /**
-     * The setup guide. [base] is the address the visitor used, like http://192.168.1.50:8642. Opened on the
-     * phone itself (see [onPhone]) it says so and leaves out the downloads: a scene made there would point
-     * at the phone.
+     * The setup guide. [base] is the address the visitor used, like http://192.168.1.50:8642, or http://127.0.0.1:8642
+     * from a PC on the USB cable (`adb forward`). [headers] are the request's, lower-cased names: the phone's own browser
+     * and a PC on the cable both reach the phone at 127.0.0.1, and only the browser's own words tell them apart (see
+     * [onPhone]). Opened on the phone itself it says so and leaves out the downloads: a scene made there would point at
+     * the phone. From a PC on the cable it offers them, with 127.0.0.1 in every address, which is what OBS on that PC
+     * reaches the phone at (2026-10-06, wired streaming).
      */
-    fun setup(base: String, token: String): String {
+    fun setup(base: String, token: String, headers: Map<String, String> = emptyMap()): String {
         val k = "k=" + URLEncoder.encode(token, "UTF-8")
         val urls = ObsScene.urls(base, token)
-        val here = onPhone(base)
+        val here = onPhone(base, headers)
+        val cable = !here && loopback(base)
         // One row a favorite, as the scene's favorite sources have them (StreamFavorites).
         val favorites = (1..StreamFavorites.SLOTS).joinToString("\n") { n ->
             "<tr><td>Favorite $n</td><td><div class=\"addr\"><input readonly value=\"" + esc(StreamFavorites.pageUrl(base, token, n)) +
@@ -37,7 +41,7 @@ object StreamPages {
         }
         return SETUP
             .replace("%FAVORITES%", favorites)
-            .replace("%PHONE_NOTE%", if (here) PHONE_NOTE else "")
+            .replace("%PHONE_NOTE%", if (here) PHONE_NOTE else if (cable) CABLE_NOTE else "")
             .replace("%DOWNLOADS%", if (here) "" else DOWNLOADS)
             .replace("%SCENE%", "/obs-scene.json?$k")
             .replace("%SCENE_TOP%", "/obs-scene.json?$k&top=1")
@@ -47,6 +51,12 @@ object StreamPages {
             .replace("%GAME%", esc(urls.getValue(ObsScene.GAME)))
             .replace("%TRACKER%", esc(urls.getValue(ObsScene.TRACKER)))
             .replace("%ATTEMPTS%", esc(urls.getValue(ObsScene.ATTEMPTS)))
+            .replace("%GAME_OVER%", esc(urls.getValue(ObsScene.GAME_OVER)))
+            .replace("%TIMER%", esc(urls.getValue(ObsScene.TIMER)))
+            .replace("%GAME_OVER_W%", ObsScene.GAME_OVER_W.toString())
+            .replace("%GAME_OVER_H%", ObsScene.GAME_OVER_H.toString())
+            .replace("%TIMER_W%", ObsScene.TIMER_W.toString())
+            .replace("%TIMER_H%", ObsScene.TIMER_H.toString())
             .replace("%STATE%", esc("$base/state.json?$k"))
             .replace("%COUNT%", esc("$base/attempts?$k"))
             .replace("%GAME_W%", ObsScene.GAME_W.toString())
@@ -54,6 +64,10 @@ object StreamPages {
             .replace("%TRACKER_W%", ObsScene.TRACKER_W.toString())
             .replace("%TRACKER_H%", ObsScene.TRACKER_H.toString())
             .replace("%ATTEMPTS_H%", ObsScene.ATTEMPTS_H.toString())
+            .replace("%HISTORY%", esc(ObsScene.historyUrl(base, token)))
+            .replace("%HISTORY_H%", ObsScene.HISTORY_H.toString())
+            .replace("%ADB_FORWARD%", StreamHub.ADB_FORWARD)
+            .replace("%PORT%", StreamHub.PORT.toString())
     }
 
     fun game(): String = GAME
@@ -63,17 +77,44 @@ object StreamPages {
     private fun esc(s: String) = s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;")
 
     /**
-     * True when the guide was opened at the phone itself: localhost, 127.x.x.x, [::1] or 0.0.0.0. The scene and
-     * the addresses it would write then name the phone, not the PC that runs OBS. [base] is "http://host" or
-     * "http://host:port", as the server builds it.
+     * True when the guide was opened in the phone's own browser: at a loopback address (localhost, 127.x.x.x, [::1] or
+     * 0.0.0.0), by a browser that says it runs on Android. The scene and the addresses it would write then name the
+     * phone, not the PC that runs OBS.
+     *
+     * A loopback address alone used to be enough (2026-09-30). Since the USB cable (2026-10-06), a PC reaches the phone at
+     * 127.0.0.1 too: `adb forward tcp:8642 tcp:8642` hands the PC's connection to adbd, which opens it on the phone's own
+     * loopback, so the server sees 127.0.0.1 either way and only the visitor's own words differ. The phone's browser says
+     * Android: in its User-Agent, and in Chrome's Sec-CH-UA-Platform ("Android") and Sec-CH-UA-Mobile (?1), which it
+     * sends to 127.0.0.1 because a loopback address counts as secure. A PC's browser and OBS say Windows, macOS or Linux,
+     * and curl says neither. A phone browser set to "Desktop site" can hide all three and is then taken for a PC: it is
+     * offered the scene, which does no harm, since nothing on the phone can import it.
+     *
+     * [base] is "http://host" or "http://host:port", as the server builds it; [headers] have lower-cased names.
      */
-    internal fun onPhone(base: String): Boolean {
+    internal fun onPhone(base: String, headers: Map<String, String> = emptyMap()): Boolean =
+        loopback(base) && android(headers)
+
+    /** [base]'s host is this device: localhost, 127.x.x.x, [::1] or 0.0.0.0. */
+    internal fun loopback(base: String): Boolean {
         val authority = base.substringAfter("://").substringBefore('/')
         val host = (if (authority.startsWith("[")) authority.substringBefore(']') + "]" else authority.substringBefore(':')).lowercase()
         return host == "localhost" || host == "[::1]" || host == "0.0.0.0" || LOOPBACK.matches(host)
     }
 
+    /** The visitor's browser says it runs on Android (see [onPhone]). */
+    internal fun android(headers: Map<String, String>): Boolean {
+        val ua = headers["user-agent"].orEmpty()
+        val platform = headers["sec-ch-ua-platform"].orEmpty().trim().trim('"')
+        return ANDROID.containsMatchIn(ua) || platform.equals("Android", ignoreCase = true) || headers["sec-ch-ua-mobile"]?.trim() == "?1"
+    }
+
     private val LOOPBACK = Regex("127(\\.[0-9]{1,3}){3}")
+    private val ANDROID = Regex("\\bAndroid\\b", RegexOption.IGNORE_CASE)
+
+    /** What a PC on the USB cable is told: the line that makes the cable work, run on the PC each time the phone is plugged in. */
+    private val CABLE_NOTE = "<div class=\"note\"><b>You are on the USB cable.</b> These addresses work while the phone is plugged in " +
+        "and the PC has run <code>" + StreamHub.ADB_FORWARD + "</code> since it was. Run that line again after you plug the phone " +
+        "back in or restart the PC. The addresses never change, so OBS keeps them.</div>"
 
     private val PHONE_NOTE = """<div class="note warn"><b>Open this page on your PC, not on the phone.</b> A scene made here would point back at the phone.</div>"""
 
@@ -114,7 +155,7 @@ td{border-bottom:1px solid #222;padding:8px 8px 8px 0;vertical-align:top}
 code{font:13px Consolas,monospace;color:var(--gold)}
 </style></head><body><main>
 <h1>KaizoCore stream kit</h1>
-<p class="lead">The game's picture and sound go from this phone to OBS over your Wi-Fi. No cable, no screen mirroring, no capture card.</p>
+<p class="lead">The game's picture and sound go from this phone to OBS over a USB cable or your Wi-Fi. No screen mirroring, no capture card.</p>
 <p class="small">It works for any game you play in KaizoCore: Kaizo IronMON, Nuzlocke, ROM hacks and games from your library, on GBA, Game Boy and DS.</p>
 
 %PHONE_NOTE%
@@ -124,7 +165,7 @@ code{font:13px Consolas,monospace;color:var(--gold)}
 <p>You should see your game. Click the page once to turn the sound on. If you do, the phone side works and any problem left is in OBS.</p>
 
 <h2><span class="n">2</span> Add it to OBS</h2>
-<p><b>Already use OBS scenes?</b> Do not import. In your gameplay scene choose <b>Sources</b>, <b>+</b>, <b>Browser</b>, and add the three addresses from the table below, one source each. On the game source, check <b>Control audio via OBS</b> and <b>Use custom frame rate</b>, 60.</p>
+<p><b>Already use OBS scenes?</b> Do not import. In your gameplay scene choose <b>Sources</b>, <b>+</b>, <b>Browser</b>, and add the addresses you want from the table below, one source each. On the game source, check <b>Control audio via OBS</b> and <b>Use custom frame rate</b>, 60.</p>
 <p><b>New to OBS?</b> Download the scene in step 1, then:</p>
 <ol>
 <li>In OBS, open the <b>Scene Collection</b> menu and choose <b>Import Scene Collection</b>.</li>
@@ -135,7 +176,8 @@ code{font:13px Consolas,monospace;color:var(--gold)}
 
 <h2><span class="n">3</span> What you should see</h2>
 <p>The game on the left, the tracker box on the right, and <b>KaizoCore game</b> moving in the Audio Mixer. Viewers see only these: never the phone's buttons, menus or camera.</p>
-<p class="small">The tracker box shows the game's tracker where KaizoCore has one, and a line saying so where it does not. The scene puts the attempt counter under the tracker. The attempt counter shows in a Kaizo IronMON run. In a Nuzlocke, a ROM hack or any other game it stays blank: there is no attempt number. The scene is laid out for a 1920 x 1080 canvas, which is OBS's default. On another size, drag the three sources where you want them.</p>
+<p class="small">The tracker box shows the game's tracker where KaizoCore has one, and a line saying so where it does not. The scene puts the attempt counter under the tracker. The attempt counter shows in a Kaizo IronMON run. In a Nuzlocke, a ROM hack or any other game it stays blank: there is no attempt number. The scene is laid out for a 1920 x 1080 canvas, which is OBS's default. On another size, drag the sources where you want them.</p>
+<p class="small">The game over card is over the game and shows nothing while you play. The run timer is in the scene too, hidden: click the eye beside <b>KaizoCore timer</b> in Sources to show it, then drag it where you want it.</p>
 
 <h2>While you stream</h2>
 <ul>
@@ -154,11 +196,12 @@ code{font:13px Consolas,monospace;color:var(--gold)}
 <h2>If nothing shows</h2>
 <ul>
 <li><b>An error box in OBS</b> means the phone was not streaming when OBS started. Turn Stream on, then switch to another scene and back. Still an error? Right-click the source, choose Properties, press <b>Refresh cache of current page</b>.</li>
-<li><b>Same Wi-Fi.</b> The phone and the PC have to be on the same network. A guest network usually blocks it, and so does a VPN on either one.</li>
+<li><b>On a USB cable:</b> run <code>%ADB_FORWARD%</code> on the PC again (it ends when the phone is unplugged or adb restarts), and open the addresses at 127.0.0.1. USB debugging has to be on, as for scrcpy.</li>
+<li><b>Same Wi-Fi.</b> On Wi-Fi the phone and the PC have to be on the same network. A guest network usually blocks it, and so does a VPN on either one.</li>
 <li><b>A game has to be running.</b> Open a game on the phone and check that the menu says STREAM ON. The picture waits for the game.</li>
-<li><b>Address changed?</b> Open this page again at the new address. In OBS, right-click each KaizoCore source, choose Properties and paste its new address from the table below: game, tracker, attempts, favorites. You do not need to import again. To stop it happening, give the phone a fixed address in your router's settings (often called an address reservation).</li>
+<li><b>Address changed?</b> On Wi-Fi the phone's address can change; on the USB cable it never does. Open this page again at the new address. In OBS, right-click each KaizoCore source, choose Properties and paste its new address from the table below: game, tracker, attempts, game over, timer, favorites. You do not need to import again. To stop it happening, give the phone a fixed address in your router's settings (often called an address reservation).</li>
 <li><b>Picture but no sound.</b> In OBS, right-click <b>KaizoCore game</b>, choose Properties and make sure <b>Control audio via OBS</b> is checked. Then check that it is not muted in the Audio Mixer.</li>
-<li><b>Choppy picture or sound.</b> Use 5 GHz Wi-Fi and keep the phone near the router. A PC on a cable helps too.</li>
+<li><b>Choppy picture or sound.</b> Use the USB cable. On Wi-Fi, use 5 GHz and keep the phone near the router. A PC on a network cable helps too.</li>
 <li><b>Still nothing?</b> Add <code>&amp;debug=1</code> to the game address. A small box in the corner shows the picture size, pictures a second and the sound state. Take it off before you go live.</li>
 <li>Every address here only works while STREAM is on in the app.</li>
 </ul>
@@ -170,11 +213,19 @@ code{font:13px Consolas,monospace;color:var(--gold)}
 <tr><td>Game, picture and sound</td><td><div class="addr"><input readonly value="%GAME%"><button type="button">Copy</button></div></td><td>%GAME_W% x %GAME_H%. Check <b>Control audio via OBS</b> and <b>Use custom frame rate</b>, 60.</td></tr>
 <tr><td>Tracker</td><td><div class="addr"><input readonly value="%TRACKER%"><button type="button">Copy</button></div></td><td>%TRACKER_W% x %TRACKER_H%</td></tr>
 <tr><td>Attempt counter</td><td><div class="addr"><input readonly value="%ATTEMPTS%"><button type="button">Copy</button></div></td><td>%TRACKER_W% x %ATTEMPTS_H%</td></tr>
+<tr><td>Game over card</td><td><div class="addr"><input readonly value="%GAME_OVER%"><button type="button">Copy</button></div></td><td>%GAME_OVER_W% x %GAME_OVER_H%</td></tr>
+<tr><td>Run timer and splits</td><td><div class="addr"><input readonly value="%TIMER%"><button type="button">Copy</button></div></td><td>%TIMER_W% x %TIMER_H%</td></tr>
 %FAVORITES%
+<tr><td>Run history</td><td><div class="addr"><input readonly value="%HISTORY%"><button type="button">Copy</button></div></td><td>%TRACKER_W% x %HISTORY_H%</td></tr>
 </table>
+<p class="small"><b>Run history</b> shows your past attempts on the game and mode you are playing: how far each got, your best run, and the Pokémon and trainers that end runs most. Viewers see it as a source on your stream. The imported scene has it hidden over the tracker: click its eye to show it, or copy it into a scene of its own. It also reads as a normal page in a browser on your Wi-Fi; take <code>&amp;bg=none</code> off the address to give it a background. <code>&amp;rows=20</code> shows more runs.</p>
 <p class="small"><b>Favorites</b> are the favorite Pokémon you set for the game you are playing, one picture each, as the tracker shows them, numbered as their boxes are. Add each one you want as a <b>Browser</b> source. The imported scene has all nine, hidden: click the eye beside one in Sources to show it, then drag it where you want it. They change by themselves as soon as you change your favorites, and a box with no favorite shows nothing. The picture alone, a see-through PNG for your own overlays, is at the same address with .png after the number, like <code>/favorite/1.png</code>.</p>
-<p class="small"><b>Placing the boxes before a game runs.</b> Add <code>&amp;demo=battle</code> to the tracker address and <code>&amp;demo=1</code> to the attempt address. Take them off before you go live.</p>
+<p class="small"><b>Game over card.</b> It stays see-through while you play. When a Kaizo IronMON run ends it comes in with what ended the run, the attempt, your badges, the time played, how it stands against your best run, and the run's GachaMon card if one was made. It goes when the next run starts, or when Retry the battle undoes the loss. To have it go by itself, add <code>&amp;hold=20</code> to its address for 20 seconds.</p>
+<p class="small"><b>Run timer.</b> It is the time played this attempt, the same time the run history keeps: it counts while KaizoCore is in front with the run's game open, and stops while the phone is in the background, the screen is off or a new run is being made. Fast forward counts as real time, not game time. When the run ends it holds the time it ended at. Each badge gets a split, the time you earned it. Once a run with splits has been played on the same game and settings file, each split also shows how far ahead (green) or behind (red) you are against your best of those runs, and the badges it reached that you have not show its time. Add <code>&amp;splits=0</code> for the time alone.</p>
+<p class="small"><b>Looks.</b> Add <code>&amp;theme=clean</code> to the tracker, attempt counter, game over or timer address for a see-through look to put over the game, or <code>&amp;theme=hud</code> for a ship's heads-up display. Leave it off for the standard look.</p>
+<p class="small"><b>Placing the boxes before a game runs.</b> Add <code>&amp;demo=battle</code> to the tracker address and <code>&amp;demo=1</code> to the attempt address. Take them off before you go live. The game over card and the timer take <code>&amp;demo=1</code> too.</p>
 <p class="small">The game address ends in <code>&amp;int=1</code>, which keeps every pixel the same size. That is the sharpest picture, but it leaves a border, most on a DS with both screens showing. Take it off to fill the box. You can also add these to the end of the game address: <code>&amp;top=1</code> shows only the top DS screen, <code>&amp;smooth=1</code> softens the picture instead of keeping hard pixel edges, <code>&amp;audio=0</code> leaves the sound off.</p>
+<p class="small"><b>USB cable or Wi-Fi.</b> On the cable, with <code>%ADB_FORWARD%</code> run on the PC, every address starts http://127.0.0.1:%PORT%. On Wi-Fi it starts with the phone's address. Open this page the way OBS will reach the phone, and download the scene from there: its addresses are the ones this page shows.</p>
 <p class="small">For your own overlays: <a href="%STATE%">the tracker's raw data</a> and <a href="%COUNT%">the attempt number as plain text</a>. After a Kaizo IronMON run ends, the tracker box's Randomizer data tab shows every species as randomized.</p>
 <div class="note">The <code>k=</code> part of each address is a password for these pages. Keep the addresses off your stream.</div>
 <script>
@@ -208,7 +259,7 @@ body{font:15px/1.25 "Segoe UI",Roboto,Arial,sans-serif;color:#e8e8e8}
 #label{color:#9a9a9a;letter-spacing:2px;font-size:15px}
 #n{color:#ffd54a;font-size:52px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1}
 </style></head><body>
-<div id="box"><span id="label">ATTEMPT</span><span id="n">-</span></div>
+<div id="box" data-panel><span id="label" class="kc-label">ATTEMPT</span><span id="n" class="kc-big">-</span></div>
 <script>
 (function () {
   var q = new URLSearchParams(location.search);

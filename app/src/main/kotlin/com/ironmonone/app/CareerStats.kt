@@ -99,13 +99,22 @@ data class CareerStats(
             return base?.displayName ?: id
         }
 
-        /** The mode a run was played in, from the settings file it was randomized with: "Kaizo", "Chaos Kaizo (Nat. Dex)", or the file's own name. */
-        fun modeLabel(ruleset: String): String {
+        /**
+         * The mode a run was played in, from the settings file it was randomized with: "Kaizo", "Chaos Kaizo (Nat. Dex)",
+         * or the file's own name. [hnsPool], a Heart & Soul run's pool (RunRecord.hnsPool): its files are the Emerald Nat.
+         * Dex ones whatever the pool, and only a Nat. Dex pool run is held to the Nat. Dex rules, so a Vanilla one reads
+         * "Kaizo (Vanilla)". Empty, as for every other game, the file decides.
+         */
+        fun modeLabel(ruleset: String, hnsPool: String = ""): String {
             val stem = ruleset.replace(Regex("(?i)[.]rnqs$"), "").trim()
             if (stem.isEmpty()) return StatsCopy.MODE_UNKNOWN
             val info = RnqsInfo.parse(ruleset)
             val key = info.ruleset ?: return stem
-            return RnqsInfo.rulesetLabel(key) + if (info.natDex) StatsCopy.NAT_DEX else ""
+            return RnqsInfo.rulesetLabel(key) + when (hnsPool) {
+                com.ironmonone.app.engine.HnsEngine.Pool.VANILLA.name -> StatsCopy.HNS_VANILLA
+                com.ironmonone.app.engine.HnsEngine.Pool.NATDEX.name -> StatsCopy.NAT_DEX
+                else -> if (info.natDex) StatsCopy.NAT_DEX else ""
+            }
         }
 
         /**
@@ -171,7 +180,7 @@ data class CareerStats(
 
             // A custom game is its own row, never a best of the mode it is named after (IronMON rules check R2).
             // So is a run that went without what its rules add: "Kaizo (50% levels)" (R4).
-            val bests = all.groupBy { (id, r) -> gameName(id) to CustomRuns.label(modeLabel(r.ruleset), r.custom) + (r.variant.takeIf { it.isNotBlank() }?.let { " ($it)" } ?: "") }
+            val bests = all.groupBy { (id, r) -> gameName(id) to CustomRuns.label(modeLabel(r.ruleset, r.hnsPool), r.custom) + (r.variant.takeIf { it.isNotBlank() }?.let { " ($it)" } ?: "") }
                 .map { (key, runs) ->
                     val best = runs.map { it.second }.sortedBy { it.attempt }.reduce { b, r -> if (beats(r, b)) r else b }
                     BestRun(
@@ -216,6 +225,8 @@ internal object StatsCopy {
         "A run that went back in time with state loads, retries or restarts says so, and does not count toward a streak."
     const val MODE_UNKNOWN = "Mode not recorded"
     const val NAT_DEX = " (Nat. Dex)"
+    /** A Heart & Soul run of the Vanilla pool (Gen 1 to 3), held to Emerald's rules. */
+    const val HNS_VANILLA = " (Vanilla)"
 
     fun number(n: Int): String = n.toString()
 

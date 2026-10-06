@@ -204,6 +204,8 @@ fun PlayScreen(
         }
     }
     var trackerState by remember { mutableStateOf<com.ironmonone.tracker.TrackerState?>(null) }
+    // The tracker card when the tracker will not read this build of the game (RunBuildCard, RunBuild).
+    val buildCard = rememberRunBuildCard(store, session, gameKeyForRom)
     var ndsState by remember {
         mutableStateOf<com.ironmonone.tracker.nds.NdsTrackerState?>(null)
     }
@@ -375,7 +377,6 @@ fun PlayScreen(
         // systemDirectory is filesDir: the cores look for these names there. Streamed and checked (SystemFiles).
         scope.launch { status = SystemFiles.import(context.filesDir, name) { context.contentResolver.openInputStream(uri) } }
     }
-    var menuOpen by remember { mutableStateOf(false) }
     // Confirmations, pickers and the toast's action live in one holder, off this method's registers.
     val ui = remember { PlayUiState() }
     // The layout editor edits a copy. It used to save on DONE and on Back alike
@@ -385,7 +386,7 @@ fun PlayScreen(
     // nothing reaches disk before DONE.
     fun startLayoutEdit() {
         padLayouts.startEdit(layoutKey, landscape); ui.skinBefore = padSkin
-        selectedElement = null; menuOpen = false; editingLayout = true
+        selectedElement = null; FileBar.close(); editingLayout = true
     }
     fun finishLayoutEdit(keep: Boolean) {
         // Every orientation the edit reached: saved (a default as no file), or put back as it was.
@@ -393,10 +394,6 @@ fun PlayScreen(
         if (!keep) ui.skinBefore?.let { if (it != padSkin) { padSkin = it; store.setPadSkin(it) } }
         ui.confirmKeepLayout = false; editingLayout = false; selectedElement = null
     }
-    // Back closes the FILE menu before it leaves anything (2026-09-27, audit).
-    // Declared before the editor's handler, so the editor's wins when both are on.
-    androidx.activity.compose.BackHandler(enabled = menuOpen) { menuOpen = false }
-    LaunchedEffect(menuOpen) { if (!menuOpen) ui.moreOpen = false }
     androidx.activity.compose.BackHandler(enabled = editingLayout) {
         if (padLayouts.changed() || padSkin != ui.skinBefore) ui.confirmKeepLayout = true
         else finishLayoutEdit(false)
@@ -486,10 +483,6 @@ fun PlayScreen(
     val dsFxReady = rememberDsEffectivenessReady(ndsState)
     var lastCountedSpecies by remember { mutableStateOf(-1) }
     var trackerOpen by remember { mutableStateOf(true) }
-    // The last touch anywhere on the play area, for the landscape chip strip's fade.
-    // Watched at the ROOT: a watcher inside the pad overlay was never hit under the
-    // DS touch surface, so in DS landscape no tap ever woke the strip (2026-09-07).
-    var lastTouch by remember { mutableStateOf(android.os.SystemClock.uptimeMillis()) }
     // STREAMING. Clean view is the capture layout: nothing on screen but
     // the game (both DS screens in the core's own layout), so scrcpy's
     // window is a clean crop. Back leaves it. The tracker for the stream
@@ -721,7 +714,8 @@ fun PlayScreen(
             r.readMemory(addr, len)
         }
         // Types, BST and abilities are randomized, so they come from the sidecar
-        // the engine writes beside the ROM rather than from a bundled list.
+        // the engine writes beside the ROM rather than from a bundled list; an
+        // alternate form's (Sandy Cloak Wormadam) from the ROM's own personal data.
         val sidecar = java.io.File(
             rom.parentFile, rom.nameWithoutExtension + ".species.tsv")
         var tracker: com.ironmonone.tracker.nds.NdsTracker? = null
@@ -747,7 +741,7 @@ fun PlayScreen(
                         // game with no map gets no tracker (and keeps probing)
                         // rather than Platinum's offsets read against it.
                         else com.ironmonone.tracker.nds.NdsGameMap.detect(reader)?.let { map ->
-                            com.ironmonone.tracker.nds.NdsTracker(reader, sidecar, map)
+                            com.ironmonone.tracker.nds.NdsTracker(reader, sidecar, map, rom)
                         }
                     }.getOrNull()
                 }
@@ -828,8 +822,10 @@ fun PlayScreen(
                         else RetroTriggerTap.attach(com.ironmonone.tracker.GbaTracker(
                             reader, com.ironmonone.tracker.GameMap.resolve(reader)
                         ), r)
-                    }.getOrNull()
+                    }.onFailure { if (it is com.ironmonone.tracker.UnreadableBuild) buildCard.refused = true }.getOrNull()
                 }
+                // A build the tracker refused is said on the card (RunBuildCard), not left on "waiting for the game".
+                if (tracker != null) buildCard.refused = false
                 trackerRef = tracker
                 // The favorite-in-ball line reads this tracker's starter balls
                 // (FavoriteBall, through favoriteLine's remember on trackerRef).
@@ -935,14 +931,18 @@ fun PlayScreen(
         }
     }
 
-    fun newRun() {
+    /**
+     * NEW RUN, or with [move] the run in play made again on this app's build of its game (RunBuild.move): the same seed,
+     * settings and mode, the core stopped first in the same way, the old build's states never restored.
+     */
+    fun newRun(move: Boolean = false) {
         // A randomized Nuzlocke's next game keeps its rules in a ledger of its own (2026-09-30, UX audit P0-8).
-        val nuzlocke = if (session.isRun) NuzlockeTracking.current(context.applicationContext.filesDir)?.ledger else null
+        val nuzlocke = if (session.isRun && !move) NuzlockeTracking.current(context.applicationContext.filesDir)?.ledger else null
         // One at a time: a second confirm while one is being made is refused, not run (rc33 audit P0-4, NewRunGuard).
         // Claimed right before the launch, whose completion gives it back however the job ends.
         if (!NewRunGuard.claim()) { status = NewRunGuard.BUSY; return }
         scope.launch {
-            status = "Rolling a new seed…"
+            status = if (move) RunBuild.MOVING else "Rolling a new seed…"
             // Stop the core BEFORE the randomizer overwrites current.gba/.nds:
             // mGBA holds the ROM in memory, but melonDS keeps the file handle,
             // and writing under it worked only because teardown usually came
@@ -965,16 +965,25 @@ fun PlayScreen(
             trackerRef = null
             kotlinx.coroutines.delay(500)
             val ok = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                runCatching {
+                if (move) runCatching {
+                    val i = RunBuild.inputs(store)
+                    val started = RunBuild.move(store, i, NextRunJob.appStamp(context),
+                        prePass = if (i.prePass) ExtraPasses.prePassFor(context, store, i.kind, i.settings, true) else null,
+                        secondPass = if (i.secondPass) ExtraPasses.secondPassFor(context, store, i.kind, i.settings, true) else null)
+                    started.seed to i.settings.name
+                } else runCatching {
                     // The last run's game and settings again. A run made ahead for exactly
                     // those (NextRun) is moved in within seconds; otherwise it is randomized
                     // now. The rotate, seed, attempt and notes are PrepStore.installRun's,
                     // the same code the Run tab goes through.
                     val (k, prepared, settings) = RunStart.lastInputs(store)
                     // The passes as RUN has them switched now (ExtraPasses): a stage made the other way is not taken.
+                    // The run's own mode carries over: a Nuzlocke counts no attempt and gets its preset (RunStart), and a
+                    // Heart & Soul run keeps its pool, not the one chosen on the mode screens since (rc36.1 known issue).
                     val started = RunStart.start(store, k, prepared, settings, seed = null, app = NextRunJob.appStamp(context),
                         prePass = ExtraPasses.prePassFor(context, store, k, settings),
-                        secondPass = ExtraPasses.secondPassFor(context, store, k, settings), countAttempt = nuzlocke == null)
+                        secondPass = ExtraPasses.secondPassFor(context, store, k, settings), countAttempt = nuzlocke == null && !store.lastRunNuzlocke(),
+                        pool = if (k.isHns) HnsPool.ofRun(store) else null)
                     nuzlocke?.let { NuzlockeStore(context.applicationContext.filesDir).startNextRandomized(it, k, started.seed, System.currentTimeMillis()) }
                     // Here, not after the reboot: if the player left Play meanwhile, the rest of this job never runs.
                     TrackerOptions.startRunWith(settings.name)
@@ -987,16 +996,16 @@ fun PlayScreen(
                 ndsState = null
                 ndsTrackerRef = null
                 battleStartState = null   // a state from another randomization must never be restored
-                gameOverLatch.reset()
                 timeMachine.clear()
-                statMarks.clear()
-                encounterBook.reset()
+                // A moved run is the same run: its marks, notes and sightings stay (PrepStore.installRun's moved).
+                if (!move) { gameOverLatch.reset(); statMarks.clear(); encounterBook.reset() }
                 lastCountedSpecies = -1
                 marksVersion++
                 gameKeyForRom++
                 gameKey++
                 gameActive = true
-                status = ("New run (seed %016x)." + if (TrackerOptions.ballPickerShows()) " New ball call incoming." else "").format(seed)
+                status = if (move) RunBuild.MOVED
+                    else ("New run (seed %016x)." + if (TrackerOptions.ballPickerShows()) " New ball call incoming." else "").format(seed)
             }.onFailure {
                 // Plain copy, never a null (which showed nothing) or an exception's
                 // class name; the exception itself goes to the log (2026-09-27, audit).
@@ -1010,6 +1019,7 @@ fun PlayScreen(
             }
         }.invokeOnCompletion { NewRunGuard.release() }   // done, failed, or cancelled before it started
     }
+    buildCard.onMove = { newRun(move = true) }
 
     // Three save slots. One slot meant every checkpoint overwrote the last,
     // which is the wrong shape for a run where you want a pre-gym state kept
@@ -1333,178 +1343,14 @@ fun PlayScreen(
         onDispose { FleeOnB.onFlee = null; FleeOnB.menuUp = null }
     }
 
-    androidx.compose.runtime.DisposableEffect(menuOpen, fullscreen) {
+    // Portrait's top bar keeps its FILE button: it opens the same FILE bar a tap on the top of the game does (FileBar.kt).
+    androidx.compose.runtime.DisposableEffect(fullscreen) {
         AppBarActions.content = if (fullscreen) null else {
             { com.ironmonone.app.gen3.Gen3Button(
-                "FILE", accent = menuOpen, onClick = { menuOpen = !menuOpen }) }
+                "FILE", accent = FileBar.open, onClick = { FileBar.toggle() }) }
         }
         onDispose { AppBarActions.content = null }
     }
-
-    // The FILE menu, defined ONCE and rendered in both orientations.
-
-    // It used to live inside the portrait-only branch while the FILE button
-    // that opens it is published in BOTH orientations, so in landscape the
-    // button toggled a menu nothing drew and read as a dead control.
-    //
-    // The landscape overlay chips do cover most of it (SLOT/SAVE/LOAD/NEW/
-    // speed/mute/CAM); RESET is the one action they lack. That is a reason to
-    // keep the menu reachable, not a reason to keep two half-overlapping
-    // control surfaces - but the button says FILE, so FILE opens the menu.
-    val FileMenu: @Composable () -> Unit = {
-        Column {
-        if (streamOn) {
-            // The address OBS needs, with a Copy button: it had to be typed by
-            // hand off this line (2026-09-27, audit).
-            val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
-            Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(com.ironmonone.app.stream.StreamHub.menuLine(),
-                    style = MaterialTheme.typography.bodySmall, color = Shell.hintOnNight,
-                    modifier = Modifier.weight(1f))
-                com.ironmonone.app.gen3.Gen3Button("Copy link", onClick = {
-                    status = com.ironmonone.app.stream.StreamHub.copyLink { clipboard.setText(androidx.compose.ui.text.AnnotatedString(it)) }
-                })
-            }
-        }
-        // Wrapped rows in three groups (save states, the game, tools), not one
-        // row of twenty buttons with most of them off screen and nothing to say
-        // so (2026-09-27, audit). Capped and scrolled vertically, so it stays
-        // near the height the portrait budget gives it; the half-shown row is
-        // the cue that there is more. 164dp ended exactly on a row edge, so the
-        // menu looked complete with four rows hidden; 190dp shows half a row, and
-        // a fade marks the bottom while there is more (2026-09-27, walk-through).
-        val menuScroll = rememberScrollState()
-        FlowRow(
-            // Excluded from the system back gesture: a fast fling on this strip
-            // starting near the screen edge used to leave the game (2026-09-06).
-            Modifier.fillMaxWidth().systemGestureExclusion()
-                .heightIn(max = if (landscape) 210.dp else 190.dp)
-                .drawWithContent {
-                    drawContent()
-                    if (menuScroll.canScrollForward) drawRect(
-                        androidx.compose.ui.graphics.Brush.verticalGradient(
-                            listOf(Color.Transparent, Shell.paper), startY = size.height - 36.dp.toPx(), endY = size.height,
-                        ),
-                    )
-                }
-                .verticalScroll(menuScroll).padding(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            if (landscape) {
-                // Landscape shows this OR the chip strip, never both.
-                com.ironmonone.app.gen3.Gen3Button("Fewer", onClick = { ui.moreOpen = false })
-                com.ironmonone.app.gen3.Gen3Button("Close", onClick = { menuOpen = false })
-                MenuRule()
-            }
-            // Save states. The slot is picked in STATES; this button used to
-            // step through eight slots one tap at a time (2026-09-27, audit).
-            val slotHas = remember(saveSlot, slotsVersion) { slotFile(saveSlot).exists() }
-            com.ironmonone.app.gen3.Gen3Button("States, slot $saveSlot" + if (slotHas) "" else " (empty)",
-                onClick = { statesDialog = true })
-            com.ironmonone.app.gen3.Gen3Button("SAVE STATE", onClick = { saveState() })
-            com.ironmonone.app.gen3.Gen3Button("LOAD STATE", onClick = { askLoad() })
-            if (rewindAllowed) HoldChip("REWIND", onDown = { startRewind() }, onUp = { stopRewind() }, big = true)
-            MenuRule()
-            // The game.
-            if (session.isRun) com.ironmonone.app.gen3.Gen3Button(if (NuzlockeTracking.inPlay()) "NEW NUZLOCKE" else "NEW RUN", accent = true,
-                onClick = { confirmNewRun = true })
-            // Speed opens a picker (see speedOptions).
-            com.ironmonone.app.gen3.Gen3Button("Speed $speedLabel", accent = speed > 1 || slow > 1,
-                onClick = { ui.speedPicker = true })
-            com.ironmonone.app.gen3.Gen3Button(if (muted) "UNMUTE" else "MUTE",
-                accent = muted, onClick = { muted = !muted; applyAudio() })
-            // Restart asks first: it threw away everything since the last save on one tap.
-            com.ironmonone.app.gen3.Gen3Button("RESTART", onClick = { ui.confirmReset = true })
-            // DS: collapse the touch screen so the top screen fills the frame.
-            if (dsScreens) {
-                com.ironmonone.app.gen3.Gen3Button(
-                    if (dsTopOnly) "Both screens" else "Top screen only",
-                    accent = dsTopOnly,
-                    onClick = { dsTopOnly = !dsTopOnly })
-            }
-            // 2.4: the rules for this game and mode, readable mid-run.
-            // A Nuzlocke's own rules in a Nuzlocke game, not the IronMON rulebook (2026-09-30, UX audit P0-6).
-            if (session.tracked) com.ironmonone.app.gen3.Gen3Button("RULES", onClick = { if (NuzlockeTracking.inPlay()) NuzlockeLedgerRequest.openRules() else rulesDialog = true })
-            // The second screen is view only, so the tracker's SETUP there cannot be tapped: this is the way in from the phone.
-            if (session.tracked && TrackerOptions.trackerOnSecondScreen) com.ironmonone.app.gen3.Gen3Button("TRACKER SETUP", onClick = { menuOpen = false; gearDialog = true })
-            MenuRule()
-            // Tools.
-            com.ironmonone.app.gen3.Gen3Button("CAM", accent = facecam,
-                onClick = { facecam = !facecam })
-            // Streaming: the web tracker for OBS, and the capture layout.
-            com.ironmonone.app.gen3.Gen3Button(if (streamOn) "STREAM ON" else "STREAM",
-                accent = streamOn, onClick = {
-                    if (streamOn) { com.ironmonone.app.stream.StreamHub.stop(); streamOn = false; status = "Stream server stopped." }
-                    else {
-                        val url = com.ironmonone.app.stream.StreamHub.start(context.filesDir)
-                        streamOn = url != null
-                        status = com.ironmonone.app.stream.StreamHub.startedLine(url)
-                    }
-                })
-            com.ironmonone.app.gen3.Gen3Button("CLEAN VIEW", onClick = { onClean(true); menuOpen = false })
-            com.ironmonone.app.gen3.Gen3Button("EDIT LAYOUT", onClick = { startLayoutEdit() })
-            com.ironmonone.app.gen3.Gen3Button("SETTINGS", onClick = { settingsDialog = true })
-            com.ironmonone.app.gen3.Gen3Button(
-                if (!raSummary.loggedIn) "ACHIEVEMENTS" else if (raSummary.gameLoaded) "Achievements ${raSummary.unlocked}/${raSummary.total}" else "ACHIEVEMENTS ON",
-                accent = raSummary.loggedIn && raSummary.gameLoaded,
-                onClick = { raRefresh(); raDialog = true })
-            com.ironmonone.app.gen3.Gen3Button(
-                if (!cheatsAllowed) "CHEATS OFF" else if (cheats.any { it.enabled }) "Cheats (${cheats.count { it.enabled }})" else "CHEATS",
-                accent = cheatsAllowed && cheats.any { it.enabled },
-                onClick = {
-                    if (cheatsAllowed) cheatsDialog = true
-                    else status = "Cheats are off in a Kaizo IronMON run, a Nuzlocke and RetroAchievements hardcore."
-                })
-            // With a controller attached the on-screen pad is optional; the
-            // switch lives here rather than as a row under the pad, which
-            // cost the tracker a button's height for a control used once.
-            if (controllerOn && padForced) {
-                com.ironmonone.app.gen3.Gen3Button("HIDE PAD") {
-                    padForced = false; store.setPadForced(false)
-                }
-            }
-            // Diagnostic for the route panel: the adopted map-id transitions,
-            // shareable without a computer, same as the crash report. Only the
-            // Gen 3 tracker records them (trackerRef is GBA only), so on GB/GBC
-            // and DS it could only ever send an empty log and is not shown
-            // there (2026-09-27, audit).
-            if (trackerRef != null) com.ironmonone.app.gen3.Gen3Button("ROUTE LOG", onClick = {
-                val lines = trackerRef?.routeLogSnapshot() ?: emptyList()
-                val text = if (lines.isEmpty()) "No map transitions recorded yet."
-                    else lines.joinToString(Char(10).toString())
-                runCatching {
-                    File(context.filesDir, "route-log.txt").writeText(text)
-                    val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                        type = "text/plain"
-                        putExtra(android.content.Intent.EXTRA_SUBJECT, "KaizoCore route log")
-                        putExtra(android.content.Intent.EXTRA_TEXT, text)
-                    }
-                    context.startActivity(
-                        android.content.Intent.createChooser(send, "Send route log"))
-                }
-                status = "Route log: " + lines.size + " transitions."
-            })
-
-            // Debug builds only: writes a known Pokemon into the DS party
-            // slot to prove the tracker's read/decode/render chain without
-            // playing to the first starter. Never present in a release APK.
-            val debuggable = (context.applicationInfo.flags and
-                android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
-            if (debuggable && dsScreens) {
-                com.ironmonone.app.gen3.Gen3Button("INJECT", onClick = {
-                    val t = ndsTrackerRef
-                    status = if (t == null) "DS tracker not ready yet."
-                    else t.injectTestMon { addr, data ->
-                        retro?.writeMemory(addr, data) ?: 0
-                    }
-                })
-            }
-        }
-        // Status messages are the toast's now (StatusToast), shown whether or not this menu is open.
-        }
-    }
-
 
     // DS coverage runs off type NAMES, because the Gen 4 sidecar stores types
     // as names rather than ids.
@@ -1543,6 +1389,35 @@ fun PlayScreen(
         }
     }
 
+    // Tracker Setup and the screens it opens, for Tracker Setup itself and the FILE bar's TRACKER sheet (FileBar.kt).
+    val trackerLinks: () -> TrackerLinks = { TrackerLinks(
+        speciesName = { id -> trackerRef?.speciesName(id) ?: ndsTrackerRef?.speciesName(id) ?: gbNames?.invoke(id) ?: "#$id" },
+        marks = statMarks,
+        onCleared = { marksVersion++ },
+        onSetup = { gearDialog = true },
+        onRules = { if (NuzlockeTracking.inPlay()) NuzlockeLedgerRequest.openRules() else rulesDialog = true },
+        onCoverage = { coverageCalc = true },
+        onStats = if (platform == com.ironmonone.core.Platform.NDS) null else { { side.statsDialog = true } },
+        onTrainers = if (trackerRef?.hasTrainerData == true) { { side.trainersDialog = true } } else null,
+        onBattleDetails = if (trackerRef?.hasBattleDetails == true) { { side.battleDetailsDialog = true } } else null,
+        onCatchRates = if (trackerRef?.hasCatchRates == true) { { side.catchHpAdjust = 0; side.catchRatesDialog = true } } else null,
+        onNotebook = if (platform == com.ironmonone.core.Platform.NDS) null else { { side.notebookDialog = true } },
+        onHeals = if (trackerRef?.hasCatchRates == true) { { side.healsDialog = true } } else null,
+        onTimeMachine = { side.timeMachineDialog = true },
+        onPastRuns = if (pastRunStore != null) { { side.pastRuns = true } } else null,
+        onStatistics = if (pastRunStore != null) { { side.statistics = true } } else null,
+        onEvoData = ndsState?.party?.firstOrNull()?.mon?.species?.let { sp -> { side.evoData = sp } },
+        onTrackedPokemon = if (ndsState != null) { { side.trackedPokemon = true } } else null,
+        onTourney = if (ndsState?.badgeSet == "HGSS") { { side.tourney = true } } else null,
+        onColorTheme = { side.colorTheme = true },
+        showTimerToggle = ndsState != null,
+        showBadgeOptions = ndsState?.badgeSet == "HGSS",
+        gameBoy = platform == com.ironmonone.core.Platform.GBC,
+        // The Gen 2 reference's IV estimate, on the lead; the Gen 1 one fails (IvEstimate).
+        ivPotential = (gbRef as? com.ironmonone.tracker.GbcTracker)?.let { g -> { g.ivPotential(trackerState?.party?.firstOrNull()) } },
+        ds = platform == com.ironmonone.core.Platform.NDS,
+    ) }
+
     // DS landscape used to overlay the tracker on the right third of a full-width
     // frame, with the bottom screen meant to show below it. With a real team the
     // tracker is taller than the screen, so the bottom screen was always hidden
@@ -1558,21 +1433,9 @@ fun PlayScreen(
                   if (facecam) {
                       FacecamDocked(onDenied = { permanent -> facecam = false; status = CameraDenied.note(context, ui, permanent) })
                   }
-                  // The attempt (the only counter in the app), FILE, the DS's screens and hiding the tracker sit
-                  // under one small arrow at the end of the tracker's first row (TrackerCornerMenu). They were a row
-                  // of chips of their own, which ran off a narrow column (Blake, 2026-10-02). The second display is
-                  // view only: the panel's own ATTEMPT line, a Kaizo IronMON run's only, shows there (rc32 audit P2 #55).
-                  val onSecond = LocalOnSecondScreen.current
-                  val corner: (@Composable () -> Unit)? = if (onSecond || TrackerOptions.landscapeTracker == LandscapeTracker.FLOATING) null else { {
-                      TrackerCornerMenu(
-                          attempt = runNow.attempt, menuOpen = menuOpen, onMenu = { menuOpen = !menuOpen; lastTouch = android.os.SystemClock.uptimeMillis() },
-                          dsTopOnly = dsTopOnly.takeIf { dsScreens }, onScreens = { dsTopOnly = !dsTopOnly },
-                          onHide = { trackerOpen = false; ui.trackerPeek = false },
-                          onFloat = { TrackerOptions.landscapeTracker = LandscapeTracker.FLOATING; TrackerOptions.save() },
-                      )
-                  } }
+                  // No gear and no menu on the tracker: Tracker Setup, FILE, the screens and the views are on the FILE bar (FileBar.kt).
                   if (dsScreens) NdsTrackerPanel(
-                      state = ndsState, onGear = { gearDialog = true }, headerTrailing = corner, timer = if (TrackerOptions.showTimer) runTimer else null,
+                      state = ndsState, timer = if (TrackerOptions.showTimer) runTimer else null,
                       favoriteLine = favoriteLine,
                       randomBall = ndsTrackerRef?.randomBall?.takeIf { TrackerOptions.ballPickerShows() },
                       onTypeDefenses = { n, a, b -> typeDefenses = n to com.ironmonone.tracker.Gen3Types.defenses(com.ironmonone.tracker.nds.Gen4Types.idOf(a) ?: -1, com.ironmonone.tracker.nds.Gen4Types.idOf(b) ?: (com.ironmonone.tracker.nds.Gen4Types.idOf(a) ?: -1)) },
@@ -1602,8 +1465,9 @@ fun PlayScreen(
                       onGradeNotes = { side.scoreSheet = true },
                       onRandomEvos = { sp -> side.randomEvos = sp }, hasRandomEvos = { sp -> trackerRef?.hasRandomEvos(sp) == true },
                       onMoveHistory = { sp, n, lv -> side.moveHistory = Triple(sp, n, lv) },
-                      onTypeDefenses = { n, a, b -> typeDefenses = n to com.ironmonone.tracker.Gen3Types.defenses(a, b, gen1 = session.kind?.generation == com.ironmonone.core.Generation.GB1, natDex = session.kind?.fairyTypes == true) },
-                      trackerState, ballCall = ballCall, onGear = { gearDialog = true }, headerTrailing = corner,
+                      onTypeDefenses = { n, ts -> typeDefenses = n to com.ironmonone.tracker.Gen3Types.defenses(ts, gen1 = session.kind?.generation == com.ironmonone.core.Generation.GB1, natDex = session.kind?.fairyTypes == true) },
+                      trackerState, ballCall = ballCall,
+                      unsupportedNote = buildCard.note, unsupportedAction = buildCard.action,
                 onRerollBall = { ballReroll++ },
                 movesSeenRunWide = gbaView.foe(trackerState)
                     ?.let { statMarks.movesSeenFor(it.species) } ?: emptyList(),
@@ -1667,6 +1531,85 @@ fun PlayScreen(
     val dsDock = dsDockIn(retro, ui, landscape && fullscreen && dsScreens && !dsTopOnly && dsLayoutName == "hybrid-top" && session.tracked && !streamClean && !trackerOnSecond,
         trackerOpen, gameColumn, coreValues)
 
+    // The FILE bar (Blake, 2026-10-05/06): one see-through bar over the play screen in every view, opened by a tap on
+    // the top third of the game or portrait's FILE, holding everything the File band, its MORE menu, the gear and the
+    // tracker's menu held. Drawn by FileBarHost; built here in a lambda of its own, off this method's registers.
+    val fileBar: @Composable () -> Unit = {
+        val density = LocalDensity.current.density
+        val links = trackerLinks()
+        val scope0 = remember(platform) { GearScope.of(context.applicationContext.filesDir, platform == com.ironmonone.core.Platform.GBC, dsScreens) }
+        FileBarHost(FileBarActions(
+            allowed = !streamClean && !editingLayout,
+            ctx = BarContext(
+                tracked = session.tracked, isRun = session.isRun, ds = dsScreens, gameBoy = platform == com.ironmonone.core.Platform.GBC,
+                landscape = landscape, fullscreen = fullscreen, controller = controllerOn, view = currentBarView(),
+                rewindAllowed = rewindAllowed, raHardcore = raHardcore, cheatsAllowed = cheatsAllowed, routeLog = trackerRef != null,
+                inject = dsScreens && (context.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0,
+                streamSettings = LocalShellNav.current?.openStreamSettings != null,
+                ironmon = scope0.ironmon, plain = scope0.plain, gen3 = scope0.gen3, reach = links.reach(),
+            ),
+            attempt = runNow.attempt,
+            tap = FileBar.TapInputs(
+                allowed = !streamClean && !editingLayout,
+                console = if (dsScreens) TapZone.Console.Ds(ScreenTap.DsLayout(dsLayoutName, padLayout.dsGap, coreValues["melonds_hybrid_ratio"]?.toIntOrNull() ?: 2), dsTopOnly)
+                    else TapZone.Console.Flat(platform.aspect, 1f),
+                viewport = dsDock?.let { TapZone.Rect(it.left, it.top, it.left + it.width, it.top + it.height) },
+                pad = padLayout.takeIf { showPad && landscape }, skin = padSkin, density = density,
+                dockCoverPx = dsDock?.trackerW ?: 0f,
+            ),
+            slot = saveSlot, onSlot = { saveSlot = it }, slotHas = { n -> slotsVersion >= 0 && slotFile(n).exists() },
+            onSave = { saveState() }, onLoad = { askLoad() }, onStates = { statesDialog = true },
+            speeds = speedOptions(), speedNow = speedLabel, onSpeed = { pickSpeed(it) },
+            muted = muted, onMute = { muted = !muted; applyAudio() },
+            onRestart = { ui.confirmReset = true },
+            onRewind = { down -> if (down) startRewind() else stopRewind() },
+            beforeNewRun = { persistSram() }, onNewRun = { newRun() },
+            links = links.takeIf { session.tracked },
+            dsTopOnly = dsTopOnly, onScreens = { dsTopOnly = it },
+            onClean = { onClean(true) }, onLayout = { startLayoutEdit() },
+            padForced = padForced, onPad = { padForced = it; store.setPadForced(it) },
+            facecam = facecam, onCam = { facecam = !facecam },
+            streamOn = streamOn,
+            onStream = {
+                if (streamOn) { com.ironmonone.app.stream.StreamHub.stop(); streamOn = false; status = "Stream server stopped." }
+                else {
+                    val url = com.ironmonone.app.stream.StreamHub.start(context.filesDir)
+                    streamOn = url != null
+                    status = com.ironmonone.app.stream.StreamHub.startedLine(url)
+                }
+            },
+            raLabel = if (raSummary.loggedIn && raSummary.gameLoaded) "Achievements ${raSummary.unlocked}/${raSummary.total}" else "Achievements",
+            raOn = raSummary.loggedIn && raSummary.gameLoaded,
+            onAchievements = { raRefresh(); raDialog = true },
+            cheatsLabel = if (cheats.any { it.enabled }) "Cheats (${cheats.count { it.enabled }})" else "Cheats",
+            onCheats = { cheatsDialog = true },
+            onRouteLog = {
+                val lines = trackerRef?.routeLogSnapshot() ?: emptyList()
+                val text = if (lines.isEmpty()) "No map transitions recorded yet." else lines.joinToString(Char(10).toString())
+                runCatching {
+                    File(context.filesDir, "route-log.txt").writeText(text)
+                    val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(android.content.Intent.EXTRA_SUBJECT, "KaizoCore route log")
+                        putExtra(android.content.Intent.EXTRA_TEXT, text)
+                    }
+                    context.startActivity(android.content.Intent.createChooser(send, "Send route log"))
+                }
+                status = "Route log: " + lines.size + " transitions."
+            },
+            // Debug builds only: a known Pokemon into the DS party, to prove the tracker's chain without playing to a starter.
+            onInject = {
+                val t = ndsTrackerRef
+                status = if (t == null) "DS tracker not ready yet." else t.injectTestMon { addr, data -> retro?.writeMemory(addr, data) ?: 0 }
+            },
+            onEmulator = { settingsDialog = true },
+            onLeave = { onExitFullscreen() },
+            // The addresses OBS needs, Wi-Fi and USB cable, each with its own Copy (StreamLinks.kt), under the stream's head line.
+            streamExtra = { StreamLinkRows({ status = it }) },
+        ))
+    }
+
+
     // The tracker pane, hoisted so it can be laid out two ways: as a
     // full-height column beside the game, or - for DS landscape - as a
     // TOP-anchored overlay, so the bottom screen can sit BELOW it.
@@ -1681,26 +1624,8 @@ fun PlayScreen(
           } else if (trackerOpen && (TrackerOptions.landscapeTracker == LandscapeTracker.DOCKED || ui.trackerPeek)) {
               // No bar: the game meets the tracker, and the tracker's left edge resizes it (TrackerEdge.kt, rc34).
               DockedTracker(panes, windowWidthDp, trackerContent)
-          } else {
-              // Collapsed: a tab on the right edge, tap to bring it back.
-              // 48dp wide and named for a screen reader; it was 26dp with a
-              // bare arrow. A tap shows the tracker for now: it used to write
-              // Docked over a Hidden choice made in the tracker's settings
-              // (2026-09-27, audit).
-              Box(
-                  Modifier.width(com.ironmonone.app.Shell.touchTarget).fillMaxHeight()
-                      .semantics { contentDescription = "Show tracker" }
-                      .background(Pc.Ground)
-                      .clickable {
-                          trackerOpen = true
-                          if (TrackerOptions.landscapeTracker != LandscapeTracker.DOCKED) ui.trackerPeek = true
-                      },
-                  contentAlignment = Alignment.Center,
-              ) {
-                  Text("◀", fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
-                      fontSize = 17.sp, color = Color.White)
-              }
           }
+          // Hidden: the game alone (VIEW on the FILE bar brings the tracker back).
         }
     }
 
@@ -1712,16 +1637,7 @@ fun PlayScreen(
     // One core means one framebuffer means one surface: the bottom screen
     // cannot be a second view, so the layout is arranged around where the
     // core actually draws it rather than trying to move it.
-    Box(
-        modifier.fillMaxSize().pointerInput(Unit) {
-            awaitPointerEventScope {
-                while (true) {
-                    awaitPointerEvent(androidx.compose.ui.input.pointer.PointerEventPass.Initial)
-                    lastTouch = android.os.SystemClock.uptimeMillis()
-                }
-            }
-        },
-    ) {
+    Box(modifier.fillMaxSize()) {
     Row(Modifier.fillMaxSize()) {
       // GBA portrait is the one layout whose height is NOT elastic: the game
       // frame is a fixed 3:2, so on a shorter screen - or one with a system nav
@@ -1758,7 +1674,7 @@ fun PlayScreen(
       // so the tracker keeps a readable minimum. See PortraitBudget.
       val budget = PortraitBudget.plan(
           playArea.width, playArea.height,
-          androidx.compose.ui.platform.LocalDensity.current.density, menuOpen,
+          androidx.compose.ui.platform.LocalDensity.current.density, false,
       )
       val scrollable = false
       Column(
@@ -1865,7 +1781,7 @@ fun PlayScreen(
                         }
                         GLRetroView(ctx, data).also { view ->
                             retro = view
-                            view.setOnTouchListener(ScreenTap.listener(ui, ctx)) // a tap on bare screen, for ScreenTapMenu
+                            view.setOnTouchListener(ScreenTap.listener(ui, ctx)) // a tap on the top third of the game opens the FILE bar (TapZone)
                             view.stateLoadListener = SaveGuard.listener(platform, File(ctx.filesDir, "saves"), rom)   // loading a state keeps the in-game save
                             view.cheevosListener = RetroAchievements.listener(
                                 onEvent = { type, title, desc, points, badge, result ->
@@ -1911,9 +1827,6 @@ fun PlayScreen(
                 }
             }
 
-            // Stream layout (brief 16.1): controls fade after idle so a screen
-            // share reads as game + tracker; any touch brings them back.
-            var dimmed by remember { mutableStateOf(false) }
             // DS stylus: the game view's own touch handling. LibretroDroid's
             // GLRetroView.onTouchEvent normalises the touch over the view and
             // the native side maps it through the core's letterbox
@@ -1926,46 +1839,14 @@ fun PlayScreen(
             // only Compose targets over the view, so a touch on bare screen
             // reaches the view, and a touch on a button is the button's.
 
-            if (landscape) {
-                LaunchedEffect(Unit) {
-                    while (true) {
-                        kotlinx.coroutines.delay(500)
-                        dimmed = android.os.SystemClock.uptimeMillis() - lastTouch > 3000
-                    }
-                }
-            }
-            // The game now fills its pane, so these sit ON the picture rather
-            // than on a black margin. They rest SEMI-TRANSPARENT so the game
-            // reads through them, and fade to nothing when untouched instead of
-            // lingering at a ghostly 12% that was neither visible nor gone.
-            // TWO fades, because these are not the same kind of control.
-            //
-            // The chip strip (SAVE / LOAD / NEW / MENU) is occasional, so it
-            // may disappear entirely. The PAD is how you play - hiding it left
-            // no way to press a button, which is worse than it covering some
-            // scenery. It stays put, just see-through.
-            val chipAlpha by androidx.compose.animation.core.animateFloatAsState(
-                targetValue = when {
-                    landscape && dimmed -> 0f
-                    landscape -> 0.55f
-                    else -> 1f
-                },
-                label = "chipFade",
-            )
+            // The pad rests SEMI-TRANSPARENT over the picture, so the game reads through it. The landscape chip
+            // strip and its fade are gone: everything it held is on the FILE bar (FileBar.kt), which a tap on the
+            // top third of the game opens (TapZone).
             val controlAlpha = if (landscape) padLayout.opacity else 1f
-            // Modifier.alpha does not affect hit testing, so a faded control is
-            // still live: the tap meant to WAKE the controls also pressed
-            // whichever one it landed on - and LOAD and SAVE sit in that strip
-            // with no confirmation. While faded, the first touch only wakes.
-            // Only the CHIPS need the wake-first guard, since only they can
-            // be invisible. The pad is always visible and always live.
-            val controlsAwake = !(landscape && dimmed)
             if (landscape) {
-                // No full-size watcher Box here any more. It had a pointer modifier and
-                // sat above the game view, and Compose hands a touch to the topmost
-                // sibling only, so in landscape the DS touch screen never received a
-                // press (2026-09-07). The root Box's watcher already sees every touch
-                // at the Initial pass without consuming it.
+                // No full-size watcher Box here: one with a pointer modifier sat above the game view, and Compose
+                // hands a touch to the topmost sibling only, so in landscape the DS touch screen never received a
+                // press (2026-09-07).
 
                 if (showPad || editingLayout) {
                     FreePad(
@@ -1976,114 +1857,17 @@ fun PlayScreen(
                             .then(Modifier.alpha(if (editingLayout) 1f else controlAlpha)).clearOfDsDock(dsDock),
                     )
                 }
-                // Swallow the wake-up touch while the strip is faded.
-                if (!controlsAwake) {
-                    Box(
-                        Modifier.align(Alignment.TopStart).fillMaxWidth()
-                            .height(56.dp)
-                            .pointerInput(Unit) {
-                                awaitPointerEventScope {
-                                    while (true) {
-                                        val e = awaitPointerEvent()
-                                        e.changes.forEach { it.consume() }
-                                        // This guard is the topmost hit under the strip, so the
-                                        // watcher below never sees a tap here: a tap on the faded
-                                        // strip did nothing at all. It wakes the chips itself now.
-                                        lastTouch = android.os.SystemClock.uptimeMillis()
-                                    }
-                                }
-                            }
-                    )
-                }
-
-                // FILE in landscape shows ONE thing: the chip strip, or (after
-                // More) the full menu. It drew both at once, about 170dp over
-                // the game, and kept drawing the menu over clean view and the
-                // layout editor (2026-09-27, audit).
-                if (menuOpen && ui.moreOpen && !streamClean && !editingLayout) {
-                    Box(Modifier.align(Alignment.TopStart).fillMaxWidth().background(Color.Black.copy(alpha = 0.75f))) {
-                        FileMenu()
-                    }
-                }
-
-                // Slim utility strip, top-left: speed and states stay reachable by
-                // touch even with a controller (no controller button maps to them).
-                // Bounded and scrollable: the strip is as wide as the game
-                // column, and adding MENU pushed it past that edge.
+                // The layout editor's bar.
                 // The editor bar is narrower than the column, so the corners
                 // (L and R in every preset) stay free, and it moves to the
                 // bottom edge when a control sits under it (2026-09-27, audit).
                 if (editingLayout) layoutToolbar(Modifier.align(if (ui.layoutBarBottom) Alignment.BottomCenter else Alignment.TopCenter))
-                if (!session.tracked && !menuOpen && !streamClean && !editingLayout)
-                    LandscapeMenuChip(Modifier.align(Alignment.TopCenter)) { menuOpen = true }
-                // Centred, with arrows while it scrolls and an X that closes it (LandscapeMenuBand, 2026-10-02).
-                if (menuOpen && !ui.moreOpen && !streamClean && !editingLayout) LandscapeMenuBand(
-                    Modifier.align(Alignment.TopCenter).fillMaxWidth().systemGestureExclusion().padding(6.dp)
-                        .alpha(chipAlpha),
-                    onClose = { menuOpen = false },
-                ) {
-                    // Two groups, separated by a rule: the ones that act on
-                    // the RUN first, then the ones that act on the APP. Nine
-                    // undifferentiated chips meant hunting for LOAD every
-                    // time, and NEW (which ends your run) sat between two
-                    // harmless ones.
-                    // One chip for the states list, where slots are picked; SLOT
-                    // used to step through eight of them (2026-09-27, audit).
-                    OverlayChip("States, slot $saveSlot") { statesDialog = true }
-                    OverlayChip("SAVE") { saveState() }
-                    OverlayChip("LOAD") { askLoad() }
-                    // Runs only, as in portrait: on a library game or hack NEW
-                    // re-randomized the last IronMON run (2026-09-27, audit).
-                    if (session.isRun) NewRunChip { confirmNewRun = true }
-                    ChipRule()
-                    OverlayChip("Speed $speedLabel") { ui.speedPicker = true }
-                    if (rewindAllowed) HoldChip("REWIND", onDown = { startRewind() }, onUp = { stopRewind() })
-                    OverlayChip(if (muted) "MUTED" else "SOUND") {
-                        muted = !muted; applyAudio()
-                    }
-                    OverlayChip(if (facecam) "CAM ON" else "CAM") { facecam = !facecam }
-                    // Both close the menu: it stayed open over the capture and the editor.
-                    OverlayChip("CLEAN") { menuOpen = false; onClean(true) }
-                    OverlayChip("LAYOUT") { startLayoutEdit() }
-                    // Reachable in landscape too, where the portrait notice
-                    // and its button are not rendered at all.
-                    if (controllerOn) {
-                        OverlayChip(if (padForced) "PAD ON" else "PAD OFF") {
-                            padForced = !padForced
-                            store.setPadForced(padForced)
-                        }
-                    }
-                    // Everything else (restart, settings, cheats, stream...) in place of the strip.
-                    OverlayChip("MORE") { ui.moreOpen = true }
-                    // Status messages are the toast's now (StatusToast); here
-                    // they were cut at 38 characters and only showed with the strip open.
-                    // The tab bar is gone in landscape, so without this the
-                    // only way back to the rest of the app was to rotate the
-                    // phone - impossible with rotation locked.
-                    OverlayChip("MENU") { onExitFullscreen() }
-                }
-                // Over the faded strip's guard, so a first tap on the docked DS tracker reaches it.
                 dsDock?.let { DsDockTracker(it, Modifier.align(Alignment.TopEnd)) { trackerContent() } }
-                // Last, so it sits over the faded strip's guard: the tracker's menu while the tracker is off screen.
-                ScreenTapMenu(
-                    ui, pad = padLayout.takeIf { showPad }, padSkin = padSkin,
-                    allowed = session.tracked && !menuOpen && !streamClean && !editingLayout,
-                    trackerOpen = trackerOpen, trackerOnSecond = trackerOnSecond,
-                    dsLayout = if (dsScreens && !dsTopOnly) ScreenTap.DsLayout(dsLayoutName, padLayout.dsGap, coreValues["melonds_hybrid_ratio"]?.toIntOrNull() ?: 2) else null,
-                    attempt = runNow.attempt, dsTopOnly = dsTopOnly.takeIf { dsScreens }, onScreens = { dsTopOnly = !dsTopOnly },
-                    // A pick in the dropdown (its own window) never reaches the idle clock, so the band came up faded.
-                    onFile = { menuOpen = true; lastTouch = android.os.SystemClock.uptimeMillis() },
-                    onShow = { trackerOpen = true; if (TrackerOptions.landscapeTracker != LandscapeTracker.DOCKED) ui.trackerPeek = true },
-                )
             }
 
         }
 
         if (!landscape) {
-            // The FILE button itself lives in the top bar; this is only what it
-            // drops down when opened, so nothing sits between game and tracker.
-            if (menuOpen) { FileMenu() }
-
             // Blake, 2026-09-15: "the game is unplayable in portrait, buttons
             // are too small etc, the tracker should be below the buttons". So
             // the order is game, pad, tracker: the buttons sit under the game
@@ -2135,7 +1919,7 @@ fun PlayScreen(
                 // party of six is taller than any phone screen.
                 TrackerScroll(Modifier.weight(1f), background = null) {
                     NdsTrackerPanel(
-                        state = ndsState, onGear = { gearDialog = true }, timer = if (TrackerOptions.showTimer) runTimer else null,
+                        state = ndsState, timer = if (TrackerOptions.showTimer) runTimer else null,
                         favoriteLine = favoriteLine,
                         randomBall = ndsTrackerRef?.randomBall?.takeIf { TrackerOptions.ballPickerShows() },
                         onTypeDefenses = { n, a, b -> typeDefenses = n to com.ironmonone.tracker.Gen3Types.defenses(com.ironmonone.tracker.nds.Gen4Types.idOf(a) ?: -1, com.ironmonone.tracker.nds.Gen4Types.idOf(b) ?: (com.ironmonone.tracker.nds.Gen4Types.idOf(a) ?: -1)) },
@@ -2173,8 +1957,9 @@ fun PlayScreen(
                       onGradeNotes = { side.scoreSheet = true },
                       onRandomEvos = { sp -> side.randomEvos = sp }, hasRandomEvos = { sp -> trackerRef?.hasRandomEvos(sp) == true },
                 onMoveHistory = { sp, n, lv -> side.moveHistory = Triple(sp, n, lv) },
-                onTypeDefenses = { n, a, b -> typeDefenses = n to com.ironmonone.tracker.Gen3Types.defenses(a, b, gen1 = session.kind?.generation == com.ironmonone.core.Generation.GB1, natDex = session.kind?.fairyTypes == true) },
-                trackerState, ballCall = ballCall, onGear = { gearDialog = true },
+                onTypeDefenses = { n, ts -> typeDefenses = n to com.ironmonone.tracker.Gen3Types.defenses(ts, gen1 = session.kind?.generation == com.ironmonone.core.Generation.GB1, natDex = session.kind?.fairyTypes == true) },
+                trackerState, ballCall = ballCall,
+                unsupportedNote = buildCard.note, unsupportedAction = buildCard.action,
                 onRerollBall = { ballReroll++ },
                 movesSeenRunWide = gbaView.foe(trackerState)
                     ?.let { statMarks.movesSeenFor(it.species) } ?: emptyList(),
@@ -2241,17 +2026,11 @@ fun PlayScreen(
     if (landscape && !streamClean && session.tracked && !trackerOnSecond && TrackerOptions.landscapeTracker == LandscapeTracker.FLOATING) {
         FloatingTracker(
             panes = panes, windowW = windowWidthDp, windowH = windowHeightDp,
-            onDock = { TrackerOptions.landscapeTracker = LandscapeTracker.DOCKED; TrackerOptions.save(); trackerOpen = true },
-            menu = { dock ->
-                TrackerCornerMenu(
-                    attempt = runNow.attempt, menuOpen = menuOpen, onMenu = { menuOpen = !menuOpen; lastTouch = android.os.SystemClock.uptimeMillis() },
-                    dsTopOnly = dsTopOnly.takeIf { dsScreens }, onScreens = { dsTopOnly = !dsTopOnly },
-                    onHide = null, onDock = dock,
-                )
-            },
             attempt = runNow.attempt,
         ) { trackerContent() }
     }
+    // The FILE bar over every view and both orientations (FileBar.kt); the toast stays above it.
+    fileBar()
     // One place for status messages in both orientations, menu open or not
     // (2026-09-27, audit). Not over the capture: clean view stays clean.
     if (!streamClean) StatusToast(
@@ -2266,6 +2045,7 @@ fun PlayScreen(
     }
 
     androidx.compose.runtime.SideEffect {
+        FileBar.say = { status = it }
         QuickActions.onQuickSave = { saveState() }
         // Instant, as a mapped key should be, with Undo on the toast instead of a question.
         QuickActions.onQuickLoad = { loadState(keepUndo = true) }
@@ -2411,37 +2191,7 @@ fun PlayScreen(
         RulesDialog(family = fam, mode = runMode, natDex = session.kind?.isNatDex == true, kind = session.kind, onDismiss = { rulesDialog = false })
     }
 
-    if (gearDialog) {
-        TrackerGearDialog(
-            speciesName = { id -> trackerRef?.speciesName(id) ?: ndsTrackerRef?.speciesName(id) ?: gbNames?.invoke(id) ?: "#$id" },
-            marks = statMarks,
-            onCleared = { marksVersion++ },
-            onRules = { gearDialog = false; if (NuzlockeTracking.inPlay()) NuzlockeLedgerRequest.openRules() else rulesDialog = true },
-            onCoverage = { gearDialog = false; coverageCalc = true },
-            onStats = if (platform == com.ironmonone.core.Platform.NDS) null else { { gearDialog = false; side.statsDialog = true } },
-            onTrainers = if (trackerRef?.hasTrainerData == true) { { gearDialog = false; side.trainersDialog = true } } else null,
-            onBattleDetails = if (trackerRef?.hasBattleDetails == true) { { gearDialog = false; side.battleDetailsDialog = true } } else null,
-            onCatchRates = if (trackerRef?.hasCatchRates == true) { { gearDialog = false; side.catchHpAdjust = 0; side.catchRatesDialog = true } } else null,
-            onNotebook = if (platform == com.ironmonone.core.Platform.NDS) null else { { gearDialog = false; side.notebookDialog = true } },
-            onHeals = if (trackerRef?.hasCatchRates == true) { { gearDialog = false; side.healsDialog = true } } else null,
-            onTimeMachine = { gearDialog = false; side.timeMachineDialog = true },
-            onPastRuns = if (pastRunStore != null) { { gearDialog = false; side.pastRuns = true } } else null,
-            onStatistics = if (pastRunStore != null) { { gearDialog = false; side.statistics = true } } else null,
-            onEvoData = ndsState?.party?.firstOrNull()?.mon?.species?.let { sp -> { gearDialog = false; side.evoData = sp } },
-            onTrackedPokemon = if (ndsState != null) { { gearDialog = false; side.trackedPokemon = true } } else null,
-            onTourney = if (ndsState?.badgeSet == "HGSS") { { gearDialog = false; side.tourney = true } } else null,
-            showTimerToggle = ndsState != null,
-            onColorTheme = { gearDialog = false; side.colorTheme = true },
-            showAutoThemes = true,
-            runSettingsName = remember(session.id) { if (session.isRun) runCatching { store.loadLastRun()?.second }.getOrNull() else null },
-            showBadgeOptions = ndsState?.badgeSet == "HGSS",
-            gameBoy = platform == com.ironmonone.core.Platform.GBC,
-            // The Gen 2 reference's IV estimate, on the lead; the Gen 1 one fails (IvEstimate).
-            ivPotential = (gbRef as? com.ironmonone.tracker.GbcTracker)?.let { g -> { g.ivPotential(trackerState?.party?.firstOrNull()) } },
-            ds = platform == com.ironmonone.core.Platform.NDS,
-            onDismiss = { gearDialog = false },
-        )
-    }
+    if (gearDialog) TrackerGearDialog(trackerLinks(), onDismiss = { gearDialog = false })
 
     if (confirmNewRun) {
         // Shell look since 2026-09-27 (audit); it was the tracker's pixel font and palette.
@@ -2451,9 +2201,6 @@ fun PlayScreen(
         ui,
         onRestart = { RetroAchievements.restartGame(retro) },
         onLoad = { loadState(it) },
-        speeds = speedOptions(),
-        speedNow = speedLabel,
-        onSpeed = { pickSpeed(it) },
         onLayoutDone = { finishLayoutEdit(it) },
     )
 
@@ -2541,6 +2288,12 @@ fun PlayScreen(
  */
 private val heldCoreKeys = java.util.Collections.synchronizedSet(HashSet<Int>())
 
+/** A pad button is down: a tap on the game now is a thumb on the pad, not a call for the FILE bar (TapZone). */
+internal fun padKeysHeld(): Boolean = heldCoreKeys.isNotEmpty()
+
+/** When the last pad button was let go (uptime ms): a tap just after it is a fast thumb, not the FILE bar (TapZone). */
+@Volatile internal var lastPadReleaseAt = 0L
+
 /** Releases anything still held. Safe to call when nothing is. */
 internal fun releaseAllCoreKeys() {
     val stuck = synchronized(heldCoreKeys) { heldCoreKeys.toList() }
@@ -2559,6 +2312,7 @@ private fun corePress(keyCode: Int) {
 }
 private fun coreRelease(keyCode: Int) {
     heldCoreKeys.remove(keyCode)
+    lastPadReleaseAt = android.os.SystemClock.uptimeMillis()
     com.swordfish.libretrodroid.LibretroDroid.onKeyEvent(0, KeyEvent.ACTION_UP, keyCode)
     NewRunCombo.track(KeyEvent.ACTION_UP, keyCode)
     SpriteMotion.key(KeyEvent.ACTION_UP, keyCode)
@@ -2805,106 +2559,6 @@ private fun OverlayPad(onB: () -> Unit, modifier: Modifier = Modifier) {
                     translucent = true)
             }
         }
-    }
-}
-
-/** Tiny translucent utility button for the fullscreen strip. */
-@Composable
-private fun ChipRule() {
-    Box(
-        Modifier.width(1.dp).heightIn(min = Shell.touchTarget)
-            .background(Color.White.copy(alpha = 0.35f)),
-    )
-}
-
-/** The line between the FILE menu's groups. */
-@Composable
-private fun MenuRule() {
-    Box(Modifier.width(1.dp).height(com.ironmonone.app.Shell.touchTarget).background(com.ironmonone.app.Shell.hairline))
-}
-
-/** A chip that acts while HELD: down starts, up stops. Rewind's control. */
-@Composable
-private fun HoldChip(label: String, onDown: () -> Unit, onUp: () -> Unit, big: Boolean = false) {
-    val g = com.ironmonone.app.gen3.Gen3
-    var held by remember { mutableStateOf(false) }
-    // The press handler outlives a recomposition (pointerInput(Unit)), so it reads the callbacks of the composition
-    // now, as PadButton does: it kept the first ones, and hardcore turned on with the FILE menu open left REWIND
-    // rewinding with the check of the moment the menu opened (rc32 audit P3 #56).
-    val down by androidx.compose.runtime.rememberUpdatedState(onDown)
-    val up by androidx.compose.runtime.rememberUpdatedState(onUp)
-    Box(
-        Modifier
-            .background(if (held) Pc.Gold.copy(alpha = 0.6f) else g.FrameDark.copy(alpha = if (big) 1f else 0.45f))
-            .padding(1.dp)
-            .background(g.Paper.copy(alpha = if (big) 1f else 0.25f))
-            .heightIn(min = Shell.touchTarget)
-            .padding(horizontal = 10.dp)
-            .holdUnlessScrolled({ held = true; down() }, { held = false; up() }),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text("\u25C0\u25C0 " + com.ironmonone.app.Shell.label(label), fontWeight = androidx.compose.ui.text.font.FontWeight.Medium, fontSize = 13.sp,
-            color = if (big) g.Ink else Color.White)
-    }
-}
-
-/**
- * [pressHold] for a control that sits in a scrolling row or menu: it waits
- * 150 ms before acting, and a finger that moves past touch slop in that time
- * is a scroll, not a press. REWIND used plain pressHold, so a swipe that began
- * on it rewound the game (2026-09-27, audit). The pad keeps pressHold: a
- * button there must act on the instant.
- */
-private fun Modifier.holdUnlessScrolled(onDown: () -> Unit, onUp: () -> Unit): Modifier =
-    this.pointerInput(Unit) {
-        awaitEachGesture {
-            val down = awaitFirstDown(requireUnconsumed = false)
-            val slop = viewConfiguration.touchSlop
-            // null = still held and still, so it is a press; false = lifted or moved.
-            val gaveUp = withTimeoutOrNull(150L) {
-                while (true) {
-                    val c = awaitPointerEvent().changes.firstOrNull { it.id == down.id } ?: break
-                    if (!c.pressed || c.isConsumed || (c.position - down.position).getDistance() > slop) break
-                }
-                false
-            }
-            if (gaveUp != null) return@awaitEachGesture
-            onDown()
-            try { waitForUpOrCancellation() } finally { onUp() }
-        }
-    }
-
-@Composable
-private fun OverlayChip(label: String, description: String? = null, onClick: () -> Unit) {
-    val g = com.ironmonone.app.gen3.Gen3
-    Box(
-        Modifier
-            .then(if (description != null) Modifier.semantics { contentDescription = description } else Modifier)
-            .background(g.FrameDark.copy(alpha = 0.45f))
-            .padding(1.dp)
-            .background(g.Paper.copy(alpha = 0.25f))
-            // clickable, not raw Release detection: the chip row scrolls
-            // horizontally, and firing on ANY Release meant a scroll flick
-            // that happened to end over LOAD instantly rewound the game.
-            // clickable cancels properly when the scroll consumes the gesture.
-            .clickable { onClick() }
-            // 48dp is the floor for a touch target; these were ~29dp tall,
-            // which is a hard thing to hit with a thumb while the other hand
-            // is on the d-pad. Width still hugs the label so nine of them
-            // still fit the strip.
-            .heightIn(min = Shell.touchTarget)
-            .padding(horizontal = 10.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        // No wrapping: when the chip row ran out of width the last chip broke
-        // its label into a vertical column of letters ("M E N U") instead of
-        // staying on one line.
-        // Shell.label: the chips were written in capitals ("SLOT 1", "MUTED")
-        // and the rest of the chrome is sentence case (2026-09-27, audit).
-        Text(
-            com.ironmonone.app.Shell.label(label), fontWeight = androidx.compose.ui.text.font.FontWeight.Medium, fontSize = 12.sp, color = Color.White,
-            maxLines = 1, softWrap = false,
-        )
     }
 }
 

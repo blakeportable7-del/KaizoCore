@@ -202,6 +202,8 @@ class StreamFavoritesSourceTest {
         val play = File("src/main/kotlin/com/ironmonone/app/PlayScreen.kt").readText()
         assertFalse("StreamFavorites" in play, "Play no longer makes the pictures")
         val src = File("src/main/kotlin/com/ironmonone/app/stream/StreamFavoritesSource.kt").readText()
-        assertTrue("game = { store.session() }" in src && "Favorites.slots(store, s.kind?.id, Favorites.slotCount(s.kind))" in src)
+        // The boxes the run counts: a Heart & Soul Vanilla run's three of its nine (HnsPool.favoritesScope).
+        assertTrue("game = { store.session() }" in src &&
+            "HnsPool.favoritesScope(s.kind, store.files, nextRun = false).let { sc -> sc.used(Favorites.slots(store, s.kind?.id, sc.stored)) }" in src)
     }
 }

@@ -6,7 +6,7 @@ games you own, and plain play.
 
 KaizoCore contains no games. You add game files you own, and they stay on your phone.
 
-> These pages describe 1.0.0-rc36, the current download.
+> These pages describe 1.0.0-rc37, the current download.
 
 ## Start here
 
@@ -19,7 +19,7 @@ KaizoCore contains no games. You add game files you own, and they stay on your p
 - [Nuzlocke](Nuzlocke): presets, the 19 rules, the ledger, level caps.
 - [Playing any game](Playing-any-game): the emulator. Save states, speed, controls, DS screens, cheats, achievements.
 - [ROM hacks and patches](ROM-hacks-and-patches): the library, patching a hack, the patched versions that come built in.
-- [Streaming to OBS](Streaming-to-OBS): the game, the tracker and your attempts on stream, over Wi-Fi.
+- [Streaming to OBS](Streaming-to-OBS): the game, the tracker and your attempts on stream, over a USB cable or Wi-Fi.
 - [Saves, backups and updates](Saves-backups-and-updates): auto-save, coming back after a crash, backups, cloud sync, updates.
 
 ## Reference

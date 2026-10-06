@@ -100,10 +100,7 @@ object RunJob {
                         countAttempt = !nuzlocke, fromCode = expect != null)
                 }
                 // Heart & Soul: a Nuzlocke run's ROM carries the Nuzlocke mode's challenge preset, not Kaizo IronMON's.
-                if (nuzlocke && rom.first.isHns) withContext(Dispatchers.IO) {
-                    com.ironmonone.app.engine.HnsEngine.writePreset(store.currentRunFor(rom.first),
-                        com.ironmonone.app.engine.HnsEngine.Preset.NUZLOCKE, com.ironmonone.app.engine.HnsEngine.appAssets())
-                }
+                // RunStart.start writes it now, for every way a run starts (countAttempt false is a Nuzlocke).
                 main { phase = RunPhase.FINISHING }
                 // The run's Game Over condition comes from its settings file (the reference's
                 // profile default by keyword, or what the player last chose for that file).

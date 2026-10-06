@@ -37,9 +37,10 @@ class SecondScreenTest {
 
     @Test fun `with the tracker on the second screen the phone still reaches its setup`() {
         // The second screen swallows every touch, so its SETUP is not a way in (emulator QA, 2026-09-29).
-        val menu = src("PlayScreen.kt").substringAfter("val FileMenu: @Composable () -> Unit = {").substringBefore("MenuRule()\n            // Tools.")
-        assertTrue("if (session.tracked && TrackerOptions.trackerOnSecondScreen) com.ironmonone.app.gen3.Gen3Button(\"TRACKER SETUP\", onClick = { menuOpen = false; gearDialog = true })" in menu,
-            "the phone's FILE menu opens the tracker's setup while the tracker may be on the other screen")
+        // The FILE bar's TRACKER sheet leads with Tracker Setup wherever there is a tracker, on the phone (FileBar.kt).
+        assertEquals(BarItem.SETUP, FileBarMap.items(BarGroup.TRACKER, BarContext()).first())
+        assertTrue("onSetup = { gearDialog = true }" in src("PlayScreen.kt"),
+            "the phone's FILE bar opens the tracker's setup while the tracker may be on the other screen")
         assertTrue("GearToggle(\"Tracker on the second screen (view only)\"" in src("TrackerGearDialog.kt"), "and the setup is where it is switched off")
     }
 

@@ -29,6 +29,11 @@ class HnsRandomizer(
     private val poolItems: Set<String>? = null,
     /** The source game's UPR "non-bad" items, as [itemKey]s (HnsEngine.poolNonBadKeys), or null for the rules below. */
     private val poolNonBad: Set<String>? = null,
+    /**
+     * The rule sheet's line for a wild Pokemon of the mode (BstRule.Lines.wild): none is placed at or over it. Most modes
+     * draw one line for both; Evo Kaizo's own line is 601 and its wild line Kaizo's, 599 on Vanilla and 600 on Nat. Dex.
+     */
+    private val wildLine: Int? = bstLine,
 ) {
     companion object {
         /** Gen 3's shortened names, as vanilla Emerald spells them, to Heart & Soul's (both as [itemKey]s). */
@@ -222,6 +227,14 @@ class HnsRandomizer(
         if (o.tutorLevelUpMoveSanity || o.tutorFollowEvolutions) n += "Tutor compatibility sanity and follow evolutions"
         if (o.reorderDamagingMoves) n += "Reorder damaging moves"
         if (o.tmsForceGoodDamaging) n += "TMs forced good damaging"
+        // Misc tweaks: Ban Lucky Egg is applied (itemList), the PC potion is rolled with the field items (pcItem); any other
+        // one the file sets is named here. The Nat. Dex fork repurposed bit 22 as Hidden Item Sparkles, which its Emerald
+        // presets set, so each fork's own list names the bits.
+        val handled = com.dabomstew.pkrandom.MiscTweak.BAN_LUCKY_EGG.value or
+            (if (o.fieldItemsMod != "UNCHANGED") com.dabomstew.pkrandom.MiscTweak.RANDOMIZE_PC_POTION.value else 0)
+        val tweaks: List<Pair<Int, String>> = if (o.zxRules) com.dabomstew.pkrandomzx.MiscTweak.allTweaks.map { it.value to it.tweakName }
+            else com.dabomstew.pkrandom.MiscTweak.allTweaks.map { it.value to it.tweakName }
+        for ((bit, name) in tweaks) if (o.miscTweaks and bit != 0 && bit and handled == 0) n += "misc tweak \"$name\""
         for (x in n) notes += "Not applied, this engine does not do it yet: $x."
     }
 
@@ -537,23 +550,32 @@ class HnsRandomizer(
     }
 
     /**
-     * ZX's randomizeEvolutionsEveryLevel, which the Nat. Dex fork does with a script flag Heart & Soul does not have:
-     * every species of the pool evolves at its next level into one random species (same curve, not itself, a
-     * different typing kept when asked), so a Pokemon changes into another one each level, as Evo Kaizo plays.
+     * Evo Kaizo. The Nat. Dex fork clears every evolution of the pool and sets a script flag
+     * (Gen3RomHandler.setEvolutionEveryLevelFlag) so the game rolls a new species at each level-up; Heart & Soul has no
+     * such flag, so the evolutions are written as data: every species of the pool evolves at its next level (EVO_LEVEL 1,
+     * one evolution, no split and no condition) into the next species of one random line through its growth group (the
+     * same curve, so its level never jumps). A line never comes back to a species, so there are no evolution loops (Blake,
+     * 2026-10-06, as the Nat. Dex Evo Kaizo rules have it: "There are no evo loops"); the last species of each line evolves
+     * no more. The line is drawn one species at a time from those not on it yet: a shared type kept when asked, an old
+     * evolution avoided when asked, any one left when nothing fits.
      */
     private fun randomizeEvolutionsEveryLevel() {
         val levelMethod = L.enumValue("EVO", "EVO_LEVEL") ?: 1
         val oldPairs = HashSet<Long>()
         if (o.evosForceChange) for (m in mainList) for (e in m.evos) oldPairs += pair(m.id, e.target)
-        val poolList = mainList.toMutableList()
-        poolList.shuffle(random)
-        for (from in poolList) {
-            var repl = mainList.filter { pk -> pk !== from && pk.growth == from.growth && !(o.evosForceChange && pair(from.id, pk.id) in oldPairs) }
-            if (o.evosSameTyping) repl.filter { sharesType(it, from) }.takeIf { it.isNotEmpty() }?.let { repl = it }
-            if (repl.isEmpty()) continue
-            val picked = repl[random.nextInt(repl.size)]
-            from.evos = mutableListOf(Evo(levelMethod, 1, picked.id, ArrayList(), 0, true, condsChanged = true))
-            from.evosChanged = true
+        for (m in mainList) { m.evos = ArrayList(); m.evosChanged = true }
+        for (group in mainList.groupBy { it.growth }.values) {
+            val left = group.toMutableList()
+            var from = left.removeAt(random.nextInt(left.size))
+            while (left.isNotEmpty()) {
+                var cand: List<Mon> = left
+                if (o.evosForceChange) cand.filter { pair(from.id, it.id) !in oldPairs }.takeIf { it.isNotEmpty() }?.let { cand = it }
+                if (o.evosSameTyping) cand.filter { sharesType(it, from) }.takeIf { it.isNotEmpty() }?.let { cand = it }
+                val next = cand[random.nextInt(cand.size)]
+                left.remove(next)
+                from.evos.add(Evo(levelMethod, 1, next.id, ArrayList(), 0, true, condsChanged = true))
+                from = next
+            }
         }
     }
 
@@ -1554,11 +1576,11 @@ class HnsRandomizer(
 
     // ------------------------------------------------------------------------------------------------ wild
 
-    /** UPR's wild pool: legendaries out as wildBSTLimit says, BST at or under the limit, under KaizoCore's line. */
+    /** UPR's wild pool: legendaries out as wildBSTLimit says, BST at or under the limit, under KaizoCore's wild line. */
     private fun wildPool(): List<Mon> {
         var list = mainList.filter { m ->
             (o.wildPokemonBSTLimit <= 0 || (m.origBst <= o.wildPokemonBSTLimit && m.bst <= o.wildPokemonBSTLimit)) &&
-                (bstLine == null || m.bst < bstLine || o.wildPokemonBSTLimit <= 0)
+                (wildLine == null || m.bst < wildLine || o.wildPokemonBSTLimit <= 0)
         }
         if (o.blockWildLegendaries) list = list.filter { m ->
             when (o.wildBSTLimitMode) {
@@ -1600,7 +1622,8 @@ class HnsRandomizer(
         areas.shuffle(random)
         for (sets in areas) {
             val slots = sets.flatMap { it.slots }.filter { it.species != 0 }
-            if (perSlot) { for (s in slots) s.species = weighted(allowed).id; continue }
+            // UPR's randomEncounters: with similar strength each slot is pickWildPowerLvlReplacement of the one it replaces.
+            if (perSlot) { for (s in slots) s.species = (if (similar) wildPowerReplacement(allowed, mons[s.species], emptyList()) else weighted(allowed)).id; continue }
             val inArea = slots.map { it.species }.distinct()
             val map = HashMap<Int, Int>()
             val used = ArrayList<Int>()

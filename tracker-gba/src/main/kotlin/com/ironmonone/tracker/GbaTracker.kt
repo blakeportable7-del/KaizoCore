@@ -34,6 +34,19 @@ data class TrainerLayout(
 }
 
 /**
+ * [GameMap.resolve]'s refusal of a ROM whose game it knows but whose build it has no addresses for: the Heart & Soul
+ * KaizoCore build made by another KaizoCore release, or a MaxDex that is not 1.0. [game] names the game. An
+ * IllegalArgumentException, as the plain refusal was, so every caller that caught that still does; the Play screen
+ * catches this one by name and says so on the tracker card instead of "waiting for the game" (2026-10-06).
+ */
+class UnreadableBuild(val game: String, message: String) : IllegalArgumentException(message) {
+    companion object {
+        /** The Heart & Soul comfort build this tracker reads (HnsLayout), for the app's check that RomKind agrees. */
+        const val HNS_BUILD_CRC: Long = HnsLayout.BUILD_CRC
+    }
+}
+
+/**
  * Per-game memory map. Vanilla Emerald values imported from the MIT tracker's own
  * machine-readable file (ironmon_tracker/GameAddresses/Pokemon Emerald.json, read
  * 2026-08-30) — not transcribed from a wiki.
@@ -300,6 +313,8 @@ data class GameMap(
      * (Program.lua:31-49, Program.isInSafariZone at 1511). 0 = not read.
      */
     val safariModeFlag: Int = 0,
+    /** A save-block flag set once the League is beaten (Heart & Soul: Lance), for Survival's Kanto heals; 0 = none. */
+    val leagueFlag: Int = 0,
     /**
      * RouteData.Locations.IsInSafariZone, by the map id the game reports
      * (Ruby and Sapphire are one higher than Emerald there): the maps whose
@@ -463,6 +478,17 @@ data class GameMap(
      * the encounter area and the Dive Ball where [battleTerrain] is not read (Heart & Soul, whose Battle Details are off).
      */
     val battleEnvironment: Long = 0,
+    /**
+     * A third type per battler, one byte each from battler 0, 9 (Mystery) for none: what Forest's Curse and
+     * Trick-or-Treat add. MaxDex 1.0 keeps it apart from the battle struct (its handler for both moves, 0x081B4CBC,
+     * writes 7 or 12 at this address plus gBattlerTarget; switching in, 0x08013BF0, writes 9). 0 where the game has none.
+     */
+    val battleType3: Long = 0,
+    /**
+     * MaxDex 1.0's terrain byte: Terrain Pulse there takes Grass at 1, Fairy at 2, Electric at 3 and Psychic at 4 (its
+     * attack canceler, 0x081AF3F6 to 0x081AF470). 0 where the game has no terrain.
+     */
+    val terrain: Long = 0,
 ) {
     companion object {
         val EMERALD_U = GameMap(
@@ -949,6 +975,8 @@ data class GameMap(
             battleMonPp = 0x25,
             battleMonHp = 0x2A,
             status2Offset = 0x54,
+            battleType3 = 0x02023DFA,
+            terrain = 0x02023DF5,
         )
 
         /**
@@ -963,7 +991,7 @@ data class GameMap(
             val version = memory.read(0x080000BC, 1)
             val header = code.size == 4 && String(code, Charsets.US_ASCII) == "BPRE" && version.size == 1 && version[0].toInt() == 1
             val tables = u32(0x08000144) == 0x08246018L && u32(0x080001BC) == 0x08270988L && u32(0x080001CC) == 0x08268000L
-            require(header && tables) { "A ROM with 1255 species that is not MaxDex 1.0: this build's addresses would read the wrong memory." }
+            if (!(header && tables)) throw UnreadableBuild("MaxDex", "A ROM with 1255 species that is not MaxDex 1.0: this build's addresses would read the wrong memory.")
             return MAXDEX_FR_10
         }
 
@@ -1007,7 +1035,7 @@ data class GameMap(
             // Heart & Soul keeps Emerald's game code (BPEE) and its own title. Only the KaizoCore comfort build's
             // layout is known; any other Heart & Soul is refused rather than read with these addresses.
             if (HnsMaps.isHns(memory)) {
-                require(HnsMaps.isKaizoBuild(memory)) { "A Heart & Soul ROM that is not the KaizoCore build (E35A0E40): its addresses would read the wrong memory." }
+                if (!HnsMaps.isKaizoBuild(memory)) throw UnreadableBuild(HnsMaps.GAME, "A Heart & Soul ROM that is not this KaizoCore's build (%08X): its addresses would read the wrong memory.".format(HnsLayout.BUILD_CRC))
                 return HnsMaps.KAIZO
             }
             val magic = ptr(NATDEX_MAGIC_ADDR)
@@ -1434,6 +1462,14 @@ data class TrackedMon(
     val expTotal: Int = 0,
     /** The evolution in brackets after the level (EvoText). Null when it does not evolve. */
     val evo: EvoText.Label? = null,
+    /**
+     * In battle, the types the game's own type checks use for this Pokemon on the field (GetBattlerTypes), Gen 3 ids:
+     * its battle struct's two (what Conversion, Conversion 2, Color Change, Camouflage, Protean, Soak and Transform
+     * change), a third where the game keeps one (Forest's Curse, Trick-or-Treat), and Roost's lost Flying as 9 (the
+     * Mystery type, neutral to everything) on Heart & Soul. The move rows' STAB and effectiveness read these. Null
+     * outside battle, where the species' types stand.
+     */
+    val battleTypes: List<Int>? = null,
     /** The game's picture of it where that is not its species' plain one: shiny, Unown's letter, Deoxys's form (GbaTracker.picture). */
     val picture: Gen3Pictures.Picture? = null,
 )
@@ -1500,6 +1536,14 @@ data class EnemyInfo(
      * Special), for whether it is shiny and Unown's letter on the Walking Pals icon (PalForms); -1 elsewhere.
      */
     val dvs: Int = -1,
+    /**
+     * In battle, the types the game's own type checks use for this Pokemon on the field (GetBattlerTypes), Gen 3 ids:
+     * its battle struct's two (what Conversion, Conversion 2, Color Change, Camouflage, Protean, Soak and Transform
+     * change), a third where the game keeps one (Forest's Curse, Trick-or-Treat), and Roost's lost Flying as 9 (the
+     * Mystery type, neutral to everything) on Heart & Soul. The move rows' STAB and effectiveness read these. Null
+     * outside battle, where the species' types stand.
+     */
+    val battleTypes: List<Int>? = null,
     /** The game's picture of it where that is not its species' plain one: shiny, Unown's letter, Deoxys's form (GbaTracker.picture). */
     val picture: Gen3Pictures.Picture? = null,
 )
@@ -1737,6 +1781,21 @@ object Gen3Types {
             out[e]?.add(name(atk))
         }
         return out.filterValues { it.isNotEmpty() }
+    }
+
+    /**
+     * [defenses] for a battler's [types] in battle (TrackedMon.battleTypes): each distinct type once, so a third type
+     * (Forest's Curse, Trick-or-Treat) counts and Roost's Mystery (9) is neutral.
+     */
+    fun defenses(types: List<Int>, gen1: Boolean = false, natDex: Boolean = false): Map<Double, List<String>> {
+        val out = linkedMapOf(0.0 to ArrayList<String>(), 0.25 to ArrayList(), 0.5 to ArrayList(), 2.0 to ArrayList(), 4.0 to ArrayList())
+        val ts = types.distinct()
+        for (atk in typesFor(natDex)) {
+            var e = 1.0
+            for (t in ts) e *= effect(atk, t, gen1, natDex)
+            out.getOrPut(e) { ArrayList() }.add(name(atk))
+        }
+        return out.filterValues { it.isNotEmpty() }.filterKeys { it != 1.0 }
     }
 }
 
@@ -2059,6 +2118,9 @@ class GbaTracker(
 
     /** Heart & Soul's ROM, read in pages (RomPages): its tables and pictures. Null on every other game. */
     internal val hnsRom: RomPages? = if (map.hns) RomPages(memory) else null
+
+    /** Heart & Soul's heals outside a Pokemon Center (HnsHeals); null on every other game. */
+    private val hnsHeals: HnsHeals.Watch? = if (map.hns) HnsHeals.Watch() else null
 
     /** Heart & Soul's ROM reads (GameMap.hns); null on every other game. */
     private val hns: HnsData? = if (map.hns) HnsData(hnsRom!!) else null
@@ -2509,9 +2571,9 @@ class GbaTracker(
         // In battle, battler 0's stage block belongs to the player's active
         // mon; the panel shows chevrons on both sides like the reference.
         if (inBattle && party.isNotEmpty()) {
-            party[ownOnField] = party[ownOnField].copy(statStages = readStatStages(0))
+            party[ownOnField] = withBattleTypes(party[ownOnField].copy(statStages = readStatStages(0)), 0)
             // Battle.updateStatStages(ownRightPokemon, true, false) (Battle.lua:494-502): battler 2's block is the right-hand one's.
-            if (ownRightOnField >= 0) party[ownRightOnField] = party[ownRightOnField].copy(statStages = readStatStages(2))
+            if (ownRightOnField >= 0) party[ownRightOnField] = withBattleTypes(party[ownRightOnField].copy(statStages = readStatStages(2)), 2)
         }
         val trainer = !isWildEncounter
         // Battle.updateTrackedInfo reads it fresh on every update while data is ready (Battle.lua:371).
@@ -2524,6 +2586,10 @@ class GbaTracker(
         }
 
         if (inBattle && !ghost) runCatching { pollMoves() }
+        // The abilities shown since the last read, before the opponent is read: a shown -ate or Normalize changes its moves now.
+        val reveals = drainReveals(live = inBattle && !ghost)
+        val revealedNow = if (inBattle) readAbilityTrigger() else null
+        for ((sp, name) in reveals + listOfNotNull(revealedNow)) noteShownAbility(sp, name)
         val enemy = if (inBattle) { if (ghost) ghostEnemy() else readEnemy() } else null
         // The opponent's right-hand battler in a double battle (Combatants.RightOther). A ghost battle is a single one.
         val enemyRight = if (doubles && !ghost) readEnemy(3) else null
@@ -2567,9 +2633,9 @@ class GbaTracker(
             enemyOnField = if (inBattle) readEnemyOnField() else emptyList(),
             enemy = enemyCard,
             enemyMovesThisBattle = if (inBattle && !ghost) enemyMovesThisBattle(enemyParty) else emptyList(),
-            abilityRevealed = if (inBattle) readAbilityTrigger() else null,
+            abilityRevealed = revealedNow,
             encounterArea = encounterArea,
-            abilitiesRevealed = drainReveals(live = inBattle && !ghost),
+            abilitiesRevealed = reveals,
             // Your own battlers' abilities are tracked in a ghost battle too: that
             // block sits outside the reference's isGhost check (Battle.lua:482-503).
             ownAbilities = if (inBattle) readOwnAbilities() else emptyList(),
@@ -2581,6 +2647,7 @@ class GbaTracker(
             battleSummaries = if (inBattle) runCatching { battleDetails()?.let { d -> (0..3).map { d.summary(it).trim() } } }.getOrNull() ?: emptyList() else emptyList(),
             badges = readBadges(),
             badgeSet = map.badgeSet,
+            leagueBeaten = readLeagueBeaten(),
             routeVersion = map.routeVersion,
             repelSteps = readRepelSteps().also { repelDuration = RepelRules.duration(it, repelDuration) },
             repelDuration = repelDuration,
@@ -2603,8 +2670,9 @@ class GbaTracker(
                 trainersOnRoute(m).count { trainerGroup(it) in BOSS_GROUPS }
             } ?: 0,
             steps = readGameStat(5),
-            // Constants.GAME_STATS USED_POKECENTER (15) + RESTED_AT_HOME (16), for "Track PC Heals".
-            centerHealsStat = readGameStat(15) + readGameStat(16),
+            // Constants.GAME_STATS USED_POKECENTER (15) + RESTED_AT_HOME (16), for "Track PC Heals"; Heart & Soul's
+            // heals outside a Pokemon Center, which bump neither, are counted from its script engine (HnsHeals).
+            centerHealsStat = readGameStat(15) + readGameStat(16) + (hnsHeals?.poll(memory) ?: 0),
             summaryOpen = map.monSummaryScreen != 0L && rb(map.monSummaryScreen) != 0,
             gameDataRandomized = randomized()?.gameData ?: true,
             randomized = randomized(),
@@ -4238,6 +4306,19 @@ class GbaTracker(
     }
 
     /**
+     * The League is beaten ([GameMap.leagueFlag] in the save block's flags): Heart & Soul sets FLAG_END_NUZLOCKE when
+     * Lance falls, in every mode, so Survival's seven Kanto heals are added (PcHeals.observeLeague). False where the
+     * game has no such flag.
+     */
+    internal fun readLeagueBeaten(): Boolean {
+        if (map.leagueFlag == 0 || map.gameFlagsOffset == 0L) return false
+        val sb1 = saveBlock1() ?: return false
+        val flag = map.leagueFlag
+        val b = memory.read(sb1 + map.gameFlagsOffset + flag / 8, 1)
+        return b.size == 1 && ((b[0].toInt() shr (flag % 8)) and 1) != 0
+    }
+
+    /**
      * Battle.lua:147: Tracker.getPokemon(1, false) ~= nil. The opponent's lead
      * in gEnemyParty: a non-zero personality or trainer id that decodes into
      * a real Pokemon (Program.updatePokemonTeams).
@@ -4588,6 +4669,88 @@ class GbaTracker(
     /** A battle struct's type byte as Gen 3 numbers types (Heart & Soul's are one higher, Fairy 19). */
     private fun battleType(t: Int): Int = if (map.hns) HnsMon.gen3Type(t) else t
 
+    /**
+     * [m], your Pokemon on the field as [battler], with the types its battle struct gives it (gBattleMons +0x21, or where
+     * the map puts them), as the opponent's card has always had: Castform in the weather (its species stays Castform in
+     * the five games, only the struct's types change), a form a Nat. Dex or Heart & Soul battle changes into, and any
+     * other change a battle makes. The species' row out of battle. Only when the struct holds [m]'s species, or it used
+     * Transform (whose types the struct then holds, as on the opponent's card): a struct left from the last battle, or
+     * not yet filled, changes nothing.
+     */
+    private fun withBattleTypes(m: TrackedMon, battler: Int): TrackedMon {
+        val base = m.base ?: return m
+        if (map.battleMons == 0L) return m
+        val b = memory.read(map.battleMons + battler.toLong() * map.battleMonSize, map.battleMonSize)
+        if (b.size < map.battleMonTypes + 2) return m
+        if (b.u16(0) != m.mon.species && !(speciesIsValid(b.u16(0)) && isTransformed(b))) return m
+        val t1 = battleType(b.u8(map.battleMonTypes)); val t2 = battleType(b.u8(map.battleMonTypes + 1))
+        return m.copy(
+            base = if (t1 == base.type1 && t2 == base.type2) base else base.copy(type1 = t1, type2 = t2),
+            battleTypes = battlerTypes(battler, b),
+            moveRows = battleMoveRows(m.moveRows, battler, b, own = true, species = m.mon.species),
+        )
+    }
+
+    /**
+     * GetBattlerTypes for [battler], whose battle struct is [b], in Gen 3 ids: the struct's two types (Conversion,
+     * Conversion 2, Color Change, Camouflage, Protean, Libero, Soak and Transform all write them there, so the next read
+     * has them), then a third where the game keeps one: Heart & Soul's types[2] (Forest's Curse, Trick-or-Treat), Roost's
+     * lost Flying as Mystery (9) there, and MaxDex's apart from the struct ([GameMap.battleType3]). MaxDex's Roost writes
+     * Mystery into the struct itself (0x081AF2F2). The five games and Nat. Dex keep two.
+     */
+    internal fun battlerTypes(battler: Int, b: ByteArray): List<Int> {
+        hnsMoveTypes?.let { h ->
+            val t = h.battlerTypes(b)
+            return (t.take(2) + t.drop(2).filter { it != HnsLayout.TYPE_MYSTERY }).map(HnsMon::gen3Type)
+        }
+        val out = mutableListOf(b.u8(map.battleMonTypes), b.u8(map.battleMonTypes + 1))
+        if (map.battleType3 != 0L) memory.read(map.battleType3 + battler, 1).takeIf { it.size == 1 }?.u8(0)
+            ?.let { if (it != 9 && it !in out) out += it }
+        return out
+    }
+
+    /** Heart & Soul's move types in battle (HnsMoveTypes); null on every other game. */
+    private val hnsMoveTypes: HnsMoveTypes? by lazy { hns?.let { HnsMoveTypes(it, hnsRom!!) } }
+
+    /**
+     * Opposing abilities the game has shown this run, by species ([TrackerState.abilitiesRevealed]): only these may
+     * change what an opponent's moves show (BattleMoveTypes). Your own are always known.
+     */
+    private val shownAbilities = HashMap<Int, MutableSet<String>>()
+
+    /** Records that the game showed [species] with ability [name]; the app may also hand in what its notes hold. */
+    fun noteShownAbility(species: Int, name: String) {
+        synchronized(shownAbilities) { shownAbilities.getOrPut(species) { HashSet() } += BattleMoveTypes.norm(name) }
+    }
+
+    private fun abilityShown(species: Int, abilityId: Int): Boolean = abilityId != 0 &&
+        synchronized(shownAbilities) { shownAbilities[species]?.contains(BattleMoveTypes.norm(abilityName(abilityId))) == true }
+
+    /**
+     * [rows], the moves of [battler] (struct [b]), with the type and power the game gives each in battle where it changes
+     * them (BattleMoveTypes): Heart & Soul and MaxDex. [own]: your side, whose ability and held item are known; an
+     * opponent's ability counts once shown ([abilityShown]) and its item never.
+     */
+    internal fun battleMoveRows(rows: List<MoveRow>, battler: Int, b: ByteArray, own: Boolean, species: Int): List<MoveRow> {
+        hnsMoveTypes?.let { h ->
+            val ability = HnsLayout.BattlePokemon.ability.at(b)
+            val fs = memory.read(HnsLayout.gFieldStatuses, 4).let { if (it.size == 4) it.u32(0) else 0L }
+            return h.rows(rows, b, abilityKnown = own || abilityShown(species, ability), itemKnown = own, fieldStatuses = fs)
+        }
+        if (map.nameSet != "maxdex" || b.size < 0x32) return rows
+        // MaxDex's struct: species 0, u16 ability 0x20, types 0x22, u16 held item 0x30 (its attack canceler's reads).
+        val abilityId = b.u16(0x20)
+        val ability = if (own || abilityShown(species, abilityId)) abilityId else null
+        val holdEffect = if (!own) null else b.u16(0x30).takeIf { it != 0 }?.let { item ->
+            memory.read(map.itemNames + item.toLong() * map.itemStride + 18, 1).takeIf { it.size == 1 }?.u8(0)
+        }
+        val terrain = if (map.terrain != 0L) memory.read(map.terrain, 1).let { if (it.size == 1) it.u8(0) else 0 } else 0
+        return rows.map { r ->
+            val t = MaxDexMoveTypes.type(r.id, r.type, r.power, b.u16(0), b.u8(map.battleMonTypes), ability, holdEffect, terrain)
+            if (t == null || t == r.type) r else r.copy(type = t)
+        }
+    }
+
     /** The ability slot in a battle struct's IV word (+0x14): bit 31, or bits 30-31 on Heart & Soul (abilityNum, 2 the hidden one). */
     private fun battleAbilitySlot(battle: ByteArray): Int =
         if (map.hns) HnsLayout.BattlePokemon.abilityNum.at(battle) else ((battle.u32(0x14) ushr 31) and 1L).toInt()
@@ -4682,7 +4845,7 @@ class GbaTracker(
             // From the enemy PARTY slot, not from gBattleMons. See enemyPartyStatus.
             statusCondition = enemyPartyStatus(species, b.u8(map.battleMonHp + 2), b.u16(map.battleMonHp))
                 ?.let(::statusName) ?: "",
-        )
+        ).let { e -> e.copy(battleTypes = battlerTypes(battler, b), moveRows = battleMoveRows(e.moveRows, battler, b, own = false, species = species)) }
     }
 
     /**
@@ -5153,6 +5316,8 @@ class GbaTracker(
     /** The rival [nuzCaps] was worked out for. */
     private var nuzCapsRival: String? = null
     private val nuzOpponents = HashMap<Int, OpponentInfo>()
+    /** Boss scouting's source (Gen3Scout), one per tracker so a poll's reads compare equal. */
+    private val nuzScout: com.ironmonone.tracker.nuzlocke.ScoutSource by lazy { Gen3Scout(this) }
 
     /**
      * The level cap table for this game. The standard table (nuzlocke/levelcaps-gen3.tsv) first, then each boss's
@@ -5267,6 +5432,7 @@ class GbaTracker(
                 staticsGame = if (map.hns) "hns" else when (map.routeVersion) { "ruby", "sapphire" -> "rs"; "emerald" -> "e"; else -> "frlg" },
                 mapSection = stableMapSection?.first ?: -1,
                 mapType = stableMapSection?.second ?: -1,
+                scout = if (hasTrainerData) nuzScout else null,
             )
         }.getOrNull()
     }

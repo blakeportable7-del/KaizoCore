@@ -74,12 +74,13 @@ class FloatingSeeThroughTest {
         val providers = all.filter { "LocalWindowFade provides" in code(it.readText()) }.map { it.name }
         assertEquals(listOf("FloatingTracker.kt", "TrackerHud.kt"), providers.sorted(), "docked, portrait and the second display never set it")
         val solidReaders = all.filter { "floatingSolid" in code(it.readText()) }.map { it.name }.sorted()
-        assertEquals(listOf("FloatingTracker.kt", "TrackerGearDialog.kt", "TrackerHud.kt", "TrackerOptions.kt"), solidReaders)
+        // FileBar.kt: the VIEW sheet's See-through slider, the same setting as Tracker Setup's (2026-10-06).
+        assertEquals(listOf("FileBar.kt", "FloatingTracker.kt", "TrackerGearDialog.kt", "TrackerHud.kt", "TrackerOptions.kt"), solidReaders)
         val ft = code(read("FloatingTracker.kt"))
         assertTrue("graphicsLayer { alpha = fade }.hostBackdrop()" in ft, "the backdrop fades in a layer of its own")
         assertTrue("background(windowFill(Pc.Ground))" in ft, "the title bar's fill fades")
         assertFalse(Regex("""graphicsLayer\s*\{\s*alpha\s*=\s*fade\s*}\s*\)?\s*\{""").containsMatchIn(ft), "no layer fades the content")
-        assertTrue(".border(1.dp, Pc.Border)" in ft, "the border stays solid")
+        assertTrue(".border(if (locked) 1.dp else 2.dp, if (locked) Pc.Border else TrackerHud.CYAN)" in ft, "the border stays solid (cyan while unlocked)")
         // Every box fill in the panels goes through the fade, none round it.
         for (f in all) if (f.name != "FloatingSeeThrough.kt") {
             assertFalse("TrackerBackground.boxFill(" in code(f.readText()), "${f.name} fills a box without the window's fade")

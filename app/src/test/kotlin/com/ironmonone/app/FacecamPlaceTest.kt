@@ -35,6 +35,6 @@ class FacecamPlaceTest {
         val play = File("src/main/kotlin/com/ironmonone/app/PlayScreen.kt").readText().replace("\r\n", "\n")
         assertTrue("if (FacecamPlace.of(facecam, streamClean, landscape, session.tracked, trackerOnSecond, TrackerOptions.landscapeTracker, trackerOpen, ui.trackerPeek) == FacecamPlace.BUBBLE) {" in play)
         assertFalse("if (facecam && !streamClean && !(landscape && trackerOpen))" in play)
-        assertTrue("OverlayChip(if (facecam) \"CAM ON\" else \"CAM\") { facecam = !facecam }" in play)
+        assertTrue("facecam = facecam, onCam = { facecam = !facecam }," in play, "the FILE bar's Camera switch (FileBar.kt)")
     }
 }

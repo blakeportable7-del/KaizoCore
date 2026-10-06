@@ -68,7 +68,9 @@ internal fun HeartSoulScreen(
     val fromLibrary = remember { mutableStateListOf<Pair<LibraryStore.Entry, HnsSetup.Start>>() }
     var listed by remember { mutableStateOf(0) }
 
-    LaunchedEffect(listed) {
+    // What the launch's refresh did (HnsRefresh): said at the top of the screen, and the list read again after it.
+    val refreshed by HnsRefresh.result
+    LaunchedEffect(listed, refreshed) {
         val l = withContext(Dispatchers.IO) { runCatching { HnsSetup.libraryGames(store.library.list()) }.getOrDefault(emptyList()) }
         fromLibrary.clear(); fromLibrary.addAll(l)
     }
@@ -170,13 +172,16 @@ internal fun HeartSoulScreen(
         scope.launch {
             val r = withContext(Dispatchers.IO) {
                 runCatching {
-                    val comfort = store.bundledPatch(context, HnsSetup.COMFORT_PATCH)
-                    val made = HnsSetup.make(g, patch, comfort, work, onStep = { progress.start(it, 0L) }) { d, t -> progress.at(d); if (t > 0) progress.total = t }
-                    progress.start("Adding to your library", 0L)
-                    HnsSetup.addToLibrary(store.library, made, g.name, patch?.name)
+                    HnsRefresh.exclusive {
+                        val comfort = store.bundledPatch(context, HnsSetup.COMFORT_PATCH)
+                        val made = HnsSetup.make(g, patch, comfort, work, onStep = { progress.start(it, 0L) }) { d, t -> progress.at(d); if (t > 0) progress.total = t }
+                        progress.start("Adding to your library", 0L)
+                        HnsSetup.addToLibrary(store.library, made, g.name, patch?.name)
+                    }
                 }
             }
             r.onSuccess {
+                HnsRefresh.result.value = HnsSetup.Refresh.NOTHING
                 added = it
                 result = HnsSetup.doneLine(it) to false
                 game = null; patch?.file?.delete(); patch = null; gameLine = null; patchLine = null
@@ -199,6 +204,12 @@ internal fun HeartSoulScreen(
                 Spacer(Modifier.height(6.dp))
                 Text(HnsSetup.INTRO, style = MaterialTheme.typography.bodyMedium, color = Gen3.Ink)
             }
+        }
+        // An update changed KaizoCore's Heart & Soul: made by itself from the library's 2.0.6, or the one step it needs.
+        when (refreshed) {
+            HnsSetup.Refresh.MADE -> Hint(HnsSetup.REFRESHED)
+            HnsSetup.Refresh.NEEDS_OFFICIAL -> Hint(HnsSetup.REFRESH_NEEDS_OFFICIAL)
+            else -> {}
         }
         if (busy) { if (progress.phase.isNotEmpty()) FileProgressPanel(progress) else ShellBusy() }
 

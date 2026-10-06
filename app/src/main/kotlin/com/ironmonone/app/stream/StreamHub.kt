@@ -30,7 +30,69 @@ object StreamHub {
      * tracker's live read used to open that tab at a Nuzlocke lead's faint while the run went on.
      */
     @Volatile var ended: RunOutcome? = null
+        set(v) {
+            // The timer holds the time the run ended at (StreamTimer); Retry undoing the loss lets it count again.
+            if (v != null && field == null) frozenMs = timerRun?.let { com.ironmonone.app.RunClock.millis(it.key) }
+            if (v == null) frozenMs = null
+            field = v
+        }
     @Volatile var page: String = "<p>Tracker page missing from the build.</p>"
+
+    /**
+     * The game over card's data (/gameover.json and the `gameover` event): StreamSnapshot.gameOver's JSON for the run that
+     * ended, as the game-over popup has it, or "null" while the run goes on. StreamFeed sets it from the latch; [newRun]
+     * clears it the moment a new run goes in, Play open or not.
+     */
+    @Volatile var gameOver: String = "null"
+
+    /** The run the timer follows: RunClock's key for it, and the attempt to print (null where none is counted). */
+    class TimerRun(val key: String, val attempt: Int?)
+
+    /** The run in Play, set by StreamFeed whether the stream is on or not; null when Play has no run up. */
+    @Volatile var timerRun: TimerRun? = null
+    /** The splits table (StreamTimer.rows) and the run it compares with (StreamTimer.bestInfo), built while the stream is on. */
+    @Volatile var splitRows: List<Map<String, Any?>> = emptyList()
+    @Volatile var splitBest: Map<String, Any?>? = null
+    /** The time played when the run ended, held while [ended] is set. */
+    @Volatile private var frozenMs: Long? = null
+
+    /** The clock RunClock is fed with (SystemClock.elapsedRealtime, Play's poll loops); a test sets its own. */
+    internal var now: () -> Long = { android.os.SystemClock.elapsedRealtime() }
+
+    /** The timer's JSON (/timer.json and the `timer` event): StreamTimer.NO_RUN with no run in Play. */
+    fun timerJson(): String {
+        val t = timerRun ?: return StreamTimer.NO_RUN
+        val over = ended
+        val ms = (if (over != null) frozenMs else null) ?: com.ironmonone.app.RunClock.millis(t.key)
+        val running = over == null && runCatching { com.ironmonone.app.RunClock.ticking(t.key, now()) }.getOrDefault(false)
+        return StreamTimer.json(t.attempt, ms, running, over?.name, splitRows, splitBest)
+    }
+
+    /**
+     * A new run has gone in (PrepStore.installRun): the last run's game over card and its held time go at once, rather
+     * than when Play next opens. The splits are the new run's from its first look.
+     */
+    fun newRun() {
+        ended = null
+        gameOver = "null"
+        splitRows = emptyList()
+    }
+
+    /**
+     * Every look's CSS (assets/stream/themes.css, the `?theme=` of the tracker, the attempt counter, the game over card and
+     * the timer), read once from the APK. Empty when there is no app to read it from (the JVM tests hand the server their
+     * own).
+     */
+    fun themes(): String = themesCss ?: runCatching {
+        appContext?.assets?.open("stream/themes.css")?.bufferedReader()?.use { it.readText() }
+    }.getOrNull()?.also { themesCss = it } ?: ""
+    @Volatile private var themesCss: String? = null
+
+    /**
+     * A species' picture as a PNG, for the game over card's Pokemon (/mon/25.png): the game Play opens, drawn as its
+     * favorites are (StreamFavoritePictures.monSource, set by MainActivity). Null: no picture, and the page shows none.
+     */
+    @Volatile var monPicture: ((Int) -> ByteArray?)? = null
 
     /**
      * Where the favorites' pictures come from (StreamFavoritesSource): the app sets it once (MainActivity), and the
@@ -70,7 +132,9 @@ object StreamHub {
         if (server != null) return url()
         token = stableToken(java.io.File(filesDir, "prep/stream-token.txt"))
         val s = StreamServer(token, { page }, { state }, { version }, { attempts }, { if (ended != null) dex else null }, feed ?: NativeGameFeed, { wifiAddress() },
-            runOver = { ended != null }, favorite = { n -> favorites?.pictures()?.getOrNull(n - 1) })
+            runOver = { ended != null }, favorite = { n -> favorites?.pictures()?.getOrNull(n - 1) },
+            gameOver = { gameOver }, timer = { timerJson() }, themes = { themes() }, mon = { n -> monPicture?.invoke(n) },
+            history = StreamHistory.source(filesDir))
         val ok = runCatching { s.start(port) }.isSuccess
         if (!ok) return null
         server = s
@@ -106,11 +170,35 @@ object StreamHub {
      */
     fun url(): String = url(wifiAddress())
 
-    internal fun url(address: String?): String = "http://${address ?: "<phone-ip>"}:$PORT/?k=$token"
+    internal fun url(address: String?, k: String = token): String = "http://${address ?: "<phone-ip>"}:$PORT/?k=$k"
+
+    /**
+     * The two ways a PC reaches the stream, equal (2026-10-06, Blake: "do both wifi and wired"). Wi-Fi: the phone's
+     * address on the network the PC is on ([wifiAddress]). USB cable: the PC runs [ADB_FORWARD] once each time the phone
+     * is plugged in (USB debugging on, as for scrcpy) and opens [WIRED_HOST], which adbd hands to the phone's own
+     * loopback. The cable needs no Wi-Fi at all, and its address never changes.
+     */
+    enum class Way(val label: String) { WIFI("Wi-Fi"), USB("USB cable") }
+
+    /** Where a PC on the USB cable opens the stream, after [ADB_FORWARD]. */
+    const val WIRED_HOST = "127.0.0.1"
+
+    /** The one line the PC runs for the USB cable: the PC's port 8642 becomes the phone's. */
+    const val ADB_FORWARD = "adb forward tcp:$PORT tcp:$PORT"
+
+    /**
+     * The other way round, for OBS switching scenes (ObsLink) over the cable: OBS's WebSocket server runs on the PC, so
+     * the phone reaches it at 127.0.0.1:4455 once the PC runs this.
+     */
+    const val ADB_REVERSE_OBS = "adb reverse tcp:${ObsProtocol.DEFAULT_PORT} tcp:${ObsProtocol.DEFAULT_PORT}"
+
+    /** The USB cable's link: the setup guide at [WIRED_HOST]. */
+    fun wiredUrl(k: String = token): String = url(WIRED_HOST, k)
 
     /**
      * What to do when the phone has no address a PC beside it can open (rc32 audit P3 #79): the status line and the
-     * menu printed the <phone-ip> placeholder in its place, and nothing said Wi-Fi was the trouble.
+     * menu printed the <phone-ip> placeholder in its place, and nothing said Wi-Fi was the trouble. Since the USB cable
+     * (2026-10-06) no Wi-Fi is not the end of it: the cable's line is always beside it.
      */
     const val NO_WIFI = "Connect the phone to the same Wi-Fi as your PC, or turn on its hotspot."
 
@@ -119,24 +207,35 @@ object StreamHub {
 
     internal fun startedLine(url: String?, address: String?): String = when {
         url == null -> "Port $PORT is busy."
-        address == null -> "Stream on. $NO_WIFI"
-        else -> "On your PC, open $url"
+        address == null -> "Stream on. USB cable: run $ADB_FORWARD on your PC, then open ${wiredUrl()} there. No Wi-Fi address: $NO_WIFI"
+        else -> "On your PC, open $url over Wi-Fi, or ${wiredUrl()} over a USB cable after $ADB_FORWARD."
     }
 
-    /** The FILE menu's line while the stream is on: the link to open, or what to do for one. */
-    fun menuLine(): String = menuLine(wifiAddress())
+    /** The links while the stream is on, Wi-Fi then the USB cable, each with its line for the FILE menu and the Stream page. */
+    fun linkLines(): List<Pair<Way, String>> = linkLines(wifiAddress())
 
-    internal fun menuLine(address: String?): String =
-        if (address == null) "Stream: no Wi-Fi address. $NO_WIFI" else "Stream: " + url(address)
+    internal fun linkLines(address: String?, k: String = token): List<Pair<Way, String>> = listOf(
+        Way.WIFI to (if (address == null) "Wi-Fi: no address. $NO_WIFI" else "Wi-Fi: " + url(address, k)),
+        Way.USB to "USB cable: run $ADB_FORWARD on your PC, then open ${wiredUrl(k)}",
+    )
 
-    /** Copy link: hands [copy] the link and says so, or, with no address to put in it, copies nothing and says what to do. */
-    fun copyLink(copy: (String) -> Unit): String = copyLink(wifiAddress(), copy)
+    /** Whether [way] has a link to copy now: the cable always, Wi-Fi only with an address. */
+    fun canCopy(way: Way, address: String? = wifiAddress()): Boolean = way == Way.USB || address != null
 
-    internal fun copyLink(address: String?, copy: (String) -> Unit): String {
-        if (address == null) return NO_WIFI
-        copy(url(address))
-        return "Stream link copied."
+    /** Copy link: hands [copy] [way]'s link and says so, or, with no address to put in it, copies nothing and says what to do. */
+    fun copyLink(way: Way, copy: (String) -> Unit): String = copyLink(way, wifiAddress(), copy)
+
+    internal fun copyLink(way: Way, address: String?, copy: (String) -> Unit, k: String = token): String = when (way) {
+        Way.WIFI -> if (address == null) NO_WIFI else { copy(url(address, k)); "Wi-Fi link copied." }
+        Way.USB -> { copy(wiredUrl(k)); "USB cable link copied. On your PC, run $ADB_FORWARD first." }
     }
+
+    /**
+     * The token the links carry, for the Stream page while the stream is off: the running one, or the saved one (made
+     * now if there is none, which [start] then reuses). So the links it shows are the ones that will work.
+     */
+    fun linkToken(filesDir: java.io.File): String =
+        token.takeIf { running && it.isNotEmpty() } ?: stableToken(java.io.File(filesDir, "prep/stream-token.txt"))
 
     /** The app's context, for ConnectivityManager's word on which interfaces carry mobile data (MainActivity sets it). */
     @Volatile var appContext: android.content.Context? = null

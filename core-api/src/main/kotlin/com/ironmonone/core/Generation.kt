@@ -68,7 +68,18 @@ data class RomKind(
      * the build the tracker has symbols for, so only the KaizoCore build ([HEARTSOUL_KAIZO_206]) is tracked.
      */
     val playOnly: Boolean = false,
+    /**
+     * The CRCs earlier KaizoCore builds made for this kind, newest first. A kind made by a patch KaizoCore ships (the
+     * Heart & Soul comfort build) gets a new CRC whenever that patch changes, and the tracker and the randomizer know
+     * only [expectedCrc]: a library copy or a run made by an older KaizoCore is this game, not a hack, and is made again
+     * from the player's own game rather than tracked with addresses that moved (2026-10-06: an rc36 Heart & Soul run
+     * opened in rc36.1 sat on "Tracker: waiting for the game..." for good). Empty for a kind whose CRC never changed.
+     */
+    val supersededCrcs: List<Long> = emptyList(),
 ) {
+    /** [crc] is this game as an earlier KaizoCore made it ([supersededCrcs]). */
+    fun isOlderBuild(crc: Long): Boolean = crc != expectedCrc && crc in supersededCrcs
+
     /** Pokemon Heart & Soul (family "HnS"): its own randomizer (HnsEngine), presets and Nuzlocke areas. */
     val isHns: Boolean get() = family == HNS_FAMILY
 
@@ -97,6 +108,9 @@ data class RomKind(
         val all: List<RomKind> get() = allV1 + allNatDex + allMaxDex + allPatched + allHns
 
         fun byId(id: String?): RomKind? = id?.let { k -> all.firstOrNull { it.id == k } }
+
+        /** The kind [crc] is an older KaizoCore build of ([supersededCrcs]), or null. */
+        fun olderBuildOf(crc: Long): RomKind? = all.firstOrNull { it.isOlderBuild(crc) }
 
         val FIRERED_U_V11 = RomKind(
             id = "firered-u-v11",
@@ -366,7 +380,7 @@ data class RomKind(
 
         /**
          * Pokemon Heart & Soul 2.0.6 with KaizoCore's comfort patch (docs/HNS-KAIZO.md): the official 2.0.6 (01713508)
-         * plus our BPS, CRC E35A0E40. The header is Heart & Soul's own ("POKEMON HNS", game code BPEE); the tracker
+         * plus our BPS, CRC C218FD9E. The header is Heart & Soul's own ("POKEMON HNS", game code BPEE); the tracker
          * picks its map by that title and the build's tables (GameMap.resolve, HnsMaps). Minimal on purpose
          * (feat/hns-tracker, 2026-10-05): recognition for the Library and the tracker only; the randomizer for it is
          * HnsEngine's to wire, and another branch may define this kind too.
@@ -377,9 +391,14 @@ data class RomKind(
             displayName = "Pokémon Heart & Soul (KaizoCore)",
             generation = Generation.GBA3,
             fileExtension = "gba",
-            expectedCrc = 0xE35A0E40L,
+            expectedCrc = 0xC218FD9EL,
             titleDetect = "POKEMON HNS",
             natDexCapable = false,
+            // Every comfort build before this one, newest first: rc36.1's E35A0E40 (the one players had), its two test
+            // builds, rc36's C993EB6E, and the test builds before it. A rebuild adds the CRC it replaces here (docs/HNS-KAIZO.md).
+            supersededCrcs = listOf(
+                0xE35A0E40L, 0x43E658C6L, 0x9399657FL, 0xC993EB6EL, 0x123ACB97L, 0x263BCD3CL, 0xD4ADC9EAL, 0xF0C6236CL, 0xE08DD128L,
+            ),
         )
 
         /**

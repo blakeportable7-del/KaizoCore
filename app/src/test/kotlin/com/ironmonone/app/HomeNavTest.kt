@@ -193,7 +193,7 @@ class HomeNavTest {
         val home = AppNav()
         val places = listOf(
             home, home.openStats(), home.play(), home.pick(Tab.LIBRARY), home.openPatchedVersions(), home.pick(Tab.MORE),
-            home.pick(Tab.MORE).withMorePage(1), home.open(HomeMode.KAIZO), home.open(HomeMode.NUZLOCKE), home.open(HomeMode.HACKS), home.open(HomeMode.HEARTSOUL),
+            home.pick(Tab.MORE).withMorePage(1), home.pick(Tab.MORE).withMorePage(AppNav.STREAM_PAGE), home.open(HomeMode.KAIZO), home.open(HomeMode.NUZLOCKE), home.open(HomeMode.HACKS), home.open(HomeMode.HEARTSOUL),
             home.open(HomeMode.PLAY_ANY), home.play().pick(Tab.LIBRARY).withLibraryPage(AppNav.PATCHED_PAGE), home.play().pick(Tab.MORE).openStats(),
         )
         for (p in places) {
@@ -213,6 +213,8 @@ class HomeNavTest {
         }
         // A page past the two there are is the nearest one.
         assertEquals(AppNav.PATCHED_PAGE, AppNav.fromSaved("LIBRARY||9|0|HOME|0")!!.libraryPage)
+        // More has three pages since Stream (2026-10-05): one past them is Stream, the last.
+        assertEquals(AppNav.STREAM_PAGE, AppNav.fromSaved("MORE||0|9|HOME|0")!!.morePage)
     }
 
     @Test

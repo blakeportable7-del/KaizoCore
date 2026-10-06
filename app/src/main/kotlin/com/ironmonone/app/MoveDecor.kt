@@ -26,8 +26,11 @@ import com.ironmonone.tracker.TrackedMon
  * What the move table needs from the battle for one card (DataHelper.lua
  * 255-370): who is attacking, who is the target, and the weather.
  *
- * Types are the species' base types. The reference reads the battlers' live
- * types, which differ only after something like Color Change or Conversion.
+ * In battle the types are the battlers' own (TrackedMon.battleTypes and
+ * EnemyInfo.battleTypes, read from the battle data on every read), as the
+ * reference reads the battlers' live types: after Conversion, Conversion 2,
+ * Color Change, Protean, Soak, Roost or a third type, the next read has them,
+ * on both cards. Outside battle, the species' types.
  */
 internal data class MoveContext(
     val inBattle: Boolean,
@@ -56,13 +59,17 @@ internal data class MoveContext(
 
 private fun kg(s: String?): Double? = s?.trim()?.toDoubleOrNull()
 
+/** The types a battler's matchups use: its battle types in battle (a third one and Roost included), else its card's two. */
+internal fun typesOf(p: TrackedMon): List<Int> = p.battleTypes ?: listOfNotNull(p.base?.type1, p.base?.type2)
+internal fun typesOf(e: EnemyInfo): List<Int> = e.battleTypes ?: listOf(e.type1, e.type2)
+
 /** Your Pokemon's card: its moves against the opponent, when there is one. */
 internal fun ownMoveContext(p: TrackedMon, enemy: EnemyInfo?, weather: String?, weight: ((Int) -> String?)?): MoveContext {
     val m = p.mon
     return MoveContext(
         inBattle = enemy != null, viewingOwn = true,
-        attackerTypes = listOfNotNull(p.base?.type1, p.base?.type2),
-        targetTypes = enemy?.let { listOf(it.type1, it.type2) } ?: emptyList(),
+        attackerTypes = typesOf(p),
+        targetTypes = enemy?.let(::typesOf) ?: emptyList(),
         source = MoveRules.Side(m.level, m.curHp, m.maxHp, m.friendship, kg(weight?.invoke(m.species))),
         target = enemy?.let { MoveRules.Side(it.level, weightKg = kg(weight?.invoke(it.species))) },
         weather = weather,
@@ -74,8 +81,8 @@ internal fun ownMoveContext(p: TrackedMon, enemy: EnemyInfo?, weather: String?, 
 internal fun enemyMoveContext(e: EnemyInfo, lead: TrackedMon?, weather: String?, weight: ((Int) -> String?)?): MoveContext =
     MoveContext(
         inBattle = true, viewingOwn = false,
-        attackerTypes = listOf(e.type1, e.type2),
-        targetTypes = lead?.base?.let { listOf(it.type1, it.type2) } ?: emptyList(),
+        attackerTypes = typesOf(e),
+        targetTypes = lead?.let(::typesOf) ?: emptyList(),
         source = MoveRules.Side(e.level, e.curHp, e.maxHp),
         target = lead?.mon?.let { MoveRules.Side(it.level, weightKg = kg(weight?.invoke(it.species))) },
         weather = weather,

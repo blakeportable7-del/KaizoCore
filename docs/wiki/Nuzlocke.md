@@ -41,17 +41,33 @@ League there is no cap after that, the Champion included. Rivals and villain tea
 
 ## The ledger
 
-**Open the ledger** on the Nuzlocke screen. It has five tabs: **AREAS**, **TEAM**, **GRAVE**, **LOG** and **RULES**.
+**Open the ledger** on the Nuzlocke screen. It has seven tabs: **AREAS**, **TEAM**, **TYPES**, **BOSSES**, **GRAVE**,
+**LOG** and **RULES**.
 The tracker fills it in as you play, and you can correct it: THIS DOES NOT COUNT, MARK DEAD, THE DEATH DOES NOT
 COUNT, ADD A POKEMON, ADD A NOTE, change a rule (the change goes in the log), END THE RUN and OPEN IT AGAIN.
 
 On the tracker, the Nuzlocke line shows the preset, how many are alive and dead, the area and the cap.
 
+## Bosses and types
+
+**BOSSES** shows the gym leaders, the Elite Four, the Champion and the other big fights still to come, with each
+Pokémon's level, types, held item and moves, read from the game itself. Tap one of their Pokémon to see, for each
+Pokémon in your party, who moves first and the chance it survives one hit of each of their moves, every damage roll
+and critical hits counted. It works on the Game Boy Advance games, Heart & Soul included.
+
+The bosses' teams are only shown on a game whose trainers are its own. In a randomized Nuzlocke, or in a game that
+looks changed, BOSSES shows nothing: that is what you find out by playing.
+
+**TYPES** shows every attacking type against your party (or your party and box): who takes it hard, who takes little
+or nothing, the types to watch out for, and the types none of your moves hits hard.
+
+**Calc Atk** also says, after a hit, the chance your Pokémon survives the same hit again at the HP it has now.
+
 ## Randomized Nuzlockes
 
 The Randomizer preset randomizes the game first, and it starts from **Nuzlocke fair**: wild Pokémon and trainers'
 teams are random but close in strength, and nothing else changes. Pick an IronMON mode instead if you want one. A
-randomized Nuzlocke counts no attempt, and **NEW NUZLOCKE** in the File menu rolls a new seed with the same rules.
+randomized Nuzlocke counts no attempt, and NEW on the File bar rolls a new seed with the same rules.
 
 ## During a Nuzlocke
 

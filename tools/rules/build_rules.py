@@ -22,7 +22,11 @@ ruleset changes. Nothing is paraphrased: table rows become bullets, HTML list
 items become indented sub-bullets, links keep their text and URL, and the
 emphasis markers the RULES box cannot draw are dropped. The only words added
 are lines starting "In KaizoCore", which say where the app does a step for
-the player. A British spelling is written the American way (american(): the
+the player. Heart & Soul's book adds more of them, because no ruleset is written
+for it: a list at the top of what its KaizoCore build does in every IronMON mode
+(HNS_GAME), and under a rule, a line where Heart & Soul differs from the game
+or settings that rule was written for (HNS_AFTER, HNS_EVO_KAIZO), each checked
+against Heart & Soul's own source. A British spelling is written the American way (american(): the
 Nat. Dex page's "favourites" becomes "favorites"); only the spelling moves.
 
 Which files are written follows the bundled presets: a mode gets a file for
@@ -287,6 +291,9 @@ NOTE_60_NATDEX = "In KaizoCore, the Nat. Dex settings files for Kaizo and harder
 # Super Kaizo's README asks for a smart AI patch; the Nat. Dex randomizer has it built in (rules check, 2026-10-01).
 NOTE_SMART_AI_NATDEX = ("In KaizoCore, the Nat. Dex Super Kaizo settings file turns on the Nat. Dex randomizer's Smart AI Mode, "
                         "so every trainer has smart AI and no patch is needed.")
+# Heart & Soul's engine does it itself: HnsGame.writeTrainers sets the trainer's smart flags (aiFlags | 7) when the file asks.
+NOTE_SMART_AI_HNS = ("In KaizoCore, Heart & Soul's Super Kaizo settings make every trainer pick its moves the smart way, "
+                     "and no patch is needed.")
 # Heart & Soul's book (main()): its folder and title, and the line that says whose rules it is held to.
 HNS_TAG = "HnS"
 HNS_LABEL = "Heart & Soul"
@@ -294,9 +301,128 @@ HNS_INTRO = ["In KaizoCore, Heart & Soul is held to the rules of the game it ret
              "and SoulSilver's story, Johto and then Kanto with sixteen badges, so HeartGold and SoulSilver's game rules below "
              "apply to it. It runs the Emerald Nat. Dex settings files, so a run with the Nat. Dex pool (Pokémon through "
              "Gen 9) is held to the Nat. Dex ruleset changes below as well. A run with the Vanilla pool (Gen 1 to 3 Pokémon) "
-             "is held to the rules above without them, as Emerald is: the Gen 3 BST limits and three favorites.", "",
+             "is held to the same rules without those changes, as Emerald is: the Gen 3 BST limits and three favorites.", "",
              "In KaizoCore, the item that starts in your PC is in the trash can in Elm's lab instead, and it is random "
              "in every mode that randomizes field items, as the other Kaizo games' PC item is.", ""]
+# What KaizoCore's Heart & Soul build (tools/hns/patches, the comfort build of rc36.1) and HnsEngine do in every IronMON
+# mode, said once, at the top of the book, where a player looks before the rules. Every IronMON run of Heart & Soul is a
+# "Kaizo run" to the build (HnsEngine.writePreset, Preset.KAIZO; KAIZOCORE_KAIZO_RUN in patch 0034): only a Nuzlocke run
+# differs, and Nuzlocke has no book here. Each line names the patch or the code that does it.
+HNS_GAME = [
+    "### What Heart & Soul does in KaizoCore", "",
+    "In KaizoCore, Heart & Soul plays every IronMON mode this way:",
+    # 0030, 0034: CanPlayerForfeitNormalTrainerBattle is FALSE in a Kaizo run. 0006: QUICK RUN on B, never from a shiny.
+    "- You cannot run from a trainer battle or forfeit it: RUN is refused, as in Emerald. From a wild battle you can run "
+    "as usual, or hold B as it starts, though never from a shiny.",
+    # 0029: expOnCatch off in a Kaizo run.
+    "- Catching a Pokémon gives no EXP.",
+    # 0028: KaizoCore_CycleSlot, one cursor per wild header and table kind.
+    "- Wild Pokémon come in turn: each list (grass, water, Rock Smash and each fishing rod) gives every species it has "
+    "once, in order, before any comes again. A route with five species shows all five in five encounters.",
+    # HnsRandomizer: hmMoves are never rolled into a learnset, evolution and level 1 moves included; trainers use learnsets.
+    "- No Pokémon learns an HM move by level or knows one when you meet it, yours or a trainer's, in either pool.",
+    # 0033: KaizoCore_IsFirstRivalBattle, the three TRAINER_RIVAL_*_1_HNS.
+    "- The lab fight these rules name is your first rival battle, outside Cherrygrove City. It plays by FireRed's "
+    "first-battle rules: your damaging moves never miss, neither side lands a critical hit, and the rival battles as "
+    "FireRed's first rival does.",
+    # 0034: TryRestoreHeldItems.
+    "- A held item that gets used up in battle stays used up. Only an item taken from you comes back after the battle.",
+    # 0034: Route34_DayCare_EventScript_KaizoCoreRefuse.
+    "- The Day Care on Route 34 takes no Pokémon.",
+    # 0034: IsGen6ExpShareEnabled.
+    "- The Exp. Share that gives EXP to the whole party is off, so a Pokémon that does not battle, such as an HM friend, gains none.",
+    # 0034: Cmd_pickup skips a party member that was not sent out.
+    "- Only a Pokémon that was sent out in the battle can find an item with Pickup.",
+    # HnsEngine.writePreset: REUSABLE TMS OFF, NATURE MINTS OFF, SHINY CHANCE 1/8192, ITEM DROP OFF, all locked.
+    "- A TM breaks after one use, as in Emerald, and there are no Nature Mints: the shop that sells them is closed.",
+    "- Shiny odds are Gen 3's 1 in 8,192, and a wild Pokémon you defeat drops nothing. Neither can be changed.",
+    # HnsRandomizer: a hidden item is never a TM (TM41, TM69, TM88 are hidden in Heart & Soul); item balls keep UPR's rule.
+    "- A hidden item is never a TM. The TMs Heart & Soul hides become other items; a TM lying in the open is still a TM.",
+    # 0004, 0018: the start menu's HM entry.
+    "- The start menu has an HM entry. Once an HM is in your bag and you have the badge it needs, you can use it from there "
+    "with no Pokémon knowing the move, so no field move needs an HM friend.",
+    # 0020, 0025, 0026, 0032.
+    "- Every Pokémon Center has a Name Rater: the Meowth standing near the counter.", ""]
+# Evo Kaizo on Heart & Soul. Blake ruled (2026-10-06) that it has no evo loops, as the Nat. Dex rules say; the engine
+# change that makes it so is on its own branch (HnsRandomizer.randomizeEvolutionsEveryLevel gave each species one fixed
+# evolution, which loops). The Nat. Dex part replaces rules 4 and 11 for the Nat. Dex pool, as everywhere in this book.
+HNS_EVO_KAIZO = [
+    "In KaizoCore, Heart & Soul's Evo Kaizo has no evo loops, in either pool, as the Nat. Dex ruleset changes say. So on "
+    "both pools there is no loop to break (rule 10) and no checkpoint to pivot to (rule 11): pivots are banned, no "
+    "exceptions, in place of rule 4. With the Nat. Dex pool, the rest of the Evo Kaizo part of the Nat. Dex ruleset "
+    "changes below applies as well.", ""]
+# Lines that belong under one rule of the book, where a player reads that rule: (the rule line's start, the modes it is
+# written into, the line). The anchor must be found, so a source that rewords its rule fails here, not silently.
+# The levels: Standard's "increased by 50%" is the rule for every mode, but Heart & Soul runs the Emerald Nat. Dex v1.2
+# settings files, which raise trainer and wild levels 60% for Kaizo and every mode built on it and 50% for Standard and
+# Ultimate (read from the .rnqs files; HnsRulesTest checks each page against its own file).
+# The HeartGold and SoulSilver lines below were checked against Heart & Soul's own source (pokehns-expansion, the
+# kaizocore-speed2 branch of rc36.1, and tools/hns/patches) on 2026-10-06; each note says where Heart & Soul differs.
+ALL_MODES = set(CHAIN)
+ULTIMATE_UP = ALL_MODES - {"standard"}
+HNS_AFTER = [
+    ("- Randomize the game:", KAIZO_BASED,
+     "In KaizoCore, Heart & Soul's settings files for Kaizo and every mode built on it raise trainer and wild Pokémon "
+     "levels by 60%, not 50%."),
+    # Blue's badge sets VAR_OAK_MT_SILVER_CALL; patch 0027 opens Mt. Silver from Oak's Viridian call.
+    ("1. To win Ironmon you must defeat Red", ALL_MODES,
+     "In KaizoCore, beating Blue for your sixteenth badge brings a call from Oak that opens Mt. Silver."),
+    # Week siblings ask for their day (multichoice MULTI_DAYS_OF_WEEK); Union Cave's Lapras any day; the contest daily.
+    ("2. You are allowed to change to game's time", ALL_MODES,
+     "In KaizoCore, no Heart & Soul event waits for a day of the week: the Week siblings ask you to guess their day, the "
+     "Union Cave Lapras is there any day, and the Bug-Catching Contest is open every day, once a day."),
+    # Both MtSilver_Summit maps are WEATHER_SNOW; battles get the Gen 9 Snow (B_OVERWORLD_SNOW), never Hail.
+    ("3. In many cases, you'll fight Red without hail", ALL_MODES,
+     "In KaizoCore, the top of Mt. Silver always snows, whatever the date or time, so Red's battle always starts in snow: "
+     "Heart & Soul's newer form of hail, which does no damage and raises the Defense of Ice types."),
+    # setwildbattleshiny GYARADOS; FLAG_HIDE_LAKE_OF_RAGE_GYARADOS is cleared by no Hall of Fame script.
+    ("5. You cannot defeat the Shiny Gyarados", ALL_MODES,
+     "In KaizoCore, Heart & Soul's red Gyarados never comes back once you beat or catch it."),
+    # Patch 0027: the Cianwood pharmacist delivers the potion once Jasmine has asked (Olivine state 3 -> 5).
+    ("1. You can only fight trainers in the Lighthouse", ULTIMATE_UP,
+     "In KaizoCore, there is no return trip: once Jasmine asks, the Cianwood pharmacist sends the Secret Potion himself, "
+     "so you climb the Lighthouse once."),
+    # Patch 0027: the Basement Key lands at the Underground's entrance, the Card Key at 3F; neither in a trainer's sight.
+    ("2. Each building of the Radio Tower", ULTIMATE_UP,
+     "In KaizoCore, the Basement Key and the Card Key each take you straight to the next building, and you can still walk "
+     "out and heal between them."),
+    # SeafoamIslands 1F and B1F: no trainerbattle; Blaine is the gym's only trainer.
+    ("3. Seafoam Islands is treated as two", ULTIMATE_UP,
+     "In KaizoCore, Heart & Soul's Seafoam cave has items but no trainers, and Blaine is the only trainer in his gym."),
+    # OlivineCity_PokemonCenter_hns: no trainerbattle.
+    ("4. The Pokémon Center in Olivine City", ULTIMATE_UP,
+     "In KaizoCore, Heart & Soul's Olivine Pokémon Center has no trainer in it."),
+    # Only Dark Cave requires_flash; the reward rooms check the party's species (RuinsOfAlph_PuzzleAndRewardChambers_hns).
+    ("1. You cannot use Flash to get the Ruins of Alph items", KAIZO_BASED,
+     "In KaizoCore, Heart & Soul's Ruins of Alph are not dark, so Flash plays no part there: each item room opens when a "
+     "Pokémon in your party is Ho-Oh, Aerodactyl, Kabuto or Omanyte. Only Dark Cave is dark."),
+    # Super Kaizo's HeartGold and SoulSilver section.
+    ("    - The pivot must be done in one of the Bug Catching Contest", {"superkaizo"},
+     "In KaizoCore, Heart & Soul's Bug-Catching Contest is open every day, once a day, so no time change and no Celebi is needed."),
+    ("    - The TM on Route 42", {"superkaizo"},
+     "In KaizoCore, Heart & Soul's Route 42 TM lies by Mt. Mortar's north entrance."),
+    ("    - The TM inside Burned Tower", {"superkaizo"},
+     "In KaizoCore, Heart & Soul's Burned Tower TM is in the basement's southwest corner, beside a Strength boulder."),
+    ("    6. Must fight Red with hail weather active", {"superkaizo"},
+     "In KaizoCore, the top of Mt. Silver always snows, Heart & Soul's newer form of hail, so Red is always fought in it "
+     "and no clock change is needed."),
+    # Free heals (Blake asked, 2026-10-06; the official rules answer it). Survival's limit counts "a PokeCenter (or
+    # equivalent NPC)", so every free whole-party heal outside a dungeon is one of the heals: NewBarkTown_Lab_hns's heal
+    # machine (any time after the first Pokemon), the National Park teacher (NationalPark_Normal_hns, every talk), any
+    # other. Patch 0031's heal with the balls comes after the first rival battle and before any other trainer, so before
+    # Survival's limit starts. Kaizo's "No Healing Stations in Dungeons" bans an NPC or bed inside a dungeon, story heals
+    # aside; National Park is outdoors, and Elm's lab has no trainers, so neither is a dungeon.
+    ("- 10 Heal Limit:", {"survival"},
+     "In KaizoCore, every free heal of the whole party outside a dungeon counts as one of these heals, as a Pokémon Center "
+     "does: the heal machine in Elm's lab, the teacher in National Park, and any other person who heals your party. The "
+     "heal Elm's aide gives with the Poké Balls comes before the limit starts."),
+    ("- Limited Healthcare:", {"survivalrevival"},
+     "In KaizoCore, every free heal of the whole party outside a dungeon counts as one of these Pokémon Center visits: the "
+     "heal machine in Elm's lab, the teacher in National Park, and any other person who heals your party."),
+    ("- No Healing Stations in Dungeons:", KAIZO_BASED,
+     "In KaizoCore, a person or bed that heals you inside a Heart & Soul dungeon is off limits, apart from the heals the "
+     "story makes. National Park is outdoors and Elm's lab has no trainers, so neither is a dungeon."),
+]
 # Where the settings page's notes on the growth patch meet the app.
 PATCH_NOTES = {
     "RED / BLUE / YELLOW": "In KaizoCore, PREPARE's pseudo-fluctuating growth patch is the first way, and a run on the patched game takes PART 1 only. "
@@ -385,6 +511,8 @@ def natdex_changes(drop=V113_ONLY):
     return render_md("\n".join(kept))
 
 NATDEX_NOTE = "(Rules the page marks \"v1.0.0 to v1.1.3 only\" are left out: KaizoCore's Nat. Dex is 1.2.1.)"
+NATDEX_NOTE_HNS = ("(On Heart & Soul, this section is for a run with the Nat. Dex pool only; a Vanilla pool run skips it. "
+                   "Rules the page marks \"v1.0.0 to v1.1.3 only\" are left out: KaizoCore's Nat. Dex is 1.2.1.)")
 # The Nat. Dex page's note, as it reads on MaxDex, which is built on Nat. Dex 1.1.3 (Blake, 2026-10-03: "Max dex is
 # allowed a bst 600 pokemon").
 NATDEX_NOTE_MAXDEX = ("(Rules the page marks \"v1.2.0+ only\" are left out: MaxDex is built on Nat. Dex 1.1.3, so the ones marked "
@@ -474,8 +602,18 @@ def main():
     written = []
     by_chain = lambda m: list(CHAIN).index(m) if m in CHAIN else 99
 
-    def book(mode, family, fam_label, label, folder, updates, natdex_build, build, intro=(), sk_family=None):
-        """One mode's file: the chain, the game's own updates, the Nat. Dex changes, MaxDex's section, the sources."""
+    def place_after(out, prefix, line):
+        """[line] as a sub-bullet at the end of the rule that starts with [prefix] (the rule and the lines indented under it)."""
+        at = next((i for i, l in enumerate(out) if l.startswith(prefix)), None)
+        assert at is not None, ("no rule starts with", prefix)
+        indent = len(out[at]) - len(out[at].lstrip())
+        end = at + 1
+        while end < len(out) and out[end].strip() and len(out[end]) - len(out[end].lstrip()) > indent: end += 1
+        out.insert(end, " " * (indent + 4) + "- " + line)
+
+    def book(mode, family, fam_label, label, folder, updates, natdex_build, build, intro=(), sk_family=None, after=()):
+        """One mode's file: the chain, the game's own updates, the Nat. Dex changes, MaxDex's section, the sources.
+        [after] puts a line under one rule (see HNS_AFTER)."""
         out = [f"# {label}: {MODE_LABEL[mode]}", "",
                "Every ruleset builds on the ones before it, so they are all here in order, then this game's own updates.", ""]
         out += list(intro)
@@ -490,7 +628,8 @@ def main():
                 out += ["## Super Kaizo IronMON", "", *sk_disclaimer, "", *sk_general, ""]
                 g = sk_game(sk_family or family)
                 if g: out += [f"### Super Kaizo, {fam_label}", ""] + g + [""]
-                if natdex_build: out += [NOTE_SMART_AI_NATDEX, ""]
+                if family == HNS_TAG: out += [NOTE_SMART_AI_HNS, ""]
+                elif natdex_build: out += [NOTE_SMART_AI_NATDEX, ""]
                 used.append("super")
             elif step == "kaizodoubles":
                 out += ["## Kaizo Doubles", ""] + doubles + [""]
@@ -503,7 +642,9 @@ def main():
                 # Evo Kaizo's source has no game sections, but its gyms and checkpoints are FireRed's (rules check, 2026-10-01).
                 elif step == "evokaizo" and family != "FRLG": out += ["Its rules are written for FireRed and LeafGreen: the gyms and places it names are in those games.", ""]
                 # The Nat. Dex page has an Evo Kaizo part of its own: no evo loops, so no checkpoint pivots (Blake asked, 2026-10-01).
-                if step == "evokaizo" and natdex_build: out += ["On a Nat. Dex build, the Evo Kaizo part of the Nat. Dex ruleset changes below replaces rules 4 and 11: pivots are banned, with no checkpoints.", ""]
+                # Heart & Soul takes it only with the Nat. Dex pool, and its engine's evolutions can loop (HNS_EVO_KAIZO).
+                if step == "evokaizo" and family == HNS_TAG: out += HNS_EVO_KAIZO
+                elif step == "evokaizo" and natdex_build: out += ["On a Nat. Dex build, the Evo Kaizo part of the Nat. Dex ruleset changes below replaces rules 4 and 11: pivots are banned, with no checkpoints.", ""]
                 used.append(step)
         own = [(t, ls) for t, ls in updates if t == "Settings notes" or applies(t, mode)]
         if own:
@@ -511,11 +652,15 @@ def main():
             for t, ls in own:
                 out += [f"### {t}", ""] + ls + [""]
         if natdex_build:
-            out += ["## Nat. Dex ruleset changes", ""] + (natdex_maxdex if build == "MaxDex" else natdex) + [""]
+            changes = natdex_maxdex if build == "MaxDex" else natdex
+            # Heart & Soul's Vanilla pool reads past this section, so its head says so where a Vanilla player reads it.
+            if family == HNS_TAG: changes = [NATDEX_NOTE_HNS] + changes[1:]
+            out += ["## Nat. Dex ruleset changes", ""] + changes + [""]
             used.append("natdex")
         if build == "MaxDex":
             out += ["## MaxDex", ""] + maxdex + [""]
             used.append("maxdex")
+        for prefix, line in after: place_after(out, prefix, line)
         out += ["## Sources", ""]
         for k in used:
             n, u, d = SOURCES[k]; out.append(f"- {n}: {u} ({d})")
@@ -547,7 +692,8 @@ def main():
     hns_modes = sorted(matrix.get(("RSE", "NatDex"), set()) | matrix.get((HNS_TAG, ""), set()), key=by_chain)
     for mode in hns_modes:
         if mode not in CHAIN: continue
-        book(mode, HNS_TAG, TAG_LABEL["HGSS"], HNS_LABEL, HNS_TAG, hgss_updates, True, "NatDex", intro=HNS_INTRO, sk_family="HGSS")
+        book(mode, HNS_TAG, TAG_LABEL["HGSS"], HNS_LABEL, HNS_TAG, hgss_updates, True, "NatDex", intro=HNS_INTRO + HNS_GAME,
+             sk_family="HGSS", after=[(p, l) for p, modes, l in HNS_AFTER if mode in modes])
     print(len(written), "files:", ", ".join(written))
 
 if __name__ == "__main__":

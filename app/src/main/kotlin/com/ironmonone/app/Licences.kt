@@ -76,9 +76,9 @@ internal object Licences {
         Part("The Nat. Dex randomizer", "CyanSixFour's fork of the randomizer.", "GPL-3.0",
             "github.com/CyanSMP64/universal-pokemon-randomizer-zx"),
         Part("LibretroDroid 0.13.2", "By Swordfish90, the emulators' host.", "GPL-3.0", "github.com/Swordfish90/LibretroDroid"),
-        Part("melonDS libretro core", "The DS emulator, built from its source with four fixes: ours to how a game is closed " +
-            "and to a saved state loaded in the middle of a 3D scene, and melonDS's own to its 3D drawing and to the Wi-Fi " +
-            "settings it gives a game. All are in KaizoCore's source, beside the commit it is built from.", "GPL-3.0",
+        Part("melonDS libretro core", "The DS emulator, built from its source with six fixes: ours to how a game is closed, " +
+            "to saved states of a 3D scene and to a game turning the Wi-Fi radio on, and melonDS's own to its 3D drawing and " +
+            "to the Wi-Fi settings it gives a game. All are in KaizoCore's source, beside the commit it is built from.", "GPL-3.0",
             "github.com/libretro/melonDS"),
         Part("NDS IronMON Tracker", "By Brian0255: the DS trackers' rules, and the badges, icons, sprites and type symbols taken from it.",
             "GPL-3.0", "github.com/Brian0255/NDS-Ironmon-Tracker"),

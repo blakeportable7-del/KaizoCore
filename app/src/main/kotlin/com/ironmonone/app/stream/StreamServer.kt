@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
- * The stream server: what OBS on the PC reads, over the phone's Wi-Fi.
+ * The stream server: what OBS on the PC reads, over the phone's Wi-Fi or a USB cable.
  *
  * Hand-written HTTP/1.1, GET only, because the surface is a handful of routes and a
  * dependency here is a supply-chain and a build-step for nothing. Live data goes out
@@ -35,11 +35,29 @@ import java.util.concurrent.atomic.AtomicInteger
  *   /dex.json        every species' randomized data, for the post-game browser
  *   /favorite/1.png  each favorite's picture, 1 to 9, a see-through PNG (StreamFavorites)
  *   /favorite/1      a page showing it, for a browser source, that follows the favorites as they change
+ *   /gameover        the game over card: see-through while the run goes on, a card when it ends (StreamOverlays)
+ *   /gameover.json   that card's data, "null" while the run goes on
+ *   /timer           the run timer and its splits, one a badge (StreamOverlays, StreamTimer)
+ *   /timer.json      the timer's data
+ *   /mon/25.png      a species' picture for the game over card, a see-through PNG (the empty one where there is none)
+ *   /history         the run history for viewers: past attempts on this game and mode, the best, what ends runs (StreamHistory)
+ *   /history.json    the same facts as JSON
+ *
+ * /tracker, /attempts.html, /gameover and /timer take `&theme=clean` or `&theme=hud` for another look (StreamThemes).
+ * /events also sends `gameover` and `timer` events, beside `state`.
+ *
+ * 2026-10-05 (streamer list items 1, 3 and 6): /gameover, /timer, their JSON, /mon and the looks were added.
+ * 2026-10-05 (streamer list items 2 and 4): /history and /history.json were added.
  *
  * Every route needs `?k=<token>`, /game.ws included (a browser cannot add a header to
  * a WebSocket, so it is the query there too). The token is in the URL the app shows,
  * so the only thing it stops is another device on the same network guessing the port.
- * Wi-Fi only by intent: the URL the app prints is the Wi-Fi address.
+ *
+ * Two ways in, equal (2026-10-06, Blake: "do both wifi and wired"): the phone's Wi-Fi address, and the USB cable, where
+ * the PC runs `adb forward tcp:8642 tcp:8642` (StreamHub.ADB_FORWARD) and opens 127.0.0.1:8642. adbd opens the PC's
+ * connection on the phone's own loopback, which [local] admits and the bind on every interface ([start]) serves, so
+ * nothing here differs by the way in except the guide's word for a loopback visitor (StreamPages.onPhone): the phone's
+ * own browser, or a PC on the cable.
  *
  * The providers are read on the server thread; they must be cheap and thread-safe
  * (the hub keeps prebuilt strings). [feed] is where the game's picture and sound come
@@ -72,6 +90,16 @@ class StreamServer(
     private val runOver: () -> Boolean = { false },
     /** Favorite [n]'s picture, 1 to StreamFavorites.SLOTS, as a PNG; null for a box with none (StreamHub.favorites). */
     private val favorite: (Int) -> ByteArray? = { null },
+    /** The game over card's JSON, "null" while the run goes on (StreamHub.gameOver). */
+    private val gameOver: () -> String = { "null" },
+    /** The run timer's JSON (StreamHub.timerJson). */
+    private val timer: () -> String = { StreamTimer.NO_RUN },
+    /** The looks' CSS, put into every page that takes `?theme=` (StreamThemes). */
+    private val themes: () -> String = { "" },
+    /** A species' picture as a PNG, for the game over card (StreamHub.monPicture); null for none. */
+    private val mon: (Int) -> ByteArray? = { null },
+    /** The run history's facts (StreamHistory.facts), read on each request for /history and /history.json. */
+    private val history: () -> Map<String, Any?> = { StreamHistory.facts(null, null, emptyList(), null) },
 ) {
     private var socket: ServerSocket? = null
     private val running = AtomicBoolean(false)
@@ -137,11 +165,15 @@ class StreamServer(
         if (!authorized(req.query["k"])) return respond(out, 403, "text/plain", "Missing or wrong token. Use the URL shown in the app.")
         val base = baseUrl(req)
         when (req.path) {
-            "/", "/index.html" -> respond(out, 200, HTML, StreamPages.setup(base, token))
-            "/tracker", "/tracker.html" -> respond(out, 200, HTML, page())
+            "/", "/index.html" -> respond(out, 200, HTML, StreamPages.setup(base, token, req.headers))
+            "/tracker", "/tracker.html" -> respond(out, 200, HTML, themed(page(), req))
             "/game", "/game.html" -> respond(out, 200, HTML, StreamPages.game())
             "/game.ws" -> gameSocket(c, input, out, req)
-            "/attempts.html" -> respond(out, 200, HTML, StreamPages.attempts())
+            "/attempts.html" -> respond(out, 200, HTML, themed(StreamPages.attempts(), req))
+            "/gameover", "/gameover.html" -> respond(out, 200, HTML, themed(StreamOverlays.gameOver(), req))
+            "/gameover.json" -> respond(out, 200, "application/json", gameOver())
+            "/timer", "/timer.html" -> respond(out, 200, HTML, themed(StreamOverlays.timer(), req))
+            "/timer.json" -> respond(out, 200, "application/json", timer())
             "/obs-scene.json" -> {
                 val top = req.query["top"] == "1"
                 val file = if (top) ObsScene.FILE_TOP else ObsScene.FILE
@@ -157,9 +189,13 @@ class StreamServer(
                 ?: if (runOver()) respond(out, 503, "text/plain; charset=utf-8", DEX_BUILDING)
                 else respond(out, 403, "text/plain; charset=utf-8", "The randomized data opens when the run is over.")
             "/events" -> events(c, out)
+            "/history", "/history.html" -> respond(out, 200, HTML, StreamHistory.page(historyFacts(), req.query))
+            "/history.json" -> respond(out, 200, "application/json", StreamHistory.json(historyFacts()))
             else -> {
                 val fav = StreamFavorites.route(req.path)
+                val species = StreamOverlays.monRoute(req.path)
                 when {
+                    species != null -> picture(out, runCatching { mon(species) }.getOrNull(), req)
                     fav == null -> respond(out, 404, "text/plain", "No such page.")
                     fav.second -> favoritePicture(out, fav.first, req)
                     else -> respond(out, 200, HTML, StreamFavorites.page())
@@ -168,16 +204,26 @@ class StreamServer(
         }
     }
 
+    /** The history's facts, or a page with no runs when reading them failed: a bad file never costs the server a thread. */
+    private fun historyFacts(): Map<String, Any?> =
+        runCatching { history() }.getOrNull() ?: StreamHistory.facts(null, null, emptyList(), null)
+
     /**
      * Favorite [n]'s picture, or the empty one (StreamFavorites.EMPTY) where there is none: always a 200 and a PNG, so
      * OBS shows nothing rather than an error. Its ETag lets the page ask "still this one?" and get a 304 with no body.
      */
-    private fun favoritePicture(out: OutputStream, n: Int, req: Request) {
-        val png = runCatching { favorite(n) }.getOrNull() ?: StreamFavorites.EMPTY
-        val tag = StreamFavorites.etag(png)
+    private fun favoritePicture(out: OutputStream, n: Int, req: Request) = picture(out, runCatching { favorite(n) }.getOrNull(), req)
+
+    /** [png], or the empty picture where there is none, with the ETag the favorites' pages ask with. */
+    private fun picture(out: OutputStream, png: ByteArray?, req: Request) {
+        val body = png ?: StreamFavorites.EMPTY
+        val tag = StreamFavorites.etag(body)
         if (req.headers["if-none-match"] == tag) return respondBytes(out, 304, null, ByteArray(0), "ETag: $tag\r\n")
-        respondBytes(out, 200, "image/png", png, "ETag: $tag\r\n")
+        respondBytes(out, 200, "image/png", body, "ETag: $tag\r\n")
     }
+
+    /** [html] in the look its address asks for (`?theme=`), the looks' CSS put in before its head ends (StreamThemes). */
+    private fun themed(html: String, req: Request): String = StreamThemes.apply(html, req.query["theme"], themes())
 
     /**
      * Reads the request line and headers, by [deadline] at the latest. Null when the client sent nothing usable
@@ -265,21 +311,37 @@ class StreamServer(
         }
     }
 
-    /** Server-Sent Events: one `state` event per snapshot change, a comment every 10s as keepalive. */
+    /**
+     * Server-Sent Events: one `state` event per snapshot change, a `gameover` event whenever the game over card's data
+     * changes (looked at four times a second), a `timer` event whenever the timer's changes (looked at once a second,
+     * which while it counts is every second), and a comment every 10s of quiet as keepalive. Each is sent once as the
+     * page connects, so a page opened mid-run starts right. A page ignores the events it does not listen for.
+     */
     private fun events(c: Socket, out: OutputStream) {
         c.soTimeout = 0
         out.write(("HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nCache-Control: no-cache\r\n" +
             "Access-Control-Allow-Origin: *\r\nConnection: keep-alive\r\n\r\n").toByteArray())
         out.flush()
         var last = -1L
+        var lastOver: String? = null
+        var lastTimer: String? = null
         var idle = 0
+        var tick = 0
+        fun send(event: String, data: String) {
+            out.write(("event: $event\ndata: " + data.replace("\n", " ") + "\n\n").toByteArray())
+            idle = 0
+        }
         while (running.get() && !c.isClosed) {
             val v = version()
-            if (v != last) {
-                last = v; idle = 0
-                out.write(("event: state\ndata: " + state().replace("\n", " ") + "\n\n").toByteArray())
-                out.flush()
-            } else if (++idle >= 40) {
+            if (v != last) { last = v; send("state", state()) }
+            val over = runCatching { gameOver() }.getOrDefault("null")
+            if (over != lastOver) { lastOver = over; send("gameover", over) }
+            if (tick++ % 4 == 0) {
+                val t = runCatching { timer() }.getOrDefault(StreamTimer.NO_RUN)
+                if (t != lastTimer) { lastTimer = t; send("timer", t) }
+            }
+            if (idle == 0) out.flush()
+            if (++idle >= 40) {
                 idle = 0
                 out.write(": keepalive\n\n".toByteArray()); out.flush()
             }
@@ -316,7 +378,7 @@ class StreamServer(
         const val DEX_BUILDING = "The randomized data is being put together. Try again in a moment."
 
         /**
-         * A peer on this network: loopback, the private ranges, link-local, IPv6 unique-local, and the carrier-grade range
+         * A peer on this network: loopback (the phone's own browser, and a PC on the USB cable through adbd), the private ranges, link-local, IPv6 unique-local, and the carrier-grade range
          * (100.64.0.0/10) a VPN such as Tailscale hands out. Anything else, a public address reaching the phone through
          * an unfiltered IPv6 route say, is closed before it costs a thread.
          */

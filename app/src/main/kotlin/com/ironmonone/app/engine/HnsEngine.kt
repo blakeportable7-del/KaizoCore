@@ -37,7 +37,7 @@ object HnsEngine {
      * which has the same structures and is kept for the tests.
      */
     val BUILDS = listOf(
-        Build(0xE35A0E40L, "KaizoCore comfort build", "hns/layout-kaizo.json", "hns/species-kaizo.json"),
+        Build(0xC218FD9EL, "KaizoCore comfort build", "hns/layout-kaizo.json", "hns/species-kaizo.json"),
         Build(0x45D07ED4L, "plain build", "hns/layout-plain.json", "hns/species-plain.json"),
     )
 
@@ -78,8 +78,20 @@ object HnsEngine {
         }
     }
 
-    /** The BST from which KaizoCore's rule sheet bans a Pokemon of the mode (BstRule): starters and wild ones stay under it. */
-    fun bstLine(options: HnsOptions, pool: Pool): Int? = BstRule.lines(modeKey(options.modeName), natDex = pool == Pool.NATDEX)?.own
+    /**
+     * The BST from which KaizoCore's rule sheet bans a Pokemon of the mode (BstRule): starters and wild ones stay under
+     * it. The randomizer draws one line for both, so it takes the wild one, except Evo Kaizo's lab line (600 and lower
+     * legal there). That is the line it has drawn since it shipped, so a seed still makes the same game: BstRule's own
+     * line for a Nat. Dex Kaizo run moved to 601 on 2026-10-06 (600 BST starters are legal), the wild one stayed at 600.
+     */
+    fun bstLine(options: HnsOptions, pool: Pool): Int? {
+        val mode = modeKey(options.modeName)
+        val lines = BstRule.lines(mode, natDex = pool == Pool.NATDEX) ?: return null
+        return if (mode == "evokaizo") lines.own else lines.wild
+    }
+
+    /** The BST from which the rule sheet bans a wild Pokemon of the mode (BstRule): Evo Kaizo's is Kaizo's, not its own 601. */
+    fun wildBstLine(options: HnsOptions, pool: Pool): Int? = BstRule.lines(modeKey(options.modeName), natDex = pool == Pool.NATDEX)?.wild
 
     /**
      * Randomizes [rom] (not changed) by [options] and [seed] over [pool]. [assets] reads an asset by its path under
@@ -94,7 +106,8 @@ object HnsEngine {
         val out = rom.copyOf()
         val game = HnsGame(HnsRom(out, layout), species)
         val text = Randomizers.inEngineLocale {
-            HnsRandomizer(game, options, seed, pool, bstLine(options, pool), poolItemKeys(pool, assets), poolNonBadKeys(pool, assets)).run()
+            HnsRandomizer(game, options, seed, pool, bstLine(options, pool), poolItemKeys(pool, assets), poolNonBadKeys(pool, assets),
+                wildBstLine(options, pool)).run()
         }
         // Every randomized run is a Kaizo IronMON run until the Nuzlocke path says otherwise (writePreset).
         writePreset(out, layout, Preset.KAIZO)

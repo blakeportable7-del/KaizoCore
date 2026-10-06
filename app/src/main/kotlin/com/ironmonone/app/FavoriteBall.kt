@@ -65,13 +65,15 @@ internal object FavoriteBall {
         FavoritesShown { parts(store, session, tracker, filesDir) }
 
     private fun parts(store: PrepStore, session: GameSession, tracker: GbaTracker?, filesDir: File): FavoritesShown.Parts {
-        val favorites = Favorites.slots(store, session.kind?.id, Favorites.slotCount(session.kind)).filter { it.isNotBlank() }
+        // The favorites the run counts: a Vanilla Heart & Soul run's first three, the rest kept unshown (Favorites.Scope).
+        val scope = HnsPool.favoritesScope(session.kind, filesDir, nextRun = false)
+        val favorites = scope.used(Favorites.slots(store, session.kind?.id, scope.stored)).filter { it.isNotBlank() }
         val balls = runCatching {
             if (tracker == null || favorites.isEmpty() || PlayRules.kind(session, filesDir) != PlayRules.Kind.IRONMON) emptyList()
             else if (session.kind?.isHns == true) hnsLines(favorites, modeOf(store), HnsPool.natDexRun(filesDir), tracker.starters()) { tracker.baseStats(it)?.bst }
             else lines(favorites, modeOf(store), session.kind?.isNatDex == true, tracker.starters(), maxDex = session.kind?.isMaxDex == true) { tracker.baseStats(it)?.bst }
         }.getOrDefault(emptyList())
-        return FavoritesShown.Parts(Favorites.line(favorites), balls, FavoriteIcons.of(favorites, session.kind))
+        return FavoritesShown.Parts(Favorites.line(favorites), balls, FavoriteIcons.of(favorites, session.kind, scope.maxDex))
     }
 
     /**

@@ -1,0 +1,96 @@
+KaizoCore patch to libretro/melonDS 66b5d2634cd0a79030562811e6e05f5532f800ba (GPL-3.0, as melonDS is), on top of
+0001-0005: turning the Wi-Fi radio on no longer closes descriptor 0.
+
+When a game powers the radio on, Wifi::Write calls Platform::MP_Init once. The Android build does not define
+HAVE_WIFI, so src/libretro/platform.cpp turns socket() into NULL and setsockopt() into -1: MP_Init stored 0 in
+MPSocket, passed the "MPSocket < 0" check, failed the first setsockopt and called close(0). The shipped rc35.2 arm64
+library compiles MP_Init to exactly that, an unconditional close(0). On a phone fd 0 belongs to the runtime, and
+Android's fdsan aborts the app ("attempted to close file descriptor 0, expected to be unowned, actually owned by
+unique_fd", KaizoCore rc35.2, HeartGold/SoulSilver on a Galaxy S22+, 2026-10-05). Before 0003 the firmware carried
+no Wi-Fi calibration and a game's wireless library would not start, which is the likely reason no crash came from
+this path before rc34.
+
+Now MPSocket starts as INVALID_SOCKET, not 0; without HAVE_WIFI MP_Init returns false before any socket call, so the
+game sees no link partners and keeps running; MP_Init first closes a socket it opened earlier, MP_DeInit closes only
+a socket MP_Init opened and forgets it after, and every check compares with INVALID_SOCKET instead of "< 0". A build
+with HAVE_WIFI opens, binds and closes its own UDP socket as before. LAN_Init and LAN_DeInit touch no descriptor
+without HAVE_PCAP, which the Android build does not define either.
+
+Applied by tools/cores/build_core.py melonds; libretrodroid/cores/melonds/PINNED.txt records the result.
+
+diff --git a/src/libretro/platform.cpp b/src/libretro/platform.cpp
+index 020b0eb..1693442 100644
+--- a/src/libretro/platform.cpp
++++ b/src/libretro/platform.cpp
+@@ -68,7 +68,8 @@ extern char retro_base_directory[4096];
+ 
+ #define NIFI_VER 1
+ 
+-socket_t MPSocket;
++// No socket until MP_Init opens one: a zero here was descriptor 0, which MP_DeInit would close.
++socket_t MPSocket = INVALID_SOCKET;
+ sockaddr_t MPSendAddr;
+ u8 PacketBuffer[2048];
+ 
+@@ -241,6 +242,16 @@ namespace Platform
+ 
+    bool MP_Init()
+    {
++      // Close only a socket this file opened, never a descriptor it did not.
++      if (MPSocket != INVALID_SOCKET)
++         MP_DeInit();
++
++#ifndef HAVE_WIFI
++      // Built without Wi-Fi (the Android build): there is no local multiplayer. The socket calls are stand-ins here,
++      // and socket() gave 0, which is not a socket: the first failure path closed descriptor 0, and Android's fdsan
++      // aborts the app on that, the moment a game turned the radio on. Report no link; the game finds no partners.
++      return false;
++#else
+       int opt_true = 1;
+       int res;
+ 
+@@ -253,7 +264,7 @@ namespace Platform
+ #endif // __WXMSW__
+ 
+       MPSocket = socket(AF_INET, SOCK_DGRAM, 0);
+-      if (MPSocket < 0)
++      if (MPSocket == INVALID_SOCKET)
+       {
+          return false;
+       }
+@@ -291,12 +302,16 @@ namespace Platform
+       *(u16*)&MPSendAddr.sa_data[0] = htons(7064);
+ 
+       return true;
++#endif // HAVE_WIFI
+    }
+ 
+    void MP_DeInit()
+    {
+-      if (MPSocket >= 0)
++      if (MPSocket != INVALID_SOCKET)
++      {
+          closesocket(MPSocket);
++         MPSocket = INVALID_SOCKET;
++      }
+ 
+ #ifdef _WIN32
+       WSACleanup();
+@@ -305,7 +320,7 @@ namespace Platform
+ 
+    int MP_SendPacket(u8* data, int len)
+    {
+-      if (MPSocket < 0)
++      if (MPSocket == INVALID_SOCKET)
+       {
+          printf("MP_SendPacket: early return (%d)\n", len);
+          return 0;
+@@ -331,7 +346,7 @@ namespace Platform
+ 
+    int MP_RecvPacket(u8* data, bool block)
+    {
+-      if (MPSocket < 0)
++      if (MPSocket == INVALID_SOCKET)
+       {
+          printf("MP_RecvPacket: early return\n");
+          return 0;

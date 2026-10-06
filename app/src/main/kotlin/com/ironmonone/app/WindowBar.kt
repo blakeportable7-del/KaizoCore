@@ -81,35 +81,14 @@ class WindowBarParts(
 )
 
 /**
- * The window's top is one row at every width (Blake, 2026-10-04: "The tracker still has too much space on top", of
- * rc35.1's second row in a narrow window): the lock, the grip, the text, the swap in a battle, the gear and the menu,
- * each button in a [PcMin.TOUCH_DP] box. Where the text would have less than [MIN_TEXT], the grip marks go first, then
- * the gear moves into the menu as "Tracker Setup"; the swap stays in the row. The text takes what is left and scrolls
- * when it does not fit, and where that is still less than [MIN_TEXT] its tap is in the menu too.
+ * The window's top is one row at every width (Blake, 2026-10-04: "The tracker still has too much space on top"): the
+ * text and, in a battle, the swap. The lock, the grip, the gear and the menu left the row on 2026-10-06: a hold on the
+ * window locks and unlocks it (FloatHold), and Tracker Setup and the menu are on the FILE bar. The text takes the rest
+ * and scrolls when it does not fit; even the narrowest window (FloatFrame.MIN_W) leaves it over 100 dp beside the swap.
  */
 object WindowBarFit {
-    const val MIN_TEXT = 64f
-    const val GRIP = 12f
-    const val PAD = 8f
     /** The row's drawn height: slimmer than a touch box, which reaches past it above and below. */
     const val ROW_DP = 36
-
-    /** What the row holds at one width. */
-    data class Top(val grip: Boolean, val gearInRow: Boolean, val text: Float) {
-        /** The text's tap goes in the menu as well when the text has too little room to be a fair target. */
-        val textTapInMenu get() = text < MIN_TEXT
-    }
-
-    fun top(windowW: Float, swap: Boolean, gear: Boolean, locked: Boolean): Top {
-        val fixed = PcMin.TOUCH_DP * (2 + (if (swap) 1 else 0)) + PAD
-        fun room(withGear: Boolean, withGrip: Boolean) =
-            windowW - fixed - (if (withGear) PcMin.TOUCH_DP.toFloat() else 0f) - (if (withGrip) GRIP else 0f)
-        var grip = !locked
-        var gearInRow = gear
-        if (room(gearInRow, grip) < MIN_TEXT) grip = false
-        if (room(gearInRow, grip) < MIN_TEXT) gearInRow = false
-        return Top(grip, gearInRow, room(gearInRow, grip).coerceAtLeast(0f))
-    }
 }
 
 /** The text slot's words: what, in what order and colour, and what goes first when there is no room. */

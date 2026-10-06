@@ -226,29 +226,6 @@ fun SideScreenDialogs(
 }
 
 /**
- * Landscape, a game with no tracker: the only FILE button lives in the tracker's
- * header, so saves, speed and the way back to the app were out of reach
- * (audit, 2026-09-27). This chip opens the same menu row. It sits top-centre,
- * clear of the L and R buttons in every pad preset, and is 48dp tall.
- */
-@Composable
-internal fun LandscapeMenuChip(modifier: androidx.compose.ui.Modifier, onClick: () -> Unit) {
-    val g = com.ironmonone.app.gen3.Gen3
-    androidx.compose.foundation.layout.Box(
-        modifier
-            .padding(6.dp)
-            .heightIn(min = 48.dp)
-            .background(g.FrameDark.copy(alpha = 0.6f))
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp),
-        contentAlignment = androidx.compose.ui.Alignment.Center,
-    ) {
-        androidx.compose.material3.Text("Menu", fontWeight = androidx.compose.ui.text.font.FontWeight.Medium, fontSize = 14.sp,
-            color = androidx.compose.ui.graphics.Color.White)
-    }
-}
-
-/**
  * The Play screen's own small bits of UI state (confirmations, pickers, the
  * status toast's action). Held here for the same reason as [SideScreenState]:
  * every `remember` added to PlayScreen itself costs registers in a method that
@@ -258,9 +235,6 @@ class PlayUiState {
     var confirmReset by mutableStateOf(false)
     /** The slot waiting on "Load slot N?", or null. */
     var confirmLoad by mutableStateOf<Int?>(null)
-    var speedPicker by mutableStateOf(false)
-    /** Landscape: FILE shows the chip strip; More swaps it for the full menu. Never both at once. */
-    var moreOpen by mutableStateOf(false)
     /** The skin as it was when the editor opened, for Cancel; the layouts' own are PadLayouts'. */
     var skinBefore: PadSkin? = null
     var confirmKeepLayout by mutableStateOf(false)
@@ -274,19 +248,9 @@ class PlayUiState {
     var coreUp by mutableStateOf<Any?>(null)
     /** The game view's size while its core loads (see [holdSizeWhileLoading]). */
     var heldSize: androidx.compose.ui.unit.IntSize? = null
-    /** Landscape with the tracker off screen: its menu at the top left, shown by a tap on the game and hidden by the next (ScreenTap). */
-    var tapMenuShown by mutableStateOf(false)
-    /** Whether that menu stands in for the tracker's now; set by ScreenTapMenu, read by the game view's listener. */
-    var tapMenuEnabled = false
-    /** The DS screens as drawn, where a tap is play; null on other consoles or with the top screen alone. */
-    var tapDsLayout: ScreenTap.DsLayout? = null
 
-    /** A tap that reached the game view: the menu shows, or hides, unless it was play on the DS touch screen. */
-    fun onScreenTap(x: Float, y: Float, viewW: Float, viewH: Float) {
-        if (!tapMenuEnabled) return
-        tapDsLayout?.let { if (ScreenTap.onTouchScreen(it, x, y, viewW, viewH)) return }
-        tapMenuShown = !tapMenuShown
-    }
+    /** A tap that reached the game view: the FILE bar opens or closes when it was on the top third of the game (TapZone). */
+    fun onScreenTap(x: Float, y: Float, viewW: Float, viewH: Float) { FileBar.onScreenTap(x, y, viewW, viewH) }
 }
 
 /**
@@ -352,17 +316,34 @@ private fun DialogBody(text: String) {
  */
 @Composable
 fun NewRunConfirmDialog(beforeRead: () -> Unit, onConfirm: () -> Unit, onDismiss: () -> Unit) {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val filesDir = context.applicationContext.filesDir
-    val store = remember { PrepStore(filesDir) }
-    val session = remember { runCatching { store.session() }.getOrNull() }
-    if (session == null || !PlayRules.newRunOffered(session)) {
+    val words = rememberNewRunWords(beforeRead)
+    if (words == null) {
         ShellDialog("No run to start", onDismiss) {
             DialogBody(NewRunCopy.NOT_A_RUN)
             Gen3Button("OK", accent = true, onClick = onDismiss)
         }
         return
     }
+    ShellDialog(words.title, onDismiss) {
+        Text(words.body, style = MaterialTheme.typography.bodyMedium, color = Shell.inkOnPaper)
+        Spacer(Modifier.height(8.dp))
+        Text(words.save, style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper)
+        Spacer(Modifier.height(16.dp))
+        ConfirmButtons(words.yes, onConfirm, "CANCEL", onDismiss)
+    }
+}
+
+/** What the new-run question says, the dialog's and the FILE bar's NEW sheet's alike. */
+internal class NewRunWords(val title: String, val body: String, val save: String, val yes: String)
+
+/** The question's words for the game in Play, or null where there is no run to start; [beforeRead] runs once first. */
+@Composable
+internal fun rememberNewRunWords(beforeRead: () -> Unit): NewRunWords? {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val filesDir = context.applicationContext.filesDir
+    val store = remember { PrepStore(filesDir) }
+    val session = remember { runCatching { store.session() }.getOrNull() }
+    if (session == null || !PlayRules.newRunOffered(session)) return null
     val nuzlocke = remember { PlayRules.kind(session, filesDir) == PlayRules.Kind.NUZLOCKE }
     val plan = remember {
         runCatching { beforeRead() }
@@ -371,13 +352,12 @@ fun NewRunConfirmDialog(beforeRead: () -> Unit, onConfirm: () -> Unit, onDismiss
             RunSaves.planOnNewSeed(RunSaves.file(filesDir, kind, store.currentRunFor(kind)), kind)
         }.getOrNull()
     }
-    ShellDialog(if (nuzlocke) "Start the next Nuzlocke?" else "Start a new run?", onDismiss) {
-        Text(if (nuzlocke) NewRunCopy.NUZLOCKE else NewRunCopy.IRONMON, style = MaterialTheme.typography.bodyMedium, color = Shell.inkOnPaper)
-        Spacer(Modifier.height(8.dp))
-        Text(NewRunCopy.save(plan), style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper)
-        Spacer(Modifier.height(16.dp))
-        ConfirmButtons(if (nuzlocke) "YES, NEW NUZLOCKE" else "YES, NEW RUN", onConfirm, "CANCEL", onDismiss)
-    }
+    return NewRunWords(
+        if (nuzlocke) "Start the next Nuzlocke?" else "Start a new run?",
+        if (nuzlocke) NewRunCopy.NUZLOCKE else NewRunCopy.IRONMON,
+        NewRunCopy.save(plan),
+        if (nuzlocke) "YES, NEW NUZLOCKE" else "YES, NEW RUN",
+    )
 }
 
 /** The new-run dialog's words (2026-09-30), kept apart so a test can hold them. */
@@ -396,18 +376,15 @@ internal object NewRunCopy {
 }
 
 /**
- * The Play screen's confirmations and its speed picker. Restart, Load and the
- * layout editor's Back used to act on one tap with no way back, and speed was
- * a seven-step forward cycle (2026-09-27, audit).
+ * The Play screen's confirmations. Restart, Load and the layout editor's Back
+ * used to act on one tap with no way back (2026-09-27, audit). Speed is picked
+ * on the FILE bar's FILE sheet.
  */
 @Composable
 fun PlayDialogs(
     ui: PlayUiState,
     onRestart: () -> Unit,
     onLoad: (Int) -> Unit,
-    speeds: List<String>,
-    speedNow: String,
-    onSpeed: (String) -> Unit,
     onLayoutDone: (keep: Boolean) -> Unit,
 ) {
     val restartFiles = androidx.compose.ui.platform.LocalContext.current.applicationContext.filesDir
@@ -420,11 +397,6 @@ fun PlayDialogs(
             DialogBody("Progress since then is lost.")
             ConfirmButtons("LOAD", { ui.confirmLoad = null; onLoad(n) }, "CANCEL", { ui.confirmLoad = null })
         }
-    }
-    if (ui.speedPicker) ShellDialog("Game speed", { ui.speedPicker = false }) {
-        ShellSegmented(speeds, speedNow, label = { it }, onSelect = { onSpeed(it); ui.speedPicker = false })
-        Spacer(Modifier.height(12.dp))
-        Text("Sound is off at any speed but 1x.", style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper)
     }
     if (ui.confirmKeepLayout) ShellDialog("Keep changes?", { ui.confirmKeepLayout = false }) {
         DialogBody("Keep saves the new layout. Discard puts it back the way it was.")

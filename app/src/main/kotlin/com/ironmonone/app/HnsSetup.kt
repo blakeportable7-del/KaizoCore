@@ -18,13 +18,13 @@ import java.io.RandomAccessFile
  * can choose your mode from there"), without the screen (HeartSoulScreen draws it), so every step is tested on the JVM.
  *
  * 1. The player's own game: Emerald (USA), CRC 1F1C08FB, or a copy already patched to Heart & Soul 2.0.6 (01713508), or
- *    the KaizoCore build itself (E35A0E40). Anything else is refused, saying what it is.
+ *    the KaizoCore build itself (C218FD9E). Anything else is refused, saying what it is.
  * 2. The patch, which the player downloads in their own browser from the team's GitHub release (the .ups) or Hackdex
  *    (an .xdelta). KaizoCore never downloads it and never ships it. Not needed when the game is already 2.0.6.
  * 3. Patch: their patch, which must give 01713508 exactly ("this is not the 2.0.6 patch" otherwise), added to the
  *    Library as Pokemon Heart & Soul 2.0.6, a normal game with no tracker (Blake: "the user should be able to play a
  *    normal heart and soul if they patch their emerald copy with the official patch"); then KaizoCore's own comfort
- *    patch on top (bundled, ours), which must give E35A0E40, added as Pokemon Heart & Soul (KaizoCore), the build Kaizo
+ *    patch on top (bundled, ours), which must give C218FD9E, added as Pokemon Heart & Soul (KaizoCore), the build Kaizo
  *    IronMON and Nuzlocke play.
  * 4. The screen then sends the player to choose a mode.
  *
@@ -42,10 +42,14 @@ internal object HnsSetup {
     const val OFFICIAL_FILE = "Pokémon Heart & Soul 2.0.6.gba"
     const val KAIZO_FILE = "Pokémon Heart & Soul (KaizoCore).gba"
 
-    /** The checksums the flow knows. A test hands its own, for files small enough to make. */
-    data class Crcs(val emerald: Long, val official: Long, val kaizo: Long) {
+    /**
+     * The checksums the flow knows. A test hands its own, for files small enough to make. [older] says whether a CRC is
+     * the KaizoCore build as an earlier release made it (RomKind.supersededCrcs).
+     */
+    data class Crcs(val emerald: Long, val official: Long, val kaizo: Long, val older: (Long) -> Boolean = { false }) {
         companion object {
-            val REAL = Crcs(RomKind.EMERALD_U.expectedCrc, RomKind.HEARTSOUL_206.expectedCrc, RomKind.HEARTSOUL_KAIZO_206.expectedCrc)
+            val REAL = Crcs(RomKind.EMERALD_U.expectedCrc, RomKind.HEARTSOUL_206.expectedCrc, RomKind.HEARTSOUL_KAIZO_206.expectedCrc,
+                RomKind.HEARTSOUL_KAIZO_206::isOlderBuild)
         }
     }
 
@@ -97,6 +101,13 @@ internal object HnsSetup {
     const val OTHER_EMERALD = "This is Emerald, but not the US copy the patch is made for. Another language or revision, " +
         "or a changed copy, will not take the patch."
     const val OTHER_HNS = "This is a Heart & Soul file, but not version 2.0.6. Pick your Emerald (USA) and the 2.0.6 patch instead."
+    const val OLDER_KAIZO = "This is Pokémon Heart & Soul (KaizoCore) as an older KaizoCore made it. Pick your Heart & Soul 2.0.6 " +
+        "or your Emerald instead, and this version makes its own."
+    /** What step 1 says while this release's KaizoCore build is being made from the library's 2.0.6 by itself ([refresh]). */
+    const val REFRESHED = "KaizoCore was updated, so it made this version's Pokémon Heart & Soul (KaizoCore) from your " +
+        "Heart & Soul 2.0.6. Nothing to do here."
+    const val REFRESH_NEEDS_OFFICIAL = "Your Pokémon Heart & Soul (KaizoCore) was made by an older KaizoCore. Add your Emerald " +
+        "or your Heart & Soul 2.0.6 below and tap Patch it once to make this version's."
     const val NOT_A_PATCH = "This file is not a patch. Pick pokemonHnS_v2.0.6.ups from GitHub, or the .xdelta file from Hackdex."
     const val PATCH_OTHER_GAME = "This patch is not made for Emerald (USA), so it is not the Heart & Soul patch. Nothing was changed."
     const val NOT_206 = "This is not the 2.0.6 patch. Download version 2.0.6 from the Heart & Soul page and pick that one."
@@ -117,6 +128,7 @@ internal object HnsSetup {
         crcs.kaizo -> Start.KAIZO
         else -> throw Problem(
             when {
+                crcs.older(crc) -> OLDER_KAIZO
                 header?.title?.startsWith("POKEMON HNS") == true -> OTHER_HNS
                 header?.game == "Emerald" -> OTHER_EMERALD
                 else -> WRONG_GAME
@@ -268,6 +280,47 @@ internal object HnsSetup {
         return crc.value
     }
 
+    /** What [refresh] did. */
+    enum class Refresh {
+        /** Nothing to do: this release's KaizoCore build is in the library, or no KaizoCore build is. */
+        NOTHING,
+        /** This release's KaizoCore build was made from the library's 2.0.6 and added. */
+        MADE,
+        /** Only an older release's KaizoCore build is there, and no 2.0.6 to make this one's from: the player is asked. */
+        NEEDS_OFFICIAL,
+    }
+
+    /** What an older KaizoCore build in the library is renamed to when this release's goes in beside it. */
+    const val OLDER_FILE_STEM = "Pokémon Heart & Soul (KaizoCore, older)"
+
+    /**
+     * After an update that changed the comfort patch (rc36.1 known issue: "patch it again once after updating"), done by
+     * the app instead of by the player: when [library] holds the KaizoCore build only as an older release made it, this
+     * release's is made from the library's own official 2.0.6 with [comfort] and added, and the older copy is renamed
+     * ([OLDER_FILE_STEM]) and left, with any save it has, for the player to delete. The library's files are not changed
+     * otherwise: the 2.0.6 is copied into [work] first, as [make] uses up the game it is given. A failure throws a
+     * [Problem] and leaves the library as it was. Blocking: a 32 MB patch.
+     */
+    fun refresh(library: LibraryStore, comfort: () -> File?, work: File, crcs: Crcs = Crcs.REAL): Refresh {
+        val list = library.list()
+        if (list.any { it.crc == crcs.kaizo }) return Refresh.NOTHING
+        val older = list.filter { crcs.older(it.crc) }
+        if (older.isEmpty()) return Refresh.NOTHING
+        val official = list.firstOrNull { it.crc == crcs.official } ?: return Refresh.NEEDS_OFFICIAL
+        work.mkdirs()
+        val copy = File(work, "hns-refresh-${System.nanoTime()}.gba")
+        try {
+            official.file.copyTo(copy)
+            val made = make(Game(copy, official.name, crcs.official, Start.OFFICIAL), null, comfort(), work, crcs)
+            // The older copy steps aside first, so this release's takes the library's usual name.
+            older.filter { it.name == KAIZO_FILE }.forEach { runCatching { library.rename(it, OLDER_FILE_STEM) } }
+            addToLibrary(library, Made(null, made.kaizo), null, null)
+        } finally {
+            copy.delete()
+        }
+        return Refresh.MADE
+    }
+
     /** The Library games step 1 offers: any copy of the three starting points, Emerald first. */
     fun libraryGames(entries: List<LibraryStore.Entry>, crcs: Crcs = Crcs.REAL): List<Pair<LibraryStore.Entry, Start>> =
         entries.mapNotNull { e ->
@@ -284,5 +337,27 @@ internal object HnsSetup {
         TITLE, INTRO, CREDIT, STEP1, STEP1_LINE, STEP1_LIBRARY, STEP2, STEP2_LINE, STEP2_NOT_NEEDED, STEP3, STEP3_LINE, STEP4, STEP4_LINE,
         EMERALD_OK, OFFICIAL_OK, KAIZO_OK, PATCH_OK, PATCH_UNCHECKED, WRONG_GAME, OTHER_EMERALD, OTHER_HNS, NOT_A_PATCH,
         PATCH_OTHER_GAME, NOT_206, DAMAGED_PATCH, COMFORT_FAILED, PICK_GAME_FIRST, PICK_PATCH_FIRST, not206(0x12345678),
+        OLDER_KAIZO, REFRESHED, REFRESH_NEEDS_OFFICIAL,
     )
+}
+
+/**
+ * [HnsSetup.refresh] once a launch, off the main thread (MainActivity), and what it did for the screens that say so
+ * (HeartSoulScreen). One at a time: the Heart & Soul screen's own Patch it waits for it.
+ */
+internal object HnsRefresh {
+    val result = androidx.compose.runtime.mutableStateOf<HnsSetup.Refresh?>(null)
+    private val LOCK = Any()
+
+    fun run(context: android.content.Context): HnsSetup.Refresh = synchronized(LOCK) {
+        val store = PrepStore(context)
+        val r = runCatching {
+            HnsSetup.refresh(store.library, { store.bundledPatch(context, HnsSetup.COMFORT_PATCH) }, File(context.cacheDir, "hns-setup"))
+        }.getOrElse { android.util.Log.w("KaizoCore", "Heart & Soul refresh failed", it); HnsSetup.Refresh.NOTHING }
+        result.value = r
+        r
+    }
+
+    /** Runs [block] (the screen's Patch it) with no refresh under way. */
+    fun <T> exclusive(block: () -> T): T = synchronized(LOCK) { block() }
 }

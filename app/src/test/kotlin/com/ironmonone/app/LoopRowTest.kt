@@ -43,8 +43,6 @@ class LoopRowTest {
 
     @Test
     fun `both bars go round, the X and DONE stay put`() {
-        val band = body(read("LandscapeChrome.kt"), "internal fun LandscapeMenuBand(")
-        assertTrue("LoopingRow(loop," in band)
         val bar = body(read("PadFree.kt"), "fun LayoutToolbar(")
         val done = bar.indexOf("LayoutChip(\"Done\", accent = true, onClick = onDone)")
         val loop = bar.indexOf("LoopingRow(loop, Modifier.weight(1f), gap = 6.dp) {")
@@ -64,7 +62,7 @@ class LoopRowTest {
         val dock = read("DsDock.kt")
         assertTrue("DsDock.coverPx = DsDock.cover(g)" in dock, "kept up to date with the dock")
         assertTrue("DisposableEffect(Unit) { onDispose { DsDock.coverPx = 0f } }" in dock, "and cleared when Play goes")
-        assertTrue("modifier.padding(end = dsDockClearance())" in body(read("LandscapeChrome.kt"), "internal fun LandscapeMenuBand("), "the File strip")
+        assertTrue("Modifier.fillMaxWidth().padding(end = dsDockClearance())" in body(read("FileBar.kt"), "private fun Bar("), "the FILE bar")
         assertTrue("Modifier.padding(end = dsDockClearance()).fillMaxWidth(0.72f)" in body(read("PadFree.kt"), "fun LayoutToolbar("),
             "the layout editor's bar, still centred in what is left so the corners stay free")
         // The docked tracker is drawn at the top right of the same box as both bars.

@@ -2,6 +2,98 @@
 
 Newest first. Each build's GitHub release has the same list, with the APK and its checksum.
 
+## 1.0.0-rc37
+
+**New**
+
+- **The File bar.** The tracker has no gear, menu or lock any more: everything is on one see-through bar, FILE, NEW,
+  TRACKER, VIEW, TOOLS, SETTINGS and HOME, with an X at the right end. Tap the top third of the game to open or close
+  it; the rest of the screen stays the game's. Every tracker option is under TRACKER. Four views under VIEW: Docked,
+  Floating, HUD and Hidden.
+- **The floating tracker locks itself.** Hold it half a second to unlock it (a ring and a buzz), then drag it or pull
+  its corner. Hold again to lock it. It also locks when the bar opens and after six seconds untouched.
+- **Streaming to OBS, by USB cable or Wi-Fi.** TOOLS, Stream sends the game, the tracker, your attempts, a run timer
+  with badge splits and a game over card to OBS on your PC, with no screen mirroring. Both links are shown side by
+  side; the wiki's Streaming to OBS page has the setup, and how to play from your PC. OBS can switch scenes by itself,
+  and viewers can ask your Twitch chat for !pokemon, !moves and more once you connect Twitch (SETTINGS, Stream
+  settings). Nothing goes to the internet except Twitch, and only if you connect it.
+- **Nuzlocke: Bosses and Types.** The Nuzlocke ledger shows every gym leader, Elite Four member and Champion still
+  ahead, with their Pokémon, levels, moves and items, and the chance each of your Pokémon survives each of their moves.
+  It shows them only when the game's trainers are its own: never in a randomized game. Types shows how your whole team
+  stands against every attacking type.
+- **Favorites predict as you type,** like the log's search: a list of Pokémon with their pictures, and "mr mime",
+  "hooh" or one typo still find the right one.
+
+**Heart & Soul**
+
+- **Updating never strands a run again.** The app makes its new Heart & Soul copy itself from your official 2.0.6; no
+  patching again. A run made on an older copy shows a note on the tracker with Move this run: the same seed, mode and
+  pool on the new copy, your in-game save carries your team (the world is rolled again, because the game changed).
+- **Every Pokémon of an area comes up in Kaizo, day or night:** the wild cycle goes through every Pokémon the area has at
+  any time of day, so you can pick your next Pokémon early whatever the clock says, and the tracker lists exactly those,
+  in order. Before, an area could alternate between two at night while the tracker showed more. A Nuzlocke keeps the
+  game's own day and night Pokémon, and its list follows the time of day.
+- **TM balls are yellow** and every other item ball red, following what is really inside.
+- **Cut cuts tall grass** in Johto and Kanto, as in Emerald.
+- **No time saver skips or locks out a battle:** the short ways out of the Dragon's Den, the Underground and the
+  lighthouse only happen once every trainer there is beaten. The Card Key's now leaves you outside the Radio Tower door.
+- **Options:** the battle slide-in is back on and text speed is the game's own for a new game; trainer calls stay off
+  and can be turned on (rematches are against the IronMON rules). Your OPTIONS stay after you save and load.
+- **Every mode works on both pools,** checked one by one. Evo Kaizo has no evolution loops any more, so pivots are
+  banned with no checkpoints, as the Nat. Dex rules say. Nuzlocke's similar-strength wild Pokémon now really are similar.
+- **A Vanilla run is held to Vanilla rules:** three favorites, Gens 1 to 3 only, and Emerald's rules text.
+- **Survival's heals:** every free heal outside a dungeon counts (Elm's lab machine, the National Park teacher and the
+  rest), and beating Lance adds the seven Kanto heals.
+- **A Nuzlocke ends at Lance:** after him, a Hardcore Nuzlocke can no longer lose its save.
+- **The rules pages** say what Heart & Soul really does: the 60% levels of Kaizo and harder, every KaizoCore change in
+  one list at the top, and notes where HeartGold and SoulSilver's rules differ.
+
+**Fixed**
+
+- **Form types, every DS game:** Sandy and Trash Cloak Wormadam show Bug/Ground and Bug/Steel, and every other form
+  (Rotom, Giratina, Shaymin, Deoxys, the Therian forms, Kyurem, Darmanitan, Meloetta, Castform) shows its own types,
+  stats and abilities, from your game's own data. Thanks for the report.
+- **Type changes in battle:** Conversion, Conversion 2, Color Change, Protean, Soak, Roost and the rest change the
+  types on the card, and the effectiveness arrows follow at once, on both cards. Moves whose type changes (Pixilate and
+  the other -ate abilities, Judgment, Multi-Attack, Terrain Pulse and more, where your game has them) are scored as the
+  type they will really be. An opponent's ability or item counts only once the game has shown it.
+- **A crash on Android 16 in DS games** when the game turned its wireless on (HGSS, Platinum's menu, Black 2's Mystery
+  Gift): the game now just finds no partners.
+- **Arrow keys from a keyboard** reach the game on every kind of keyboard.
+- **A Heart & Soul NEW RUN from the Play screen during a Nuzlocke** keeps the Nuzlocke's settings.
+
+**Known issues**
+
+- Not checked on a phone: the File bar on folding phones and tablets, streaming with real OBS and Twitch, the arrow
+  keys through scrcpy, and Heart & Soul's new build in the app (it was played in an emulator on the PC).
+- Some of Heart & Soul's grass has no cut version in the game and still does not cut (long grass, cave grass,
+  Viridian Forest).
+- Nuzlocke Bosses reads Game Boy Advance games only for now.
+- At high fast forward, Survival's heal count can miss a heal outside a Pokémon Center.
+- Heart & Soul's catch-rate line uses the Gen 3 formula.
+
+## 1.0.0-rc36.1
+
+**Heart & Soul: after updating, patch it again once** (Home > Pokémon Heart & Soul). Your official copy is already in the Library, so it only takes a moment. Your saves and attempts stay.
+
+**Kaizo rules for Heart & Soul**
+
+- **No running from trainer battles in Kaizo:** RUN says "No! There's no running from a trainer battle!" and the forfeit prompt is gone. A Nuzlocke keeps the forfeit, so a run can never get stuck.
+- **No EXP for catching in Kaizo,** as in the Gen 3 games IronMON was built on.
+- **Wild Pokémon come in order in Kaizo:** each area cycles through its Pokémon, so five kinds mean five encounters, then it starts over.
+- **No HM moves in any random moveset,** so no starter or wild Pokémon knows or learns one.
+- **Your first rival battle plays by FireRed's first-battle rules:** your attacks never miss and nobody gets a critical hit.
+- **Kaizo only:** used-up held items stay used up, the Day Care won't take your Pokémon, the Exp. Share is off so your main gets all the EXP, shiny odds and item drops stay at the default, only Pokémon that fought roll Pickup, TMs break after one use, and there are no mints.
+- **Hidden items are never TMs,** and item pools now match the source game's list, so TMs turn up as often as in Emerald Kaizo and no more.
+
+**Faster Heart & Soul**
+
+- After the egg comes back, the aide hands you the Poké Balls right away and you are healed, no trip home.
+- The trash can in Elm's lab sparkles and just gives you the item.
+- Ilex Forest's Farfetch'd goes home on the first talk, trainer phone calls are off in Kaizo (Elm's story calls stay), the Violet egg comes with Elm's call, and the Burned Tower, Suicune and story scenes are quicker.
+- Short warps after the Radio Tower keys, after Lance agrees at the Lake of Rage, and after the Dragon's Den badge (no quiz). The lighthouse medicine is done at the Cianwood pharmacy, Whitney gives her badge right away, Oak calls to open Mt. Silver, and the credits can be skipped with Start or B. No trainer is skipped and no warp lands you in a fight.
+- The Meowth Name Raters stand where Emerald's Name Rater does.
+
 ## 1.0.0-rc36
 
 **New**

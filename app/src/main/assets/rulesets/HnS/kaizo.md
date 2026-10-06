@@ -2,14 +2,33 @@
 
 Every ruleset builds on the ones before it, so they are all here in order, then this game's own updates.
 
-In KaizoCore, Heart & Soul is held to the rules of the game it retells and the build it runs on. It is HeartGold and SoulSilver's story, Johto and then Kanto with sixteen badges, so HeartGold and SoulSilver's game rules below apply to it. It runs the Emerald Nat. Dex settings files, so a run with the Nat. Dex pool (Pokémon through Gen 9) is held to the Nat. Dex ruleset changes below as well. A run with the Vanilla pool (Gen 1 to 3 Pokémon) is held to the rules above without them, as Emerald is: the Gen 3 BST limits and three favorites.
+In KaizoCore, Heart & Soul is held to the rules of the game it retells and the build it runs on. It is HeartGold and SoulSilver's story, Johto and then Kanto with sixteen badges, so HeartGold and SoulSilver's game rules below apply to it. It runs the Emerald Nat. Dex settings files, so a run with the Nat. Dex pool (Pokémon through Gen 9) is held to the Nat. Dex ruleset changes below as well. A run with the Vanilla pool (Gen 1 to 3 Pokémon) is held to the same rules without those changes, as Emerald is: the Gen 3 BST limits and three favorites.
 
 In KaizoCore, the item that starts in your PC is in the trash can in Elm's lab instead, and it is random in every mode that randomizes field items, as the other Kaizo games' PC item is.
+
+### What Heart & Soul does in KaizoCore
+
+In KaizoCore, Heart & Soul plays every IronMON mode this way:
+- You cannot run from a trainer battle or forfeit it: RUN is refused, as in Emerald. From a wild battle you can run as usual, or hold B as it starts, though never from a shiny.
+- Catching a Pokémon gives no EXP.
+- Wild Pokémon come in turn: each list (grass, water, Rock Smash and each fishing rod) gives every species it has once, in order, before any comes again. A route with five species shows all five in five encounters.
+- No Pokémon learns an HM move by level or knows one when you meet it, yours or a trainer's, in either pool.
+- The lab fight these rules name is your first rival battle, outside Cherrygrove City. It plays by FireRed's first-battle rules: your damaging moves never miss, neither side lands a critical hit, and the rival battles as FireRed's first rival does.
+- A held item that gets used up in battle stays used up. Only an item taken from you comes back after the battle.
+- The Day Care on Route 34 takes no Pokémon.
+- The Exp. Share that gives EXP to the whole party is off, so a Pokémon that does not battle, such as an HM friend, gains none.
+- Only a Pokémon that was sent out in the battle can find an item with Pickup.
+- A TM breaks after one use, as in Emerald, and there are no Nature Mints: the shop that sells them is closed.
+- Shiny odds are Gen 3's 1 in 8,192, and a wild Pokémon you defeat drops nothing. Neither can be changed.
+- A hidden item is never a TM. The TMs Heart & Soul hides become other items; a TM lying in the open is still a TM.
+- The start menu has an HM entry. Once an HM is in your bag and you have the badge it needs, you can use it from there with no Pokémon knowing the move, so no field move needs an HM friend.
+- Every Pokémon Center has a Name Rater: the Meowth standing near the counter.
 
 ## Standard IronMON
 
 - Randomize the game: All Pokémon, movesets, and items are randomized, with Trainer Pokémon & Wild Pokémon levels increased by 50%.
     - Note: Visit the Ironmon Discord for a list of Setting Strings to apply all required Randomizer settings.
+    - In KaizoCore, Heart & Soul's settings files for Kaizo and every mode built on it raise trainer and wild Pokémon levels by 60%, not 50%.
 - Catch or Kill 1 per Route: You can only catch OR kill one Pokémon per Route. It does not have to be the first one seen. All other Exp will come from Trainers.
 - Permadeath: Once a Pokémon faints, you must release/store it. No exceptions.
     - Note: If a Pokémon dies with an item attached to it, the item cannot be salvaged.
@@ -102,6 +121,7 @@ non-negotiable. If you wish to adjust rules just play Standard Ironmon and Ultim
     - During the lab fight(s) only, you may hold banned items.
 - No Healing Stations in Dungeons: No Pokecenter-like healing in Dungeons (Example - Rocket Hideout NPC, SS Anne Bed, etc)
     - Note: Forced heals from the story are fine but you cannot go back for more
+    - In KaizoCore, a person or bed that heals you inside a Heart & Soul dungeon is off limits, apart from the heals the story makes. National Park is outdoors and Elm's lab has no trainers, so neither is a dungeon.
 - Kaizo Banned Items: No use of any flute items for status healing
 - Kaizo Randomizer Settings: A few specific settings for Kaizo:
     - Static Pokémon MUST NOT have level increase
@@ -116,29 +136,38 @@ non-negotiable. If you wish to adjust rules just play Standard Ironmon and Ultim
 ### General rules
 
 1. To win Ironmon you must defeat Red at the top of Mt. Silver.
+    - In KaizoCore, beating Blue for your sixteenth badge brings a call from Oak that opens Mt. Silver.
 
 ### Rules updates to Standard & up
 
 1. You may play with bad berries included (4.6.0+ randomizer), or removed (old 4.4.0 randomizer). Both are okay.
 2. You are allowed to change to game's time for events that occur on specific days within the game.
+    - In KaizoCore, no Heart & Soul event waits for a day of the week: the Week siblings ask you to guess their day, the Union Cave Lapras is there any day, and the Bug-Catching Contest is open every day, once a day.
 3. In many cases, you'll fight Red without hail due to the default date/time used by some emulators (e.g. Bizhawk). Or you can manually change the date/time for your emulator and game. Both are okay.
+    - In KaizoCore, the top of Mt. Silver always snows, whatever the date or time, so Red's battle always starts in snow: Heart & Soul's newer form of hail, which does no damage and raises the Defense of Ice types.
 4. You may use Rock Smash repeatedly on the same rock in search of a catch/pivot for the area, but you cannot keep any items you get from the extra smashes.
 5. You cannot defeat the Shiny Gyarados more than once. (respawns after E4)
+    - In KaizoCore, Heart & Soul's red Gyarados never comes back once you beat or catch it.
 
 ### Rules updates to Ultimate & up
 
 1. You can only fight trainers in the Lighthouse the first time you visit; not when you return with Secret Potion
+    - In KaizoCore, there is no return trip: once Jasmine asks, the Cianwood pharmacist sends the Secret Potion himself, so you climb the Lighthouse once.
 2. Each building of the Radio Tower story sequence is treated separately. You can heal as you go from the tower to the basement, or basement back to the tower. You can fight trainers in the tower when you return later to finish the story.
+    - In KaizoCore, the Basement Key and the Card Key each take you straight to the next building, and you can still walk out and heal between them.
 3. Seafoam Islands is treated as two separate dungeons: one for the cave itself with items and trainers, and one for the gym only. You may do the cave and return later to do the gym.
+    - In KaizoCore, Heart & Soul's Seafoam cave has items but no trainers, and Blaine is the only trainer in his gym.
 4. The Pokémon Center in Olivine City is not a dungeon, even though there is a trainer there.
+    - In KaizoCore, Heart & Soul's Olivine Pokémon Center has no trainer in it.
 
 ### Rules updates to Kaizo & up
 
 1. You cannot use Flash to get the Ruins of Alph items unless your main Pokémon has the move Flash. No uses HM friends with Flash.
+    - In KaizoCore, Heart & Soul's Ruins of Alph are not dark, so Flash plays no part there: each item room opens when a Pokémon in your party is Ho-Oh, Aerodactyl, Kabuto or Omanyte. Only Dark Cave is dark.
 
 ## Nat. Dex ruleset changes
 
-(Rules the page marks "v1.0.0 to v1.1.3 only" are left out: KaizoCore's Nat. Dex is 1.2.1.)
+(On Heart & Soul, this section is for a run with the Nat. Dex pool only; a Vanilla pool run skips it. Rules the page marks "v1.0.0 to v1.1.3 only" are left out: KaizoCore's Nat. Dex is 1.2.1.)
 
 Read the official IronMON Rules first (http://ironmon.gg/), as well as the version specific rules for FireRed (https://gist.github.com/UTDZac/a147c497424dfbd537d8c4b0c22b5621#fire-red--leaf-green) and Emerald (https://gist.github.com/UTDZac/a147c497424dfbd537d8c4b0c22b5621#ruby--sapphire--emerald)!!
 - The BST limit for banned Abilities such as Huge Power is increased to 420 inclusive.
@@ -192,4 +221,4 @@ Note: None of the Pokémon in this list have the Slow Exp. curve
 - game-specific rules and settings gist by UTDZac: https://gist.github.com/UTDZac/a147c497424dfbd537d8c4b0c22b5621 (last changed 2026-07-05)
 - Nat. Dex Ruleset Changes, the Nat. Dex Extension wiki by CyanSixFour: https://github.com/CyanSMP64/NatDexExtension/wiki/Nat.-Dex-Ruleset-Changes (last changed 2026-06-29)
 
-Generated 2026-10-05 by tools/rules/build_rules.py. Rulesets get revised; if this reads behind a source, regenerate.
+Generated 2026-10-06 by tools/rules/build_rules.py. Rulesets get revised; if this reads behind a source, regenerate.

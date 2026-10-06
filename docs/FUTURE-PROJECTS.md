@@ -101,12 +101,51 @@ packages are merged, so its branches begin from the rc34 that ships)
 **Log viewer parity check** (Blake, 2026-10-04, with PC log screenshots of Nat. Dex FireRed): compare our GBA log page by page with the PC LogOverlay and fix gaps. **Done on fix/seen-and-log** (table in docs/LOG-VIEWER-PARITY.md): the PC opens its Trainer Info and Pokemon info panels beside the log; ours now puts their lines at the top of the page. A trainer's page has its route, "Pokémon: N (Lv.a -- b)", Avg. IVs, AI Script, Usable Items, # id and Double Battle (LogInfoPanels, from the ROM's trainer entry); a Pokemon's page has Weak to, History (the run's tracked moves), Show resistances and its note with "(Leave a note)", saved into the notes Play uses (RunMarks). Still missing: tapping a move or an ability for its info (no move or ability info screen in the log), EXP yield. Images (Blake, 2026-10-05): every PC log picture is the game's own here too (the doc's Images section); the Game Boy log gained its Pokemon icons, a route page its idle icons and the player's head; DS trainer pictures stay out (no ROM source).
 
 **Streamer features** (Blake, 2026-10-04: "put 1-6 on the future list"; no desktop version, the phone-to-OBS path is the focus)
+   **All six are on one branch, feat/stream (2026-10-05), not on master yet:** feat/stream-sources, feat/stream-obs and
+   feat/stream-twitch merged in that order. One More > Stream page holds the OBS card, then the Twitch card. The OBS
+   scene has 15 browser sources, item ids 1 to 15 in source order (game, tracker, attempts, game over, timer, the nine
+   favorites, history). Open connections: with every source shown OBS holds four /events streams (tracker, attempts,
+   game over, timer) of the browser's six per host, plus the game's WebSocket; /history polls its page every 30 s and
+   opens no stream, so the merge added none and nothing was moved to polling. Fixed on the merge: OBS's password is
+   sealed with the Keystore (KeystoreSealedFile, shared with the Twitch sign-in) in filesDir/obs-password.bin, out of
+   backups, and a plain-text one in prep/obs-link.txt is moved over once; leaving Play or closing the game goes back to
+   the game scene (StreamFeed's dispose, ObsLink.gameStopped). Still open: a check with a real OBS 28+ and Blake's
+   Twitch account; the app going to the background mid-battle leaves OBS where it was (the game is paused, not stopped).
 1. Game-over card for stream: an OBS source that animates what ended the run, the attempt, badges, time and the GachaMon card (3-4 h).
+   **Built 2026-10-05 on feat/stream-sources, merged into feat/stream:** `/gameover` (and `/gameover.json`, the `gameover` event on
+   /events). Its data is the game-over popup's own: the latch's outcome, the death card RunHistoryHook filed (what ended
+   the run, trainer, place, badges, time played, best other run), the popup's DeathQuotes line, and the run's GachaMon
+   card as its facts (the prize card when made, else the fallen lead's capture; the card itself is Compose-drawn on the
+   phone and is not served) with the Pokemon's picture from `/mon/<species>.png`. Clears on NEW RUN (PrepStore.installRun
+   calls StreamHub.newRun) and on Retry; `&hold=`, `&demo=1`. In the OBS scene, centred over the game.
 2. OBS reacts by itself through obs-websocket: switch scenes on battle start and game over, save the replay buffer at the moment of a loss (4-6 h).
+   Built 2026-10-05 on branch feat/stream-obs, merged into feat/stream: More, Stream (StreamSettingsScreen) takes the PC's address, port and password, tests the connection (GetSceneList, GetReplayBufferStatus) and picks a game scene, a battle scene and a game over scene from OBS's own list, plus "save the replay buffer when a run ends". ObsLink (stream/ObsLink.kt) is the phone as an obs-websocket 5 client (stream/ObsWebSocket.kt, SHA-256 challenge, no new dependency) on a thread of its own: battles must hold 1.2 s before a switch, a loss goes to the game over scene at once, it switches only from one of the three scenes (Starting soon is left alone), retries 1 s up to 30 s, stops on a wrong password. Fed from StreamFeed: the tracker's inBattle and the game-over latch. Leaving Play or closing the game goes back to the game scene at once (merge fix). The password is sealed with the Keystore, not kept in obs-link.txt (merge fix). Tested against a fake OBS (ObsLinkTest, ObsWebSocketTest); still needs one check with a real OBS 28+ on a PC.
 3. Run timer and splits source: time per badge and gym (3-5 h).
+   **Built 2026-10-05 on feat/stream-sources, merged into feat/stream:** `/timer` (and `/timer.json`, the `timer` event). The time is
+   RunClock's time played (counts while KaizoCore is in front with the run's game open; stops in the background, screen
+   off, during NEW RUN; fast forward is real time) and holds at the end. Splits: RunProgress keeps the time each badge
+   bit was first seen earned, filed with the run as RunRecord.splits (a new 21st column of runhistory-<game>.tsv);
+   deltas are against the best earlier run with splits on the same game and settings file (win, badges, fastest to its
+   last badge, earliest). In the scene, hidden. Not done: gym leader names on the rows (they say Badge 1 to 8).
 4. Run history page for viewers: past attempts, how far each got, best run, most common killers, as a link or a source (4-6 h).
+   Built 2026-10-05 on branch feat/stream-obs, merged into feat/stream: /history (and /history.json) on the stream server, token-protected, from the app's own RunHistory files for the game and settings file last randomized: runs and wins, the best run, the Pokemon and trainers that end runs most, the latest attempts (badges, where, what ended it). ?bg=none for a see-through source, ?rows=N. On the setup page's links and in obs-scene.json as "KaizoCore history", hidden over the tracker. Run facts only: no seed, no paths, no integrity counts.
 5. Stream Connect: Twitch chat commands like the PC tracker (!pokemon, !moves, !attempts, !gachamon), the player signs in on the phone (15-30 h).
+   BUILT 2026-10-05 on feat/stream-twitch, merged into feat/stream, waiting on Blake's test with his own Twitch account. More > Stream:
+   Connect Twitch shows a code for twitch.tv/activate (Device Code flow, public client gge79biuenmcj3fpd4xrq1m21pfd35,
+   scopes user:read:chat and user:write:chat only). Chat is read over EventSub (channel.chat.message, hand-written
+   wss client in stream/twitch/WsClient.kt) and answered as the streamer through Helix, threaded under the question.
+   Commands: !pokemon (!mon), !moves, !attempts, !gachamon, !progress, !heals, !about, !help (!commands), each with a
+   switch; 10 s per-command cooldown and 8 answers per 30 s in all. Answers come only from the stream page's snapshot
+   (hidden stats stay hidden, the opponent, seed and log are never answered) plus GachaMon's card for !gachamon, which
+   waits for the summary too. Tokens: AES-GCM with an Android Keystore key, filesDir/twitch-session.bin, out of the
+   backup, Cloud sync and crash reports; Sign out revokes. Drops reconnect with backoff up to a minute. Not done: the
+   PC tracker's other commands (!bst, !weak, !move, !ability, !route, !trainer and the rest) and channel point redeems;
+   most of them read the randomized game's data, which needs the IronMON rules check the stream page had first.
 6. Overlay themes for the tracker source, including the HUD cockpit look (3 h).
+   **Built 2026-10-05 on feat/stream-sources, merged into feat/stream:** `&theme=clean` (see-through, outlined text) and `&theme=hud`
+   (dark glass, thin glowing cyan lines, two cut corners and brackets, scan lines, monospace numbers) on /tracker,
+   /attempts.html, /gameover and /timer. Plain CSS in assets/stream/themes.css, put into the page by the server
+   (StreamThemes) only when asked; system fonts only.
 
 **Ideas** (Blake, 2026-10-04: "put it all on the future plan"; Blake ruled out importing PC tracker notes, which are per seed)
 - Race a friend's seed: paste a shared seed (the log's Share Seed) and play the exact same game. Small.

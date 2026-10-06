@@ -146,6 +146,6 @@ class StreamDoublesTest {
     fun `Play hands the stream the phone's views, and a swap goes out at once`() {
         val feed = File("src/main/kotlin/com/ironmonone/app/stream/StreamFeed.kt").readText()
         assertTrue("StreamSnapshot.build(shown, gba, nds, notes, ref, com.ironmonone.app.gbaView, com.ironmonone.app.dsView)" in feed)
-        assertTrue("LaunchedEffect(on, gba, nds, marksVersion, session.id, com.ironmonone.app.gbaView.view, com.ironmonone.app.dsView.key) {" in feed)
+        assertTrue("LaunchedEffect(on || chat, gba, nds, marksVersion, session.id, com.ironmonone.app.gbaView.view, com.ironmonone.app.dsView.key) {" in feed)
     }
 }

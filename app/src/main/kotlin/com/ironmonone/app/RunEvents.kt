@@ -28,7 +28,9 @@ class RunEvents(val file: File) {
         /** The run was built from a run code, its detail saying when this game's history already held the seed (R7). */
         CODE("code"),
         /** "Game is considered over when" set, during the run, to other than its settings file's own rule (R12). */
-        RULE("rule");
+        RULE("rule"),
+        /** The run made again on this KaizoCore's build of its game, same seed (RunBuild.move, 2026-10-06). */
+        MOVE("move");
 
         companion object {
             fun of(key: String): Kind? = entries.firstOrNull { it.key == key }

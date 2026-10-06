@@ -183,6 +183,9 @@ class MainActivity : ComponentActivity() {
         // Heart & Soul's randomizer reads its tables from the APK, and the pool the player chose (HnsPool).
         com.ironmonone.app.engine.HnsEngine.assetText = { path -> appContext.assets.open(path).use { it.readBytes().toString(Charsets.UTF_8) } }
         com.ironmonone.app.engine.Randomizers.hnsPoolChosen = { HnsPool.chosen(appContext.filesDir) }
+        // An update that changed Heart & Soul's comfort patch makes this version's KaizoCore build from the library's
+        // 2.0.6 by itself, so no player has to patch again by hand to keep playing (HnsRefresh, 2026-10-06).
+        Thread({ runCatching { HnsRefresh.run(appContext) } }, "hns-refresh").apply { isDaemon = true }.start()
         HiddenPowerTypes.load(java.io.File(filesDir, "prep/hidden-power.txt"))
         PcHeals.load(java.io.File(filesDir, "prep/pc-heals.txt"))
         RunClock.load(java.io.File(filesDir, "prep/run-clock.txt"))
@@ -202,7 +205,11 @@ class MainActivity : ComponentActivity() {
         com.ironmonone.app.stream.StreamHub.appContext = applicationContext
         // The stream's favorite pictures follow the saved favorites, edited anywhere, with Play open or not (StreamFavoritePictures).
         com.ironmonone.app.stream.StreamHub.favorites = StreamFavoritePictures.source(applicationContext)
+        // The game over card's Pokemon pictures, drawn the same way (StreamFavoritePictures.monSource).
+        com.ironmonone.app.stream.StreamHub.monPicture = StreamFavoritePictures.monSource(applicationContext)
         // The stream reminder (StreamReminder): from Android 13 the phone asks once, as the stream is turned on.
+        // Twitch chat commands (Stream Connect): a saved sign-in goes back to answering chat, on threads of its own.
+        com.ironmonone.app.stream.twitch.TwitchChat.init(applicationContext)
         com.ironmonone.app.stream.StreamHub.onStarted = {
             if (com.ironmonone.app.stream.StreamReminder.shouldAsk(this)) requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 71)
         }
@@ -294,9 +301,8 @@ class MainActivity : ComponentActivity() {
         // A keyboard is a real input device here, not a second-class one: map its
         // keys and feed the same path. Without this branch a Bluetooth keyboard
         // was completely inert, because it never reports SOURCE_GAMEPAD.
-        val fromKeyboard = (event.source and InputDevice.SOURCE_KEYBOARD) ==
-            InputDevice.SOURCE_KEYBOARD
-        if (fromKeyboard) {
+        // Arrow keys sent from a D-pad source alone (adb input, some remotes and keyboards) take the same mapping (KeySource).
+        if (KeySource.viaKeyboardMap(event.source, event.keyCode)) {
             // The player's own bindings, falling back to the defaults baked into
             // KeyBindings so a fresh install is playable with no setup.
             KeyBindings.active[event.keyCode]?.let { mapped ->
@@ -311,7 +317,9 @@ class MainActivity : ComponentActivity() {
     }
 
     /** A locked, see-through floating window: a swipe on it scrolls it, a tap goes on to the game (WindowSwipe). */
-    override fun dispatchTouchEvent(ev: MotionEvent): Boolean = WindowSwipe.dispatch(this, ev) { super.dispatchTouchEvent(it) }
+    override fun dispatchTouchEvent(ev: MotionEvent): Boolean =
+        // The floating window's hold to lock and unlock (FloatHold), then the see-through window's swipe (WindowSwipe).
+        FloatHold.dispatch(this, ev) { e -> WindowSwipe.dispatch(this, e) { super.dispatchTouchEvent(it) } }
 
     /** Sticks and d-pad hats arrive as motion; fold them into d-pad presses. */
     override fun dispatchGenericMotionEvent(event: MotionEvent): Boolean {
@@ -578,7 +586,11 @@ private fun App() {
                 // Where Play's empty screen sends the player (PlayNothing): Play takes no new parameters (2026-09-30).
                 // While a new run is being made, Play waits on it instead of booting the run it replaces (rc33 P0-5).
                 Tab.PLAY -> if (RunJob.installing) PlayRunBeingMade(Modifier.fillMaxSize()) else androidx.compose.runtime.CompositionLocalProvider(
-                    LocalShellNav provides ShellNav(openMyGames = { nav = nav.openMyGames() }, openKaizo = { nav = nav.open(HomeMode.KAIZO) }),
+                    LocalShellNav provides ShellNav(openMyGames = { nav = nav.openMyGames() }, openKaizo = { nav = nav.open(HomeMode.KAIZO) },
+                        openHeartSoul = { nav = nav.open(HomeMode.HEARTSOUL) },
+                        openHome = { nav = nav.home() }, openPatched = { nav = nav.openPatchedVersions() }, openStats = { nav = nav.openStats() },
+                        openControls = { nav = nav.pick(Tab.MORE).withMorePage(0) }, openBackup = { nav = nav.pick(Tab.MORE).withMorePage(1) },
+                        openStreamSettings = { nav = nav.pick(Tab.MORE).withMorePage(AppNav.STREAM_PAGE) }),
                 ) { PlayScreen(
                     Modifier.fillMaxSize(),
                     fullscreen = fullscreen,
@@ -592,8 +604,11 @@ private fun App() {
                     if (nav.libraryPage == AppNav.MY_GAMES_PAGE) RomLibraryScreen(Modifier.fillMaxSize(), onPlay = { nav = nav.play() })
                     else PrepareScreen(Modifier.fillMaxSize(), onMyGames = { nav = nav.withLibraryPage(AppNav.MY_GAMES_PAGE) })
                 }
-                Tab.MORE -> TabPages(listOf("Controls", "Backup and info"), nav.morePage, { nav = nav.withMorePage(it) }) {
+                // Stream, third (2026-10-05): OBS switching scenes by itself and Twitch chat commands (StreamSettingsScreen); the
+                // Play screen has no room for them. Last, so the other two keep their numbers.
+                Tab.MORE -> TabPages(listOf("Controls", "Backup and info", "Stream"), nav.morePage, { nav = nav.withMorePage(it) }) {
                     if (nav.morePage == 0) ControlsScreen(Modifier.fillMaxSize())
+                    else if (nav.morePage == AppNav.STREAM_PAGE) StreamSettingsScreen(Modifier.fillMaxSize())
                     else AboutScreen(Modifier.fillMaxSize(), onStats = { nav = nav.openStats() })
                 }
             }

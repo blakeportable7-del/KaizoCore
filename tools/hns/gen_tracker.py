@@ -46,6 +46,8 @@ STRUCTS = {
     "Sprite": ["oam", "x", "y", "x2", "y2", "centerToCornerVecX", "centerToCornerVecY", "inUse", "coordOffsetEnabled", "invisible"],
     "ObjectEvent": ["facingDirection"],
     "PlayerAvatar": ["runningState", "tileTransitionState", "spriteId", "objectEventId"],
+    # The Survival heal counter (2026-10-06, tracker-gba HnsHeals): the script running now and its call stack.
+    "ScriptContext": ["stackDepth", "scriptPtr", "stack"],
 }
 
 # Items the tracker's shared tables name by the vanilla Gen 3 id (HEAL_ITEMS, the catch-rate balls, EvoText's
@@ -238,7 +240,7 @@ def main():
     for n, t in sorted(L["tables"].items()):
         w("    const val %s_COUNT = %d" % (n, t["count"]))
     w("")
-    w("    // Battle script labels, [addr, end): end is the next symbol's address.")
+    w("    // Script labels (battle and field), [addr, end): end is the next symbol's address.")
     for n, s in sorted(L["labels"].items()):
         w("    val %s = %s until %s" % (n, hexl(int(s["addr"], 16)), hexl(int(s["end"], 16))))
     w("")

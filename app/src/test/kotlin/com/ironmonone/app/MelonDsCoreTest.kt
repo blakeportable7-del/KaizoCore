@@ -21,6 +21,9 @@ import kotlin.test.assertTrue
  * partners whenever a save exists, stopped on "A communication error has occurred" and a white screen. 0004 (2026-10-04)
  * keeps a state loaded in the middle of a quad from writing a fifth vertex past the 3D vertex buffer, over the opaque
  * polygon count: VBlank then sorted a list with holes, and Black 2 resumed from its snapshot crashed in YSort.
+ * 0006 (2026-10-05) keeps the radio's multiplayer init from closing descriptor 0: the Android build has no HAVE_WIFI, so
+ * socket() was a stand-in that gave 0 and MP_Init's first failure path closed it, and fdsan aborted the app the moment a
+ * game turned the radio on (rc35.2, HeartGold on a Galaxy S22+).
  *
  * This pins what ships to that record: each library's SHA-256 and build id, the symbol table kept for crash reports
  * (the same build id, so it reads this build's addresses), the patches' hashes, 16 KB alignment, and NOTICE and the
@@ -116,10 +119,10 @@ class MelonDsCoreTest {
     }
 
     @Test
-    fun `the source is a pinned commit and five patches, with the hashes the record pins`() {
+    fun `the source is a pinned commit and six patches, with the hashes the record pins`() {
         assertEquals("https://github.com/libretro/melonDS.git", record["repo"])
         assertTrue(Regex("[0-9a-f]{40}").matches(record.getValue("commit")), "a full commit, not a branch")
-        assertEquals(listOf("0001-", "0002-", "0003-", "0004-", "0005-"), patches.map { it.first.take(5) }, "applied in this order")
+        assertEquals(listOf("0001-", "0002-", "0003-", "0004-", "0005-", "0006-"), patches.map { it.first.take(5) }, "applied in this order")
         for ((name, sha) in patches) {
             assertEquals(sha, sha256(patchText(name).toByteArray(Charsets.UTF_8)), "$name is the patch the record pins")
         }
@@ -238,6 +241,57 @@ class MelonDsCoreTest {
         assertFalse(removed.any { "PolygonRAM[id]" in it || "VertexRAM[id]" in it }, "loading is unchanged, for 9.0 states")
         // Both libraries were built with it: the record's hashes are this patch's build, and the app knows 9.1.
         assertEquals(1, com.swordfish.libretrodroid.MelonState.MINOR)
+    }
+
+    /**
+     * rc36 (2026-10-05): patch 0006. Without HAVE_WIFI (jni/Android.mk never sets it) platform.cpp turns socket() into
+     * NULL and setsockopt() into -1, so MP_Init stored 0, passed "MPSocket < 0", and its first failure path closed
+     * descriptor 0; the rc35.2 arm64 library compiled MP_Init to an unconditional close(0). A phone's fdsan aborted on it.
+     */
+    @Test
+    fun `patch 0006 keeps the radio's multiplayer init from closing a descriptor it never opened`() {
+        val patch = patchText(patches[5].first)
+        val added = patch.lines().filter { it.startsWith("+") && !it.startsWith("+++") }.map { it.drop(1).trim() }
+        val removed = patch.lines().filter { it.startsWith("-") && !it.startsWith("---") }.map { it.drop(1).trim() }
+        assertTrue("socket_t MPSocket = INVALID_SOCKET;" in added && "socket_t MPSocket;" in removed, "no socket until one is opened")
+        // Without HAVE_WIFI, MP_Init gives up before any socket call, so no failure path can close what socket() faked.
+        val init = patch.substringAfter("bool MP_Init()")
+        val noWifi = init.indexOf("+#ifndef HAVE_WIFI")
+        assertTrue(noWifi >= 0 && init.indexOf("+      return false;", noWifi) < init.indexOf("MPSocket = socket(AF_INET, SOCK_DGRAM, 0);"),
+            "MP_Init returns before socket() in a build without Wi-Fi")
+        assertTrue(init.indexOf("+      if (MPSocket != INVALID_SOCKET)") < noWifi, "a socket it opened before is closed first")
+        // MP_DeInit closes only a socket MP_Init opened, and forgets it.
+        val deinit = patch.substringAfter("void MP_DeInit()").substringBefore("WSACleanup")
+        assertTrue("+      if (MPSocket != INVALID_SOCKET)" in deinit && "+         MPSocket = INVALID_SOCKET;" in deinit)
+        assertTrue(removed.count { it == "if (MPSocket < 0)" } == 3 && "if (MPSocket >= 0)" in removed, "no check left on the sign")
+        assertFalse(added.any { "MPSocket < 0" in it || "MPSocket >= 0" in it })
+        // Both libraries were built with it: MPSocket starts as -1 in their data, where rc35's kept it at zero.
+        for (abi in abis) {
+            val symbols = File(dir, "symbols/$abi/libmelonds_libretro_android.so").readBytes()
+            assertEquals("ffffffff", symbolBytes(symbols, "MPSocket"), "$abi: MPSocket starts as INVALID_SOCKET")
+        }
+    }
+
+    /** The initial bytes of a data symbol, from the symbol table kept for crash reports; null if it lives in .bss. */
+    private fun symbolBytes(bytes: ByteArray, name: String): String? {
+        val b = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN)
+        val shoff = b.getLong(0x28).toInt(); val shentsize = b.getShort(0x3A).toInt(); val shnum = b.getShort(0x3C).toInt()
+        fun sec(i: Int, field: Int) = shoff + i * shentsize + field
+        val symtab = (0 until shnum).single { b.getInt(sec(it, 4)) == 2 }                     // SHT_SYMTAB
+        val strtab = b.getLong(sec(b.getInt(sec(symtab, 0x28)), 0x18)).toInt()
+        val symoff = b.getLong(sec(symtab, 0x18)).toInt()
+        for (i in 0 until (b.getLong(sec(symtab, 0x20)) / 24).toInt()) {
+            val at = symoff + i * 24
+            var p = strtab + b.getInt(at)
+            val sb = StringBuilder()
+            while (bytes[p] != 0.toByte()) sb.append(bytes[p++].toInt().toChar())
+            if (sb.toString() != name) continue
+            val shndx = b.getShort(at + 6).toInt() and 0xffff
+            if (b.getInt(sec(shndx, 4)) == 8) return null                                       // SHT_NOBITS
+            val off = b.getLong(sec(shndx, 0x18)) + (b.getLong(at + 8) - b.getLong(sec(shndx, 0x10)))
+            return (0 until b.getLong(at + 16).toInt()).joinToString("") { "%02x".format(bytes[off.toInt() + it]) }
+        }
+        error("no $name in the symbol table")
     }
 
     private fun bytes(vararg v: Int) = ByteArray(v.size) { v[it].toByte() }

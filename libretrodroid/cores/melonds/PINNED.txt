@@ -11,9 +11,10 @@ patch: 0002-3d-depth-no-longer-reads-a-value-it-never-set.patch sha256=60e3260c2
 patch: 0003-generated-firmware-carries-wifi-calibration.patch sha256=f2bb9ec8d282f3d7de09024b086fd1a8ac6fddc57a117ab1477860b1293388d4
 patch: 0004-3d-a-loaded-state-never-writes-past-the-vertex-buffer.patch sha256=940fddc480e961d201292809f0d2e2dc3e5e37e99907abde00ce8e266c44b9dc
 patch: 0005-savestates-keep-the-3d-polygon-mode.patch sha256=31969b30a9eb2cdf1aec29f723856edf08ce65909ca46d01bac1df947c046ea6
+patch: 0006-radio-init-never-closes-a-descriptor-it-did-not-open.patch sha256=2dc19e5a2635274d2d4242bcfab8c13651fae514b914c6319aad4e797fd84835
 ndk: 26.1.10909125
 build: -C jni APP_PLATFORM=android-21 APP_LDFLAGS=-Wl,-z,max-page-size=16384
 module: libretro.so
 ship-as: libmelonds_libretro_android.so
-arm64-v8a: sha256=3dfe418e539afc88aeba8408e039ba8cb0b230748e8b966efcec34fdcd929682 build-id=330a351ae8501ce998560832fb0170c975e49aca symbols-sha256=83e714f4aae458fb585c9b625d90aa063e147bbb0b756cd5a15993af41e4800f
-x86_64: sha256=3bc41bdbec3ac8578d034439cf8792ce4ae5853fc3e2c42423c8a17e7ec930ba build-id=26cc75630b1b63d196703a6bd5122a88605c2570 symbols-sha256=aeb8d53440bd99e2ebbf0c270c3d13da6b637b466a66cc3fe22c1a0cee769c71
+arm64-v8a: sha256=e72602501bb8e38360f28c4245da63abdd7faf2338096b17847f08310f0ab0e9 build-id=b0738958c00c8332bd7203497853bd5677897c3f symbols-sha256=035daf7e28bf47d6d888ef61e4c6a7cd0c3d3fa21371fad53eb9c4aef56cc45e
+x86_64: sha256=0eccd18faad3fe57722adfa2dc8aff9250fdbb510e0ec4e8d87882625360a1a6 build-id=a531d069e5002c94fbb47c0994c6d29cc865d999 symbols-sha256=702396a563da1d685e6ea903b3609110335d0805b8bd4156d9f83b4179b5bb96

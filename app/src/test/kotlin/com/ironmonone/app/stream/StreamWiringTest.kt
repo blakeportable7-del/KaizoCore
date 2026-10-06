@@ -44,15 +44,13 @@ class StreamWiringTest {
 
     @Test
     fun `the STREAM button is in the menu for every game`() {
-        val play = read(File("src/main/kotlin/com/ironmonone/app/PlayScreen.kt")).lines()
-        val at = play.indexOfFirst { it.contains("\"STREAM ON\"") }
-        assertTrue(at > 0, "the STREAM button should be in PlayScreen")
-        assertFalse(play[at].contains("session"), "the button's own line is not gated")
-        // The last two lines of code before it must not open a condition on the session.
-        val before = play.subList(0, at).filter { it.isNotBlank() && !it.trim().startsWith("//") }.takeLast(2)
-        for (l in before) {
-            assertFalse(Regex("\\bif\\b.*\\b(isRun|tracked|kind|session)\\b").containsMatchIn(l), "gated by: $l")
+        // The FILE bar's TOOLS sheet (2026-10-06): Stream shows for every game, run or library, tracked or not.
+        for (tracked in listOf(true, false)) for (isRun in listOf(true, false)) for (ds in listOf(true, false)) {
+            val c = com.ironmonone.app.BarContext(tracked = tracked, isRun = isRun, ds = ds)
+            assertTrue(com.ironmonone.app.BarItem.STREAM in com.ironmonone.app.FileBarMap.items(com.ironmonone.app.BarGroup.TOOLS, c), "$c")
         }
+        val bar = read(File("src/main/kotlin/com/ironmonone/app/FileBar.kt"))
+        assertTrue("BarItem.STREAM -> Toggle(item.label, a.streamOn, modifier) { a.onStream() }" in bar)
     }
 
     @Test
@@ -62,7 +60,7 @@ class StreamWiringTest {
         assertTrue(at > 0)
         // The effect that publishes it is the one above, keyed on the stream, the state, the session and the phone's battle views.
         val effect = feed.lastIndexOf("LaunchedEffect(", at)
-        assertContains(feed.substring(effect, effect + 90), "on, gba, nds, marksVersion, session.id")
+        assertContains(feed.substring(effect, effect + 90), "on || chat, gba, nds, marksVersion, session.id")
         val header = feed.substring(effect, at)
         assertFalse(Regex("\\bif\\s*\\(\\s*session\\.(isRun|tracked)").containsMatchIn(header.substringBefore("val shown")), "the publishing effect is not gated on a run")
         assertContains(header, ", session.isRun, session.kind", message = "the run flag is passed outright")
@@ -77,9 +75,10 @@ class StreamWiringTest {
     @Test
     fun `nothing is built while the stream is off`() {
         val feed = read(File(stream, "StreamFeed.kt"))
-        // The phone's battle views joined the keys in rc34, so a swap goes out at once (StreamDoublesTest).
-        val effect = feed.substring(feed.indexOf("LaunchedEffect(on, gba, nds, marksVersion, session.id, com.ironmonone.app.gbaView.view, com.ironmonone.app.dsView.key) {"), feed.indexOf("StreamHub.publish(json"))
-        assertTrue(effect.indexOf("if (!on) return@LaunchedEffect") in 0 until effect.indexOf("StreamSnapshot.build("))
+        // The phone's battle views joined the keys in rc34, so a swap goes out at once (StreamDoublesTest). Twitch chat
+        // commands answer from the snapshot too (2026-10-05): built while the stream is on or chat is being answered.
+        val effect = feed.substring(feed.indexOf("LaunchedEffect(on || chat, gba, nds, marksVersion, session.id, com.ironmonone.app.gbaView.view, com.ironmonone.app.dsView.key) {"), feed.indexOf("StreamHub.publish(json"))
+        assertTrue(effect.indexOf("if (!on && !chat) return@LaunchedEffect") in 0 until effect.indexOf("StreamSnapshot.build("))
         val play = read(File("src/main/kotlin/com/ironmonone/app/PlayScreen.kt"))
         assertFalse("StreamHub.publish(" in play, "Play publishes nothing of its own")
     }

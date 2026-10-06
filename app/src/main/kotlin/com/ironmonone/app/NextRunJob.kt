@@ -171,7 +171,8 @@ object NextRunJob {
             // switch flipped in between makes a different recipe, so this stage is not taken.
             val secondPass = ExtraPasses.secondPassFor(app, store, kind, settings)
             val prePass = ExtraPasses.prePassFor(app, store, kind, settings)
-            val recipe = NextRun.recipe(kind, prepared, settings, secondPass, prePass, appStamp(app))
+            // Heart & Soul: the run in play's pool, as Play's NEW RUN asks for it (HnsPool.ofRun), so the stage is taken.
+            val recipe = NextRun.recipe(kind, prepared, settings, secondPass, prePass, appStamp(app), if (kind.isHns) HnsPool.ofRun(store) else null)
             if (store.nextRun.ready(recipe) != null) { Log.i(TAG, "next run: one is waiting for ${kind.id}"); return }
 
             // The output is about the size of the run in play; the prepared ROM when there is none yet.

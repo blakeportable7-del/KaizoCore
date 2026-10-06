@@ -682,9 +682,9 @@ fun NdsTrackerPanel(
     enemyLastLevel: Int? = null,
     movesSeenRunWide: List<StatMarks.SeenMove> = emptyList(),
     moveInfoFor: (Int) -> NdsMoveInfo? = { null },
-    /** Opens the tracker's gear (the reference's SettingsGear). */
+    /** A gear on the first row; Play passes none since 2026-10-06, when Tracker Setup moved to the FILE bar. */
     onGear: (() -> Unit)? = null,
-    /** After SETUP in the first row: landscape's corner arrow (TrackerCornerMenu); null in portrait. */
+    /** Anything after it on the first row; Play passes none since the tracker's menu moved to the FILE bar. */
     headerTrailing: (@Composable () -> Unit)? = null,
     /** TimerScreen: the run clock, when the option is on. */
     timer: RunTimer? = null,
@@ -753,14 +753,15 @@ fun NdsTrackerPanel(
           }
           val bannerShows = state != null && state.inBattle &&
               !(state.runOver != null && state.runOver != com.ironmonone.tracker.nds.NdsRunOver.WON && ironmonOver)
-          onGear?.takeIf { !bannerShows }?.let { g ->
-              // In the floating window this row is the window's bar (WindowBar.kt): the area, the repel and the gear.
+          // Every view draws this row; the gear on it went to the FILE bar (2026-10-06), so Play hands no [onGear].
+          if (!bannerShows) run {
+              // In the floating window this row is the window's bar (WindowBar.kt): the area and the repel.
               val repelShown = TrackerOptions.showRepel && state != null && !state.inBattle && state.repelSteps > 0
               if (publishToWindowBar(WindowBarParts(
                   segments = WindowBarText.withAttempt(attemptShown, WindowBarText.overworld(state?.areaName)), onTextTap = null, tapLabel = null,
-                  swap = null, onGear = g,
+                  swap = null, onGear = onGear,
                   extra = if (repelShown) { { PcRepelBar(state!!.repelSteps, state.repelDuration, dsIcons = true) } } else null,
-              ))) return@let
+              ))) return@run
               Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
                   attemptShown?.let {
                       PixText("ATTEMPT $it", PcRef.FONT - 1, Pc.Text, weight = androidx.compose.ui.text.font.FontWeight.Medium)
@@ -771,7 +772,7 @@ fun NdsTrackerPanel(
                       PcRepelBar(state.repelSteps, state.repelDuration, dsIcons = true)
                       Spacer(Modifier.width(6.dp))
                   }
-                  TrackerGearButton { g() }
+                  onGear?.let { g -> TrackerGearButton { g() } }
                   headerTrailing?.invoke()
               }
               Spacer(Modifier.height(2.rp))

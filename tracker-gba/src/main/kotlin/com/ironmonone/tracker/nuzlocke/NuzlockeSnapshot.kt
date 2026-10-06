@@ -37,6 +37,10 @@ data class NzMon(
     val gender: Gender?,
     val types: List<Int>,
     val shiny: Boolean,
+    /** The Gen 3 types of its moves that do damage, for the team's coverage; empty when the tracker did not say. */
+    val moveTypes: List<Int> = emptyList(),
+    /** Its stats in the game: max HP, Attack, Defense, Speed, Sp. Atk, Sp. Def; empty when the tracker did not say. */
+    val stats: List<Int> = emptyList(),
 ) {
     /** A real party member: not an egg, not a slot that has not decoded yet. */
     val real: Boolean get() = !isEgg && level > 0 && maxHp > 0
@@ -112,4 +116,6 @@ class Snapshot(
      * afterwards: nothing it shows is the run's, so the engine leaves the poll alone (rc32 audit P2 #141).
      */
     val facility: Boolean = false,
+    /** The game's trainer teams, for boss scouting; only ever read through NuzlockeScout.view's fence. Null where the tracker has none. */
+    val scout: ScoutSource? = null,
 )

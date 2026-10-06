@@ -157,7 +157,8 @@ class WindowSwipeTest {
 
     @Test
     fun `the activity runs every touch through it, and the window registers only while taps pass through`() {
-        assertTrue("override fun dispatchTouchEvent(ev: MotionEvent): Boolean = WindowSwipe.dispatch(this, ev) { super.dispatchTouchEvent(it) }" in code("MainActivity.kt"))
+        // After the floating window's hold watch (FloatHold, 2026-10-06), which passes every touch on until a hold fires.
+        assertTrue("FloatHold.dispatch(this, ev) { e -> WindowSwipe.dispatch(this, e) { super.dispatchTouchEvent(it) } }" in code("MainActivity.kt"))
         val all = src.listFiles { f -> f.extension == "kt" }!!
         assertEquals(listOf("TrackerScroll.kt"), all.filter { "WindowSwipe.target =" in strip(it.readText()) }.map { it.name }.sorted())
         val scroll = code("TrackerScroll.kt")
@@ -181,6 +182,6 @@ class WindowSwipeTest {
         assertTrue("if (scroll.canScrollForward) MoreBelow(" in scroll)
         assertFalse("MoreBelow" in scroll.substringAfter("private fun SwipeColumn").substringBefore("private fun MoreBelow"))
         // The swap stays exactly as it was.
-        assertTrue("parts?.swap?.let { Box(Modifier.overhang()) { SwapIconButton(it) } }" in code("FloatingTracker.kt"))
+        assertTrue("SwapIconButton(it)" in code("FloatingTracker.kt") && "parts?.swap?.let {" in code("FloatingTracker.kt"))
     }
 }

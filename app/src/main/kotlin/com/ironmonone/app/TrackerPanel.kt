@@ -72,7 +72,7 @@ import com.ironmonone.tracker.TrackerState
 @Composable
 private fun PartyCard(
     onMoveHistory: ((Int, String, Int) -> Unit)? = null,
-    onTypeDefenses: ((String, Int, Int) -> Unit)? = null,
+    onTypeDefenses: ((String, List<Int>) -> Unit)? = null,
     p: TrackedMon,
     spriteFor: (Int) -> androidx.compose.ui.graphics.ImageBitmap?,
     healPercent: Int = -1,
@@ -126,12 +126,10 @@ private fun PartyCard(
             level = m.level, curHp = m.curHp, maxHp = m.maxHp,
             // DataHelper.lua:145-148: hidden, the stand-in keeps the species, so its types, BST,
             // evolution and moves header still show (:168, :169, :205, :253).
-            typeChips = listOfNotNull(
-                p.base?.type1?.let { Gen3Types.name(it) to pcTypeColor(it) },
-                p.base?.type2?.takeIf { it != p.base?.type1 }
-                    ?.let { Gen3Types.name(it) to pcTypeColor(it) },
-            ),
-            onTypesTap = p.base?.let { b -> onTypeDefenses?.let { cb -> { cb(p.speciesName, b.type1, b.type2) } } },
+            // In battle the battler's own types (MoveDecor's typesOf: Conversion, Soak, Roost, a third type such as
+            // Heart & Soul's Forest's Curse), else the species' two; the weakness screen takes the same.
+            typeChips = typesOf(p).distinct().map { Gen3Types.name(it) to pcTypeColor(it) },
+            onTypesTap = p.base?.let { onTypeDefenses?.let { cb -> { cb(p.speciesName, typesOf(p)) } } },
             itemLine = if (hidden) "" else p.itemName.takeIf { it != "-" } ?: "",
             abilityLine = if (hidden) dash else p.abilityName,
             itemBan = itemBan.takeIf { !hidden },
@@ -193,7 +191,7 @@ private fun PartyCard(
 @Composable
 private fun EnemyCard(
     onMoveHistory: ((Int, String, Int) -> Unit)? = null,
-    onTypeDefenses: ((String, Int, Int) -> Unit)? = null,
+    onTypeDefenses: ((String, List<Int>) -> Unit)? = null,
     e: EnemyInfo,
     revealedAbility: String?,
     revealedAbility2: String?,
@@ -246,7 +244,7 @@ private fun EnemyCard(
             encounterLine =
                 if (lastSeenLevel != null) "Last seen Lv.$lastSeenLevel"
                 else "New encounter",
-            onTypesTap = onTypeDefenses?.let { cb -> { cb(e.speciesName, e.type1, e.type2) } },
+            onTypesTap = onTypeDefenses?.let { cb -> { cb(e.speciesName, typesOf(e)) } },
             // TrackerScreen.lua:1135: "Reveal info if randomized" off hides randomized types as "?".
             typeChips = InfoRules.typeIcons(GhostCard.types(e), InfoRules.hidesRandomizedTypes(rand)).map { (name, id) -> name to pcTypeColor(id) },
             // DataHelper.lua:234 puts the two possible abilities on the two
@@ -459,16 +457,18 @@ fun TrackerPanel(
     /** Move History for a card: (species, name, level). */
     onMoveHistory: ((Int, String, Int) -> Unit)? = null,
     /** Type Defenses for a card: (name, type1, type2) in Gen 3 ids. */
-    onTypeDefenses: ((String, Int, Int) -> Unit)? = null,
+    onTypeDefenses: ((String, List<Int>) -> Unit)? = null,
     state: TrackerState?,
     modifier: Modifier = Modifier,
     ballCall: String? = null,
     favoriteLine: FavoritesShown? = null,
     spriteFor: (Int) -> androidx.compose.ui.graphics.ImageBitmap? = { null },
     unsupportedNote: String? = null,
-    /** Opens the tracker's gear (the reference's SettingsGear). */
+    /** A button under [unsupportedNote]: its label and what it does (RunBuild: move the run, or make the game again). */
+    unsupportedAction: Pair<String, () -> Unit>? = null,
+    /** A gear on the first row; Play passes none since 2026-10-06, when Tracker Setup moved to the FILE bar. */
     onGear: (() -> Unit)? = null,
-    /** After SETUP in the first row: landscape's corner arrow (TrackerCornerMenu); null in portrait. */
+    /** Anything after it on the first row; Play passes none since the tracker's menu moved to the FILE bar. */
     headerTrailing: (@Composable () -> Unit)? = null,
     enemyMarks: IntArray = IntArray(StatMarks.COUNT),
     enemyEncounters: Int = 0,
@@ -613,7 +613,7 @@ fun TrackerPanel(
             onNext = { speciesInfo = stepSpecies(sp, 1) },
             lookup = lookupNames, onLookup = { speciesInfo = it },
             onHistory = onMoveHistory?.let { cb -> { cb(sp, onSpeciesName?.invoke(sp) ?: "#$sp", 0) } },
-            onResistances = if (base != null && onTypeDefenses != null) { { onTypeDefenses(onSpeciesName?.invoke(sp) ?: "#$sp", base.type1, base.type2) } } else null,
+            onResistances = if (base != null && onTypeDefenses != null) { { onTypeDefenses(onSpeciesName?.invoke(sp) ?: "#$sp", listOf(base.type1, base.type2)) } } else null,
             onEditNote = onEditNoteFor?.let { cb -> { cb(sp) } },
             name = onSpeciesName?.invoke(sp) ?: "#$sp",
             types = infoTypes(base, sp),
@@ -633,7 +633,7 @@ fun TrackerPanel(
             onNext = { monInfo = null; speciesInfo = stepSpecies(p.mon.species, 1) },
             lookup = lookupNames, onLookup = { monInfo = null; speciesInfo = it },
             onHistory = onMoveHistory?.let { cb -> { cb(p.mon.species, p.speciesName, p.mon.level) } },
-            onResistances = p.base?.let { b -> onTypeDefenses?.let { cb -> { cb(p.speciesName, b.type1, b.type2) } } },
+            onResistances = p.base?.let { onTypeDefenses?.let { cb -> { cb(p.speciesName, typesOf(p)) } } },
             onEditNote = onEditNoteFor?.let { cb -> { cb(p.mon.species) } },
             name = p.speciesName,
             types = infoTypes(p.base, p.mon.species),
@@ -706,14 +706,15 @@ fun TrackerPanel(
           }
           val bannerShows = state != null && unsupportedNote == null && !state.unreadable && state.partyCount != 0 &&
               !(ironmonOver && state.gameOver != null) && state.inBattle
-          onGear?.takeIf { !bannerShows }?.let { g ->
-              // In the floating window this row is the window's bar (WindowBar.kt): the area, the repel and the gear.
+          // Every view draws this row; the gear on it went to the FILE bar (2026-10-06), so Play hands no [onGear].
+          if (!bannerShows) run {
+              // In the floating window this row is the window's bar (WindowBar.kt): the area and the repel.
               val repelShown = TrackerOptions.showRepel && state != null && state.repelVisible
               if (publishToWindowBar(WindowBarParts(
                   segments = WindowBarText.withAttempt(attemptShown, WindowBarText.overworld(routeName)), onTextTap = null, tapLabel = null,
-                  swap = null, onGear = g,
+                  swap = null, onGear = onGear,
                   extra = if (repelShown) { { PcRepelBar(state!!.repelSteps, state.repelDuration) } } else null,
-              ))) return@let
+              ))) return@run
               Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                   attemptShown?.let {
                       PixText("ATTEMPT $it", PcRef.FONT - 1, Pc.Text, weight = androidx.compose.ui.text.font.FontWeight.Medium)
@@ -726,7 +727,7 @@ fun TrackerPanel(
                       PcRepelBar(state.repelSteps, state.repelDuration)
                       Spacer(Modifier.width(6.dp))
                   }
-                  TrackerGearButton { g() }
+                  onGear?.let { g -> TrackerGearButton { g() } }
                   headerTrailing?.invoke()
               }
               Spacer(Modifier.height(2.rp))
@@ -736,7 +737,7 @@ fun TrackerPanel(
               PcTeamView(
                   party = state.party, spriteFor = spriteFor,
                   onMon = { monInfo = it },
-                  onTypes = onTypeDefenses?.let { cb -> { p -> p.base?.let { b -> cb(p.speciesName, b.type1, b.type2) } } },
+                  onTypes = onTypeDefenses?.let { cb -> { p -> p.base?.let { cb(p.speciesName, typesOf(p)) } } },
                   onAbility = { p -> info = Triple(p.abilityName, "Ability", onAbilityDescription?.invoke(p.abilityName)) },
                   // PokemonData.Values.EggId, 412; past Gen 3's 411 species (Nat. Dex) the bundled pack's egg is 1284.
                   eggSpecies = if (hnsGame) com.ironmonone.tracker.HnsSpecies.EGG else if (speciesTotal > 411) 1284 else 412,
@@ -746,7 +747,10 @@ fun TrackerPanel(
           NuzlockePanel(state) // the Nuzlocke run's area, cap and graveyard, when this game has one (2026-09-29)
         when {
             unsupportedNote != null -> PcCard {
-                PixText(unsupportedNote, 8, Pc.Negative, Modifier.padding(6.dp))
+                Column(Modifier.padding(6.dp)) {
+                    PixText(unsupportedNote, 8, Pc.Negative, wrap = true)
+                    unsupportedAction?.let { (label, act) -> Spacer(Modifier.height(4.dp)); PcButton(label, onClick = act) }
+                }
             }
 
             state == null -> PcCard {

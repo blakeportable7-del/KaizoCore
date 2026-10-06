@@ -59,6 +59,12 @@ object CrashReport {
      */
     private val PATH = Regex("(?i)(?:/storage/|/sdcard|/mnt/|/data/user/|/data/data/|/data/media/|content://|file://).*")
 
+    /**
+     * A sign-in token after the word that names it (Twitch's Bearer and OAuth headers, access_token, refresh_token,
+     * device_code; Stream Connect, 2026-10-05). No code puts one in a message; this is the second fence.
+     */
+    private val SECRET = Regex("(?i)\\b(bearer|oauth|access_token|refresh_token|device_code)([\"']?\\s*[:=]?\\s*[\"']?\\s*)[A-Za-z0-9._~+/=-]{12,}")
+
     /** A quoted name that ends in a game or save extension, spaces and all. */
     private val QUOTED = Regex("(?i)\"[^\"\\r\\n]*\\.(?:$EXTENSIONS)\"|'[^'\\r\\n]*\\.(?:$EXTENSIONS)'")
 
@@ -78,6 +84,7 @@ object CrashReport {
      * Cause lines and stack frames come through untouched.
      */
     fun scrub(text: String): String = text
+        .replace(SECRET, "$1$2<secret>")
         .replace(PATH, "<path>")
         .replace(QUOTED, "<file>")
         .replace(NAMED, "<file>")

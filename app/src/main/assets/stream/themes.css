@@ -1,0 +1,88 @@
+/*
+  KaizoCore stream looks, chosen with ?theme= on the tracker, the attempt counter, the game over card and the timer
+  (2026-10-05, streamer list item 6). The phone puts this file into a page (StreamThemes) only when its address asks
+  for a look; without ?theme= every page is exactly as it was. Plain CSS over the pages' own colour names (--bg, --line,
+  --ink and the rest). Each page marks its boxes with a data-panel attribute, not a class, since the pages' scripts
+  set their classes; kc-label, kc-big, kc-glow and kc-rule are classes on parts no script touches. System fonts only:
+  nothing is fetched from anywhere.
+
+  clean  see-through, for over the game: no box and no border, and the words carry a dark outline so they read on
+         any picture.
+  hud    a ship's heads-up display: a dark glass panel with thin glowing cyan lines, two angled corners, corner
+         brackets on the other two, faint scan lines, and monospace numbers.
+*/
+
+/* ------------------------------------------------------------------ clean */
+
+:root[data-theme="clean"] {
+  --bg: transparent; --panel: rgba(0, 0, 0, .28); --line: rgba(255, 255, 255, .35);
+  --dim: #d4d4d4;   /* the small grey words are lighter here: they sit on the game, not on black */
+}
+:root[data-theme="clean"] body {
+  text-shadow: 0 0 2px #000, 0 0 3px #000, 1px 1px 2px #000, -1px -1px 2px #000;
+}
+:root[data-theme="clean"] [data-panel] {
+  background: transparent !important; border-color: transparent !important; box-shadow: none !important;
+}
+:root[data-theme="clean"] .hpbar { background: rgba(0, 0, 0, .45); border-color: rgba(0, 0, 0, .6); }
+:root[data-theme="clean"] .types span, :root[data-theme="clean"] .tabs button { background: rgba(0, 0, 0, .45); }
+:root[data-theme="clean"] th, :root[data-theme="clean"] .foot, :root[data-theme="clean"] .kc-rule {
+  border-color: rgba(255, 255, 255, .3) !important;
+}
+
+/* ------------------------------------------------------------------ hud */
+
+:root[data-theme="hud"] {
+  --bg: rgba(3, 13, 22, .86); --panel: rgba(0, 229, 255, .06); --line: rgba(0, 229, 255, .55);
+  --ink: #d9f7ff; --dim: #70a9bd; --gold: #ffd166; --red: #ff4d6d; --green: #3dffb5; --blue: #5ad8ff;
+  --plus: #3dffb5; --minus: #ff4d6d; --eq: #ffd166;
+  --hud: #00e5ff; --cut: 14px;
+}
+:root[data-theme="hud"] body {
+  font-family: "Cascadia Mono", "Cascadia Code", Consolas, "Roboto Mono", "DejaVu Sans Mono", Menlo, monospace;
+  letter-spacing: .02em; font-variant-numeric: tabular-nums;
+}
+/* The panel: two corners cut at 45 degrees with a glowing line along each cut, brackets on the other two, a hairline
+   border, scan lines, and a glow on the inside (an outer glow would be cut off by the angled corners). */
+:root[data-theme="hud"] [data-panel] {
+  border: 1px solid var(--line) !important;
+  border-radius: 0 !important;
+  background:
+    linear-gradient(135deg, transparent calc(var(--cut) * .7071 - .6px), var(--hud) calc(var(--cut) * .7071),
+      var(--hud) calc(var(--cut) * .7071 + 1.2px), transparent calc(var(--cut) * .7071 + 1.8px)) top left / calc(var(--cut) * 1.6) calc(var(--cut) * 1.6) no-repeat,
+    linear-gradient(315deg, transparent calc(var(--cut) * .7071 - .6px), var(--hud) calc(var(--cut) * .7071),
+      var(--hud) calc(var(--cut) * .7071 + 1.2px), transparent calc(var(--cut) * .7071 + 1.8px)) bottom right / calc(var(--cut) * 1.6) calc(var(--cut) * 1.6) no-repeat,
+    linear-gradient(var(--hud), var(--hud)) top right / 22px 2px no-repeat,
+    linear-gradient(var(--hud), var(--hud)) top right / 2px 22px no-repeat,
+    linear-gradient(var(--hud), var(--hud)) bottom left / 22px 2px no-repeat,
+    linear-gradient(var(--hud), var(--hud)) bottom left / 2px 22px no-repeat,
+    repeating-linear-gradient(0deg, rgba(0, 229, 255, .035) 0 1px, transparent 1px 3px),
+    var(--bg) !important;
+  background-origin: border-box !important;
+  clip-path: polygon(var(--cut) 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%, 0 var(--cut));
+  box-shadow: inset 0 0 22px rgba(0, 229, 255, .14), inset 0 0 2px rgba(0, 229, 255, .5) !important;
+}
+/* The opponent's card and a lost run glow red; a won run green. */
+:root[data-theme="hud"] #enemy[data-panel], :root[data-theme="hud"] [data-panel].lost { --hud: #ff4d6d; --line: rgba(255, 77, 109, .7); }
+:root[data-theme="hud"] [data-panel].won { --hud: #3dffb5; --line: rgba(61, 255, 181, .7); }
+:root[data-theme="hud"] h1, :root[data-theme="hud"] .kc-glow {
+  text-shadow: 0 0 6px rgba(0, 229, 255, .6), 0 0 1px rgba(0, 229, 255, .9);
+}
+:root[data-theme="hud"] .kc-big { color: var(--hud); text-shadow: 0 0 10px rgba(0, 229, 255, .55); }
+:root[data-theme="hud"] th, :root[data-theme="hud"] .kc-label {
+  text-transform: uppercase; letter-spacing: .14em; font-size: 11px; color: var(--dim);
+}
+:root[data-theme="hud"] th, :root[data-theme="hud"] .foot, :root[data-theme="hud"] .kc-rule { border-color: rgba(0, 229, 255, .3) !important; }
+:root[data-theme="hud"] .types span {
+  background: rgba(0, 229, 255, .1); border: 1px solid var(--line); border-radius: 0; text-transform: uppercase; font-size: 11px;
+}
+:root[data-theme="hud"] .hpbar {
+  height: 6px; background: rgba(0, 229, 255, .08); border: 1px solid var(--line); transform: skewX(-24deg);
+}
+:root[data-theme="hud"] .hpbar i { box-shadow: 0 0 6px var(--green); }
+:root[data-theme="hud"] .hpbar.low i { box-shadow: 0 0 6px var(--gold); }
+:root[data-theme="hud"] .hpbar.crit i { box-shadow: 0 0 6px var(--red); }
+:root[data-theme="hud"] .tabs button, :root[data-theme="hud"] #dexq {
+  background: rgba(0, 229, 255, .08); border: 1px solid var(--line); border-radius: 0; color: var(--ink); font-family: inherit;
+}
+:root[data-theme="hud"] .note { color: var(--blue); }

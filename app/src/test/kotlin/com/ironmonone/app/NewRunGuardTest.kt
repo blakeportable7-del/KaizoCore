@@ -50,7 +50,7 @@ class NewRunGuardTest {
     @Test
     fun `Play's newRun claims before it launches and releases on completion`() {
         val play = File("src/main/kotlin/com/ironmonone/app/PlayScreen.kt").readText().replace("\r\n", "\n")
-        val body = play.substring(play.indexOf("    fun newRun() {"), play.indexOf("    // Three save slots."))
+        val body = play.substring(play.indexOf("    fun newRun(move: Boolean = false) {"), play.indexOf("    // Three save slots."))
         val claim = body.indexOf("if (!NewRunGuard.claim()) { status = NewRunGuard.BUSY; return }")
         val launch = body.indexOf("scope.launch {")
         assertTrue(claim in 0 until launch, "the claim comes right before the launch")

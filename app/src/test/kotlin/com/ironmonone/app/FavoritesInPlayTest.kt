@@ -43,12 +43,13 @@ class FavoritesInPlayTest {
         assertTrue(Favorites.edits.intValue > before, "a save is counted, so what shows the favorites reads again")
 
         val editor = read("FavoritesEditor.kt")
-        assertEquals(2, Regex("""Favorites\.save\(store, favRomId, favSlots\)""").findAll(editor).count(), "typing and a suggestion")
+        // One save for every box: typing and a name picked from its list both come through FavoriteNameField's onValue.
+        assertEquals(1, Regex("""Favorites\.save\(store, favRomId, favSlots\)""").findAll(editor).count(), "typing and a suggestion")
         val run = read("RunScreen.kt")
-        assertTrue("FavoritesEditor(store, selectedRom?.first, RulesetCatalog.modeOf(modes, selectedSettings)?.key)" in run)
+        assertTrue("FavoritesEditor(store, selectedRom?.first, RulesetCatalog.modeOf(modes, selectedSettings)?.key, nextRun = true)" in run)
         assertFalse("Favorites.save(" in run || "Favorites.suggest(" in run || "FavoriteRulesBlock(" in run, "nothing duplicated on the Run screen")
         // In play: the game in Play and the run's mode, so the same rules, limits and ball note apply.
-        assertTrue("store.session().kind" in editor && "FavoriteBall.modeOf(store)" in editor && "FavoritesEditor(store, kind, mode)" in editor)
+        assertTrue("store.session().kind" in editor && "FavoriteBall.modeOf(store)" in editor && "FavoritesEditor(store, kind, mode, nextRun = false)" in editor)
     }
 
     @Test

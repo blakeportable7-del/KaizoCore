@@ -6,9 +6,8 @@ import android.view.View
 import android.view.ViewConfiguration
 
 /**
- * A tap on the bare game screen, for the menu button that stands in for the tracker's own when the tracker is off
- * screen (Blake, 2026-10-02: "a screen tap displays another menu button on the top left, tapping away from the button
- * and on the screen makes it disappear. That way the menu can be accessible if the tracker is off screen").
+ * A tap on the bare game screen, for the FILE bar (Blake, 2026-10-05: "screen tap, tapped at the upper 33% of the play
+ * screen opens the semi transparent bar"). TapZone decides whether a tap counts; this reads the taps.
  *
  * Read from the game view's own touches. The pad's buttons and every other control sit above the view and take their
  * touches themselves, so only bare screen reaches it; the listener only watches, so the view still hands every touch
@@ -56,32 +55,6 @@ object ScreenTap {
             // "top-bottom", and the core's own fallback for a name it does not know (NdsScreens.classicName).
             else -> Frame(W, H * 2 + g, Area(0f, H + g, W, H * 2 + g))
         }
-    }
-
-    /** Whether ([x], [y]) on a game view of [viewW] by [viewH] lands on the DS touch screen; LibretroDroid fits the frame to the view, centred. */
-    fun onTouchScreen(l: DsLayout, x: Float, y: Float, viewW: Float, viewH: Float): Boolean {
-        val f = frame(l)
-        val touch = f.touch ?: return false
-        if (viewW <= 0f || viewH <= 0f) return false
-        val scale = minOf(viewW / f.width, viewH / f.height)
-        val x0 = (viewW - f.width * scale) / 2f
-        val y0 = (viewH - f.height * scale) / 2f
-        return touch.contains((x - x0) / scale, (y - y0) / scale)
-    }
-
-    /**
-     * How far down the menu button sits, in dp: the top left corner, or just below the pad controls in it ([pad],
-     * PadGeometry.rects). On the DS presets L sits in that corner, and the button covered it (2026-10-02).
-     */
-    fun menuTop(pad: List<PadGeometry.Box>, margin: Float, size: Float): Float {
-        var top = margin
-        repeat(pad.size + 1) {
-            val me = PadGeometry.Box(margin, top, margin + size, top + size)
-            val under = pad.filter { it.meets(me) }
-            if (under.isEmpty()) return top
-            top = under.maxOf { it.b } + margin
-        }
-        return top
     }
 
     /** A finger's down, moves and up, to a tap or nothing. Apart from MotionEvent so a test can drive it. */

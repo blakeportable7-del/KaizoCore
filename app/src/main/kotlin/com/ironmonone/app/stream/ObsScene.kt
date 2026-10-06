@@ -46,6 +46,17 @@ import java.net.URLEncoder
  * "KaizoCore favorite 1" to "9", 128 x 128, in a row along the top. They are hidden ("visible" false on the
  * item), because no place on the canvas is free for them in every game, and "shutdown" is true on them alone,
  * so a hidden one costs OBS nothing until the streamer clicks its eye.
+ *
+ * 2026-10-05 (streamer list items 1 and 3): "KaizoCore game over", 900 x 560, centred over the game and shown, since
+ * the page is see-through until a run ends; and "KaizoCore timer", 420 x 420, top left, hidden like the favorites
+ * (no place is free for it in every game) and shut down while hidden.
+ *
+ * 2026-10-05 (run history, StreamHistory): "KaizoCore history", the past attempts for viewers, over the tracker's
+ * column with a see-through page (bg=none). Hidden and shut down while hidden, as the favorites are: it covers the
+ * tracker, so it is for a scene of its own or a break.
+ *
+ * Merged 2026-10-05: item ids run 1 to 15 in the order the sources are listed (game, tracker, attempts, game over,
+ * timer, the nine favorites, the history), and id_counter is the highest of them, as OBS keeps it.
  */
 object ObsScene {
     const val COLLECTION = "KaizoCore stream"
@@ -54,6 +65,15 @@ object ObsScene {
     const val TRACKER = "KaizoCore tracker"
     const val ATTEMPTS = "KaizoCore attempts"
     const val FAVORITE = "KaizoCore favorite"
+    const val GAME_OVER = "KaizoCore game over"
+    const val TIMER = "KaizoCore timer"
+    const val HISTORY = "KaizoCore history"
+
+    /** The run history's source: the tracker's column, most of its height. */
+    const val HISTORY_H = 720
+
+    /** The run history page as the scene and the setup page give it: no page background, for over a scene. */
+    fun historyUrl(base: String, token: String): String = "$base/history?k=" + URLEncoder.encode(token, "UTF-8") + "&bg=none"
 
     /** A favorite's source: 4 times a 32-pixel icon and 2 times a 64-pixel front picture, so either fills it in whole pixels. */
     const val FAVORITE_SIZE = 128
@@ -67,6 +87,10 @@ object ObsScene {
     const val TRACKER_H = 950
     const val ATTEMPTS_H = 120
     const val GAME_W = CANVAS_W - TRACKER_W
+    const val GAME_OVER_W = 900
+    const val GAME_OVER_H = 560
+    const val TIMER_W = 420
+    const val TIMER_H = 420
 
     /**
      * What the two downloads on the setup page are called. The server sends them under these names and the
@@ -84,13 +108,15 @@ object ObsScene {
     /** OBS's own default for a browser source's CSS: the page's background stays see-through. */
     private const val BROWSER_CSS = "body { background-color: rgba(0, 0, 0, 0); margin: 0px auto; overflow: hidden; }"
 
-    /** The three page addresses in the scene, for the tests and the setup page. */
+    /** The page addresses in the scene besides the favorites', for the tests and the setup page. */
     fun urls(base: String, token: String, topOnly: Boolean = false): Map<String, String> {
         val k = "k=" + URLEncoder.encode(token, "UTF-8")
         return linkedMapOf(
             GAME to "$base/game?$k$GAME_OPTIONS" + if (topOnly) "&top=1" else "",
             TRACKER to "$base/tracker?$k",
             ATTEMPTS to "$base/attempts.html?$k",
+            GAME_OVER to "$base/gameover?$k",
+            TIMER to "$base/timer?$k",
         )
     }
 
@@ -102,21 +128,27 @@ object ObsScene {
         val game = browser(GAME, url.getValue(GAME), GAME_W, CANVAS_H, audio = true, fps = 60)
         val tracker = browser(TRACKER, url.getValue(TRACKER), TRACKER_W, TRACKER_H)
         val attempts = browser(ATTEMPTS, url.getValue(ATTEMPTS), TRACKER_W, ATTEMPTS_H)
+        val gameOver = browser(GAME_OVER, url.getValue(GAME_OVER), GAME_OVER_W, GAME_OVER_H)
+        val timer = browser(TIMER, url.getValue(TIMER), TIMER_W, TIMER_H, shutdown = true)
 
         val favorites = (1..StreamFavorites.SLOTS).map { n ->
             browser(favoriteName(n), StreamFavorites.pageUrl(base, token, n), FAVORITE_SIZE, FAVORITE_SIZE, shutdown = true)
         }
 
+        val history = browser(HISTORY, historyUrl(base, token), TRACKER_W, HISTORY_H, shutdown = true)
+
         val items = listOf(
             item(1, GAME, 0.0, 0.0),
             item(2, TRACKER, GAME_W.toDouble(), 0.0),
             item(3, ATTEMPTS, GAME_W.toDouble(), (CANVAS_H - ATTEMPTS_H).toDouble()),
+            item(4, GAME_OVER, ((GAME_W - GAME_OVER_W) / 2).toDouble(), ((CANVAS_H - GAME_OVER_H) / 2).toDouble()),
+            item(5, TIMER, 0.0, 0.0, visible = false),
         ) + (1..StreamFavorites.SLOTS).map { n ->
-            item(3 + n, favoriteName(n), ((n - 1) * FAVORITE_SIZE).toDouble(), 0.0, visible = false)
-        }
+            item(5 + n, favoriteName(n), ((n - 1) * FAVORITE_SIZE).toDouble(), 0.0, visible = false)
+        } + item(6 + StreamFavorites.SLOTS, HISTORY, GAME_W.toDouble(), 0.0, visible = false)
         val scene = source(
             id = "scene", name = SCENE, mixers = 0,
-            settings = linkedMapOf("id_counter" to items.size, "custom_size" to false, "items" to items),
+            settings = linkedMapOf("id_counter" to items.maxOf { it["id"] as Int }, "custom_size" to false, "items" to items),
         )
 
         return linkedMapOf(
@@ -124,7 +156,7 @@ object ObsScene {
             "current_scene" to SCENE,
             "current_program_scene" to SCENE,
             "scene_order" to listOf(mapOf("name" to SCENE)),
-            "sources" to listOf(scene, game, tracker, attempts) + favorites,
+            "sources" to listOf(scene, game, tracker, attempts, gameOver, timer) + favorites + history,
             "groups" to emptyList<Any?>(),
             "current_transition" to "Fade",
             "transition_duration" to 300,
@@ -148,7 +180,7 @@ object ObsScene {
             "css" to BROWSER_CSS,
             "reroute_audio" to audio,
             "is_local_file" to false,
-            // "Shutdown source when not visible": only the favorites, which the scene keeps hidden.
+            // "Shutdown source when not visible": only the sources the scene keeps hidden, the timer and the favorites.
             "shutdown" to shutdown,
             // Reload the page whenever its scene comes up: the cure for an error box left by OBS opening first.
             "restart_when_active" to true,

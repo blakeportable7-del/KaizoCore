@@ -40,9 +40,9 @@ td.n,th.n{text-align:right}
 #dexlist div:hover{background:#222}
 .mini{font-size:12px;color:var(--dim)}
 </style></head><body>
-<div id="box">
+<div id="box" data-panel>
   <div id="own"><div class="wait">Waiting for the game…</div></div>
-  <div id="enemy"></div>
+  <div id="enemy" data-panel></div>
   <div id="over"></div>
 </div>
 <script>
@@ -107,7 +107,9 @@ function overView(s){const won=s.outcome==='WON';
 function draw(){if(!S)return;const over=document.getElementById('over'),en=document.getElementById('enemy'),own=document.getElementById('own');
   if(S.outcome){over.className='on';own.style.display='none';en.className='';over.innerHTML=overView(S);return}
   over.className='';own.style.display='';own.innerHTML=ownCard(S);
-  if(S.enemy&&S.inBattle){en.className='on';en.innerHTML=enemyCard(S)}else{en.className=''}}
+  if(S.enemy&&S.inBattle){en.className='on';en.innerHTML=enemyCard(S)}else{en.className=''}
+  // Under the opponent's card yours is hidden, not only covered: in a see-through look (?theme=clean) nothing covers it.
+  own.style.visibility=en.className==='on'?'hidden':''}
 // A refused or failed answer is not "no data": nothing is kept, so the next tap asks again. A 503 is the phone still
 // putting the data together after the run ended: the page waits and asks again by itself (RC35-NOTICED N #7).
 function loadDex(){overTab='dex';dexFailed=false;draw();if(DEX)return;const key=runKey;

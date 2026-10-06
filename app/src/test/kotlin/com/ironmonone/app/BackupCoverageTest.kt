@@ -2,6 +2,7 @@ package com.ironmonone.app
 
 import java.io.File
 import kotlin.test.Test
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /**
@@ -18,6 +19,7 @@ class BackupCoverageTest {
         "prep/crc-cache.txt" to "a cache, rebuilt from the files",
         "prep/run-error.txt" to "the last randomizer failure, a diagnostic",
         "prep/stream-token.txt" to "the stream page's key on this phone; OBS on this phone's network holds it, and another phone gets its own",
+        "prep/obs-link.txt" to "the PC's address for OBS on this phone's network (ObsLink); another phone or network sets its own. The password is not in it: it is sealed in filesDir/obs-password.bin",
         "prep/tmp" to "scratch space",
         "prep/patches" to "patch files the player can re-add",
         "prep/prepared" to "prepared ROMs, which are the player's own dumps",
@@ -58,6 +60,21 @@ class BackupCoverageTest {
                 !Backup.admits(p) && !Backup.admits("$asFile/x") && !Backup.admits("${asFile}x.tsv")
         }
         assertTrue(missing.isEmpty(), "kept under prep/ but neither backed up nor excluded: $missing")
+    }
+
+    @Test
+    fun `the sealed secrets are never in a backup or a cloud copy`() {
+        // OBS's WebSocket password (ObsLink, 2026-10-05) and the Twitch sign-in, each sealed with the phone's Keystore
+        // (KeystoreSealedFile) at the top of filesDir, where nothing is admitted.
+        for (p in listOf(com.ironmonone.app.stream.ObsLink.PASSWORD_FILE, com.ironmonone.app.stream.twitch.KeystoreTokenStore.FILE))
+            assertFalse(Backup.admits(p), p)
+        val dir = java.nio.file.Files.createTempDirectory("sealed").toFile()
+        try {
+            File(dir, com.ironmonone.app.stream.ObsLink.PASSWORD_FILE).writeBytes(ByteArray(40) { 3 })
+            File(dir, "prep/obs-link.txt").apply { parentFile.mkdirs(); writeText("enabled=1\nhost=pc\n") }
+            val taken = Backup.collect(dir)
+            assertTrue(taken.none { "obs-" in it }, "Backup.collect, which Cloud sync's fingerprint reads too: $taken")
+        } finally { dir.deleteRecursively() }
     }
 
     @Test

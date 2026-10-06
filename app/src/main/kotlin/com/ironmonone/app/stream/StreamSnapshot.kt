@@ -64,6 +64,78 @@ object StreamSnapshot {
     fun isRun(json: String): Boolean = json.contains("\"run\":true")
 
     /**
+     * How a Kaizo IronMON run ended, as the game-over popup knows it (streamer list item 1, 2026-10-05): the latch's
+     * [outcome] (GameOverLatch, the popup's own; never re-read from the game), the death card RunHistoryHook filed for
+     * it ([card]: what ended the run, where, badges, time played, the best other run), the popup's line ([quote],
+     * DeathQuotes, the same one), the team the latch kept ([team]), and the run's GachaMon card ([gachamon], the prize
+     * card when one was made, else the fallen lead's capture; [gachamonFrom] "prize" or "lead").
+     * [counted]: the attempt is printed (a Kaizo IronMON run counts one; the popup is for those only).
+     */
+    class Ending(
+        val outcome: RunOutcome,
+        val title: String,
+        val attempt: Int,
+        val seed: String?,
+        val counted: Boolean = true,
+        val card: com.ironmonone.app.DeathCard? = null,
+        val quote: String? = null,
+        val team: List<com.ironmonone.app.GameOverMon> = emptyList(),
+        /** The badges as the game shows them, for when there is no card (a bit a badge). */
+        val badgeBits: Int = 0,
+        val gachamon: com.ironmonone.app.GachaMonEntry? = null,
+        val gachamonFrom: String? = null,
+    )
+
+    /**
+     * The game over card's data (/gameover.json, the `gameover` event), or null with no [e]: the run goes on. "key" names
+     * the ending, so the page brings a card in once per ending and only refreshes it after that.
+     */
+    fun gameOver(e: Ending?): Map<String, Any?>? {
+        e ?: return null
+        val record = e.card?.record
+        val won = e.outcome == RunOutcome.WON
+        val headline = e.card?.headline()
+        fun mon(m: com.ironmonone.app.RunRecord.Mon?) = m?.let { linkedMapOf("species" to it.species, "name" to it.name, "level" to it.level) }
+        val fallen = record?.lead?.let { mon(it) }
+            ?: e.team.firstOrNull { it.fainted }?.let { linkedMapOf("species" to it.species, "name" to it.name, "level" to it.level) }
+        val g = e.gachamon
+        return linkedMapOf(
+            "key" to listOf(e.title, e.seed.orEmpty(), e.attempt, e.outcome.name).joinToString("|"),
+            "outcome" to e.outcome.name,
+            "won" to won,
+            "title" to e.title,
+            "attempt" to e.attempt.takeIf { e.counted },
+            // "LOST TO", "ENDED ON" or "FIRST LOSS", and "Lv.21 Sandile (Hiker Marcos)": the popup's own first line.
+            "label" to headline?.first,
+            "cause" to headline?.second,
+            "killer" to mon(record?.killer).takeIf { !won },
+            "trainer" to record?.trainer.orEmpty(),
+            "location" to record?.location.orEmpty(),
+            "fallen" to fallen,
+            "badges" to (record?.badges ?: Integer.bitCount(e.badgeBits)),
+            "seconds" to record?.playSeconds?.takeIf { it > 0 },
+            "newBest" to (e.card?.newBest == true),
+            "best" to e.card?.bestText(),
+            "integrity" to record?.let { com.ironmonone.app.integrityText(it.restores, it.resumes, it.resets, it.keptSave) },
+            "quote" to e.quote?.takeIf { it.isNotBlank() },
+            "gachamon" to g?.let {
+                linkedMapOf(
+                    "from" to (e.gachamonFrom ?: "lead"),
+                    "species" to it.card.pokemonId,
+                    "name" to it.speciesName,
+                    "level" to it.card.level,
+                    "stars" to it.stars,
+                    "power" to it.card.battlePower,
+                    "ability" to it.abilityName.takeIf { a -> a != "---" },
+                    "moves" to (0 until 4).map { i -> it.moveName(i) }.filter { m -> m != "---" },
+                    "shiny" to (it.card.isShiny == 1),
+                    "trainer" to (it.notes.trainer.ifBlank { it.trainerName.orEmpty() }).takeIf { t -> t.isNotBlank() },
+                )
+            },
+        )
+    }
+
+    /**
      * [gbaView] and [dsView] are the phone's battle views (the panels' own, as Play hands them): in a double or triple
      * battle the page shows the Pokemon the phone's swap shows, yours and the opponent's, and where each stands
      * ("own", "enemy" and "sides"). A single battle keeps the page as it was: the party's first and the one opponent.

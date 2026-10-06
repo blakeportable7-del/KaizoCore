@@ -84,6 +84,7 @@ fun SaveStatesDialog(
                         when {
                             !auto.exists -> "none yet"
                             autoUsable -> auto.savedLabel() + " · kept up to date as you play and when you leave"
+                            CrashResume.otherBuild(auto, runStamp()) -> auto.savedLabel() + " · from an older build of this game"
                             else -> auto.savedLabel() + " · from another run"
                         },
                         style = MaterialTheme.typography.bodySmall, color = Shell.hintOnPaper)

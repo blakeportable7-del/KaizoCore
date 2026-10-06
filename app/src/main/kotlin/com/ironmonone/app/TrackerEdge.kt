@@ -5,6 +5,7 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
@@ -60,7 +61,8 @@ internal fun DockedTracker(panes: PaneSizes, windowW: Float, content: @Composabl
                 if (dragging.value) edgeGrip()
             },
     ) {
-        TrackerScroll(Modifier.fillMaxSize()) { content() }
+        // Under the open FILE bar the column's top steps down, so its first row is not hidden (FileBar.kt).
+        TrackerScroll(Modifier.fillMaxSize().padding(top = if (FileBar.open) (FileBar.BAR_DP + 4).dp else 0.dp)) { content() }
         EdgeLabel(panes, windowW)
     }
 }

@@ -46,7 +46,9 @@ class FrlgPicturesWiringTest {
     @Test
     fun `SETUP reaches the mark for any place through Trainers on Route`() {
         assertTrue("\"TRAINERS ON ROUTE\"" in src("TrackerGearDialog.kt"))
-        assertTrue("onTrainers = if (trackerRef?.hasTrainerData == true) { { gearDialog = false; side.trainersDialog = true } } else null," in src("PlayScreen.kt"))
+        // Tracker Setup and the FILE bar's TRACKER sheet share the link; Tracker Setup closes itself first (FileBar.kt).
+        assertTrue("onTrainers = if (trackerRef?.hasTrainerData == true) { { side.trainersDialog = true } } else null," in src("PlayScreen.kt"))
+        assertTrue("onTrainers = close(links.onTrainers)" in src("FileBar.kt"))
         val side = src("SideScreens.kt")
         assertTrue("if (gba != null && mapId != null) {" in side, "any map the tracker can read")
         assertTrue("st.routeName ?: \"This map\"" in side, "a place with no name still opens it")

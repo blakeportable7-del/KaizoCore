@@ -69,8 +69,8 @@ line: you may take any starter there.
 ## Starting, continuing, and NEW RUN
 
 - **Start attempt N** makes a new run. **Continue attempt N** goes back to the one in progress.
-- **NEW RUN** is in the File menu while you play. So is **New game (new seed)** on the game-over popup, the NEW chip in
-  landscape, and holding A, B and Start for about a second. Every one of them asks first.
+- **NEW RUN** is under NEW on the File bar while you play. So is **New game (new seed)** on the game-over popup,
+  and holding A, B and Start for about a second. Every one of them asks first.
 - **Your next run is made while you play.** Randomizing from scratch takes the phone half a minute or more, so
   KaizoCore makes the next seed in the background, with the same game and settings, and NEW RUN only has to swap it
   in. It skips this when the phone is short on space or memory, and for a run built from a run code. The switch is

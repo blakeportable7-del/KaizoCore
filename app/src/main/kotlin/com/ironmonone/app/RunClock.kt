@@ -65,6 +65,17 @@ object RunClock {
     @Synchronized
     fun of(key: String): Int = (seconds[key] ?: 0L).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
 
+    /** Milliseconds played in the run [key]: [of]'s seconds and the part of a second not counted yet. The stream's timer. */
+    @Synchronized
+    fun millis(key: String): Long = (seconds[key] ?: 0L) * 1000L + (carryMs[key] ?: 0L)
+
+    /**
+     * Whether the run [key] is being played at [nowMs] (the clock [observe] is given): its last read was no more than
+     * [MAX_STEP_MS] ago, so the next one will count. The stream's timer says "paused" otherwise.
+     */
+    @Synchronized
+    fun ticking(key: String, nowMs: Long): Boolean = key == lastKey && nowMs - lastAt in 0..MAX_STEP_MS
+
     /**
      * A tracker read of the run [key] at [nowMs] (a monotonic clock). The first read of a run,
      * or one after a gap longer than [MAX_STEP_MS], only sets the mark.

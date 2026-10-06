@@ -117,7 +117,7 @@ class TrackerEdgeTest {
             "LandscapeTracker.DOCKED || ui.trackerPeek)) {\n" +
                 "              // No bar: the game meets the tracker, and the tracker's left edge resizes it (TrackerEdge.kt, rc34).\n" +
                 "              DockedTracker(panes, windowWidthDp, trackerContent)\n" +
-                "          } else {" in pane,
+                "          }" in pane,
             "the docked branch is the one call",
         )
         assertEquals(1, Regex(Regex.escape("DockedTracker(")).findAll(play).count())
@@ -149,7 +149,7 @@ class TrackerEdgeTest {
         val docked = src.substringAfter("internal fun DockedTracker(").substringBefore("\n}\n")
         assertTrue(".edgeResize(panes, windowW, dragging)" in docked, "on the column itself, not a layer over it")
         assertTrue("drawContent()\n                if (dragging.value) edgeGrip()" in docked, "over the cards, and only while dragging")
-        assertTrue("TrackerScroll(Modifier.fillMaxSize()) { content() }\n        EdgeLabel(panes, windowW)" in docked)
+        assertTrue("TrackerScroll(Modifier.fillMaxSize().padding(top = if (FileBar.open) (FileBar.BAR_DP + 4).dp else 0.dp)) { content() }\n        EdgeLabel(panes, windowW)" in docked)
         assertEquals(1, Regex(Regex.escape("dragging.value = true")).findAll(src).count())
         assertTrue("} finally {\n                dragging.value = false" in src, "gone when the finger lifts or the touch is cancelled")
         val label = src.substringAfter("private fun EdgeLabel(").substringBefore("\n}\n")

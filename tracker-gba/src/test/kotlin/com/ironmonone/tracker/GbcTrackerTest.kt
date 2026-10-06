@@ -576,4 +576,26 @@ class GbcTrackerTest {
         fight(w, 0x01); t.read(); end(w, 0)
         assertNull(t.read().gameOver, "Falkner")
     }
+
+    /**
+     * Conversion and Conversion 2 rewrite wBattleMon's types (pokecrystal conversion.asm, conversion2.asm): your card
+     * shows them on the next read, as the opponent's has always shown wEnemyMon's, and its matchups follow.
+     */
+    @Test
+    fun `your Conversion shows on your card on the next read`() {
+        val w = overworld()
+        w.put(GbcTracker.BATTLE_MODE, 1)
+        val e = GbcTracker.ENEMY_MON
+        w.put(e, 161); w.put(e + 13, 4); w.be16(e + 16, 12); w.be16(e + 18, 18)
+        val me = Gen2Map.CRYSTAL.battleMon
+        w.put(me, 155); w.put(me + 30, 20); w.put(me + 31, 20)        // Cyndaquil in battle, Fire
+        val t = GbcTracker(w, rom())
+        assertEquals(listOf(10, 10), t.read().party[0].battleTypes)
+        w.put(me + 30, 21); w.put(me + 31, 21)                         // Conversion: Water
+        val s = t.read()
+        assertEquals(listOf(11, 11), s.party[0].battleTypes)
+        assertEquals(11, s.party[0].base?.type1, "the card's type icons")
+        w.put(me, 161)                                                  // Transform's species: not this Pokemon's struct
+        assertEquals(10, t.read().party[0].base?.type1)
+    }
 }

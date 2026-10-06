@@ -11,8 +11,11 @@
          willowcreek.group: once a day the update check reads
          /kaizocore/latest.json (UpdateCheck, a switch on INFO turns it off),
          and after a crash a report goes to /api/kaizocore-crash only when the
-         player says so (CrashReport). Nothing else goes out, and no ROM, save
-         or file name ever does. -->
+         player says so (CrashReport). Since 2026-10-05, Twitch chat commands
+         (More > Stream, only after the player signs in to Twitch): id.twitch.tv
+         for the sign-in, EventSub to read their channel's chat, and the Helix API
+         to answer it as them. Nothing else goes out, and no ROM, save or file
+         name ever does. -->
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- REQUEST_INSTALL_PACKAGES: Update on INFO and in the update prompt hands the
          build latest.json names (size and SHA-256 checked) to Android's own installer

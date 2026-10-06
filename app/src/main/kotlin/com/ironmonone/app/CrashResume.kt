@@ -92,9 +92,13 @@ object CrashResume {
         }
     }
 
-    /** The auto slot holds a state of the run in play: it is there, and stamped with [stamp], a known identity. */
+    /** The auto slot holds a state of the run in play: it is there, and its stamp matches [stamp] (StateStamp.matches). */
     fun usable(slot: StateSlots.Slot, stamp: String): Boolean =
-        slot.exists && PrepStore.stampKnown(stamp) && runCatching { slot.stamp.readText().trim() }.getOrNull() == stamp
+        slot.exists && StateStamp.matches(runCatching { slot.stamp.readText().trim() }.getOrNull(), stamp)
+
+    /** The auto slot holds this run as it was on another build of its game (StateStamp.otherBuild): never loaded, said. */
+    fun otherBuild(slot: StateSlots.Slot, stamp: String): Boolean =
+        slot.exists && StateStamp.otherBuild(runCatching { slot.stamp.readText().trim() }.getOrNull(), stamp)
 
     fun plan(left: Left?, sessionId: String, usable: Boolean, loadsAllowed: Boolean): Plan = when {
         left == null || left.sessionId != sessionId || !usable -> Plan.NONE
@@ -138,6 +142,9 @@ object CrashResume {
             }
             playing(marker, session.id)
             return when {
+                // This run's auto-save, taken on the build of its game an older KaizoCore made: a state only works on the
+                // very game it was taken on, so the game starts on its in-game save, and the player is told so.
+                !usable && otherBuild(slot, stamp) -> StateStamp.AUTO_OTHER_BUILD
                 plan == Plan.TRIED -> "The auto-save did not load when the app last opened. It is still in File > States."
                 usable -> "Auto-save from ${slot.savedLabel()}: File > States > Resume."
                 else -> null

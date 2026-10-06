@@ -81,8 +81,15 @@ class LibraryStore(private val root: File, private val savesDir: File? = savesDi
         val playOnly: Boolean get() = verified && kind!!.playOnly
         /** The tracker reads this file: the same test GameSession.trackerKind makes. */
         val tracked: Boolean get() = verified && !kind!!.playOnly
+        /**
+         * The game this file is as an older KaizoCore made it (RomKind.supersededCrcs: Heart & Soul's comfort build of
+         * another release), or null. Not tracked and not randomized: it is made again (RunBuild.whereToMake, and
+         * HnsRefresh does it by itself for Heart & Soul), never mistaken for a hack (2026-10-06).
+         */
+        val olderBuildOf: RomKind? get() = if (verified) null else RomKind.olderBuildOf(crc)
         val category: Category get() = when {
             playOnly -> Category.HACK
+            olderBuildOf != null -> Category.PATCHED
             // Heart & Soul (KaizoCore): a known build made from the player's Emerald, as Nat. Dex is.
             verified && (kind!!.isNatDex || kind.patchTag != null || kind.isHns) -> Category.PATCHED
             // Made by a patch and not a known build: a hack, even if the header
@@ -108,6 +115,7 @@ class LibraryStore(private val root: File, private val savesDir: File? = savesDi
          */
         val subtitle: String get() = when {
             playOnly -> kind!!.displayName + " · No tracker"
+            olderBuildOf != null -> olderBuildOf!!.displayName + " · " + OLDER_BUILD_LINE
             verified && (kind!!.isNatDex || kind.patchTag != null) -> kind.displayName + " · Tracker works"
             // Names without their file extensions, and no checksum talk (audit, 2026-09-27).
             patchName != null -> "${stripKnownExt(patchName)} on ${baseName?.let(::stripKnownExt) ?: "?"} · " + if (verified) "Tracker works" else "No tracker"
@@ -602,6 +610,9 @@ class LibraryStore(private val root: File, private val savesDir: File? = savesDi
             ((this[o + 2].toLong() and 0xFF) shl 16) or ((this[o + 3].toLong() and 0xFF) shl 24)
 
     companion object {
+        /** What a library card says under an older KaizoCore's build of a game (Entry.olderBuildOf). */
+        const val OLDER_BUILD_LINE = "Made by an older KaizoCore, no tracker. This version makes its own"
+
         /**
          * One lock for the saves folder's markers and moves. Every screen makes its own PrepStore, so its own
          * LibraryStore, and two of them list the library at once.

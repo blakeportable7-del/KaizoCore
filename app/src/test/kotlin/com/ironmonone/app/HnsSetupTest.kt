@@ -9,18 +9,20 @@ import java.io.File
 import java.nio.file.Files
 import java.util.zip.CRC32
 import kotlin.test.Test
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.test.fail
 
 /**
  * The Pokemon Heart & Soul button's flow (HnsSetup, 2026-10-05): every wrong input and the happy path, on small files
  * made here with checksums the flow is handed (Crcs), then once on the real files when they are on this PC: the
  * player's Emerald (.vendor/roms/emerald-u.gba), the team's pokemonHnS_v2.0.6.ups (.vendor/hns) and KaizoCore's own
- * bundled comfort patch, which must make 01713508 and then E35A0E40.
+ * bundled comfort patch, which must make 01713508 and then C218FD9E.
  */
 class HnsSetupTest {
     // ------------------------------------------------------------------ small files and patches
@@ -122,7 +124,7 @@ class HnsSetupTest {
         // The real checksums by default: Emerald (USA), the official 2.0.6 and the KaizoCore build.
         assertEquals(HnsSetup.Start.EMERALD, HnsSetup.startOf(0x1F1C08FBL, null))
         assertEquals(HnsSetup.Start.OFFICIAL, HnsSetup.startOf(0x01713508L, null))
-        assertEquals(HnsSetup.Start.KAIZO, HnsSetup.startOf(0xE35A0E40L, null))
+        assertEquals(HnsSetup.Start.KAIZO, HnsSetup.startOf(0xC218FD9EL, null))
     }
 
     @Test
@@ -236,6 +238,53 @@ class HnsSetupTest {
         assertTrue(work.listFiles().orEmpty().isEmpty(), "the 2.0.6 made on the way is not left behind")
     }
 
+    // ------------------------------------------------------------------ after an update (2026-10-06)
+
+    /** The KaizoCore build as an older release made it: another comfort patch on the same 2.0.6. */
+    private val olderKaizo = ByteArray(8192) { (it * 13 + 1 + (if (it % 89 == 0) 3 else 0)).toByte() }
+    private val crcsAfterUpdate = crcs.copy(older = { it == crc(olderKaizo) })
+
+    @Test
+    fun `an older KaizoCore's build is named as that in step 1, never as another Heart & Soul`() {
+        assertEquals(HnsSetup.OLDER_KAIZO, problem { HnsSetup.startOf(crc(olderKaizo), GbaHeader("POKEMON HNS", "BPEE", "01", 0, true), crcsAfterUpdate) })
+        // The real list: rc36's build is one rc36.1 knows.
+        assertEquals(HnsSetup.OLDER_KAIZO, problem { HnsSetup.startOf(0xC993EB6EL, null) })
+        assertEquals(HnsSetup.Start.KAIZO, HnsSetup.startOf(RomKind.HEARTSOUL_KAIZO_206.expectedCrc, null))
+    }
+
+    @Test
+    fun `after an update the KaizoCore build is made again from the library's 2_0_6, with no step for the player`() {
+        val d = dir()
+        val library = LibraryStore(File(d, "library"))
+        library.import(HnsSetup.OFFICIAL_FILE, official)
+        library.import(HnsSetup.KAIZO_FILE, olderKaizo)
+        val comfort = file(d, "hns-kaizo.bps", bps(official, kaizo))
+        assertEquals(HnsSetup.Refresh.MADE, HnsSetup.refresh(library, { comfort }, File(d, "work"), crcsAfterUpdate))
+        val byCrc = library.list().associateBy { it.crc }
+        assertEquals(HnsSetup.KAIZO_FILE, byCrc.getValue(crcs.kaizo).name, "this release's build takes the usual name")
+        assertEquals(HnsSetup.OLDER_FILE_STEM + ".gba", byCrc.getValue(crc(olderKaizo)).name, "the older one is kept, named as older")
+        assertContentEquals(official, byCrc.getValue(crcs.official).file.readBytes(), "the library's 2.0.6 is not touched")
+        assertTrue(File(d, "work").listFiles().orEmpty().none { it.name.startsWith("hns-refresh") }, "the working copy goes")
+        // Once is enough.
+        assertEquals(HnsSetup.Refresh.NOTHING, HnsSetup.refresh(library, { comfort }, File(d, "work"), crcsAfterUpdate))
+        assertEquals(3, library.list().size)
+    }
+
+    @Test
+    fun `with no 2_0_6 in the library the player is asked, and a library with no KaizoCore build is left alone`() {
+        val d = dir()
+        val comfort = file(d, "hns-kaizo.bps", bps(official, kaizo))
+        val only = LibraryStore(File(d, "only-older")).apply { import(HnsSetup.KAIZO_FILE, olderKaizo) }
+        assertEquals(HnsSetup.Refresh.NEEDS_OFFICIAL, HnsSetup.refresh(only, { comfort }, File(d, "work"), crcsAfterUpdate))
+        assertEquals(1, only.list().size)
+        val none = LibraryStore(File(d, "none")).apply { import(HnsSetup.OFFICIAL_FILE, official) }
+        assertEquals(HnsSetup.Refresh.NOTHING, HnsSetup.refresh(none, { fail("nothing to make") }, File(d, "work"), crcsAfterUpdate))
+        // A comfort patch that will not apply leaves the library as it was.
+        val broken = LibraryStore(File(d, "broken")).apply { import(HnsSetup.OFFICIAL_FILE, official); import(HnsSetup.KAIZO_FILE, olderKaizo) }
+        assertFailsWith<HnsSetup.Problem> { HnsSetup.refresh(broken, { null }, File(d, "work"), crcsAfterUpdate) }
+        assertEquals(setOf(HnsSetup.OFFICIAL_FILE, HnsSetup.KAIZO_FILE), broken.list().map { it.name }.toSet())
+    }
+
     @Test
     fun `step 1 offers the library's copies of the three starting points, Emerald first`() {
         val d = dir()
@@ -307,7 +356,7 @@ class HnsSetupTest {
     }
 
     @Test
-    fun `the player's Emerald and the team's 2_0_6 patch make 01713508, and the comfort patch E35A0E40`() {
+    fun `the player's Emerald and the team's 2_0_6 patch make 01713508, and the comfort patch C218FD9E`() {
         val emeraldFile = vendor("roms", "emerald-u.gba") ?: return println("HnsSetupTest skipped: no emerald-u.gba")
         val upsFile = vendor("hns", "pokemonHnS_v2.0.6.ups") ?: return println("HnsSetupTest skipped: no pokemonHnS_v2.0.6.ups")
         val d = dir()
@@ -324,7 +373,7 @@ class HnsSetupTest {
         assertEquals(0x01713508L, official.crc)
         assertEquals(RomKind.HEARTSOUL_206, official.kind)
         val kaizo = RomIdentity.identify(made.kaizo)
-        assertEquals(0xE35A0E40L, kaizo.crc)
+        assertEquals(0xC218FD9EL, kaizo.crc)
         assertEquals(RomKind.HEARTSOUL_KAIZO_206, kaizo.kind)
         // Into a Library: the official plays without a tracker, the KaizoCore build is tracked and Kaizo IronMON's.
         val library = LibraryStore(File(d, "library"), savesDir = null)

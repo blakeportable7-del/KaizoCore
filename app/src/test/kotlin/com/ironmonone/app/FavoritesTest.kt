@@ -27,14 +27,19 @@ class FavoritesTest {
         assertNull(Favorites.idOf("Blake"))
     }
 
-    /** Typing narrows the list: "s" is many, "sn" fewer, "snorlax" exactly typed is none. */
+    /**
+     * Typing narrows the list: "s" is many, "sno" puts the names that start with it first, "snorlax" exactly typed is
+     * none. Since 2026-10-06 the log search's ranking (LogSuggest): after the names that start with what is typed come a
+     * word that does, a name that contains it and one a slip away (HnsPoolFavoritesTest has those).
+     */
     @Test
     fun `suggestions start with what was typed, in dex order, and narrow`() {
         val s = Favorites.suggest("s")
         kotlin.test.assertEquals(8, s.size)
         kotlin.test.assertTrue(s.all { it.lowercase().startsWith("s") })
-        val sn = Favorites.suggest("sno")
-        kotlin.test.assertTrue(sn.size < s.size && sn.all { it.lowercase().startsWith("sno") })
+        val sn = Favorites.suggest("sno", limit = 50)
+        val starts = sn.takeWhile { it.lowercase().startsWith("sno") }
+        kotlin.test.assertTrue(starts.size >= 3 && sn.drop(starts.size).none { it.lowercase().startsWith("sno") }, sn.toString())
         kotlin.test.assertEquals("Snorlax", Favorites.suggest("snorl").first())
         kotlin.test.assertTrue(Favorites.suggest("snorlax").isEmpty())
         kotlin.test.assertTrue(Favorites.suggest("").isEmpty())
@@ -59,9 +64,10 @@ class FavoritesTest {
         kotlin.test.assertEquals(151, Favorites.maxDex(K.RED_U)); kotlin.test.assertEquals(251, Favorites.maxDex(K.CRYSTAL_U))
         kotlin.test.assertEquals(386, Favorites.maxDex(K.FIRERED_U_V10)); kotlin.test.assertEquals(493, Favorites.maxDex(K.PLATINUM_U)); kotlin.test.assertEquals(649, Favorites.maxDex(K.WHITE2_U))
         kotlin.test.assertEquals(Int.MAX_VALUE, Favorites.maxDex(K.EMERALD_NATDEX_121))
-        kotlin.test.assertEquals(setOf("Mewtwo", "Mew"), Favorites.suggest("mew", maxId = 151).toSet())
-        kotlin.test.assertTrue(Favorites.suggest("sni", maxId = 386).isEmpty())
-        kotlin.test.assertTrue("Snivy" in Favorites.suggest("sni", maxId = 649))
+        kotlin.test.assertEquals(listOf("Mew", "Mewtwo"), Favorites.suggest("mew", maxId = 151).take(2))
+        kotlin.test.assertTrue(Favorites.suggest("mew", maxId = 151).all { Favorites.nationalOf(Favorites.idOf(it)!!)!! <= 151 })
+        kotlin.test.assertFalse("Snivy" in Favorites.suggest("sni", maxId = 386))
+        kotlin.test.assertEquals("Snivy", Favorites.suggest("sni", maxId = 649).first())
         kotlin.test.assertEquals(5, Favorites.slots("a,b", 5).size)
     }
 

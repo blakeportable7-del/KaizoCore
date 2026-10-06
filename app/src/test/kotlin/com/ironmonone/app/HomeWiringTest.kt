@@ -121,7 +121,8 @@ class HomeWiringTest {
         assertTrue("TabPages(listOf(\"My games\", \"Patched versions\"), nav.libraryPage, { nav = nav.withLibraryPage(it) })" in main)
         assertTrue("if (nav.libraryPage == AppNav.MY_GAMES_PAGE) RomLibraryScreen(Modifier.fillMaxSize(), onPlay = { nav = nav.play() })" in main)
         assertTrue("else PrepareScreen(Modifier.fillMaxSize(), onMyGames = { nav = nav.withLibraryPage(AppNav.MY_GAMES_PAGE) })" in main)
-        assertTrue("TabPages(listOf(\"Controls\", \"Backup and info\"), nav.morePage, { nav = nav.withMorePage(it) })" in main)
+        assertTrue("TabPages(listOf(\"Controls\", \"Backup and info\", \"Stream\"), nav.morePage, { nav = nav.withMorePage(it) })" in main)
+        assertTrue("else if (nav.morePage == AppNav.STREAM_PAGE) StreamSettingsScreen(Modifier.fillMaxSize())" in main)
     }
 
     @Test

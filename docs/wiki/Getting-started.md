@@ -40,7 +40,7 @@ When a game is in progress, the **Continue** card at the top takes you straight 
 ## Finding your way around
 
 - **Home**: the four modes, Continue, and links to Library, More and Your stats.
-- **Play**: the game. **File**, top right, holds save states, speed, rewind, cheats, streaming, the layout editor and
-  the rest. **SETUP** on the tracker opens Tracker Setup.
+- **Play**: the game. A tap on the top third of the game opens the File bar: save states, speed, rewind, Tracker
+  Setup, where the tracker sits, cheats, streaming and the rest.
 - **Library**: **My games**, and **Patched versions**.
 - **More**: **Controls** (keys and buttons), and **Backup and info** (backups, cloud sync, updates, bug reports).

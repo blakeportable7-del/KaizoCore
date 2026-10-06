@@ -98,10 +98,14 @@ class NextRun(val dir: File) {
          * (null for a pass it does not take: ExtraPasses), by the app build
          * [app]. Hashes the settings files, which are a few hundred bytes.
          */
-        fun recipe(kind: RomKind, prepared: File, settings: File, secondPass: File?, prePass: File?, app: String): Recipe = Recipe(
+        fun recipe(
+            kind: RomKind, prepared: File, settings: File, secondPass: File?, prePass: File?, app: String,
+            /** Heart & Soul's pool, null for the one chosen now (Randomizers.engineId). */
+            pool: com.ironmonone.app.engine.HnsEngine.Pool? = null,
+        ): Recipe = Recipe(
             kind = kind.id,
             ext = kind.fileExtension,
-            engine = Randomizers.engineId(kind),
+            engine = Randomizers.engineId(kind, pool),
             app = app,
             rom = prepared.absolutePath,
             romSize = prepared.length(),

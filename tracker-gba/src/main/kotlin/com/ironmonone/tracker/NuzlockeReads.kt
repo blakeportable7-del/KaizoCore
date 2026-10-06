@@ -63,6 +63,8 @@ data class NuzlockeReads(
     val mapType: Int = -1,
     /** Set by the Game Boy trackers instead of the Gen 3 fields above; Gen12Nuzlocke reads it. Null on a Gen 3 game. */
     val gb: GbNuzReads? = null,
+    /** The game's trainer teams for boss scouting (NuzlockeScout), one object per tracker; null where it has none. */
+    val scout: com.ironmonone.tracker.nuzlocke.ScoutSource? = null,
 )
 
 /**

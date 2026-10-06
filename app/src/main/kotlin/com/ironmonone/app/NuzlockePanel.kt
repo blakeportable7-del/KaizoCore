@@ -118,7 +118,8 @@ private fun toneColor(t: NuzlockeView.Tone): Color = when (t) {
 // The ledger
 // ---------------------------------------------------------------------------------------------------------------
 
-private enum class LedgerTab(val label: String) { AREAS("AREAS"), TEAM("TEAM"), GRAVE("GRAVE"), LOG("LOG"), RULES("RULES") }
+/** BOSSES and TYPES (2026-10-06) are the Nuzlify best practices: the teams to come and the team's weak spots (NuzlockeBosses.kt). */
+private enum class LedgerTab(val label: String) { AREAS("AREAS"), TEAM("TEAM"), TYPES("TYPES"), BOSSES("BOSSES"), GRAVE("GRAVE"), LOG("LOG"), RULES("RULES") }
 
 /**
  * Opens the ledger from outside the panel (2026-09-30, UX audit P0-6): Rules in the File menu and in Tracker Setup
@@ -181,6 +182,8 @@ fun NuzlockeLedgerDialog(
         when (tab) {
             LedgerTab.AREAS -> AreasTab(live, here, rev, onEdit = { areaEdit = it })
             LedgerTab.TEAM -> TeamTab(live, rev, onEdit = { monEdit = it }, onAdd = { addOpen = true })
+            LedgerTab.TYPES -> TypesTab(live, snapshot, rev)
+            LedgerTab.BOSSES -> BossesTab(live, snapshot, rev)
             LedgerTab.GRAVE -> GraveTab(live, rev, onEdit = { monEdit = it })
             LedgerTab.LOG -> LogTab(live, rev, onDismiss = { live.edits.dismiss(it); changed() }, onNote = { noteOpen = true })
             LedgerTab.RULES -> RulesTab(live, snapshot, rev, onChanged = { changed() })
@@ -521,7 +524,7 @@ private fun AddMonEditor(live: NuzlockeTracking.Live, here: AreaKey?, @Suppress(
 // ---------------------------------------------------------------------------------------------------------------
 
 @Composable
-private fun NzSection(text: String) {
+internal fun NzSection(text: String) {
     Spacer(Modifier.height(10.dp))
     DialogText(text.uppercase(), 13, Pc.Gold, heading = true)
     Box(Modifier.fillMaxWidth().padding(vertical = 3.dp).height(1.dp).background(Pc.Border.copy(alpha = 0.5f)))
@@ -532,7 +535,7 @@ private fun NzSection(text: String) {
  * one marked by its fill and an underline, its label in sp (rc32 audit P2 #19, rc35 follow-up N #29).
  */
 @Composable
-private fun NzChip(label: String, on: Boolean, role: Role = Role.RadioButton, onClick: () -> Unit) {
+internal fun NzChip(label: String, on: Boolean, role: Role = Role.RadioButton, onClick: () -> Unit) {
     Box(
         Modifier.heightIn(min = PcMin.DIALOG_TOUCH_DP.dp).background(if (on) Pc.Border else Color(0xFF303030))
             .selectable(selected = on, role = role) { onClick() }.padding(horizontal = 10.dp, vertical = 6.dp),

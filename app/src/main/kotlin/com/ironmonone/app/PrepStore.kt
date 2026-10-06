@@ -133,8 +133,29 @@ class PrepStore(private val filesDir: File) {
     fun gameSettings(s: GameSession): GameSettings.Values = games.load(s.id)
     fun saveGameSettings(s: GameSession, v: GameSettings.Values) = games.save(s.id, v)
 
-    /** What a save state is stamped with: the run's kind+seed, or the library id. */
-    fun stateStamp(s: GameSession): String = if (s.isRun) runIdentity() else s.id
+    /**
+     * What a save state is stamped with: the run's kind, seed and the tag of the recipe it was made from (StateStamp),
+     * or the library id, which carries the file's CRC.
+     */
+    fun stateStamp(s: GameSession): String = if (s.isRun) StateStamp.of(runIdentity(), runTag()) else s.id
+
+    /** The tag of the run in play's recipe (StateStamp.tagOf), or null when no recipe names this run. */
+    fun runTag(): String? = runCatching { NextRun.currentRecipe(this)?.let { (r, seed) -> StateStamp.tagOf(r, seed) } }.getOrNull()
+
+    /**
+     * The build the run in play was made from: the CRC its recipe records (NextRun.Recipe.romCrc, the prepared game's
+     * kind CRC at the time), or null when no recipe names this run. Compared with the kind's CRC now by RunBuild.
+     */
+    fun runBuild(): Long? = runCatching { NextRun.currentRecipe(this)?.first?.romCrc?.toLongOrNull(16) }.getOrNull()
+
+    /** The run's save state stamps, slots and their UNDO copies, auto-save included (StateStamp.pin). */
+    internal fun runStateStamps(): List<File> {
+        val run = GameSession.forRun(currentRun, null)
+        return (0..StateSlots.COUNT).flatMap { n ->
+            val f = SessionPaths.slotStamp(filesDir, run, n)
+            listOf(f, File(f.parentFile, f.nameWithoutExtension + ".bak.id"))
+        }
+    }
 
     // ------------------------------------------------------------------ patches
 
@@ -685,6 +706,8 @@ class PrepStore(private val filesDir: File) {
                 resets = events.count { it.kind == RunEvents.Kind.RESET },
                 keptSave = events.any { it.kind == RunEvents.Kind.KEPT_SAVE }, custom = lastRunCustom(),
                 variant = lastRunVariant().orEmpty(), fromCode = events.any { it.kind == RunEvents.Kind.CODE },
+                hnsPool = HnsPool.ofRun(this)?.name.orEmpty(),
+                splits = seen?.splits.orEmpty(),
             ))
         }
     }
@@ -864,9 +887,17 @@ class PrepStore(private val filesDir: File) {
         variant: String? = null,
         /** Built from a run code: its record says so, and whether the seed was played before (R7). */
         fromCode: Boolean = false,
+        /**
+         * The same run made again on this app's build of its game (RunMove): the same seed, settings and mode, so it is
+         * not a new attempt. It is not filed as ended, counts no attempt and keeps its notes and events.
+         */
+        moved: Boolean = false,
     ): Unit = synchronized(RUN_FILES) {
+        // Before anything moves: no save state of the game going out may pass for one of the game coming in, even with
+        // the same seed (StateStamp). Its tag comes from its recipe, read while the recipe and seed still name it.
+        StateStamp.pin(runStateStamps(), runTag())
         // Before anything moves: the run this replaces, if it never ended, goes into its history as ended (R13).
-        fileOpenRunAsEnded()
+        if (!moved) fileOpenRunAsEnded()
         // First. A save state is stamped with the seed (runIdentity), and were
         // the app to die between the new ROM moving in and the new seed being
         // saved, the old seed would vouch for an old state on the new ROM.
@@ -891,12 +922,16 @@ class PrepStore(private val filesDir: File) {
         library.selectRun()
         // Named explicitly: this counter is per game and settings file and must not depend on the order of the lines
         // above. A randomized Nuzlocke takes its file's number without counting one (R8).
-        val n = if (countAttempt) bumpAttempt(kind.id, settingsName) else countOf(kind.id, settingsName)
-        freshAttempt(kind.id, n)
-        // Marks, notes and route sightings describe the OLD seed's
-        // randomization; carrying them into the new run is misleading.
-        clearRunNotes()
+        if (!moved) {
+            val n = if (countAttempt) bumpAttempt(kind.id, settingsName) else countOf(kind.id, settingsName)
+            freshAttempt(kind.id, n)
+            // Marks, notes and route sightings describe the OLD seed's
+            // randomization; carrying them into the new run is misleading.
+            clearRunNotes()
+        }
         setLastRunError(null)
+        // The stream's game over card and frozen timer belong to the run just replaced: they go now, Play open or not.
+        com.ironmonone.app.stream.StreamHub.newRun()
         // A run code's run: said on its record, with the attempt that played the same seed before, if one did (R7).
         if (fromCode) {
             val before = RunCodeHistory.playedBefore(RunHistory(runHistoryFile(kind)), "%016x".format(staged.seed), settingsName)

@@ -62,6 +62,10 @@ object Gen3Nuzlocke {
         else -> null
     }
 
+    /** The types of the moves that do damage (power above 0), each once: the team's coverage reads them. */
+    internal fun damagingTypes(rows: List<MoveRow>): List<Int> =
+        rows.filter { (it.power ?: 0) > 0 }.mapNotNull { it.type }.distinct()
+
     private fun types(a: Int, b: Int): List<Int> = if (a == b) listOf(a) else listOf(a, b)
 
     /**
@@ -84,6 +88,8 @@ object Gen3Nuzlocke {
                 gender = gender(p.base?.genderRatio, p.mon.pid),
                 types = p.base?.let { types(it.type1, it.type2) } ?: emptyList(),
                 shiny = p.mon.shiny,
+                moveTypes = damagingTypes(p.moveRows),
+                stats = listOf(p.mon.maxHp, p.mon.atk, p.mon.def, p.mon.spe, p.mon.spAtk, p.mon.spDef),
             )
         }
         val enemy = s.enemy?.takeIf { !it.isGhost }?.let { e ->
@@ -114,6 +120,7 @@ object Gen3Nuzlocke {
             battleStyleSet = n.battleStyleSet,
             caps = n.caps,
             beaten = n.beaten,
+            scout = n.scout,
         )
     }
 }

@@ -3,7 +3,7 @@
 //
 //   node pages_runner.js job.json      prints one JSON object on stdout
 //
-// job:    { page: "tracker" | "attempts" | "game", file: "<the page's HTML>", search: "?k=abcd", steps: [ ... ],
+// job:    { page: "tracker" | "attempts" | "game" | "favorite" | "gameover" | "timer", ids: [ ... ] (gameover, timer), file: "<the page's HTML>", search: "?k=abcd", steps: [ ... ],
 //           plain: "<what the plain-text /attempts answers>", obs: <true inside OBS>, audioState: "suspended" }
 // answer: { initial: {...}, steps: [ {...}, ... ] }   what the page showed after it loaded, then after each step
 //
@@ -245,8 +245,46 @@ function favoriteHost() {
   };
 }
 
+// The game over card and the run timer (2026-10-05, StreamOverlays): what each element named in job.ids shows (its
+// text, class and inner HTML) after the page loaded and after each step.
+//   gameover, timer     { event: { type, data } }   a server-sent event ("gameover", "timer", "state")
+//                       { advance: <ms> }           the clock moves, and the page's timers with it
+function overlayHost() {
+  FakeEventSource.made = [];
+  const d = fakeDocument();
+  const c = clock();
+  const sandbox = {
+    URLSearchParams, encodeURIComponent, location: { search: job.search || '' }, document: d.document, EventSource: FakeEventSource,
+    setTimeout: c.setTimeout, clearTimeout: c.clearTimeout, setInterval: c.setInterval, performance: { now: () => c.now },
+    Date, console, JSON, Math, String, Number, Object, Array, Promise, parseInt,
+  };
+  sandbox.window = sandbox;
+  vm.createContext(sandbox);
+  vm.runInContext(script, sandbox);
+  return {
+    seen: () => {
+      const o = { sources: FakeEventSource.made.length, width: d.vars['--w'] || '' };
+      for (const id of job.ids || []) {
+        const e = d.el(id);
+        o[id] = { text: String(e.textContent), cls: String(e.className), html: String(e.innerHTML), src: String(e.src || '') };
+      }
+      return o;
+    },
+    step: async (s) => {
+      if (s.event) {
+        const es = FakeEventSource.made[FakeEventSource.made.length - 1];
+        const fn = es.listeners[s.event.type];
+        if (fn) fn({ data: JSON.stringify(s.event.data) });
+      }
+      await settle();
+      if (s.advance) await c.advance(s.advance);
+      await settle();
+    },
+  };
+}
+
 (async () => {
-  const host = { tracker: trackerHost, attempts: attemptsHost, game: gameHost, favorite: favoriteHost }[job.page]();
+  const host = { tracker: trackerHost, attempts: attemptsHost, game: gameHost, favorite: favoriteHost, gameover: overlayHost, timer: overlayHost }[job.page]();
   await settle();
   const out = { initial: host.seen(), steps: [] };
   for (const s of job.steps || []) { await host.step(s); out.steps.push(host.seen()); }

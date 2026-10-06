@@ -2,6 +2,7 @@ package com.ironmonone.app.stream
 
 import com.ironmonone.app.Favorites
 import com.ironmonone.app.GameSession
+import com.ironmonone.app.HnsPool
 import com.ironmonone.app.PrepStore
 
 /**
@@ -50,7 +51,8 @@ class StreamFavoritesSource(
         /** The app's source: the game [store] says Play opens, and the favorites saved for it, drawn by [picture]. */
         fun of(store: PrepStore, picture: (GameSession, Int) -> ByteArray?): StreamFavoritesSource = StreamFavoritesSource(
             game = { store.session() },
-            boxes = { s -> Favorites.slots(store, s.kind?.id, Favorites.slotCount(s.kind)) },
+            // The boxes the run in play counts (HnsPool.favoritesScope): a Heart & Soul Vanilla run's three of its nine.
+            boxes = { s -> HnsPool.favoritesScope(s.kind, store.files, nextRun = false).let { sc -> sc.used(Favorites.slots(store, s.kind?.id, sc.stored)) } },
             picture = picture,
         )
     }

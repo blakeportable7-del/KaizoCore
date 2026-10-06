@@ -53,6 +53,17 @@ data class RunRecord(
      * "changed during the run" when it went back to the file's own before the end; "" when it was the file's (R12).
      */
     val lossRule: String = "",
+    /**
+     * Badge bit to the seconds played when the run earned that badge (RunProgress): the run's splits, which the stream's
+     * timer compares a later attempt with. Empty for a run filed before splits, or one that earned no badge in sight.
+     */
+    val splits: Map<Int, Int> = emptyMap(),
+    /**
+     * Heart & Soul's pool for the run ("VANILLA" or "NATDEX", HnsPool), which decides whether it was held to the Nat. Dex
+     * rules: its settings files are the Emerald Nat. Dex ones either way. "" for every other game, and for a Heart & Soul
+     * run filed before the pool was recorded.
+     */
+    val hnsPool: String = "",
 ) {
     data class Mon(val species: Int, val name: String, val level: Int)
 
@@ -67,10 +78,21 @@ data class RunRecord(
         attempt.toString(), seed, flat(ruleset), started.toString(), ended.toString(), playSeconds.toString(),
         outcome.name, badges.toString(), mon(lead), mon(killer), flat(trainer), flat(location), restores.toString(),
         resumes.toString(), resets.toString(), if (keptSave) "1" else "0", if (custom) "1" else "0", flat(variant),
-        if (fromCode) "1" else "0", flat(lossRule),
+        if (fromCode) "1" else "0", flat(lossRule), splitsText(splits), hnsPool,
     ).joinToString("\t")
 
     companion object {
+        /** Splits as a line keeps them: "0:754,1:1820", badge bit then seconds, in badge order. */
+        fun splitsText(splits: Map<Int, Int>): String = splits.entries.sortedBy { it.key }.joinToString(",") { "${it.key}:${it.value}" }
+
+        /** [splitsText] read back; anything that is not "bit:seconds" is skipped. */
+        fun parseSplits(text: String): Map<Int, Int> = text.split(',').mapNotNull { part ->
+            val p = part.trim().split(':')
+            val bit = p.getOrNull(0)?.toIntOrNull()?.takeIf { it in 0..31 } ?: return@mapNotNull null
+            val at = p.getOrNull(1)?.toIntOrNull()?.takeIf { it >= 0 } ?: return@mapNotNull null
+            bit to at
+        }.toMap()
+
         private fun flat(s: String) = s.replace('\t', ' ').replace('\n', ' ').replace('\r', ' ').replace('|', '/')
         private fun mon(m: Mon?) = m?.let { "${it.species}|${flat(it.name)}|${it.level}" } ?: ""
         private fun mon(s: String): Mon? {
@@ -91,7 +113,8 @@ data class RunRecord(
                 resumes = p.getOrNull(13)?.toIntOrNull() ?: 0,
                 resets = p.getOrNull(14)?.toIntOrNull() ?: 0, keptSave = p.getOrNull(15) == "1",
                 custom = p.getOrNull(16) == "1", variant = p.getOrNull(17).orEmpty(), fromCode = p.getOrNull(18) == "1",
-                lossRule = p.getOrNull(19).orEmpty(),
+                lossRule = p.getOrNull(19).orEmpty(), splits = parseSplits(p.getOrNull(20).orEmpty()),
+                hnsPool = p.getOrNull(21).orEmpty(),
             )
         }
     }
@@ -283,7 +306,8 @@ fun runRecordAtEnd(
     attempt: Int, seed: String, ruleset: String, started: Long, playSeconds: Int, won: Boolean,
     gba: com.ironmonone.tracker.TrackerState?, nds: com.ironmonone.tracker.nds.NdsTrackerState?,
     trainerName: String?, restores: Int = 0, resumes: Int = 0, resets: Int = 0, keptSave: Boolean = false,
-    custom: Boolean = false, variant: String = "", fromCode: Boolean = false, lossRule: String = "",
+    custom: Boolean = false, variant: String = "", fromCode: Boolean = false, lossRule: String = "", hnsPool: String = "",
+    splits: Map<Int, Int> = emptyMap(),
 ): RunRecord {
     val lead = gba?.party?.let { p -> (p.firstOrNull { it.mon.curHp == 0 } ?: p.firstOrNull())?.let { RunRecord.Mon(it.mon.species, it.speciesName, it.mon.level) } }
         ?: nds?.party?.let { p -> (p.firstOrNull { it.mon.curHp == 0 } ?: p.firstOrNull())?.let { RunRecord.Mon(it.mon.species, it.speciesName, it.mon.level) } }
@@ -296,6 +320,8 @@ fun runRecordAtEnd(
         lead = lead, killer = killer, trainer = if (won) "" else trainerName.orEmpty(),
         location = gba?.routeName ?: nds?.areaName.orEmpty(), restores = restores, resumes = resumes,
         resets = resets, keptSave = keptSave, custom = custom, variant = variant, fromCode = fromCode, lossRule = lossRule,
+        hnsPool = hnsPool,
+        splits = splits,
     )
 }
 
@@ -382,6 +408,9 @@ object RunHistoryHook {
                         lossRuleAtEnd(rule, RunModeName.of(store.settingsFile(name), kind.family), if (ds) TrackerOptions.dsLossLabel(rule) else rule.label,
                             changedOnTheWay = events?.any { it.kind == RunEvents.Kind.RULE } == true)
                     }.orEmpty(),
+                    hnsPool = HnsPool.ofRun(store)?.name.orEmpty(),
+                    // The time each badge was earned, for a later attempt's timer to compare with (RunProgress).
+                    splits = RunProgress.splitsOf(store.files, attempt, seed),
                 )
             }
             reopened -= k

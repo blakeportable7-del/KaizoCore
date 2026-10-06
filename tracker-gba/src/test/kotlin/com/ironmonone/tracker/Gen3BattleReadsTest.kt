@@ -79,6 +79,34 @@ class Gen3BattleReadsTest {
     /** Two polls: the first enters the battle, the second makes its data readable. */
     private fun settle(t: GbaTracker): TrackerState { t.read(); return t.read() }
 
+    // ------------------------------------------------------------------ your Pokemon's types in battle (2026-10-06)
+
+    /**
+     * Castform keeps its species in battle in the five games and only its battle struct's types change with the weather;
+     * the opponent's card read those, your own card read the species' row. Now the Pokemon on the field shows the
+     * struct's types too, and only when the struct holds that Pokemon.
+     */
+    @Test
+    fun `your Castform in the sun shows the Fire type its battle struct holds, and its row outside the battle`() {
+        val m = GameMap.EMERALD_U
+        val mem = Mem()
+        party(mem, m, encodeMon(24, 385, 20, 40, 40))
+        base(mem, m, 385, 59)                       // Castform's row: Normal/Normal (types 0), Forecast
+        mem.put(m.enemyParty, encodeMon(48, 25, 20, 30, 30))
+        battle(mem, m, flags = 0, own = 385, foe = 25)
+        mem.put8(m.battleMons + m.battleMonTypes, 10); mem.put8(m.battleMons + m.battleMonTypes + 1, 10)
+        val s = settle(GbaTracker(mem.reader(), m))
+        assertEquals(10 to 10, s.party[0].base?.let { it.type1 to it.type2 }, "Fire, as the battle has it")
+        // A struct holding another species (the last battle's, or not yet filled) is not this Pokemon's.
+        mem.put16(m.battleMons, 25)
+        assertEquals(0 to 0, settle(GbaTracker(mem.reader(), m)).party[0].base?.let { it.type1 to it.type2 })
+        // Outside the battle, the row.
+        mem.put16(m.battleMons, 385)
+        endBattle(mem, m)
+        val t = GbaTracker(mem.reader(), m)
+        assertEquals(0 to 0, settle(t).party[0].base?.let { it.type1 to it.type2 })
+    }
+
     // ------------------------------------------------------------------ Transform (P2 #131)
 
     @Test

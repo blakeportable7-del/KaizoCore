@@ -22,7 +22,7 @@ class TrackerScrollTest {
         // The docked column is in TrackerEdge.kt since rc34, with no bar beside it (TrackerEdgeTest).
         val docked = read("TrackerEdge.kt").substringAfter("internal fun DockedTracker(").substringBefore("\n}\n")
         assertTrue("Modifier.width(panes.width(windowW).dp).fillMaxHeight()" in docked)
-        assertTrue("TrackerScroll(Modifier.fillMaxSize()) { content() }" in docked)
+        assertTrue("TrackerScroll(Modifier.fillMaxSize().padding(top = if (FileBar.open) (FileBar.BAR_DP + 4).dp else 0.dp)) { content() }" in docked)
         assertTrue("TrackerScroll(modifier.size(w, h))" in read("DsDock.kt"))
         assertTrue("TrackerScroll(Modifier.fillMaxSize(), background = null" in read("FloatingTracker.kt"))
     }

@@ -82,7 +82,11 @@ object CalcAtk {
     fun found(result: Pair<Int, Int>): Boolean = result.first <= result.second
 
     /** What [autoFill] fills in, and whether the power had to be guessed (the extension marks it). */
-    data class Fill(val inputs: Inputs, val guessed: Boolean, val physical: Boolean)
+    data class Fill(
+        val inputs: Inputs, val guessed: Boolean, val physical: Boolean,
+        /** Your Pokemon's HP now and its max, for the chance it survives the same hit again (NuzlockeOdds); 0 when unknown. */
+        val ownHp: Int = 0, val ownMaxHp: Int = 0,
+    )
 
     private const val ROCK = 5
     private const val FIRE = 10

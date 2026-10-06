@@ -121,6 +121,9 @@ internal data class AppNav(
         /** Library's second page, "Patched versions": make a patched game, such as Nat. Dex, from one already added. */
         const val PATCHED_PAGE = 1
 
+        /** More's third page, Stream: OBS switching scenes by itself and Twitch chat commands (StreamSettingsScreen, 2026-10-05). */
+        const val STREAM_PAGE = 2
+
         /** The state a launch starts in, from PrepStore.startingPoint(). */
         fun opening(startingPoint: String): AppNav =
             if (startingPoint == "PLAY") AppNav(tab = Tab.PLAY, anchor = Tab.PLAY) else AppNav()
@@ -144,7 +147,7 @@ internal data class AppNav(
                 tab = Tab.valueOf(f[0]),
                 mode = f[1].takeIf { it.isNotEmpty() }?.let { HomeMode.valueOf(it) },
                 libraryPage = f[2].toInt().coerceIn(MY_GAMES_PAGE, PATCHED_PAGE),
-                morePage = f[3].toInt().coerceIn(0, 1),
+                morePage = f[3].toInt().coerceIn(0, STREAM_PAGE),
                 anchor = Tab.valueOf(f[4]),
                 stats = f[5] == "1",
             )

@@ -631,7 +631,7 @@ class HnsGame(val rom: HnsRom, speciesFile: HnsSpeciesFile) {
 
     /** Pickup's items, the lab trash can's item and the starter's held item, where they changed. */
     fun writeItems() {
-        val st = L.struct("PickupItem").takeIf { pickup.isNotEmpty() }
+        val st = if (pickup.isNotEmpty()) L.struct("PickupItem") else null
         for (p in pickup) if (p.item != p.origItem) rom.set(st!!.f("itemId"), p.addr, p.item)
         labTrashAddr?.let { if (labTrashItem != origLabTrashItem) rom.w16(it, labTrashItem) }
         if (starterItem != origStarterItem) for (op in starterItemOperands) rom.w16(op.addr, starterItem)

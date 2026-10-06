@@ -132,8 +132,8 @@ class StreamServerTest {
                 assertEquals("event: state", r.readLine())
                 assertEquals("data: {\"n\":1}", r.readLine())
                 state = """{"n":2}"""; v = 2
-                // skip the blank separator, then the next event
-                val lines = generateSequence { r.readLine() }.filter { it.isNotEmpty() }.take(2).toList()
+                // The next state event, past the blank separators and the game over and timer events (2026-10-05).
+                val lines = generateSequence { r.readLine() }.filter { it.isNotEmpty() }.chunked(2).first { it[0] == "event: state" }
                 assertEquals(listOf("event: state", "data: {\"n\":2}"), lines)
             }
         } finally { s.stop() }
@@ -222,7 +222,7 @@ class StreamServerTest {
         try {
             val a = raw(port, "/obs-scene.json?k=abcd", mapOf("Host" to "192.168.1.50:8642"))
             val urls = Regex("\"url\":\"([^\"]+)\"").findAll(a.body).map { it.groupValues[1] }.toList()
-            assertEquals(3 + StreamFavorites.SLOTS, urls.size, "the game, the tracker, the attempts and each favorite")
+            assertEquals(6 + StreamFavorites.SLOTS, urls.size, "the game, the tracker, the attempts, the game over card, the timer, each favorite and the run history")
             assertTrue(urls.all { it.startsWith("http://192.168.1.50:8642/") && it.contains("k=abcd") }, urls.toString())
 
             val named = raw(port, "/obs-scene.json?k=abcd", mapOf("Host" to "pixel-7.local:8642"))
@@ -317,8 +317,9 @@ class StreamServerTest {
         val s = server(address = { "10.0.0.7" })
         val port = s.start(0)
         try {
+            val phone = "Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Mobile Safari/537.36"
             for (host in listOf("localhost:$port", "127.0.0.1:$port", "[::1]:$port")) {
-                val page = raw(port, "/?k=abcd", mapOf("Host" to host)).body
+                val page = raw(port, "/?k=abcd", mapOf("Host" to host, "User-Agent" to phone)).body
                 assertContains(page, "Open this page on your PC, not on the phone.", message = host)
                 assertFalse(page.contains("download="), "a scene made at $host would point at localhost, so none is offered")
             }

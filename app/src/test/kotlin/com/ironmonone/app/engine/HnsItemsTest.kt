@@ -16,7 +16,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 /**
- * Heart & Soul's item rules (docs/HNS-KAIZO.md, "Next comfort-patch rebuild"), on the real comfort build E35A0E40:
+ * Heart & Soul's item rules (docs/HNS-KAIZO.md, "Next comfort-patch rebuild"), on the real comfort build C218FD9E:
  * the PC item in Elm's lab trash can (randomNonTM, never a TM), the starter's held item (randomItem, TMs allowed),
  * hidden items with the field-item rules, Pickup as UPR does it, and item pools by the run's pool (VANILLA: vanilla
  * Emerald's items, NATDEX: Nat. Dex Emerald 1.2.1's). Without the ROM every test returns early, as HnsEngineTest's do.

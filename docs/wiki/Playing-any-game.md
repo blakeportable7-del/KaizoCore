@@ -7,11 +7,19 @@ No rules, no randomizer. Leave, and the game opens where you left it next time.
 
 Game Boy and Game Boy Color (Gambatte), Game Boy Advance (mGBA) and Nintendo DS (melonDS).
 
-## The File menu
+## The File bar
 
-While you play, **File** (top right) opens: States, Save state, Load state, Rewind, Speed, Mute, Restart, Rules, Cam,
-Stream, Clean view, Edit layout, Settings, Achievements, Cheats and Hide pad. In landscape the same things sit in a
-strip beside the game.
+While you play, tap the top third of the game (or **File**, top right, in portrait) and the File bar opens over the
+game. Tap there again, or its X, to close it. A tap on the lower part of the game, on the DS touch screen or just
+beside a button is always the game's.
+
+- **FILE**: the save slot, Save state, Load state, All save states, Speed, Sound, Restart and Rewind.
+- **NEW**: a new run, in a Kaizo IronMON run or a Nuzlocke.
+- **TRACKER**: Tracker Setup and its screens (rules, notebook, coverage calc, trainers, heals, catch rates and more).
+- **VIEW**: where the tracker sits, the DS screens, Clean view, Edit layout and, with a controller, the on-screen pad.
+- **TOOLS**: Camera, Stream (with its link), Achievements and Cheats.
+- **SETTINGS**: the emulator's settings, Controls and Backup and info.
+- **HOME**: Home, My games, Patched versions, Your stats, and leaving full screen.
 
 ## Save states
 
@@ -42,26 +50,26 @@ strip beside the game.
 ## DS
 
 - **Screens**: Automatic, Top above bottom, Bottom above top, Side by side (either way round), Hybrid (top or bottom
-  large), Top screen only and Bottom screen only. **Top screen only** in the File menu switches quickly.
+  large), Top screen only and Bottom screen only. **DS screens** under VIEW on the File bar switches between 1 screen and 2 quickly.
 - **Touch**: your finger is the stylus on the bottom screen.
 - **Microphone**: the phone's microphone is never used.
 - **DSi mode** needs your own DSi files, and has no save states.
 
 ## Picture and sound
 
-**Settings** in the File menu has each console's own options: video filters (Default, Sharp, LCD, CRT and Upscale),
+**Emulator settings** under SETTINGS on the File bar has each console's own options: video filters (Default, Sharp, LCD, CRT and Upscale),
 color correction and frame blending on GBA, Game Boy colors with 47 palettes, and frame skip on GBA. Mute is kept per
 game.
 
 ## Cheats
 
-**Cheats** in the File menu takes GameShark, CodeBreaker and Action Replay codes on GBA, GameShark and Game Genie
+**Cheats** under TOOLS on the File bar takes GameShark, CodeBreaker and Action Replay codes on GBA, GameShark and Game Genie
 codes on Game Boy, and Action Replay codes on DS. They are kept per game, and they are off in Kaizo IronMON runs,
 Nuzlockes and RetroAchievements hardcore.
 
 ## RetroAchievements
 
-**Achievements** in the File menu: sign in (the password is sent once and never stored), see your progress, and
+**Achievements** under TOOLS on the File bar: sign in (the password is sent once and never stored), see your progress, and
 switch **Hardcore** on. Hardcore turns off cheats, rewind, slow motion, state loads and Time Machine restores.
 Achievements are not loaded in Kaizo IronMON runs.
 

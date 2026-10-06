@@ -37,7 +37,22 @@ object HnsPool {
     fun choose(filesDir: File, pool: HnsEngine.Pool) {
         file(filesDir).parentFile?.mkdirs()
         SafeWrite.text(file(filesDir), pool.name)
+        edits.intValue++
     }
+
+    /**
+     * Counts every [choose]. The Kaizo IronMON screen's favorites (FavoritesEditor) read it, so changing the pool there
+     * changes the boxes and the names offered at once.
+     */
+    val edits = androidx.compose.runtime.mutableIntStateOf(0)
+
+    /**
+     * The favorites of [kind] as a Heart & Soul run holds them (Favorites.scope): [nextRun], the pool chosen now, which
+     * the next run takes (the Kaizo IronMON screen); else the run in play's (Tracker Setup during a run, the tracker's
+     * card). Every other game's are its own, whatever the pool.
+     */
+    fun favoritesScope(kind: com.ironmonone.core.RomKind?, filesDir: File, nextRun: Boolean): Favorites.Scope =
+        Favorites.scope(kind, hnsNatDex = kind?.isHns != true || (if (nextRun) chosen(filesDir) == HnsEngine.Pool.NATDEX else natDexRun(filesDir)))
 
     /** The pool of the Heart & Soul run in play, from its recipe; null when the run in play is not one or has no recipe. */
     fun ofRun(store: PrepStore): HnsEngine.Pool? = runCatching { Randomizers.hnsPoolOf(NextRun.currentRecipe(store)?.first?.engine) }.getOrNull()

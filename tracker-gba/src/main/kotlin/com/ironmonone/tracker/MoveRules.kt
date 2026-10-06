@@ -128,8 +128,10 @@ object MoveRules {
         // MaxDex 1.0's Freeze-Dry (its move 578) is super effective on Water whatever the chart says, as MaxDexExtension.lua's
         // max_netEffectiveness has it; any other type it meets, the chart decides.
         fun chart(t: Int) = if (maxDex && id == MAXDEX_FREEZE_DRY && t == WATER) 2.0 else Gen3Types.effect(type, t, gen1, natDex)
-        var total = chart(targetTypes[0])
-        if (targetTypes.size > 1 && targetTypes[1] != targetTypes[0]) total *= chart(targetTypes[1])
+        // Each of the target's types once: two, or three where the game adds one (Forest's Curse, Trick-or-Treat), as
+        // pokeemerald-expansion's CalcTypeEffectivenessMultiplier walks GetBattlerTypes (GbaTracker.battlerTypes).
+        var total = 1.0
+        for (t in targetTypes.distinct()) total *= chart(t)
         // Utils.lua:715-721: a move whose damage is fixed ([power] "0" or "---" as shown: Seismic Toss, Night Shade, Dragon
         // Rage, Super Fang, the one-hit KOs) still checks immunities but otherwise ignores the chart. The ROM stores power
         // 1 for them, so they read as attacks and took a 2x or 1/2 mark (rc33 audit P1 #77).

@@ -57,12 +57,16 @@ class TrackerHudTest {
                 if (sys == Sys.DS) assertFalse(r.meets(HudLayout.R(g.l + g.w * 2f / 3f, g.t, g.r, g.b)), "$where: over the DS touch screen")
             }
             if (plan.mine != null && plan.rest != null) assertFalse(plan.mine!!.meets(plan.rest!!), "$where: the two panels meet")
-            // The menu, the way out of the HUD, is always somewhere, and never on a control or a panel.
-            val m = assertNotNull(plan.menu, "$where: no menu")
-            for (c in controls) assertFalse(m.meets(c.grown(HudLayout.MARGIN)), "$where: the menu meets the control at $c")
-            for (r in rects) assertFalse(m.meets(r), "$where: the menu lies on a panel")
-            // There is always somewhere for the menu, the way back out of the HUD, on every phone.
+            // The way out of the HUD is the FILE bar, every view's; every phone but the narrowest DS gets a panel.
             if (s.name != "16:9" || sys != Sys.DS) assertNotNull(plan.rest, "$where: no panel at all")
+            // Under the open bar a panel keeps its place and loses only its top, or waits for the bar to close.
+            for (r in rects) {
+                val under = r.underBar(FileBar.UNDER_DP.toFloat())
+                if (under != null) {
+                    assertTrue(under.l == r.l && under.r == r.r && under.b == r.b && under.t >= FileBar.UNDER_DP.toFloat(), "$where: trimmed in place")
+                    assertTrue(under.h >= 72f, "$where: never too short to read")
+                } else assertTrue(r.b - FileBar.UNDER_DP < 72f, "$where: hidden only when too short")
+            }
         }
         assertTrue(placed > 100, "the sweep placed panels ($placed)")
     }

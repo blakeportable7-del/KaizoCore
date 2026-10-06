@@ -188,6 +188,8 @@ object Gen12Nuzlocke {
                 gender = gender(gen, p.base?.genderRatio, dvs),
                 types = p.base?.let { types(it.type1, it.type2) } ?: emptyList(),
                 shiny = shiny(gen, dvs),
+                moveTypes = Gen3Nuzlocke.damagingTypes(p.moveRows),
+                stats = listOf(p.mon.maxHp, p.mon.atk, p.mon.def, p.mon.spe, p.mon.spAtk, p.mon.spDef),
             )
         } + g.eggs.map { e ->
             // The party's eggs, which the tracker's party leaves out: the engine notes where each joined, and gives the
@@ -230,6 +232,7 @@ object Gen12Nuzlocke {
             battleStyleSet = g.battleStyleSet,
             caps = g.caps,
             beaten = g.caps?.beatenByBadges(s.badges) ?: emptySet(),
+            scout = s.nuz?.scout,
         )
     }
 }

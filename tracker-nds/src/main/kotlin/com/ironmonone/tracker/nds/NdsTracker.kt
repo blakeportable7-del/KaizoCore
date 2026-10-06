@@ -220,6 +220,11 @@ class NdsTracker(
     sidecar: File? = null,
     /** Which DS game's offsets to read. See NdsGameMap; detect() picks it by header. */
     val map: NdsGameMap = NdsGameMap.PLATINUM,
+    /**
+     * The ROM being played, for its alternate forms' own types, stats and abilities (NdsForms). Read once, where it
+     * lies. Without it, or when it cannot be read, every form shows its species' first entry, as before.
+     */
+    rom: File? = null,
 ) {
     /**
      * RandomBallScreen.lua: `math.random(1, 3)` once when the tracker starts,
@@ -379,6 +384,32 @@ class NdsTracker(
     private val moveInfo = HashMap<Int, NdsMoveInfo>()
     private val speciesInfo = HashMap<Int, NdsSpeciesInfo>()
 
+    /** Generation 5's berries' Natural Gift types from the ROM (NdsMoveTypes); empty without one. */
+    @Volatile var naturalGift: Map<Int, String> = emptyMap()
+        internal set
+
+    /** Opposing abilities the game has shown this run, by species: only these may change an opponent's move types. */
+    private val shownAbilities = HashMap<Int, MutableSet<String>>()
+
+    /** Records that the game showed [species] with ability [name]; the app may hand in what its notes hold too. */
+    fun noteShownAbility(species: Int, name: String) {
+        synchronized(shownAbilities) { shownAbilities.getOrPut(species) { HashSet() } += NdsMoveTypes.norm(name) }
+    }
+
+    /**
+     * [m] in battle with each move's type as the game gives it (NdsMoveTypes): [own] your side, whose ability and item
+     * are known; an opponent's ability once the game has shown it, its item never.
+     */
+    internal fun withMoveTypes(m: NdsTrackedMon, own: Boolean): NdsTrackedMon {
+        val known = own || synchronized(shownAbilities) { shownAbilities[m.mon.species]?.contains(NdsMoveTypes.norm(m.abilityName)) == true }
+        val moves = NdsMoveTypes.moves(m.moves, m.abilityName, known, own, m.mon.heldItem, m.itemName, naturalGift)
+        return if (moves == m.moves) m else m.copy(moves = moves)
+    }
+
+    /** The ROM's alternate forms (NdsForms), or null when no ROM was given or it could not be read. */
+    @Volatile var forms: NdsForms.Table? = null
+        internal set
+
     /**
      * Level-up LEVELS per species, ascending. Not the moves - the levels.
      *
@@ -433,6 +464,8 @@ class NdsTracker(
         loadMoves()
         loadMoveLevels()
         sidecar?.takeIf { it.exists() }?.let(::loadSidecar)
+        forms = rom?.takeIf { it.isFile }?.let { NdsForms.read(it, map.generation) }
+        naturalGift = rom?.takeIf { it.isFile }?.let { NdsMoveTypes.naturalGiftTypes(it, map.generation) } ?: emptyMap()
     }
 
     private fun loadMoveLevels() {
@@ -509,6 +542,72 @@ class NdsTracker(
 
     /** The ROM data's row for a species, for screens that need its BST, types and abilities. */
     fun speciesInfoFor(id: Int): NdsSpeciesInfo? = speciesInfo[id]
+
+    /**
+     * The row for [species] as a Pokemon of it in [form], holding [heldItem] with ability [abilityId], has it out of
+     * battle (NdsForms): its form's own entry where the game reads one (Wormadam's Sandy and Trash Cloaks, Rotom's
+     * appliances, Giratina's Origin, Shaymin's Sky, Deoxys's forms, and in Generation 5 the others its personal data
+     * lists), and Arceus with Multitype its plate's type. The species' row otherwise, and null with no sidecar row.
+     * The name stays the species'. Built from the ROM's numbers, so it follows the randomization.
+     */
+    fun speciesInfoFor(species: Int, form: Int, abilityId: Int = -1, heldItem: Int = 0): NdsSpeciesInfo? {
+        val base = speciesInfo[species] ?: return null
+        val table = forms
+        val e = table?.form(species, form)
+        var info = if (table == null || e == null) base else base.copy(
+            type1 = table.typeName(e.type1),
+            type2 = table.typeName(e.type2).ifEmpty { table.typeName(e.type1) },
+            bst = e.bst,
+            ability1 = if (e.ability1 == 0) "" else abilityNames[e.ability1] ?: base.ability1,
+            ability2 = if (e.ability2 == 0) "" else abilityNames[e.ability2] ?: base.ability2,
+            growthRate = e.growthRate.takeIf { it in 0..5 } ?: base.growthRate,
+        )
+        NdsForms.arceusType(species, abilityId, heldItem)?.let { info = info.copy(type1 = it, type2 = it) }
+        return info
+    }
+
+    /**
+     * [m] with the types its battler has in the battle's own data ([types], type names), which is what the game uses
+     * there: Castform in the weather, Darmanitan's Zen Mode, Meloetta's Pirouette and any other change a battle makes.
+     * Unchanged when [types] is null (the battle data was not this Pokemon's) or it has no row.
+     */
+    internal fun withBattleTypes(m: NdsTrackedMon, types: Pair<String, String>?): NdsTrackedMon {
+        if (types == null) return m
+        val info = m.info ?: return m
+        if (info.type1 == types.first && info.type2 == types.second) return m
+        return m.copy(info = info.copy(type1 = types.first, type2 = types.second))
+    }
+
+    /** Type names for the battle's type bytes [t1] and [t2], or null when the first is no type of this game. */
+    private fun battleTypeNames(t1: Int, t2: Int): Pair<String, String>? {
+        val a = NdsForms.typeName(map.generation, t1).ifEmpty { return null }
+        return a to NdsForms.typeName(map.generation, t2).ifEmpty { a }
+    }
+
+    /**
+     * Generation 4: a battler's types in its BattleMon (pokeplatinum and pokeheartgold BattleMon: species at +0x00, the
+     * eight stat stages at +0x18, the types at +0x24 and +0x25, the personality at +0x68, 0xC0 a battler). The stage block
+     * the tracker already reads is that +0x18, and the battle PID it reads sits 0x50 past it, the struct's +0x68, on every
+     * Gen 4 map: so the types are 0x0C past the stages. Only when the BattleMon holds [species]: a Pokemon that used
+     * Transform carries its target's, and keeps its own row then.
+     */
+    private fun gen4BattleTypes(versionRel: Long, isEnemy: Boolean, slot: Int, species: Int): Pair<String, String>? {
+        val stages = versionRel + (if (isEnemy) statStagesEnemyOffset else statStagesPlayerOffset) + slot * GEN4_ACTIVE_PID_DIFFERENCE
+        val b = memory.read(ramStart + stages - 0x18, 0x28)
+        if (b.size < 0x28 || b.u16(0) != species) return null
+        return battleTypeNames(b.u8(0x24), b.u8(0x25))
+    }
+
+    /**
+     * Generation 5: a battler's types in its battle data, +0xF8 and +0xF9, just before the stat stages at +0xFC (on the
+     * Black 2 rival battle dump, Dialga's read Steel/Dragon and Larvitar's Rock/Ground there). Only when its species at
+     * +0x0C is [species], the Pokemon shown: an opponent under an Illusion shows the one it imitates, and keeps that one's.
+     */
+    private fun gen5BattleTypes(battleData: Long, species: Int): Pair<String, String>? {
+        val b = memory.read(battleData, 0xFA)
+        if (b.size < 0xFA || b.u16(0x0C) != species) return null
+        return battleTypeNames(b.u8(0xF8), b.u8(0xF9))
+    }
 
     /** Every move in the game's table, for the log viewer's move details and search. */
     fun moveTable(): List<NdsMoveInfo> = moveInfo.values.sortedBy { it.id }
@@ -772,7 +871,8 @@ class NdsTracker(
             val pd = ptr(bd) ?: return null
             val d = Gen4.decodeParty(memory.read(pd, map.entrySize), gen5 = true) ?: return null
             fun u16At(off: Long, fallback: Int) = memory.read(bd + off, 2).let { if (it.size == 2) it.u16(0) else fallback }
-            return decorate(d.copy(curHp = u16At(0x10, d.curHp), maxHp = u16At(0x0E, d.maxHp), level = u16At(0x18, d.level) % 256))
+            return withBattleTypes(decorate(d.copy(curHp = u16At(0x10, d.curHp), maxHp = u16At(0x0E, d.maxHp), level = u16At(0x18, d.level) % 256)),
+                gen5BattleTypes(bd, d.species))
         }
         val pid = u32(ramStart + versionRel + playerBattleMonPidOffset)
         if (pid == 0L) return null
@@ -780,7 +880,7 @@ class NdsTracker(
         // side (readBattle). It read null, and your card, stages and heals fell back to the lead (rc32 audit P2 #145).
         val party = battleParty(versionRel).values
         val mon = party.firstOrNull { it.pid == pid }?.also { lastPlayerPid = pid } ?: party.firstOrNull { it.pid == lastPlayerPid }
-        return mon?.let(::decorate)
+        return mon?.let { withBattleTypes(decorate(it), gen4BattleTypes(versionRel, isEnemy = false, slot = 0, species = it.species)) }
     }
 
     /** Each side's Pokemon on the field in a battle, in the DS tracker's slot order (NdsTrackerState.playerBattlers). */
@@ -847,7 +947,8 @@ class NdsTracker(
         val last = if (isEnemy) lastEnemyPid2 else lastPlayerPid2
         val match = team.firstOrNull { it.pid == pid }?.also { if (isEnemy) lastEnemyPid2 = pid else lastPlayerPid2 = pid }
             ?: team.firstOrNull { it.pid == last } ?: return listOf(null)
-        val mon = if (isEnemy) decorate(enemyUsedOnly(match)) else decorate(match)
+        val mon = withBattleTypes(if (isEnemy) decorate(enemyUsedOnly(match)) else decorate(match),
+            gen4BattleTypes(versionRel, isEnemy, slot = 1, species = match.species))
         return listOf(mon.copy(statStages = readStatStages(versionRel, isEnemy, slot = 1)))
     }
 
@@ -871,7 +972,8 @@ class NdsTracker(
             moves = List(4) { i -> u16At(0x104 + i * 14L, 0) },
             pp = List(4) { i -> memory.read(battleData + 0x104 + i * 14L + 2, 1).let { if (it.size == 1) it.u8(0) else 0 } },
         )
-        return (if (isEnemy) decorate(enemyUsedOnly(live)) else decorate(live)).copy(statStages = readStatStagesGen5(battleData + 0xFC))
+        return withBattleTypes(if (isEnemy) decorate(enemyUsedOnly(live)) else decorate(live), gen5BattleTypes(battleData, d.species))
+            .copy(statStages = readStatStagesGen5(battleData + 0xFC))
     }
 
     /** Healing carried, as a share of [maxHp] rounded as the reference rounds, and the count (NdsHeals.totals). */
@@ -1233,9 +1335,12 @@ class NdsTracker(
         var onField = lead
         if (battle != null && lead != null && battle.third != 0L) {
             val i = party.indexOfFirst { it.mon.pid == playerActive?.mon?.pid }.coerceAtLeast(0)
-            party[i] = party[i].copy(statStages =
-                if (map.absolute) ptr(ramStart + live.mainBattleDataPtr)
-                    ?.let { readStatStagesGen5(it + 0xFC) } ?: emptyMap()
+            // The Pokemon on the field shows the types the battle gives it, as its opponent does.
+            val bd = if (map.absolute) ptr(ramStart + live.mainBattleDataPtr) else null
+            val types = if (map.absolute) bd?.let { gen5BattleTypes(it, party[i].mon.species) }
+                else gen4BattleTypes(battle.third, isEnemy = false, slot = 0, species = party[i].mon.species)
+            party[i] = withMoveTypes(withBattleTypes(party[i], types), own = true).copy(statStages =
+                if (map.absolute) bd?.let { readStatStagesGen5(it + 0xFC) } ?: emptyMap()
                 else readStatStages(battle.third, isEnemy = false))
             onField = party[i]
         }
@@ -1264,6 +1369,7 @@ class NdsTracker(
             val queued = synchronized(pendingMsgs) { val q = pendingMsgs.toList(); pendingMsgs.clear(); q }
             (queued.mapNotNull { resolveAbilityMsg(it, onField, battle.first) } + listOfNotNull(revealed)).distinct()
         }
+        for ((sp, name) in allRevealed) noteShownAbility(sp, name)
         val bag = readBag(battle != null)
         runCatching { updateLocation() }
         // Program.readMemory: battleHandler:checkIfRunHasEnded() after the battle is read,
@@ -1313,7 +1419,7 @@ class NdsTracker(
             located = party.isNotEmpty(),
             inBattle = battle != null,
             isWildBattle = battle?.second ?: false,
-            enemy = battle?.first,
+            enemy = battle?.first?.let { withMoveTypes(it, own = false) },
             abilityRevealed = revealed,
             abilitiesRevealed = allRevealed,
             resolvedBase = partyBase,
@@ -1334,7 +1440,7 @@ class NdsTracker(
             lastBattleEnemy = lastBattleEnemy,
             battleFetched = fetchedThisBattle,
             playerBattlers = playerBattlers,
-            enemyBattlers = sides?.enemies ?: emptyList(),
+            enemyBattlers = sides?.enemies?.map { it?.let { e -> withMoveTypes(e, own = false) } } ?: emptyList(),
             rotation = sides?.rotation ?: false,
             enemyAllies = sides?.allies ?: 0,
             progress = progress,
@@ -1400,7 +1506,8 @@ class NdsTracker(
         }
         // The enemy on the field carries live stage data and status.
         mon = mon?.let {
-            it.copy(statStages = readStatStages(versionRel, isEnemy = true))
+            withBattleTypes(it, gen4BattleTypes(versionRel, isEnemy = true, slot = 0, species = it.mon.species))
+                .copy(statStages = readStatStages(versionRel, isEnemy = true))
         }
         return Triple(mon, isWild, versionRel)
     }
@@ -1484,7 +1591,8 @@ class NdsTracker(
             memory.read(battleDataBase + 0x104 + i * 14L + 2, 1).let { if (it.size == 1) it.u8(0) else 0 }
         }
         val live = d.copy(curHp = curHp, maxHp = maxHp, status = status, moves = moves, pp = pp)
-        val mon = decorate(enemyUsedOnly(live)).copy(statStages = readStatStagesGen5(battleDataBase + 0xFC))
+        val mon = withBattleTypes(decorate(enemyUsedOnly(live)), gen5BattleTypes(battleDataBase, d.species))
+            .copy(statStages = readStatStagesGen5(battleDataBase + 0xFC))
         return Triple(mon, isWild, battleDataBase)
     }
 
@@ -1665,7 +1773,7 @@ class NdsTracker(
     private fun enemyUsedOnly(mon: Gen4.Mon): Gen4.Mon = usedOnly(mon) { moveInfo[it]?.pp ?: 0 }
 
     private fun decorate(mon: Gen4.Mon): NdsTrackedMon {
-        val info = speciesInfo[mon.species]
+        val info = speciesInfoFor(mon.species, mon.form, mon.abilityId, mon.heldItem)
         val levels = moveLevelsOf(mon.species)
         return NdsTrackedMon(
             mon = mon,

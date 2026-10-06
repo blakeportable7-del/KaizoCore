@@ -53,17 +53,18 @@ class WindowBarTest {
             "SwapAction(PcBannerCopy.see(viewingOwn), swapSpoken ?: PcBannerCopy.seeSpoken(viewingOwn), it)", "onGear = onGear", "extra = trailing", "))) return")) {
             assertTrue(part in banner, part)
         }
-        // The area's row in both panels: the area, the gear and the repel bar.
+        // The area's row in both panels: the area and the repel bar (the gear went to the FILE bar, 2026-10-06).
         for (f in listOf("TrackerPanel.kt", "NdsTrackerPanel.kt")) {
             val row = code(f)
-            assertTrue("WindowBarText.overworld(" in row && "onGear = g" in row && "PcRepelBar(" in row.substringAfter("publishToWindowBar(") && "))) return@let" in row, f)
+            assertTrue("WindowBarText.overworld(" in row && "onGear = onGear" in row && "PcRepelBar(" in row.substringAfter("publishToWindowBar(") && "))) return@run" in row, f)
         }
-        // The bar: lock, grip, the drag and double tap while unlocked, the trainer tap, the swap, the gear, the menu.
+        // The bar: the trainer tap, the swap and the repel; the drag and the double tap while unlocked (FloatHold).
         val ft = code("FloatingTracker.kt")
-        for (part in listOf("LockButton(locked)", "if (top.grip) GripDots()", "detectDragGestures", "detectTapGestures(onDoubleTap",
-            "WindowBarTextSlot(segs, parts?.onTextTap, parts?.tapLabel", "SwapIconButton(it)", "TrackerGearButton(onClick = it)", "menu(dock)", "parts?.extra?.invoke()")) {
+        for (part in listOf("WindowBarTextSlot(segs, parts?.onTextTap, parts?.tapLabel", "SwapIconButton(it)", "parts?.extra?.invoke()",
+            "move(live.copy(x = live.x + d.x / density, y = live.y + d.y / density))", "move(FloatFrame.default(areaW, areaH))")) {
             assertTrue(part in ft, part)
         }
+        for (gone in listOf("LockButton(", "GripDots(", "TrackerGearButton(", "menu(dock)")) assertFalse(gone in ft, gone)
     }
 
     @Test
@@ -91,41 +92,13 @@ class WindowBarTest {
     }
 
     @Test
-    fun `the top is one row at every width, and the gear, menu, lock, swap and text tap all stay reachable`() {
-        // Blake, 2026-10-04: "The tracker still has too much space on top" (rc35.1's second row in a narrow window).
-        var w = FloatFrame.MIN_W
-        while (w <= 1200f) {
-            for (swap in listOf(true, false)) for (gear in listOf(true, false)) for (locked in listOf(true, false)) {
-                val t = WindowBarFit.top(w, swap = swap, gear = gear, locked = locked)
-                val at = "w=$w swap=$swap gear=$gear locked=$locked: $t"
-                // The lock, the menu, the swap in a battle and the gear while it is in the row: every button whole, in one row.
-                val buttons = 2 + (if (swap) 1 else 0) + (if (t.gearInRow) 1 else 0)
-                val used = PcMin.TOUCH_DP * buttons + (if (t.grip) WindowBarFit.GRIP else 0f) + WindowBarFit.PAD + t.text
-                assertTrue(used <= w + 0.01f, "one row holds it all, $at")
-                assertTrue(t.text >= 0f, at)
-                // The gear is in the row or in the menu, never lost; the text's tap is a fair target or in the menu too.
-                if (gear && !t.gearInRow) assertTrue(t.text < WindowBarFit.MIN_TEXT + PcMin.TOUCH_DP, "the gear leaves only when it must, $at")
-                assertTrue(t.text >= WindowBarFit.MIN_TEXT || t.textTapInMenu, at)
-                if (locked) assertFalse(t.grip, "no grip on a locked window, $at")
-            }
-            w += 1f
-        }
-        // The narrowest window in a battle: lock, swap and menu stay, the gear goes in the menu.
-        val narrow = WindowBarFit.top(FloatFrame.MIN_W, swap = true, gear = true, locked = false)
-        assertFalse(narrow.gearInRow); assertFalse(narrow.grip)
-        // The usual window keeps them all in the row.
-        val usual = WindowBarFit.top(360f, swap = true, gear = true, locked = false)
-        assertTrue(usual.gearInRow && usual.grip && !usual.textTapInMenu)
-        // And the window draws it so: one Row, the menu gets what the row has no room for.
+    fun `the top is one row at every width, with no button but the swap`() {
+        // Blake, 2026-10-04: "The tracker still has too much space on top"; 2026-10-05: no gear, no menu, no lock on it.
         val ft = code("FloatingTracker.kt")
         assertFalse("twoRows" in ft || "2 * BAR_DP" in ft, "no second row")
-        assertEquals(1, Regex("""\bRow\(""").findAll(ft.substringAfter("val barSlot").substringBefore("val room =")).count(), "one Row on top")
         assertTrue("val barDp = WindowBarFit.ROW_DP" in ft && WindowBarFit.ROW_DP < PcMin.TOUCH_DP, "the row is drawn slimmer than a touch box")
-        assertTrue("if (top.gearInRow) parts?.onGear?.let" in ft)
-        assertTrue("parts?.onGear?.takeIf { !top.gearInRow }?.let { HudMenuItem(\"Tracker Setup\", it) }" in ft)
-        assertTrue("parts?.onTextTap?.takeIf { top.textTapInMenu }" in ft && "LocalWindowMenuItems provides moved" in ft)
-        assertTrue("parts?.swap?.let { Box(Modifier.overhang()) { SwapIconButton(it) } }" in ft, "the swap is never moved off the row")
-        assertTrue("for (item in LocalWindowMenuItems.current) DropdownMenuItem(" in code("LandscapeChrome.kt"), "the menu draws them")
-        assertTrue("FloatGrabs.of(shown, fitH, barDp.toFloat()" in ft)
+        val row = ft.substringAfter("val barSlot").substringBefore("val room =")
+        assertEquals(1, Regex("""\bRow\(""").findAll(row).count(), "one Row on top")
+        assertFalse("HudMenuItem" in ft || "LocalWindowMenuItems" in ft, "nothing is moved into a menu: there is none")
     }
 }

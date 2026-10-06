@@ -401,4 +401,21 @@ class Gen1TrackerTest {
         w.put(map.curMap, 0x76)
         assertNull(t.read().gameOver, "no battle with the Champion was seen")
     }
+
+    /** Gen 1 Conversion copies the target's types into wBattleMon (pokered ConversionEffect): your card shows them next read. */
+    @Test
+    fun `your Conversion shows on your card on the next read`() {
+        val map = Gen1Map.RED_BLUE
+        val rom = rom(map, "POKEMON RED", 0x00)
+        val w = overworld(map)
+        w.put(map.inBattle, 1)
+        val e = map.enemyMon
+        w.put(e, 0x03); w.be16(e + 1, 12); w.put(e + 5, 23); w.put(e + 6, 23); w.put(e + 14, 4); w.be16(e + 15, 18)
+        w.put(map.battleMon, 0xB1); w.put(map.battleMon + 5, 20); w.put(map.battleMon + 6, 20)   // Charmander, Fire
+        val t = Gen1Tracker(w, rom)
+        assertEquals(listOf(10, 10), t.read().party[0].battleTypes)
+        w.put(map.battleMon + 5, 23); w.put(map.battleMon + 6, 23)                               // Conversion: the foe's Electric
+        assertEquals(listOf(13, 13), t.read().party[0].battleTypes)
+        assertEquals(13, t.read().party[0].base?.type1)
+    }
 }

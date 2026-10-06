@@ -112,7 +112,9 @@ class RunRulesByModeTest {
     @Test
     fun `Play keeps a library game's pick off the last run, and Journey has no ball call`() {
         val play = File("src/main/kotlin/com/ironmonone/app/PlayScreen.kt").readText().replace("\r\n", "\n")
-        assertTrue("runSettingsName = remember(session.id) { if (session.isRun)" in play)
+        // Tracker Setup reads the run's settings name for itself now (FileBar.kt's TrackerGearDialog(links)).
+        assertTrue("runCatching { PrepStore(filesDir).let { s -> if (s.session().isRun) s.loadLastRun()?.second else null } }" in
+            File("src/main/kotlin/com/ironmonone/app/FileBar.kt").readText())
         assertTrue("""if (TrackerOptions.ballPickerShows()) " New ball call incoming." else "")""" in play)
         assertTrue("kind = session.kind, onDismiss = { rulesDialog = false }" in play)
         val gear = File("src/main/kotlin/com/ironmonone/app/TrackerGearDialog.kt").readText()

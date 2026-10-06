@@ -76,6 +76,16 @@ internal object FavoriteRules {
         .distinct()
         .toList()
 
+    /** Where a book's Nat. Dex ruleset changes begin (tools/rules/build_rules.py). */
+    const val NAT_DEX_HEADING = "## Nat. Dex ruleset changes"
+
+    /**
+     * [book] as a run of Heart & Soul's pool reads it: whole for a Nat. Dex pool run ([natDexRules]), and for a Vanilla
+     * pool run without the Nat. Dex ruleset changes, which its book says it is not held to (the Gen 3 limits and three
+     * favorites, as Emerald). Every other book has the section only where the game is a Nat. Dex build, which is held to it.
+     */
+    fun forPool(book: String, natDexRules: Boolean): String = if (natDexRules) book else book.substringBefore(NAT_DEX_HEADING)
+
     /** Whether [name] is a legendary, sub-legendary or mythical Pokemon, a form by its species (Kyogre-P, Articuno-G). */
     fun isLegendary(name: String): Boolean = nationalOfName(name)?.let { it in LEGENDARY } == true
 

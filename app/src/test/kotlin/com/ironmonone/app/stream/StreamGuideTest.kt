@@ -68,7 +68,7 @@ class StreamGuideTest {
     fun `step 2 has two ways in, the second in OBS's own words`() {
         val step2 = at("2 Add it to OBS")
         val already = at(
-            "Already use OBS scenes? Do not import. In your gameplay scene choose Sources, +, Browser, and add the three addresses " +
+            "Already use OBS scenes? Do not import. In your gameplay scene choose Sources, +, Browser, and add the addresses you want " +
                 "from the table below, one source each. On the game source, check Control audio via OBS and Use custom frame rate, 60.", step2)
         val new = at("New to OBS? Download the scene in step 1, then:", already)
         val menu = at("Scene Collection menu and choose Import Scene Collection.", new)
@@ -137,8 +137,8 @@ class StreamGuideTest {
                 "Still an error? Right-click the source, choose Properties, press Refresh cache of current page.", head)
         assertTrue(error < at("Same Wi-Fi.", head), "the error box is the first thing listed")
         val changed = at(
-            "Address changed? Open this page again at the new address. In OBS, right-click each KaizoCore source, choose Properties and paste " +
-                "its new address from the table below: game, tracker, attempts, favorites. You do not need to import again.", head)
+            "Address changed? On Wi-Fi the phone's address can change; on the USB cable it never does. Open this page again at the new address. In OBS, right-click each KaizoCore source, choose Properties and paste " +
+                "its new address from the table below: game, tracker, attempts, game over, timer, favorites. You do not need to import again.", head)
         at("give the phone a fixed address in your router's settings (often called an address reservation)", changed)
         at("Add &debug=1 to the game address.", head)
         assertTrue(at("The links, one at a time") > changed, "the table it sends you to is below it")
@@ -177,10 +177,16 @@ class StreamGuideTest {
 
     // ------------------------------------------------------------------ opened on the phone itself
 
+    /** The phone's own Chrome: its User-Agent, and the client hints it sends to a loopback address (a secure one). */
+    private val phoneChrome = mapOf(
+        "user-agent" to "Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Mobile Safari/537.36",
+        "sec-ch-ua-mobile" to "?1", "sec-ch-ua-platform" to "\"Android\"",
+    )
+
     @Test
     fun `opened on the phone itself the guide says so and leaves out the downloads`() {
         for (host in listOf("localhost:8642", "LocalHost:8642", "127.0.0.1:8642", "127.0.0.1", "127.1.2.3:8642", "[::1]:8642", "0.0.0.0:8642")) {
-            val page = StreamPages.setup("http://$host", "abcd")
+            val page = StreamPages.setup("http://$host", "abcd", phoneChrome)
             assertContains(read(page), "Open this page on your PC, not on the phone.", message = host)
             assertFalse(page.contains("download="), "no download is offered at $host")
             assertFalse(page.contains("/obs-scene.json"), "no scene file is linked at $host")
@@ -196,8 +202,8 @@ class StreamGuideTest {
             assertContains(page, "download=\"${ObsScene.FILE}\"", message = host)
             assertContains(page, "download=\"${ObsScene.FILE_TOP}\"", message = host)
         }
-        assertFalse(StreamPages.onPhone("http://localhost.example.com"), "a name that starts with localhost is somebody's site")
-        assertFalse(StreamPages.onPhone("http://127.0.0.1.example.com:8642"))
+        assertFalse(StreamPages.onPhone("http://localhost.example.com", phoneChrome), "a name that starts with localhost is somebody's site")
+        assertFalse(StreamPages.onPhone("http://127.0.0.1.example.com:8642", phoneChrome))
     }
 
     // ------------------------------------------------------------------ the house rules
@@ -212,6 +218,10 @@ class StreamGuideTest {
             "tracker" to File("src/main/assets/stream/tracker.html").readText(),
             "scene" to ObsScene.json(base, "abcd"),
             "favorite" to StreamFavorites.page(),
+            "game over" to StreamOverlays.gameOver(),
+            "timer" to StreamOverlays.timer(),
+            "run history" to StreamHistory.page(StreamHistory.facts(null, null, emptyList(), null)),
+            "looks" to File("src/main/assets/stream/themes.css").readText(),
         )
         val emoji = Regex("[\\u2600-\\u27BF\\uFE0F]|[\\uD83C-\\uD83E][\\uDC00-\\uDFFF]")
         for ((name, body) in pages) {
@@ -238,5 +248,33 @@ class StreamGuideTest {
     private fun existing(d: File): File {
         assertTrue(d.isDirectory, "${d.path} should exist (the working directory is app/)")
         return d
+    }
+
+    // ------------------------------------------------------------------ the game over card, the timer and the looks
+
+    @Test
+    fun `the guide lists the game over card and the timer, says what each does, and names the looks`() {
+        val urls = ObsScene.urls(base, "abcd")
+        val links = at("The links, one at a time")
+        assertContains(guide, "value=\"" + urls.getValue(ObsScene.GAME_OVER).replace("&", "&amp;") + "\"")
+        assertContains(guide, "value=\"" + urls.getValue(ObsScene.TIMER).replace("&", "&amp;") + "\"")
+        at("Game over cardCopy900 x 560", links)
+        at("Run timer and splitsCopy420 x 420", links)
+        at("Game over card. It stays see-through while you play. When a Kaizo IronMON run ends", links)
+        at("It goes when the next run starts, or when Retry the battle undoes the loss.", links)
+        at("add &hold=20 to its address for 20 seconds.", links)
+        // What the timer measures, said exactly (StreamTimer).
+        at("Run timer. It is the time played this attempt, the same time the run history keeps: it counts while KaizoCore is in front " +
+            "with the run's game open, and stops while the phone is in the background, the screen is off or a new run is being made. " +
+            "Fast forward counts as real time, not game time.", links)
+        at("Add &splits=0 for the time alone.", links)
+        at("Looks. Add &theme=clean to the tracker, attempt counter, game over or timer address", links)
+        at("&theme=hud for a ship's heads-up display.", links)
+        at("The game over card and the timer take &demo=1 too.", links)
+        at("The run timer is in the scene too, hidden: click the eye beside KaizoCore timer in Sources to show it")
+        // The switches the guide names are the ones the pages read.
+        for (sw in listOf("q.get('hold')", "q.get('demo')")) assertContains(StreamOverlays.gameOver(), sw)
+        for (sw in listOf("q.get('splits')", "q.get('demo')")) assertContains(StreamOverlays.timer(), sw)
+        assertEquals(listOf("clean", "hud"), StreamThemes.NAMES)
     }
 }

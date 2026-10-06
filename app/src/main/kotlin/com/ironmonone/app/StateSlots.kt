@@ -107,7 +107,9 @@ object StateSlots {
      * unknown; a stamp that differs is checked before a missing one.
      */
     fun loadRefusal(n: Int, got: String?, want: String): String? = when {
-        got != null && (got != want || !PrepStore.stampKnown(want)) -> "${named(n)} is from a different run, so it was not loaded."
+        // This run, saved on another build of its game (StateStamp, 2026-10-06): its memory belongs to that build's code.
+        StateStamp.otherBuild(got, want) -> StateStamp.otherBuildLine(named(n))
+        got != null && !StateStamp.matches(got, want) -> "${named(n)} is from a different run, so it was not loaded."
         got == null -> "${named(n)} is from an older version, so it was not loaded."
         else -> null
     }

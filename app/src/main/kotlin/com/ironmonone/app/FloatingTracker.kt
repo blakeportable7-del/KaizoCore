@@ -1,52 +1,64 @@
 package com.ironmonone.app
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChange
+import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -67,64 +79,35 @@ data class FloatFrame(val x: Float, val y: Float, val w: Float, val h: Float) {
     }
 
     /**
-     * On screen, and never the whole width or height: the resize grabs sit outside the window's edge (FloatGrabs), so a
-     * strip of [FloatGrabs.OUT] is left beside it and under it, and however it is moved one grab of each kind can be
-     * reached. It still moves flush to every edge.
+     * On screen, and never the whole width or height: a strip of [FloatGrabs.OUT] is left beside it and under it, so the
+     * corner's resize button, which sits half outside the corner, can always be reached. It still moves flush to every edge.
      */
     fun clamped(windowW: Float, windowH: Float): FloatFrame {
         val w = w.coerceIn(MIN_W, maxOf(MIN_W, windowW - FloatGrabs.OUT))
         val h = h.coerceIn(MIN_H, maxOf(MIN_H, windowH - FloatGrabs.OUT))
         return FloatFrame(x.coerceIn(0f, (windowW - w).coerceAtLeast(0f)), y.coerceIn(0f, (windowH - h).coerceAtLeast(0f)), w, h)
     }
-
-    /** Dragged by its left edge: the right edge stays where it is, and the window grows no wider than [maxW]. */
-    fun leftEdge(dx: Float, maxW: Float = Float.MAX_VALUE): FloatFrame {
-        val right = x + w
-        val nx = (x + dx).coerceIn(maxOf(0f, right - maxOf(maxW, MIN_W)), right - MIN_W)
-        return copy(x = nx, w = right - nx)
-    }
 }
 
 /**
- * Where a finger resizes the window, in dp (Blake, 2026-10-03: "shave off the buffer space around that tracker and bring
- * the edge to the lines"). The window used to keep a 16 dp border of its own inside its edge to resize by, so no grab sat
- * over SETUP or the corner arrow; its edge now meets the tracker's boxes, and the grabs reach OUT past the edge instead,
- * over the game, and IN only over the window's own margin, which holds no button. Each is cut to the box the window
- * moves in, and one with less than [MIN] left is drawn at no size, so it takes no new touch but a drag already on it
- * carries on.
+ * The room round the window, in dp (Blake, 2026-10-03: "shave off the buffer space around that tracker and bring the edge
+ * to the lines"): the window's edge meets the tracker's boxes, with [IN] of margin, and [OUT] is kept free beside and
+ * under it for the corner's resize button (Blake, 2026-10-05: "a long hold would show the floating tracker expand corner
+ * button").
  */
 internal object FloatGrabs {
-    /** How far a side's or the bottom's grab reaches past the edge. */
+    /** How far the corner button reaches past the edge, and the strip kept free for it. */
     const val OUT = 18f
-    /** How far it reaches in: the window's margin (FLOAT_MARGIN), short of the boxes' lines. */
+    /** The window's margin (FLOAT_MARGIN), short of the boxes' lines. */
     const val IN = 2f
-    /** How far a bottom corner's grab reaches out both ways: more than a side's, so a corner is easy to catch. */
-    const val CORNER = 26f
-    /** Less than this left of a grab is no grab. */
-    const val MIN = 4f
+    /** The corner button: a thumb's target. */
+    const val CORNER = 44f
 
-    data class Rect(val x: Float, val y: Float, val w: Float, val h: Float) {
-        val usable: Boolean get() = w > 0f && h > 0f
-    }
-
-    data class Grabs(val left: Rect, val right: Rect, val bottom: Rect, val bottomLeft: Rect, val bottomRight: Rect)
-
-    /** For the window at [f], drawn [drawnH] tall with a title bar [bar] tall (a drag there moves it), in an [areaW] by [areaH] box. */
-    fun of(f: FloatFrame, drawnH: Float, bar: Float, areaW: Float, areaH: Float): Grabs {
-        val bottom = f.y + drawnH
-        val right = f.x + f.w
-        fun cut(x0: Float, y0: Float, x1: Float, y1: Float): Rect {
-            val l = x0.coerceIn(0f, areaW); val r = x1.coerceIn(0f, areaW)
-            val t = y0.coerceIn(0f, areaH); val b = y1.coerceIn(0f, areaH)
-            return if (r - l < MIN || b - t < MIN) Rect(l, t, 0f, 0f) else Rect(l, t, r - l, b - t)
-        }
-        return Grabs(
-            left = cut(f.x - OUT, f.y + bar, f.x + IN, bottom),
-            right = cut(right - IN, f.y + bar, right + OUT, bottom),
-            bottom = cut(f.x, bottom - IN, right, bottom + OUT),
-            bottomLeft = cut(f.x - CORNER, bottom - IN, f.x + IN, bottom + CORNER),
-            bottomRight = cut(right - IN, bottom - IN, right + CORNER, bottom + CORNER),
-        )
+    /** The corner button's top left, in dp, for the window at [f] drawn [drawnH] tall in an [areaW] by [areaH] box. */
+    fun corner(f: FloatFrame, drawnH: Float, areaW: Float, areaH: Float): Pair<Float, Float> {
+        val x = (f.x + f.w - CORNER / 2f - 4f).coerceIn(0f, (areaW - CORNER).coerceAtLeast(0f))
+        val y = (f.y + drawnH - CORNER / 2f - 4f).coerceIn(0f, (areaH - CORNER).coerceAtLeast(0f))
+        return x to y
     }
 }
 
@@ -141,9 +124,6 @@ internal fun trackerMargin(): PaddingValues = LocalTrackerMargin.current ?: Padd
 /** The floating window's margin: the boxes' lines 1 dp inside its border (Blake, 2026-10-03: "bring the edge to the lines"). */
 private val FLOAT_MARGIN = PaddingValues(FloatGrabs.IN.dp)
 
-/** The title bar's height, in dp: a lock and the menu a thumb can hit (PcMin.TOUCH_DP), and a strip a thumb can drag by. */
-private const val BAR_DP = 44
-
 /**
  * Lays a button out at its full touch box but takes only the row's height: the box reaches past the slim row above and
  * below, centred on it, so the row is drawn thin and every target stays [PcMin.TOUCH_DP] tall.
@@ -155,10 +135,13 @@ private fun Modifier.overhang(): Modifier = layout { measurable, c ->
 }
 
 /**
- * 2.2: the tracker as a window over the game in landscape. One draggable Box: the title bar moves it, grabs round its
- * sides, its bottom and its bottom corners resize it, and a double tap on the bar puts it back where the dock would be.
- * The lock at the bar's left pins it, size and place, until it is unlocked (Blake, 2026-10-02: "Undocked, I want to be
- * able to move it around, make it any size and lock it into place").
+ * 2.2: the tracker as a window over the game in landscape. It carries no buttons of its own (Blake, 2026-10-05:
+ * "completely removing the gear and the hamburger menu buttons off the tracker", "remove the lock, a long hold would lock
+ * in place, and a long hold would show the floating tracker expand corner button"). It is locked whenever it is shown,
+ * and its rows take their taps as they do docked. Hold it half a second (FloatHold) and it unlocks, with a ring and a
+ * buzz: a drag anywhere on it moves it, the corner button resizes it, a double tap puts it back where the dock would be.
+ * Hold again to lock it; opening the FILE bar locks it, and so do six seconds untouched. While the bar is open it steps
+ * down below it, and goes back when the bar closes.
  *
  * It moves inside the box it is drawn in, measured here. It used to be clamped to LocalConfiguration's screen size,
  * which leaves the system bars out while the play screen draws edge to edge, so it stopped short of the right edge
@@ -170,20 +153,13 @@ fun FloatingTracker(
     @Suppress("UNUSED_PARAMETER") windowW: Float,
     @Suppress("UNUSED_PARAMETER") windowH: Float,
     onFrame: (FloatFrame) -> Unit,
-    onDock: () -> Unit,
-    /** The tracker's menu (TrackerCornerMenu) in the title bar, handed the way back to the dock. */
-    menu: @Composable (dock: () -> Unit) -> Unit,
     /** The run's attempt: the title reads it in a Kaizo IronMON run (Blake, 2026-10-02: "Replace 'Tracker' with the attempt and number"). */
     attempt: Int = 0,
     content: @Composable () -> Unit,
 ) {
-    // Leaving the HUD or the window for the dock leaves the HUD off, so the next Float is a window again.
-    val dock = { TrackerOptions.trackerHud = false; onDock() }
     if (TrackerHud.ENABLED && TrackerOptions.trackerHud) {
         // The Tracker HUD rides on this path, so Play lays the game out as for the window: never moved, never smaller.
-        CompositionLocalProvider(LocalHudMenu provides HudMenuItem(TrackerHud.MENU_FLOAT) { TrackerOptions.trackerHud = false; TrackerOptions.save() }) {
-            TrackerHudLayer(menu = { menu(dock) }, attempt = attempt, content = content)
-        }
+        TrackerHudLayer(attempt = attempt, content = content)
         return
     }
     BoxWithConstraints(Modifier.fillMaxSize()) {
@@ -195,7 +171,41 @@ fun FloatingTracker(
         // copy made every move start from the old spot and the window jittered
         // instead of following the finger (2026-09-27, audit).
         val live by rememberUpdatedState(frame.clamped(areaW, areaH))
-        val locked = TrackerOptions.floatingLocked
+        val locked = FileBar.floatLocked
+        val haptics = LocalHapticFeedback.current
+        // Where the box the window moves in sits in the activity's window, for FloatHold's pixels.
+        var areaOrigin by remember { mutableStateOf(Offset.Zero) }
+        Box(Modifier.size(0.dp).onGloballyPositioned { areaOrigin = it.boundsInWindow().topLeft })
+        // The ring under a holding finger, in this box's pixels.
+        var ring by remember { mutableStateOf<Offset?>(null) }
+        fun touched() { FileBar.floatTouchedAt = android.os.SystemClock.uptimeMillis() }
+        DisposableEffect(Unit) {
+            FileBar.floatLocked = true
+            onDispose { FloatHold.bounds = null; FloatHold.skip = null; FloatHold.onHold = null; FloatHold.onPress = null; FloatHold.onRelease = null }
+        }
+        SideEffect {
+            FloatHold.onHold = {
+                FileBar.floatLocked = FloatLockRules.afterHold(FileBar.floatLocked)
+                touched()
+                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                FileBar.say(if (FileBar.floatLocked) FloatLockRules.LOCKED else FloatLockRules.UNLOCKED)
+            }
+            FloatHold.onPress = { x, y -> ring = Offset(x - areaOrigin.x, y - areaOrigin.y); touched() }
+            FloatHold.onRelease = { ring = null; touched() }
+        }
+        // The bar's taps are the bar's: an unlocked window locks when it opens.
+        LaunchedEffect(FileBar.open) {
+            if (FloatLockRules.locksForBar(FileBar.open, FileBar.floatLocked)) { FileBar.floatLocked = true; FileBar.say(FloatLockRules.LOCKED_FOR_BAR) }
+        }
+        // Six seconds untouched, unlocked: it locks itself.
+        LaunchedEffect(locked, FileBar.floatTouchedAt) {
+            if (locked) return@LaunchedEffect
+            val now = android.os.SystemClock.uptimeMillis()
+            kotlinx.coroutines.delay((FloatHold.IDLE_MS - (now - FileBar.floatTouchedAt)).coerceAtLeast(0L))
+            if (FloatLockRules.idleLocks(FileBar.floatLocked, FileBar.floatTouchedAt, android.os.SystemClock.uptimeMillis())) {
+                FileBar.floatLocked = true; FileBar.say(FloatLockRules.LOCKED_IDLE)
+            }
+        }
         // See-through (FloatingSeeThrough): the fills fade, the words take an outline, and locked, the empty space
         // takes no touch, so a tap there reaches the game.
         val solid = TrackerOptions.floatingSolid
@@ -204,79 +214,59 @@ fun FloatingTracker(
         // The panel's first row, handed up to the bar (WindowBar.kt).
         val barSlot = remember { WindowBarSlot() }
         val parts = barSlot.parts
-        // One row at every width (WindowBarFit.top): narrow, the grip marks go, then the gear moves into the menu.
-        val top = WindowBarFit.top(live.w, swap = parts?.swap != null, gear = parts?.onGear != null, locked = locked)
         val barDp = WindowBarFit.ROW_DP
         fun move(f: FloatFrame) = onFrame(f.clamped(areaW, areaH))
-        val shown = live
         // The tracker's own height, as last laid out. The window fits it: the height the player sets is the most it
         // may take, and blank space under the cards is not drawn (Blake, 2026-10-02: "Wasted space").
         var contentH by remember { mutableStateOf(0f) }
-        val fitH = if (contentH > 0f) (barDp + contentH).coerceIn(FloatFrame.MIN_H, shown.h) else shown.h
+        val fitH = if (contentH > 0f) (barDp + contentH).coerceIn(FloatFrame.MIN_H, live.h) else live.h
+        // Below the FILE bar while it is open, and back where it was when it closes.
+        val shown = if (FileBar.open) live.copy(y = maxOf(live.y, minOf(FileBar.UNDER_DP.toFloat(), areaH - fitH))) else live
+        var lastTap by remember { mutableStateOf(0L) }
         Box(
             Modifier
                 .offset { IntOffset((shown.x * density).roundToInt(), (shown.y * density).roundToInt()) }
                 .size(shown.w.dp, fitH.dp)
-                .border(1.dp, Pc.Border),
+                .border(if (locked) 1.dp else 2.dp, if (locked) Pc.Border else TrackerHud.CYAN)
+                .onGloballyPositioned { c ->
+                    val r = c.boundsInWindow()
+                    FloatHold.bounds = TapZone.Rect(r.left, r.top, r.right, r.bottom)
+                }
+                // The hold has no target of its own, so a screen reader is given it as an action.
+                .semantics {
+                    stateDescription = if (locked) "Locked" else "Unlocked"
+                    customActions = listOf(CustomAccessibilityAction(if (locked) "Unlock to move and resize" else "Lock in place") {
+                        FileBar.floatLocked = !locked; touched(); true
+                    })
+                },
         ) {
             // The Main background colour and the player's image, once behind the whole window; the panel inside it
             // paints nothing of its own (TrackerBackdrop.kt). Its own layer, so see-through fades it alone.
             Box(Modifier.matchParentSize().graphicsLayer { alpha = fade }.hostBackdrop())
             CompositionLocalProvider(LocalWindowFade provides fade, LocalTrackerTextShadow provides outline, LocalWindowBar provides barSlot) {
             Column(Modifier.fillMaxSize()) {
-                Row(
-                    Modifier.fillMaxWidth().height(barDp.dp).background(windowFill(Pc.Ground))
-                        .then(if (locked) Modifier else Modifier
-                            .pointerInput(areaW, areaH) {
-                                detectDragGestures { change, drag ->
-                                    change.consume()
-                                    move(live.copy(x = live.x + drag.x / density, y = live.y + drag.y / density))
-                                }
-                            }
-                            .pointerInput(areaW, areaH) {
-                                detectTapGestures(onDoubleTap = { move(FloatFrame.default(areaW, areaH)) })
-                            }),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    // One group at the bar's left: the lock, the grip, the title and the menu side by side, and the
-                    // rest of the bar a handle to drag by (Blake, 2026-10-03: "the hamburger menu and lock and attempt
-                    // will be moved closer together"). Every button keeps its touch box, which reaches past the slim
-                    // row above and below (overhang).
-                    Box(Modifier.overhang()) { LockButton(locked) { TrackerOptions.floatingLocked = !locked; TrackerOptions.save() } }
-                    // Six dots: the bar is a handle while it can move.
-                    if (top.grip) GripDots()
-                    // One row (Blake, 2026-10-04, "less bulky"): the panel's first row, the battle banner or the
-                    // area's bar, is drawn here (WindowBar.kt): one text slot, the swap, the gear, then the menu.
+                // One row (Blake, 2026-10-04, "less bulky"): the panel's first row, the battle banner or the area's
+                // bar, is drawn here (WindowBar.kt): the text slot and, in a battle, the swap.
+                Row(Modifier.fillMaxWidth().height(barDp.dp).background(windowFill(Pc.Ground)), verticalAlignment = Alignment.CenterVertically) {
                     val segs = WindowBarText.withAttempt(attempt.takeIf { ironmonRunInPlay(attempt) }, parts?.segments ?: emptyList())
                         .ifEmpty { listOf(BarSegment("TRACKER", Pc.Dim, 0)) }
                     Box(Modifier.weight(1f).padding(start = 6.dp, end = 2.dp).overhang()) {
                         WindowBarTextSlot(segs, parts?.onTextTap, parts?.tapLabel, Modifier.fillMaxWidth())
                     }
                     parts?.extra?.invoke()
-                    parts?.swap?.let { Box(Modifier.overhang()) { SwapIconButton(it) } }
-                    if (top.gearInRow) parts?.onGear?.let { Box(Modifier.overhang()) { TrackerGearButton(onClick = it) } }
-                    // What the row has no room for is in the menu: Tracker Setup, and the text's tap.
-                    val moved = listOfNotNull(
-                        parts?.onGear?.takeIf { !top.gearInRow }?.let { HudMenuItem("Tracker Setup", it) },
-                        parts?.onTextTap?.takeIf { top.textTapInMenu }?.let { HudMenuItem(parts.tapLabel ?: "Trainer info", it) },
-                    )
-                    // The attempt, FILE, the screens and DOCK: one menu, beside the title (Blake, 2026-10-02).
-                    CompositionLocalProvider(
-                        LocalHudMenu provides HudMenuItem(TrackerHud.MENU_HUD) { TrackerOptions.trackerHud = true; TrackerOptions.save() }.takeIf { TrackerHud.ENABLED },
-                        LocalWindowMenuItems provides moved,
-                    ) {
-                        Box(Modifier.overhang()) { PcCanvas(Modifier.width(PcMin.TOUCH_DP.dp)) { menu(dock) } }
-                    }
+                    // A long press on the swap shows its words, so the window's hold leaves it alone (FloatHold.skip).
+                    parts?.swap?.let {
+                        Box(Modifier.overhang().onGloballyPositioned { c -> val r = c.boundsInWindow(); FloatHold.skip = TapZone.Rect(r.left, r.top, r.right, r.bottom) }) {
+                            SwapIconButton(it)
+                        }
+                    } ?: SideEffect { FloatHold.skip = null }
                 }
                 // The room is the height the player gave the window, not the fitted one: fitted to one card it would
                 // never again have room for two.
-                val room = (shown.h - barDp).coerceAtLeast(0f).dp
+                val room = (live.h - barDp).coerceAtLeast(0f).dp
                 // Wide enough for columns (TrackerWideView): both cards side by side, so the room is no reason to swap.
-                val wideView = TrackerWideView.applies(shown.w, room.value)
-                Box(
-                    Modifier.weight(1f).fillMaxWidth()
-                        .then(if (locked) Modifier else Modifier.background(windowFill(Pc.Ground.copy(alpha = 0.6f)))),
-                ) {
+                val wideView = TrackerWideView.applies(live.w, room.value)
+                Box(Modifier.weight(1f).fillMaxWidth()) {
                     TrackerScroll(Modifier.fillMaxSize(), background = null, swipe = FloatingSeeThrough.swipeScrolls(locked, solid)) {
                         Column(Modifier.fillMaxWidth().onSizeChanged { contentH = it.height / density }) {
                             CompositionLocalProvider(
@@ -288,21 +278,81 @@ fun FloatingTracker(
                 }
             }
             }
+            if (!locked) {
+                // Unlocked, the window is a thing to move: every touch on it is the drag's, and a double tap puts it back
+                // where the dock would be. Its rows take no taps until it is locked again.
+                Box(
+                    Modifier.matchParentSize().background(Pc.Ground.copy(alpha = 0.25f))
+                        .pointerInput(areaW, areaH) {
+                            awaitEachGesture {
+                                val down = awaitFirstDown(requireUnconsumed = false)
+                                down.consume()
+                                touched()
+                                var moved = false
+                                while (true) {
+                                    val ev = awaitPointerEvent()
+                                    val c = ev.changes.firstOrNull { it.id == down.id } ?: break
+                                    if (!c.pressed) { c.consume(); break }
+                                    if (!moved && (c.position - down.position).getDistance() > viewConfiguration.touchSlop) moved = true
+                                    if (moved) {
+                                        val d = c.positionChange()
+                                        move(live.copy(x = live.x + d.x / density, y = live.y + d.y / density))
+                                        touched()
+                                    }
+                                    c.consume()
+                                }
+                                if (!moved) {
+                                    val now = android.os.SystemClock.uptimeMillis()
+                                    if (now - lastTap < 300L) { move(FloatFrame.default(areaW, areaH)); lastTap = 0L } else lastTap = now
+                                }
+                            }
+                        },
+                )
+            }
         }
         if (!locked) {
-            // The grabs, outside the edge (FloatGrabs): each side and the bottom resize one way, the bottom corners both
-            // at once. The corners come last, so they are on top where they meet a side.
-            val g = FloatGrabs.of(shown, fitH, barDp.toFloat(), areaW, areaH)
-            EdgeHandle(g.right, areaW, areaH) { dx, _ -> move(live.copy(w = live.w + dx)) }
-            EdgeHandle(g.left, areaW, areaH) { dx, _ -> move(live.leftEdge(dx, areaW - FloatGrabs.OUT)) }
-            EdgeHandle(g.bottom, areaW, areaH) { _, dy -> move(live.copy(h = live.h + dy)) }
-            EdgeHandle(g.bottomRight, areaW, areaH) { dx, dy -> move(live.copy(w = live.w + dx, h = live.h + dy)) }
-            EdgeHandle(g.bottomLeft, areaW, areaH) { dx, dy -> move(live.leftEdge(dx, areaW - FloatGrabs.OUT).let { it.copy(h = it.h + dy) }) }
-            // The grip marks sit just outside the bottom corners, where their grabs are.
-            val right = shown.x + shown.w
-            val bottom = shown.y + fitH
-            if (g.bottomRight.usable) CornerGrip(right - GRIP_INSET, bottom - GRIP_INSET, mirrored = false)
-            if (g.bottomLeft.usable) CornerGrip(shown.x - GRIP_DP + GRIP_INSET, bottom - GRIP_INSET, mirrored = true)
+            // What the hold did, said where the finger is not: over the window, or inside its top when it is at the top.
+            val above = shown.y >= 40f
+            Text(
+                FloatLockRules.TIP, color = Color.Black, fontSize = 13.sp, fontWeight = FontWeight.Medium,
+                modifier = Modifier
+                    .offset { IntOffset(((shown.x + 8f) * density).roundToInt(), ((if (above) shown.y - 34f else shown.y + barDp + 4f) * density).roundToInt()) }
+                    .widthIn(max = (shown.w - 16f).coerceAtLeast(120f).dp)
+                    .background(TrackerHud.CYAN).padding(horizontal = 8.dp, vertical = 5.dp),
+            )
+            // The corner button: pull it to resize.
+            val (gx, gy) = FloatGrabs.corner(shown, fitH, areaW, areaH)
+            Box(
+                Modifier.offset { IntOffset((gx * density).roundToInt(), (gy * density).roundToInt()) }.size(FloatGrabs.CORNER.dp)
+                    .clip(CircleShape).background(TrackerHud.CYAN)
+                    .semantics { contentDescription = "Drag to resize" }
+                    .pointerInput(areaW, areaH) {
+                        detectDragGestures { change, drag ->
+                            change.consume()
+                            touched()
+                            // It grows to the box's edge and stops there: past it, clamping would push the window off its place.
+                            move(live.copy(w = (live.w + drag.x / density).coerceAtMost(areaW - FloatGrabs.OUT - live.x),
+                                h = (live.h + drag.y / density).coerceAtMost(areaH - FloatGrabs.OUT - live.y)))
+                        }
+                    },
+                contentAlignment = Alignment.Center,
+            ) { CornerMark() }
+        }
+        ring?.let { p ->
+            key(p) {
+                val progress = remember { Animatable(0f) }
+                LaunchedEffect(Unit) {
+                    kotlinx.coroutines.delay(FloatHold.RING_AFTER_MS)
+                    progress.animateTo(1f, tween((FloatHold.HOLD_MS - FloatHold.RING_AFTER_MS).toInt(), easing = LinearEasing))
+                }
+                Canvas(Modifier.offset { IntOffset((p.x - 30.dp.toPx()).roundToInt(), (p.y - 30.dp.toPx()).roundToInt()) }.size(60.dp)) {
+                    if (progress.value <= 0f) return@Canvas
+                    val st = 4.dp.toPx()
+                    drawCircle(Color.Black.copy(alpha = 0.45f), radius = size.minDimension / 2 - st, style = Stroke(st))
+                    drawArc(TrackerHud.CYAN, -90f, 360f * progress.value, false, style = Stroke(st, cap = StrokeCap.Round),
+                        topLeft = Offset(st, st), size = androidx.compose.ui.geometry.Size(size.width - 2 * st, size.height - 2 * st))
+                }
+            }
         }
     }
 }
@@ -316,98 +366,21 @@ internal fun FloatingTracker(
     panes: PaneSizes,
     windowW: Float,
     windowH: Float,
-    onDock: () -> Unit,
-    menu: @Composable (dock: () -> Unit) -> Unit,
     attempt: Int = 0,
     content: @Composable () -> Unit,
-) = FloatingTracker(panes.frameFor(windowW, windowH), windowW, windowH, onFrame = { panes.frame = it }, onDock = onDock,
-    menu = menu, attempt = attempt, content = content)
+) = FloatingTracker(panes.frameFor(windowW, windowH), windowW, windowH, onFrame = { panes.frame = it }, attempt = attempt, content = content)
 
-/**
- * A strip or corner that resizes the window as it is dragged, in dp, at [r] in the box the window moves in. It stays
- * composed at no size while it has no room, so a drag that runs the edge into the side of the box carries on.
- */
+/** Two arrows out of the corner, dark on the cyan button. */
 @Composable
-private fun EdgeHandle(r: FloatGrabs.Rect, areaW: Float, areaH: Float, onDrag: (Float, Float) -> Unit) {
-    val density = LocalDensity.current.density
-    Box(
-        Modifier
-            .offset { IntOffset((r.x * density).roundToInt(), (r.y * density).roundToInt()) }
-            .size(r.w.dp, r.h.dp)
-            .pointerInput(areaW, areaH) {
-                detectDragGestures { change, drag ->
-                    change.consume()
-                    onDrag(drag.x / density, drag.y / density)
-                }
-            },
-    )
-}
-
-/** A corner's grip mark, in dp: its square, and how far the square reaches in over the window's corner. */
-private const val GRIP_DP = 16f
-private const val GRIP_INSET = 3f
-
-/** Three short strokes across a bottom corner, at ([x], [y]) in dp, with a dark edge so they read over any game. */
-@Composable
-private fun CornerGrip(x: Float, y: Float, mirrored: Boolean) {
-    val color = Pc.Text.copy(alpha = 0.85f)
-    val density = LocalDensity.current.density
-    Canvas(
-        Modifier
-            .offset { IntOffset((x * density).roundToInt(), (y * density).roundToInt()) }
-            .size(GRIP_DP.dp),
-    ) {
+private fun CornerMark() {
+    Canvas(Modifier.size(22.dp)) {
         val s = size.minDimension
-        for (i in 1..3) {
-            val o = s * i / 3.6f
-            val a = if (mirrored) Offset(0f, s - o) else Offset(s, s - o)
-            val b = if (mirrored) Offset(o, s) else Offset(s - o, s)
-            drawLine(Color.Black.copy(alpha = 0.5f), a, b, strokeWidth = 4.dp.toPx(), cap = StrokeCap.Round)
-            drawLine(color, a, b, strokeWidth = 2.dp.toPx(), cap = StrokeCap.Round)
-        }
-    }
-}
-
-@Composable
-private fun GripDots() {
-    val color = Pc.Dim
-    Canvas(Modifier.padding(start = 2.dp).size(width = 10.dp, height = 16.dp)) {
-        val r = 1.5.dp.toPx()
-        for (row in 0..2) for (col in 0..1) {
-            drawCircle(color, r, Offset(size.width * (0.25f + col * 0.5f), size.height * (0.2f + row * 0.3f)))
-        }
-    }
-}
-
-/** A padlock, shut while the window is pinned, in a touch box of [BAR_DP]. A screen reader hears what a tap will do. */
-@Composable
-private fun LockButton(locked: Boolean, onClick: () -> Unit) {
-    val color = if (locked) Pc.Gold else Pc.Text
-    Box(
-        Modifier.size(BAR_DP.dp).clickable(role = Role.Button) { onClick() }
-            .semantics {
-                contentDescription = if (locked) "Unlock the tracker window" else "Lock the tracker window in place"
-                stateDescription = if (locked) "Locked" else "Unlocked"
-            },
-        contentAlignment = Alignment.Center,
-    ) {
-        Canvas(Modifier.size(width = 14.dp, height = 18.dp)) {
-            val w = size.width
-            val h = size.height
-            val stroke = 2.dp.toPx()
-            val body = h * 0.52f
-            // The shackle: closed over the body, or swung up and open on its right.
-            val shackleW = w * 0.62f
-            val left = (w - shackleW) / 2
-            val lift = if (locked) 0f else h * 0.16f
-            drawArc(
-                color, startAngle = 180f, sweepAngle = 180f, useCenter = false,
-                topLeft = Offset(left, stroke / 2 - lift), size = Size(shackleW, shackleW),
-                style = Stroke(stroke),
-            )
-            drawLine(color, Offset(left, shackleW / 2 - lift), Offset(left, h - body), strokeWidth = stroke)
-            if (locked) drawLine(color, Offset(left + shackleW, shackleW / 2), Offset(left + shackleW, h - body), strokeWidth = stroke)
-            drawRoundRect(color, topLeft = Offset(0f, h - body), size = Size(w, body), cornerRadius = CornerRadius(2.dp.toPx()))
-        }
+        val st = 2.5.dp.toPx()
+        val c = Color(0xFF08141C)
+        drawLine(c, Offset(s * 0.2f, s * 0.8f), Offset(s * 0.8f, s * 0.2f), st, StrokeCap.Round)
+        drawLine(c, Offset(s * 0.8f, s * 0.2f), Offset(s * 0.45f, s * 0.2f), st, StrokeCap.Round)
+        drawLine(c, Offset(s * 0.8f, s * 0.2f), Offset(s * 0.8f, s * 0.55f), st, StrokeCap.Round)
+        drawLine(c, Offset(s * 0.2f, s * 0.8f), Offset(s * 0.55f, s * 0.8f), st, StrokeCap.Round)
+        drawLine(c, Offset(s * 0.2f, s * 0.8f), Offset(s * 0.2f, s * 0.45f), st, StrokeCap.Round)
     }
 }

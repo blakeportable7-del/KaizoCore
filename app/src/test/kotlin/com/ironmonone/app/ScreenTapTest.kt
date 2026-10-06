@@ -8,9 +8,8 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
- * The menu a tap brings up while the tracker is off screen (Blake, 2026-10-02: "a screen tap displays another menu
- * button on the top left, tapping away from the button and on the screen makes it disappear"). The DS frame maths,
- * the tap and the toggle run for real; the wiring is held to the source.
+ * A tap on the game, read from the game view's own touches (ScreenTap), for the FILE bar (TapZoneTest holds which taps
+ * count). The DS frame maths and the tap run for real; the wiring is held to the source.
  */
 class ScreenTapTest {
     private val dir = File("src/main/kotlin/com/ironmonone/app")
@@ -37,21 +36,6 @@ class ScreenTapTest {
     }
 
     @Test
-    fun `a tap on the touch screen is play, a tap anywhere else is for the menu`() {
-        // Landscape 2340 x 1080 with Hybrid Top: the frame is fitted by height, so it sits 84 px in from each side.
-        val hybrid = ScreenTap.DsLayout("hybrid-top")
-        assertTrue(ScreenTap.onTouchScreen(hybrid, 1900f, 800f, 2340f, 1080f), "the small bottom screen")
-        assertFalse(ScreenTap.onTouchScreen(hybrid, 600f, 400f, 2340f, 1080f), "the big top screen")
-        assertFalse(ScreenTap.onTouchScreen(hybrid, 1900f, 300f, 2340f, 1080f), "the empty space above the small screen")
-        assertFalse(ScreenTap.onTouchScreen(hybrid, 40f, 800f, 2340f, 1080f), "the black bar")
-        // Portrait 1080 x 1600, stacked: the lower half.
-        val stacked = ScreenTap.DsLayout("top-bottom")
-        assertTrue(ScreenTap.onTouchScreen(stacked, 540f, 1200f, 1080f, 1600f))
-        assertFalse(ScreenTap.onTouchScreen(stacked, 540f, 400f, 1080f, 1600f))
-        assertFalse(ScreenTap.onTouchScreen(ScreenTap.DsLayout("top"), 540f, 1200f, 1080f, 1600f))
-    }
-
-    @Test
     fun `only a short still touch is a tap`() {
         val t = ScreenTap.Taps(slopPx = 20f)
         t.down(100f, 100f, at = 0); assertEquals(100f to 100f, t.up(at = 150))
@@ -63,54 +47,17 @@ class ScreenTapTest {
     }
 
     @Test
-    fun `a tap shows the menu and the next hides it, while it stands in for the tracker`() {
-        val ui = PlayUiState()
-        ui.onScreenTap(10f, 10f, 100f, 100f)
-        assertFalse(ui.tapMenuShown, "with the tracker on screen a tap does nothing")
-        ui.tapMenuEnabled = true
-        ui.onScreenTap(10f, 10f, 100f, 100f); assertTrue(ui.tapMenuShown)
-        ui.onScreenTap(50f, 50f, 100f, 100f); assertFalse(ui.tapMenuShown, "tapping away hides it")
-        ui.tapDsLayout = ScreenTap.DsLayout("top-bottom")
-        ui.onScreenTap(50f, 90f, 100f, 100f); assertFalse(ui.tapMenuShown, "a tap on the DS touch screen is play")
-        ui.onScreenTap(50f, 10f, 100f, 100f); assertTrue(ui.tapMenuShown, "on the top screen it is for the menu")
-    }
-
-    @Test
-    fun `the button steps below a pad control in the corner`() {
-        assertEquals(6f, ScreenTap.menuTop(emptyList(), 6f, 44f), "the corner, with nothing there")
-        val l = PadGeometry.Box(20f, 8f, 60f, 48f)
-        assertEquals(54f, ScreenTap.menuTop(listOf(l), 6f, 44f), "below L")
-        val next = PadGeometry.Box(0f, 60f, 100f, 120f)
-        assertEquals(126f, ScreenTap.menuTop(listOf(l, next), 6f, 44f), "and past the next one under it")
-        // The DS landscape preset, where L covered the button on the emulator (851 x 393 dp).
-        for (skin in PadSkin.entries) {
-            val boxes = PadGeometry.rects(PadLayout.default(landscape = true, nds = true), 851f, 393f, landscape = true, skin = skin).values.flatten()
-            val top = ScreenTap.menuTop(boxes, 6f, 44f)
-            assertTrue(boxes.none { it.meets(PadGeometry.Box(6f, top, 50f, top + 44f)) }, "$skin: clear of every control")
-            assertTrue(top + 44f <= 393f, "$skin: still on the screen")
-        }
-    }
-
-    @Test
-    fun `the game view only watches, and the button sits last over the game`() {
+    fun `the game view only watches, and a tap on it goes to the FILE bar's rules`() {
         val tap = read("ScreenTap.kt").substringAfter("fun listener(").substringBefore("\n    }\n")
         assertTrue("\n            false\n        }" in tap, "the listener answers false: the view still gets every touch")
+        assertTrue("ui.onScreenTap(x, y, v.width.toFloat(), v.height.toFloat())" in tap)
         val play = read("PlayScreen.kt")
         assertTrue("view.setOnTouchListener(ScreenTap.listener(ui, ctx))" in play)
-        val landscape = play.substringAfter("OverlayChip(\"MENU\") { onExitFullscreen() }").substringBefore("if (!landscape) {")
-        assertTrue("ScreenTapMenu(" in landscape, "drawn after the band and the faded strip's guard, so it is on top")
-        assertTrue("allowed = session.tracked && !menuOpen && !streamClean && !editingLayout" in landscape)
-        val chrome = read("LandscapeChrome.kt")
-        val menu = chrome.substringAfter("internal fun ScreenTapMenu(").substringBefore("\n}\n")
-        assertTrue("TrackerOptions.landscapeTracker != LandscapeTracker.FLOATING" in menu && "trackerOnSecond ||" in menu,
-            "off screen: hidden beside the game, or on the other display")
-        assertTrue("if (!enabled && ui.tapMenuShown) ui.tapMenuShown = false" in menu, "it goes when the tracker comes back")
-        assertTrue("\"Show the tracker\"" in chrome)
-        assertTrue("val run = ironmonRunInPlay(attempt)" in chrome && "if (run) Text(" in chrome,
-            "the attempt is a Kaizo IronMON run's: a library game showed the last run's count")
-        // A pick in a dropdown never reaches the idle clock (its own window), so File brought the band up faded.
-        assertEquals(3, Regex(Regex.escape("menuOpen = !menuOpen; lastTouch = android.os.SystemClock.uptimeMillis()") + "|" +
-            Regex.escape("onFile = { menuOpen = true; lastTouch = android.os.SystemClock.uptimeMillis() }")).findAll(play).count(),
-            "the docked menu, the floating window's and this one all wake the band")
+        val ui = read("SideScreens.kt").substringAfter("class PlayUiState {").substringBefore("\n}\n")
+        assertTrue("fun onScreenTap(x: Float, y: Float, viewW: Float, viewH: Float) { FileBar.onScreenTap(x, y, viewW, viewH) }" in ui)
+        // With nothing composed to say what is on screen, a tap does nothing.
+        FileBar.reset()
+        PlayUiState().onScreenTap(10f, 10f, 100f, 100f)
+        assertFalse(FileBar.open)
     }
 }
