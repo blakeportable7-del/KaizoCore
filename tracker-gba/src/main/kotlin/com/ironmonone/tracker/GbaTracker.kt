@@ -1007,7 +1007,7 @@ data class GameMap(
             // Heart & Soul keeps Emerald's game code (BPEE) and its own title. Only the KaizoCore comfort build's
             // layout is known; any other Heart & Soul is refused rather than read with these addresses.
             if (HnsMaps.isHns(memory)) {
-                require(HnsMaps.isKaizoBuild(memory)) { "A Heart & Soul ROM that is not the KaizoCore build (C993EB6E): its addresses would read the wrong memory." }
+                require(HnsMaps.isKaizoBuild(memory)) { "A Heart & Soul ROM that is not the KaizoCore build (E35A0E40): its addresses would read the wrong memory." }
                 return HnsMaps.KAIZO
             }
             val magic = ptr(NATDEX_MAGIC_ADDR)

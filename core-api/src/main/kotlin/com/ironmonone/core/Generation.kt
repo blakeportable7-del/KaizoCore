@@ -366,7 +366,7 @@ data class RomKind(
 
         /**
          * Pokemon Heart & Soul 2.0.6 with KaizoCore's comfort patch (docs/HNS-KAIZO.md): the official 2.0.6 (01713508)
-         * plus our BPS, CRC C993EB6E. The header is Heart & Soul's own ("POKEMON HNS", game code BPEE); the tracker
+         * plus our BPS, CRC E35A0E40. The header is Heart & Soul's own ("POKEMON HNS", game code BPEE); the tracker
          * picks its map by that title and the build's tables (GameMap.resolve, HnsMaps). Minimal on purpose
          * (feat/hns-tracker, 2026-10-05): recognition for the Library and the tracker only; the randomizer for it is
          * HnsEngine's to wire, and another branch may define this kind too.
@@ -377,7 +377,7 @@ data class RomKind(
             displayName = "Pokémon Heart & Soul (KaizoCore)",
             generation = Generation.GBA3,
             fileExtension = "gba",
-            expectedCrc = 0xC993EB6EL,
+            expectedCrc = 0xE35A0E40L,
             titleDetect = "POKEMON HNS",
             natDexCapable = false,
         )

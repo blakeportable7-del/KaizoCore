@@ -1,5 +1,5 @@
 {
-"buildCrc": "C993EB6E",
+"buildCrc": "E35A0E40",
 "genScope": "src/randomizer.c IsSpeciesInGenScope with tx_Random_GenScope on",
 "species": [
 {"id":0,"const":"SPECIES_NONE","name":"??????????","natDexNum":0,"baseStats":{"hp":0,"atk":0,"def":0,"spe":0,"spa":0,"spd":0},"types":["TYPE_NONE","TYPE_NONE"],"abilities":[{"id":0,"name":"-------"},{"id":0,"name":"-------"},{"id":0,"name":"-------"}],"growthRate":"GROWTH_MEDIUM_FAST","enabled":false,"randomizerMode":3,"gen13Scope":false,"legendary":{"restricted":0,"sub":0,"mythical":0,"ultraBeast":0,"paradox":0},"bst":0},

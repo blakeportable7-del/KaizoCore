@@ -10,7 +10,7 @@ import kotlin.test.assertTrue
 
 /**
  * The Heart & Soul tracker profile (HnsMaps, HnsData, HnsMon, HnsLayout) against the real comfort build,
- * hns-kaizo.gba (CRC C993EB6E), read where it lies: IRONMON_HNS, else this checkout's .vendor/hns, else the main
+ * hns-kaizo.gba (CRC E35A0E40), read where it lies: IRONMON_HNS, else this checkout's .vendor/hns, else the main
  * checkout's (a worktree can carry a newer build than the main checkout). Without it
  * every test here returns; under IRONMON_REQUIRE_DUMPS a missing ROM fails instead. The RAM is synthetic: parties,
  * save blocks and battles are written into it with the game's own algorithm and offsets, then read back.

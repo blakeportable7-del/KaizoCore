@@ -2,6 +2,39 @@
 
 Short and plain, one list per release. Newest first.
 
+## rc36.1 (5 October 2026)
+
+**Heart & Soul: after updating, patch it again once** (Home > Pokémon Heart & Soul). Your official copy is already
+in the Library, so it only takes a moment. Your saves and attempts stay.
+
+**Kaizo rules for Heart & Soul**
+
+- **No running from trainer battles in Kaizo:** RUN says "No! There's no running from a trainer battle!" and the
+  forfeit prompt is gone. A Nuzlocke keeps the forfeit, so a run can never get stuck.
+- **No EXP for catching in Kaizo,** as in the Gen 3 games IronMON was built on.
+- **Wild Pokémon come in order in Kaizo:** each area cycles through its Pokémon, so five kinds mean five encounters,
+  then it starts over.
+- **No HM moves in any random moveset,** so no starter or wild Pokémon knows or learns one.
+- **Your first rival battle plays by FireRed's first-battle rules:** your attacks never miss and nobody gets a
+  critical hit.
+- **Kaizo only:** used-up held items stay used up, the Day Care won't take your Pokémon, the Exp. Share is off
+  so your main gets all the EXP, shiny odds and item drops stay at the default, only Pokémon that fought roll
+  Pickup, TMs break after one use, and there are no mints.
+- **Hidden items are never TMs,** and item pools now match the source game's list, so TMs turn up as often as in
+  Emerald Kaizo and no more.
+
+**Faster Heart & Soul**
+
+- After the egg comes back, the aide hands you the Poké Balls right away and you are healed, no trip home.
+- The trash can in Elm's lab sparkles and just gives you the item.
+- Ilex Forest's Farfetch'd goes home on the first talk, trainer phone calls are off in Kaizo (Elm's story calls
+  stay), the Violet egg comes with Elm's call, and the Burned Tower, Suicune and story scenes are quicker.
+- Short warps after the Radio Tower keys, after Lance agrees at the Lake of Rage, and after the Dragon's Den badge
+  (no quiz). The lighthouse medicine is done at the Cianwood pharmacy, Whitney gives her badge right away, Oak calls
+  to open Mt. Silver, and the credits can be skipped with Start or B. No trainer is skipped and no warp lands you in
+  a fight.
+- The Meowth Name Raters stand where Emerald's Name Rater does.
+
 ## rc36 (5 October 2026)
 
 **New**

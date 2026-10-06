@@ -20,7 +20,7 @@ import kotlin.test.assertTrue
  * The Pokemon Heart & Soul button's flow (HnsSetup, 2026-10-05): every wrong input and the happy path, on small files
  * made here with checksums the flow is handed (Crcs), then once on the real files when they are on this PC: the
  * player's Emerald (.vendor/roms/emerald-u.gba), the team's pokemonHnS_v2.0.6.ups (.vendor/hns) and KaizoCore's own
- * bundled comfort patch, which must make 01713508 and then C993EB6E.
+ * bundled comfort patch, which must make 01713508 and then E35A0E40.
  */
 class HnsSetupTest {
     // ------------------------------------------------------------------ small files and patches
@@ -122,7 +122,7 @@ class HnsSetupTest {
         // The real checksums by default: Emerald (USA), the official 2.0.6 and the KaizoCore build.
         assertEquals(HnsSetup.Start.EMERALD, HnsSetup.startOf(0x1F1C08FBL, null))
         assertEquals(HnsSetup.Start.OFFICIAL, HnsSetup.startOf(0x01713508L, null))
-        assertEquals(HnsSetup.Start.KAIZO, HnsSetup.startOf(0xC993EB6EL, null))
+        assertEquals(HnsSetup.Start.KAIZO, HnsSetup.startOf(0xE35A0E40L, null))
     }
 
     @Test
@@ -307,7 +307,7 @@ class HnsSetupTest {
     }
 
     @Test
-    fun `the player's Emerald and the team's 2_0_6 patch make 01713508, and the comfort patch C993EB6E`() {
+    fun `the player's Emerald and the team's 2_0_6 patch make 01713508, and the comfort patch E35A0E40`() {
         val emeraldFile = vendor("roms", "emerald-u.gba") ?: return println("HnsSetupTest skipped: no emerald-u.gba")
         val upsFile = vendor("hns", "pokemonHnS_v2.0.6.ups") ?: return println("HnsSetupTest skipped: no pokemonHnS_v2.0.6.ups")
         val d = dir()
@@ -324,7 +324,7 @@ class HnsSetupTest {
         assertEquals(0x01713508L, official.crc)
         assertEquals(RomKind.HEARTSOUL_206, official.kind)
         val kaizo = RomIdentity.identify(made.kaizo)
-        assertEquals(0xC993EB6EL, kaizo.crc)
+        assertEquals(0xE35A0E40L, kaizo.crc)
         assertEquals(RomKind.HEARTSOUL_KAIZO_206, kaizo.kind)
         // Into a Library: the official plays without a tracker, the KaizoCore build is tracked and Kaizo IronMON's.
         val library = LibraryStore(File(d, "library"), savesDir = null)

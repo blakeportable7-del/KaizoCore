@@ -38,7 +38,7 @@ class HnsIntegrationTest {
         fun byCrc(c: Long) = RomKind.all.filter { it.expectedCrc == c }
         assertEquals(listOf(RomKind.EMERALD_U), byCrc(0x1F1C08FBL))
         assertEquals(listOf(RomKind.HEARTSOUL_206), byCrc(0x01713508L))
-        assertEquals(listOf(RomKind.HEARTSOUL_KAIZO_206), byCrc(0xC993EB6EL))
+        assertEquals(listOf(RomKind.HEARTSOUL_KAIZO_206), byCrc(0xE35A0E40L))
         assertEquals(RomKind.HEARTSOUL_206, RomKind.byId("heartsoul-206"))
         for (k in RomKind.allHns) {
             assertEquals("POKEMON HNS", k.titleDetect)
@@ -56,7 +56,7 @@ class HnsIntegrationTest {
         val d = tmp()
         val f1 = File(d, "a.gba").apply { writeBytes(ByteArray(16)) }
         val official = LibraryStore.Entry(f1, "Pokémon Heart & Soul 2.0.6.gba", 0x01713508L, RomKind.HEARTSOUL_206, Platform.GBA, "s")
-        val kaizo = LibraryStore.Entry(f1, "Pokémon Heart & Soul (KaizoCore).gba", 0xC993EB6EL, RomKind.HEARTSOUL_KAIZO_206, Platform.GBA, "s")
+        val kaizo = LibraryStore.Entry(f1, "Pokémon Heart & Soul (KaizoCore).gba", 0xE35A0E40L, RomKind.HEARTSOUL_KAIZO_206, Platform.GBA, "s")
         assertTrue(official.verified && official.playOnly && !official.tracked)
         assertEquals(LibraryStore.Category.HACK, official.category)
         assertEquals("Pokémon Heart & Soul 2.0.6 · No tracker", official.subtitle)
@@ -64,7 +64,7 @@ class HnsIntegrationTest {
         assertEquals(LibraryStore.Category.PATCHED, kaizo.category)
         assertEquals("Pokémon Heart & Soul (KaizoCore) · Tracker works", kaizo.subtitle)
         assertNull(GameSession.trackerKind(RomKind.HEARTSOUL_206, 0x01713508L))
-        assertEquals(RomKind.HEARTSOUL_KAIZO_206, GameSession.trackerKind(RomKind.HEARTSOUL_KAIZO_206, 0xC993EB6EL))
+        assertEquals(RomKind.HEARTSOUL_KAIZO_206, GameSession.trackerKind(RomKind.HEARTSOUL_KAIZO_206, 0xE35A0E40L))
         // Nuzlocke's plain games: the KaizoCore build, never the official one.
         assertEquals(listOf(kaizo), NuzlockeStarts.plainGames(listOf(official, kaizo)))
         assertTrue(LibraryImport.addedLine(official).contains("Pokémon Heart & Soul on Home"))
@@ -84,7 +84,7 @@ class HnsIntegrationTest {
             meta.writeText(lines.joinToString("\n"))
         }
         pin(official, RomKind.HEARTSOUL_206, 0x01713508L)
-        pin(kaizo, RomKind.HEARTSOUL_KAIZO_206, 0xC993EB6EL)
+        pin(kaizo, RomKind.HEARTSOUL_KAIZO_206, 0xE35A0E40L)
         assertEquals(listOf(RomKind.HEARTSOUL_KAIZO_206.id), store.listPrepared().map { it.first.id })
     }
 

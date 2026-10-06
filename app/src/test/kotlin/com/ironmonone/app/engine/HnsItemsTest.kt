@@ -16,7 +16,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 /**
- * Heart & Soul's item rules (docs/HNS-KAIZO.md, "Next comfort-patch rebuild"), on the real comfort build C993EB6E:
+ * Heart & Soul's item rules (docs/HNS-KAIZO.md, "Next comfort-patch rebuild"), on the real comfort build E35A0E40:
  * the PC item in Elm's lab trash can (randomNonTM, never a TM), the starter's held item (randomItem, TMs allowed),
  * hidden items with the field-item rules, Pickup as UPR does it, and item pools by the run's pool (VANILLA: vanilla
  * Emerald's items, NATDEX: Nat. Dex Emerald 1.2.1's). Without the ROM every test returns early, as HnsEngineTest's do.
@@ -125,12 +125,37 @@ class HnsItemsTest {
                 assertEquals(v.item, f.item, "a key item or HM moved at ${f.addr}")
                 continue
             }
-            assertEquals(v.item in tmItems, f.item in tmItems, "${f.hidden?.map ?: "ball"}: ${vanilla.itemName(v.item)} -> ${out.itemName(f.item)}")
+            // An item ball keeps UPR's rule (a TM stays a TM, an item stays an item); a hidden item is never a TM.
+            if (f.hidden == null) assertEquals(v.item in tmItems, f.item in tmItems, "ball: ${vanilla.itemName(v.item)} -> ${out.itemName(f.item)}")
+            else assertFalse(f.item in tmItems, "${f.hidden?.map}: ${vanilla.itemName(v.item)} -> ${out.itemName(f.item)}")
             if (f.hidden != null && f.item != v.item) hiddenChanged++
             // The rest of a hidden item's word (flag, quantity, underfoot) is untouched.
             if (f.hidden != null) assertEquals(vanilla.rom.read(f.addr, 4) and 0x7FFL.inv(), out.rom.read(f.addr, 4) and 0x7FFL.inv())
         }
         assertTrue(hiddenChanged > 100, "only $hiddenChanged hidden items changed")
+    }
+
+    @Test
+    fun `no Kaizo seed writes a TM into a hidden item, and item ball TMs stay TMs`() {
+        if (skip()) return
+        // Heart & Soul itself hides three TMs (Rock Polish, Pluck, Torment); Blake: hidden items are never TMs.
+        val hiddenTms = vanilla.fieldItems.filter { it.hidden != null && it.item in tmItems }
+        // TM41 Torment, TM69 Rock Polish, TM88 Pluck.
+        assertEquals(setOf("TM41", "TM69", "TM88"), hiddenTms.map { vanilla.itemName(it.item) }.toSet())
+        val ballTms = vanilla.fieldItems.filter { it.hidden == null && it.item in tmItems }.map { it.addr }.toSet()
+        assertTrue(ballTms.size > 10)
+        val runs = (1L..3L).map { "Kaizo seed $it" to { read(run(HnsEngineTest.KAIZO, it, HnsEngine.Pool.NATDEX).rom) } } +
+            listOf("shuffle" to { read(itemRun(4L, HnsEngine.Pool.NATDEX, itemsOnly.copy(fieldItemsMod = "SHUFFLE")).rom) })
+        for ((what, make) in runs) {
+            val out = make()
+            val seed = what
+            for (f in out.fieldItems) {
+                if (f.hidden != null) assertFalse(f.item in tmItems, "$seed: hidden ${f.hidden?.map} holds ${out.itemName(f.item)}")
+                if (f.addr in ballTms) assertTrue(f.item in tmItems, "$seed: ball TM became ${out.itemName(f.item)}")
+            }
+            val h = hiddenTms.map { t -> out.fieldItems.first { it.addr == t.addr }.item }
+            assertTrue(h.all { it != 0 && out.items[it] != null && out.items[it]!!.pocket != keyPocket }, "$seed: ${h.map { out.itemName(it) }}")
+        }
     }
 
     @Test

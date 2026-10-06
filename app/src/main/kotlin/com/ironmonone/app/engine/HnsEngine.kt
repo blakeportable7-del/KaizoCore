@@ -37,7 +37,7 @@ object HnsEngine {
      * which has the same structures and is kept for the tests.
      */
     val BUILDS = listOf(
-        Build(0xC993EB6EL, "KaizoCore comfort build", "hns/layout-kaizo.json", "hns/species-kaizo.json"),
+        Build(0xE35A0E40L, "KaizoCore comfort build", "hns/layout-kaizo.json", "hns/species-kaizo.json"),
         Build(0x45D07ED4L, "plain build", "hns/layout-plain.json", "hns/species-plain.json"),
     )
 
@@ -94,7 +94,7 @@ object HnsEngine {
         val out = rom.copyOf()
         val game = HnsGame(HnsRom(out, layout), species)
         val text = Randomizers.inEngineLocale {
-            HnsRandomizer(game, options, seed, pool, bstLine(options, pool), poolItemKeys(pool, assets)).run()
+            HnsRandomizer(game, options, seed, pool, bstLine(options, pool), poolItemKeys(pool, assets), poolNonBadKeys(pool, assets)).run()
         }
         // Every randomized run is a Kaizo IronMON run until the Nuzlocke path says otherwise (writePreset).
         writePreset(out, layout, Preset.KAIZO)
@@ -124,7 +124,18 @@ object HnsEngine {
             rom[values + NUZLOCKE_ROW + k] = (if (kaizo && k == 0) 1 else 0).toByte()
             rom[locks + NUZLOCKE_ROW + k] = (if (kaizo) 1 else 0).toByte()
         }
+        // The rules rows Kaizo sets apart from the build's Nuzlocke preset (Blake, 2026-10-05), locked: GAME MODE CUSTOM
+        // (the two below differ from RECOMMENDED), REUSABLE TMS OFF, NATURE MINTS OFF (the mint shop closes with it),
+        // SHINY CHANCE 1/8192 and ITEM DROP OFF. The Nuzlocke path puts the build's own back: RECOMMENDED, both ON and
+        // locked; the two FEATURES rows free.
+        for ((row, k, n) in KAIZO_RULE_ROWS) {
+            rom[values + row] = (if (kaizo) k else n).toByte()
+            rom[locks + row] = (if (kaizo || row < 20) 1 else 0).toByte()
+        }
     }
+
+    /** (row, Kaizo value, Nuzlocke value): a value is the selection plus one, 0 leaves the row as it is. */
+    private val KAIZO_RULE_ROWS = listOf(Triple(0, 2, 1), Triple(4, 1, 2), Triple(5, 1, 2), Triple(20 + 1, 1, 0), Triple(20 + 3, 1, 0))
 
     /** [writePreset] on a run's ROM file, read through the comfort build's layout. */
     fun writePreset(romFile: File, preset: Preset, assets: (String) -> String) {
@@ -144,6 +155,19 @@ object HnsEngine {
     fun poolItemKeys(pool: Pool, assets: (String) -> String): Set<String> =
         assets(poolItemsAsset(pool)).lineSequence().map { it.trimEnd('\r') }.filter { it.isNotBlank() && !it.startsWith("#") }
             .map { HnsRandomizer.itemKey(it.substringAfter('\t')) }.toSet()
+
+    /**
+     * The pool's "bad items banned" list, as the source game's own UPR fork has it for Emerald (Gen3Constants
+     * .getNonBadItems): engine-zx's for VANILLA, engine-natdex's for NATDEX, by name. Heart & Soul had banned more on
+     * its own (valuables, the status berries, the Deep Sea items), which left TMs 31% of the list against Emerald's 27%
+     * (Blake, 2026-10-05: the starter's item seemed to favor TMs). Every item roll with bad items banned draws from it.
+     */
+    fun poolNonBadKeys(pool: Pool, assets: (String) -> String): Set<String> {
+        val list = if (pool == Pool.VANILLA) com.dabomstew.pkrandomzx.constants.Gen3Constants.getNonBadItems(com.dabomstew.pkrandomzx.constants.Gen3Constants.RomType_Em)::isAllowed
+                   else com.dabomstew.pkrandom.constants.Gen3Constants.getNonBadItems(com.dabomstew.pkrandom.constants.Gen3Constants.RomType_Em)::isAllowed
+        return assets(poolItemsAsset(pool)).lineSequence().map { it.trimEnd('\r') }.filter { it.isNotBlank() && !it.startsWith("#") }
+            .filter { list(it.substringBefore('\t').toInt()) }.map { HnsRandomizer.itemKey(it.substringAfter('\t')) }.toSet()
+    }
 
     fun randomize(rom: ByteArray, settings: com.dabomstew.pkrandom.Settings, modeName: String, seed: Long, pool: Pool, assets: (String) -> String): Result =
         randomize(rom, HnsOptions.from(settings, modeName), seed, pool, assets)

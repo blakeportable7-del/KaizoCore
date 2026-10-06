@@ -16,7 +16,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 /**
- * HnsEngine on the real Heart & Soul comfort build (.vendor/hns/hns-kaizo.gba, CRC C993EB6E, never in the repo).
+ * HnsEngine on the real Heart & Soul comfort build (.vendor/hns/hns-kaizo.gba, CRC E35A0E40, never in the repo).
  * Without the ROM every test returns early, as the other ROM tests do; under IRONMON_REQUIRE_DUMPS a missing ROM fails.
  * Each output is read back through a fresh HnsGame over the output bytes, plus raw reads where the game reads raw.
  */
@@ -69,8 +69,8 @@ class HnsEngineTest {
     @Test
     fun `the comfort build is what the layout describes`() {
         if (skip()) return
-        assertEquals(0xC993EB6EL, HnsEngine.crc(rom!!))
-        assertEquals(0xC993EB6EL, layout.buildCrc)
+        assertEquals(0xE35A0E40L, HnsEngine.crc(rom!!))
+        assertEquals(0xE35A0E40L, layout.buildCrc)
         assertEquals(null, HnsEngine.refusal(rom!!))
     }
 
@@ -183,6 +183,25 @@ class HnsEngineTest {
             checked++
         }
         assertTrue(checked > 1000)
+    }
+
+    @Test
+    fun `no randomized learnset holds an HM move, so no Pokemon learns or starts with one`() {
+        if (skip()) return
+        // Blake, 2026-10-05: "starters can't know hm moves", "can't learn hm moves either". Trainers get their level-up
+        // moves from these learnsets (their move slots are cleared), so this covers them too.
+        for (pool in listOf(HnsEngine.Pool.NATDEX, HnsEngine.Pool.VANILLA)) for (seed in 1L..6L) {
+            val out = read(run(KAIZO, seed, pool).rom)
+            val hms = out.L.machines.filter { it.kind == "HM" }.map { it.move }.toSet()
+            assertEquals(8, hms.size)
+            for (m in out.mons) {
+                if (m == null || !m.eligible) continue
+                val bad = m.learnset.filter { it.move in hms }
+                assertTrue(bad.isEmpty(), "$pool seed $seed: ${m.const} learns ${bad.map { "${out.moveName(it.move)} at ${it.level}" }}")
+            }
+            for (sp in (0 until 3).map { out.rom.u16(out.L.sym("sStarterMon") + 2 * it) })
+                assertTrue(out.mons[sp]!!.learnset.none { it.move in hms }, "$pool seed $seed: starter ${out.speciesName(sp)}")
+        }
     }
 
     @Test
@@ -310,7 +329,11 @@ class HnsEngineTest {
         assertEquals(1, out[base + 1].toInt())
         assertEquals(1, out[v + row(3, 0)].toInt())
         assertTrue((0 until 6).all { out[lk + row(3, it)].toInt() == 1 })
-        for (i in 0 until 120) if (i / 20 != 3) {
+        // Kaizo's own rules rows (Blake, 2026-10-05), all locked: CUSTOM, reusable TMs OFF, mints OFF, shiny 1/8192, drops OFF.
+        val kaizoRows = mapOf(row(0, 0) to 2, row(0, 4) to 1, row(0, 5) to 1, row(1, 1) to 1, row(1, 3) to 1)
+        for ((i, value) in kaizoRows) { assertEquals(value, out[v + i].toInt(), "Kaizo value $i"); assertEquals(1, out[lk + i].toInt(), "Kaizo lock $i") }
+        assertEquals(0, r[lk + row(1, 1)].toInt(), "the build leaves SHINY CHANCE free")
+        for (i in 0 until 120) if (i / 20 != 3 && i !in kaizoRows) {
             assertEquals(r[v + i], out[v + i], "value $i"); assertEquals(r[lk + i], out[lk + i], "lock $i")
         }
         // The Nuzlocke path puts the build's own preset back.

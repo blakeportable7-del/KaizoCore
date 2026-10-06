@@ -27,6 +27,8 @@ class HnsRandomizer(
      * of them; the bad-item rules apply on top. Battle rules stay Heart & Soul's in both (Blake, 2026-10-05).
      */
     private val poolItems: Set<String>? = null,
+    /** The source game's UPR "non-bad" items, as [itemKey]s (HnsEngine.poolNonBadKeys), or null for the rules below. */
+    private val poolNonBad: Set<String>? = null,
 ) {
     companion object {
         /** Gen 3's shortened names, as vanilla Emerald spells them, to Heart & Soul's (both as [itemKey]s). */
@@ -333,6 +335,8 @@ class HnsRandomizer(
     private val tmPocket = L.enumValue("POCKET", "POCKET_TM_HM") ?: 3
     private val berryPocket = L.enumValue("POCKET", "POCKET_BERRIES") ?: 4
     private val hmItems: Set<Int> = L.machines.filter { it.kind == "HM" }.map { it.item }.toSet()
+    /** The HM moves (Cut, Fly, Surf, Strength, Flash, Rock Smash, Waterfall, Whirlpool in Heart & Soul). */
+    private val hmMoves: Set<Int> = L.machines.filter { it.kind == "HM" }.map { it.move }.toSet()
     private val tmItems: List<Int> = L.machines.filter { it.kind == "TM" }.map { it.item }
 
     /** Whether item [id] is in the pool's game (see [poolItems]). */
@@ -366,6 +370,9 @@ class HnsRandomizer(
             "RARE_BONE", "RELIC_COPPER", "RELIC_SILVER", "RELIC_GOLD", "RELIC_VASE", "RELIC_BAND", "RELIC_STATUE", "RELIC_CROWN",
             "ODD_KEYSTONE", "BOTTLE_CAP", "GOLD_BOTTLE_CAP", "HONEY", "SLOWPOKE_TAIL", "SOOT_SACK")
             .mapNotNull { item(it) }.toSet()
+        if (poolNonBad != null) return@lazy allowedItems.filter { id ->
+            itemKey(game.items[id]!!.name) in poolNonBad && !(o.banLuckyEgg && id == item("LUCKY_EGG"))
+        }
         allowedItems.filter { id ->
             val d = game.items[id]!!
             d.pocket != berryPocket && !d.name.endsWith(" MAIL") && !d.name.endsWith("MAIL") && d.holdEffect !in holdBad && id !in names &&
@@ -377,6 +384,10 @@ class HnsRandomizer(
         val l = if (banBad) nonBadItems else allowedItems
         return if (o.banLuckyEgg) l.filter { it != item("LUCKY_EGG") } else l
     }
+
+    /** For tests: the list every item roll of [banBad] draws from, and one starter-item roll on this seed. */
+    internal fun itemPoolForTest(banBad: Boolean): List<Int> = itemList(banBad)
+    internal fun starterItemRollForTest(): Int = randomItem(itemList(o.banBadStarterHeldItems))
 
     /** UPR's ItemList.randomItem: any item of the list, TMs included. */
     private fun randomItem(list: List<Int>) = list[random.nextInt(list.size)]
@@ -847,9 +858,15 @@ class HnsRandomizer(
         return p >= 100 || (p >= 50 && (mv.accuracy >= 90 || mv.accuracy == 0))
     }
 
-    /** AbstractRomHandler.randomizeMovesLearnt. */
+    /**
+     * AbstractRomHandler.randomizeMovesLearnt. No HM move is ever rolled into a learnset, evolution moves included, so
+     * no Pokemon learns one by level or knows one when met (Blake, 2026-10-05: "starters can't know hm moves", "can't
+     * learn hm moves either"). engine-zx's createSetsOfMoves bans getHMMoves(); engine-natdex has that line commented
+     * out; both pools follow the vanilla rule here.
+     */
     private fun randomizeMovesets() {
         val typed = o.movesetsMod == "RANDOM_PREFER_SAME_TYPE"
+        val validMoves = validMoves.filter { it.id !in hmMoves }
         val damaging = validMoves.filter { goodDamaging(it) }
         val byType = validMoves.groupBy { it.type }
         val damagingByType = damaging.groupBy { it.type }
@@ -1685,7 +1702,9 @@ class HnsRandomizer(
     /**
      * AbstractRomHandler.randomizeFieldItems over the item balls and the hidden items (UPR's "Item balls and hidden
      * items"): an item stays an item (randomNonTM) and a TM stays a TM; key items and HMs never move. Every roll is an
-     * item of the pool's game.
+     * item of the pool's game. One rule of our own (Blake, 2026-10-05): a hidden item is never a TM. Heart & Soul hides
+     * three TMs (Rock Polish, Pluck, Torment); they get a regular item like every other hidden item, and only item
+     * balls keep UPR's "a TM stays a TM".
      */
     private fun fieldItems() {
         if (o.fieldItemsMod == "UNCHANGED") return
@@ -1693,13 +1712,16 @@ class HnsRandomizer(
             val d = game.items.getOrNull(f.item)
             d != null && d.pocket != keyPocket && f.item !in hmItems && (d.pocket != tmPocket || f.item in tmItems)
         }
-        val regular = list.filter { it.item !in tmItems }
-        val tms = list.filter { it.item in tmItems }
+        val regular = list.filter { it.item !in tmItems || it.hidden != null }
+        val tms = list.filter { it.item in tmItems && it.hidden == null }
+        val hiddenTms = list.filter { it.item in tmItems && it.hidden != null }
+        val possible = itemList(o.banBadFieldItems).filter { it !in tmItems }
         if (o.fieldItemsMod == "SHUFFLE") {
-            val a = regular.map { it.item }.shuffled(random); regular.forEachIndexed { i, f -> f.item = a[i] }
+            val plain = regular - hiddenTms.toSet()
+            val a = plain.map { it.item }.shuffled(random); plain.forEachIndexed { i, f -> f.item = a[i] }
             val b = tms.map { it.item }.shuffled(random); tms.forEachIndexed { i, f -> f.item = b[i] }
+            hiddenTms.forEach { it.item = possible[random.nextInt(possible.size)] }
         } else {
-            val possible = itemList(o.banBadFieldItems).filter { it !in tmItems }
             val newItems = regular.map { possible[random.nextInt(possible.size)] }.toMutableList()
             // UPR draws each field TM once; past the pool's TM count (vanilla Emerald's 50) the draw starts over.
             val newTms = ArrayList<Int>()
@@ -1720,7 +1742,8 @@ class HnsRandomizer(
         }
         log()
         val hidden = list.count { it.hidden != null }
-        notes += "Field items: ${list.size - hidden} item balls and $hidden hidden items randomized (${tms.size} of them TMs)."
+        notes += "Field items: ${list.size - hidden} item balls and $hidden hidden items randomized (${tms.size} of them TMs)." +
+            if (hiddenTms.isNotEmpty()) " The ${hiddenTms.size} hidden TMs became regular items: a hidden item is never a TM." else ""
     }
 
     /** AbstractRomHandler.randomizeStarterHeldItems: one item for the starter, whichever is picked, TMs included. */
