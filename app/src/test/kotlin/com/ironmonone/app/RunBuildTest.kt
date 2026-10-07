@@ -106,9 +106,9 @@ class RunBuildTest {
         assertFalse(hns.expectedCrc in hns.supersededCrcs)
         assertTrue(hns.isOlderBuild(rc36), "rc36's, the build players had")
         assertEquals(hns, RomKind.olderBuildOf(rc36))
-        // Every build players were given stays known for good: rc36 (C993EB6E), rc36.1 (E35A0E40) and rc37 (C218FD9E), or an
-        // update strands their runs.
-        for (shipped in listOf(0xC993EB6EL, 0xE35A0E40L, 0xC218FD9EL)) assertTrue(hns.isOlderBuild(shipped), "%08X shipped to players".format(shipped))
+        // Every build players were given stays known for good: rc36 (C993EB6E), rc36.1 (E35A0E40), rc37 (C218FD9E) and rc38
+        // (949DBE42), or an update strands their runs.
+        for (shipped in listOf(0xC993EB6EL, 0xE35A0E40L, 0xC218FD9EL, 0x949DBE42L)) assertTrue(hns.isOlderBuild(shipped), "%08X shipped to players".format(shipped))
         assertNull(RomKind.olderBuildOf(hns.expectedCrc))
         assertNull(RomKind.olderBuildOf(RomKind.EMERALD_U.expectedCrc))
     }

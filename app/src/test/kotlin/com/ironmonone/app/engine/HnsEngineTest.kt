@@ -16,7 +16,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 /**
- * HnsEngine on the real Heart & Soul comfort build (.vendor/hns/hns-kaizo.gba, CRC 949DBE42, never in the repo).
+ * HnsEngine on the real Heart & Soul comfort build (.vendor/hns/hns-kaizo.gba, CRC E61D7527, never in the repo).
  * Without the ROM every test returns early, as the other ROM tests do; under IRONMON_REQUIRE_DUMPS a missing ROM fails.
  * Each output is read back through a fresh HnsGame over the output bytes, plus raw reads where the game reads raw.
  */
@@ -69,8 +69,8 @@ class HnsEngineTest {
     @Test
     fun `the comfort build is what the layout describes`() {
         if (skip()) return
-        assertEquals(0x949DBE42L, HnsEngine.crc(rom!!))
-        assertEquals(0x949DBE42L, layout.buildCrc)
+        assertEquals(0xE61D7527L, HnsEngine.crc(rom!!))
+        assertEquals(0xE61D7527L, layout.buildCrc)
         assertEquals(null, HnsEngine.refusal(rom!!))
     }
 

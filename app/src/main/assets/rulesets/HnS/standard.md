@@ -14,7 +14,8 @@ In KaizoCore, Heart & Soul plays every IronMON mode this way:
 - Catching a Pokémon gives no EXP.
 - Wild Pokémon come in turn: each list (grass, water, Rock Smash and each fishing rod) gives every species it has once, in order, before any comes again. A route with five species shows all five in five encounters.
 - No Pokémon learns an HM move by level or knows one when you meet it, yours or a trainer's, in either pool.
-- The lab fight these rules name is your first rival battle, outside Cherrygrove City. It plays by FireRed's first-battle rules: your damaging moves never miss, neither side lands a critical hit, and the rival battles as FireRed's first rival does.
+- No TM teaches an HM move, in either pool, as in vanilla Emerald.
+- The lab fight these rules name is your first rival battle, outside Cherrygrove City. It plays by FireRed's first-battle rules: your damaging moves never miss, neither side lands a critical hit, and the rival battles as FireRed's first rival does. A trainer's Pokémon never runs from a battle, the rival's included.
 - A held item that gets used up in battle stays used up. Only an item taken from you comes back after the battle.
 - The Day Care on Route 34 takes no Pokémon.
 - The Exp. Share that gives EXP to the whole party is off, so a Pokémon that does not battle, such as an HM friend, gains none.
@@ -129,4 +130,4 @@ Note: None of the Pokémon in this list have the Slow Exp. curve
 - game-specific rules and settings gist by UTDZac: https://gist.github.com/UTDZac/a147c497424dfbd537d8c4b0c22b5621 (last changed 2026-07-05)
 - Nat. Dex Ruleset Changes, the Nat. Dex Extension wiki by CyanSixFour: https://github.com/CyanSMP64/NatDexExtension/wiki/Nat.-Dex-Ruleset-Changes (last changed 2026-06-29)
 
-Generated 2026-10-06 by tools/rules/build_rules.py. Rulesets get revised; if this reads behind a source, regenerate.
+Generated 2026-10-07 by tools/rules/build_rules.py. Rulesets get revised; if this reads behind a source, regenerate.

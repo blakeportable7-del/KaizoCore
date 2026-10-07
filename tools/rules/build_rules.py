@@ -325,10 +325,12 @@ HNS_GAME = [
     "once, in order, before any comes again. A route with five species shows all five in five encounters.",
     # HnsRandomizer: hmMoves are never rolled into a learnset, evolution and level 1 moves included; trainers use learnsets.
     "- No Pokémon learns an HM move by level or knows one when you meet it, yours or a trainer's, in either pool.",
-    # 0033: KaizoCore_IsFirstRivalBattle, the three TRAINER_RIVAL_*_1_HNS.
+    # HnsRandomizer.randomizeTMs (rc38.1, Blake: "apply the vanilla rule to natl dex"): hmMoves never go on a TM.
+    "- No TM teaches an HM move, in either pool, as in vanilla Emerald.",
+    # 0033: KaizoCore_IsFirstRivalBattle, the three TRAINER_RIVAL_*_1_HNS. 0045: a trainer's Pokemon never flees.
     "- The lab fight these rules name is your first rival battle, outside Cherrygrove City. It plays by FireRed's "
     "first-battle rules: your damaging moves never miss, neither side lands a critical hit, and the rival battles as "
-    "FireRed's first rival does.",
+    "FireRed's first rival does. A trainer's Pokémon never runs from a battle, the rival's included.",
     # 0034: TryRestoreHeldItems.
     "- A held item that gets used up in battle stays used up. Only an item taken from you comes back after the battle.",
     # 0034: Route34_DayCare_EventScript_KaizoCoreRefuse.

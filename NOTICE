@@ -731,8 +731,8 @@ https://github.com/PokemonHnS-Development/pokehns-expansion
   (2026-10-04, docs/HNS-KAIZO.md). They take no donations and KaizoCore asks for none.
   The one Heart & Soul file in the APK is KaizoCore's own comfort patch, made by
   tools/hns/build.sh from the official 2.0.6 (CRC 01713508) to the KaizoCore build
-  (949DBE42) out of the patch series in tools/hns/patches. SHA-256:
-    3872f46ac528f6b9d1a9e6c5db92154854252989583c4a724b518c7a1b77e8b0  hns-kaizo-heartsoul-206.bps
+  (E61D7527) out of the patch series in tools/hns/patches. SHA-256:
+    55f1395f1820cf023b10dc18754cfabfa67841a69d592f454e3bfefdd5e7b76b  hns-kaizo-heartsoul-206.bps
 
 BINDING RELEASE CONDITIONS — verify every one before any public build
 ---------------------------------------------------------------------

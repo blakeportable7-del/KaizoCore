@@ -50,6 +50,8 @@ STRUCTS = {
     "PlayerAvatar": ["runningState", "tileTransitionState", "spriteId", "objectEventId"],
     # The Survival heal counter (2026-10-06, tracker-gba HnsHeals): the script running now and its call stack.
     "ScriptContext": ["stackDepth", "scriptPtr", "stack"],
+    # The log viewer's trainer portraits (rc38.1).
+    "TrainerSprite": ["frontPic", "palette"],
 }
 
 # Items the tracker's shared tables name by the vanilla Gen 3 id (HEAL_ITEMS, the catch-rate balls, EvoText's

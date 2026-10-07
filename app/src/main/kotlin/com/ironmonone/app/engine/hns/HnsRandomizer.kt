@@ -1128,9 +1128,13 @@ class HnsRandomizer(
 
     private var tmTablesWritten = 0
 
-    /** AbstractRomHandler.randomizeTMMoves: TM moves only; the HMs stay. */
+    /**
+     * AbstractRomHandler.randomizeTMMoves: TM moves only; the HMs stay. No TM teaches an HM's move, in either pool: the
+     * vanilla Emerald rule (engine-zx bans getHMMoves() from the TMs; engine-natdex has that line commented out, and
+     * Blake ruled for rc38.1 "apply the vanilla rule to natl dex").
+     */
     private fun randomizeTMs() {
-        val usable = validMoves.toMutableList()
+        val usable = validMoves.filter { it.id !in hmMoves }.toMutableList()
         val picked = ArrayList<Int>()
         repeat(game.tmCount) {
             val mv = usable[random.nextInt(usable.size)]

@@ -10,7 +10,7 @@ import kotlin.test.assertTrue
 
 /**
  * The Heart & Soul tracker profile (HnsMaps, HnsData, HnsMon, HnsLayout) against the real comfort build,
- * hns-kaizo.gba (CRC 949DBE42), read where it lies: IRONMON_HNS, else this checkout's .vendor/hns, else the main
+ * hns-kaizo.gba (CRC E61D7527), read where it lies: IRONMON_HNS, else this checkout's .vendor/hns, else the main
  * checkout's (a worktree can carry a newer build than the main checkout). Without it
  * every test here returns; under IRONMON_REQUIRE_DUMPS a missing ROM fails instead. The RAM is synthetic: parties,
  * save blocks and battles are written into it with the game's own algorithm and offsets, then read back.
@@ -211,6 +211,23 @@ class HnsTrackerTest {
             if (rom != ours) bad += "${Gen3Types.name(a)}>${Gen3Types.name(df)} ROM $rom, tracker $ours"
         }
         assertEquals(emptyList(), bad)
+    }
+
+    @Test
+    fun `every trainer has the game's own picture, for the log viewer's portraits`() {
+        val (_, t) = game() ?: return
+        // Blake (rc38): "No image of trainer" in a Heart & Soul log's TRAINERS tab. gTrainerSprites, not pret's tables.
+        fun look(id: Int): IntArray {
+            val px = assertNotNull(t.trainerPicture(id), "trainer $id has no picture")
+            assertEquals(64 * 64, px.size)
+            assertTrue(px.count { it != 0 } > 400, "trainer $id: ${px.count { it != 0 }} coloured pixels")
+            assertTrue(px.filter { it != 0 }.toSet().size >= 4, "trainer $id: too few colours")
+            return px
+        }
+        val sawyer = look(1); val falkner = look(402); val rival = look(450)
+        assertFalse(sawyer.contentEquals(falkner)); assertFalse(falkner.contentEquals(rival))
+        val missing = (1 until HnsLayout.TRAINERS_COUNT).filter { id -> t.trainer(id)?.party?.isNotEmpty() == true && t.trainerPicture(id) == null }
+        assertTrue(missing.isEmpty(), "trainers with a party and no picture: $missing")
     }
 
     @Test

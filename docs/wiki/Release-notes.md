@@ -2,6 +2,20 @@
 
 Newest first. Each build's GitHub release has the same list, with the APK and its checksum.
 
+## 1.0.0-rc38.1
+
+**Heart & Soul**
+
+- **Your first rival can no longer run away.** In the first rival battle outside Cherrygrove City, the rival's Pokémon
+  ran once yours was low on HP, the battle ended and it counted as a win, so a trainer was skipped. A trainer's Pokémon
+  now never runs from a battle, and the rival fights to the end.
+- **No TM teaches an HM move, in either pool,** as in vanilla Emerald. A Nat. Dex run could put Fly or Surf on a TM
+  before.
+- **Trainer pictures in the log.** The randomizer log's Trainers tab shows each Heart & Soul trainer's own picture.
+
+A run started on rc38 keeps its own game. Start a new run to get these fixes; the app makes the new Heart & Soul build
+by itself.
+
 ## 1.0.0-rc38
 
 **Heart & Soul** (from Blake's attempt 46)

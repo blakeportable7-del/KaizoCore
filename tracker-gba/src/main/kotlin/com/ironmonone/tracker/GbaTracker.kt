@@ -3169,6 +3169,12 @@ class GbaTracker(
      * out of the ROM. Null on a build whose picture tables are not proven (GameMap.trainerPics), or where a read fails.
      */
     fun trainerPicture(trainerId: Int): IntArray? {
+        if (map.hns) return synchronized(trainerPictures) {
+            // Heart & Soul (rc38.1): gTrainerSprites, keyed apart from the slots below by a negative id.
+            val key = -1 - trainerId
+            if (key in trainerPictures) trainerPictures[key]
+            else runCatching { HnsPics.trainer(hnsRom ?: memory, trainerId) }.getOrNull().also { trainerPictures[key] = it }
+        }
         if (map.gTrainers == 0L || trainerId <= 0) return null
         val lay = map.trainerLayout
         val b = memory.read(map.gTrainers + trainerId.toLong() * lay.size + lay.picOffset, 1)

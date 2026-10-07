@@ -81,6 +81,25 @@ object HnsPics {
         val colors = palette(memory, palAddr) ?: return null
         return Gen3Pictures.Picture(64, 64, tilesToArgb(tiles, colors))
     }
+
+    /**
+     * [trainerId]'s picture, 64x64 ARGB (the log viewer's portraits, rc38.1): its gTrainers[DIFFICULTY_NORMAL] entry's
+     * trainerPic, then gTrainerSprites[trainerPic]'s frontPic (smol or LZ77) and palette, as the game loads them. Heart &
+     * Soul's pictures are not in pret's two tables, so TrainerPictures has none for it. Null where a read fails.
+     */
+    fun trainer(memory: MemoryReader, trainerId: Int): IntArray? {
+        if (trainerId !in 1 until HnsLayout.TRAINERS_COUNT) return null
+        val T = HnsLayout.Trainer
+        val rec = memory.read(HnsLayout.gTrainers + (HnsLayout.DIFFICULTY_NORMAL.toLong() * HnsLayout.TRAINERS_COUNT + trainerId) * T.SIZE, T.SIZE)
+            .takeIf { it.size == T.SIZE } ?: return null
+        val slot = T.trainerPic.at(rec)
+        if (slot !in 0 until HnsLayout.gTrainerSprites_COUNT) return null
+        val S = HnsLayout.TrainerSprite
+        val sprite = memory.read(HnsLayout.gTrainerSprites + slot.toLong() * S.SIZE, S.SIZE).takeIf { it.size == S.SIZE } ?: return null
+        val tiles = decompress(memory, sprite.u32(S.frontPic.offset))?.takeIf { it.size >= FRAME } ?: return null
+        val colors = palette(memory, sprite.u32(S.palette.offset)) ?: return null
+        return tilesToArgb(tiles, colors)
+    }
 }
 
 /**

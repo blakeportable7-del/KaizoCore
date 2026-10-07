@@ -57,6 +57,8 @@ STRUCTS = [
     ("Main", None), ("Sprite", None), ("ObjectEvent", None), ("PlayerAvatar", None),
     # The Survival heal counter (2026-10-06): the field script running now and its call stack (tracker-gba HnsHeals).
     ("ScriptContext", None),
+    # The log viewer's trainer portraits (rc38.1): gTrainerSprites[trainerPic].frontPic and .palette.
+    ("TrainerSprite", None),
 ]
 
 HEADERS = [
@@ -79,7 +81,7 @@ SYMBOLS = [
     "gTypeEffectivenessTable", "gExperienceTables", "gTMHMItemMoveIds", "gTrainers",
     "gBattlePartners", "gTrainerClasses", "gWildMonHeaders", "sStarterMon",
     "gStarterAndGiftMonTable", "gEggMonTable", "sIngameTrades", "sObtainableToNationalOrder",
-    "gNaturesInfo", "sSubstructOffsets", "sOddEggSpecies",
+    "gNaturesInfo", "sSubstructOffsets", "sOddEggSpecies", "gTrainerSprites",
     # KaizoCore comfort build only (tools/hns/patches, src/kaizocore_tables.c); absent from the plain build
     "gHnsRoamerSpecies", "gHnsNamedGiftSpecies", "gHnsLabTrashItem", "gHnsChallengePreset",
     # The Pickup table (src/battle_script_commands.c, static)
@@ -138,7 +140,7 @@ LABELS = [
 # Tables: symbol -> struct name, or uN for plain integer arrays.
 TABLES = {
     "gSpeciesInfo": "SpeciesInfo", "gMovesInfo": "MoveInfo", "gAbilitiesInfo": "AbilityInfo",
-    "gItemsInfo": "ItemInfo", "gTypesInfo": "TypeInfo", "gTrainers": "Trainer",
+    "gItemsInfo": "ItemInfo", "gTypesInfo": "TypeInfo", "gTrainers": "Trainer", "gTrainerSprites": "TrainerSprite",
     "gBattlePartners": "Trainer", "gTrainerClasses": "TrainerClass",
     "gWildMonHeaders": "WildPokemonHeader", "gTMHMItemMoveIds": "TmHmIndexKey",
     "sIngameTrades": "InGameTrade", "gTypeEffectivenessTable": "u32", "gExperienceTables": "u32",

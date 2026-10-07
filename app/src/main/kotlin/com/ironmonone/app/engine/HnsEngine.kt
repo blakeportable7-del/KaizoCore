@@ -37,7 +37,7 @@ object HnsEngine {
      * which has the same structures and is kept for the tests.
      */
     val BUILDS = listOf(
-        Build(0x949DBE42L, "KaizoCore comfort build", "hns/layout-kaizo.json", "hns/species-kaizo.json"),
+        Build(0xE61D7527L, "KaizoCore comfort build", "hns/layout-kaizo.json", "hns/species-kaizo.json"),
         Build(0x45D07ED4L, "plain build", "hns/layout-plain.json", "hns/species-plain.json"),
     )
 

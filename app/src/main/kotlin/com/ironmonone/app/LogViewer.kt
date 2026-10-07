@@ -420,7 +420,10 @@ internal fun loadLogView(file: File, tracker: com.ironmonone.tracker.GbaTracker?
     val log = RandomizerLog.parse(file)
     // Heart & Soul has no trainer rules here (they are Emerald's and FireRed's), but its names, sprites and move types
     // are the tracker's like any Gen 3 game's: without them its log showed every Pokemon by name only.
-    if (rules == null && tracker != null && tracker.heartSoul) return LogViewData(log, logMoveTypes(tracker), LogNames.of(tracker), emptyList())
+    // Its trainers' portraits are the game's own pictures (rc38.1, Blake: "No image of trainer"), read through
+    // gTrainerSprites (HnsPics.trainer).
+    if (rules == null && tracker != null && tracker.heartSoul) return LogViewData(log, logMoveTypes(tracker), LogNames.of(tracker), emptyList(),
+        portraits = log?.trainers.orEmpty().mapNotNull { t -> tracker.trainerPicture(t.number)?.let { t.number to it } }.toMap())
     if (rules == null || tracker == null) return LogViewData(log, emptyMap(), LogNames.PLAIN, emptyList())
     return LogViewData(
         log, logMoveTypes(tracker),
