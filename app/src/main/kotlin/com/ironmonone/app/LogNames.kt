@@ -82,6 +82,9 @@ class LogNames(
             for ((name, id) in t.logSpeciesIds()) add(name, id)
             // Heart & Soul's run to 1572, past the Nat. Dex build's 1300 (GbaTracker.speciesIdCount).
             for (id in 1..t.speciesIdCount) add(t.speciesName(id), id)
+            // Heart & Soul's forms share their species' name in the game (every Rotom is ROTOM), and its log names each
+            // by its constant (ROTOM-HEAT, HnsGame.displayNames): found by those too, or a form's page had no picture.
+            if (t.heartSoul) hnsLogNames(t).forEach { (id, name) -> add(name, id) }
             val moves = HashMap<String, String>()
             for (id in 1..t.lastMoveId) {
                 val n = t.moveName(id)
@@ -90,5 +93,18 @@ class LogNames(
             }
             return LogNames(ids, t::speciesName, moves)
         }
+
+        /**
+         * The names Heart & Soul's log gives its species (HnsGame.displayNames), from the build's species constants
+         * (the comfort build's species file, the one build the tracker reads) and the game's own names. Empty without
+         * the app's assets.
+         */
+        private fun hnsLogNames(t: GbaTracker): Map<Int, String> = runCatching {
+            val assets = com.ironmonone.app.engine.HnsEngine.assetText ?: return emptyMap()
+            val file = com.ironmonone.app.engine.hns.HnsSpeciesFile.parse(assets(com.ironmonone.app.engine.HnsEngine.BUILDS.first().speciesAsset))
+            val consts = file.species.associate { it.id to it.const }
+            com.ironmonone.app.engine.hns.HnsGame.displayNames((1..t.speciesIdCount).filter { t.speciesExists(it) }
+                .map { Triple(it, consts[it].orEmpty(), t.speciesName(it)) })
+        }.getOrDefault(emptyMap())
     }
 }

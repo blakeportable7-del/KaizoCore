@@ -94,6 +94,8 @@ class HnsGame(val rom: HnsRom, speciesFile: HnsSpeciesFile) {
 
     class ItemData(val id: Int) {
         var name = ""; var pocket = 0; var holdEffect = 0; var price = 0; var importance = 0
+        /** The bag picture (gItemsInfo[id].iconPic); ITEM_NONE's is the question mark the bag shows for a missing one. */
+        var iconPic = 0
     }
 
     val itemsCount = L.const("ITEMS_COUNT")
@@ -252,21 +254,8 @@ class HnsGame(val rom: HnsRom, speciesFile: HnsSpeciesFile) {
             m.eligible = !m.battleForm && m.cosmeticOf == 0 && !(m.randomizerMode == invalid && (isForm || m.regional))
         }
         // Unique names for the log: a form that shares its species' name takes the end of its constant.
-        val nameSeen = HashMap<String, Mon>()
-        for (m in mons) {
-            if (m == null || !m.enabled) continue
-            val first = nameSeen[m.name.uppercase()]
-            if (first == null) {
-                m.displayName = m.name; nameSeen[m.name.uppercase()] = m
-            } else {
-                // The constant's tail past the species' own name: SPECIES_LYCANROC_DUSK reads LYCANROC-DUSK.
-                val norm = { s: String -> s.uppercase().replace(Regex("[^A-Z0-9]+"), "_").trim('_') }
-                var tail = m.const.removePrefix("SPECIES_")
-                listOf(first.const.removePrefix("SPECIES_") + "_", norm(m.name) + "_", norm(m.name.substringBefore('-')) + "_")
-                    .filter { it.length > 1 && tail.startsWith(it) }.maxByOrNull { it.length }?.let { tail = tail.removePrefix(it) }
-                m.displayName = m.name + "-" + tail.replace('_', ' ')
-            }
-        }
+        val shown = displayNames(mons.filter { it != null && it.enabled }.map { Triple(it!!.id, it.const, it.name) })
+        for (m in mons) if (m != null && m.enabled) m.displayName = shown[m.id] ?: m.name
 
         // Moves.
         val mi = L.struct("MoveInfo")
@@ -290,6 +279,7 @@ class HnsGame(val rom: HnsRom, speciesFile: HnsSpeciesFile) {
             d.name = if (rom.isRomPtr(np)) rom.text(np, 24).trim().uppercase() else ""
             d.pocket = rom.get(ii.f("pocket"), r); d.holdEffect = rom.get(ii.f("holdEffect"), r)
             d.price = rom.get(ii.f("price"), r); d.importance = rom.get(ii.f("importance"), r)
+            d.iconPic = rom.get(ii.f("iconPic"), r)
             items[id] = d
         }
         for (id in abilityNames.indices) abilityNames[id] = rom.inlineText("AbilityInfo", L.rec("gAbilitiesInfo", id), "name").trim().uppercase()
@@ -644,6 +634,29 @@ class HnsGame(val rom: HnsRom, speciesFile: HnsSpeciesFile) {
     fun typeName(t: Int): String = typeNames[t] ?: "???"
 
     companion object {
+        /**
+         * The names the log gives the build's species, from (id, constant, the game's name) of every species it has, in id
+         * order: the game's name, and for a form that shares its species' name, that name and the end of its constant past
+         * it (SPECIES_LYCANROC_DUSK reads LYCANROC-DUSK). The log viewer finds a log's Pokemon by these (LogNames.of).
+         */
+        fun displayNames(species: List<Triple<Int, String, String>>): Map<Int, String> {
+            val out = LinkedHashMap<Int, String>()
+            val firstConst = HashMap<String, String>()
+            val norm = { s: String -> s.uppercase().replace(Regex("[^A-Z0-9]+"), "_").trim('_') }
+            for ((id, const, name) in species) {
+                val first = firstConst[name.uppercase()]
+                if (first == null) {
+                    out[id] = name; firstConst[name.uppercase()] = const
+                } else {
+                    var tail = const.removePrefix("SPECIES_")
+                    listOf(first.removePrefix("SPECIES_") + "_", norm(name) + "_", norm(name.substringBefore('-')) + "_")
+                        .filter { it.length > 1 && tail.startsWith(it) }.maxByOrNull { it.length }?.let { tail = tail.removePrefix(it) }
+                    out[id] = name + "-" + tail.replace('_', ' ')
+                }
+            }
+            return out
+        }
+
         /** "MAP_ROUTE29_HNS" reads "ROUTE 29", "MAP_VIOLET_CITY_HNS" reads "VIOLET CITY". */
         fun prettyMap(const: String): String = const.removePrefix("MAP_").removeSuffix("_HNS").replace('_', ' ')
             .replace(Regex("([A-Z])(\\d)"), "$1 $2").trim()

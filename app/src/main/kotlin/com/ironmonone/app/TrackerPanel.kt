@@ -906,7 +906,7 @@ fun TrackerPanel(
                         onNameInfo = { monInfo = p },
                         // Against the opponent shown, or its partner once it has fainted (GbaViewState.ownTarget).
                         moveCtx = ownMoveContext(p, view.ownTarget(state), state.weather, onWeight)
-                            .copy(hideEffectiveness = InfoRules.hideEffectiveness(state.randomized, state.isGhostBattle, own = true), generation = generation, natDex = natDex, maxDex = maxDex),
+                            .copy(ownCategories = hnsGame, hideEffectiveness = InfoRules.hideEffectiveness(state.randomized, state.isGhostBattle, own = true), generation = generation, natDex = natDex, maxDex = maxDex),
                         attempt = attempt,
                         hidden = hideStats,
                         iconDex = WalkingPals.trackerDex(generation, speciesTotal, maxDex, hns = hnsGame),
@@ -945,11 +945,12 @@ fun TrackerPanel(
                         moveLevels = onMoveLevels?.invoke(enemy.species) ?: emptyList(),
                         // Against your Pokemon shown, or your other one once it has fainted (GbaViewState.foeTarget).
                         moveCtx = enemyMoveContext(enemy, view.foeTarget(state), state.weather, onWeight)
-                            .copy(hide = InfoRules.hiddenMoveInfo(state.randomized), hideEffectiveness = InfoRules.hideEffectiveness(state.randomized, state.isGhostBattle, own = false), generation = generation, natDex = natDex, maxDex = maxDex),
+                            .copy(ownCategories = hnsGame, hide = InfoRules.hiddenMoveInfo(state.randomized), hideEffectiveness = InfoRules.hideEffectiveness(state.randomized, state.isGhostBattle, own = false), generation = generation, natDex = natDex, maxDex = maxDex),
                         rand = state.randomized,
                         catchText = state.catchPercent?.takeIf { state.isWildBattle && TrackerOptions.showCatchRate }?.let { pct ->
                             // DataHelper.lua:402-406 works it from the viewed Pokemon, the blank stand-in while hidden.
-                            "~ ${if (hideStats) 0 else pct}%  to catch" },
+                            // Heart & Soul's is the game's own capture formula (HnsCatch), so no "~" (2026-10-06).
+                            "${if (hnsGame) "" else "~ "}${if (hideStats) 0 else pct}%  to catch" },
                         onCatchTap = onCatchRates,
                         // DataHelper.lua:144: the viewed Pokemon is hidden, the opponent included.
                         hidden = hideStats,

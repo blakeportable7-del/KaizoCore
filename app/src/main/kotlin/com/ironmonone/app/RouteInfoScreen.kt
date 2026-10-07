@@ -57,7 +57,34 @@ class RouteInfoSource(
      * Blake, 2026-09-29: show it somewhere, so it sits under the map's icons.
      */
     val safari: List<Pair<Int, Int>> = emptyList(),
+    /**
+     * Heart & Soul: [vanilla] is the run's own wild tables, read from its ROM, not the game's vanilla ones as RouteData
+     * holds them for the other games. Outside Open Book, a Pokemon not yet met there is a "?" with its chance or levels,
+     * since which Pokemon a seed put on a route is the log's to tell (the Nat. Dex sweep, 2026-10-06).
+     */
+    val runTables: Boolean = false,
 )
+
+/**
+ * The icons the route info screen shows for [area] of [src]: the log's in Open Book ([logged]); with Percentages or
+ * Levels on, the area's table with its chances or levels; otherwise the Pokemon met there in order of appearance, then a
+ * "?" for each one of the table's count not yet met. A table that is the run's own ([RouteInfoSource.runTables]) shows a
+ * Pokemon not met there as "?" outside Open Book.
+ */
+internal fun routeIcons(src: RouteInfoSource, area: String, logged: List<RouteIcon>?, readingLog: Boolean,
+                        showPercents: Boolean, showLevels: Boolean, openBook: Boolean): List<RouteIcon> = when {
+    readingLog -> emptyList()
+    logged != null -> logged
+    showPercents || showLevels -> {
+        val seen = if (src.runTables && !openBook) src.tracked(area).toSet() else emptySet()
+        src.vanilla[area].orEmpty().map { RouteIcon(it.id.takeIf { id -> !src.runTables || openBook || id in seen }, it.rate, it.minLv, it.maxLv) }
+    }
+    else -> {
+        val seen = src.tracked(area)
+        val total = maxOf(seen.size, src.vanilla[area].orEmpty().size)
+        List(total) { i -> RouteIcon(seen.getOrNull(i)) }
+    }
+}
 
 /**
  * InfoScreen's ROUTE_INFO view (InfoScreen.lua:1046 drawRouteInfoScreen,
@@ -123,16 +150,7 @@ fun PcRouteInfoScreen(
     }
     val readingLog = openBook && src.logged != null && loggedFor?.first != want
     val logged = loggedFor?.takeIf { it.first == want }?.second
-    val icons: List<RouteIcon> = when {
-        readingLog -> emptyList()
-        logged != null -> logged
-        showPercents || showLevels -> src.vanilla[area].orEmpty().map { RouteIcon(it.id, it.rate, it.minLv, it.maxLv) }
-        else -> {
-            val seen = src.tracked(area)
-            val total = maxOf(seen.size, src.vanilla[area].orEmpty().size)
-            List(total) { i -> RouteIcon(seen.getOrNull(i)) }
-        }
-    }
+    val icons: List<RouteIcon> = routeIcons(src, area, logged, readingLog, showPercents, showLevels, openBook)
 
     androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
         Column(

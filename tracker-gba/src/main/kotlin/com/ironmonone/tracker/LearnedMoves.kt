@@ -24,13 +24,15 @@ package com.ironmonone.tracker
 object LearnedMoves {
     data class Header(val learned: Int, val total: Int, val next: Int?)
 
-    /** [levels] is the learnset's levels in ROM order (ascending). */
+    /** [levels] is the learnset's levels in ROM order (ascending in every game but Heart & Soul, where a few are not). */
     fun of(levels: List<Int>, level: Int): Header {
         val learnt = levels.filter { it > 1 }
         return Header(
             learned = learnt.count { it <= level },
             total = learnt.size,
-            next = learnt.firstOrNull { it > level },
+            // The lowest level still to come, not the first in list order: Heart & Soul's learnsets are not all in
+            // order (Ninetales learns at 49 before 42), and the game finds a level's moves anywhere in the list.
+            next = learnt.filter { it > level }.minOrNull(),
         )
     }
 }

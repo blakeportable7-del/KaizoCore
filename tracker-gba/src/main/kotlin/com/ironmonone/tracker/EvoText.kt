@@ -88,7 +88,18 @@ object EvoText {
         "DEEPSEA" to Method("DEEPSEA", listOf("D.S.Tooth", "D.S.Scale"), listOf("Deep Sea Tooth", "Deep Sea Scale"), setOf(192, 193)),
         "EEVEE_STONES_NATDEX" to Method("STONE", listOf("Thunder", "Water", "Fire", "Sun", "Moon", "Leaf", "Ice", "Dawn"),
             listOf("8 Diff. Stones"), setOf(93, 94, 95, 96, 97, 98, 102, 101)),
+        // Heart & Soul's ways the table above has no word for (Hns.kt evolutionText): the kind of way only.
+        "HNS_TRADE" to Method("TRADE", listOf("Trade"), listOf("Trade")),
+        "HNS_ITEM" to Method("ITEM", listOf("Item"), listOf("An item")),
+        "HNS_LEVEL_UP" to Method("LV UP", listOf("Lv. up"), listOf("Level up, with a condition")),
+        "HNS_OTHER" to Method("OTHER", listOf("Other"), listOf("Another way")),
     )
+
+    /** Heart & Soul's evolution methods past the Nat. Dex table's: a trade, an item, a level-up with no level, another way. */
+    const val HNS_TRADE = "HNS_TRADE"
+    const val HNS_ITEM = "HNS_ITEM"
+    const val HNS_LEVEL_UP = "HNS_LEVEL_UP"
+    const val HNS_OTHER = "HNS_OTHER"
 
     /** Program.lua's friendshipRequired before the ROM answers, and PokemonData.Values.DefaultBaseFriendship. */
     const val DEFAULT_REQUIRED = 220

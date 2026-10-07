@@ -10,7 +10,7 @@ import kotlin.test.assertTrue
 
 /**
  * The Heart & Soul tracker profile (HnsMaps, HnsData, HnsMon, HnsLayout) against the real comfort build,
- * hns-kaizo.gba (CRC C218FD9E), read where it lies: IRONMON_HNS, else this checkout's .vendor/hns, else the main
+ * hns-kaizo.gba (CRC 949DBE42), read where it lies: IRONMON_HNS, else this checkout's .vendor/hns, else the main
  * checkout's (a worktree can carry a newer build than the main checkout). Without it
  * every test here returns; under IRONMON_REQUIRE_DUMPS a missing ROM fails instead. The RAM is synthetic: parties,
  * save blocks and battles are written into it with the game's own algorithm and offsets, then read back.
@@ -531,6 +531,56 @@ class HnsTrackerTest {
         fun map(n: String) = Regex("\"$n\":\\s*(\\d+)").find(json)!!.groupValues[1].toInt()
         assertTrue(t.isSafariMap(map("MAP_SAFARI_ZONE_TOP_MID_HNS")) && t.isSafariMap(map("MAP_FUCHSIA_CITY_SAFARI_ZONE_BEACH_HNS")))
         assertFalse(t.isSafariMap(map("MAP_SAFARI_ZONE_GATE_HNS")) || t.isSafariMap(map("MAP_ROUTE29_HNS")))
+    }
+
+    @Test
+    fun `Catch Rates lists every ball the build has at the game's own odds, and the card's line is the Poke Ball's`() {
+        val (mem, t) = game() ?: return
+        mem.write(HnsLayout.gPlayerParty, pikachu); mem.w8(HnsLayout.gPlayerPartyCount, 1)
+        battle(mem, enemySpecies = 212, trainer = null)   // a wild Scizor
+        val bm = HnsLayout.BattlePokemon
+        val foe = mem.read(HnsLayout.gBattleMons + bm.SIZE, bm.SIZE)
+        put(bm.hp, foe, 0, 60); put(bm.maxHP, foe, 0, 60); put(bm.level, foe, 0, 20)
+        put(bm.types, foe, 0, HnsLayout.TYPE_BUG, 0); put(bm.types, foe, 0, HnsLayout.TYPE_STEEL, 1); put(bm.types, foe, 0, HnsLayout.TYPE_MYSTERY, 2)
+        mem.write(HnsLayout.gBattleMons + bm.SIZE, foe)
+        val enemy = partyMon(pid = 0x00C0FFEEL, otId = 0x11112222L, species = 212, level = 20, nickname = "SCIZOR",
+            moves = listOf(33, 0, 0, 0), pp = listOf(35, 0, 0, 0), ivs = List(6) { 10 }, evs = List(6) { 0 }, abilityNum = 0,
+            hp = 60, maxHp = 60)
+        mem.write(HnsLayout.gEnemyParty, enemy)
+        // Five Poke Balls and two Level Balls (one of Kurt's, which Gen 3's twelve never had).
+        val bag = sb1 + HnsLayout.SaveBlock1.bag.offset + HnsLayout.Bag.pokeBalls.offset
+        val k = (key and 0xFFFF).toInt()
+        mem.w16(bag, 1); mem.w16(bag + 2, 5 xor k); mem.w16(bag + 4, 15); mem.w16(bag + 6, 2 xor k)
+        t.read()
+        val s = t.read()
+        assertTrue(s.inBattle && s.isWildBattle)
+        // Scizor's own catch rate, 25, in this unrandomized ROM: 60 * 25 / 180 = 8, 3% in a Poke Ball (HnsCatchTest).
+        assertEquals(25, t.baseStats(212)!!.catchRate)
+        val d = assertNotNull(t.catchRates())
+        assertTrue(d.exact); assertEquals(100, d.hpPercent)
+        // Rows by the build's item ids (ITEM_POKE_BALL 1, MASTER 4, NET 7, LEVEL 15, HEAVY 21).
+        val byItem = d.rows.associateBy { it.ballId }
+        assertEquals(3, byItem.getValue(1).rate); assertEquals(5, byItem.getValue(1).quantity)
+        assertTrue(byItem.getValue(1).pokeBall); assertEquals(1, d.rows.count { it.pokeBall })
+        assertEquals(2, byItem.getValue(15).quantity); assertEquals(3, byItem.getValue(15).rate)
+        // Net x3.5 on a Bug: 28, 12%. Heavy: Steel, x4: 32, 14%. Master: certain.
+        assertEquals(12, byItem.getValue(7).rate); assertEquals(14, byItem.getValue(21).rate)
+        assertEquals(100, byItem.getValue(4).rate)
+        // Every item in the Poke Balls pocket has one line; the carried ones first.
+        assertEquals(d.rows.size, byItem.size)
+        assertTrue(d.rows.size > 12, "the newer balls are listed: ${d.rows.size}")
+        assertEquals(listOf(true, true, false), d.rows.take(3).map { it.quantity > 0 })
+        // The tracker card's line is the Poke Ball's.
+        assertEquals(3, s.catchPercent)
+        // The Nuzlocke's slow start counts the Level Balls too.
+        assertEquals(7, s.nuz?.ballCount)
+
+        // Half its HP gone: (180 - 60) * 25 / 180 = 16; 16711680 / 16 = 1044480, Sqrt 1021, Sqrt 31, 1048560 / 31 = 33824:
+        // (33824 / 65536)^4 = 7%. The screen's -50 key gives the same.
+        put(bm.hp, foe, 0, 30); mem.write(HnsLayout.gBattleMons + bm.SIZE, foe)
+        assertEquals(7, assertNotNull(t.catchRates()).rows.first { it.pokeBall }.rate)
+        put(bm.hp, foe, 0, 60); mem.write(HnsLayout.gBattleMons + bm.SIZE, foe)
+        assertEquals(7, assertNotNull(t.catchRates(hpAdjust = -50)).rows.first { it.pokeBall }.rate)
     }
 
     // ---------------------------------------------------------------- the Nuzlocke's gifts and statics

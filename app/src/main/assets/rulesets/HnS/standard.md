@@ -10,6 +10,7 @@ In KaizoCore, the item that starts in your PC is in the trash can in Elm's lab i
 
 In KaizoCore, Heart & Soul plays every IronMON mode this way:
 - You cannot run from a trainer battle or forfeit it: RUN is refused, as in Emerald. From a wild battle you can run as usual, or hold B as it starts, though never from a shiny.
+- Trainers who would battle you two at once (twins, couples, the gym pairs) battle you in a single battle, one of their Pokémon at a time, whatever your party: no second Pokémon is needed. In Kaizo Doubles every trainer battle is a double, as that mode asks.
 - Catching a Pokémon gives no EXP.
 - Wild Pokémon come in turn: each list (grass, water, Rock Smash and each fishing rod) gives every species it has once, in order, before any comes again. A route with five species shows all five in five encounters.
 - No Pokémon learns an HM move by level or knows one when you meet it, yours or a trainer's, in either pool.

@@ -16,7 +16,10 @@ import androidx.compose.ui.semantics.semantics
  * "I like the symbols"). Transcribed from the NDS Ironmon Tracker's IconDrawer.lua (Brian0255, GPL-3.0, credited in
  * NOTICE): its seventeen *_FILLED icons, the ones it draws with "Color move type icons" on. Each row is a string of
  * palette numbers, 0 for no pixel and n for the icon's n-th colour, in its own colours as the DS tracker has them.
- * The DS games have no Fairy type, so Fairy, "???" and an unknown type have no symbol.
+ * The DS games have no Fairy type, so the DS tracker draws none; KaizoCore adds two of its own in the same manner (dark
+ * outline, light top-left, darker bottom-right): Fairy, a four-point sparkle in Fairy pink, for the Nat. Dex, MaxDex and
+ * Heart & Soul moves (2026-10-06, Moonblast's row had none), and "???" (Gen 3's Mystery type, Curse's), a question mark
+ * in its teal. Only an unknown type is left without one.
  */
 internal object TypeSymbols {
     class Symbol(val rows: List<String>, val palette: List<Long>) {
@@ -27,8 +30,8 @@ internal object TypeSymbols {
     /** The widest and the tallest symbol, 9 by 9: the square each move row holds for one, so the names stay in a column. */
     const val SLOT = 9
 
-    /** A type's symbol by its name in any case ("FIRE", "Fire"), or null. */
-    fun of(typeName: String?): Symbol? = typeName?.let { BY_TYPE[it.trim().uppercase()] }
+    /** A type's symbol by its name in any case ("FIRE", "Fire"), or null. Gen 3's Mystery type goes by "???" too. */
+    fun of(typeName: String?): Symbol? = typeName?.let { BY_TYPE[it.trim().uppercase().let { n -> if (n == "???") "MYSTERY" else n }] }
 
     val BY_TYPE: Map<String, Symbol> = mapOf(
         "NORMAL" to Symbol(
@@ -98,6 +101,15 @@ internal object TypeSymbols {
         "DARK" to Symbol(
             listOf("00000000", "01100110", "12100161", "12311561", "12344561", "12344561", "01344510", "00111100", "00000000"),
             listOf(0xFF6E5848L, 0xFFD3A88BL, 0xFFC19A7FL, 0xFFB59077L, 0xFFA5836DL, 0xFF997964L),
+        ),
+        // KaizoCore's own, after the DS set's manner (no DS game has these types).
+        "FAIRY" to Symbol(
+            listOf("000010000", "000121000", "000121000", "011223110", "122233341", "011334110", "000141000", "000141000", "000010000"),
+            listOf(0xFFC9578DL, 0xFFFFE6F0L, 0xFFFFC2DAL, 0xFFF39BC0L),
+        ),
+        "MYSTERY" to Symbol(
+            listOf("0111110", "1223321", "1211121", "0001321", "0013210", "0012100", "0001000", "0012100", "0011100"),
+            listOf(0xFF3D6B5CL, 0xFFC4EBDDL, 0xFF8CC7B2L),
         ),
     )
 }

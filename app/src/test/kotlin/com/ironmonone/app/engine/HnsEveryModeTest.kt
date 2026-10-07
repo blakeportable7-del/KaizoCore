@@ -353,7 +353,10 @@ class HnsEveryModeTest(private val mode: String, private val pool: HnsEngine.Poo
             "RANDOM" -> check("evolutions random") {
                 val withEvos = poolMons.filter { v.mons[it.id]!!.evos.isNotEmpty() && it.evos.isNotEmpty() }
                 val changed = withEvos.count { m -> m.evos.map { it.target }.toSet() != v.mons[m.id]!!.evos.map { it.target }.toSet() }
-                expect(changed > withEvos.size * 9 / 10) { "$changed of ${withEvos.size} changed" }
+                // Without forced change a random pick can land on the old target: Ironmon Journey on the Vanilla pool
+                // changed 86.6% to 95.3% over seeds 1-16 and SEED (2026-10-06, build 949DBE42), so 90% failed on
+                // four of them; four in five still tells a randomized table from an untouched one.
+                expect(changed > withEvos.size * 4 / 5) { "$changed of ${withEvos.size} changed" }
                 if (o.evosForceChange) for (m in poolMons) {
                     val old = v.mons[m.id]!!.evos.map { it.target }.toSet()
                     expect(m.evos.none { it.target in old }) { "${m.const} kept an evolution into ${m.evos.filter { it.target in old }.map { out.speciesName(it.target) }}" }

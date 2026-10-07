@@ -37,7 +37,7 @@ object HnsEngine {
      * which has the same structures and is kept for the tests.
      */
     val BUILDS = listOf(
-        Build(0xC218FD9EL, "KaizoCore comfort build", "hns/layout-kaizo.json", "hns/species-kaizo.json"),
+        Build(0x949DBE42L, "KaizoCore comfort build", "hns/layout-kaizo.json", "hns/species-kaizo.json"),
         Build(0x45D07ED4L, "plain build", "hns/layout-plain.json", "hns/species-plain.json"),
     )
 
@@ -107,10 +107,10 @@ object HnsEngine {
         val game = HnsGame(HnsRom(out, layout), species)
         val text = Randomizers.inEngineLocale {
             HnsRandomizer(game, options, seed, pool, bstLine(options, pool), poolItemKeys(pool, assets), poolNonBadKeys(pool, assets),
-                wildBstLine(options, pool)).run()
+                wildBstLine(options, pool), poolAllowedKeys(pool, assets)).run()
         }
         // Every randomized run is a Kaizo IronMON run until the Nuzlocke path says otherwise (writePreset).
-        writePreset(out, layout, Preset.KAIZO)
+        writePreset(out, layout, Preset.KAIZO, kaizoDoubles = options.doubleBattleMode)
         return Result(out, text, seed)
     }
 
@@ -123,8 +123,13 @@ object HnsEngine {
     /** Rows of the Nuzlocke tab (tab 3 of 20 rows): the NUZLOCKE switch, then its clauses. */
     private const val NUZLOCKE_ROW = 3 * 20
 
-    /** Writes [preset] into [rom] (a run of the comfort build, or the build itself) at the layout's gHnsChallengePreset. */
-    fun writePreset(rom: ByteArray, layout: HnsLayout, preset: Preset) {
+    /**
+     * Writes [preset] into [rom] (a run of the comfort build, or the build itself) at the layout's gHnsChallengePreset.
+     * [kaizoDoubles]: the Kaizo Doubles mode (its trainers battle in doubles), which keeps every trainer double battle a
+     * double; any other Kaizo run plays them as singles, one Pokemon at a time (Blake, 2026-10-06). The Nuzlocke mode
+     * keeps the game's own doubles either way.
+     */
+    fun writePreset(rom: ByteArray, layout: HnsLayout, preset: Preset, kaizoDoubles: Boolean = false) {
         if (!layout.hasSym("gHnsChallengePreset")) return
         val base = layout.sym("gHnsChallengePreset") - layout.romBase
         val values = base + layout.const("HNS_PRESET_VALUES")
@@ -132,6 +137,8 @@ object HnsEngine {
         val kaizo = preset == Preset.KAIZO
         rom[base + layout.const("HNS_PRESET_MODE")] = layout.const(if (kaizo) "HNS_PRESET_MODE_KAIZO" else "HNS_PRESET_MODE_NUZLOCKE").toByte()
         rom[base + layout.const("HNS_PRESET_SKIP_MENU")] = (if (kaizo) 1 else 0).toByte()
+        if (layout.constants.containsKey("HNS_PRESET_KAIZO_DOUBLES"))
+            rom[base + layout.const("HNS_PRESET_KAIZO_DOUBLES")] = (if (kaizo && kaizoDoubles) 1 else 0).toByte()
         for (k in 0 until 6) {
             // The NUZLOCKE switch OFF (selection 0, stored plus one) and every clause locked; in a Nuzlocke run all free.
             rom[values + NUZLOCKE_ROW + k] = (if (kaizo && k == 0) 1 else 0).toByte()
@@ -178,6 +185,18 @@ object HnsEngine {
     fun poolNonBadKeys(pool: Pool, assets: (String) -> String): Set<String> {
         val list = if (pool == Pool.VANILLA) com.dabomstew.pkrandomzx.constants.Gen3Constants.getNonBadItems(com.dabomstew.pkrandomzx.constants.Gen3Constants.RomType_Em)::isAllowed
                    else com.dabomstew.pkrandom.constants.Gen3Constants.getNonBadItems(com.dabomstew.pkrandom.constants.Gen3Constants.RomType_Em)::isAllowed
+        return assets(poolItemsAsset(pool)).lineSequence().map { it.trimEnd('\r') }.filter { it.isNotBlank() && !it.startsWith("#") }
+            .filter { list(it.substringBefore('\t').toInt()) }.map { HnsRandomizer.itemKey(it.substringAfter('\t')) }.toSet()
+    }
+
+    /**
+     * The pool's allowed items, as the source game's own UPR fork has it for Emerald (Gen3Constants.allowedItems: no key
+     * item, HM or unused slot): engine-zx's for VANILLA, engine-natdex's for NATDEX, by name. A roll that may land on a
+     * bad item (an in-game trade's item, or a mode that keeps bad items) draws from it (rc38).
+     */
+    fun poolAllowedKeys(pool: Pool, assets: (String) -> String): Set<String> {
+        val list = if (pool == Pool.VANILLA) com.dabomstew.pkrandomzx.constants.Gen3Constants.allowedItems::isAllowed
+                   else com.dabomstew.pkrandom.constants.Gen3Constants.allowedItems::isAllowed
         return assets(poolItemsAsset(pool)).lineSequence().map { it.trimEnd('\r') }.filter { it.isNotBlank() && !it.startsWith("#") }
             .filter { list(it.substringBefore('\t').toInt()) }.map { HnsRandomizer.itemKey(it.substringAfter('\t')) }.toSet()
     }

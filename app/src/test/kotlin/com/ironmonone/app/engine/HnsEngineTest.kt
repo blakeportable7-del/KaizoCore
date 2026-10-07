@@ -16,7 +16,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 /**
- * HnsEngine on the real Heart & Soul comfort build (.vendor/hns/hns-kaizo.gba, CRC C218FD9E, never in the repo).
+ * HnsEngine on the real Heart & Soul comfort build (.vendor/hns/hns-kaizo.gba, CRC 949DBE42, never in the repo).
  * Without the ROM every test returns early, as the other ROM tests do; under IRONMON_REQUIRE_DUMPS a missing ROM fails.
  * Each output is read back through a fresh HnsGame over the output bytes, plus raw reads where the game reads raw.
  */
@@ -69,8 +69,8 @@ class HnsEngineTest {
     @Test
     fun `the comfort build is what the layout describes`() {
         if (skip()) return
-        assertEquals(0xC218FD9EL, HnsEngine.crc(rom!!))
-        assertEquals(0xC218FD9EL, layout.buildCrc)
+        assertEquals(0x949DBE42L, HnsEngine.crc(rom!!))
+        assertEquals(0x949DBE42L, layout.buildCrc)
         assertEquals(null, HnsEngine.refusal(rom!!))
     }
 
@@ -343,6 +343,21 @@ class HnsEngineTest {
     }
 
     @Test
+    fun `trainer doubles are singles in a Kaizo run, doubles in the Kaizo Doubles mode and the Nuzlocke one`() {
+        if (skip()) return
+        // Blake, 2026-10-06: KaizoCore_TrainerDoublesAreSingles reads the mode byte and this one; the build carries 0.
+        val L = layout
+        val at = L.sym("gHnsChallengePreset") - L.romBase + L.const("HNS_PRESET_KAIZO_DOUBLES")
+        assertEquals(0, rom!![at].toInt())
+        assertEquals(0, run(KAIZO, 1234L, HnsEngine.Pool.NATDEX).rom[at].toInt())
+        val doubles = run("RSE NatDex v1.2 Kaizo Doubles", 7L, HnsEngine.Pool.NATDEX).rom
+        assertEquals(1, doubles[at].toInt())
+        val back = doubles.copyOf()
+        HnsEngine.writePreset(back, L, HnsEngine.Preset.NUZLOCKE)
+        assertEquals(0, back[at].toInt())
+    }
+
+    @Test
     fun `the starters sit in the starter table and in the lab's three scripts`() {
         if (skip()) return
         val result = run(KAIZO, 1234L, HnsEngine.Pool.NATDEX)
@@ -378,22 +393,21 @@ class HnsEngineTest {
     }
 
     @Test
-    fun `random moves and abilities come from the Nat Dex fork's own pools`() {
+    fun `random moves come from the Nat Dex fork's own pools and abilities stop at Teravolt`() {
         if (skip()) return
         val out = read(run(KAIZO, 1234L, HnsEngine.Pool.NATDEX).rom)
         val rules = com.ironmonone.app.engine.hns.HnsUprRules(zx = false)
         val moveNames = out.L.enum("MOVE").entries.groupBy({ it.value }, { it.key.removePrefix("MOVE_") })
         val abilityNames = out.L.enum("ABILITY").entries.groupBy({ it.value }, { it.key.removePrefix("ABILITY_") })
-        assertTrue("U_TURN" in rules.bannedMoves && "CLOSE_COMBAT" in rules.bannedMoves && "ADAPTABILITY" in rules.bannedAbilities)
+        assertTrue("U_TURN" in rules.bannedMoves && "CLOSE_COMBAT" in rules.bannedMoves)
         for (m in out.mons) {
             if (m == null || !m.eligible) continue
             for (lm in m.learnset) assertFalse(moveNames[lm.move].orEmpty().any { it in rules.bannedMoves }, "${m.const} learns ${moveNames[lm.move]}")
             val vm = vanilla.mons[m.id]!!
-            // Shedinja keeps Wonder Guard as UPR keeps it; every other slot was rolled from the fork's pool.
+            // Shedinja keeps Wonder Guard as UPR keeps it; every other slot was rolled from Black 2 / White 2's 1 to 164
+            // (the Nat. Dex pool's abilities since rc38; HnsNatDexParityTest has the rest).
             if (vm.abilities.contains(out.L.enumValue("ABILITY", "ABILITY_WONDER_GUARD") ?: -1)) continue
-            for (a in m.abilities) if (a != 0) assertFalse(abilityNames[a].orEmpty().any { it in rules.bannedAbilities }, "${m.const} has ${abilityNames[a]}")
-            // The duplicates UPR weighs with their originals appear only as those originals' variations.
-            for (a in m.abilities) assertFalse(abilityNames[a].orEmpty().any { it in setOf("SOLID_ROCK", "IRON_BARBS", "TERAVOLT", "LIBERO") }, "${m.const} has a duplicate ability")
+            for (a in m.abilities) assertTrue(a in 0..164, "${m.const} has ${abilityNames[a]}")
         }
         // HnsGame's machineMoves is the layout's vanilla list; the ROM's TMs are in gTMHMItemMoveIds.
         val tms = (1..out.tmCount).map { out.rom.get("TmHmIndexKey", out.L.rec("gTMHMItemMoveIds", it), "moveId") }

@@ -55,6 +55,11 @@ internal data class MoveContext(
     val natDex: Boolean = false,
     /** MaxDex 1.0, whose Freeze-Dry is super effective on Water (MoveRules.effectiveness). */
     val maxDex: Boolean = false,
+    /**
+     * Heart & Soul: every move has its own category in the ROM's row, Hidden Power and Weather Ball special whatever type
+     * they take, so neither follows its type the Gen 3 way.
+     */
+    val ownCategories: Boolean = false,
 )
 
 private fun kg(s: String?): Double? = s?.trim()?.toDoubleOrNull()
@@ -96,7 +101,8 @@ internal object MoveDecorAccess {
 /** One ROM move row as the PC tracker draws it (MoveRules). */
 internal fun MoveRow.toPcMove(ctx: MoveContext?): PcMove {
     val shownType = MoveRules.shownType(id, type, ctx?.hiddenPowerType)
-    val base = MoveRules.basePower(id, power, ctx?.generation ?: 3)
+    // Heart & Soul's own label first, where its table holds a placeholder (MoveRow.powerLabel, HnsMovePower).
+    val base = powerLabel ?: MoveRules.basePower(id, power, ctx?.generation ?: 3)
     val acc0 = (acc ?: 0).toString()
     // "Calculate variable damage" off: the labels stay labels, and Weather Ball
     // keeps its own type (the reference only recolours it with the option on).
@@ -110,7 +116,11 @@ internal fun MoveRow.toPcMove(ctx: MoveContext?): PcMove {
     // the weather's type, or a Hidden Power with its type set, follows it.
     // Hidden Power with no type set has no category at all: MoveData.getCategory
     // maps the unknown type to NONE, so no icon is drawn.
+    // Not on Heart & Soul (MoveContext.ownCategories), where Hidden Power and Weather Ball are special whatever their type,
+    // as the ROM's row says (the Nat. Dex sweep, 2026-10-06: a Hidden Power set to Fighting, or a Weather Ball in a
+    // sandstorm, read PHY).
     val cat = when {
+        ctx?.ownCategories == true -> category
         id == MoveRules.HIDDEN_POWER -> newType?.let { if (it <= 8) "PHY" else "SPE" }
         id == MoveRules.WEATHER_BALL && newType != null && newType != shownType -> if (newType <= 8) "PHY" else "SPE"
         else -> category

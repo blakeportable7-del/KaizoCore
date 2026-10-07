@@ -114,6 +114,8 @@ SYMBOLS = [
     "gSpriteCoordOffsetY", "gPlttBufferUnfaded", "gPlttBufferFaded", "gObjectEvents",
     # The Survival heal counter (2026-10-06): the field script engine's context (src/script.c, static).
     "sGlobalScriptContext",
+    # Catch Rates (2026-10-06): the Lure and Dive Balls' conditions (src/wild_encounter.c), as ComputeBallData reads them.
+    "gIsFishingEncounter", "gIsSurfingEncounter",
 ]
 
 # Battle script labels: plain asm labels carry no size, so each gets "end", the next symbol's address. The tracker
@@ -190,6 +192,9 @@ SCALARS = [
     # The challenge menu's preset per KaizoCore mode (kaizocore_tables.h, 2026-10-05).
     "HNS_CHALLENGE_ROWS", "HNS_PRESET_MODE", "HNS_PRESET_SKIP_MENU", "HNS_PRESET_VALUES", "HNS_PRESET_LOCKS",
     "HNS_PRESET_SIZE", "HNS_PRESET_MODE_NONE", "HNS_PRESET_MODE_KAIZO", "HNS_PRESET_MODE_NUZLOCKE",
+    "HNS_PRESET_KAIZO_DOUBLES",  # rc38: the Kaizo Doubles mode keeps trainer doubles; other Kaizo runs play them single
+    # Catch Rates (2026-10-06): the Dive and Dusk Balls read the map type (GetCurrentMapType, gMapHeader.mapType).
+    "MAP_TYPE_UNDERGROUND", "MAP_TYPE_UNDERWATER",
 ]
 
 # Families exported whole, grouped by prefix. Enumerators and #defines both count.

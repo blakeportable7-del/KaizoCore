@@ -18,7 +18,9 @@ class HnsItemPoolTest {
         val g = vanilla
         val tms = g.L.machines.filter { it.kind == "TM" }.map { it.item }.toSet()
         val o = HnsEngine.readSettings(File("src/main/assets/presets/${HnsEngineTest.KAIZO}.rnqs"))
-        val hnsKeys = g.items.filterNotNull().filter { it.id != 0 && it.name.isNotEmpty() }.associateBy { HnsRandomizer.itemKey(it.name) }
+        // The first item of each name (a later one of the same name is a copy the pools leave out: 897, 581).
+        val hnsKeys = g.items.filterNotNull().filter { it.id != 0 && it.name.isNotEmpty() }.groupBy { HnsRandomizer.itemKey(it.name) }
+            .mapValues { e -> e.value.minBy { it.id } }
         val out = StringBuilder()
         val shares = HashMap<HnsEngine.Pool, Triple<Double, Double, Boolean>>()
         for (pool in HnsEngine.Pool.values()) {

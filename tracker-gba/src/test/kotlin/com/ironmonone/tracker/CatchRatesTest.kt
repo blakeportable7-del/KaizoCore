@@ -56,8 +56,9 @@ class CatchRatesTest {
         assertEquals(5, toxic(GameMap.RUBY_U)); assertEquals(5, toxic(GameMap.SAPPHIRE_U))
         assertEquals(5, toxic(GameMap.EMERALD_U))
         assertEquals(9, toxic(GameMap.FIRERED_U_V10)); assertEquals(9, toxic(GameMap.LEAFGREEN_U))
-        // The Nat. Dex builds count as their base game (IRONMON_ROMS; skipped without the dumps).
-        for ((file, want) in listOf("emerald-natdex-121.gba" to 5, "firered-natdex-121.gba" to 9)) {
+        // The Nat. Dex builds follow their own code (IRONMON_ROMS; skipped without the dumps): both test status1 & 0xD8,
+        // Toxic included, in handleballthrow (Emerald Nat. Dex 1.2.1 at 0x08059360, FireRed's at 0x0802E7DC).
+        for ((file, want) in listOf("emerald-natdex-121.gba" to 9, "firered-natdex-121.gba" to 9)) {
             val f = Dumps.rom(file) ?: continue
             val rom = f.readBytes()
             val mem = MemoryReader { a, n ->
@@ -65,6 +66,27 @@ class CatchRatesTest {
                 ByteArray(n) { i -> if (o >= 0 && o + i < rom.size) rom[(o + i).toInt()] else 0 }
             }
             assertEquals(want, GbaTracker(mem, GameMap.resolve(mem)).calcCatchRate(45, 20, 20, 5, 0x80, 4, false, 0, false, 0), file)
+        }
+    }
+
+    @Test
+    fun `Nat Dex and MaxDex throw with Gen 3's handleballthrow, Toxic counted`() {
+        // Each ROM's battle script command 0xEF (gBattleScriptingCommandsTable, found by its run of 248+ code pointers),
+        // read where it lies (IRONMON_ROMS; skipped without the dumps). Every build keeps Gen 3's code: sleep or freeze
+        // (status1 & 0x27) doubles, status1 & 0xD8 (poison, burn, paralysis and Toxic) adds half, Dive's 35 and the 30 of
+        // Net and Repeat, and four shake checks (cmp r4, #4). No modern formula, no new balls, so the Gen 3 estimate holds.
+        val tables = listOf("firered-u-v11.gba" to 0x0825018CL, "emerald-u.gba" to 0x0831BD10L,
+            "firered-natdex-121.gba" to 0x0820C5CCL, "emerald-natdex-121.gba" to 0x0838F4D0L, "firered-maxdex.gba" to 0x0826425CL)
+        for ((file, table) in tables) {
+            val rom = Dumps.rom(file)?.readBytes() ?: continue
+            fun u32(a: Long): Long { val o = (a - 0x08000000L).toInt(); return rom.u32(o) }
+            val start = (u32(table + 0xEF * 4) and 1L.inv()) - 0x08000000L
+            val end = (u32(table + 0xF0 * 4) and 1L.inv()) - 0x08000000L
+            kotlin.test.assertTrue(end - start in 800..1100, "$file: handleballthrow is ${end - start} bytes")
+            val halves = (start until end step 2).map { rom.u16(it.toInt()) }.toSet()
+            for ((op, what) in listOf(0x2027 to "movs r0, #0x27 (sleep, freeze)", 0x20D8 to "movs r0, #0xD8 (Toxic included)",
+                    0x2C04 to "cmp r4, #4 (four shakes)", 0x2423 to "movs r4, #35 (Dive)", 0x241E to "movs r4, #30 (Net, Repeat)"))
+                kotlin.test.assertTrue(op in halves, "$file: no $what")
         }
     }
 }

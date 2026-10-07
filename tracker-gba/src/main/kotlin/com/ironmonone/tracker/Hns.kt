@@ -146,6 +146,25 @@ object HnsWeather {
 }
 
 /**
+ * The power column of the Heart & Soul moves whose power the game works out in battle, where its move table holds the
+ * expansion's placeholder 1 (the Nat. Dex sweep, 2026-10-06: Grass Knot and fifteen more printed "1"). The words are
+ * the DS tracker's for the same moves (tracker-nds gen5/moves.tsv: WT, >WT, <SP, >SP, BRY, ITM, <PP, VAR, HP), the PC
+ * tracker's for the rest: a fixed amount of damage prints as no power ("0", as Super Fang and Counter do there), a
+ * friendship one as Return's ">FR". By the move's name, so a build with other ids never takes a label it should not.
+ */
+object HnsMovePower {
+    private val LABELS = mapOf(
+        "GRASSKNOT" to "WT", "HEAVYSLAM" to ">WT", "HEATCRASH" to ">WT", "GYROBALL" to "<SP", "ELECTROBALL" to ">SP",
+        "NATURALGIFT" to "BRY", "FLING" to "ITM", "TRUMPCARD" to "<PP", "BEATUP" to "VAR", "FINALGAMBIT" to "HP",
+        "METALBURST" to "0", "COMEUPPANCE" to "0", "NATURESMADNESS" to "0", "RUINATION" to "0",
+        "PIKAPAPOW" to ">FR", "VEEVEEVOLLEY" to ">FR",
+    )
+
+    /** The label for the move named [name] when its table power is the placeholder 1, else null (the number stands). */
+    fun label(name: String, romPower: Int?): String? = if (romPower == 1) LABELS[BattleMoveTypes.norm(name)] else null
+}
+
+/**
  * Heart & Soul's species numbering for the app's screens (2026-10-05): its ids run 1 to [TOTAL] in the expansion's own
  * order (National Dex order to 1025, then the forms), which is neither Gen 3's nor the Nat. Dex build's, so a screen that
  * counts or pictures species asks here.
@@ -335,7 +354,7 @@ internal class HnsData(private val memory: MemoryReader) {
         val ev = HnsLayout.Evolution
         val prm = HnsLayout.EvolutionParam
         val out = ArrayList<Evo>()
-        for (i in 0 until 16) {
+        for (i in 0 until 128) {   // to EVOLUTIONS_END: Milcery has 72 (every sweet and cream), not 16
             val e = memory.read(p + i * ev.SIZE.toLong(), ev.SIZE)
             if (e.size < ev.SIZE) break
             val method = ev.method.at(e)
@@ -376,7 +395,16 @@ internal class HnsData(private val memory: MemoryReader) {
                 }
             }
         }
-        return null
+        // A way none of those names (2026-10-06, the Nat. Dex sweep: 32 species of the build, about 40 a Kaizo seed, read
+        // as not evolving at all): a trade, an item the table has no word for (Protector, Galarica Cuff, Oval Stone), a
+        // level-up with a condition and no level (knowing a move, Remoraid in the party, 1,000 steps), or another way.
+        val e = evos.first()
+        return when {
+            evos.any { it.method == HnsLayout.EVO_ITEM } || e.conditions.any { it.first == HnsLayout.IF_HOLD_ITEM } -> EvoText.HNS_ITEM
+            e.method == HnsLayout.EVO_TRADE -> EvoText.HNS_TRADE
+            e.method == HnsLayout.EVO_LEVEL -> EvoText.HNS_LEVEL_UP
+            else -> EvoText.HNS_OTHER
+        }
     }
 
     /** The friendship an evolution asks for (IF_MIN_FRIENDSHIP's argument): 160 on this build's generation, 220 before. */
@@ -448,6 +476,20 @@ internal class HnsData(private val memory: MemoryReader) {
         (1 until HnsLayout.ITEMS_COUNT).filterTo(HashSet()) { id ->
             effect(id)?.let { (it.u8(4) and (HnsLayout.ITEM4_HEAL_PP or HnsLayout.ITEM4_HEAL_PP_ONE)) != 0 } == true
         }
+    }
+
+    /**
+     * Every item an evolution of the build uses or asks to be held (EVO_ITEM's item, IF_HOLD_ITEM's): Heals in Bag's
+     * Evo tab, which knew only the stones and trade items of EvoText's table (Protector, Galarica Cuff and 27 more
+     * read as Other, the Nat. Dex sweep 2026-10-06).
+     */
+    val evoItems: Set<Int> by lazy {
+        val out = HashSet<Int>()
+        for (s in 1 until HnsLayout.NUM_SPECIES) for (e in evolutions(s)) {
+            if (e.method == HnsLayout.EVO_ITEM && e.param > 0) out += e.param
+            e.conditions.filter { it.first == HnsLayout.IF_HOLD_ITEM && it.second > 0 }.forEach { out += it.second }
+        }
+        out
     }
 
     /** The X items, Guard Spec. and Dire Hit (MiscData.BattleItems). */

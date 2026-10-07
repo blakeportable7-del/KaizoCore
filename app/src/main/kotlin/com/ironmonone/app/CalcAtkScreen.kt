@@ -170,7 +170,7 @@ private fun calcAtkAutoFill(
     own: com.ironmonone.tracker.TrackedMon, enemy: com.ironmonone.tracker.EnemyInfo,
 ): CalcAtk.Fill? {
     return CalcAtk.autoFill(
-        moveId = id, power = com.ironmonone.tracker.MoveRules.basePower(id, row.power), type = row.type, category = row.category,
+        moveId = id, power = row.powerLabel ?: com.ironmonone.tracker.MoveRules.basePower(id, row.power), type = row.type, category = row.category,
         damage = s.lastAttackDamage,
         ownTypes = typesOf(own), ownDef = own.mon.def, ownSpd = own.mon.spDef,
         ownWeightKg = t.weight(own.mon.species)?.toDoubleOrNull(),

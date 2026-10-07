@@ -386,7 +386,9 @@ object PcAssets {
     fun gbaSprite(context: android.content.Context, species: Int, nameSet: String?): ImageBitmap? =
         // Heart & Soul numbers its species the expansion's way (National Dex order, then forms): the pack's picture
         // for the same Pokemon (com.ironmonone.tracker.HnsSprites, by National Dex number and form).
-        if (nameSet == "hns") com.ironmonone.tracker.HnsSprites.packId(species)?.let { gbaSprite(context, it) }
+        // The Egg (SPECIES_EGG) is in no species table: natDexId sends it to the pack's Egg, 1284. The PC tracker's Team
+        // View hard-codes 412, which is the Egg only in a vanilla Gen 3 game (the pack's 412 is Turtwig, 2026-10-06).
+        if (nameSet == "hns") com.ironmonone.tracker.HnsSpecies.natDexId(species)?.let { gbaSprite(context, it) }
         else if (nameSet == "maxdex" && species in 412..1280) load(context, "gbasprites-maxdex/$species.png") else gbaSprite(context, species)
 
     /** DS sprite by national dex id; [shiny] picks the alternate palette. */

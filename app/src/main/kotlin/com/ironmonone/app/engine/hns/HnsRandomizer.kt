@@ -34,10 +34,43 @@ class HnsRandomizer(
      * draw one line for both; Evo Kaizo's own line is 601 and its wild line Kaizo's, 599 on Vanilla and 600 on Nat. Dex.
      */
     private val wildLine: Int? = bstLine,
+    /** The source game's UPR allowed items (Gen3Constants.allowedItems), as [itemKey]s (HnsEngine.poolAllowedKeys), or null. */
+    private val poolAllowed: Set<String>? = null,
 ) {
     companion object {
         /** Gen 3's shortened names, as vanilla Emerald spells them, to Heart & Soul's (both as [itemKey]s). */
         private val GEN3_NAMES = mapOf("PARLYZHEAL" to "PARALYZEHEAL", "XDEFEND" to "XDEFENSE", "XSPECIAL" to "XSPATK", "STICK" to "LEEK")
+
+        /**
+         * The forms AbstractRomHandler.randomizeAbilities gives their base's abilities after rolling (Pikachu's caps,
+         * Castform, Deoxys, Rotom, the Origin forms, Zen Darmanitan, Aegislash's Blade...), as Heart & Soul's species
+         * constants (without SPECIES_), form to base.
+         */
+        val FORM_ABILITIES_FROM_BASE: List<Pair<String, String>> = buildList {
+            for (c in listOf("ORIGINAL", "HOENN", "SINNOH", "UNOVA", "KALOS", "ALOLA", "PARTNER", "WORLD")) add("PIKACHU_$c" to "PIKACHU")
+            add("PICHU_SPIKY_EARED" to "PICHU")
+            for (c in listOf("SUNNY", "RAINY", "SNOWY")) add("CASTFORM_$c" to "CASTFORM_NORMAL")
+            for (c in listOf("ATTACK", "DEFENSE", "SPEED")) add("DEOXYS_$c" to "DEOXYS_NORMAL")
+            for (c in listOf("SANDY", "TRASH")) { add("BURMY_$c" to "BURMY_PLANT"); add("WORMADAM_$c" to "WORMADAM_PLANT") }
+            add("CHERRIM_SUNSHINE" to "CHERRIM_OVERCAST")
+            for (c in listOf("HEAT", "WASH", "FROST", "FAN", "MOW")) add("ROTOM_$c" to "ROTOM")
+            add("DIALGA_ORIGIN" to "DIALGA"); add("PALKIA_ORIGIN" to "PALKIA")
+            add("DARMANITAN_ZEN" to "DARMANITAN_STANDARD"); add("DARMANITAN_GALAR_ZEN" to "DARMANITAN_GALAR_STANDARD")
+            add("MELOETTA_PIROUETTE" to "MELOETTA_ARIA"); add("GRENINJA_ASH" to "GRENINJA_BOND")
+            add("FLOETTE_ETERNAL" to "FLOETTE_RED"); add("MEOWSTIC_F_MEGA" to "MEOWSTIC_M_MEGA")
+            add("AEGISLASH_BLADE" to "AEGISLASH_SHIELD")
+            for (c in listOf("SMALL", "LARGE", "SUPER")) { add("PUMPKABOO_$c" to "PUMPKABOO_AVERAGE"); add("GOURGEIST_$c" to "GOURGEIST_AVERAGE") }
+            add("ZYGARDE_10_AURA_BREAK" to "ZYGARDE_50"); add("ZYGARDE_10_POWER_CONSTRUCT" to "ZYGARDE_50_POWER_CONSTRUCT")
+            add("HOOPA_UNBOUND" to "HOOPA_CONFINED")
+            for (c in listOf("POM_POM", "PAU", "SENSU")) add("ORICORIO_$c" to "ORICORIO_BAILE")
+            add("WISHIWASHI_SCHOOL" to "WISHIWASHI_SOLO")
+            for (c in listOf("RED", "ORANGE", "YELLOW", "GREEN", "BLUE", "INDIGO", "VIOLET")) add("MINIOR_CORE_$c" to "MINIOR_METEOR_$c")
+            add("NECROZMA_DUSK_MANE" to "NECROZMA"); add("NECROZMA_DAWN_WINGS" to "NECROZMA")
+            add("EISCUE_NOICE" to "EISCUE_ICE"); add("MORPEKO_HANGRY" to "MORPEKO_FULL_BELLY")
+            add("ZACIAN_CROWNED" to "ZACIAN_HERO"); add("ZAMAZENTA_CROWNED" to "ZAMAZENTA_HERO")
+            add("ETERNATUS_ETERNAMAX" to "ETERNATUS"); add("BASCULEGION_F" to "BASCULEGION_M")
+            add("URSHIFU_RAPID_STRIKE" to "URSHIFU_SINGLE_STRIKE"); add("PALAFIN_HERO" to "PALAFIN_ZERO")
+        }
 
         /** An item name as the pools compare it: upper case, an accented E as E, letters and digits only, Gen 3's short forms spelled out. */
         fun itemKey(name: String): String {
@@ -158,10 +191,12 @@ class HnsRandomizer(
         if (o.baseStatsMod != "UNCHANGED" || o.abilitiesMod == "RANDOMIZE" || o.typesMod != "UNCHANGED" || o.randomizeWildHeldItems) {
             logTraits()
         } else log("Pokemon base stats & type: unchanged\n")
-        val impossible = if (o.changeImpossibleEvolutions) removeImpossibleEvolutions() else emptyList()
+        // Always, whatever changeImpossibleEvolutions says: Emerald Nat. Dex 1.2.1's own data has no trade evolution left
+        // (its presets leave the box off for that reason), so a run in line with it never asks for a trade.
+        val impossible = removeImpossibleEvolutions()
         val easier = if (o.makeEvolutionsEasier) makeEvolutionsEasier() else emptyList()
         val timed = if (o.removeTimeBasedEvolutions) removeTimeBasedEvolutions() else emptyList()
-        if (o.changeImpossibleEvolutions) { log("--Removing Impossible Evolutions--"); impossible.forEach { log(it) }; log() }
+        if (o.changeImpossibleEvolutions || impossible.isNotEmpty()) { log("--Removing Impossible Evolutions--"); impossible.forEach { log(it) }; log() }
         if (o.makeEvolutionsEasier) {
             log("--Making Evolutions Easier--"); log("Friendship evolutions now take 160 happiness (was 220).")
             easier.forEach { log(it) }; log()
@@ -365,9 +400,32 @@ class HnsRandomizer(
         game.items.filterNotNull().filter { d ->
             d.id != 0 && d.name.isNotEmpty() && !d.name.startsWith("?") && d.pocket != keyPocket &&
                 d.id !in hmItems && !(d.pocket == tmPocket && d.id !in machineItems) && !(d.id in tmLike && d.id !in machineItems) &&
-                inPool(d.id)
+                pictured(d) && numberedBerry(d) && firstOfName(d) && inPool(d.id) && (poolAllowed == null || itemKey(d.name) in poolAllowed)
         }.map { it.id }
     }
+
+    /**
+     * An item the bag can show: not drawn with ITEM_NONE's question mark. Heart & Soul's unused slots carry it, among
+     * them ITEM_UNUSED_BERRY_1 (897), named SITRUS BERRY like the real one (523), so the name match let it into the
+     * pools and a Kaizo run handed it out: the bag showed "No?4 SITRUS BERRY" with a "?" (Blake, rc37).
+     */
+    private fun pictured(d: HnsGame.ItemData): Boolean = d.iconPic != game.items[0]!!.iconPic
+
+    /** A berry pocket item is one of the numbered berries (the bag numbers it id - CHERI + 1, in two digits). */
+    private val berryRange: IntRange? by lazy {
+        val first = item("CHERI_BERRY"); val last = item("ENIGMA_BERRY_E_READER") ?: item("ENIGMA_BERRY")
+        if (first != null && last != null) first..last else null
+    }
+    private fun numberedBerry(d: HnsGame.ItemData): Boolean = d.pocket != berryPocket || berryRange?.contains(d.id) != false
+
+    /**
+     * The first item of its name: the pools take items by name, and a later item of the same name is a copy the game
+     * treats otherwise (ITEM_ENIGMA_BERRY_E_READER, 581, reads its data from the save's e-Reader berry; 897 above).
+     */
+    private val firstIdOfName: Map<String, Int> by lazy {
+        game.items.filterNotNull().filter { it.name.isNotEmpty() }.groupBy { it.name }.mapValues { e -> e.value.minOf { it.id } }
+    }
+    private fun firstOfName(d: HnsGame.ItemData): Boolean = firstIdOfName[d.name] == d.id
 
     /** UPR's nonBadItems: allowed, less mail, berries, valuables, one species' items, contest scarves (Gen3Constants), and the like. */
     private val nonBadItems: List<Int> by lazy {
@@ -641,22 +699,35 @@ class HnsRandomizer(
 
     private val wonderGuard = ability("WONDER_GUARD") ?: 25
 
-    /** AbstractRomHandler.randomizeAbilities with Gen 3's variation table and UPR's ban lists, on HnS's 310 abilities. */
+    /**
+     * The last ability id a roll may land on, by pool (Blake, 2026-10-07; Heart & Soul numbers abilities the official
+     * way, so the ids are the games' own):
+     * - NATDEX: Black 2 / White 2 Kaizo's, the newest game with official IronMON rules: Gen5Constants.highestAbilityIndex,
+     *   164, Teravolt.
+     * - VANILLA: vanilla Emerald Kaizo's, ZX's Gen3Constants.highestAbilityIndex: through Air Lock (Gen 3's 77, 76 in
+     *   the official numbering Heart & Soul uses; Gen 3's unused Cacophony, which UPR leaves out, is not in the game).
+     */
+    internal val lastAbility: Int by lazy {
+        if (pool == HnsEngine.Pool.NATDEX) ability("TERAVOLT") ?: 164 else ability("AIR_LOCK") ?: 76
+    }
+
+    /**
+     * AbstractRomHandler.randomizeAbilities (engine-zx AbstractRomHandler.java:505) on abilities 1 to [lastAbility]: the
+     * game's useless ones out, then
+     * the bans the settings ask for, the variations of the source game when duplicates are weighed together (Gen 5 adds
+     * Filter/Solid Rock, Rough Skin/Iron Barbs, Mold Breaker/Turboblaze/Teravolt). Gen 5 rolls its hidden ability too;
+     * Emerald has none, so on the Vanilla pool Heart & Soul's hidden slot takes the rolled first ability.
+     */
     private fun randomizeAbilities() {
-        val maxAbility = game.abilityNames.size - 1
+        val maxAbility = minOf(lastAbility, game.abilityNames.size - 1)
         val banned = HashSet<Int>()
         banned += 0
+        // An id the build has no real ability for (no name, or ITEM_NONE's "-------") is never rolled.
         for (id in 1..maxAbility) if (game.abilityNames[id].isEmpty() || game.abilityNames[id].startsWith("-")) banned += id
-        // Abilities that only work on one species' forms do nothing elsewhere (Gen7Constants.uselessAbilities, extended).
-        banned += abilitySet("FORECAST", "MULTITYPE", "FLOWER_GIFT", "ZEN_MODE", "STANCE_CHANGE", "SHIELDS_DOWN", "SCHOOLING",
-            "DISGUISE", "BATTLE_BOND", "POWER_CONSTRUCT", "RKS_SYSTEM", "GULP_MISSILE", "ICE_FACE", "HUNGER_SWITCH", "ZERO_TO_HERO",
-            "COMMANDER", "TERA_SHIFT", "TERAFORM_ZERO", "AS_ONE_ICE_RIDER", "AS_ONE_SHADOW_RIDER")
-        // The abilities the settings file's UPR fork never rolls (HnsUprRules).
-        for ((id, names) in abilityConsts) {
-            if (id !in 1..maxAbility) continue
-            if (names.any { it in rules.bannedAbilities }) banned += id
-            if (rules.onlyAbilities != null && names.none { it in rules.onlyAbilities!! }) banned += id
-        }
+        // The source game's getUselessAbilities, banned whatever the settings say: ZX Gen5Constants.uselessAbilities
+        // (Gen5Constants.java:134) on Nat. Dex, ZX Gen3Constants.uselessAbilities (Gen3Constants.java:190: Forecast and
+        // Cacophony, which Heart & Soul has not) on Vanilla.
+        banned += if (pool == HnsEngine.Pool.NATDEX) abilitySet("FORECAST", "MULTITYPE", "FLOWER_GIFT", "ZEN_MODE") else abilitySet("FORECAST", "CACOPHONY")
         if (!o.allowWonderGuard) banned += wonderGuard
         if (o.banTrappingAbilities) banned += abilitySet("SHADOW_TAG", "MAGNET_PULL", "ARENA_TRAP")
         if (o.banNegativeAbilities) banned += abilitySet("DEFEATIST", "SLOW_START", "TRUANT", "KLUTZ", "STALL")
@@ -669,10 +740,13 @@ class HnsRandomizer(
             banned += abilitySet("VITAL_SPIRIT", "WHITE_SMOKE", "PURE_POWER", "SHELL_ARMOR", "AIR_LOCK", "SOLID_ROCK", "IRON_BARBS",
                 "TURBOBLAZE", "TERAVOLT", "EMERGENCY_EXIT", "DAZZLING", "TANGLING_HAIR", "POWER_OF_ALCHEMY", "FULL_METAL_BODY",
                 "SHADOW_SHIELD", "PRISM_ARMOR", "LIBERO", "STALWART")
-            for ((a, b) in listOf("INSOMNIA" to "VITAL_SPIRIT", "CLEAR_BODY" to "WHITE_SMOKE", "HUGE_POWER" to "PURE_POWER",
-                "BATTLE_ARMOR" to "SHELL_ARMOR", "CLOUD_NINE" to "AIR_LOCK")) {
-                val x = ability(a); val y = ability(b)
-                if (x != null && y != null) variations[x] = listOf(x, y)
+            val table = mutableListOf(listOf("INSOMNIA", "VITAL_SPIRIT"), listOf("CLEAR_BODY", "WHITE_SMOKE"),
+                listOf("HUGE_POWER", "PURE_POWER"), listOf("BATTLE_ARMOR", "SHELL_ARMOR"), listOf("CLOUD_NINE", "AIR_LOCK"))
+            if (pool == HnsEngine.Pool.NATDEX) table += listOf(listOf("FILTER", "SOLID_ROCK"), listOf("ROUGH_SKIN", "IRON_BARBS"),
+                listOf("MOLD_BREAKER", "TURBOBLAZE", "TERAVOLT"))
+            for (names in table) {
+                val ids = names.mapNotNull { ability(it) }.filter { it <= maxAbility }
+                if (ids.size == names.size) variations[ids[0]] = ids
             }
         }
         fun pick(vararg already: Int): Int {
@@ -687,14 +761,24 @@ class HnsRandomizer(
             if (m.abilities.contains(wonderGuard)) return
             m.abilities[0] = pick()
             m.abilities[1] = if (o.ensureTwoAbilities || random.nextDouble() < 0.5) pick(m.abilities[0]) else 0
-            m.abilities[2] = pick(m.abilities[0], m.abilities[1])
+            // Emerald has no hidden ability: on the Vanilla pool a hidden-ability Pokemon has its first ability, so it
+            // behaves as any other (Blake, 2026-10-07: "i don't want to break the game"). Gen 5 rolls its third slot.
+            m.abilities[2] = if (pool == HnsEngine.Pool.VANILLA) m.abilities[0] else pick(m.abilities[0], m.abilities[1])
         }
         if (o.abilitiesFollowEvolutions) {
             copyUp(traitMons, { randomize(it) }, { from, to, _ ->
                 if (!to.abilities.contains(wonderGuard)) from.abilities.copyInto(to.abilities)
             })
         } else traitMons.forEach { randomize(it) }
+        // AbstractRomHandler.randomizeAbilities's "cases for certain alt forms": these forms take their base's abilities.
+        for ((form, base) in FORM_ABILITIES_FROM_BASE) {
+            val f = speciesByConst["SPECIES_$form"]?.let { mons[it] } ?: continue
+            val b = speciesByConst["SPECIES_$base"]?.let { mons[it] }?.let { if (it.cosmeticOf != 0) mons[it.cosmeticOf] else it } ?: continue
+            if (f.enabled && b.enabled) b.abilities.copyInto(f.abilities)
+        }
     }
+
+    private val speciesByConst: Map<String, Int> by lazy { mons.filterNotNull().associate { it.const to it.id } }
 
     /** A cosmetic form (Furfrou's trims, Minior's colors) is its base again: UPR's copyBaseForme*. */
     private fun copyCosmetic() {
@@ -746,18 +830,53 @@ class HnsRandomizer(
 
     private fun evoLine(from: Mon, e: Evo, how: String) = fmt("%-15s -> %-15s %s", from.displayName, nm(e.target), how)
 
-    /** Gen3RomHandler.removeImpossibleEvolutions: a trade evolution happens on level-up instead. */
+    private val ifHoldItem = L.enumValue("IF", "IF_HOLD_ITEM")
+
+    /**
+     * No evolution asks for a trade, in every mode and pool (Blake, 2026-10-06: "trades are by level up using the
+     * emerald natl dex rules"). Emerald Nat. Dex 1.2.1's own evolution table has no trade method at all (the hack made
+     * each one an item used like a stone: a Linking Cord, or the item the trade asked to hold), and the Nat. Dex fork
+     * keeps an evolution's method when it changes the target (AbstractRomHandler.randomizeEvolutions), so no Nat. Dex
+     * seed has one. Heart & Soul's table still has EVO_TRADE, listed first beside its own way (Kadabra: trade, or level
+     * 42), and randomizeEvolutions keeps the first per target, which left about eleven species a seed that could only
+     * evolve by trade. Now:
+     * - A trade evolution whose target the species also reaches another way (Heart & Soul's own, untouched data) is
+     *   dropped; that other way stays.
+     * - Any other (the one a randomized species kept) takes Gen3RomHandler.removeImpossibleEvolutions's numbers, the
+     *   rule the vanilla IronMON settings files turn on: a trade (or a trade for a given partner, Karrablast and
+     *   Shelmet) at level 37; a trade holding an item at level 30, except Poliwhirl level 37, Seadra level 40, Slowpoke
+     *   a Water Stone, Clamperl level 30 with the Deep Sea Tooth and a Water Stone with the Deep Sea Scale.
+     * Logged under --Removing Impossible Evolutions-- in the fork's words.
+     */
     private fun removeImpossibleEvolutions(): List<String> {
         val lines = ArrayList<String>()
+        val water = item("WATER_STONE")
+        val tooth = item("DEEP_SEA_TOOTH")
+        val scale = item("DEEP_SEA_SCALE")
         for (m in mons) {
-            if (m == null || !m.enabled) continue
+            if (m == null) continue
+            if (m.evos.none { it.method == evoTrade }) continue
+            val others = m.evos.filter { it.method != evoTrade }.map { it.target }.toSet()
+            if (m.evos.removeAll { it.method == evoTrade && it.target in others }) m.evosChanged = true
             for (e in m.evos) {
-                if (e.method != evoTrade || !e.paramsOk) continue
-                e.conds.removeAll { it[0] == ifTradePartner }
-                e.method = evoLevel
-                e.param = if (e.conds.isEmpty()) 37 else 0
-                e.condsChanged = true; m.evosChanged = true
-                lines += evoLine(m, e, if (e.param > 0) "at level ${e.param}" else "on level-up, as the trade asked")
+                if (e.method != evoTrade) continue
+                val held = if (ifHoldItem == null) null else e.conds.firstOrNull { it[0] == ifHoldItem }?.get(1)
+                val stone: Int?
+                val level: Int
+                when {
+                    held == null -> { stone = null; level = 37 }
+                    m.natDex == 61 -> { stone = null; level = 37 }                    // Poliwhirl
+                    m.natDex == 79 && water != null -> { stone = water; level = 0 }    // Slowpoke
+                    m.natDex == 117 -> { stone = null; level = 40 }                   // Seadra
+                    m.natDex == 366 && held == scale && water != null -> { stone = water; level = 0 }
+                    m.natDex == 366 && held == tooth -> { stone = null; level = 30 }
+                    else -> { stone = null; level = 30 }                              // Onix, Scyther, Porygon and the rest
+                }
+                if (stone != null) { e.method = evoItem; e.param = stone } else { e.method = evoLevel; e.param = level }
+                // Conditions read to their end are rewritten without the trade's (HnsGame.writeEvos keeps the rest).
+                if (e.paramsOk) { e.conds.removeAll { it[0] == ifTradePartner || it[0] == ifHoldItem }; e.condsChanged = true }
+                m.evosChanged = true
+                if (m.enabled) lines += evoLine(m, e, if (stone != null) "using a ${game.itemName(stone)}" else "at level $level")
             }
         }
         return lines
@@ -855,7 +974,6 @@ class HnsRandomizer(
 
     private val rules = HnsUprRules(o.zxRules)
     private val moveConsts: Map<Int, Set<String>> = L.enum("MOVE").entries.groupBy({ it.value }, { it.key.removePrefix("MOVE_") }).mapValues { it.value.toSet() }
-    private val abilityConsts: Map<Int, Set<String>> = L.enum("ABILITY").entries.groupBy({ it.value }, { it.key.removePrefix("ABILITY_") }).mapValues { it.value.toSet() }
 
     /**
      * The moves a random pick may land on: real moves of this build (not Z or Max moves, not Struggle, not ones HnS's own
@@ -1377,7 +1495,7 @@ class HnsRandomizer(
         items("BRIGHT_POWDER", "QUICK_CLAW", "CHOICE_BAND", "KINGS_ROCK", "SILVER_POWDER", "FOCUS_BAND", "SCOPE_LENS", "METAL_COAT",
             "LEFTOVERS", "SOFT_SAND", "HARD_STONE", "MIRACLE_SEED", "BLACK_GLASSES", "BLACK_BELT", "MAGNET", "MYSTIC_WATER",
             "SHARP_BEAK", "POISON_BARB", "NEVER_MELT_ICE", "SPELL_TAG", "TWISTED_SPOON", "CHARCOAL", "DRAGON_FANG", "SILK_SCARF",
-            "SHELL_BELL", "SEA_INCENSE", "LAX_INCENSE") + consumableHeld
+            "SHELL_BELL", "SEA_INCENSE", "LAX_INCENSE", "RAZOR_CLAW", "RAZOR_FANG") + consumableHeld
     }
     private val generalConsumable by lazy {
         items("CHERI_BERRY", "CHESTO_BERRY", "PECHA_BERRY", "RAWST_BERRY", "ASPEAR_BERRY", "LEPPA_BERRY", "ORAN_BERRY", "PERSIM_BERRY",
@@ -1388,13 +1506,19 @@ class HnsRandomizer(
         items("BRIGHT_POWDER", "QUICK_CLAW", "KINGS_ROCK", "FOCUS_BAND", "SCOPE_LENS", "LEFTOVERS", "SHELL_BELL", "LAX_INCENSE",
             "RAZOR_CLAW", "RAZOR_FANG")
     }
-    private val typeBoost by lazy {
+    private val typeBoost: Map<Int, List<Int>> by lazy {
         mapOf("BUG" to "SILVER_POWDER", "DARK" to "BLACK_GLASSES", "DRAGON" to "DRAGON_FANG", "ELECTRIC" to "MAGNET",
             "FIGHTING" to "BLACK_BELT", "FIRE" to "CHARCOAL", "FLYING" to "SHARP_BEAK", "GHOST" to "SPELL_TAG",
             "GRASS" to "MIRACLE_SEED", "GROUND" to "SOFT_SAND", "ICE" to "NEVER_MELT_ICE", "NORMAL" to "SILK_SCARF",
             "POISON" to "POISON_BARB", "PSYCHIC" to "TWISTED_SPOON", "ROCK" to "HARD_STONE", "STEEL" to "METAL_COAT",
-            "WATER" to "MYSTIC_WATER", "FAIRY" to "FAIRY_FEATHER")
-            .mapNotNull { (t, i) -> val tid = L.enumValue("TYPE", "TYPE_$t"); val iid = item(i); if (tid != null && iid != null && inPool(iid)) tid to iid else null }.toMap()
+            "WATER" to "MYSTIC_WATER,SEA_INCENSE", "FAIRY" to "FAIRY_FEATHER")
+            .mapNotNull { (t, i) -> val tid = L.enumValue("TYPE", "TYPE_$t"); val l = items(*i.split(',').toTypedArray()); if (tid != null && l.isNotEmpty()) tid to l else null }.toMap()
+    }
+    /** Gen3Constants.speciesBoostingItems, by National Dex number (a form takes its species' item, as UPR's number does). */
+    private val speciesBoost: Map<Int, List<Int>> by lazy {
+        mapOf(380 to "SOUL_DEW", 381 to "SOUL_DEW", 366 to "DEEP_SEA_TOOTH,DEEP_SEA_SCALE", 25 to "LIGHT_BALL", 113 to "LUCKY_PUNCH",
+            132 to "METAL_POWDER", 104 to "THICK_CLUB", 105 to "THICK_CLUB", 83 to "LEEK")
+            .mapValues { (_, i) -> items(*i.split(',').toTypedArray()) }.filterValues { it.isNotEmpty() }
     }
 
     /** The four moves a trainer Pokemon gets with no moves set: its last four level-up moves at its level. */
@@ -1423,6 +1547,8 @@ class HnsRandomizer(
                             if (mv.category == 0) { l += items("LIECHI_BERRY"); if (!o.consumableItemsOnly) { typeBoost[mv.type]?.let { l += it }; l += items("CHOICE_BAND") } }
                             else { l += items("PETAYA_BERRY"); if (!o.consumableItemsOnly) typeBoost[mv.type]?.let { l += it } }
                         }
+                        // "Increase the likelihood of using species specific items": six times over.
+                        if (!o.consumableItemsOnly) speciesBoost[m.natDex]?.let { sp -> repeat(6) { l += sp } }
                         l
                     }
                     o.consumableItemsOnly -> consumableHeld

@@ -2,3 +2,15 @@
 *.patch -text
 *.sh text eol=lf
 *.py text eol=lf
+
+# Kept out of the public source snapshot (Blake, 2026-10-06: "i don't want them to copy my heart and soul tracker").
+# git archive, which builds every public snapshot (docs/RELEASING.md step 10), skips these. The comfort ROM patch is a
+# separate work for a game with no licence of its own; the app's code, and layout.py, gen_tracker.py and item_names.py
+# that generate files the app ships, stay public as the GPL requires.
+patches export-ignore
+mgba export-ignore
+build.sh export-ignore
+bps_make.py export-ignore
+bps_apply.py export-ignore
+ups_apply.py export-ignore
+layout_check.py export-ignore

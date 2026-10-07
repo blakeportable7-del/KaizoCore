@@ -23,6 +23,8 @@ REPO = os.path.abspath(os.path.join(HERE, "..", ".."))
 KT_OUT = os.path.join(REPO, "tracker-gba/src/main/kotlin/com/ironmonone/tracker/HnsLayout.kt")
 RES = os.path.join(REPO, "tracker-gba/src/main/resources/hns")
 NATDEX_SPECIES = os.path.join(REPO, "tracker-gba/src/main/resources/natdex/species.tsv")
+# The pack's forms, each with its National Dex number and form name (the Walking Pals map of the same ids).
+NATDEX_FORMS = os.path.join(REPO, "app/src/main/assets/walkingpals-nat/natdex-map.tsv")
 
 # Struct fields the tracker reads; None = every field.
 STRUCTS = {
@@ -37,7 +39,7 @@ STRUCTS = {
                    "dexSeen", "dexCaught"],
     "SaveBlock2": ["playerName", "playerGender", "playerTrainerId", "optionsBattleStyle", "encryptionKey", "rivalName"],
     "BattleScripting": ["battler"],
-    "BattleStruct": ["unableToUseMove", "futureSight", "wish", "weatherDuration"],
+    "BattleStruct": ["unableToUseMove", "futureSight", "wish", "weatherDuration", "safariCatchFactor"],
     # Battle Details and the last-attack line (2026-10-05).
     "SideTimer": None, "FieldTimer": None, "ProtectStruct": ["physicalDmg", "specialDmg"],
     # The Nuzlocke's statics (2026-10-05): a scripted wild battle returns through CB2_EndScriptedWildBattle.
@@ -150,17 +152,66 @@ FORM_SUFFIX = [("_MEGA_X", "X"), ("_MEGA_Y", "Y"), ("_MEGA", "M"), ("_PRIMAL", "
                ("_GALAR", "G"), ("_HISUI", "H")]
 
 
+# A form's name as HnS spells it (the end of its constant) where the pack's map spells it otherwise.
+FORM_ALIASES = {"SANDY": "sand", "BLUE_STRIPED": "blue", "WHITE_STRIPED": "white", "PAU": "pa-u", "LOW_KEY": "lowkey",
+                "SPIKY_EARED": "spiky", "F": "female", "10_AURA_BREAK": "10", "10_POWER_CONSTRUCT": "10"}
+# Forms the pack draws under a name of its own, by the HnS constant: Partner Pikachu and Eevee (Let's Go's, HnS's
+# _STARTER), Battle Bond Greninja, and Zacian and Zamazenta Crowned.
+FORM_PACK_NAMES = {"SPECIES_PIKACHU_STARTER": "Pikachu-P", "SPECIES_EEVEE_STARTER": "Eevee-P",
+                   "SPECIES_GRENINJA_BOND": "Greninja-B", "SPECIES_ZACIAN_CROWNED": "Zacian-C",
+                   "SPECIES_ZAMAZENTA_CROWNED": "Zamazenta-C"}
+
+
 def pack_sprites(species):
-    """HnS species id -> the Nat. Dex pack's id for the same Pokemon (its form where the pack has one)."""
+    """HnS species id -> the Nat. Dex pack's id for the same Pokemon (its form where the pack has one).
+
+    A form is matched to the pack's picture of that form by its National Dex number and its form name: the end of its
+    HnS constant past its species' (SPECIES_ROTOM_HEAT is Rotom's "heat", SPECIES_DARMANITAN_GALAR_ZEN Darmanitan's
+    "galar-zen"), as the pack's map (natdex-map.tsv) names its forms; every Minior core is the pack's one core picture.
+    A form the pack has no picture of is drawn as its base species."""
     pack = {}
     for line in open(NATDEX_SPECIES, encoding="utf-8"):
         i, _, n = line.rstrip("\n").partition("\t")
         if i.isdigit() and n and n != "none":
             pack.setdefault(norm(n), int(i))
+    # (national number, form name) -> pack id, from the map's rows: id, name, national, form, set, key, note.
+    pack_forms = {}
+    for line in open(NATDEX_FORMS, encoding="utf-8"):
+        if line.startswith("#"):
+            continue
+        c = line.rstrip("\n").split("\t")
+        if len(c) >= 4 and c[0].isdigit() and c[2].isdigit() and c[3]:
+            pack_forms.setdefault((int(c[2]), c[3]), int(c[0]))
     base_of = {}
     for e in species:
         if e["natDexNum"] and e["natDexNum"] not in base_of:
             base_of[e["natDexNum"]] = e
+    # Each species by its name, at its own National Dex number: a regional form is numbered past 1025 in HnS, so its
+    # forms (Darmanitan's Galarian Zen) are found through the species it is a form of.
+    root_of = {}
+    for e in species:
+        if 0 < e["natDexNum"] <= 1025:
+            root_of.setdefault(norm(e["name"]), e)
+
+    def form_pack(e, base):
+        if e["const"] in FORM_PACK_NAMES:
+            return pack.get(norm(FORM_PACK_NAMES[e["const"]]))
+        root = root_of.get(norm(base["name"].split("-")[0])) or base
+        const = e["const"][len("SPECIES_"):]
+        if const.startswith("MINIOR_CORE_"):
+            return pack_forms.get((root["natDexNum"], "red"))
+        # Past the species' constant (SPECIES_ROTOM), or its name where its own constant names its form
+        # (SPECIES_CASTFORM_NORMAL), shortest first: the Galarian Zen Darmanitan is Darmanitan's "galar-zen", not Galarian
+        # Darmanitan's "zen".
+        named = re.sub("[^A-Z0-9]+", "_", root["name"].upper()).strip("_") + "_"
+        for prefix in sorted({root["const"][len("SPECIES_"):] + "_", base["const"][len("SPECIES_"):] + "_", named}, key=len):
+            if const.startswith(prefix):
+                tail = const[len(prefix):]
+                key = FORM_ALIASES.get(tail, tail.lower().replace("_", "-"))
+                if (root["natDexNum"], key) in pack_forms:
+                    return pack_forms[(root["natDexNum"], key)]
+        return None
+
     out, gaps, forms_as_base = {}, [], []
     for e in species:
         if not e["id"] or not e["natDexNum"] or e["const"] == "SPECIES_EGG":
@@ -176,6 +227,8 @@ def pack_sprites(species):
                 if e["const"].endswith(suf) or (suf + "_") in e["const"]:
                     pid = pack.get(norm(base["name"] + "-" + letter), b)
                     break
+            if pid == b:
+                pid = form_pack(e, base) or b
             if pid == b:
                 forms_as_base.append(e["const"])
         out[e["id"]] = pid
@@ -268,6 +321,18 @@ def main():
     for fam in ("SIDE_STATUS", "STATUS_FIELD", "BATTLE_ENVIRONMENT"):
         for n, v in sorted(E.get(fam, {}).items(), key=lambda kv: (kv[1], kv[0])):
             w("    const val %s = %d" % (n, v))
+    # Catch Rates (2026-10-06, tracker-gba HnsCatch): the balls by their BALL_ id (ItemInfo.secondaryId), and what
+    # ComputeBallData and ComputeCaptureOdds compare against.
+    for n, v in sorted(E["BALL"].items(), key=lambda kv: (kv[1], kv[0])):
+        if not re.match(r"BALL_(ROTATE|AFFINE)", n):
+            w("    const val %s = %d" % (n, v))
+    for n in ("TIME_EVENING", "TIME_NIGHT"):
+        w("    const val %s = %d" % (n, E["TIME"][n]))
+    w("    const val BATTLE_TYPE_SAFARI = %d" % E["BATTLE_TYPE"]["BATTLE_TYPE_SAFARI"])
+    w("    const val SPECIES_CELEBI = %d" % sp["SPECIES_CELEBI"])
+    w("    const val ABILITY_COMATOSE = %d" % E["ABILITY"]["ABILITY_COMATOSE"])
+    for n in ("ITEM_MOON_STONE", "ITEM_SAFARI_BALL"):
+        w("    const val %s = %d" % (n, it[n]))
     w("")
     w("    /** HnS item id to the id the shared tables use for the same item (vanilla Gen 3, or Nat. Dex's for the newer evolution items). */")
     w("    val VANILLA_ITEM: Map<Int, Int> = mapOf(")

@@ -1420,6 +1420,12 @@ data class MoveRow(
     val priority: Int? = null,
     /** Whether the move makes contact. Null when unreadable. */
     val contact: Boolean? = null,
+    /**
+     * What the power column prints where the game works the power out and its move table holds a placeholder (Heart &
+     * Soul's Grass Knot "WT", Gyro Ball "<SP", Ruination "0"): HnsMovePower. The card prints it in place of
+     * MoveRules.basePower's. Null for every other move and game.
+     */
+    val powerLabel: String? = null,
 )
 
 /**
@@ -2263,6 +2269,7 @@ class GbaTracker(
         return MoveRow(
             id = id, name = moveName(id), pp = d[3], ppMax = null, power = d[0], acc = d[2], type = d[1],
             category = categoryOf(d), priority = d[4].takeIf { it in -7..7 }, contact = (d[5] and 1) != 0,
+            powerLabel = hnsPowerLabel(id, d[0]),
         )
     }
 
@@ -2286,9 +2293,13 @@ class GbaTracker(
                     category = d?.let { categoryOf(it) },
                     priority = d?.get(4)?.takeIf { it in -7..7 },
                     contact = d?.let { (it[5] and 1) != 0 },
+                    powerLabel = hnsPowerLabel(m, d?.get(0)),
                 )
             }
         }
+
+    /** Heart & Soul's power label for move [id] whose table power is [romPower] (HnsMovePower); null on every other game. */
+    private fun hnsPowerLabel(id: Int, romPower: Int?): String? = if (hns == null) null else HnsMovePower.label(moveName(id), romPower)
 
     /** The rolled ability for a party mon: slot bit against the base-stats pair. */
     private fun abilityOf(mon: PokemonDecoder.Mon, base: BaseStats?): String {
@@ -2622,7 +2633,7 @@ class GbaTracker(
             // data.x.catchrate: PokemonData.calcCatchRate with its default ball, the Poke Ball.
             // For the ghost stand-in it is 0: calcCatchRate refuses an id that is not a species.
             catchPercent = if (inBattle && !trainer) {
-                if (ghost) 0 else runCatching { catchRates()?.rows?.firstOrNull { it.ballId == 4 }?.rate }.getOrNull()
+                if (ghost) 0 else runCatching { catchRates()?.rows?.firstOrNull { it.pokeBall }?.rate }.getOrNull()
             } else null,
             lastAttackMove = if (inBattle && damageWatch.ready) moveName(damageWatch.lastEnemyMoveId) else null,
             lastAttackMoveId = if (inBattle && damageWatch.ready) damageWatch.lastEnemyMoveId else 0,
@@ -3303,7 +3314,7 @@ class GbaTracker(
                 hns != null && id in hns.ppItems -> { category = "PP"; helpful = ppEmpty; sort = 30000 }
                 hns != null && id in hns.battleItems -> { category = "Battle"; sort = 20000 }
                 hns != null && id in hns.balls -> { category = "Balls"; sort = 0 }
-                hns != null && id in HnsLayout.EVO_ITEM_METHOD -> { category = "Evo"; sort = 0 }
+                hns != null && (id in HnsLayout.EVO_ITEM_METHOD || id in hns.evoItems) -> { category = "Evo"; sort = 0 }
                 hns != null -> { category = "Other"; sort = 0 }
                 id in PP_ITEMS -> { category = "PP"; helpful = ppEmpty; sort = 30000 }
                 id in BATTLE_ITEMS || (map.expandedSpeciesIds && id == NATDEX_X_SP_DEF) -> { category = "Battle"; sort = 20000 }
@@ -3390,14 +3401,20 @@ class GbaTracker(
 
     // ---- Catch Rates (CatchRatesScreen.lua, PokemonData.calcCatchRate) ----
 
-    data class CatchRow(val ballId: Int, val name: String, val quantity: Int, val rate: Int)
+    /**
+     * One ball's line. [ballId] is the vanilla Gen 3 item id, or on Heart & Soul the build's own item id; [pokeBall] says
+     * which line is the Poke Ball's, the one the tracker card's "to catch" line shows.
+     */
+    data class CatchRow(val ballId: Int, val name: String, val quantity: Int, val rate: Int, val pokeBall: Boolean = ballId == 4)
 
     data class CatchRates(
         val speciesName: String,
-        /** The reference's estimate: HP rounded up to the nearest tenth, as a percent. */
+        /** The reference's estimate: HP rounded up to the nearest tenth, as a percent. On Heart & Soul ([exact]) the HP itself. */
         val hpPercent: Int,
         val status: String,
         val rows: List<CatchRow>,
+        /** Heart & Soul: the game's own odds from the true HP (HnsCatch), not the reference's Gen 3 estimate. */
+        val exact: Boolean = false,
     )
 
     /** The Poke Balls pocket as ball id to quantity, decrypted like the Items pocket. */
@@ -3455,10 +3472,12 @@ class GbaTracker(
         val statusBonus = when {
             status and 0x07L != 0L -> 2.0          // sleep
             status and 0x20L != 0L -> 2.0          // freeze
-            // Toxic: 1x when GameSettings.game is 1 or 2, Ruby/Sapphire and Emerald (Nat. Dex
-            // Emerald too), 1.5x only on FireRed/LeafGreen (PokemonData.lua:672-676). Keyed on
-            // rsMapShift, Emerald got 1.5x (parity audit, 2026-09-28).
-            status and 0x80L != 0L -> if (refGame == 1 || refGame == 2) 1.0 else 1.5
+            // Toxic: 1x when GameSettings.game is 1 or 2, Ruby/Sapphire and Emerald, 1.5x only on
+            // FireRed/LeafGreen (PokemonData.lua:672-676). Keyed on rsMapShift, Emerald got 1.5x
+            // (parity audit, 2026-09-28). The Nat. Dex builds follow their own code instead: Emerald
+            // Nat. Dex 1.2.1's handleballthrow (0x08059360) tests status1 & 0xD8, Toxic included,
+            // for the 1.5x, as FireRed's does (2026-10-06).
+            status and 0x80L != 0L -> if ((refGame == 1 || refGame == 2) && !map.expandedSpeciesIds) 1.0 else 1.5
             status and 0x08L != 0L || status and 0x10L != 0L || status and 0x40L != 0L -> 1.5
             else -> 1.0
         }
@@ -3484,6 +3503,7 @@ class GbaTracker(
     fun catchRates(hpAdjust: Int = 0): CatchRates? {
         // CatchRatesScreen.buildScreen: the ghost stand-in is not a valid Pokemon, so no screen.
         if (!inBattleNow() || map.battleMons == 0L || isGhostBattle()) return null
+        hns?.let { return hnsCatchRates(it, hpAdjust) }
         val b = memory.read(map.battleMons + map.battleMonSize, map.battleMonSize)
         if (b.size < 0x50) return null
         val species = b.u16(0)
@@ -3507,6 +3527,74 @@ class GbaTracker(
                 calcCatchRate(base?.catchRate ?: 0, hpMax, estimatedHp, level, status, ball, waterOrBug, terrain, owned, turn))
         }.sortedWith(compareByDescending<CatchRow> { it.quantity > 0 }.thenByDescending { it.rate }.thenBy { it.ballId })
         return CatchRates(speciesName(species), hpPercent, statusName(status), rows)
+    }
+
+    /**
+     * Heart & Soul's Catch Rates: every ball the build has (its Poke Balls pocket's items), each at the game's own
+     * chance (HnsCatch, the expansion's ComputeCaptureOdds with this build's config), from the battle's true HP and
+     * status (gBattleMons, what the game reads), [hpAdjust] percent of max HP added for the screen's +/- keys.
+     */
+    private fun hnsCatchRates(h: HnsData, hpAdjust: Int): CatchRates? {
+        val bm = HnsLayout.BattlePokemon
+        val si = HnsLayout.SpeciesInfo
+        fun mon(battler: Int) = memory.read(map.battleMons + battler * bm.SIZE.toLong(), bm.SIZE).takeIf { it.size == bm.SIZE }
+        // GetCatchingBattler: the opponent's left battler while it stands, else its right.
+        val left = mon(1) ?: return null
+        val wild = if (bm.hp.at(left) == 0 && rb(map.battlersCount) > 2) mon(3) ?: left else left
+        val species = bm.species.at(wild)
+        if (!speciesIsValid(species)) return null
+        val sp = h.species(species) ?: return null
+        val maxHp = bm.maxHP.at(wild); val hpNow = bm.hp.at(wild); val level = bm.level.at(wild)
+        if (maxHp <= 0) return null
+        val hp = if (hpAdjust == 0) hpNow else (hpNow + Math.floor(maxHp * hpAdjust / 100.0 + 0.5).toInt()).coerceIn(1, maxHp)
+        val status = bm.status1.u32(wild)
+        fun gender(speciesId: Int, personality: Long): Int {
+            val ratio = h.species(speciesId)?.let { si.genderRatio.at(it) } ?: return HnsLayout.MON_GENDERLESS
+            return when (ratio) {
+                HnsLayout.MON_MALE, HnsLayout.MON_FEMALE, HnsLayout.MON_GENDERLESS -> ratio
+                else -> if (ratio > (personality and 0xFF).toInt()) HnsLayout.MON_FEMALE else HnsLayout.MON_MALE
+            }
+        }
+        // GetBattlerTypes: the three battle type slots, a roosting Flying type grounded (B_ROOST_PURE_FLYING Gen 5+).
+        val types = MutableList(3) { bm.types.at(wild, 0, it) }
+        if (HnsLayout.Volatiles.roostActive.at(wild, bm.volatiles.offset) == 1) {
+            if (types[0] == HnsLayout.TYPE_FLYING && types[1] == HnsLayout.TYPE_FLYING) { types[0] = HnsLayout.TYPE_NORMAL; types[1] = HnsLayout.TYPE_NORMAL }
+            else if (types[0] == HnsLayout.TYPE_FLYING) types[0] = HnsLayout.TYPE_MYSTERY
+            else if (types[1] == HnsLayout.TYPE_FLYING) types[1] = HnsLayout.TYPE_MYSTERY
+        }
+        val target = HnsCatch.Target(
+            species = species, catchRate = si.catchRate.at(sp), hp = hp, maxHp = maxHp, level = level, status1 = status,
+            types = types, ability = bm.ability.at(wild), gender = gender(species, bm.personality.u32(wild)),
+            isUltraBeast = si.isUltraBeast.at(sp) == 1, baseSpeed = si.baseSpeed.at(sp), weight = si.weight.at(sp),
+            evolvesByMoonStone = h.evolutions(species).any { it.method == HnsLayout.EVO_ITEM && it.param == HnsLayout.ITEM_MOON_STONE },
+        )
+        val player = mon(0)
+        val header = memory.read(HnsLayout.gMapHeader, HnsLayout.MapHeader.SIZE)
+        val battleStruct = rd(HnsLayout.gBattleStruct)
+        val field = HnsCatch.Field(
+            playerSpecies = player?.let { bm.species.at(it) } ?: 0,
+            playerLevel = player?.let { bm.level.at(it) } ?: 0,
+            playerGender = player?.let { gender(bm.species.at(it), bm.personality.u32(it)) } ?: HnsLayout.MON_GENDERLESS,
+            turn = rb(map.battleResults + map.battleResultsTurnOffset),
+            caughtBefore = dexOwned(species),
+            timeOfDay = h.timeOfDay(),
+            cave = header.size == HnsLayout.MapHeader.SIZE && HnsLayout.MapHeader.cave.at(header) != 0,
+            mapType = if (header.size == HnsLayout.MapHeader.SIZE) HnsLayout.MapHeader.mapType.at(header) else 0,
+            fishing = rb(HnsLayout.gIsFishingEncounter) != 0,
+            surfing = rb(HnsLayout.gIsSurfingEncounter) != 0,
+            safari = rd(HnsLayout.gBattleTypeFlags) and HnsLayout.BATTLE_TYPE_SAFARI.toLong() != 0L,
+            safariCatchFactor = if (battleStruct in 0x02000000L..0x0203FFFFL) rb(battleStruct + HnsLayout.BattleStruct.safariCatchFactor.offset) else 0,
+            badges = Integer.bitCount(readBadges()),
+        )
+        val bag = readBag()
+        val rows = h.balls.map { item ->
+            // ItemIdToBallId: the item's secondaryId, BALL_STRANGE outside the ball ids.
+            val ball = h.item(item)?.let { HnsLayout.ItemInfo.secondaryId.at(it) }?.takeIf { it in 1..HnsLayout.BALL_GS } ?: HnsLayout.BALL_STRANGE
+            CatchRow(item, itemName(item), bag[item] ?: 0, HnsCatch.percent(HnsCatch.chance(HnsCatch.odds(ball, target, field))),
+                pokeBall = ball == HnsLayout.BALL_POKE)
+        }.sortedWith(compareByDescending<CatchRow> { it.quantity > 0 }.thenByDescending { it.rate }.thenBy { it.ballId })
+        // The HP line is the battle's own HP, to the percent (never 0 while it stands); the +/- keys add to it.
+        return CatchRates(speciesName(species), (hpNow * 100 / maxHp).coerceAtLeast(if (hpNow > 0) 1 else 0), statusName(status), rows, exact = true)
     }
 
     // ---- Battle Details (BattleDetailsScreen.lua) ----
@@ -4799,7 +4887,7 @@ class GbaTracker(
         // 0x20 is the ability the enemy ACTUALLY has. It is kept internal:
         // the reference shows an enemy ability only after a battle script
         // reveals it activating, and the panel follows the same rule.
-        val abilityId = b.u8(0x20)
+        val abilityId = if (map.hns) HnsLayout.BattlePokemon.ability.at(b) else b.u8(0x20)
         val possible = base?.let {
             listOf(it.ability1, it.ability2, it.ability3).filter { a -> a != 0 }.distinct().joinToString(" / ") { a -> abilityName(a) }
                 .ifEmpty { abilityName(it.ability1) }
@@ -4837,6 +4925,7 @@ class GbaTracker(
                     category = d?.let { categoryOf(it) },
                     priority = d?.get(4)?.takeIf { it in -7..7 },
                     contact = d?.let { (it[5] and 1) != 0 },
+                    powerLabel = hnsPowerLabel(id, d?.get(0)),
                 )
             },
             abilityGuess = possible,
@@ -5419,7 +5508,9 @@ class GbaTracker(
                     ?: enemyParty.singleOrNull { it.species == enemy.species && it.level == enemy.level })?.shiny == true
             NuzlockeReads(
                 battleOutcome = if (map.battleOutcome != 0L) rb(map.battleOutcome) else 0,
-                ballCount = if (map.bagBallsOffset == 0L || saveBlock1() == null) -1 else bagBalls().values.sum(),
+                // Heart & Soul counts every ball it has (Kurt's, the Dream Ball...): bagBalls keeps only Gen 3's twelve.
+                ballCount = if (map.bagBallsOffset == 0L || saveBlock1() == null) -1
+                    else hns?.let { h -> readBag().filterKeys { it in h.balls }.values.sum() } ?: bagBalls().values.sum(),
                 bag = if (inBattle || wasInBattle) nuzBag() else null,
                 turn = if (inBattle && map.battleResults != 0L) rb(map.battleResults + map.battleResultsTurnOffset) else -1,
                 battleStyleSet = nuzBattleStyle(),

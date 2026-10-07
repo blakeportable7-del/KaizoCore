@@ -454,6 +454,7 @@ fun PlayScreen(
             safari = if (t.isSafariMap(mapId)) statMarks.safariSeen(mapId) else emptyList(),
             tracked = { area -> statMarks.seenOnRouteArea(mapId, area) },
             logged = { area -> openBook.icons(t, store, session.kind, set, mapId, area) },
+            runTables = t.heartSoul,
         )
     }
     // TrackerScreen CarouselItems ROUTE_INFO: in a wild battle the battle's area when RouteData has

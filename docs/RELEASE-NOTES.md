@@ -2,6 +2,57 @@
 
 Short and plain, one list per release. Newest first.
 
+## rc38 (7 October 2026)
+
+**Heart & Soul** (from Blake's attempt 46)
+
+- **TMs say what they teach.** A TM's bag description is the description of the move it really teaches, and the
+  "Obtained" line names that move ("Obtained the TM89 GRUDGE!"). Every gym leader and everyone else who hands out a TM
+  names the move it holds and reads out what it does, and the Goldenrod Game Corner's TM prizes are listed by their
+  real moves.
+- **No more "No?4" and "?" in the bag.** Heart & Soul has an unused item also called Sitrus Berry with no picture; runs
+  no longer hand it out, or any other item the bag cannot show.
+- **Gym 2 and every twins or couples battle can be fought in Kaizo.** In a Kaizo run every trainer double battle is a
+  single battle, whatever your party: Amy & May and the rest send their Pokémon one at a time, walk up to you and battle
+  when you talk to them even with one Pokémon, with the same prize and defeat. Kaizo Doubles keeps its doubles, a
+  Nuzlocke keeps the game's own, and the Rocket Hideout tag battle with Lance is unchanged.
+- **The Meowth Name Raters and the Pokémon in the scenery move,** walking in place like the Pokémon that follow you.
+- **Ilex Forest no longer goes dark** after you talk to the Farfetch'd.
+- **Three shortcuts are gone, so nothing is left behind:** you walk out of the Dragon's Den, you walk back out of the
+  Underground after the Card Key, and the Lighthouse's second climb is back with the pharmacist's Secret Potion. Clair
+  now leaves the shrine instead of standing there.
+- **The Day Care refuses in a Kaizo run,** as it was meant to; in rc37 it took Pokémon.
+- **Smaller scene fixes:** the Kimono Girl no longer dances off screen after Elm's call in Violet, you no longer walk
+  through Lance leaving the Champion's room, and the lab aide and Elm no longer say things that are not so.
+- **Trade evolutions happen by level in every Heart & Soul run.** Kadabra, Machoke, Haunter and the rest used to
+  need a trade, so in a run they never evolved. Where Heart & Soul has its own way (Kadabra at level 42) that stays;
+  any other trade becomes a level up as IronMON's settings do it (level 37, or 30 for one that held an item).
+- **Abilities follow the official IronMON games.** Nat. Dex runs roll abilities the way Black 2 and White 2 Kaizo does:
+  every ability up to Teravolt, all three slots, with the same bans (Wonder Guard, the trapping abilities, and the four
+  that only work for one Pokémon). Vanilla runs roll Gen 3's abilities like Emerald Kaizo, and a hidden ability is the
+  same as the first. Shedinja keeps Wonder Guard, as in every IronMON game.
+- **Items and trainer held items match Emerald Nat. Dex's lists.**
+- **The real catch rate.** The catch line uses Heart & Soul's own formula, with its bonus for low level wild Pokémon,
+  every ball the game has (Kurt's balls included), status and the badge rule. The Catch Rates screen lists every ball
+  in your bag.
+
+**Fixed**
+
+- **Fairy moves have their type symbol** on the tracker, and so does the ??? type.
+- **Nat. Dex Pokémon on the tracker, checked one by one** (1,427 Pokémon, 847 moves, 310 abilities, 900 items):
+  evolution text that was blank, 82 forms drawn as their base Pokémon, form names the log could not find (Rotom
+  Heat, Arceus Fire and the rest), moves showing a power of 1, the next move's level, evolution items in the wrong
+  bag tab, and the opponent's ability.
+- **The route screen no longer shows wild Pokémon you have not met** in a Heart & Soul run.
+- **The Egg's picture** in Heart & Soul is always the Egg.
+- **Beating Lance adds Survival's seven Kanto heals** in Heart & Soul.
+
+**Known issues**
+
+- Not checked on a phone yet: the new Heart & Soul build in the app (it was played in an emulator on the PC).
+- Two pairs of abilities share a name (As One, Embody Aspect), so the second shows the first's description.
+- Some Heart & Soul grass has no cut version in the game and still does not cut.
+
 ## rc37 (6 October 2026)
 
 **New**

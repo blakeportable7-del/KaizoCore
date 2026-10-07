@@ -16,7 +16,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 /**
- * Heart & Soul's item rules (docs/HNS-KAIZO.md, "Next comfort-patch rebuild"), on the real comfort build C218FD9E:
+ * Heart & Soul's item rules (docs/HNS-KAIZO.md, "Next comfort-patch rebuild"), on the real comfort build 949DBE42:
  * the PC item in Elm's lab trash can (randomNonTM, never a TM), the starter's held item (randomItem, TMs allowed),
  * hidden items with the field-item rules, Pickup as UPR does it, and item pools by the run's pool (VANILLA: vanilla
  * Emerald's items, NATDEX: Nat. Dex Emerald 1.2.1's). Without the ROM every test returns early, as HnsEngineTest's do.
@@ -57,6 +57,37 @@ class HnsItemsTest {
         assertEquals(30, vanilla.pickup.size)
         assertEquals(id("POTION"), vanilla.pickup.first().item)
         assertEquals(List(10) { 100 }, (0 until 10).map { b -> vanilla.pickup.sumOf { it.percentages[b] } })
+    }
+
+    @Test
+    fun `no pool rolls an item the bag cannot picture or number`() {
+        if (skip()) return
+        // Blake (rc37): a randomized SITRUS BERRY showed "No?4" and a "?" in the bag. It was Heart & Soul's unused
+        // ITEM_UNUSED_BERRY_1 (897), named SITRUS BERRY like the real one (523) and drawn with ITEM_NONE's question mark.
+        val g = vanilla
+        val question = g.items[0]!!.iconPic
+        val cheri = id("CHERI_BERRY"); val lastBerry = vanilla.L.enumValue("ITEM", "ITEM_ENIGMA_BERRY_E_READER")!!
+        val berryPocket = vanilla.L.enumValue("POCKET", "POCKET_BERRIES")!!
+        assertEquals(question, g.items[vanilla.L.enumValue("ITEM", "ITEM_UNUSED_BERRY_1")!!]!!.iconPic, "897 is the unpictured one")
+        val o = HnsEngine.readSettings(File(presets, "RSE NatDex v1.2 Kaizo.rnqs"))
+        for (pool in HnsEngine.Pool.entries) for (banBad in listOf(true, false)) {
+            val r = HnsRandomizer(g, o, 1L, pool, null, HnsEngine.poolItemKeys(pool, assets), HnsEngine.poolNonBadKeys(pool, assets))
+            val list = r.itemPoolForTest(banBad)
+            assertTrue(list.isNotEmpty())
+            val unpictured = list.filter { g.items[it]!!.iconPic == question }.map { "$it ${g.itemName(it)}" }
+            assertTrue(unpictured.isEmpty(), "$pool banBad=$banBad rolls items with no picture: $unpictured")
+            val badBerries = list.filter { g.items[it]!!.pocket == berryPocket && it !in cheri..lastBerry }
+            assertTrue(badBerries.isEmpty(), "$pool banBad=$banBad rolls unnumbered berries: $badBerries")
+            assertTrue(list.groupBy { g.itemName(it) }.all { it.value.size == 1 }, "$pool banBad=$banBad: two items share a name")
+        }
+        // And on real runs: nothing a field item, a hidden item, Pickup or a held item gets is one of them.
+        for (pool in HnsEngine.Pool.entries) for (seed in 1L..5L) {
+            val out = read(itemRun(seed, pool, itemsOnly.copy(randomizeWildHeldItems = true, banBadWildHeldItems = false)).rom)
+            val placed = out.fieldItems.map { it.item } + out.pickup.map { it.item } + listOf(out.labTrashItem) +
+                out.starterItemOperands.map { it.value }.filter { it != 0 }
+            val bad = placed.filter { it != 0 && (g.items[it]!!.iconPic == question || (g.items[it]!!.pocket == berryPocket && it !in cheri..lastBerry)) }
+            assertTrue(bad.isEmpty(), "$pool seed $seed placed $bad")
+        }
     }
 
     @Test

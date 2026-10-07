@@ -10,6 +10,7 @@ In KaizoCore, the item that starts in your PC is in the trash can in Elm's lab i
 
 In KaizoCore, Heart & Soul plays every IronMON mode this way:
 - You cannot run from a trainer battle or forfeit it: RUN is refused, as in Emerald. From a wild battle you can run as usual, or hold B as it starts, though never from a shiny.
+- Trainers who would battle you two at once (twins, couples, the gym pairs) battle you in a single battle, one of their Pokémon at a time, whatever your party: no second Pokémon is needed. In Kaizo Doubles every trainer battle is a double, as that mode asks.
 - Catching a Pokémon gives no EXP.
 - Wild Pokémon come in turn: each list (grass, water, Rock Smash and each fishing rod) gives every species it has once, in order, before any comes again. A route with five species shows all five in five encounters.
 - No Pokémon learns an HM move by level or knows one when you meet it, yours or a trainer's, in either pool.
@@ -199,9 +200,9 @@ getting past the first gym or two, while tapering off late game. This run should
 ### Rules updates to Ultimate & up
 
 1. You can only fight trainers in the Lighthouse the first time you visit; not when you return with Secret Potion
-    - In KaizoCore, there is no return trip: once Jasmine asks, the Cianwood pharmacist sends the Secret Potion himself, so you climb the Lighthouse once.
+    - In KaizoCore, the second climb is back, as in the game: the Cianwood pharmacist gives you the Secret Potion and you carry it up the Lighthouse to Jasmine.
 2. Each building of the Radio Tower story sequence is treated separately. You can heal as you go from the tower to the basement, or basement back to the tower. You can fight trainers in the tower when you return later to finish the story.
-    - In KaizoCore, the Basement Key and the Card Key each take you straight to the next building, and you can still walk out and heal between them.
+    - In KaizoCore, the Basement Key takes you straight to the Underground's entrance; after the Card Key you walk back out the way you came. You can still walk out and heal between the buildings.
 3. Seafoam Islands is treated as two separate dungeons: one for the cave itself with items and trainers, and one for the gym only. You may do the cave and return later to do the gym.
     - In KaizoCore, Heart & Soul's Seafoam cave has items but no trainers, and Blaine is the only trainer in his gym.
 4. The Pokémon Center in Olivine City is not a dungeon, even though there is a trainer there.

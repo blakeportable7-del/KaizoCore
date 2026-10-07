@@ -62,7 +62,8 @@ fun CatchRatesDialog(d: GbaTracker.CatchRates?, hpAdjust: Int, onAdjust: (Int) -
             val adjustNow by androidx.compose.runtime.rememberUpdatedState(hpAdjust)
             val onAdjustNow by androidx.compose.runtime.rememberUpdatedState(onAdjust)
             fun adjust(d: Int) { val n = (adjustNow + d).coerceIn(-90, 90); if (n != adjustNow) onAdjustNow(n) }
-            val rounded = Math.floor(d.hpPercent / 10.0 + 0.5).toInt() * 10
+            // Heart & Soul's rates come from the true HP, so its line shows that HP, not the reference's tenths.
+            val rounded = if (d.exact) d.hpPercent else Math.floor(d.hpPercent / 10.0 + 0.5).toInt() * 10
             line("Pokemon's HP:", "$rounded%", true) {
                 if (hpAdjust != 0) DialogText((if (hpAdjust > 0) " + " else " -- ") + Math.abs(hpAdjust) + "%", 13, Pc.Text)
                 Spacer(Modifier.weight(1f))

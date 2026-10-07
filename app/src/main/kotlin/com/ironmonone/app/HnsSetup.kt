@@ -18,13 +18,13 @@ import java.io.RandomAccessFile
  * can choose your mode from there"), without the screen (HeartSoulScreen draws it), so every step is tested on the JVM.
  *
  * 1. The player's own game: Emerald (USA), CRC 1F1C08FB, or a copy already patched to Heart & Soul 2.0.6 (01713508), or
- *    the KaizoCore build itself (C218FD9E). Anything else is refused, saying what it is.
+ *    the KaizoCore build itself (949DBE42). Anything else is refused, saying what it is.
  * 2. The patch, which the player downloads in their own browser from the team's GitHub release (the .ups) or Hackdex
  *    (an .xdelta). KaizoCore never downloads it and never ships it. Not needed when the game is already 2.0.6.
  * 3. Patch: their patch, which must give 01713508 exactly ("this is not the 2.0.6 patch" otherwise), added to the
  *    Library as Pokemon Heart & Soul 2.0.6, a normal game with no tracker (Blake: "the user should be able to play a
  *    normal heart and soul if they patch their emerald copy with the official patch"); then KaizoCore's own comfort
- *    patch on top (bundled, ours), which must give C218FD9E, added as Pokemon Heart & Soul (KaizoCore), the build Kaizo
+ *    patch on top (bundled, ours), which must give 949DBE42, added as Pokemon Heart & Soul (KaizoCore), the build Kaizo
  *    IronMON and Nuzlocke play.
  * 4. The screen then sends the player to choose a mode.
  *

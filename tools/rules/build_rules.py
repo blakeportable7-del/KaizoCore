@@ -314,6 +314,10 @@ HNS_GAME = [
     # 0030, 0034: CanPlayerForfeitNormalTrainerBattle is FALSE in a Kaizo run. 0006: QUICK RUN on B, never from a shiny.
     "- You cannot run from a trainer battle or forfeit it: RUN is refused, as in Emerald. From a wild battle you can run "
     "as usual, or hold B as it starts, though never from a shiny.",
+    # rc38 (0041-0044, Blake 2026-10-06): a Kaizo run plays trainer doubles as singles; HNS_PRESET_KAIZO_DOUBLES keeps them.
+    "- Trainers who would battle you two at once (twins, couples, the gym pairs) battle you in a single battle, one of "
+    "their Pokémon at a time, whatever your party: no second Pokémon is needed. In Kaizo Doubles every trainer "
+    "battle is a double, as that mode asks.",
     # 0029: expOnCatch off in a Kaizo run.
     "- Catching a Pokémon gives no EXP.",
     # 0028: KaizoCore_CycleSlot, one cursor per wild header and table kind.
@@ -378,14 +382,16 @@ HNS_AFTER = [
     # setwildbattleshiny GYARADOS; FLAG_HIDE_LAKE_OF_RAGE_GYARADOS is cleared by no Hall of Fame script.
     ("5. You cannot defeat the Shiny Gyarados", ALL_MODES,
      "In KaizoCore, Heart & Soul's red Gyarados never comes back once you beat or catch it."),
-    # Patch 0027: the Cianwood pharmacist delivers the potion once Jasmine has asked (Olivine state 3 -> 5).
+    # rc38 (Blake, 2026-10-06: "just cut those short cuts then"): the pharmacist's delivery is gone; CianwoodShop_hns
+    # gives the Secret Potion as the game does, and Jasmine takes it at the top (OlivineLighthouse).
     ("1. You can only fight trainers in the Lighthouse", ULTIMATE_UP,
-     "In KaizoCore, there is no return trip: once Jasmine asks, the Cianwood pharmacist sends the Secret Potion himself, "
-     "so you climb the Lighthouse once."),
-    # Patch 0027: the Basement Key lands at the Underground's entrance, the Card Key at 3F; neither in a trainer's sight.
+     "In KaizoCore, the second climb is back, as in the game: the Cianwood pharmacist gives you the Secret Potion and "
+     "you carry it up the Lighthouse to Jasmine."),
+    # Patch 0027: the Basement Key lands at the Underground's entrance, out of every trainer's sight. rc38: the Card Key
+    # no longer moves you; you walk back out past the Underground's rooms.
     ("2. Each building of the Radio Tower", ULTIMATE_UP,
-     "In KaizoCore, the Basement Key and the Card Key each take you straight to the next building, and you can still walk "
-     "out and heal between them."),
+     "In KaizoCore, the Basement Key takes you straight to the Underground's entrance; after the Card Key you walk back "
+     "out the way you came. You can still walk out and heal between the buildings."),
     # SeafoamIslands 1F and B1F: no trainerbattle; Blaine is the gym's only trainer.
     ("3. Seafoam Islands is treated as two", ULTIMATE_UP,
      "In KaizoCore, Heart & Soul's Seafoam cave has items but no trainers, and Blaine is the only trainer in his gym."),

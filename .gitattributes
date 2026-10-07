@@ -1,0 +1,2 @@
+# The Heart & Soul comfort ROM design notes stay out of the public snapshot (see tools/hns/.gitattributes).
+docs/HNS-KAIZO.md export-ignore

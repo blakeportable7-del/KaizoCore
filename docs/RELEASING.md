@@ -54,6 +54,9 @@ GitHub release, the public source, the wiki and the site) happens only on Blake'
 10. Public source: a fresh shallow clone of blakeportable7-del/KaizoCore, its files replaced by
     `git -C C:/Users/bepor/IronMonOne archive master`; check the file counts and that no ROM, BIOS, key or RogueMon file
     is in it; commit "KaizoCore <version>"; push.
+    The archive leaves out the Heart & Soul comfort ROM work by export-ignore (tools/hns/.gitattributes, .gitattributes:
+    the patches, mgba/, build.sh, the BPS/UPS tools, layout_check.py, docs/HNS-KAIZO.md; Blake, 2026-10-06). Check
+    `git ls-files tools/hns` in the snapshot lists only .gitattributes, gen_tracker.py, item_names.py and layout.py.
 11. `gh release create v<version> dist/KaizoCore-<version>.apk dist/KaizoCore-<version>.apk.sha256 --repo
     blakeportable7-del/KaizoCore --title "KaizoCore <version> (beta)" --notes-file dist/RELEASE-NOTES.md --target <the
     snapshot's full 40-character sha> --latest`. Never `--prerelease`. Never attach the mapping or the symbols.

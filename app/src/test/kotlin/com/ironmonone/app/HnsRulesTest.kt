@@ -110,7 +110,7 @@ class HnsRulesTest {
             assertTrue("Heart & Soul's red Gyarados never comes back" in text, m.key)
             assertTrue("no Heart & Soul event waits for a day of the week" in text, m.key)
             assertTrue("a call from Oak that opens Mt. Silver" in text, m.key)
-            assertEquals(m.key != "standard", "the Cianwood pharmacist sends the Secret Potion himself" in text, m.key)
+            assertEquals(m.key != "standard", "the second climb is back, as in the game" in text, m.key)
             assertEquals(m.key != "standard", "Heart & Soul's Olivine Pokémon Center has no trainer in it." in text, m.key)
             assertEquals(m.key != "standard" && m.key != "ultimate", "Heart & Soul's Ruins of Alph are not dark" in text, m.key)
         }
