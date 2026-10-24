@@ -160,7 +160,7 @@ class StreamFavoritesSourceTest {
             "From.MAXDEX_PACK -> PcAssets.gbaSprite(context, species, \"maxdex\")", "From.ROM_SPRITE -> romSprite(s.file, species)"))
             assertTrue(call in draw, call)
         // The server's threads draw through PcAssets too: its cache is held while it is read or filled.
-        assertTrue("private fun load(context: android.content.Context, path: String): ImageBitmap? = synchronized(cache) {" in
+        assertTrue("private fun load(context: PcCtx, path: String): ImageBitmap? = synchronized(cache) {" in
             File("src/main/kotlin/com/ironmonone/app/PcTracker.kt").readText())
     }
 

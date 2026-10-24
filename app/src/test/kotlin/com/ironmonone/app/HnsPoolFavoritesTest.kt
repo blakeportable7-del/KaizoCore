@@ -172,14 +172,18 @@ class HnsPoolFavoritesTest {
             assertTrue(BstRule.wildBreaks(600, l), "$book/$mode: a wild 600 is banned")
             assertFalse(BstRule.wildBreaks(599, l))
         }
-        // Heart & Soul through its pool: Nat. Dex takes the lines above, Vanilla Emerald's 599.
+        // Heart & Soul through its pool: Nat. Dex allows 600 and below (Blake, 2026-10-07: 601 and up banned), Vanilla
+        // Emerald's 599. Emerald's and FireRed's Nat. Dex keep their books' 600.
         assertEquals(BstRule.Lines(own = 600, wild = 600), BstRule.lines("kaizo", natDex = true))
+        assertEquals(BstRule.Lines(own = 601, wild = 601), BstRule.lines("kaizo", natDex = true, hns = true))
+        assertFalse(BstRule.breaks(600, BstRule.lines("kaizo", natDex = true, hns = true)!!.own, null, 0), "a 600 is allowed in Heart & Soul")
+        assertTrue(BstRule.wildBreaks(601, BstRule.lines("kaizo", natDex = true, hns = true)), "a wild 601 is not")
         assertEquals(BstRule.Lines(599, 599), BstRule.lines("kaizo", natDex = false))
-        // The randomizer's line for each preset and pool is what rc36.1 drew, so a seed makes the same game.
+        // The randomizer's line for each preset and pool: rc36.1's, but 601 for Heart & Soul's Nat. Dex (2026-10-07).
         val before = mapOf(
-            ("kaizo" to HnsEngine.Pool.NATDEX) to 600, ("kaizo" to HnsEngine.Pool.VANILLA) to 599,
-            ("survival" to HnsEngine.Pool.NATDEX) to 600, ("super kaizo" to HnsEngine.Pool.NATDEX) to 600,
-            ("kaizo doubles" to HnsEngine.Pool.NATDEX) to 600, ("survival revival" to HnsEngine.Pool.VANILLA) to 599,
+            ("kaizo" to HnsEngine.Pool.NATDEX) to 601, ("kaizo" to HnsEngine.Pool.VANILLA) to 599,
+            ("survival" to HnsEngine.Pool.NATDEX) to 601, ("super kaizo" to HnsEngine.Pool.NATDEX) to 601,
+            ("kaizo doubles" to HnsEngine.Pool.NATDEX) to 601, ("survival revival" to HnsEngine.Pool.VANILLA) to 599,
             ("evo kaizo" to HnsEngine.Pool.NATDEX) to 601, ("evo kaizo" to HnsEngine.Pool.VANILLA) to 601,
             ("standard" to HnsEngine.Pool.NATDEX) to null, ("ultimate" to HnsEngine.Pool.VANILLA) to null,
             ("chaos kaizo" to HnsEngine.Pool.NATDEX) to null,

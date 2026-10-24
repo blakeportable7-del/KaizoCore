@@ -24,9 +24,15 @@ package com.ironmonone.tracker
 object LearnedMoves {
     data class Header(val learned: Int, val total: Int, val next: Int?)
 
-    /** [levels] is the learnset's levels in ROM order (ascending in every game but Heart & Soul, where a few are not). */
-    fun of(levels: List<Int>, level: Int): Header {
-        val learnt = levels.filter { it > 1 }
+    /**
+     * [levels] is the learnset's levels in ROM order (ascending in every game but Heart & Soul, where a few are not).
+     * [since] is the level your own Pokemon was met at (Blake, 2026-10-09: "moves need to say 0/total"): only the moves
+     * after it count, so a Pokemon opens at 0 out of the moves still ahead of it and ends at all of them. The
+     * opponent's header leaves it at 1, the reference's count.
+     */
+    fun of(levels: List<Int>, level: Int, since: Int = 1): Header {
+        val from = maxOf(1, since)
+        val learnt = levels.filter { it > from }
         return Header(
             learned = learnt.count { it <= level },
             total = learnt.size,

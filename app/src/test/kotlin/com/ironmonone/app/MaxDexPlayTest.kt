@@ -32,7 +32,7 @@ class MaxDexPlayTest {
         val pal = { pack: WalkingPals.Pack, key: String -> WalkingPals.Pal(pack, key) }
         // The ids MaxDex shares with Nat. Dex walk as there; past them, each Z-A Mega walks as the Nat. Dex one of its name.
         for (id in listOf(1, 25, 277, 412, 1032, 1050, 1235)) assertEquals(ix.find(id, WalkingPals.Dex.NAT_DEX), ix.find(id, WalkingPals.Dex.MAX_DEX), "$id")
-        assertEquals(pal(WalkingPals.Pack.GEN3, "149"), ix.find(1236, WalkingPals.Dex.MAX_DEX), "Dragonite-M, not Nat. Dex's 1236")
+        assertEquals(pal(WalkingPals.Pack.OW, "149-mega"), ix.find(1236, WalkingPals.Dex.MAX_DEX), "Dragonite-M, its own overworld sheet, not Nat. Dex's 1236")
         assertEquals(pal(WalkingPals.Pack.NATIONAL, "998"), ix.find(1280, WalkingPals.Dex.MAX_DEX), "Baxcalibur-M")
         assertNull(ix.find(1281, WalkingPals.Dex.MAX_DEX), "past MaxDex's last Pokemon")
         // A Nat. Dex build still finds Bulbasaur and Turtwig.

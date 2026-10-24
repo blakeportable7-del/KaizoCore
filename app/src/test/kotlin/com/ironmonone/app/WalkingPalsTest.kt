@@ -86,9 +86,9 @@ class WalkingPalsTest {
 
     @Test
     fun `no sheet is null, never another Pokemon's`() {
-        assertNull(ix.find(539, Dex.NAT_DEX), "Simisear: nobody has drawn it yet")
-        assertNull(ix.find(514, Dex.NATIONAL), "Simisear by its national number")
-        assertNull(ix.find(1263, Dex.NAT_DEX), "Mega Falinks: Falinks has no sheet either, so nothing stands in")
+        assertEquals(Pal(Pack.EXPO, "514"), ix.find(539, Dex.NAT_DEX), "Simisear walks as the Generation 9 pack's follower")
+        assertNull(ix.find(514, Dex.NATIONAL), "a DS national number does not consult the Nat. Dex map")
+        assertEquals(Pal(Pack.EXPO, "870"), ix.find(1263, Dex.NAT_DEX), "Mega Falinks walks as Falinks")
         assertNull(ix.find(260, Dex.GEN3), "one of Gen 3's unused slots")
         assertNull(ix.find(1284, Dex.NAT_DEX), "a Nat. Dex build's egg")
         assertNull(ix.find(1285, Dex.NAT_DEX), "the Nat. Dex ghost stand-in")
@@ -109,7 +109,7 @@ class WalkingPalsTest {
             .filter { it.isNotBlank() && !it.startsWith("#") }.map { it.split('\t') }
             .map { c -> Row(c[0].toInt(), c[2].toInt(), c[3], ShippedPals.natDex[c[0].toInt()], c.getOrElse(6) { "" }) }
         val standIns = rows.filter { "stands in until its own is drawn" in it.note }
-        assertTrue(standIns.size >= 60, "only ${standIns.size}")
+        assertTrue(standIns.size >= 24, "only ${standIns.size}")
         for (r in standIns) {
             assertTrue(r.id > 1050, "${r.id}: only a Mega or form stands in, never a species")
             assertFalse("${r.national}-${r.form}" in ShippedPals.national, "${r.id} stands in over a sheet of its own")
@@ -121,12 +121,17 @@ class WalkingPalsTest {
         for (r in rows) if (r.id > 1050 && r.form.isNotEmpty() && "${r.national}-${r.form}" in ShippedPals.national) {
             assertEquals(Pal(Pack.NATIONAL, "${r.national}-${r.form}"), r.pal, "${r.id}")
         }
-        assertEquals(Pal(Pack.GEN3, "6"), ix.find(1053, Dex.NAT_DEX), "Charizard-Y walks as Charizard")
+        assertEquals(Pal(Pack.OW, "6-mega-y"), ix.find(1053, Dex.NAT_DEX), "Charizard-Y walks on its own sheet")
         assertEquals(Pal(Pack.NATIONAL, "6-mega-x"), ix.find(1052, Dex.NAT_DEX), "Charizard-X keeps its own")
-        assertEquals(Pal(Pack.GEN3, "282"), ix.find(1073, Dex.NAT_DEX), "Mega Blaziken walks as Blaziken, by Gen 3's id")
-        assertEquals(Pal(Pack.NATIONAL, "668-female"), ix.find(1255, Dex.NAT_DEX), "Mega Pyroar as Pyroar's own row has it")
-        assertNull(ix.find(1263, Dex.NAT_DEX), "Mega Falinks: its base has no sheet")
-        assertNull(ix.find(895, Dex.NAT_DEX), "Falinks itself: no species is given another's")
+        assertEquals(Pal(Pack.OW, "257-mega"), ix.find(1073, Dex.NAT_DEX), "Mega Blaziken walks on its own sheet")
+        assertEquals(Pal(Pack.OW, "306-mega"), ix.find(1078, Dex.NAT_DEX), "Aggron-M walks on its own sheet")
+        assertEquals(Pal(Pack.OW, "160-mega"), ix.find(1243, Dex.NAT_DEX), "Feraligatr-M walks on its own sheet")
+        assertEquals(Pal(Pack.OW, "445-mega-z"), ix.find(1269, Dex.NAT_DEX), "Garchomp-Z walks on its own sheet")
+        assertEquals(Pal(Pack.OW, "668"), ix.find(693, Dex.NAT_DEX), "Pyroar walks on the male sheet")
+        assertEquals(Pal(Pack.OW, "668"), ix.find(1255, Dex.NAT_DEX), "Mega Pyroar walks as Pyroar's male sheet")
+        assertEquals(Pal(Pack.EXPO, "870"), ix.find(1263, Dex.NAT_DEX), "Mega Falinks walks as Falinks")
+        assertEquals(Pal(Pack.EXPO, "870"), ix.find(895, Dex.NAT_DEX), "Falinks itself keeps its own sheet")
+        assertEquals(Pal(Pack.GEN3, "154"), ix.find(1242, Dex.NAT_DEX), "Meganium-M walks as Meganium")
     }
 
     @Test
@@ -150,7 +155,7 @@ class WalkingPalsTest {
     @Test
     fun `every frame of every sheet fits the overworld once cut to what shows`() {
         var big = 0
-        for ((pack, set) in listOf(Pack.GEN3 to ShippedPals.gen3, Pack.NATIONAL to ShippedPals.national, Pack.DARKUS to ShippedPals.darkus)) {
+        for ((pack, set) in listOf(Pack.GEN3 to ShippedPals.gen3, Pack.NATIONAL to ShippedPals.national, Pack.DARKUS to ShippedPals.darkus, Pack.EXPO to ShippedPals.expo, Pack.OW to ShippedPals.ow)) {
             for ((key, anims) in set) for ((anim, sheet) in anims) {
                 if (sheet.w <= SpriteArt.MAX_FRAME && sheet.h <= SpriteArt.MAX_FRAME) continue
                 big++
@@ -201,18 +206,18 @@ class WalkingPalsTest {
         assertEquals(1241, ids[1236], "Dragonite-M")
         assertEquals(1282, ids[1280], "Baxcalibur-M")
         // Each walks as the Nat. Dex Pokemon of its name, never as the one Nat. Dex keeps at the same number.
-        assertEquals(Pal(Pack.GEN3, "149"), ix.find(1236, Dex.MAX_DEX), "Dragonite-M walks as Dragonite")
+        assertEquals(Pal(Pack.OW, "149-mega"), ix.find(1236, Dex.MAX_DEX), "Dragonite-M walks on its own sheet")
         assertEquals(Pal(Pack.NATIONAL, "658"), ix.find(1236, Dex.NAT_DEX), "Nat. Dex's 1236 is Battle Bond Greninja")
         assertEquals(Pal(Pack.NATIONAL, "998"), ix.find(1280, Dex.MAX_DEX), "Baxcalibur-M walks as Baxcalibur")
         assertEquals(Pal(Pack.NATIONAL, "227-mega"), ix.find(1244, Dex.MAX_DEX), "Skarmory-M has a sheet of its own")
-        assertNull(ix.find(1276, Dex.MAX_DEX), "Falinks-M: its base has no sheet either")
-        assertEquals(44, (1236..1280).count { ix.find(it, Dex.MAX_DEX) != null })
+        assertEquals(Pal(Pack.EXPO, "870"), ix.find(1276, Dex.MAX_DEX), "Falinks-M walks as Falinks")
+        assertEquals(45, (1236..1280).count { ix.find(it, Dex.MAX_DEX) != null })
         // Gen 1 to 9 as the Nat. Dex Extension numbers them.
         assertEquals(Pal(Pack.GEN3, "1"), ix.find(1, Dex.MAX_DEX))
         assertEquals(Pal(Pack.GEN3, "277"), ix.find(277, Dex.MAX_DEX), "Treecko")
         assertEquals(Pal(Pack.NATIONAL, "387"), ix.find(412, Dex.MAX_DEX), "Turtwig")
         assertEquals(Pal(Pack.NATIONAL, "1007"), ix.find(1032, Dex.MAX_DEX), "Koraidon")
-        assertNull(ix.find(1018, Dex.MAX_DEX), "Iron Jugulis: nobody has drawn it yet")
+        assertEquals(Pal(Pack.EXPO, "993"), ix.find(1018, Dex.MAX_DEX), "Iron Jugulis walks as the Generation 9 pack's follower")
         assertEquals(Pal(Pack.DARKUS, "1008"), ix.find(1033, Dex.MAX_DEX), "Miraidon: DarkusShadow's sheet fills the gap")
         // Past MaxDex's last Pokemon (where its egg and ghost stand-ins sit), and Gen 3's unused slots: nothing.
         for (id in listOf(1281, 1282, 1283, 1285, 260, 0, -1)) assertNull(ix.find(id, Dex.MAX_DEX), "$id")
@@ -336,7 +341,8 @@ class WalkingPalsTest {
         val pals = src.getValue("WalkingPals.kt")
         // The lookups that read the tables on first use are gone; ready hands the read to its own thread.
         assertFalse(Regex("fun (find|sheets)\\(ctx").containsMatchIn(pals), "a lookup that reads on first use")
-        assertTrue("fun ready(ctx: android.content.Context): Index? = loaded.get { index(ctx.applicationContext ?: ctx) }" in pals)
+        assertTrue("fun ready(ctx: PcCtx): Index? = loaded.get { index(ctx.pcAppCtx) }" in pals)
+        assertTrue("val PcCtx.pcAppCtx: PcCtx get() = applicationContext ?: this" in src.getValue("PcPlatformAndroid.kt"))
         assertTrue("Thread(r, \"walking-pals\").apply { isDaemon = true }.start()" in pals)
         // The read that waits is only where it runs off the main thread: AndroidSpriteArt.prepare.
         assertEquals(listOf("SpriteIsMeArt.kt"), src.filter { "WalkingPals.index(" in it.value }.keys.toList())

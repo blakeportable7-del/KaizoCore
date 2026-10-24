@@ -104,6 +104,13 @@ data class RomKind(
         /** The settings-file family of Heart & Soul: its own, so no other game's preset is offered for it by name. */
         const val HNS_FAMILY = "HnS"
 
+        /**
+         * KaizoCore PC's Heart & Soul build (2026-10-23): [HEARTSOUL_KAIZO_206]'s game with the client's easter eggs
+         * (patch 0061, KAIZOCORE_CLIENT_EGGS on). The PC's comfort patch makes it and its setup expects it
+         * (HnsSetup.Crcs.PC); to the app it is another KaizoCore's build, so the app makes its own from 2.0.6.
+         */
+        const val HNS_PC_BUILD_CRC = 0xF4E28E3DL
+
         /** Every kind the app knows, so a stored id can be turned back into one. */
         val all: List<RomKind> get() = allV1 + allNatDex + allMaxDex + allPatched + allHns
 
@@ -380,7 +387,9 @@ data class RomKind(
 
         /**
          * Pokemon Heart & Soul 2.0.6 with KaizoCore's comfort patch (docs/HNS-KAIZO.md): the official 2.0.6 (01713508)
-         * plus our BPS, CRC E61D7527. The header is Heart & Soul's own ("POKEMON HNS", game code BPEE); the tracker
+         * plus our BPS, CRC F5F37A8E (Nat. Dex Emerald's Gen 3 rules, patches 0047-0061, 2026-10-23): the Android app's build.
+         * KaizoCore PC makes the same game with the client's easter eggs, [HNS_PC_BUILD_CRC], from the same source (patch
+         * 0061's KAIZOCORE_CLIENT_EGGS); the tracker reads both. The header is Heart & Soul's own ("POKEMON HNS", game code BPEE); the tracker
          * picks its map by that title and the build's tables (GameMap.resolve, HnsMaps). Minimal on purpose
          * (feat/hns-tracker, 2026-10-05): recognition for the Library and the tracker only; the randomizer for it is
          * HnsEngine's to wire, and another branch may define this kind too.
@@ -391,13 +400,20 @@ data class RomKind(
             displayName = "Pokémon Heart & Soul (KaizoCore)",
             generation = Generation.GBA3,
             fileExtension = "gba",
-            expectedCrc = 0xE61D7527L,
+            expectedCrc = 0xF5F37A8EL,
             titleDetect = "POKEMON HNS",
             natDexCapable = false,
-            // Every comfort build before this one, newest first: rc38's 949DBE42, rc37's C218FD9E, rc36.1's E35A0E40, its two
+            // Every comfort build before this one, newest first: F4E28E3D (the last one built with the client's easter
+            // eggs in the app too; KaizoCore PC's build since, HNS_PC_BUILD_CRC), AA092306 (before Whirlpool needed a Pokemon that knows it
+            // and Red was fought without Hail, patches 0059-0060), 1C824440 (before SET battles, a ball in any trainer battle
+            // and the GeneralQwert nods, patches 0053-0058), CDC719C2 (before evolving added the max HP it gains,
+            // as in Emerald, patch 0052), 09405F53 (before Nat. Dex Emerald's Gen 3 rules and the
+            // Kaizo compliance fixes, patches 0046-0051), 00CCF118 (before the faster start's two warps faded
+            // fast), C4684999 (before the faster start's warps skipped the
+            // music fade-out and MR. POKEMON's heal lost its black screen), 17C288C4 (before the hidden-item sparkle's own palette), rc38's 949DBE42, rc37's C218FD9E, rc36.1's E35A0E40, its two
             // test builds, rc36's C993EB6E, and the test builds before it. A rebuild adds the CRC it replaces here (docs/HNS-KAIZO.md).
             supersededCrcs = listOf(
-                0x949DBE42L, 0xC218FD9EL, 0xE35A0E40L, 0x43E658C6L, 0x9399657FL, 0xC993EB6EL, 0x123ACB97L, 0x263BCD3CL, 0xD4ADC9EAL, 0xF0C6236CL, 0xE08DD128L,
+                0xF4E28E3DL, 0xAA092306L, 0x1C824440L, 0xCDC719C2L, 0x09405F53L, 0x00CCF118L, 0xC4684999L, 0x17C288C4L, 0x6776E392L, 0xE61D7527L, 0x949DBE42L, 0xC218FD9EL, 0xE35A0E40L, 0x43E658C6L, 0x9399657FL, 0xC993EB6EL, 0x123ACB97L, 0x263BCD3CL, 0xD4ADC9EAL, 0xF0C6236CL, 0xE08DD128L,
             ),
         )
 

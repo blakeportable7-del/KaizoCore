@@ -1,0 +1,44 @@
+# Lasting effects stay until the game ends them, and each side keeps its own when the card flips.
+lead Quilava lv 30 moves Ember, Quick Attack, Smokescreen, Swift
+foe Gengar lv 32 moves Shadow Ball, Hypnosis, Curse, Destiny Bond
+view foe
+# On the opponent: your Leech Seed, a burn and confusion together, and your Spikes on its side.
+foe leech seed
+wait 0.4
+foe status BRN
+foe confuse
+foe spikes 2
+wait 1.0
+# On you: its Taunt, its Disable on Ember, Reflect on your side, a Future Sight coming.
+view own
+own taunt 3
+own disable Ember 4
+own reflect 5
+own future sight 2
+wait 1.4
+# Flip back: the opponent's are all still there.
+view foe
+wait 1.4
+# Turns tick down without restarting; the confusion ends; Spikes gets a third layer.
+foe confuse off
+foe spikes 3
+view own
+own taunt 2
+own reflect 4
+own future sight 1
+wait 1.4
+# Its Curse, your Ingrain, Yawn and Wish: more on your card.
+own curse
+own ingrain
+own yawn
+own wish 1
+wait 1.6
+# Encore on Quick Attack instead of the Taunt; then Gengar faints: its own effects go, the Spikes on its side stay.
+own taunt off
+own encore Quick Attack 3
+wait 1.2
+view foe
+faint foe
+wait 1.2
+foe Haunter lv 30 moves Lick, Confuse Ray, Mean Look, Hypnosis
+wait 1.4

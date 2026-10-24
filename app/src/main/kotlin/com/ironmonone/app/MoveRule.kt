@@ -1,8 +1,5 @@
 package com.ironmonone.app
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.LocalContext
 import com.ironmonone.tracker.nuzlocke.LevelCapTable
 import com.ironmonone.tracker.nuzlocke.NuzlockeSystem
 
@@ -340,20 +337,4 @@ object MoveRule {
     /** A DS Pokemon that will evolve further: the DS tracker's evolution line for it is not empty (ndsEvoLabel). */
     internal fun ndsCanEvolve(m: com.ironmonone.tracker.nds.Gen4.Mon): Boolean =
         com.ironmonone.tracker.nds.NdsLogData.evoFor(m.species, m.isFemale).isNotEmpty()
-}
-
-/** The rules for the game in Play: a Kaizo IronMON run on any console; null otherwise, as for the BST X. */
-@Composable
-fun moveRulesInPlay(attempt: Int): MoveRule.Rules? {
-    val context = LocalContext.current
-    return remember(attempt) {
-        runCatching {
-            val filesDir = context.applicationContext.filesDir
-            val store = PrepStore(filesDir)
-            val session = store.session()
-            val kind = session.kind
-            if (PlayRules.kind(session, filesDir) != PlayRules.Kind.IRONMON || kind == null) null
-            else MoveRule.rules(FavoriteBall.modeOf(store), kind.family, HnsPool.rulesNatDex(kind, filesDir), kind.baseId ?: kind.id)
-        }.getOrNull()
-    }
 }

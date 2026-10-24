@@ -66,7 +66,7 @@ class MaxDexRulesTest {
         assertEquals(BstRule.Lines(own = 601, wild = 600), BstRule.lines("evokaizo", true, maxDex = true))
         for (mode in listOf("chaoskaizo", "ironmonjourney", null)) assertNull(BstRule.lines(mode, true, maxDex = true), "$mode")
         // Play reads MaxDex from the session's game.
-        assertTrue("maxDex = session.kind?.isMaxDex == true)" in File("src/main/kotlin/com/ironmonone/app/BstRule.kt").readText())
+        assertTrue("maxDex = session.kind?.isMaxDex == true" in File("src/main/kotlin/com/ironmonone/app/BstRule.kt").readText())
     }
 
     @Test

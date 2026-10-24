@@ -36,8 +36,13 @@ object HnsPics {
     fun palette(memory: MemoryReader, address: Long): IntArray? {
         if (!rom(address)) return null
         val raw = memory.read(address, 32).takeIf { it.size == 32 } ?: return null
-        val compressed = raw.u8(0) == 0x10 || (raw.u32(0) and 0xF).toInt() in 1..6
-        val bytes = if (compressed) decompress(memory, address)?.takeIf { it.size >= 32 } ?: raw else raw
+        // A plain BGR555 colour often has a low nibble of 1-6, which is also a smol mode. Only a header whose
+        // declared size is one palette (32 bytes), or an LZ77 stream, is compressed. Anything else stays the raw palette.
+        val head = raw.u32(0)
+        val mode = (head and 0xF).toInt()
+        val declared = (((head shr 4) and 0x3FFF) * 4).toInt()
+        val compressed = raw.u8(0) == 0x10 || (mode in 1..6 && declared == 32)
+        val bytes = if (compressed) decompress(memory, address)?.takeIf { it.size == 32 } ?: raw else raw
         return IntArray(16) { i -> if (i == 0) 0 else argb555(bytes.u16(i * 2)) }
     }
 
@@ -68,6 +73,7 @@ object HnsPics {
      * shiny palette where [shiny]. Null when the entry or its data do not decode.
      */
     fun front(memory: MemoryReader, species: Int, shiny: Boolean = false, female: Boolean = false): Gen3Pictures.Picture? {
+        HnsMaps.ensureBuild(memory)
         if (species !in 1 until HnsLayout.NUM_SPECIES + 1) return null
         val SI = HnsLayout.SpeciesInfo
         val rec = memory.read(HnsLayout.gSpeciesInfo + species.toLong() * SI.SIZE, SI.SIZE).takeIf { it.size == SI.SIZE } ?: return null
@@ -88,6 +94,7 @@ object HnsPics {
      * Soul's pictures are not in pret's two tables, so TrainerPictures has none for it. Null where a read fails.
      */
     fun trainer(memory: MemoryReader, trainerId: Int): IntArray? {
+        HnsMaps.ensureBuild(memory)
         if (trainerId !in 1 until HnsLayout.TRAINERS_COUNT) return null
         val T = HnsLayout.Trainer
         val rec = memory.read(HnsLayout.gTrainers + (HnsLayout.DIFFICULTY_NORMAL.toLong() * HnsLayout.TRAINERS_COUNT + trainerId) * T.SIZE, T.SIZE)
@@ -99,6 +106,79 @@ object HnsPics {
         val tiles = decompress(memory, sprite.u32(S.frontPic.offset))?.takeIf { it.size >= FRAME } ?: return null
         val colors = palette(memory, sprite.u32(S.palette.offset)) ?: return null
         return tilesToArgb(tiles, colors)
+    }
+
+    /**
+     * [item]'s bag icon as the game draws it (gItemsInfo[item].iconPic and iconPalette, 24 by 24, smol or LZ77), for the
+     * effects that show the very item used (the animation exploration, 2026-10-10). Null where it does not decode.
+     */
+    fun itemIcon(memory: MemoryReader, item: Int): Gen3Pictures.Picture? {
+        HnsMaps.ensureBuild(memory)
+        if (item !in 1 until HnsLayout.gItemsInfo_COUNT) return null
+        val II = HnsLayout.ItemInfo
+        val rec = memory.read(HnsLayout.gItemsInfo + item.toLong() * II.SIZE, II.SIZE).takeIf { it.size == II.SIZE } ?: return null
+        val tiles = decompress(memory, II.iconPic.u32(rec))?.takeIf { it.size >= 24 * 24 / 2 } ?: return null
+        val colors = palette(memory, II.iconPalette.u32(rec)) ?: return null
+        return Gen3Pictures.Picture(24, 24, tilesToArgb(tiles, colors, 24, 24))
+    }
+
+    /**
+     * [item]'s use in battle (ItemInfo.battleUsage, include/constants/items.h): 1 restores HP, 2 cures a status, 3 both
+     * (Full Restore), 4 raises a stat (the X items), 5 Mist (Guard Spec.), 6 Focus Energy (Dire Hit), 7 escapes, 8 a
+     * ball, 9 revives, 10 restores PP, 11 raises every stat, 12 the Poke Flute; 0 not used in battle.
+     */
+    fun itemBattleUsage(memory: MemoryReader, item: Int): Int {
+        HnsMaps.ensureBuild(memory)
+        if (item !in 1 until HnsLayout.gItemsInfo_COUNT) return 0
+        val II = HnsLayout.ItemInfo
+        val rec = memory.read(HnsLayout.gItemsInfo + item.toLong() * II.SIZE, II.SIZE).takeIf { it.size == II.SIZE } ?: return 0
+        return II.battleUsage.at(rec)
+    }
+
+    /**
+     * A battle animation sheet out of the game: the compressed 4bpp tiles at [gfx] with the palette at [pal], cut into
+     * [parts] (width by height each, their tiles one after another, as the game's graphics rules join them). Each part's
+     * tiles run row by row. Null where it does not decode.
+     */
+    fun sheet(memory: MemoryReader, gfx: Long, pal: Long, parts: List<Pair<Int, Int>>): List<Gen3Pictures.Picture>? {
+        val tiles = decompress(memory, gfx) ?: return null
+        val colors = palette(memory, pal) ?: return null
+        var at = 0
+        return parts.map { (w, h) ->
+            val n = (w / 8) * (h / 8) * 32
+            val part = tiles.copyOfRange(at.coerceAtMost(tiles.size), (at + n).coerceAtMost(tiles.size))
+            at += n
+            Gen3Pictures.Picture(w, h, tilesToArgb(part, colors, w, h))
+        }
+    }
+
+    /** A follower's frames, left to right as its overworld.png has them: 0-1 facing down, 2-3 up, 4-5 to the side. */
+    class Follower(val width: Int, val height: Int, val frames: List<IntArray>)
+
+    /**
+     * [species]' follower out of the game (Blake, 2026-10-09: base Aggron on the favorites strip is the game's own, since
+     * the walking sheet reads as the mega). SpeciesInfo.overworldData is an ObjectEventGraphicsInfo: width and height at
+     * 0x08 and 0x0A, the compressed bit at the top of 0x0C, images at 0x1C. images[0].data is the whole sheet (every
+     * follower is overworld_ascending_frames), one frame after another, smol or LZ77 when compressed. The palette is
+     * overworldPalette (overworldShinyPalette for [shiny]). Null where the entry or its data do not decode.
+     */
+    fun follower(memory: MemoryReader, species: Int, shiny: Boolean = false): Follower? {
+        HnsMaps.ensureBuild(memory)
+        if (species !in 1 until HnsLayout.NUM_SPECIES + 1) return null
+        val SI = HnsLayout.SpeciesInfo
+        val rec = memory.read(HnsLayout.gSpeciesInfo + species.toLong() * SI.SIZE, SI.SIZE).takeIf { it.size == SI.SIZE } ?: return null
+        val o = SI.overworldData.offset
+        val w = rec.u16(o + 0x08); val h = rec.u16(o + 0x0A)
+        if (w !in setOf(16, 32, 64) || h !in setOf(16, 32, 64)) return null
+        val compressed = rec.u8(o + 0x0C) and 0x80 != 0
+        val images = rec.u32(o + 0x1C).takeIf(::rom) ?: return null
+        val data = memory.read(images, 4).takeIf { it.size == 4 }?.u32(0)?.takeIf(::rom) ?: return null
+        val frame = w * h / 2
+        // An uncompressed sheet has no length of its own; six frames is every follower's (two a facing).
+        val tiles = (if (compressed) decompress(memory, data) else memory.read(data, frame * 6))?.takeIf { it.size >= frame } ?: return null
+        val colors = palette(memory, (if (shiny) SI.overworldShinyPalette else SI.overworldPalette).u32(rec)) ?: return null
+        val frames = (0 until tiles.size / frame).map { i -> tilesToArgb(tiles.copyOfRange(i * frame, (i + 1) * frame), colors, w, h) }
+        return Follower(w, h, frames)
     }
 }
 

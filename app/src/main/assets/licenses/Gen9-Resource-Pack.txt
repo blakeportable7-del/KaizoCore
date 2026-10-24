@@ -1,0 +1,29 @@
+Generation 9 Resource Pack follower sprites: credit the artists
+
+The walking sprites KaizoCore draws for the Pokemon PMD Sprite Collab has not drawn,
+and DarkusShadow's own posts do not cover (walkingpals-expo), are the follower
+sheets from Caruban's Generation 9 Resource Pack, version 3.3.8:
+
+  https://eeveeexpo.com/resources/1101/
+
+The pack's page says to give the artists credit. Caruban compiles the pack.
+The artists, as that page lists them for the overworlds used here:
+
+  Gen 5 (Simisear, Simipour, Tranquill, Blitzle, Zebstrika, Throh, Crustle,
+  Tirtouga, Carracosta, Amoonguss, Frillish, Shelmet, Bouffalant):
+  MissingLukey, help-14, Kymoyonian, cSc-A7X, 2and2makes5, Pokegirl4ever,
+  Fernandojl, Silver-Skies, TyranitarDark, Getsuei-H, Kid1513, Milomilotic11,
+  Kyt666, kdiamo11, Chocosrawlooid, Syledude, Gallanty, Gizamimi-Pichu, Zyon17,
+  LarryTurbo, spritesstealer.
+
+  Gen 7 (Trumbeak, Gumshoos, Shiinotic, Oranguru): Larry Turbo, princess-phoenix.
+
+  Gen 8 (Rolycoly, Carkol, Coalossal, Mr. Rime, Falinks, Cufant, Zarude):
+  SageDeoxys, Wolfang62, LarryTurbo, tammyclaydon.
+
+  Maschiff: Carmanekko.
+  Iron Jugulis: TooManyLuigis, Mortedesu, Billla and Wolfang62.
+
+Mega Falinks walks as Falinks until it has a sheet of its own. Each sheet's
+artists are also in walkingpals-expo/credits.tsv. A Sprite Collab sheet, when
+one is drawn, replaces these.

@@ -155,6 +155,27 @@ object MoveRules {
 
     data class Shown(val type: Int?, val power: String, val acc: String)
 
+    private const val THUNDER = 87
+    private const val BLIZZARD = 59
+    private const val SOLAR_BEAM = 76
+    /** Heart & Soul's and Nat. Dex's later moves (their own ids); a Gen 3 game has no such id, so they never match there. */
+    private const val HURRICANE = 542
+    private const val SOLAR_BLADE = 632
+
+    /**
+     * How the weather moves this move's damage, as Heart & Soul works it out (pokehns-expansion src/battle_util.c
+     * GetWeatherDamageModifier, and Solar Beam's halving at 6608): Fire x1.5 in sun and x0.5 in rain, Water the other way
+     * round, Solar Beam and Solar Blade x0.5 in rain, sand and hail or snow. 1 up, -1 down, 0 untouched. [type] is the type
+     * the card shows (a Weather Ball that took Fire in sun counts). [weather] is null while Cloud Nine or Air Lock is out.
+     */
+    fun weatherMark(id: Int, type: Int?, weather: String?): Int = when {
+        weather == null -> 0
+        (id == SOLAR_BEAM || id == SOLAR_BLADE) && weather in setOf("RAIN", "SANDSTORM", "HAIL") -> -1
+        type == 10 -> when (weather) { "SUN" -> 1; "RAIN" -> -1; else -> 0 }
+        type == 11 -> when (weather) { "RAIN" -> 1; "SUN" -> -1; else -> 0 }
+        else -> 0
+    }
+
     /**
      * MoveData.adjustVariableMoveValues. [weather] is the tracker's RAIN,
      * SANDSTORM, SUN or HAIL. [viewingOwn] is whether [source] is the player's.
@@ -163,8 +184,16 @@ object MoveRules {
         id: Int, type: Int?, power: String, acc: String,
         source: Side, target: Side?, inBattle: Boolean, viewingOwn: Boolean,
         weather: String?, determineFriendship: Boolean,
+        /** Heart & Soul: Blizzard never misses in hail (B_BLIZZARD_HAIL, GEN_LATEST in its source; the ROM's flag agrees). */
+        laterRules: Boolean = false,
     ): Shown {
         var t = type; var p = power; var a = acc
+        // Weather and accuracy (CanMoveSkipAccuracyCalc and the 50 in sun, src/battle_util.c): "0" prints the card's dash,
+        // a move that cannot miss.
+        if (inBattle && weather != null) when (id) {
+            THUNDER, HURRICANE -> if (weather == "RAIN") a = "0" else if (weather == "SUN") a = "50"
+            BLIZZARD -> if (laterRules && weather == "HAIL") a = "0"
+        }
         when (id) {
             WEATHER_BALL -> if (inBattle) {
                 val w = when (weather) { "RAIN" -> 11; "SANDSTORM" -> 5; "SUN" -> 10; "HAIL" -> 15; else -> null }
@@ -214,13 +243,14 @@ object MoveRules {
     }
 
     /**
-     * Utils.calculateFriendshipBasedDamage: revealed only once it would reach
-     * 100 or more, and only with "Determine friendship readiness" on.
+     * "Determine friendship readiness" on: Return's column is the power at max friendship (255 is 102).
+     * Frustration still shows a number only once its power would reach 100.
      */
     fun friendshipBased(power: String, friendship: Int, determineFriendship: Boolean): String {
         if (!determineFriendship || (power != ">FR" && power != "<FR")) return power
+        if (power == ">FR") return floor(max(255 / 2.5, 1.0)).toInt().toString()
         var f = friendship.coerceIn(0, 255)
-        if (power == "<FR") f = 255 - f
+        f = 255 - f
         val bp = max(f / 2.5, 1.0)
         return if (bp < 100) power else floor(bp).toInt().toString()
     }

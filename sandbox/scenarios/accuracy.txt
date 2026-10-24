@@ -1,0 +1,18 @@
+# Accuracy drops and evasion down. Sandshrew throws Sand Attack three times at your Quilava: each time the dust rolls
+# over its eyes, and your moves' accuracy counts down to the game's real odds (100 -> 75 -> 60 -> 50).
+# Then Quilava uses Sweet Scent: Sandshrew is locked in the sights, and your odds climb back (50 -> 60).
+lead Quilava lv 24 moves Ember, Quick Attack, Smokescreen, Swift
+foe Sandshrew lv 22 moves Sand Attack, Scratch, Defense Curl, Rollout
+view own
+wait 0.8
+own stage ACC -1
+wait 0.6
+own stage ACC -1
+wait 0.6
+own stage ACC -1
+wait 1.0
+view foe
+foe stage EVA -1
+wait 1.0
+view own
+wait 2.0

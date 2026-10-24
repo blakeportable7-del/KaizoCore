@@ -164,11 +164,11 @@ class HnsTypeChangeTest {
     private fun TrackerState.rows() = party[0].moveRows.map { it.type to it.power }
 
     @Test
-    fun `your Pixilate turns your Normal moves Fairy at 1-2x, the plate sets Judgment, Terrain Pulse follows the terrain`() {
+    fun `your Pixilate turns your Normal moves Fairy at the build's boost, the plate sets Judgment, Terrain Pulse follows the terrain`() {
         val (mem, t) = ownGame(id("ABILITY_PIXILATE")) ?: return
-        // Pound 40 -> Fairy 48; Judgment with a Flame Plate Fire (its own rule, before any ability); Hyper Voice 90 -> Fairy
-        // 108; Terrain Pulse stays Normal 50 with no terrain (TrySetAteType leaves it alone).
-        assertEquals(listOf(18 to 48, 10 to 100, 18 to 108, 0 to 50), t.settle().rows())
+        // Pound 40 -> Fairy 52 (x1.3, B_ATE_MULTIPLIER GEN_3); Judgment with a Flame Plate Fire (its own rule, before any
+        // ability); Hyper Voice 90 -> Fairy 117; Terrain Pulse stays Normal 50 with no terrain (TrySetAteType leaves it alone).
+        assertEquals(listOf(18 to 52, 10 to 100, 18 to 117, 0 to 50), t.settle().rows())
         // Electric Terrain on a grounded Pikachu: Terrain Pulse is Electric.
         mem.w32(HnsLayout.gFieldStatuses, HnsLayout.STATUS_FIELD_ELECTRIC_TERRAIN.toLong())
         assertEquals(13 to 50, t.read().rows()[3])
@@ -219,12 +219,12 @@ class HnsTypeChangeTest {
         mem.w16(HnsLayout.gBattleResults + HnsLayout.BattleResults.lastUsedMoveOpponent.offset, 33)
         t.read()
         val hidden = t.read().enemy!!
-        assertEquals(listOf(0 to 40), hidden.moveRows.map { it.type to it.power }, "Tackle as the table has it: nothing reveals the ability")
+        assertEquals(listOf(0 to 35), hidden.moveRows.map { it.type to it.power }, "Tackle as the table has it (Gen 3's 35): nothing reveals the ability")
         // The game shows it: the pop-up for battler 1.
         mem.w8(HnsLayout.gBattlerAbility, 1)
         mem.w32(HnsLayout.gBattlescriptCurrInstr, HnsLayout.BattleScript_AbilityPopUp.first + 5)
         val shown = t.read()
         assertEquals(listOf(sylveon to t.abilityName(id("ABILITY_PIXILATE"))), shown.abilitiesRevealed)
-        assertEquals(listOf(18 to 48), shown.enemy!!.moveRows.map { it.type to it.power }, "shown: Fairy, 1.2x")
+        assertEquals(listOf(18 to 46), shown.enemy!!.moveRows.map { it.type to it.power }, "shown: Fairy, 1.3x (B_ATE_MULTIPLIER GEN_3)")
     }
 }

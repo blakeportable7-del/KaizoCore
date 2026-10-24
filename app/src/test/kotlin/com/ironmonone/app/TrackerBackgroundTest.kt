@@ -384,8 +384,8 @@ class TrackerBackgroundTest {
     @Test
     fun `see-through reaches the tracker's boxes and not its dialogs`() {
         val pc = src("PcTracker.kt")
-        assertEquals(6, Regex(Regex.escape("trackerBoxFill(")).findAll(pc).count(),
-            "card, battle banner, carousel line, badge row, move header, move list")
+        assertEquals(7, Regex(Regex.escape("trackerBoxFill(")).findAll(pc).count(),
+            "card, battle banner, carousel line, badge row, move header, move list, and the note row's box at KaizoCore PC's rows")
         val dialog = pc.substringAfter("fun PcInfoDialog(").substringBefore("\n}\n")
         assertTrue(dialog.length < 4000, "the dialog body was cut out, not the rest of the file")
         assertFalse("boxFill" in dialog, "an info dialog stays solid over the game")

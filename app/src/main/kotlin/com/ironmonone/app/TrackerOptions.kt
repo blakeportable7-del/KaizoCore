@@ -161,7 +161,11 @@ object TrackerOptions {
         LossCondition.EITHER_OF_FIRST_TWO -> "Either of your first two faints"
     }
     /** Options["Display repel usage"], off by default in the reference. */
-    var showRepel by mutableStateOf(false)
+    var showRepel by mutableStateOf(true)
+    /** "Battle animations": statuses, stat changes, hits, abilities, weather and items used in battle play on the card. */
+    var battleAnimations by mutableStateOf(true)
+    /** "Level-up and item animations": level ups, new moves, Rare Candy, vitamins and badges, in battle or out. */
+    var progressAnimations by mutableStateOf(true)
     /**
      * Options["Pokemon icon set"] = Walking Pals (Blake, 2026-09-15: on by default). Every tracker reads it since
      * 2026-10-01, Gen 1 to 9: the Gen 1-3 panel, a Nat. Dex build's and the DS panel ("if we get the animation sprites
@@ -194,6 +198,17 @@ object TrackerOptions {
         set(v) { countEnemyPpState.value = v; com.ironmonone.tracker.TrackerPrefs.countEnemyPp = v }
     /** "Show last damage calcs": the carousel's "Wing Attack: 23 damage". */
     var showLastDamage by mutableStateOf(true)
+    /**
+     * "Show real hit chance": in battle, your moves' Acc is the game's chance to hit now, worked out from what you know
+     * (the stages, the weather, Lock-On and the rest, your ability and item, the opponent's shown ability; PcReal on the
+     * PC card). Off, Acc is the move's own (Blake, 2026-10-10).
+     */
+    var realHitChance by mutableStateOf(true)
+    /**
+     * "Show real move power": in battle, your moves' Pow with the weather, Charge, the Sports, your pinch ability and
+     * type item, Facade, SmellingSalt and the opponent's shown Thick Fat (PcReal). Off, Pow is the move's own.
+     */
+    var realMovePower by mutableStateOf(true)
     /** Calc Atk's "Only display for wild encounters" (CalcAtk.lua ExtSettingsData), on by default. */
     var calcAtkWildOnly by mutableStateOf(true)
     /**
@@ -347,6 +362,8 @@ object TrackerOptions {
                     "frlgGuidePictures" -> frlgGuidePictures = v == "true"
                     "showTypeMatchups" -> showTypeMatchups = v == "true"
                     "showRepel" -> showRepel = v == "true"
+                    "battleAnimations" -> battleAnimations = v == "true"
+                    "progressAnimations" -> progressAnimations = v == "true"
                     "animatedSprites" -> animatedSprites = v == "true"
                     "spritesWalk" -> spritesWalk = v == "true"
                     "determineFriendship" -> determineFriendship = v == "true"
@@ -356,6 +373,8 @@ object TrackerOptions {
                     "calculateVariableDamage" -> calculateVariableDamage = v == "true"
                     "countEnemyPp" -> countEnemyPp = v == "true"
                     "showLastDamage" -> showLastDamage = v == "true"
+                    "realHitChance" -> realHitChance = v == "true"
+                    "realMovePower" -> realMovePower = v == "true"
                     "calcAtkWildOnly" -> calcAtkWildOnly = v == "true"
                     // A pick. Files before it wrote every key, so their "true" was the old
                     // default and only their "false" was a pick.
@@ -398,7 +417,7 @@ object TrackerOptions {
         DiskWriter.write(f, text())
     }
 
-    fun text(): String = "showBallPicker=$showBallPicker\nshowCategoryIcons=$showCategoryIcons\nhealsWhole=$healsWhole\nshowTeamView=$showTeamView\nautoPokemonThemes=$autoPokemonThemes\nrestorePoints=$restorePoints\nshowTimer=$showTimer\ntourneyTracker=$tourneyTracker\nkantoBadgesFirst=$kantoBadgesFirst\nshowBothBadgeSets=$showBothBadgeSets\nlogCustomTrainerNames=$logCustomTrainerNames\nlogShowUnlearnableGymTms=$logShowUnlearnableGymTms\nlogShowPreEvolutions=$logShowPreEvolutions\nlossCondition=${lossCondition.key}\ndsLossCondition=${dsLossCondition.key}\nlandscapeTracker=${landscapeTracker.name}\nfloatingLocked=$floatingLocked\nshowRepel=$showRepel\nanimatedSprites=$animatedSprites\nspritesWalk=$spritesWalk\ndetermineFriendship=$determineFriendship\ndisplayPedometer=$displayPedometer\nshowMoveEffectiveness=$showMoveEffectiveness\nshowCatchRate=$showCatchRate\ncalculateVariableDamage=$calculateVariableDamage\ncountEnemyPp=$countEnemyPp\nshowLastDamage=$showLastDamage\ncalcAtkWildOnly=$calcAtkWildOnly\n${autoSwapChoice.value?.let { "autoSwapToEnemyChoice=$it\n" } ?: ""}showNicknames=$showNicknames\ndisplayGender=$displayGender\nshowExpBar=$showExpBar\nruleMarks=$ruleMarks\ncolorStatNumbers=$colorStatNumbers\nrightJustifiedNumbers=$rightJustifiedNumbers\ntrackPcHeals=$trackPcHeals\npcHealsCountDownward=$pcHealsCountDownward\nhideStatsUntilSummary=$hideStatsUntilSummary\nshowDataForVanillaGame=$showDataForVanillaGame\nopenBookPlayMode=$openBookPlayMode\nrevealInfoIfRandomized=$revealInfoIfRandomized\nallowCarouselRotation=$allowCarouselRotation\ncarouselItems=$carouselItems\ncarouselSpeed=$carouselSpeed\nshowStarterBallInfo=$showStarterBallInfo\ndsPokecenterHeals=$dsPokecenterHeals\ndsExpBar=$dsExpBar\ndsAccEva=$dsAccEva\ndsAutoSwapToEnemy=$dsAutoSwapToEnemy\ndsEnemyLocking=$dsEnemyLocking\ntrackerOnSecondScreen=$trackerOnSecondScreen\nfrlgGuidePictures=$frlgGuidePictures\nshowTypeMatchups=$showTypeMatchups\nnuzlockeBallPicker=$nuzlockeBallPicker\nfloatingSolid=$floatingSolid\ntrackerHud=$trackerHud\nhudShowMine=$hudShowMine\nhudShowRest=$hudShowRest\n" +
+    fun text(): String = "showBallPicker=$showBallPicker\nshowCategoryIcons=$showCategoryIcons\nhealsWhole=$healsWhole\nshowTeamView=$showTeamView\nautoPokemonThemes=$autoPokemonThemes\nrestorePoints=$restorePoints\nshowTimer=$showTimer\ntourneyTracker=$tourneyTracker\nkantoBadgesFirst=$kantoBadgesFirst\nshowBothBadgeSets=$showBothBadgeSets\nlogCustomTrainerNames=$logCustomTrainerNames\nlogShowUnlearnableGymTms=$logShowUnlearnableGymTms\nlogShowPreEvolutions=$logShowPreEvolutions\nlossCondition=${lossCondition.key}\ndsLossCondition=${dsLossCondition.key}\nlandscapeTracker=${landscapeTracker.name}\nfloatingLocked=$floatingLocked\nshowRepel=$showRepel\nbattleAnimations=$battleAnimations\nprogressAnimations=$progressAnimations\nanimatedSprites=$animatedSprites\nspritesWalk=$spritesWalk\ndetermineFriendship=$determineFriendship\ndisplayPedometer=$displayPedometer\nshowMoveEffectiveness=$showMoveEffectiveness\nshowCatchRate=$showCatchRate\ncalculateVariableDamage=$calculateVariableDamage\ncountEnemyPp=$countEnemyPp\nshowLastDamage=$showLastDamage\nrealHitChance=$realHitChance\nrealMovePower=$realMovePower\ncalcAtkWildOnly=$calcAtkWildOnly\n${autoSwapChoice.value?.let { "autoSwapToEnemyChoice=$it\n" } ?: ""}showNicknames=$showNicknames\ndisplayGender=$displayGender\nshowExpBar=$showExpBar\nruleMarks=$ruleMarks\ncolorStatNumbers=$colorStatNumbers\nrightJustifiedNumbers=$rightJustifiedNumbers\ntrackPcHeals=$trackPcHeals\npcHealsCountDownward=$pcHealsCountDownward\nhideStatsUntilSummary=$hideStatsUntilSummary\nshowDataForVanillaGame=$showDataForVanillaGame\nopenBookPlayMode=$openBookPlayMode\nrevealInfoIfRandomized=$revealInfoIfRandomized\nallowCarouselRotation=$allowCarouselRotation\ncarouselItems=$carouselItems\ncarouselSpeed=$carouselSpeed\nshowStarterBallInfo=$showStarterBallInfo\ndsPokecenterHeals=$dsPokecenterHeals\ndsExpBar=$dsExpBar\ndsAccEva=$dsAccEva\ndsAutoSwapToEnemy=$dsAutoSwapToEnemy\ndsEnemyLocking=$dsEnemyLocking\ntrackerOnSecondScreen=$trackerOnSecondScreen\nfrlgGuidePictures=$frlgGuidePictures\nshowTypeMatchups=$showTypeMatchups\nnuzlockeBallPicker=$nuzlockeBallPicker\nfloatingSolid=$floatingSolid\ntrackerHud=$trackerHud\nhudShowMine=$hudShowMine\nhudShowRest=$hudShowRest\n" +
         lossBySettings.entries.joinToString("") { (name, c) -> "lossConditionFor.$name=${c.key}\n" } +
         dsLossBySettings.entries.joinToString("") { (name, c) -> "dsLossConditionFor.$name=${c.key}\n" }
 }

@@ -184,6 +184,10 @@ SCALARS = [
     "ITEM6_HEAL_HP_FULL", "ITEM6_HEAL_HP_HALF", "ITEM6_HEAL_HP_LVL_UP", "ITEM6_HEAL_HP_QUARTER",
     "STATUS1_SLEEP", "STATUS1_POISON", "STATUS1_BURN", "STATUS1_FREEZE", "STATUS1_PARALYSIS",
     "STATUS1_TOXIC_POISON", "STATUS1_FROSTBITE", "CONDITIONS_END",
+    # The battle rules the tracker's numbers follow (2026-10-10, the Gen 3 client build): crit odds and damage, the
+    # sure-hit weathers and moves, Hidden Power's power, the type boosters.
+    "B_CRIT_CHANCE", "B_CRIT_MULTIPLIER", "B_BLIZZARD_HAIL", "B_TOXIC_NEVER_MISS", "B_HIDDEN_POWER_DMG",
+    "B_UPDATED_MOVE_DATA", "I_TYPE_BOOST_POWER", "I_SITRUS_BERRY_HEAL", "KAIZOCORE_GEN3_BATTLE", "B_ATE_MULTIPLIER",
     # Hidden items and the lab trash can (2026-10-05).
     "BG_EVENT_HIDDEN_ITEM", "FLAG_HIDDEN_ITEMS_START", "FLAG_HNS_LAB_TRASH_ITEM_TAKEN",
     # The Safari Zone (2026-10-05): the flag the game sets while the player is in it.

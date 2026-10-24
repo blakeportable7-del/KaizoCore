@@ -649,6 +649,28 @@ fun AboutScreen(modifier: Modifier = Modifier, onStats: () -> Unit = {}) {
         )
         CreditLink("https://www.deviantart.com/darkusshadow") { openOrSay(it) }
 
+        Spacer(Modifier.height(12.dp))
+
+        // Added 2026-10-08: the Generation 9 Resource Pack's followers fill the sheets still missing.
+        Text(
+            "Simisear, Falinks, Maschiff, Iron Jugulis and the rest still missing from the Sprite Collab walk as " +
+                "the follower sheets in Caruban's Generation 9 Resource Pack. Credit the artists. Mega Falinks walks as Falinks.",
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        CreditLink("https://eeveeexpo.com/resources/1101/") { openOrSay(it) }
+
+        Spacer(Modifier.height(12.dp))
+
+        // Added 2026-10-08: the overworlds for forms that were still using another Pokemon's sheet.
+        Text(
+            "Mega Aggron, Mega Charizard Y, Mega Feraligatr, Garchomp Z, the male Pyroar and the other forms " +
+                "that were still using another Pokémon's sheet walk on their own overworlds. The mega sheets are " +
+                "Kidkatt, Larryturbo and Princess-Phoenix, ported by Willøw, and the Z-A ones are DarkusShadow and " +
+                "BluebirdDxD. Feraligatr-M and Garchomp-Z are JinGuinsoO00's. The rest are the Heart & Soul follower sheets.",
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        CreditLink("https://eeveeexpo.com/resources/1475/") { openOrSay(it) }
+
         Spacer(Modifier.height(16.dp))
 
         // Added 2026-09-29 (the rc30 credits check): the DS tracker, the two Gen 3 extensions

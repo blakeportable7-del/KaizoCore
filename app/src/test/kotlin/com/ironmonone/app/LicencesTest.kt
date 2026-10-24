@@ -24,6 +24,8 @@ class LicencesTest {
         "OFL-1.1" to listOf("SIL OPEN FONT LICENSE"),
         "CC-BY-NC-4.0" to listOf("Attribution-NonCommercial 4.0 International"),
         "DarkusShadow-Free-Use" to listOf("DarkusShadow's overworld sprites: free use with credit", "Give Credits If Used"),
+        "Gen9-Resource-Pack" to listOf("Generation 9 Resource Pack follower sprites: credit the artists", "eeveeexpo.com/resources/1101"),
+        "Ow-Sheets" to listOf("Overworlds for the forms that were still using another Pokemon", "eeveeexpo.com/resources/1475"),
     )
 
     @Test

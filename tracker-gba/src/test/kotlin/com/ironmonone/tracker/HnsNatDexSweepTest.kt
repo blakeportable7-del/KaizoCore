@@ -403,7 +403,13 @@ class HnsNatDexSweepTest {
             val row = t.moveRowFor(id)
             if (row == null) { bad += "$tag: no row"; continue }
             val type = MI.type.at(m)
-            val cat = when (MI.category.at(m)) { 0 -> "PHY"; 1 -> "SPE"; else -> "STA" }
+            // On a Gen 3 build (HnsRules.categoryByType) a damaging move's type decides, as GetBattleMoveCategory does.
+            val cat = when {
+                MI.category.at(m) == 2 -> "STA"
+                HnsRules.categoryByType -> if (HnsMon.gen3Type(type) <= 8) "PHY" else "SPE"
+                MI.category.at(m) == 0 -> "PHY"
+                else -> "SPE"
+            }
             val want = listOf(MI.power.at(m), HnsMon.gen3Type(type), MI.accuracy.at(m), MI.pp.at(m), MI.priority.at(m), MI.makesContact.at(m) == 1, cat)
             val got = listOf(row.power, row.type, row.acc, row.pp, row.priority, row.contact, row.category)
             if (want != got) bad += "$tag: row $got, ROM $want"

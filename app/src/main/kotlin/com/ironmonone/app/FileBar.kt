@@ -641,7 +641,7 @@ private fun Toggle(label: String, on: Boolean, modifier: Modifier, onClick: () -
 
 /** One choice of a picker: lit while chosen. */
 @Composable
-private fun Seg(label: String, on: Boolean, modifier: Modifier, onClick: () -> Unit) {
+internal fun Seg(label: String, on: Boolean, modifier: Modifier, onClick: () -> Unit) {
     Box(
         modifier.heightIn(min = Shell.touchTarget).background(if (on) CYAN.copy(alpha = 0.14f) else BTN_FILL).border(1.dp, if (on) CYAN else BTN_EDGE)
             .clickable(role = Role.RadioButton) { onClick() }

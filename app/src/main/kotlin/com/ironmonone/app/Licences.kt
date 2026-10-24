@@ -66,6 +66,8 @@ internal object Licences {
         Text("OFL-1.1", "SIL Open Font License 1.1", "OFL_press_start_2p.txt"),
         Text("CC-BY-NC-4.0", "Creative Commons Attribution-NonCommercial 4.0", "licenses/CC-BY-NC-4.0.txt"),
         Text("DarkusShadow-Free-Use", "Free use with credit (DarkusShadow's overworld sprites)", "licenses/DarkusShadow-Free-Use.txt"),
+        Text("Gen9-Resource-Pack", "Credit the artists (Generation 9 Resource Pack followers)", "licenses/Gen9-Resource-Pack.txt"),
+        Text("Ow-Sheets", "Credit the artists (overworlds added for the missing forms)", "licenses/Ow-Sheets.txt"),
     )
 
     val parts = listOf(
@@ -108,6 +110,11 @@ internal object Licences {
         Part("DarkusShadow's overworld sprites", "The walking sprites of the Pokémon Sprite Collab has not drawn, by DarkusShadow, " +
             "Brute Bonnet's from TyranitarDark's original and Mega Malamar's from princess-phoenix's.", "DarkusShadow-Free-Use",
             "deviantart.com/darkusshadow"),
+        Part("Generation 9 Resource Pack", "The walking sprites still missing after that, from Caruban's pack. Credit the artists.",
+            "Gen9-Resource-Pack", "eeveeexpo.com/resources/1101"),
+        Part("Overworlds for the missing forms", "Mega overworlds from Willøw's pack, JinGuinsoO00's Feraligatr-M and Garchomp-Z, " +
+            "and the Heart & Soul follower sheets. Credit the artists.",
+            "Ow-Sheets", "eeveeexpo.com/resources/1475"),
     )
 
     const val INTRO = "What KaizoCore carries, and the license each is under. Tap a license to read it whole."

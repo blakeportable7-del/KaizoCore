@@ -2,6 +2,7 @@ package com.ironmonone.app.engine
 
 import com.ironmonone.app.Dumps
 import com.ironmonone.app.RandomizerLog
+import com.ironmonone.app.engine.hns.HnsRandomizer
 import com.ironmonone.app.engine.hns.HnsGame
 import com.ironmonone.app.engine.hns.HnsLayout
 import com.ironmonone.app.engine.hns.HnsOptions
@@ -40,7 +41,11 @@ class HnsEngineTest {
                 }
                 d = d.parentFile
             }
-            val f = candidates.firstOrNull { it.isFile }
+            // The app's build by name first (hns-kaizo-F5F37A8E.gba), then hns-kaizo.gba; only a file of the app's CRC
+            // counts, since KaizoCore PC's build (patch 0061) and older builds lie in the same folders.
+            val want = com.ironmonone.core.RomKind.HEARTSOUL_KAIZO_206.expectedCrc
+            val named = candidates.map { File(it.parentFile, "hns-kaizo-%08X.gba".format(want)) }
+            val f = (named + candidates).firstOrNull { it.isFile && java.util.zip.CRC32().apply { update(it.readBytes()) }.value == want }
             if (f == null && Dumps.required) throw AssertionError("IRONMON_REQUIRE_DUMPS: hns-kaizo.gba is not in .vendor/hns, and the release gate needs it")
             f
         }
@@ -69,8 +74,8 @@ class HnsEngineTest {
     @Test
     fun `the comfort build is what the layout describes`() {
         if (skip()) return
-        assertEquals(0xE61D7527L, HnsEngine.crc(rom!!))
-        assertEquals(0xE61D7527L, layout.buildCrc)
+        assertEquals(0xF5F37A8EL, HnsEngine.crc(rom!!))
+        assertEquals(0xF5F37A8EL, layout.buildCrc)
         assertEquals(null, HnsEngine.refusal(rom!!))
     }
 
@@ -225,7 +230,10 @@ class HnsEngineTest {
         val tms = (1..out.tmCount).map { out.rom.get("TmHmIndexKey", L.rec("gTMHMItemMoveIds", it), "moveId") }
         assertFalse(tms == vanilla.origMachineMoves.take(out.tmCount))
         assertEquals(tms.size, tms.distinct().size)
-        // The old run of TM moves is gone from the ROM, and the new one is where the old one was (three tables).
+        // The old run of TM moves is gone from the ROM, and the new one is where the old one was. Two tables since build
+        // 17C288C4, as in the official 2.0.6 (2026-10-11, AA092306): GetItemTMHMMoveId is inline, and its switch compiles
+        // to one table for GetItemIconPalette and one that ItemUseCB_TMHM, ItemIdToBattleMoveId and RenderPartyMenuBox
+        // share; the start menu's HM list compiles to HM-only code, and HMs are never rolled. The rc37 builds had three.
         val old = vanilla.origMachineMoves.take(out.tmCount).flatMap { listOf(it.toByte(), (it shr 8).toByte()) }.toByteArray()
         val new = tms.flatMap { listOf(it.toByte(), (it shr 8).toByte()) }.toByteArray()
         fun count(hay: ByteArray, needle: ByteArray): Int {
@@ -233,13 +241,13 @@ class HnsEngineTest {
             outer@ while (i + needle.size <= hay.size) { for (k in needle.indices) if (hay[i + k] != needle[k]) { i++; continue@outer }; n++; i += needle.size }
             return n
         }
-        assertEquals(3, count(rom!!, old))
+        assertEquals(2, count(rom!!, old))
         assertEquals(0, count(bytes, old))
-        assertEquals(3, count(bytes, new))
+        assertEquals(2, count(bytes, new))
     }
 
     @Test
-    fun `Kaizo trainers are 60 percent higher, capped at 100, and bosses carry three more`() {
+    fun `Kaizo trainers are 60 percent higher up to base 50, easing to 100 at Red, and bosses carry three more`() {
         if (skip()) return
         val out = read(run(KAIZO, 1234L, HnsEngine.Pool.NATDEX).rom)
         val before = vanilla.trainers.associateBy { it.id }
@@ -247,9 +255,9 @@ class HnsEngineTest {
         var bosses = 0
         for (t in out.trainers) {
             val v = before.getValue(t.id)
-            val expected = v.mons.map { minOf(100, Math.round(it.level * 1.6).toInt()) }.toSet()
+            val expected = v.mons.map { HnsRandomizer.trainerLevel(it.level, 60) }.toSet()
             for (tm in t.mons) assertTrue(tm.level in expected, "trainer ${t.id}: level ${tm.level} not one of $expected")
-            assertEquals(minOf(100, Math.round(v.mons.maxOf { it.level } * 1.6).toInt()), t.mons.maxOf { it.level })
+            assertEquals(HnsRandomizer.trainerLevel(v.mons.maxOf { it.level }, 60), t.mons.maxOf { it.level })
             if (t.trainerClass in bossClasses || t.constName.startsWith("TRAINER_RED_")) {
                 assertEquals(minOf(6, v.mons.size + 3), t.mons.size, "boss ${t.constName}")
                 bosses++
@@ -343,13 +351,14 @@ class HnsEngineTest {
     }
 
     @Test
-    fun `trainer doubles are singles in a Kaizo run, doubles in the Kaizo Doubles mode and the Nuzlocke one`() {
+    fun `trainer doubles stay the game's doubles in a Kaizo run`() {
         if (skip()) return
-        // Blake, 2026-10-06: KaizoCore_TrainerDoublesAreSingles reads the mode byte and this one; the build carries 0.
+        // The comfort build's own byte is 0. A Kaizo run sets it, so KaizoCore_TrainerDoublesAreSingles stays off
+        // and the trainers the game marked as doubles stay doubles.
         val L = layout
         val at = L.sym("gHnsChallengePreset") - L.romBase + L.const("HNS_PRESET_KAIZO_DOUBLES")
         assertEquals(0, rom!![at].toInt())
-        assertEquals(0, run(KAIZO, 1234L, HnsEngine.Pool.NATDEX).rom[at].toInt())
+        assertEquals(1, run(KAIZO, 1234L, HnsEngine.Pool.NATDEX).rom[at].toInt())
         val doubles = run("RSE NatDex v1.2 Kaizo Doubles", 7L, HnsEngine.Pool.NATDEX).rom
         assertEquals(1, doubles[at].toInt())
         val back = doubles.copyOf()
@@ -393,25 +402,25 @@ class HnsEngineTest {
     }
 
     @Test
-    fun `random moves come from the Nat Dex fork's own pools and abilities stop at Teravolt`() {
+    fun `random moves come from the Nat Dex fork's own pools, plus Fairy, and abilities stop at Air Lock`() {
         if (skip()) return
         val out = read(run(KAIZO, 1234L, HnsEngine.Pool.NATDEX).rom)
         val rules = com.ironmonone.app.engine.hns.HnsUprRules(zx = false)
         val moveNames = out.L.enum("MOVE").entries.groupBy({ it.value }, { it.key.removePrefix("MOVE_") })
         val abilityNames = out.L.enum("ABILITY").entries.groupBy({ it.value }, { it.key.removePrefix("ABILITY_") })
+        val fairy = out.typeNames.entries.first { it.value == "FAIRY" }.key
         assertTrue("U_TURN" in rules.bannedMoves && "CLOSE_COMBAT" in rules.bannedMoves)
+        fun banned(id: Int) = moveNames[id].orEmpty().any { it in rules.bannedMoves } && out.moves[id]?.type != fairy
         for (m in out.mons) {
             if (m == null || !m.eligible) continue
-            for (lm in m.learnset) assertFalse(moveNames[lm.move].orEmpty().any { it in rules.bannedMoves }, "${m.const} learns ${moveNames[lm.move]}")
+            for (lm in m.learnset) assertFalse(banned(lm.move), "${m.const} learns ${moveNames[lm.move]}")
             val vm = vanilla.mons[m.id]!!
-            // Shedinja keeps Wonder Guard as UPR keeps it; every other slot was rolled from Black 2 / White 2's 1 to 164
-            // (the Nat. Dex pool's abilities since rc38; HnsNatDexParityTest has the rest).
+            // Shedinja keeps Wonder Guard. Every other slot is Emerald's, through Air Lock (76).
             if (vm.abilities.contains(out.L.enumValue("ABILITY", "ABILITY_WONDER_GUARD") ?: -1)) continue
-            for (a in m.abilities) assertTrue(a in 0..164, "${m.const} has ${abilityNames[a]}")
+            for (a in m.abilities) assertTrue(a in 0..76, "${m.const} has ${abilityNames[a]}")
         }
-        // HnsGame's machineMoves is the layout's vanilla list; the ROM's TMs are in gTMHMItemMoveIds.
         val tms = (1..out.tmCount).map { out.rom.get("TmHmIndexKey", out.L.rec("gTMHMItemMoveIds", it), "moveId") }
-        assertTrue(tms.none { mv -> moveNames[mv].orEmpty().any { it in rules.bannedMoves } }, "TMs ${tms.map { moveNames[it] }}")
+        assertTrue(tms.none { banned(it) }, "TMs ${tms.map { moveNames[it] }}")
     }
 
     @Test

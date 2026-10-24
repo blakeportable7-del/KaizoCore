@@ -2,6 +2,58 @@
 
 Short and plain, one list per release. Newest first.
 
+## rc39 (23 October 2026)
+
+**Heart & Soul: Nat. Dex Emerald's Kaizo rules**
+
+- **Battles play by Nat. Dex Emerald 1.2.1's Gen 3 rules,** with Heart & Soul's bigger Pokémon pool: Gen 3 abilities,
+  moves and battle mechanics, physical and special by type, Sturdy and Sitrus Berry the Emerald way. The challenge
+  menu's Split, Synchronize, Sturdy, Sitrus Berry and Gen 1 recharge rows are fixed at Emerald's, and the rules pages
+  say so.
+- **Evolving is never a heal.** As in Emerald, an evolution adds only the extra max HP the new form has to your current
+  HP, and it never restores PP.
+- **You can throw a ball in any trainer battle,** doubles too. The trainer blocks it, as in Emerald, so a Pokémon that
+  must not help spends its turn.
+- **Battles are always Set.**
+- **Kaizo fixes:** no effectiveness marks in battle, field moves need a Pokémon that knows them (Whirlpool needs the
+  seventh badge and a Pokémon that knows it), Red is fought without Hail, and trainer levels ease off above level 50 so
+  only Red's strongest reaches 100.
+- **Hidden item sparkles stay** until the item is picked up.
+
+A Heart & Soul run made by an earlier KaizoCore offers "Move this run": the same seed and settings made again on this
+version, and your in-game save keeps your team and progress.
+
+**Each game keeps its own run**
+
+- Starting a run on another game no longer ends the one you were playing. Pick that game on the Kaizo IronMON screen
+  and "Continue attempt" puts it back where you left it, its save states and notes included.
+
+**Tracker**
+
+- **Random evolutions** sort by Name, BST or Percent and show each Pokémon's BST. Heart & Soul has odds of its own,
+  counted over 1,000 seeds of KaizoCore's randomizer, and any Pokémon you look up shows them.
+- **Tap the Moves header** for the level-up moves, then History. A move's name shows only where the rules allow it.
+- **Resistances** show the game's type icons.
+- **Tap the held item** for what it does, in Heart & Soul.
+- The weather's arrow beside a move's power when the weather raises or lowers it.
+- Stat marks in the theme's colors everywhere: a green plus, a red minus and the equals sign in the text color.
+
+**Play**
+
+- **Slide on the d-pad:** move your thumb from one arrow to the next without lifting it.
+- **Fast forward** is in the emulator settings too, not only under File, Speed.
+
+**Black 2 and White 2**
+
+- **Challenge Mode switch** on the Kaizo IronMON screen, per game and mode: on, the randomizer forces the game's
+  Challenge Mode, with no Key System needed. The mode stays official, and the run's record says Challenge Mode.
+
+**Stream to PC**
+
+- The streamed card shows your Pokémon's nature on its stats.
+- After a game over, opening the randomizer log on the phone shows the randomizer data on the stream, and closing it
+  goes back to the final party.
+
 ## rc38.1 (7 October 2026)
 
 **Heart & Soul**

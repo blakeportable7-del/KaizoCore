@@ -178,6 +178,8 @@ object StreamSnapshot {
             "inBattle" to (view?.inBattle ?: false),
             "wild" to (view?.isWildBattle ?: false),
             "outcome" to outcome?.name,
+            // The phone's log viewer is open (StreamHub.logOpen): after the run, the stream shows the randomizer data.
+            "logOpen" to StreamHub.logOpen,
             "badges" to (gba?.badges ?: nds?.badges ?: 0),
             "badgeSet" to (gba?.badgeSet ?: nds?.badgeSet),
             "heals" to mapOf("percent" to healPercent, "count" to healCount),
@@ -255,6 +257,8 @@ object StreamSnapshot {
             "ability" to p.abilityName.takeIf { !hidden }, "item" to p.itemName.takeIf { !hidden },
             "stats" to if (hidden) null else mapOf("hp" to m.maxHp, "atk" to m.atk, "def" to m.def, "spa" to m.spAtk,
                 "spd" to m.spDef, "spe" to m.spe),
+            // The nature's + and - on the stats, as the phone's card draws them (VILLAIN, 10/10: his -SpA +SpD was missing).
+            "nature" to if (hidden || generation < 3) null else natureMarks(m.nature),
             "bst" to p.base?.bst,
             "status" to p.statusCondition,
             "stages" to if (hidden) emptyMap() else p.statStages,
@@ -299,6 +303,10 @@ object StreamSnapshot {
       )
     }
 
+    /** The stats a nature raises and lowers, by the stream's stat keys: {"spd": "+", "spa": "-"}; empty for a neutral one. */
+    internal fun natureMarks(nature: Int?): Map<String, String> =
+        listOf("atk", "def", "spa", "spd", "spe").mapNotNull { k -> com.ironmonone.app.natureMark(nature, k.uppercase())?.let { k to it.toString() } }.toMap()
+
     private fun ownNds(p: NdsTrackedMon, notes: Notes): Map<String, Any?> {
         val m = p.mon
         return linkedMapOf(
@@ -308,6 +316,7 @@ object StreamSnapshot {
             "ability" to p.abilityName, "item" to p.itemName,
             "stats" to mapOf("hp" to m.maxHp, "atk" to m.atk, "def" to m.def, "spa" to m.spAtk,
                 "spd" to m.spDef, "spe" to m.spe),
+            "nature" to natureMarks(m.nature),
             "bst" to p.info?.bst,
             "status" to p.statusCondition,
             "stages" to p.statStages,

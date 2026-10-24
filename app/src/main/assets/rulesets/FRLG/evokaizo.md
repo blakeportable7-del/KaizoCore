@@ -150,4 +150,4 @@ Here are the rules.
 - game-specific rules and settings gist by UTDZac: https://gist.github.com/UTDZac/a147c497424dfbd537d8c4b0c22b5621 (last changed 2026-07-05)
 - Evo Kaizo rules, a pastebin that names no author: https://pastebin.com/puyAqPyt (undated)
 
-Generated 2026-10-01 by tools/rules/build_rules.py. Rulesets get revised; if this reads behind a source, regenerate.
+Generated 2026-10-07 by tools/rules/build_rules.py. Rulesets get revised; if this reads behind a source, regenerate.

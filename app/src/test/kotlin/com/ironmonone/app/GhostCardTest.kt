@@ -55,11 +55,11 @@ class GhostCardTest {
     fun `a ghost hides effectiveness on both cards`() {
         assertTrue(InfoRules.hideEffectiveness(null, ghost = true, own = true))
         assertTrue(InfoRules.hideEffectiveness(null, ghost = true, own = false))
-        // Outside a ghost battle, the "Reveal info if randomized" rule is unchanged.
+        // Outside a ghost battle, your own marks follow "Show move effectiveness", not the randomized-type hide.
         assertFalse(InfoRules.hideEffectiveness(null, ghost = false, own = true))
         assertFalse(InfoRules.hideEffectiveness(null, ghost = false, own = false))
         TrackerOptions.revealInfoIfRandomized = false
-        assertTrue(InfoRules.hideEffectiveness(null, ghost = false, own = true))
+        assertFalse(InfoRules.hideEffectiveness(null, ghost = false, own = true))
         assertFalse(InfoRules.hideEffectiveness(null, ghost = false, own = false))
     }
 

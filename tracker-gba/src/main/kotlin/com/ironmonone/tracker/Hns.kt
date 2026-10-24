@@ -83,6 +83,7 @@ internal object HnsMon {
             spAtk = P.spAttack.at(mon), spDef = P.spDefense.at(mon),
             exp = S0.experience.at(plain, g).toLong(),
             isEgg = S3.isEgg.at(plain, m) == 1,
+            metLevel = S3.metLevel.at(plain, m),
         )
     }
 
@@ -146,6 +147,24 @@ object HnsWeather {
 }
 
 /**
+ * The build's battle rules, read from its own config (the layout's scalars). The Nat. Dex Kaizo client build (patch 0047,
+ * 2026-10-10) plays Nat. Dex Emerald's Gen 3 rules; the builds before it played the expansion's latest ones.
+ */
+object HnsRules {
+    /** GEN_4 in the expansion's numbering (include/config/general.h: GEN_1 is 0). */
+    private const val GEN_4 = 3
+
+    /**
+     * Gen 3's physical/special rule: a damaging move's type decides (Fire special, Fighting physical), whatever the move
+     * row's own category byte says (BattleUtil GetBattleMoveCategory, B_PHYSICAL_SPECIAL_SPLIT below GEN_4).
+     */
+    val categoryByType: Boolean get() = HnsLayout.B_PHYSICAL_SPECIAL_SPLIT < GEN_4
+
+    /** Blizzard never misses in hail (B_BLIZZARD_HAIL Gen 4+): the builds before patch 0047, not the Nat. Dex Kaizo one. */
+    val blizzardSureInHail: Boolean get() = HnsLayout.B_BLIZZARD_HAIL >= GEN_4
+}
+
+/**
  * The power column of the Heart & Soul moves whose power the game works out in battle, where its move table holds the
  * expansion's placeholder 1 (the Nat. Dex sweep, 2026-10-06: Grass Knot and fifteen more printed "1"). The words are
  * the DS tracker's for the same moves (tracker-nds gen5/moves.tsv: WT, >WT, <SP, >SP, BRY, ITM, <PP, VAR, HP), the PC
@@ -157,7 +176,7 @@ object HnsMovePower {
         "GRASSKNOT" to "WT", "HEAVYSLAM" to ">WT", "HEATCRASH" to ">WT", "GYROBALL" to "<SP", "ELECTROBALL" to ">SP",
         "NATURALGIFT" to "BRY", "FLING" to "ITM", "TRUMPCARD" to "<PP", "BEATUP" to "VAR", "FINALGAMBIT" to "HP",
         "METALBURST" to "0", "COMEUPPANCE" to "0", "NATURESMADNESS" to "0", "RUINATION" to "0",
-        "PIKAPAPOW" to ">FR", "VEEVEEVOLLEY" to ">FR",
+        "RETURN" to ">FR", "FRUSTRATION" to "<FR", "PIKAPAPOW" to ">FR", "VEEVEEVOLLEY" to ">FR",
     )
 
     /** The label for the move named [name] when its table power is the placeholder 1, else null (the number stands). */
@@ -293,6 +312,8 @@ internal class HnsData(private val memory: MemoryReader) {
 
     fun moveDescription(id: Int): String? = move(id)?.let { text(MI.description.u32(it), 200) }?.takeIf { it.isNotBlank() }
 
+    fun itemDescription(id: Int): String? = if (id <= 0) null else item(id)?.let { text(II.description.u32(it), 200) }?.takeIf { it.isNotBlank() }
+
     fun abilityDescription(id: Int): String? {
         if (id !in 1 until HnsLayout.ABILITIES_COUNT) return null
         val b = rec(HnsLayout.gAbilitiesInfo, AI.SIZE, id)
@@ -319,6 +340,9 @@ internal class HnsData(private val memory: MemoryReader) {
 
     /** Weight in kg as the reference writes it ("6.9"), from SpeciesInfo.weight in hectograms. */
     fun weight(id: Int): String? = species(id)?.let { SI.weight.at(it) }?.takeIf { it > 0 }?.let { "%d.%d".format(it / 10, it % 10) }
+
+    /** The base experience yield (SpeciesInfo.expYield), the reference's InfoScreen "EXP:". */
+    fun expYield(id: Int): Int? = species(id)?.let { SI.expYield.at(it) }
 
     /** [power, type (Gen 3's id), accuracy, PP, priority, flags (bit 0 contact), category 0 physical 1 special 2 status]. */
     fun moveData(id: Int): IntArray? {
@@ -741,7 +765,28 @@ internal object HnsMaps {
         return title.size == 12 && String(title, Charsets.ISO_8859_1).startsWith("POKEMON HNS")
     }
 
+    /**
+     * Whether [memory] holds one of the KaizoCore builds, and which: the Android app's or KaizoCore PC's (patch 0061,
+     * 2026-10-23: one source, the PC's with the client's easter eggs). Sets [HnsLayout.pcBuild] to the one it holds;
+     * the build already picked is tried first.
+     */
     fun isKaizoBuild(memory: MemoryReader): Boolean {
+        val first = HnsLayout.pcBuild
+        for (pc in listOf(first, !first)) {
+            HnsLayout.pcBuild = pc
+            if (namesAt(memory)) return true
+        }
+        HnsLayout.pcBuild = first
+        return false
+    }
+
+    /**
+     * Makes sure HnsLayout's addresses are [memory]'s build's, for a caller that reads the ROM with no tracker in front
+     * (HnsPics: KaizoCore PC's followers and battle art). Four small reads when the build is already the right one.
+     */
+    fun ensureBuild(memory: MemoryReader) { if (!namesAt(memory)) isKaizoBuild(memory) }
+
+    private fun namesAt(memory: MemoryReader): Boolean {
         val d = HnsData(memory)
         // Names only: every one sits where this build's layout puts its table, and no randomizer setting renames a
         // species or a move. Pikachu's base stats were part of the check, and a run with random base stats (every Kaizo
@@ -750,7 +795,20 @@ internal object HnsMaps {
             d.moveName(1)?.uppercase() == "POUND" && d.moveName(33)?.uppercase() == "TACKLE"
     }
 
-    val KAIZO: GameMap = GameMap(
+    /** The map of the build [HnsLayout.pcBuild] names (its ROM tables lie elsewhere in each). */
+    val KAIZO: GameMap get() = if (HnsLayout.pcBuild) kaizoPc else kaizoApp
+    private val kaizoApp: GameMap by lazy { underBuild(pc = false, ::make) }
+    private val kaizoPc: GameMap by lazy { underBuild(pc = true, ::make) }
+
+    /** [make] with HnsLayout's addresses set to one build: for a value kept per build ([KAIZO], Overworld's table). */
+    @Synchronized
+    internal fun <T> underBuild(pc: Boolean, make: () -> T): T {
+        val was = HnsLayout.pcBuild
+        HnsLayout.pcBuild = pc
+        try { return make() } finally { HnsLayout.pcBuild = was }
+    }
+
+    private fun make(): GameMap = GameMap(
         name = NAME,
         hns = true,
         nameSet = "hns",

@@ -115,6 +115,8 @@ object PokemonDecoder {
         val exp: Long = 0,
         /** IV word bit 30 (Program.lua:983 isEgg). */
         val isEgg: Boolean = false,
+        /** The level it was met at (misc substructure origins, bits 0-6); 0 for a hatched egg. */
+        val metLevel: Int = 0,
     )
 
     fun isEmpty(mon: ByteArray): Boolean = mon.u32(PID) == 0L
@@ -157,6 +159,7 @@ object PokemonDecoder {
             atk = mon.u16(layout.maxHp + 2), def = mon.u16(layout.maxHp + 4), spe = mon.u16(layout.maxHp + 6),
             spAtk = mon.u16(layout.maxHp + 8), spDef = mon.u16(layout.maxHp + 10),
             exp = plain.u32(g + 4),
+            metLevel = plain.u16(m + 2) and 0x7F,
         )
     }
 }

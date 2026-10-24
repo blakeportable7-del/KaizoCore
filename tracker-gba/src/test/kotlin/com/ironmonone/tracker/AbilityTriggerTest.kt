@@ -108,7 +108,8 @@ class AbilityTriggerTest {
         t.pollAbilityTrigger(); t.pollAbilityTrigger()
         // live = true: drained by a read during an active battle.
         val drained = t.javaClass.getDeclaredMethod("drainReveals", Boolean::class.javaPrimitiveType).apply { isAccessible = true }.invoke(t, true) as List<*>
-        assertEquals(listOf(59 to "#22", 72 to "#29"), drained)
+        // Each reveal names its Pokemon too (its personality value), for the per-battle fence.
+        assertEquals(listOf(59 to "#22", 72 to "#29"), drained.map { (it as GbaTracker.Reveal).let { r -> r.species to r.name } })
     }
 
     /**

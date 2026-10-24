@@ -1,0 +1,53 @@
+# The app's own files KaizoCore PC compiles too, unchanged and read where they lie (under app/src/main/kotlin/com/ironmonone/app).
+# What they need from the rest of the app: src/main/kotlin/com/ironmonone/app/PcPlatformDesktop.kt and PcSeamsDesktop.kt,
+# and the pieces copyAppPieces copies (build.gradle.kts). They call Android only through PcPlatformAndroid.kt's names.
+PcTracker.kt
+BattleSummary.kt
+CarouselClock.kt
+DeathQuotes.kt
+DoublesView.kt
+FloatingSeeThrough.kt
+GbBadgeRows.kt
+HiddenPower.kt
+InfoScreenLines.kt
+MoveDecor.kt
+NatureMark.kt
+PalForms.kt
+PcHeals.kt
+Pedometer.kt
+ShellTheme.kt
+StatMarks.kt
+MoveRule.kt
+RuleMarks.kt
+TrackerOptions.kt
+TrackerWideView.kt
+TypeSymbols.kt
+SafeWrite.kt
+DiskWriter.kt
+InfoSheet.kt
+TrackerLook.kt
+WindowBar.kt
+WalkingPals.kt
+HnsNumbers.kt
+Favorites.kt
+# Auto Pokemon Themes (the panel's colours from the lead), Play as your Pokemon's choices and art maths, and the tracker icons' pictures.
+AutoTheme.kt
+SpriteIsMeLogic.kt
+SpriteIsMeSettings.kt
+SpriteArt.kt
+gen3/Gen3Theme.kt
+RandomizerLog.kt
+LogNames.kt
+InfoRules.kt
+GhostCard.kt
+StageChevrons.kt
+EncounterBook.kt
+# Twitch chat (PLAN row 9): the app's Stream Connect, pure JVM; TwitchChat.kt (the phone's Context and Keystore) stays behind.
+stream/Json.kt
+stream/WebSocket.kt
+stream/twitch/ChatCommands.kt
+stream/twitch/EventSub.kt
+stream/twitch/TwitchAuth.kt
+stream/twitch/TwitchHttp.kt
+stream/twitch/TwitchLink.kt
+stream/twitch/WsClient.kt

@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger
  */
 internal object HnsHeals {
     /** The scripts that call the shared heal and count as one heal each. */
-    val CALLERS: List<LongRange> = listOf(
+    val CALLERS: List<LongRange> get() = listOf(
         HnsLayout.NewBarkTown_Lab_EventScript_HealingMachine2,    // Elm's lab heal machine, New Bark Town
         HnsLayout.NationalPark_Normal_EventScript_Teacher2,       // the teacher in the National Park (outdoors)
         HnsLayout.Route26_House1_EventScript_HealWoman,           // the house on Route 26, before Victory Road
@@ -35,7 +35,7 @@ internal object HnsHeals {
     )
 
     /** Scripts that heal on their own: the benches on Akala, Poni and Ula'ula (outdoors), from the heal on. */
-    val DIRECT: List<LongRange> = listOf(
+    val DIRECT: List<LongRange> get() = listOf(
         HnsLayout.Alola_Akala_Bench_Heal_2, HnsLayout.Alola_Poni_Bench_Heal_2, HnsLayout.Alola_Ulaula_Bench_Heal_2,
     )
 

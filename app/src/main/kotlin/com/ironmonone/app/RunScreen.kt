@@ -238,6 +238,12 @@ fun RunScreen(
         if (!RunJob.randomize(context, rom, s, seed = null)) RunJob.say(NewRunGuard.BUSY, true)
     }
 
+    // The picked game's own run, set aside when a run of another game started (PrepStore.parkedRun, VILLAIN 2026-10-12):
+    // each game keeps its Continue. Null when the picked game's run is the one in place, or it has none.
+    val parked = remember(refresh + jobGeneration, selectedRom?.first?.id) {
+        selectedRom?.first?.takeIf { it.id != store.loadLastRun()?.first }?.let { store.parkedRun(it.id) }
+    }
+
     /**
      * The start button. A pairing the run would be refused on is said now, not after the question (2026-09-30), and a run
      * in play is asked about first, the same gate the Play screen's NEW chip has.
@@ -245,7 +251,7 @@ fun RunScreen(
     fun startTapped() {
         val problem = pairingProblem()
         if (problem != null) { say(problem, true); return }
-        if (store.currentRun.exists()) confirmNewRun = true else newRun()
+        if (store.currentRun.exists() || parked != null) confirmNewRun = true else newRun()
     }
 
     val building = buildGame
@@ -261,6 +267,10 @@ fun RunScreen(
     // The run in play (RunInPlay), what the next attempt will be numbered, the mode as the confirm names it, the game
     // list with the selected game first, and how many library files there are for an empty list to say something about.
     val inPlay = runInPlay(store, refresh + jobGeneration)
+    // The run in place when it is another game's IronMON run that has not ended: a new attempt here sets it aside.
+    val keptOther = remember(refresh + jobGeneration, selectedRom?.first?.id) {
+        inPlay?.takeIf { !it.nuzlocke && store.loadLastRun()?.first != selectedRom?.first?.id && store.runIsOpen() }
+    }
     // Counted per game and settings file (PrepStore): the file picked is the one the next attempt is of.
     val nextAttempt = (selectedRom?.first?.id?.let { store.attemptOf(it, selectedSettings?.name) } ?: 0) + 1
     // A file that is not one KaizoCore comes with is a custom game, said wherever the mode is named (CustomRuns, R2).
@@ -295,7 +305,7 @@ fun RunScreen(
                 Column {
                     Text("Run", style = MaterialTheme.typography.bodySmall, color = Shell.hintOnNight)
                     Text(
-                        "Attempt ${RunHeader.attempt(inPlay?.attempt, store.attemptOf(rom.id, selectedSettings?.name))}",
+                        "Attempt ${RunHeader.attempt(parked?.attempt ?: inPlay?.attempt, store.attemptOf(rom.id, selectedSettings?.name))}",
                         fontSize = 26.sp,
                         fontWeight = FontWeight.Medium,
                         color = Shell.textOnNight,
@@ -325,7 +335,19 @@ fun RunScreen(
         // run exists it is one tap away here, and this is the one filled button on the screen
         // (2026-09-30, UX audit P2: two red primaries); starting another attempt is the quiet one
         // below. When Play is on a Library game instead, the line under the button says so.
-        inPlay?.let { run ->
+        val parkedGame = selectedRom?.first
+        if (parked != null && parkedGame != null) {
+            Gen3Button(RunCopy.continueRun(parked.attempt), accent = true) {
+                if (store.continueRun(parkedGame)) onPlay() else { say(RunCopy.PARKED_GONE, true); refresh++ }
+            }
+            Text(
+                RunCopy.parkedLine(parkedGame.displayName),
+                style = MaterialTheme.typography.bodySmall, color = Shell.hintOnNight,
+                modifier = Modifier.padding(top = 4.dp),
+            )
+            Spacer(Modifier.height(16.dp))
+        }
+        if (parked == null) inPlay?.let { run ->
             Gen3Button(if (run.nuzlocke) RunCopy.CONTINUE_NUZLOCKE else RunCopy.continueRun(run.attempt), accent = true) {
                 store.library.selectRun()
                 onPlay()
@@ -562,8 +584,13 @@ fun RunScreen(
                   Column {
                       Text(
                           RunCopy.confirmNewAttempt(
-                              inPlay?.let { RunCopy.EndingRun(it.attempt, it.game, it.nuzlocke) }, nextAttempt,
-                              selectedRom?.first?.displayName ?: "?", modeName),
+                              when {
+                                  parked != null -> RunCopy.EndingRun(parked.attempt, selectedRom?.first?.displayName ?: "?")
+                                  keptOther != null -> null
+                                  else -> inPlay?.let { RunCopy.EndingRun(it.attempt, it.game, it.nuzlocke) }
+                              }, nextAttempt,
+                              selectedRom?.first?.displayName ?: "?", modeName,
+                              kept = keptOther?.let { RunCopy.EndingRun(it.attempt, it.game) }),
                           style = MaterialTheme.typography.bodyMedium,
                           color = Shell.inkOnPaper,
                       )
@@ -577,7 +604,7 @@ fun RunScreen(
                       Spacer(Modifier.height(8.dp))
                       Row {
                           // Named for what it starts, and quiet while Continue is the red one (2026-09-30, UX audit P1, P2).
-                          Gen3Button(RunCopy.start(nextAttempt), accent = inPlay == null) {
+                          Gen3Button(RunCopy.start(nextAttempt), accent = inPlay == null && parked == null) {
                               confirmNewRun = false; newRun()
                           }
                           Spacer(Modifier.width(8.dp))
@@ -596,7 +623,7 @@ fun RunScreen(
               modifier = Modifier.fillMaxWidth(),
               enabled = !busy && preparedList.isNotEmpty(),
               // Red only when there is no run to continue: the button that continues is the red one (2026-09-30, UX audit P2).
-              accent = inPlay == null,
+              accent = inPlay == null && parked == null,
               // Rolling a new seed ends the current run; startTapped asks first.
           ) { startTapped() }
       }
@@ -643,6 +670,12 @@ private fun runInPlay(store: PrepStore, key: Int): RunInPlay? = remember(key) {
 private fun ExtraPassRows(rom: RomKind, settings: File) {
     val context = LocalContext.current
     if (rom.isHns) { HnsPoolRow(); return }
+    if (ExtraPasses.takesChallenge(rom)) {
+        var version by remember { mutableIntStateOf(0) }
+        val on = remember(rom.id, settings.absolutePath, version) { ExtraPasses.challengeOn(context, rom, settings) }
+        PassSwitch(RunCopy.CHALLENGE, on, RunCopy.CHALLENGE_LINE) { ExtraPasses.chooseChallenge(context, rom, settings, !on); version++ }
+        return
+    }
     if (ExtraPasses.takesPart2(rom)) {
         var version by remember { mutableIntStateOf(0) }
         val on = remember(rom.id, settings.absolutePath, settings.lastModified(), version) { ExtraPasses.part2On(context, rom, settings) }
@@ -865,6 +898,17 @@ internal object RunCopy {
     /** The same for a randomized Nuzlocke, which counts no attempt (PrepStore.installRun). */
     const val CONTINUE_NUZLOCKE = "Continue the Nuzlocke"
 
+    /** Black 2 and White 2's switch (ExtraPasses.takesChallenge). */
+    const val CHALLENGE = "Challenge Mode"
+    const val CHALLENGE_LINE = "Trainers at Challenge Mode's higher levels from the start, without the Key System. " +
+        "The mode stays official; the run's record says Challenge Mode."
+
+    /** Under the Continue of a game's run set aside (PrepStore.parkedRun). */
+    fun parkedLine(game: String) = "Your $game run, where you left it. Another game's run is kept the same way."
+
+    /** When a run set aside could not be put back (its files gone). */
+    const val PARKED_GONE = "That run could not be put back. Start a new attempt instead."
+
     /** The run a new attempt ends: its number and its game, and whether it is a Nuzlocke, which has no number. */
     class EndingRun(val attempt: Int, val game: String, val nuzlocke: Boolean = false)
 
@@ -873,8 +917,14 @@ internal object RunCopy {
      * The game is named once when the run and the new attempt are the same game, and twice when a run of another game
      * is the one that ends. [ending] is null when a run file is there and the last run says nothing about it.
      */
-    fun confirmNewAttempt(ending: EndingRun?, next: Int, game: String, mode: String?): String {
+    fun confirmNewAttempt(ending: EndingRun?, next: Int, game: String, mode: String?, kept: EndingRun? = null): String {
         val target = if (mode == null) game else "$game, $mode"
+        // A run of another game that has not ended is set aside, not ended (PrepStore.parkedRun): it says so.
+        if (kept != null) {
+            val keep = "Your attempt ${kept.attempt} on ${kept.game} is kept: pick ${kept.game} here to continue it."
+            return if (ending == null) "Start attempt $next on $target? $keep"
+            else "End attempt ${ending.attempt} and start attempt $next on $target? $keep"
+        }
         return when {
             ending == null -> "End the current run and start attempt $next on $target?"
             ending.nuzlocke -> "End the Nuzlocke on ${ending.game} and start attempt $next on $target?"

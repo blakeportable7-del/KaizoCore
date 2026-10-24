@@ -49,6 +49,9 @@ object Backup {
         // per attempt. It said "Saved" and nothing backed it up, so an uninstall or a new phone lost every one
         // (2026-09-30, UX audit P0-5). Each holds a copy of the randomized game, as prep/runs/ does for the run in play.
         "attempts/",
+        // Each game's run set aside when a run of another game started (PrepStore.parkedRun, 2026-10-23): its game,
+        // log, record, notes and save states. Continue on that game puts it back, so a restore must carry it.
+        "prep/parked/",
     )
     private val FILES = setOf(
         "prep/marks.txt", "prep/notes.txt", "prep/routes.txt", "prep/moves.txt", "prep/abilities.txt", "prep/integrity.txt",

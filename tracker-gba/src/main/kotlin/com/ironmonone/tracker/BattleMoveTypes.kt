@@ -15,8 +15,16 @@ package com.ironmonone.tracker
  * either side.
  */
 internal object BattleMoveTypes {
-    /** pokeemerald-expansion's 1.2x for -ate and Normalize (B_ATE_MULTIPLIER, GEN_LATEST here), uq4_12_multiply_by_int_half_down. */
-    fun ateBoosted(power: Int): Int = (power * 4915 + 2047) shr 12
+    /**
+     * pokeemerald-expansion's -ate boost by the build's B_ATE_MULTIPLIER (CalcMoveBasePowerAfterModifiers): 1.2x for the
+     * -ate abilities and Normalize from GEN_7 (6 in the expansion's numbering); 1.3x for the -ate abilities and nothing for
+     * Normalize below it, as on the Nat. Dex Kaizo build (patch 0047, GEN_3). uq4_12_multiply_by_int_half_down.
+     */
+    fun ateBoosted(power: Int, normalize: Boolean = false): Int = when {
+        HnsLayout.B_ATE_MULTIPLIER >= 6 -> (power * 4915 + 2047) shr 12
+        normalize -> power
+        else -> (power * 5325 + 2047) shr 12
+    }
 
     /** A name as the comparisons here take it: letters only, upper case ("Multi-Attack" and "MULTI ATTACK" alike). */
     fun norm(s: String?): String = s.orEmpty().uppercase().filter { it in 'A'..'Z' }
@@ -166,7 +174,7 @@ internal class HnsMoveTypes(private val data: HnsData, private val mem: MemoryRe
             if (type == null && !boost) return@map r
             r.copy(
                 type = type?.let(HnsMon::gen3Type) ?: r.type,
-                power = r.power?.let { if (boost && it > 1) BattleMoveTypes.ateBoosted(it) else it },
+                power = r.power?.let { if (boost && it > 1) BattleMoveTypes.ateBoosted(it, normalize = ability == "NORMALIZE") else it },
             )
         }
     }

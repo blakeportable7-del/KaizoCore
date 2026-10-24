@@ -12,10 +12,9 @@ import kotlin.test.assertTrue
  * through the app's path (HnsEveryModeTest.make), holding Heart & Soul to what the Nat. Dex fork does on Nat. Dex
  * Emerald 1.2.1 (docs/HNS-KAIZO.md, "rc38: in line with Emerald Nat. Dex"):
  * - no evolution asks for a trade (Nat. Dex Emerald's own table has none);
- * - abilities roll from the pool's game (Blake, 2026-10-07): Nat. Dex 1 to 164 as Black 2 / White 2 Kaizo, Vanilla 1 to
- *   76 (Air Lock) as vanilla Emerald Kaizo; Nat. Dex rolls all three slots, Vanilla's hidden slot is its first ability;
- *   each game's always-banned list and the mode's bans hold, Wonder Guard stays only where it was,
- *   and the forms UPR copies take their base's abilities;
+ * - abilities are Emerald's on both pools (Blake, 2026-10-08): 1 to 76, Air Lock. The hidden slot is the first
+ *   ability. Forecast is always banned. The mode's bans hold, Wonder Guard stays only where it was, and the forms
+ *   UPR copies take their base's abilities. Not Black 2's 1 to 164.
  * - the item lists are the fork's allowed and non-bad lists, and the items a run places come from them.
  * Needs the comfort build, as HnsEveryModeTest does; without it the test returns early.
  */
@@ -58,57 +57,45 @@ class HnsNatDexParityTest {
     }
 
     @Test
-    fun `abilities roll from the pool's game, Black 2 White 2 on Nat Dex and Emerald on Vanilla, and the mode's bans hold`() {
+    fun `abilities are Emerald's through Air Lock on both pools, and the mode's bans hold`() {
         if (rom == null || HnsEveryModeTest.romFile == null) return
         val vanilla = HnsEveryModeTest.vanilla
         val L = vanilla.L
         fun ab(n: String) = L.enumValue("ABILITY", "ABILITY_$n")
-        // Heart & Soul numbers abilities the official way: Teravolt is 164 (Gen5Constants.highestAbilityIndex), Air Lock 76.
-        assertEquals(164, ab("TERAVOLT")); assertEquals(76, ab("AIR_LOCK")); assertEquals(null, ab("CACOPHONY"))
-        // No id up to 164 is a placeholder in this build.
-        assertTrue((1..164).all { vanilla.abilityNames[it].isNotEmpty() && !vanilla.abilityNames[it].startsWith("-") })
+        assertEquals(76, ab("AIR_LOCK")); assertEquals(null, ab("CACOPHONY"))
         val wg = ab("WONDER_GUARD")!!
         val trapping = setOfNotNull(ab("SHADOW_TAG"), ab("MAGNET_PULL"), ab("ARENA_TRAP"))
         val negative = setOfNotNull(ab("TRUANT"), ab("SLOW_START"), ab("DEFEATIST"), ab("KLUTZ"), ab("STALL"))
-        // ZX's always-banned lists: Gen5Constants.uselessAbilities for Black 2 / White 2, Gen3Constants' (Forecast, and
-        // Cacophony, which Heart & Soul has not) for Emerald.
-        val uselessGen5 = setOfNotNull(ab("FORECAST"), ab("MULTITYPE"), ab("FLOWER_GIFT"), ab("ZEN_MODE"))
-        val uselessGen3 = setOfNotNull(ab("FORECAST"))
+        val useless = setOfNotNull(ab("FORECAST"))
         val hadWg = vanilla.mons.filterNotNull().filter { wg in it.abilities }.map { it.id }.toSet()
         val fails = ArrayList<String>()
         val out = StringBuilder()
         for (mode in HnsEveryModeTest.MODES) for (pool in HnsEngine.Pool.entries) {
-            val last = if (pool == HnsEngine.Pool.NATDEX) 164 else 76
-            val useless = if (pool == HnsEngine.Pool.NATDEX) uselessGen5 else uselessGen3
             val o = HnsEngine.readSettings(settings(mode))
             val made = HnsEveryModeTest.make(settings(mode), pool, seeds[0])
             val g = HnsEveryModeTest.read(made.bytes)
             val seen = HashSet<Int>()
-            var hiddenChanged = 0
             for (m in g.mons.filterNotNull()) {
                 if (!m.enabled || m.id == g.speciesEgg || m.id in hadWg) continue
-                if (m.abilities[2] != vanilla.mons[m.id]!!.abilities[2]) hiddenChanged++
                 for (a in m.abilities) {
                     if (a == 0) continue
                     seen += a
-                    if (a > last) fails += "$mode $pool: ${m.const} has ${g.abilityNames[a]} ($a)"
+                    if (a > 76) fails += "$mode $pool: ${m.const} has ${g.abilityNames[a]} ($a)"
                     if (a in useless) fails += "$mode $pool: ${m.const} has ${g.abilityNames[a]}"
                     if (a == wg && !o.allowWonderGuard) fails += "$mode $pool: ${m.const} has Wonder Guard"
                     if (o.banTrappingAbilities && a in trapping) fails += "$mode $pool: ${m.const} has trapping ${g.abilityNames[a]}"
                     if (o.banNegativeAbilities && a in negative) fails += "$mode $pool: ${m.const} has negative ${g.abilityNames[a]}"
                 }
-                if (pool == HnsEngine.Pool.VANILLA && m.abilities[2] != m.abilities[0]) fails += "$mode $pool: ${m.const} hidden ${m.abilities[2]} is not its first ${m.abilities[0]}"
-                if (pool == HnsEngine.Pool.NATDEX && m.abilities[2] == 0) fails += "$mode $pool: ${m.const} has no hidden ability ${m.abilities.toList()}"
+                if (m.abilities[2] != m.abilities[0]) fails += "$mode $pool: ${m.const} hidden ${m.abilities[2]} is not its first ${m.abilities[0]}"
             }
-            val later = seen.count { it in 77..164 }
-            if (pool == HnsEngine.Pool.NATDEX && later < 50) fails += "$mode $pool: only $later Gen 4-5 abilities seen"
-            if (pool == HnsEngine.Pool.VANILLA && later > 0) fails += "$mode $pool: $later abilities past Air Lock"
+            val later = seen.count { it > 76 }
+            if (later > 0) fails += "$mode $pool: $later abilities past Air Lock"
             for ((form, base) in HnsRandomizer.FORM_ABILITIES_FROM_BASE) {
                 val f = g.mons.firstOrNull { it?.const == "SPECIES_$form" } ?: continue
                 val b = g.mons.firstOrNull { it?.const == "SPECIES_$base" } ?: continue
                 if (f.enabled && b.enabled && !f.abilities.contentEquals(b.abilities)) fails += "$mode $pool: $form ${f.abilities.toList()} vs $base ${b.abilities.toList()}"
             }
-            out.appendLine("$mode|$pool|${seen.size} abilities seen, $later of them 77-164, max ${seen.maxOrNull()}, hidden slots changed $hiddenChanged")
+            out.appendLine("$mode|$pool|${seen.size} abilities seen, max ${seen.maxOrNull()}")
         }
         File("build").mkdirs(); File("build/hns-natdex-abilities.txt").writeText(out.toString())
         assertTrue(fails.isEmpty(), fails.take(40).joinToString("\n") + "\n(${fails.size})\n" + out)

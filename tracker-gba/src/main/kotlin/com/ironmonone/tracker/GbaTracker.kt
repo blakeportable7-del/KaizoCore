@@ -42,7 +42,10 @@ data class TrainerLayout(
 class UnreadableBuild(val game: String, message: String) : IllegalArgumentException(message) {
     companion object {
         /** The Heart & Soul comfort build this tracker reads (HnsLayout), for the app's check that RomKind agrees. */
-        const val HNS_BUILD_CRC: Long = HnsLayout.BUILD_CRC
+        /** The Android app's Heart & Soul build (KaizoCore PC's is [HNS_PC_BUILD_CRC]; the tracker reads both). */
+        const val HNS_BUILD_CRC: Long = HnsLayout.APP_BUILD_CRC
+        /** KaizoCore PC's Heart & Soul build: the same game with the client's easter eggs (patch 0061). */
+        const val HNS_PC_BUILD_CRC: Long = HnsLayout.PC_BUILD_CRC
     }
 }
 
@@ -1035,7 +1038,7 @@ data class GameMap(
             // Heart & Soul keeps Emerald's game code (BPEE) and its own title. Only the KaizoCore comfort build's
             // layout is known; any other Heart & Soul is refused rather than read with these addresses.
             if (HnsMaps.isHns(memory)) {
-                if (!HnsMaps.isKaizoBuild(memory)) throw UnreadableBuild(HnsMaps.GAME, "A Heart & Soul ROM that is not this KaizoCore's build (%08X): its addresses would read the wrong memory.".format(HnsLayout.BUILD_CRC))
+                if (!HnsMaps.isKaizoBuild(memory)) throw UnreadableBuild(HnsMaps.GAME, "A Heart & Soul ROM that is not this KaizoCore's build (%08X): its addresses would read the wrong memory.".format(HnsLayout.APP_BUILD_CRC))
                 return HnsMaps.KAIZO
             }
             val magic = ptr(NATDEX_MAGIC_ADDR)
@@ -1660,6 +1663,9 @@ internal val AREA_LABELS = mapOf(
     "OLDROD" to "Old Rod",
 )
 
+/** The weather the moves feel: none while Cloud Nine or Air Lock is out. */
+val TrackerState.effectiveWeather: String? get() = if (weatherSuppressed) null else weather
+
 /** Gen 3 weather bitmasks as the tracker names them; unknown bits name nothing, so a wrong address shows nothing. */
 internal fun gen3WeatherName(w: Int): String? {
     if (w == 0 || w > 0xFF) return null   // unknown bits: show nothing
@@ -1865,6 +1871,12 @@ data class TrackerState(
      * not pinned. The carousel's battle line shows the viewed battler's.
      */
     val battleSummaries: List<String> = emptyList(),
+    /**
+     * Cloud Nine or Air Lock is on the field (HasWeatherEffect): the weather stays up but changes nothing. Both announce
+     * themselves with a pop-up on switch-in (docs/ABILITY-POPUPS.md), so reading the field's live abilities reveals
+     * nothing the game has not shown.
+     */
+    val weatherSuppressed: Boolean = false,
     /** Active battle weather ("RAIN", "SUN", "SANDSTORM", "HAIL"), null outside
      *  battle, when clear, or when the bits do not match a known mask. */
     val weather: String? = null,
@@ -2250,8 +2262,13 @@ class GbaTracker(
         else intArrayOf(b.u8(2), b.u8(3), b.u8(5), b.u8(6), b.u8(9).let { if (it >= 128) it - 256 else it }, b.u8(10), b.u8(4))
     }.takeIf { it[0] >= 0 }
 
-    /** A move row's category: the ROM's own byte where the build has one, else Gen 3's rule (the type decides). */
-    private fun categoryOf(d: IntArray): String = if (d.size > 6) when (d[6]) {
+    /**
+     * A move row's category: the ROM's own byte where the build has one, else Gen 3's rule (the type decides). A Heart &
+     * Soul build on Gen 3 rules ([HnsRules.categoryByType]) keeps its byte only for status moves, as the game does.
+     */
+    private fun categoryOf(d: IntArray): String = if (d.size > 6 && hns != null && HnsRules.categoryByType) {
+        if (d[6] == 2) "STA" else if (d[1] <= 8) "PHY" else "SPE"
+    } else if (d.size > 6) when (d[6]) {
         0 -> "PHY"
         1 -> "SPE"
         else -> "STA"
@@ -2489,7 +2506,7 @@ class GbaTracker(
                     }
                     val base = baseStats(mon.species)
                     val learn = learnset(mon.species)
-                    val header = LearnedMoves.of(learn.map { it.first }, mon.level)
+                    val header = LearnedMoves.of(learn.map { it.first }, mon.level, since = mon.metLevel.coerceIn(1, maxOf(1, mon.level)))
                     party += TrackedMon(
                         mon = mon,
                         speciesName = speciesName(mon.species),
@@ -2598,9 +2615,11 @@ class GbaTracker(
 
         if (inBattle && !ghost) runCatching { pollMoves() }
         // The abilities shown since the last read, before the opponent is read: a shown -ate or Normalize changes its moves now.
-        val reveals = drainReveals(live = inBattle && !ghost)
-        val revealedNow = if (inBattle) readAbilityTrigger() else null
-        for ((sp, name) in reveals + listOfNotNull(revealedNow)) noteShownAbility(sp, name)
+        val shown = drainReveals(live = inBattle && !ghost)
+        val shownNow = if (inBattle) readAbilityReveals().firstOrNull() else null
+        for (r in shown + listOfNotNull(shownNow)) noteBattlerShown(r.personality, r.name)
+        val reveals = shown.map { it.species to it.name }.distinct()
+        val revealedNow = shownNow?.let { it.species to it.name }
         val enemy = if (inBattle) { if (ghost) ghostEnemy() else readEnemy() } else null
         // The opponent's right-hand battler in a double battle (Combatants.RightOther). A ghost battle is a single one.
         val enemyRight = if (doubles && !ghost) readEnemy(3) else null
@@ -2654,6 +2673,7 @@ class GbaTracker(
             playerX = px,
             playerY = py,
             weather = if (inBattle) readWeather() else null,
+            weatherSuppressed = inBattle && weatherLocked(),
             weatherWord = if (inBattle && map.weather != 0L) memory.read(map.weather, 2).takeIf { it.size == 2 }?.u16(0)?.let { if (map.hns) hnsWeatherWord(it) else it } else null,
             battleSummaries = if (inBattle) runCatching { battleDetails()?.let { d -> (0..3).map { d.summary(it).trim() } } }.getOrNull() ?: emptyList() else emptyList(),
             badges = readBadges(),
@@ -3221,11 +3241,31 @@ class GbaTracker(
 
     // ---- Random Evos (RandomEvosScreen.lua, PokemonRevoData.lua) ----
 
+    /**
+     * Heart & Soul's pool for the odds ("NATDEX" or "VANILLA", HnsPool): the app sets it for a run, and the table is the
+     * one KaizoCore's own randomizer made over many seeds of that pool (hns/revos-<pool>.tsv, HnsRevosTable).
+     */
+    @Volatile var hnsEvoPool: String = "NATDEX"
+        set(v) { if (field != v) { field = v; hnsRevos = null } }
+    @Volatile private var hnsRevos: Map<Int, Map<Int, List<Pair<Int, Double>>>>? = null
+
+    /** How many seeds the Heart & Soul odds were counted over (the table's "# seeds N" line), or null. */
+    fun hnsEvoSeeds(): Int? = if (!map.hns) null else javaClass.getResourceAsStream("/hns/revos-${hnsEvoPool.lowercase()}.tsv")?.bufferedReader(Charsets.UTF_8)
+        ?.useLines { l -> l.firstOrNull { it.startsWith("# seeds ") }?.removePrefix("# seeds ")?.trim()?.toIntOrNull() }
+
+    /** Heart & Soul's own evolutions of [species] as the game holds them now (the run's), in the game's order. */
+    fun hnsEvoTargets(species: Int): List<Int> = hns?.evolutions(species)?.filter { it.method != 0 }?.map { it.target }.orEmpty()
+
     /** revos.tsv: base id -> (target id, or 0 for a single evolution) -> (evo id, percent) in the reference's order. */
-    private val revos: Map<Int, Map<Int, List<Pair<Int, Double>>>> by lazy {
+    private val revos: Map<Int, Map<Int, List<Pair<Int, Double>>>> get() =
+        if (map.hns) hnsRevos ?: readRevos("/hns/revos-${hnsEvoPool.lowercase()}.tsv").also { hnsRevos = it } else gen3Revos
+    private val gen3Revos: Map<Int, Map<Int, List<Pair<Int, Double>>>> by lazy {
+        readRevos(if (map.nameSet == "maxdex") "/gen3/revos-maxdex.tsv" else "/gen3/revos.tsv")
+    }
+
+    private fun readRevos(resource: String): Map<Int, Map<Int, List<Pair<Int, Double>>>> {
         val out = HashMap<Int, LinkedHashMap<Int, List<Pair<Int, Double>>>>()
-        if (map.hns) return@lazy out
-        javaClass.getResourceAsStream(if (map.nameSet == "maxdex") "/gen3/revos-maxdex.tsv" else "/gen3/revos.tsv")?.bufferedReader(Charsets.UTF_8)?.useLines { lines ->
+        javaClass.getResourceAsStream(resource)?.bufferedReader(Charsets.UTF_8)?.useLines { lines ->
             lines.forEach { line ->
                 if (line.startsWith("#")) return@forEach
                 val p = line.split('\t'); if (p.size < 3) return@forEach
@@ -3240,7 +3280,7 @@ class GbaTracker(
                 out.getOrPut(base) { LinkedHashMap() }[target] = list
             }
         }
-        out
+        return out
     }
 
     /** PokemonRevoData.getEvoOptions: the regular evolutions to pick between, or empty for a single one. */
@@ -3802,7 +3842,10 @@ class GbaTracker(
             map.hns -> {
                 val r = rw(HnsLayout.gSpecialVar_Result)
                 val v = saveBlock1()?.let { rw(it + HnsLayout.SaveBlock1.vars.offset + 2L * (HnsLayout.VAR_TEMP_2 - HnsLayout.VARS_START)) }
-                if ((r == 1 || r == 255) && v != null && v in hnsStarters().map { it.species }) v else null
+                // The caller already requires the lab and an empty party. VAR_RESULT 255 (or 1 after YES) while
+                // PLAYER_STARTER_SPECIES holds a real species is the yes/no. Requiring that species to also be one of
+                // the three ball words hid the card whenever one ball word did not read as a species.
+                if ((r == 1 || r == 255) && v != null && v != 0) v else null
             }
             map.confirmStarterTask != 0L && map.gTasks != 0L -> {
                 val func = rd(map.gTasks)
@@ -3952,6 +3995,9 @@ class GbaTracker(
     fun weight(species: Int): String? =
         hns?.let { return it.weight(species) } ?: speciesExtra[species]?.third?.takeIf { it.isNotBlank() }
 
+    /** The species' base experience yield; Heart & Soul only (null elsewhere). */
+    fun expYield(species: Int): Int? = hns?.expYield(species)
+
     /**
      * What hits this species hard, computed from the live types and the shared
      * chart - the reference's PokemonData.getEffectiveness.
@@ -4000,6 +4046,9 @@ class GbaTracker(
         }
         return text?.takeIf { it.isNotBlank() }
     }
+
+    /** The item's own description from Heart & Soul's item table; null on the other games, which carry no item text. */
+    fun itemDescription(itemId: Int): String? = hns?.itemDescription(itemId)
 
     /** A move name as a match key: case, spaces and punctuation ignored ("U-turn" and "U-Turn" are one move). */
     private fun moveKey(name: String): String = name.lowercase().filter { it in 'a'..'z' || it in '0'..'9' }
@@ -4781,7 +4830,7 @@ class GbaTracker(
         return m.copy(
             base = if (t1 == base.type1 && t2 == base.type2) base else base.copy(type1 = t1, type2 = t2),
             battleTypes = battlerTypes(battler, b),
-            moveRows = battleMoveRows(m.moveRows, battler, b, own = true, species = m.mon.species),
+            moveRows = battleMoveRows(m.moveRows, battler, b, own = true),
         )
     }
 
@@ -4806,35 +4855,67 @@ class GbaTracker(
     /** Heart & Soul's move types in battle (HnsMoveTypes); null on every other game. */
     private val hnsMoveTypes: HnsMoveTypes? by lazy { hns?.let { HnsMoveTypes(it, hnsRom!!) } }
 
-    /**
-     * Opposing abilities the game has shown this run, by species ([TrackerState.abilitiesRevealed]): only these may
-     * change what an opponent's moves show (BattleMoveTypes). Your own are always known.
-     */
-    private val shownAbilities = HashMap<Int, MutableSet<String>>()
+    /** One ability the game showed in a pop-up: the Pokemon's species, the ability's name, and which Pokemon it was. */
+    internal data class Reveal(val species: Int, val name: String, val personality: Long)
 
-    /** Records that the game showed [species] with ability [name]; the app may also hand in what its notes hold. */
-    fun noteShownAbility(species: Int, name: String) {
-        synchronized(shownAbilities) { shownAbilities.getOrPut(species) { HashSet() } += BattleMoveTypes.norm(name) }
+    /**
+     * The abilities each Pokemon has shown in THIS battle, by its personality value: only these may change what an
+     * opponent's moves show (BattleMoveTypes); your own are always known. The run's notes keep reveals by species
+     * (StatMarks, [TrackerState.abilitiesRevealed]), as the reference does, but a species has up to two abilities, and a
+     * Pixilate an earlier Mareep showed says nothing about this one: counting it would tell the player which ability this
+     * Mareep has before the game did (Blake, 2026-10-10: "only things revealed to the player in battle is revealed and
+     * reflected in changes on the tracker for enemies"). Emptied when a battle starts and when it ends ([clearBattleMoves]).
+     */
+    private val battleShown = HashMap<Long, MutableSet<String>>()
+
+    private fun noteBattlerShown(personality: Long, name: String) {
+        synchronized(battleShown) { battleShown.getOrPut(personality) { HashSet() } += BattleMoveTypes.norm(name) }
     }
 
-    private fun abilityShown(species: Int, abilityId: Int): Boolean = abilityId != 0 &&
-        synchronized(shownAbilities) { shownAbilities[species]?.contains(BattleMoveTypes.norm(abilityName(abilityId))) == true }
+    private fun battlerShown(personality: Long, abilityId: Int): Boolean = abilityId != 0 &&
+        synchronized(battleShown) { battleShown[personality]?.contains(BattleMoveTypes.norm(abilityName(abilityId))) == true }
+
+    /**
+     * A pop-up caught outside the tracker's own reads (KaizoCore PC's BizHawk script): [species] showed [abilityId]. The
+     * Pokemon is [personality] when the script read it, else the battler on the field now with that species and that live
+     * ability. It waits with the trigger tap's reveals for the next read, so a battle start noticed after it cannot wipe it.
+     */
+    fun notePopup(species: Int, abilityId: Int, personality: Long? = null) {
+        if (species <= 0 || abilityId <= 0) return
+        val pid = personality ?: battlerWith(species, abilityId) ?: return
+        val r = Reveal(species, abilityName(abilityId), pid)
+        synchronized(pendingReveals) { if (r !in tapReveals) tapReveals += r }
+    }
+
+    /** The personality value of the battler now on the field with [species] and live ability [abilityId], or null. */
+    private fun battlerWith(species: Int, abilityId: Int): Long? {
+        if (map.battleMons == 0L) return null
+        val n = memory.read(map.battlersCount, 1).let { if (it.isEmpty()) 2 else (it[0].toInt() and 0xFF).coerceIn(1, 4) }
+        for (i in 0 until n) {
+            val b = memory.read(map.battleMons + i.toLong() * map.battleMonSize, map.battleMonSize)
+            if (b.size < map.battleMonSize || b.u16(0) != species) continue
+            val live = if (map.hns) HnsLayout.BattlePokemon.ability.at(b) else if (map.abilitiesAreU16 || map.nameSet == "maxdex") b.u16(0x20) else b.u8(0x20)
+            if (live == abilityId) return b.u32(map.status2Offset - 8)
+        }
+        return null
+    }
 
     /**
      * [rows], the moves of [battler] (struct [b]), with the type and power the game gives each in battle where it changes
      * them (BattleMoveTypes): Heart & Soul and MaxDex. [own]: your side, whose ability and held item are known; an
-     * opponent's ability counts once shown ([abilityShown]) and its item never.
+     * opponent's ability counts once this Pokemon has shown it in this battle ([battlerShown]) and its item never.
      */
-    internal fun battleMoveRows(rows: List<MoveRow>, battler: Int, b: ByteArray, own: Boolean, species: Int): List<MoveRow> {
+    internal fun battleMoveRows(rows: List<MoveRow>, battler: Int, b: ByteArray, own: Boolean): List<MoveRow> {
+        val personality = if (b.size >= map.status2Offset - 4) b.u32(map.status2Offset - 8) else 0L
         hnsMoveTypes?.let { h ->
             val ability = HnsLayout.BattlePokemon.ability.at(b)
             val fs = memory.read(HnsLayout.gFieldStatuses, 4).let { if (it.size == 4) it.u32(0) else 0L }
-            return h.rows(rows, b, abilityKnown = own || abilityShown(species, ability), itemKnown = own, fieldStatuses = fs)
+            return h.rows(rows, b, abilityKnown = own || battlerShown(personality, ability), itemKnown = own, fieldStatuses = fs)
         }
         if (map.nameSet != "maxdex" || b.size < 0x32) return rows
         // MaxDex's struct: species 0, u16 ability 0x20, types 0x22, u16 held item 0x30 (its attack canceler's reads).
         val abilityId = b.u16(0x20)
-        val ability = if (own || abilityShown(species, abilityId)) abilityId else null
+        val ability = if (own || battlerShown(personality, abilityId)) abilityId else null
         val holdEffect = if (!own) null else b.u16(0x30).takeIf { it != 0 }?.let { item ->
             memory.read(map.itemNames + item.toLong() * map.itemStride + 18, 1).takeIf { it.size == 1 }?.u8(0)
         }
@@ -4940,7 +5021,7 @@ class GbaTracker(
             // From the enemy PARTY slot, not from gBattleMons. See enemyPartyStatus.
             statusCondition = enemyPartyStatus(species, b.u8(map.battleMonHp + 2), b.u16(map.battleMonHp))
                 ?.let(::statusName) ?: "",
-        ).let { e -> e.copy(battleTypes = battlerTypes(battler, b), moveRows = battleMoveRows(e.moveRows, battler, b, own = false, species = species)) }
+        ).let { e -> e.copy(battleTypes = battlerTypes(battler, b), moveRows = battleMoveRows(e.moveRows, battler, b, own = false)) }
     }
 
     /**
@@ -5024,7 +5105,8 @@ class GbaTracker(
         // and BattleScript_AbilityPopUpOverwriteThenNormal (data/battle_scripts_1.s; Cmd_showabilitypopup is the one
         // CreateAbilityPopUp outside the interface code). Any byte of them is a pop-up on screen for gBattlerAbility.
         if (map.hns) {
-            for (r in listOf(HnsLayout.BattleScript_AbilityPopUp, HnsLayout.BattleScript_AbilityPopUpOverwriteThenNormal))
+            for (r in listOf(HnsLayout.BattleScript_AbilityPopUp, HnsLayout.BattleScript_AbilityPopUpOverwriteThenNormal,
+                HnsLayout.BattleScript_AbilityPopUpScripting, HnsLayout.BattleScript_AbilityPopUpTarget))
                 for (a in r) out.getOrPut(a) { mutableListOf() }.add(Triple("ABILITY", emptySet(), ""))
             return@lazy out
         }
@@ -5113,13 +5195,13 @@ class GbaTracker(
      * the emulator has the trigger tap ([triggerTap]), every frame is looked at
      * and these polls only collect what it caught (drainTap).
      */
-    private val pendingReveals = ArrayList<Pair<Int, String>>()
+    private val pendingReveals = ArrayList<Reveal>()
 
     fun pollAbilityTrigger() {
         // The move tracking wants the same fast polls: a move action can be over in a quarter second at 4x.
         if (inBattleScreen && battleDataReady) runCatching { pollMoves() }
         synchronized(pendingReveals) { runCatching { drainTap() } }
-        val r = runCatching { readAbilityTriggers() }.getOrNull() ?: return
+        val r = runCatching { readAbilityReveals() }.getOrNull() ?: return
         synchronized(pendingReveals) {
             // The same message stays up across several polls, and one message can reveal two: each once.
             for (p in r) if (p !in pendingReveals) pendingReveals += p
@@ -5188,12 +5270,12 @@ class GbaTracker(
                 val o = view.read(map.battleOutcome, 1)
                 if (o.size == 1 && o[0].toInt() != 0) continue
             }
-            for (p in readAbilityTriggers(view)) if (p !in tapReveals) tapReveals += p
+            for (p in readAbilityReveals(view)) if (p !in tapReveals) tapReveals += p
         }
     }
 
     /** The tap's reveals waiting for the next read; [pendingReveals]' lock guards both. */
-    private val tapReveals = ArrayList<Pair<Int, String>>()
+    private val tapReveals = ArrayList<Reveal>()
 
     /**
      * One poll of the move tracking (EnemyMoveWatch, Battle.lua:376-445), from the fast battle poll and from read(): a
@@ -5239,6 +5321,7 @@ class GbaTracker(
 
     private fun clearBattleMoves() {
         synchronized(battleMoves) { battleMoves.clear() }
+        synchronized(battleShown) { battleShown.clear() }
         moveWatch.reset()
     }
 
@@ -5268,10 +5351,10 @@ class GbaTracker(
      * The reveals since the last read. What the tap caught was checked against its own frame (drainTap) and stands; the
      * live check, and the fast polls' reveals, only in an active battle that is not a ghost one ([live]), as before.
      */
-    private fun drainReveals(live: Boolean): List<Pair<Int, String>> = synchronized(pendingReveals) {
+    private fun drainReveals(live: Boolean): List<Reveal> = synchronized(pendingReveals) {
         if (!live) pendingReveals.clear()
         runCatching { drainTap() }
-        if (live) for (p in readAbilityTriggers()) if (p !in pendingReveals) pendingReveals += p
+        if (live) for (p in readAbilityReveals()) if (p !in pendingReveals) pendingReveals += p
         for (p in tapReveals) if (p !in pendingReveals) pendingReveals += p
         tapReveals.clear()
         val out = pendingReveals.toList(); pendingReveals.clear(); out
@@ -5306,6 +5389,19 @@ class GbaTracker(
         return base.abilityFor(slot)
     }
 
+    /** Cloud Nine (13) or Air Lock (76) on a battler on the field, still standing: its live ability, as the game checks it. */
+    private fun weatherLocked(): Boolean {
+        if (map.battleMons == 0L) return false
+        val n = memory.read(map.battlersCount, 1).let { if (it.isEmpty()) 2 else (it[0].toInt() and 0xFF).coerceIn(1, 4) }
+        for (i in 0 until n) {
+            val b = memory.read(map.battleMons + i.toLong() * map.battleMonSize, map.battleMonSize)
+            if (b.size < map.battleMonSize || b.u16(0) == 0 || b.u16(map.battleMonHp) == 0) continue
+            val ability = if (map.hns) HnsLayout.BattlePokemon.ability.at(b) else if (map.abilitiesAreU16 || map.nameSet == "maxdex") b.u16(0x20) else b.u8(0x20)
+            if (ability == 13 || ability == 76) return true
+        }
+        return false
+    }
+
     /** The first of [readAbilityTriggers], or null. */
     internal fun readAbilityTrigger(): Pair<Int, String>? = readAbilityTriggers().firstOrNull()
 
@@ -5319,7 +5415,11 @@ class GbaTracker(
      * [mem] is the memory the check reads: the live game, or one frame the trigger tap caught (TapPlan.view), which is
      * how a message too short for any poll at 8x or 16x is still checked exactly as the reference would have.
      */
-    internal fun readAbilityTriggers(mem: MemoryReader = memory): List<Pair<Int, String>> {
+    internal fun readAbilityTriggers(mem: MemoryReader = memory): List<Pair<Int, String>> =
+        readAbilityReveals(mem).map { it.species to it.name }.distinct()
+
+    /** [readAbilityTriggers] with the Pokemon each reveal belongs to (its personality value), for the per-battle fence. */
+    internal fun readAbilityReveals(mem: MemoryReader = memory): List<Reveal> {
         if (map.scriptCurrInstr == 0L || abilityScripts.isEmpty()) return emptyList()
         // Battle.lua:505: checkAbilitiesToTrack is skipped in a ghost battle.
         if (isGhostBattle(mem)) return emptyList()
@@ -5339,6 +5439,12 @@ class GbaTracker(
         val target = battlerByte(map.battlerTarget)
 
         fun abilityOf(i: Int): Int {
+            // Heart & Soul stores the ability the popup is showing on the battle mon (a u16). The species table's
+            // slot is the unrandomized ability, so a Drizzle that the randomizer rolled was never the name recorded.
+            if (map.hns) {
+                val b = mem.read(map.battleMons + i.toLong() * map.battleMonSize, map.battleMonSize)
+                return if (b.size < 34) 0 else HnsLayout.BattlePokemon.ability.at(b)
+            }
             // Nat. Dex: abilities are u16 there and the struct keeps its types at
             // 0x21 (the ROM's own offsetBattlePokemonTypes), so byte 0x20 cannot be
             // the ability; the tracker read garbage there and no enemy ability was
@@ -5356,10 +5462,11 @@ class GbaTracker(
             val b = mem.read(map.battleMons + i * map.battleMonSize.toLong(), 2)
             return if (b.size < 2) 0 else b.u16(0)
         }
-        val out = LinkedHashSet<Pair<Int, String>>()
+        val out = LinkedHashSet<Reveal>()
         fun reveal(i: Int) {
             val sp = speciesOf(i); val ab = abilityOf(i)
-            if (sp != 0 && ab != 0) out += sp to abilityName(ab)
+            val pid = mem.read(map.battleMons + i.toLong() * map.battleMonSize + map.status2Offset - 8, 4).let { if (it.size == 4) it.u32(0) else 0L }
+            if (sp != 0 && ab != 0) out += Reveal(sp, abilityName(ab), pid)
         }
         // Trace: the game writes the traced ability into the holder's live byte before it runs this script (CFRU
         // ability_battle_effects.c:760-766, as pokeemerald's ABILITYEFFECT_TRACE), so that byte never read Trace here and

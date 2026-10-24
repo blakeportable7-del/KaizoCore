@@ -366,3 +366,13 @@ full findings, the bug record and the plan are in docs/research/roguemon.md; the
 - The rest of the 2026-09-29 repo list (docs/research/repos-to-add.md: Platinum GIGA patch, IronMON HGSS, Diamond
   IronMON, the Black intro patch, the patch editor, Kelsey Young's maps, Hackdex, Following Platinum): not re-checked
   against rc32.
+
+## Tabled 2026-10-07
+
+- **Heart & Soul game updates without an app release** (Blake: "need a quicker way to change the game and upload the
+  update to the site, like small dialogue fixes"; tabled the same day). The app checks `/kaizocore/hns/latest.json`,
+  downloads the new comfort patch and its tracker layout (about 2 MB), checks SHA-256 and a signature only Blake's key
+  makes, builds the game from the player's own 2.0.6; new runs use it, a run in progress gets Move this run. One
+  command (`tools/hns_publish.py`) builds, runs layout_check and the HnS tests, signs, uploads, deploys and checks live.
+  App changes still take a normal release. About 3 to 4 days, including one app release that teaches the app to take
+  game updates. A smaller first step: one command for today's full release (about half a day).

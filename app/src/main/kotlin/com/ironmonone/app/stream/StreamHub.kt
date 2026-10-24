@@ -39,6 +39,20 @@ object StreamHub {
     @Volatile var page: String = "<p>Tracker page missing from the build.</p>"
 
     /**
+     * Whether the phone has the randomizer log open (LogViewer, DsLogViewer). Once the run is over the stream's run-over
+     * view follows it (VILLAIN, 10/10: after a game over the stream showed only the cause and place): the Randomizer
+     * data tab while the log is open on the phone, the final party when it closes. The state JSON carries it
+     * (StreamSnapshot "logOpen"), and a change re-sends the state at once rather than waiting for the tracker.
+     */
+    @Volatile var logOpen: Boolean = false
+        set(v) {
+            if (field == v) return
+            field = v
+            val was = "\"logOpen\":${!v}"
+            if (was in state) { state = state.replace(was, "\"logOpen\":$v"); version++ }
+        }
+
+    /**
      * The game over card's data (/gameover.json and the `gameover` event): StreamSnapshot.gameOver's JSON for the run that
      * ended, as the game-over popup has it, or "null" while the run goes on. StreamFeed sets it from the latch; [newRun]
      * clears it the moment a new run goes in, Play open or not.

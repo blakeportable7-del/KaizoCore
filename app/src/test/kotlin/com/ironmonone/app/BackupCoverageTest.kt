@@ -25,6 +25,7 @@ class BackupCoverageTest {
         "prep/prepared" to "prepared ROMs, which are the player's own dumps",
         "prep/library" to "library ROMs; only prep/library/notes/ and session.txt are theirs to keep",
         "prep/next" to "the next run, randomized ahead (NextRun): a ROM of the player's game, made again after a restore",
+        "prep/challenge" to "Black 2 and White 2 Challenge Mode copies of a settings file (ExtraPasses.forRun), made again from the file each run",
         "prep/playing.txt" to "which game this phone's Play screen had open when the app died (CrashResume); on another phone it would resume a game never left there",
     )
 

@@ -1,0 +1,16 @@
+# Poison Point and Effect Spore when you touch them (your card picks up the status), and Shed Skin clearing a burn.
+lead Pikachu lv 30 moves Quick Attack, Thunderbolt, Iron Tail, Growl
+foe Nidoran♂ lv 28 moves Peck, Leer, Horn Attack, Double Kick
+wait 0.6
+foe ability Poison Point
+view own
+wait 1.2
+own status none
+foe Parasect lv 30 moves Slash, Spore, Leech Life, Growth
+wait 0.6
+foe ability Effect Spore
+foe Seviper lv 31 moves Poison Fang, Glare, Bite, Swagger
+foe status BRN
+wait 1.0
+foe ability Shed Skin
+wait 1.2

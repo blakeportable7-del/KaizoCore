@@ -1,0 +1,21 @@
+# Abilities and items in the hit chance, counting only what the game shows. Quilava holds a Wide Lens: Fire Blast's
+# 85 reads 93. Sandstorm starts and nothing changes: Sandshrew may well have Sand Veil, but Sand Veil never shows a
+# pop-up, so the card cannot know. Quilava's Frisk finds the Bright Powder, and from then on it counts. Sand Attack
+# drops Quilava's accuracy, Dire Hit raises its crit odds, and Lock-On makes every move a sure hit.
+lead Quilava lv 30 ability Frisk item Wide Lens moves Fire Blast, Thunder Punch, Quick Attack, Swift
+foe Sandshrew lv 28 moves Sand Attack, Scratch, Rollout, Defense Curl
+view own
+wait 0.8
+sand
+wait 0.8
+foe item Bright Powder by Frisk
+wait 0.8
+own stage ACC -1
+wait 0.8
+own use Dire Hit
+wait 0.6
+own lockon
+wait 1.2
+own lockon off
+sand off
+wait 1.5

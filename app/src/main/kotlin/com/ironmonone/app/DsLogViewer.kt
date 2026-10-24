@@ -113,6 +113,8 @@ private class DsTabState {
  */
 @Composable
 internal fun DsLogViewer(file: File, tracker: NdsTracker, party: List<NdsTrackedMon>?, onClose: () -> Unit) {
+    // The stream follows the log while it is open, once the run is over (StreamHub.logOpen).
+    androidx.compose.runtime.DisposableEffect(Unit) { com.ironmonone.app.stream.StreamHub.logOpen = true; onDispose { com.ironmonone.app.stream.StreamHub.logOpen = false } }
     // The log and everything built from it, read off the main thread (rc32 audit P2 #27): a 2.4 MB Black 2 log was
     // parsed in the first composition, and the screen froze after the tap. Null until it lands.
     val loaded by produceState<DsLogData?>(null, file, tracker) {

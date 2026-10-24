@@ -61,7 +61,7 @@ class WalkingPalsDarkusTest {
         for ((id, key) in listOf(1013 to "988", 1030 to "1005", 1045 to "1020", 1042 to "1017", 1234 to "1024-terastal", 1152 to "713-hisui", 1041 to "1016")) {
             assertEquals(Pal(Pack.NATIONAL, key), ix.find(id, Dex.NAT_DEX), "Nat. Dex $id")
         }
-        assertEquals(Pal(Pack.DARKUS, "931"), ix.find(1237, Dex.NAT_DEX), "White Squawkabilly walks as Squawkabilly")
+        assertEquals(Pal(Pack.OW, "931-white"), ix.find(1237, Dex.NAT_DEX), "White Squawkabilly walks on its own sheet")
     }
 
     @Test

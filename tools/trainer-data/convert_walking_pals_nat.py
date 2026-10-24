@@ -432,8 +432,9 @@ def plan(col, names, darkus=None, skipped=None):
         targets.setdefault(t.key, t)
         rows[i] = (nat, fk, "walkingpals-nat", t.key, note)
     rows, unneeded = fill_gaps(rows, names, darkus_sources() if darkus is None else darkus)
+    rows, expo_unneeded = fill_gaps(rows, names, darkus_sources(EXPO_DIR), EXPO_SET, EXPO_NOTE)
     if skipped is not None:
-        skipped += unneeded
+        skipped += unneeded + expo_unneeded
     return targets, stand_in(rows, names, by_name)
 
 
@@ -483,6 +484,11 @@ def gen3_internal(nat, names, by_name):
 DARKUS_DIR = REPO / "tools/trainer-data/sources/darkusshadow"
 DARKUS_SET = "walkingpals-darkus"
 DARKUS_NOTE = "no Sprite Collab sheet; DarkusShadow's overworld sprite fills the gap until one is drawn"
+# The Generation 9 Resource Pack's follower sheets (eeveeexpo.com/resources/1101, v3.3.8), the same 4 x 4 layout,
+# for the species still empty after Sprite Collab and DarkusShadow. Blake, 2026-10-08: "add them to this project".
+EXPO_DIR = REPO / "tools/trainer-data/sources/gen9pack"
+EXPO_SET = "walkingpals-expo"
+EXPO_NOTE = "no Sprite Collab sheet; the Generation 9 Resource Pack overworld fills the gap until one is drawn"
 # This set's eight facings top to bottom (down, down-right, right, up-right, up, up-left, left, down-left), each from one
 # of his four rows (down, left, right, up). He draws no diagonal, so the side view stands in for each.
 DARKUS_ROWS = (0, 2, 2, 2, 3, 1, 1, 1)
@@ -517,11 +523,10 @@ def darkus_sources(folder=DARKUS_DIR):
     return out
 
 
-def fill_gaps(rows, names, sources):
-    """DARKUSSHADOW: a Nat. Dex id whose row has no sheet (a species nobody has drawn, or a Mega or form whose slot is
-    empty) takes the DarkusShadow sheet drawn for it. A row with a Sprite Collab sheet of its own keeps it, so a sheet
-    drawn there later takes over on the next run with no change here; such a source comes back in the second list, with
-    the sheet that won. It runs before stand_in, so a form with no sheet of either kind walks as its base species."""
+def fill_gaps(rows, names, sources, kit_name=DARKUS_SET, note=DARKUS_NOTE):
+    """A Nat. Dex id whose row has no sheet takes [sources] (DarkusShadow, then the Generation 9 pack). A row that
+    already has a sheet keeps it, so a Sprite Collab sheet drawn later takes over on the next run; that source comes
+    back in the second list. It runs before stand_in, so a form with no sheet of any kind walks as its base species."""
     unneeded = []
     for s in sources:
         r = rows.get(s.natdex)
@@ -535,7 +540,7 @@ def fill_gaps(rows, names, sources):
         if kit:
             unneeded.append((s, "%s/%s" % (kit, key)))
             continue
-        rows[s.natdex] = (nat, form, DARKUS_SET, s.key, DARKUS_NOTE)
+        rows[s.natdex] = (nat, form, kit_name, s.key, note)
     return rows, unneeded
 
 
@@ -563,6 +568,28 @@ def darkus_cut(native, f, cols):
 def darkus_sheets(data, name):
     """DARKUSSHADOW for one sheet: (frame size, offset x, y, {anim: (sheet, durations)})."""
     native, f = darkus_pixels(data, name)
+    return cut_follower(native, f, name)
+
+
+def expo_native(data, name):
+    """A Generation 9 pack follower: DarkusShadow's exact doubling when the sheet is one, otherwise the pixels as
+    drawn on a 4 x 4 grid (Falinks is 320, and it is not an exact doubling, so it is not resampled)."""
+    a = np.array(Image.open(io.BytesIO(data)).convert("RGBA"))
+    if not np.isin(a[..., 3], (0, 255)).all():
+        sys.exit("%s: partly clear pixels" % name)
+    a[a[..., 3] == 0] = 0
+    h, w = a.shape[:2]
+    if w == h and w % 8 == 0:
+        n = a[0::2, 0::2]
+        if (n.repeat(2, 0).repeat(2, 1) == a).all():
+            return n, n.shape[0] // 4
+    if w == h and w % 4 == 0:
+        return a, w // 4
+    sys.exit("%s: %d x %d is not a 4 x 4 follower sheet" % (name, w, h))
+
+
+def cut_follower(native, f, name):
+    """Four-direction follower to this set's eight facings. (frame size, offset x, y, {anim: (sheet, durations)})."""
     out = {}
     for anim, cols, length in (("idle", DARKUS_IDLE, DARKUS_IDLE_FRAMES), ("walk", DARKUS_WALK, DARKUS_WALK_FRAMES)):
         sheet = darkus_cut(native, f, cols)
@@ -573,6 +600,11 @@ def darkus_sheets(data, name):
         out[anim] = (sheet, [length] * len(cols))
     x, y = place("idle", out["idle"][0], f, f, len(DARKUS_IDLE))
     return f, x, y, out
+
+
+def expo_sheets(data, name):
+    native, f = expo_native(data, name)
+    return cut_follower(native, f, name)
 
 
 def convert_darkus(sources, keys, out):
@@ -589,6 +621,32 @@ def convert_darkus(sources, keys, out):
         if hashlib.sha256(data).hexdigest() != s.sha256:
             sys.exit("sources.tsv: %s is not the file fetched (sha256 differs)" % s.file)
         f, x, y, sheets = darkus_sheets(data, s.file)
+        for anim, (sheet, durs) in sheets.items():
+            png = encode_png(sheet)
+            if not same_pixels(sheet, np.array(Image.open(io.BytesIO(png)).convert("RGBA"))):
+                sys.exit("re-encoding changed %s %s" % (key, anim))
+            (out / anim).mkdir(parents=True, exist_ok=True)
+            (out / anim / (key + ".png")).write_bytes(png)
+            nbytes += len(png)
+            table.append([key, anim, f, f, x, y, ",".join(map(str, durs))])
+        credits.append([key, s.sprite(), s.post, s.artists, s.terms])
+    return table, credits, nbytes
+
+
+def convert_expo(sources, keys, out):
+    """The Generation 9 pack's followers, cut like DarkusShadow's, into [out]. A sheet that is not an exact doubling
+    (Falinks) keeps the pixels it was drawn at."""
+    for anim in ANIMS:
+        for p in (out / anim).glob("*.png") if (out / anim).is_dir() else []:
+            p.unlink()
+    by_key = {s.key: s for s in sources}
+    table, credits, nbytes = [], [], 0
+    for key in sorted(keys, key=lambda k: (int(k.split("-")[0]), k)):
+        s = by_key[key]
+        data = (EXPO_DIR / s.file).read_bytes()
+        if hashlib.sha256(data).hexdigest() != s.sha256:
+            sys.exit("sources.tsv: %s is not the file fetched (sha256 differs)" % s.file)
+        f, x, y, sheets = expo_sheets(data, s.file)
         for anim, (sheet, durs) in sheets.items():
             png = encode_png(sheet)
             if not same_pixels(sheet, np.array(Image.open(io.BytesIO(png)).convert("RGBA"))):
@@ -1068,7 +1126,8 @@ def main():
         "The Nat. Dex Extension's species ids 412-1283 (tracker-gba/src/main/resources/natdex/species.tsv) to a",
         "Walking Pals sheet. set walkingpals-nat: key is <national>[-<form>] in this folder; set walkingpals: key is",
         "the Gen 3 internal id in walkingpals/; set walkingpals-darkus: key is <national>[-<form>] in walkingpals-darkus/,",
-        "DarkusShadow's overworld sprites, only where Sprite Collab has no sheet of its own. Blank set and key: no sheet,",
+        "DarkusShadow's overworld sprites; set walkingpals-expo: the Generation 9 Resource Pack's follower sheets.",
+        "Both fill a row only where Sprite Collab has no sheet of its own. Blank set and key: no sheet,",
         "and the note says why. A Mega or form with no sheet of its own has its base species' set and key until its own",
         "is drawn, and the note says so. Ids 1-411 are Gen 3's own internal ids and walkingpals/ already covers them.",
     ], map_rows)
@@ -1105,8 +1164,31 @@ def main():
     shinies.report("walkingpals-nat")
     print("%s: %d sheets for %d keys, %.2f MB, from %d sources" % (
         DARKUS_SET, len(dtable), len(dcredits), dbytes / 1e6, len(darkus)))
+    eout = args.assets / EXPO_SET
+    etable, ecredits, ebytes = convert_expo(darkus_sources(EXPO_DIR), {r[3] for r in rows.values() if r[2] == EXPO_SET}, eout)
+    esrc = "the Generation 9 Resource Pack v3.3.8 (eeveeexpo.com/resources/1101), tools/trainer-data/sources/gen9pack"
+    write_tsv(eout / (EXPO_SET + ".tsv"), ["key", "animation", "w", "h", "x", "y", "durations"], [
+        "Walking Pals from " + esrc + ",",
+        "only where PMD Sprite Collab has no sheet of its own (natdex-map.tsv). Keyed as walkingpals-nat is.",
+        "Written by tools/trainer-data/convert_walking_pals_nat.py: a doubled sheet at its own pixels, Falinks at the",
+        "pixels it was drawn; the eight facings, each diagonal as the side view; walk the four frames from the first",
+        "step, idle the two grounded poses. No sleep or faint: the app shows idle.",
+        "Credit the artists (credits.tsv). x,y: offset from a 32x32 icon's corner; durations in game frames (60 a second).",
+    ], etable)
+    write_tsv(eout / "credits.tsv", ["key", "sprite", "post", "artists", "terms"], [
+        "Who drew each sheet in this folder, from " + esrc + "/sources.tsv.",
+        "The pack's page asks that the artists be credited. Caruban compiles the pack.",
+    ], ecredits)
+    write_tsv(eout / "shiny-colors.tsv", ["key", "animations", "colors"], [
+        "No shinies ship in this folder. A shiny walks in plain colors. The same columns as walkingpals-nat/shiny-colors.tsv.",
+    ], [])
+    write_tsv(eout / "shiny.tsv", ["key", "animation", "w", "h", "x", "y", "durations"], [
+        "No shinies ship in this folder (see shiny-colors.tsv). The same columns as walkingpals-expo.tsv.",
+    ], [])
     for s, won in unneeded:
         print("  not needed, Sprite Collab has it: %s (Nat. Dex %d %s, %s)" % (s.file, s.natdex, s.name, won))
+    print("%s: %d sheets for %d keys, %.2f MB, from %d sources" % (
+        EXPO_SET, len(etable), len(ecredits), ebytes / 1e6, len(darkus_sources(EXPO_DIR))))
     unmapped = [r for r in map_rows if not r[5]]
     standing = [r for r in map_rows if STANDS_IN in r[6]]
     print("nat. dex ids 412-1283: %d mapped (%d of them a Mega or form walking as its base species), %d without a sheet" % (

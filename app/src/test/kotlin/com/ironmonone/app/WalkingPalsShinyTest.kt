@@ -33,7 +33,9 @@ class WalkingPalsShinyTest {
         assertEquals(Pal(Pack.GEN3, "25"), ix.find(25, Dex.GEN3), "the lookup as it was")
         // Sprite Collab has no shiny Karrablast: the plain one, silently.
         assertEquals(Pal(Pack.NATIONAL, "588"), ix.find(588, Dex.NATIONAL, Look(shiny = true)))
-        assertNull(ix.find(539, Dex.NAT_DEX, Look(shiny = true)), "no sheet at all is still none")
+        // Simisear's Generation 9 Resource Pack follower ships no shiny: the plain one, silently.
+        assertEquals(Pal(Pack.EXPO, "514"), ix.find(539, Dex.NAT_DEX, Look(shiny = true)))
+        assertNull(ix.find(253, Dex.NAT_DEX, Look(shiny = true)), "no sheet at all (Gen 3's unused slot 253) is still none")
         // The sheets a shiny animates by: its own rows where it has sheets of its own.
         val megaX = Pal(Pack.NATIONAL, "6-mega-x")
         assertEquals(56, ix.sheets(megaX)!!.getValue(Anim.IDLE).h)

@@ -1,0 +1,17 @@
+# The card growing up. Outside battle: a Protein (Attack reacts), a Rare Candy (the candy, then the level-up), a TM
+# taught over Ember ("NEW MOVE!"). Then in battle: a level-up that learns a move at that level.
+lead Quilava lv 49 moves Ember, Quick Attack, Smokescreen, Swift
+wait 0.8
+own use Protein
+wait 0.6
+own use Carbos
+wait 0.6
+own use Rare Candy
+wait 0.6
+own learn Flamethrower over Ember
+wait 0.8
+foe Graveler lv 45 moves Rock Throw, Magnitude, Defense Curl, Self-Destruct
+view own
+wait 0.4
+own learn Flame Wheel over Smokescreen levelup
+wait 1.2

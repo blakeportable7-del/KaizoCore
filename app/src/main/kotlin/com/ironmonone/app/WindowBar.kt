@@ -163,7 +163,7 @@ internal fun publishToWindowBar(parts: WindowBarParts): Boolean {
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun WindowBarTextSlot(segs: List<BarSegment>, onTap: (() -> Unit)?, tapLabel: String?, modifier: Modifier = Modifier) {
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val context = LocalPcCtx.current
     val still = remember(context) { !TrackerMotion.animationsOn(context) }
     val style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.Medium, shadow = LocalTrackerTextShadow.current)
     val measurer = rememberTextMeasurer()

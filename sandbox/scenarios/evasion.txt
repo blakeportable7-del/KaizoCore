@@ -1,0 +1,13 @@
+# Evasion going up: the opponent uses Double Team twice, then Minimize; then your own lead uses Double Team.
+lead Quilava lv 24 moves Ember, Quick Attack, Smokescreen, Swift
+foe Ninjask lv 25 moves Double Team, Minimize, Fury Cutter, Sand Attack
+wait 0.8
+foe stage EVA +1
+wait 0.6
+foe stage EVA +1
+wait 0.6
+foe stage EVA +2
+wait 1.2
+view own
+own stage EVA +1
+wait 1.5

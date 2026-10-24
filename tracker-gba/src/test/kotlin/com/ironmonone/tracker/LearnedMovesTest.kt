@@ -35,6 +35,18 @@ class LearnedMovesTest {
     }
 
     @Test
+    fun `your own Lv5 starter opens at 0 of the moves still ahead and ends at all of them`() {
+        // Bulbasaur's Growl at Lv4 is behind a Lv5 starter (met at 5): 0/9, not the reference's 1/10.
+        val rom = listOf(1, 4, 7, 10, 15, 15, 20, 25, 32, 39, 46)
+        assertEquals(LearnedMoves.Header(0, 9, 7), LearnedMoves.of(rom, 5, since = 5))
+        assertEquals(LearnedMoves.Header(1, 9, 10), LearnedMoves.of(rom, 7, since = 5))
+        // Rare Candies to 50: everything ahead of Lv5 learned.
+        assertEquals(LearnedMoves.Header(9, 9, null), LearnedMoves.of(rom, 50, since = 5))
+        // A Pokemon caught at 12 counts from 12.
+        assertEquals(LearnedMoves.Header(0, 7, 15), LearnedMoves.of(rom, 12, since = 12))
+    }
+
+    @Test
     fun `a Pokemon with only starting moves learns nothing`() {
         assertEquals(LearnedMoves.Header(0, 0, null), LearnedMoves.of(listOf(1, 1), 30))
     }

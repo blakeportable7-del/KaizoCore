@@ -193,4 +193,4 @@ In KaizoCore, the "Official 60% levels" switch on RUN runs this first pass for y
 - game-specific rules and settings gist by UTDZac: https://gist.github.com/UTDZac/a147c497424dfbd537d8c4b0c22b5621 (last changed 2026-07-05)
 - Chaos Kaizo IronMON rules by UTDZac: https://gist.github.com/UTDZac/c8c3a84553840f8eabb063be80a33ee7 (last changed 2023-09-20)
 
-Generated 2026-10-01 by tools/rules/build_rules.py. Rulesets get revised; if this reads behind a source, regenerate.
+Generated 2026-10-07 by tools/rules/build_rules.py. Rulesets get revised; if this reads behind a source, regenerate.

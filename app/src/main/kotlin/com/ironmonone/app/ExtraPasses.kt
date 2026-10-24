@@ -40,6 +40,7 @@ object ExtraPasses {
     /** The keys a choice is stored under. */
     const val PRE_60 = "prepass"
     const val PART_2 = "part2"
+    const val CHALLENGE = "challenge"
 
     /**
      * The pre-pass [kind] takes, or null where none does: never Nat. Dex (the
@@ -100,6 +101,39 @@ object ExtraPasses {
         prePassName(kind) != null &&
             (choices.get(kind.id, settingsName, PRE_60) ?: prePassByDefault(kind, settingsName, bytes, bundled))
 
+    /**
+     * Black 2 and White 2's Challenge Mode (the site's idea form, 2026-10-20; Blake, 2026-10-23: it counts as the official
+     * preset, not custom): the randomizer's own "force Challenge Mode" tweak (engine-zx MiscTweak.FORCE_CHALLENGE_MODE,
+     * which Gen5RomHandler offers on Black 2 and White 2 only). A switch per game and settings file, off unless chosen.
+     */
+    fun takesChallenge(kind: RomKind): Boolean = kind.family == "B2W2"
+
+    fun challengeOn(kind: RomKind, settingsName: String, choices: Choices): Boolean =
+        takesChallenge(kind) && choices.get(kind.id, settingsName, CHALLENGE) == true
+
+    /** Where the copies a Challenge Mode run is made from lie, each under its file's own name. */
+    private const val CHALLENGE_DIR = "prep/challenge"
+
+    /** Whether [f] is such a copy. */
+    fun isChallengeCopy(f: File): Boolean = f.parentFile?.name == "challenge" && f.parentFile?.parentFile?.name == "prep"
+
+    /**
+     * [settings] as the run is made from it: with Challenge Mode switched on for [kind], a copy under the same name with
+     * the tweak set, so the run's name, its attempt count and its rules are its file's; else [settings] itself. The copy
+     * is made again every time, so it always follows the file. [on] is a run code's own choice (R4).
+     */
+    fun forRun(store: PrepStore, kind: RomKind, settings: File, on: Boolean? = null): File {
+        if (isChallengeCopy(settings)) return settings
+        if (!(on ?: challengeOn(kind, settings.name, Choices(File(store.files, "prep/extra-passes.txt"))))) return settings
+        val s = java.io.FileInputStream(settings).use { com.dabomstew.pkrandomzx.Settings.read(it) }
+        s.currentMiscTweaks = s.currentMiscTweaks or com.dabomstew.pkrandomzx.MiscTweak.FORCE_CHALLENGE_MODE.value
+        val out = File(File(store.files, CHALLENGE_DIR).apply { mkdirs() }, settings.name)
+        val tmp = File(out.parentFile, out.name + ".tmp")
+        java.io.FileOutputStream(tmp).use { s.write(it) }
+        if (!tmp.renameTo(out)) { tmp.copyTo(out, overwrite = true); tmp.delete() }
+        return out
+    }
+
     /** Whether [kind] is Red, Blue or Yellow, the games PART 2 is for. */
     fun takesPart2(kind: RomKind): Boolean = kind.generation == Generation.GB1
 
@@ -114,7 +148,8 @@ object ExtraPasses {
      * Ultimate with the 60% levels on read as plain official runs while their levels were about x1.59 (rc32 audit P2 #20).
      * Null when it played as its rules have it, and for a custom file, which says "(custom)" instead (CustomRuns).
      */
-    fun variant(kind: RomKind, settingsName: String, bytes: ByteArray?, bundled: Map<String, ByteArray>, prePassTaken: Boolean, part2Taken: Boolean): String? {
+    fun variant(kind: RomKind, settingsName: String, bytes: ByteArray?, bundled: Map<String, ByteArray>, prePassTaken: Boolean, part2Taken: Boolean,
+                challenge: Boolean = false): String? {
         val official = officialName(settingsName, bytes, bundled) ?: return null
         val ruleset = RnqsInfo.parse(official).ruleset
         val notes = buildList {
@@ -122,6 +157,8 @@ object ExtraPasses {
             if ((carries60(kind) || (prePassName(kind) != null && prePassTaken)) && !callsFor60(kind, ruleset)) add("+6% levels")
             if (takesPart2(kind) && !patched(kind) && !part2Taken) add("no PART 2")
             if (ruleset == "superkaizo" && RulesetCatalog.superKaizoWarning(kind, "superkaizo") != null) add("no Smart AI")
+            // Official all the same (Blake, 2026-10-23); the record says it was played that way.
+            if (challenge) add("Challenge Mode")
         }
         return notes.joinToString(", ").ifEmpty { null }
     }
@@ -205,6 +242,12 @@ object ExtraPasses {
 
     fun choosePart2(context: Context, kind: RomKind, settings: File, on: Boolean) =
         choices(context).set(kind.id, settings.name, PART_2, on)
+
+    /** RUN's Challenge Mode switch for Black 2 and White 2. */
+    fun challengeOn(context: Context, kind: RomKind, settings: File): Boolean = challengeOn(kind, settings.name, choices(context))
+
+    fun chooseChallenge(context: Context, kind: RomKind, settings: File, on: Boolean) =
+        choices(context).set(kind.id, settings.name, CHALLENGE, on)
 
     /** PART 2 for a run, or null when the run takes none; put back from the APK when missing, as [prePassFor] does. */
     /** [on], when given, is a run code's own choice for this one build (R4): the player's switch is left as it is. */

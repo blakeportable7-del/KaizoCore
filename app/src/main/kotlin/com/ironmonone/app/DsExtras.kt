@@ -134,7 +134,7 @@ fun TrackedPokemonDialog(marks: StatMarks, seen: Set<Int>, tracker: NdsTracker?,
                     }
                     val m = marks.of(id)
                     Column {
-                        StatMarks.STAT_NAMES.forEachIndexed { i, n -> val st = m.getOrElse(i) { 0 }; if (st != 0) PixText(n + " " + StatMarks.symbol(st), 7, Pc.Gold) }
+                        StatMarks.STAT_NAMES.forEachIndexed { i, n -> val st = m.getOrElse(i) { 0 }; if (st != 0) PixText(n + " " + StatMarks.symbol(st), 7, markColor(st)) }
                     }
                 }
                 Spacer(Modifier.height(4.dp))

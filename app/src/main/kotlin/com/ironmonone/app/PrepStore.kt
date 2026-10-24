@@ -893,6 +893,14 @@ class PrepStore(private val filesDir: File) {
          */
         moved: Boolean = false,
     ): Unit = synchronized(RUN_FILES) {
+        // Each game keeps its own run (VILLAIN, 2026-10-12: a FireRed run saved mid-game could not be continued after a
+        // HeartGold run). A run of another game that has not ended is set aside whole, not filed as ended, and this
+        // game's own run set aside earlier comes back first, so it is the one this new run replaces and files as ended.
+        val goingOut = RomKind.byId(loadLastRun()?.first)
+        if (!moved) {
+            loadLastRun()?.first?.takeIf { it != kind.id }?.let { if (runIsOpen()) parkRun(it) }
+            if (parkedRun(kind.id) != null) unparkRun(kind.id)
+        }
         // Before anything moves: no save state of the game going out may pass for one of the game coming in, even with
         // the same seed (StateStamp). Its tag comes from its recipe, read while the recipe and seed still name it.
         StateStamp.pin(runStateStamps(), runTag())
@@ -905,7 +913,7 @@ class PrepStore(private val filesDir: File) {
         lastSeedFile.delete()
         // A DS run's save is one per game: another DS game's is parked and this game's comes back (RunSaves.dsSwap,
         // rc33 audit P1). Before lastrun.txt names the new run, so a save from before rc33 is filed under its own game.
-        RunSaves.dsSwap(filesDir, kind, RomKind.byId(loadLastRun()?.first))
+        RunSaves.dsSwap(filesDir, kind, goingOut ?: RomKind.byId(loadLastRun()?.first))
         // The in-game save stays, in every game, and a copy rc32's first builds set aside comes back when there is
         // none (RunSaves, Blake 2026-09-30). Before the ROM moves: the name is the old run's.
         RunSaves.onNewSeed(RunSaves.file(filesDir, kind, currentRunFor(kind)), kind)
@@ -940,6 +948,97 @@ class PrepStore(private val filesDir: File) {
         dropStaleRuns(kind)
     }
 
+    // ------------------------------------------------- runs set aside, one per game
+
+    /** A run of another game set aside by [installRun] or [continueRun]: its game, settings file and attempt. */
+    data class ParkedRun(val kindId: String, val settingsName: String, val attempt: Int, val seed: String)
+
+    private val parkedRoot = File(root, "parked")
+
+    private fun parkedDir(kindId: String) = File(parkedRoot, kindId.replace(UNSAFE_NAME, "_"))
+
+    /** The per-run notes in prep/ that go with a run (as [clearRunNotes] lists them), and its record and seed. */
+    private fun runOwnFiles(): List<String> = listOf("lastrun.txt", "lastseed.txt", "marks.txt", "notes.txt", "routes.txt",
+        "moves.txt", "abilities.txt", "encounters.txt", "ds-encounters.txt", "safari.txt", "ds-tracked.txt", "integrity.txt",
+        RunProgress.FILE)
+
+    /** The run's save states (auto-save and the numbered slots, with their stamps), in saves/. Never the in-game save. */
+    private fun runStateFiles(): List<File> = File(filesDir, "saves").listFiles().orEmpty()
+        .filter { it.isFile && Regex("""^(autosave|state\d+)(\..*)?$""").matches(it.name) }
+
+    /** Whether the run in place is an IronMON run that has not ended: on disk, seeded, and not in its history yet. */
+    internal fun runIsOpen(): Boolean = runCatching {
+        val (romId, settingsName) = loadLastRun() ?: return false
+        if (lastRunNuzlocke()) return false
+        val kind = RomKind.byId(romId) ?: return false
+        if (!currentRunFor(kind).isFile) return false
+        val seed = lastSeedText().takeIf { it.isNotBlank() } ?: return false
+        RunHistory(runHistoryFile(kind)).find(countOf(romId, settingsName), seed) == null
+    }.getOrDefault(false)
+
+    /** The run of [kindId] set aside, or null. */
+    fun parkedRun(kindId: String): ParkedRun? = runCatching {
+        val d = parkedDir(kindId)
+        val lines = File(d, "lastrun.txt").takeIf { File(d, PARKED_DONE).isFile }?.readLines() ?: return null
+        if (lines.size < 2 || lines[0] != kindId) return null
+        val attempt = File(d, PARKED_DONE).readLines().firstOrNull { it.startsWith("attempt=") }?.removePrefix("attempt=")?.toIntOrNull() ?: return null
+        ParkedRun(kindId, lines[1], attempt, File(d, "lastseed.txt").takeIf { it.isFile }?.readText()?.trim().orEmpty())
+    }.getOrNull()
+
+    /**
+     * Sets the run in place aside, whole: its game and log (runs/current.*), its record and seed, its notes and its
+     * save states, into prep/parked/<game>/. The in-game save is one per game already (saves/<game>.srm) and stays.
+     */
+    private fun parkRun(kindId: String) {
+        val d = parkedDir(kindId)
+        d.deleteRecursively(); d.mkdirs()
+        val attempt = countOf(kindId, loadLastRun()?.second)
+        DiskWriter.drain()
+        val notes = runOwnFiles().map { File(root, it) }
+        DiskWriter.forget(notes)
+        RunProgress.forget()
+        notes.filter { it.isFile }.forEach { moveOrCopy(it, File(d, it.name)) }
+        val runsOut = File(d, "runs").apply { mkdirs() }
+        runs.listFiles().orEmpty().filter { it.isFile && it.name.startsWith("current.") }.forEach { moveOrCopy(it, File(runsOut, it.name)) }
+        val statesOut = File(d, "saves").apply { mkdirs() }
+        runStateFiles().forEach { moveOrCopy(it, File(statesOut, it.name)) }
+        // Last: a folder without it is a set-aside that never finished, and is not offered.
+        SafeWrite.text(File(d, PARKED_DONE), "game=$kindId\nattempt=$attempt\n")
+    }
+
+    /** Puts [kindId]'s run set aside back in place (the run in place has been set aside or ended first). */
+    private fun unparkRun(kindId: String) {
+        val d = parkedDir(kindId)
+        if (!File(d, PARKED_DONE).isFile) return
+        // What is in place now is gone or set aside: its notes and states must not mix with the run coming back.
+        clearRunNotes()
+        runStateFiles().forEach { runCatching { it.delete() } }
+        runs.listFiles().orEmpty().filter { it.isFile && it.name.startsWith("current.") }.forEach { runCatching { it.delete() } }
+        File(d, "runs").listFiles().orEmpty().forEach { moveOrCopy(it, File(runs, it.name)) }
+        val saves = File(filesDir, "saves").apply { mkdirs() }
+        File(d, "saves").listFiles().orEmpty().forEach { moveOrCopy(it, File(saves, it.name)) }
+        d.listFiles().orEmpty().filter { it.isFile && it.name != PARKED_DONE }.forEach { moveOrCopy(it, File(root, it.name)) }
+        d.deleteRecursively()
+        RunProgress.forget()
+    }
+
+    /**
+     * Continue [kind]'s run set aside (the Run tab's "Continue attempt N" for that game): the run in place, if it is
+     * another game's and has not ended, is set aside in its turn. Returns whether [kind]'s run is now in place.
+     */
+    fun continueRun(kind: RomKind): Boolean = synchronized(RUN_FILES) {
+        if (loadLastRun()?.first == kind.id) return true
+        if (parkedRun(kind.id) == null) return false
+        val goingOut = RomKind.byId(loadLastRun()?.first)
+        loadLastRun()?.first?.let { if (runIsOpen()) parkRun(it) }
+        unparkRun(kind.id)
+        // A DS game's run save is one file per game: the other game's goes to its own name and this one's comes back.
+        RunSaves.dsSwap(filesDir, kind, goingOut)
+        library.selectRun()
+        com.ironmonone.app.stream.StreamHub.newRun()
+        loadLastRun()?.first == kind.id && currentRunFor(kind).isFile
+    }
+
     /**
      * Once a new run is in: the run it replaced (previous.*, which nothing reads) and a run of another console
      * (current.<other ext>, its game and log) are deleted. They stayed for good, up to 512 MB each for a DS game, and
@@ -955,6 +1054,9 @@ internal const val RUN_NOT_SAVED = "Could not save the new run's game and seed. 
 
 /** What Prepare says when a Nat. Dex patch it took could not be written (RC35-NOTICED N #15). */
 internal const val PATCH_NOT_SAVED = "Could not save the patch. If this phone is out of space, free some, then try again."
+
+/** A run set aside (PrepStore.parkedRun): the folder's last file, written once everything else is in. */
+internal const val PARKED_DONE = "parked.txt"
 
 /** Save this attempt: the folder's last file, written once everything else is in (rc32 audit P2 #66). */
 internal const val ATTEMPT_DONE = "attempt.txt"

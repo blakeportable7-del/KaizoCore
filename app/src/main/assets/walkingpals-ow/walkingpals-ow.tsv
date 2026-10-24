@@ -1,0 +1,92 @@
+# Walking Pals for forms that were still using another Pokemon's sheet (2026-10-08).
+# Willøw's Eevee Expo 1475 mega overworlds, JinGuinsoO00's Feraligatr-M and Garchomp-Z,
+# and the Heart & Soul follower strips. Keyed as walkingpals-nat is.
+# A 4x4 sheet is cut like the other follower sets (eight facings, diagonals use the side).
+# A Heart & Soul strip is one facing, copied into each of the eight rows. Idle two frames, walk four.
+# No sleep or faint: the app shows idle. Credit the artists (credits.tsv).
+# x,y: offset from a 32x32 icon's corner; durations in game frames (60 a second).
+# key	animation	w	h	x	y	durations
+3-mega	idle	64	64	-15	-13	32,32
+3-mega	walk	64	64	-15	-13	8,8,8,8
+6-mega-y	idle	64	64	-20	-14	32,32
+6-mega-y	walk	64	64	-20	-14	8,8,8,8
+9-mega	idle	64	64	-20	-11	32,32
+9-mega	walk	64	64	-20	-11	8,8,8,8
+15-mega	idle	64	64	-17	-17	32,32
+15-mega	walk	64	64	-17	-17	8,8,8,8
+18-mega	idle	64	64	-18	-8	32,32
+18-mega	walk	64	64	-18	-8	8,8,8,8
+127-mega	idle	64	64	-19	-13	32,32
+127-mega	walk	64	64	-19	-13	8,8,8,8
+130-mega	idle	64	64	-18	-12	32,32
+130-mega	walk	64	64	-18	-12	8,8,8,8
+150-mega-x	idle	64	64	-18	-11	32,32
+150-mega-x	walk	64	64	-18	-11	8,8,8,8
+181-mega	idle	64	64	-21	-13	32,32
+181-mega	walk	64	64	-21	-13	8,8,8,8
+212-mega	idle	64	64	-18	-15	32,32
+212-mega	walk	64	64	-18	-15	8,8,8,8
+214-mega	idle	64	64	-19	-13	32,32
+214-mega	walk	64	64	-19	-13	8,8,8,8
+257-mega	idle	64	64	-18	-11	32,32
+257-mega	walk	64	64	-18	-11	8,8,8,8
+260-mega	idle	64	64	-20	-17	32,32
+260-mega	walk	64	64	-20	-17	8,8,8,8
+306-mega	idle	64	64	-17	-12	32,32
+306-mega	walk	64	64	-17	-12	8,8,8,8
+373-mega	idle	64	64	-19	-12	32,32
+373-mega	walk	64	64	-19	-12	8,8,8,8
+376-mega	idle	64	64	-14	-15	32,32
+376-mega	walk	64	64	-14	-15	8,8,8,8
+445-mega	idle	64	64	-19	-13	32,32
+445-mega	walk	64	64	-19	-13	8,8,8,8
+460-mega	idle	64	64	-17	-13	32,32
+460-mega	walk	64	64	-17	-13	8,8,8,8
+531-mega	idle	64	64	-16	-16	32,32
+531-mega	walk	64	64	-16	-16	8,8,8,8
+36-mega	idle	32	32	1	5	32,32
+36-mega	walk	32	32	1	5	8,8,8,8
+71-mega	idle	64	64	-15	-14	32,32
+71-mega	walk	64	64	-15	-14	8,8,8,8
+121-mega	idle	32	32	0	4	32,32
+121-mega	walk	32	32	0	4	8,8,8,8
+149-mega	idle	32	32	0	4	32,32
+149-mega	walk	32	32	0	4	8,8,8,8
+26-mega-x	idle	32	32	0	2	32,32
+26-mega-x	walk	32	32	0	2	8,8,8,8
+26-mega-y	idle	32	32	0	4	32,32
+26-mega-y	walk	32	32	0	4	8,8,8,8
+448-mega-z	idle	32	32	-1	2	32,32
+448-mega-z	walk	32	32	-1	2	8,8,8,8
+668	idle	32	32	0	3	32,32
+668	walk	32	32	0	3	8,8,8,8
+618-galar	idle	32	32	1	-4	32,32
+618-galar	walk	32	32	1	-4	8,8,8,8
+641-therian	idle	64	64	-16	-21	32,32
+641-therian	walk	64	64	-16	-21	8,8,8,8
+642-therian	idle	64	64	-16	-27	32,32
+642-therian	walk	64	64	-16	-27	8,8,8,8
+658-ash	idle	32	32	0	3	32,32
+658-ash	walk	32	32	0	3	8,8,8,8
+711-small	idle	32	32	0	-2	32,32
+711-small	walk	32	32	0	-2	8,8,8,8
+711-large	idle	32	32	0	3	32,32
+711-large	walk	32	32	0	3	8,8,8,8
+741-sensu	idle	32	32	1	1	32,32
+741-sensu	walk	32	32	1	1	8,8,8,8
+800-dusk-mane	idle	32	32	0	4	32,32
+800-dusk-mane	walk	32	32	0	4	8,8,8,8
+800-dawn-wings	idle	32	32	0	4	32,32
+800-dawn-wings	walk	32	32	0	4	8,8,8,8
+898-ice-rider	idle	32	32	0	5	32,32
+898-ice-rider	walk	32	32	0	5	8,8,8,8
+898-shadow-rider	idle	32	32	0	4	32,32
+898-shadow-rider	walk	32	32	0	4	8,8,8,8
+916-female	idle	32	32	1	-2	32,32
+916-female	walk	32	32	1	-2	8,8,8,8
+931-white	idle	32	32	1	-2	32,32
+931-white	walk	32	32	1	-2	8,8,8,8
+160-mega	idle	64	64	-15	-14	32,32
+160-mega	walk	64	64	-15	-14	8,8,8,8
+445-mega-z	idle	64	64	-15	-15	32,32
+445-mega-z	walk	64	64	-15	-15	8,8,8,8

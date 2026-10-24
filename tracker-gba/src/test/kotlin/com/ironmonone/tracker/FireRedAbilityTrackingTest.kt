@@ -66,7 +66,7 @@ class FireRedAbilityTrackingTest {
         val drained = t.javaClass.getDeclaredMethod("drainReveals", Boolean::class.javaPrimitiveType).apply { isAccessible = true }
             .invoke(t, true) as List<*>
         assertEquals(1, drained.size, "seen once, recorded once")
-        assertEquals(64, (drained[0] as Pair<*, *>).first)
+        assertEquals(64, (drained[0] as GbaTracker.Reveal).species)
     }
 
     @Test

@@ -72,6 +72,6 @@ internal object InfoRules {
      * hides every move's effectiveness, your own included; otherwise only your
      * own moves lose it, under [hideOwnEffectiveness].
      */
-    fun hideEffectiveness(r: RandomizedFlags?, ghost: Boolean, own: Boolean): Boolean =
-        ghost || (own && hideOwnEffectiveness(r))
+    /** A ghost battle hides every mark. Otherwise "Show move effectiveness" is the switch, including on your own moves. */
+    fun hideEffectiveness(r: RandomizedFlags?, ghost: Boolean, own: Boolean): Boolean = ghost
 }

@@ -312,19 +312,53 @@ HNS_GAME = [
     "### What Heart & Soul does in KaizoCore", "",
     "In KaizoCore, Heart & Soul plays every IronMON mode this way:",
     # 0030, 0034: CanPlayerForfeitNormalTrainerBattle is FALSE in a Kaizo run. 0006: QUICK RUN on B, never from a shiny.
+    # 0050: held B takes only an escape Emerald's RUN grants outright (as fast or faster, Smoke Ball, Run Away).
     "- You cannot run from a trainer battle or forfeit it: RUN is refused, as in Emerald. From a wild battle you can run "
-    "as usual, or hold B as it starts, though never from a shiny.",
-    # rc38 (0041-0044, Blake 2026-10-06): a Kaizo run plays trainer doubles as singles; HNS_PRESET_KAIZO_DOUBLES keeps them.
-    "- Trainers who would battle you two at once (twins, couples, the gym pairs) battle you in a single battle, one of "
-    "their Pokémon at a time, whatever your party: no second Pokémon is needed. In Kaizo Doubles every trainer "
-    "battle is a double, as that mode asks.",
+    "as usual. Holding B as it starts gets you away only when RUN would surely work (your Pokémon is as fast as the "
+    "wild one or faster, or holds a Smoke Ball, or has Run Away), never from a shiny; otherwise the battle starts and "
+    "RUN takes your turn.",
+    # 0053 (Blake, 2026-10-11: "set"): ClearSetBScriptingStruct always takes OPTIONS_BATTLE_STYLE_SET.
+    "- Battles are always SET: when a foe faints, the game never asks whether you want to switch Pokémon, whatever "
+    "the Options menu says.",
+    # 0054 (Blake, 2026-10-11): GetBallThrowableState lets a ball go in any trainer battle; Cmd_handleballthrow blocks it.
+    "- In any trainer battle, double battles too, you can throw a Poké Ball: the trainer blocks it and the turn is "
+    "spent, as in Emerald. That is how a Pokémon that must not help in a double battle spends its turn.",
+    # 0047, 0048, 0051 (KAIZOCORE_GEN3_BATTLE): the client's Nat. Dex Kaizo build, Blake 2026-10-10.
+    "- Battles play by Nat. Dex Emerald's rules. A move's type decides whether it is physical or special (Fire, Water, "
+    "Grass, Electric, Psychic, Ice, Dragon, Dark and Fairy are special; every other type is physical), critical hits "
+    "come 1 time in 16 and do double damage, and moves, abilities and items work as they do in Nat. Dex Emerald. Only "
+    "the Pokémon to choose from are more.",
+    # 0047, 0048: the challenge menu's rule rows pinned and greyed; Survive Poison pinned ON (Blake, 2026-10-10).
+    "- The challenge menu's Split, Synchronize, Sturdy, Sitrus Berry and Gen 1 recharge rows are fixed at Emerald's. "
+    "Survive Poison stays on: outside battle, poison stops at 1 HP and then wears off.",
+    # 0052 (Blake, 2026-10-10: "Match emerald"): CalculateMonStats adds the max HP gained, as pret Emerald's does; nothing
+    # on the evolution path restores PP (tools/hns/mgba/play5_evolve.py: Gyarados 28/43 HP before, 58/73 after, PP 1).
+    "- Evolving is never a heal, as in Emerald: like a level-up, it adds only the extra max HP the new form has to your "
+    "current HP, and it never restores PP.",
+    # 0050: B_SHOW_EFFECTIVENESS NEVER.
+    "- The move menu shows no type effectiveness, as in Emerald.",
+    # 0050: pokedex_plus_hgss.c refuses the stats and evolution pages in a Kaizo run.
+    "- The Pokédex's stats and evolution pages are closed during a run: they would show your randomized moves, "
+    "abilities and evolutions.",
+    # Blake, 2026-10-08: trainer doubles stay the game's own doubles. The 2026-10-06 singles conversion is withdrawn.
+    "- Trainers who battle two at once in the game (twins, couples, the gym pairs) stay double battles. "
+    "In Kaizo Doubles every trainer battle is a double, as that mode asks.",
     # 0029: expOnCatch off in a Kaizo run.
     "- Catching a Pokémon gives no EXP.",
     # 0028: KaizoCore_CycleSlot, one cursor per wild header and table kind.
     "- Wild Pokémon come in turn: each list (grass, water, Rock Smash and each fishing rod) gives every species it has "
     "once, in order, before any comes again. A route with five species shows all five in five encounters.",
     # HnsRandomizer: hmMoves are never rolled into a learnset, evolution and level 1 moves included; trainers use learnsets.
-    "- No Pokémon learns an HM move by level or knows one when you meet it, yours or a trainer's, in either pool.",
+    "- No Pokémon learns an HM move by level or knows one when you meet it, yours or a trainer's, in either pool. "
+    "No egg move or TM is an HM move either.",
+    # HnsUprRules (Blake, 2026-10-08): Nat. Dex uses the fork's move list, plus Fairy-type moves. Not Black 2's Gen 1-5 cut.
+    "- With the Nat. Dex pool, moves are Emerald Nat. Dex Kaizo's list, plus every Fairy-type move. "
+    "The Vanilla pool keeps Gen 1 to 3.",
+    # Abilities stop at Air Lock on both pools. Emerald has no hidden ability.
+    "- Abilities are Emerald's on both pools, through Air Lock. The hidden slot is the same as the first ability.",
+    # BstRule.lines(hns = true), HnsEngine.bstLine (Blake, 2026-10-07).
+    "- With the Nat. Dex pool, 600 BST and below is allowed: only a Pokémon of 601 BST or more is banned, where the "
+    "rules below say 599 or 600. The Vanilla pool keeps 599.",
     # HnsRandomizer.randomizeTMs (rc38.1, Blake: "apply the vanilla rule to natl dex"): hmMoves never go on a TM.
     "- No TM teaches an HM move, in either pool, as in vanilla Emerald.",
     # 0033: KaizoCore_IsFirstRivalBattle, the three TRAINER_RIVAL_*_1_HNS. 0045: a trainer's Pokemon never flees.
@@ -344,9 +378,17 @@ HNS_GAME = [
     "- Shiny odds are Gen 3's 1 in 8,192, and a wild Pokémon you defeat drops nothing. Neither can be changed.",
     # HnsRandomizer: a hidden item is never a TM (TM41, TM69, TM88 are hidden in Heart & Soul); item balls keep UPR's rule.
     "- A hidden item is never a TM. The TMs Heart & Soul hides become other items; a TM lying in the open is still a TM.",
-    # 0004, 0018: the start menu's HM entry.
-    "- The start menu has an HM entry. Once an HM is in your bag and you have the badge it needs, you can use it from there "
-    "with no Pokémon knowing the move, so no field move needs an HM friend.",
+    # 0049 took out 0004's start-menu HM entry and 0018's party-menu offer; 0050: checkfieldmove, checkpartymove and
+    # Surf need a party Pokemon that knows the move in a Kaizo run.
+    "- There is no HM entry in the start menu. A field move (Cut, Rock Smash, Strength, Surf, Waterfall, Whirlpool, "
+    "Dive) needs a Pokémon in your party that knows it, and the badge, as in Emerald: that is your HM friend.",
+    # 0050: ComputeBallData, the Apricorn Balls and the GS Ball at x1; every ball in the Safari Zone a Safari Ball.
+    "- Kurt's Apricorn Balls and the GS Ball catch like a Poké Ball, and in the Safari Zone every ball counts as a "
+    "Safari Ball.",
+    # 0050: Special_MomEnableSaving does nothing in a Kaizo run.
+    "- Mom does not save your money, so she never buys you anything.",
+    # 0050: OW_PC_HEAL and OW_PC_RELEASE_ITEM GEN_3.
+    "- A Pokémon put in the PC comes back healed, as in Emerald, and a Pokémon you release takes its held item with it.",
     # 0020, 0025, 0026, 0032.
     "- Every Pokémon Center has a Name Rater: the Meowth standing near the counter.", ""]
 # Evo Kaizo on Heart & Soul. Blake ruled (2026-10-06) that it has no evo loops, as the Nat. Dex rules say; the engine
@@ -370,6 +412,10 @@ HNS_AFTER = [
     ("- Randomize the game:", KAIZO_BASED,
      "In KaizoCore, Heart & Soul's settings files for Kaizo and every mode built on it raise trainer and wild Pokémon "
      "levels by 60%, not 50%."),
+    # HnsRandomizer.trainerLevel (Blake, 2026-10-11): a flat raise put ten Kanto teams entirely at level 100.
+    ("- Randomize the game:", ALL_MODES,
+     "In KaizoCore, a Heart & Soul trainer Pokémon above level 50 before the raise gets less of it, so only Red's "
+     "strongest reaches level 100: in Kaizo, Kanto's gym leaders top out between 85 and 89 instead of at 100."),
     # Blue's badge sets VAR_OAK_MT_SILVER_CALL; patch 0027 opens Mt. Silver from Oak's Viridian call.
     ("1. To win Ironmon you must defeat Red", ALL_MODES,
      "In KaizoCore, beating Blue for your sixteenth badge brings a call from Oak that opens Mt. Silver."),
@@ -377,10 +423,11 @@ HNS_AFTER = [
     ("2. You are allowed to change to game's time", ALL_MODES,
      "In KaizoCore, no Heart & Soul event waits for a day of the week: the Week siblings ask you to guess their day, the "
      "Union Cave Lapras is there any day, and the Bug-Catching Contest is open every day, once a day."),
-    # Both MtSilver_Summit maps are WEATHER_SNOW; battles get the Gen 9 Snow (B_OVERWORLD_SNOW), never Hail.
+    # Both MtSilver_Summit maps are WEATHER_SNOW, and with Gen 3's rules (0047) that was Hail in battle; patch 0060 brings
+    # no weather into a battle on the summit (Blake, 2026-10-11: "no hail").
     ("3. In many cases, you'll fight Red without hail", ALL_MODES,
-     "In KaizoCore, the top of Mt. Silver always snows, whatever the date or time, so Red's battle always starts in snow: "
-     "Heart & Soul's newer form of hail, which does no damage and raises the Defense of Ice types."),
+     "In KaizoCore, Red is always fought without hail: the top of Mt. Silver snows, but the snow brings no weather into "
+     "his battle, whatever the date or time."),
     # setwildbattleshiny GYARADOS; FLAG_HIDE_LAKE_OF_RAGE_GYARADOS is cleared by no Hall of Fame script.
     ("5. You cannot defeat the Shiny Gyarados", ALL_MODES,
      "In KaizoCore, Heart & Soul's red Gyarados never comes back once you beat or catch it."),
@@ -412,8 +459,8 @@ HNS_AFTER = [
     ("    - The TM inside Burned Tower", {"superkaizo"},
      "In KaizoCore, Heart & Soul's Burned Tower TM is in the basement's southwest corner, beside a Strength boulder."),
     ("    6. Must fight Red with hail weather active", {"superkaizo"},
-     "In KaizoCore, the top of Mt. Silver always snows, Heart & Soul's newer form of hail, so Red is always fought in it "
-     "and no clock change is needed."),
+     "In KaizoCore, Red is always fought without hail (the summit's snow brings no weather into his battle), so this "
+     "one cannot be set up."),
     # Free heals (Blake asked, 2026-10-06; the official rules answer it). Survival's limit counts "a PokeCenter (or
     # equivalent NPC)", so every free whole-party heal outside a dungeon is one of the heals: NewBarkTown_Lab_hns's heal
     # machine (any time after the first Pokemon), the National Park teacher (NationalPark_Normal_hns, every talk), any

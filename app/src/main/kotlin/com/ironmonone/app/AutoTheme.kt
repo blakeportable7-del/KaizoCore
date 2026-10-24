@@ -67,6 +67,67 @@ object AutoTheme {
     /** The theme for the lead [species] of the game in Play. */
     fun gbaThemeInPlay(species: Int): String? = if (heartSoul) HnsNumbers.toPack(species)?.let { gba[it] } else gba[species]
 
+    /** natdex-map.tsv: a Nat. Dex id 412 and up to the walking sheet drawn for it (set and key). */
+    private val natDexSheets: Map<Int, WalkingPals.Pal?> by lazy {
+        Thread.currentThread().contextClassLoader?.getResourceAsStream("assets/${WalkingPals.Pack.NATIONAL.dir}/natdex-map.tsv")
+            ?.bufferedReader(Charsets.UTF_8)?.useLines { WalkingPals.parseNatDexMap(it) } ?: emptyMap()
+    }
+
+    /**
+     * A lead the 386-row table does not name: the walking sheet's own colours, darkest as the boxes and a light
+     * text on them. The positive, negative and intermediate colours stay the readable ones every shipped theme uses.
+     */
+    private fun painted(packId: Int): String? = runCatching {
+        // A Nat. Dex id past Gen 3 is not a file name: walkingpals-nat/ is keyed by national number, and some Pokemon's
+        // sheet is in another set. natdex-map.tsv says which, as it does for the walking sprites (WalkingPals.find). Until
+        // 2026-10-10 this read walkingpals-nat/<Nat. Dex id>.png, another Pokemon's sheet: Luxray (430) got Honchkrow's.
+        val path = if (packId <= WalkingPals.GEN3_LAST) "assets/walkingpals/idle/$packId.png"
+            else "assets/" + (natDexSheets[packId] ?: return null).path(WalkingPals.Anim.IDLE)
+        val stream = Thread.currentThread().contextClassLoader?.getResourceAsStream(path) ?: return null
+        // ImageIO is on the PC. The phone has no javax.imageio, so this stays a reflection call and paints nothing there.
+        val imageIo = Class.forName("javax.imageio.ImageIO")
+        val img = imageIo.getMethod("read", java.io.InputStream::class.java).invoke(null, stream) ?: return null
+        val width = img.javaClass.getMethod("getWidth").invoke(img) as Int
+        val height = img.javaClass.getMethod("getHeight").invoke(img) as Int
+        val rgbOf = img.javaClass.getMethod("getRGB", Int::class.javaPrimitiveType, Int::class.javaPrimitiveType)
+        val counts = HashMap<Int, Int>()
+        var y = 0
+        while (y < height) {
+            var x = 0
+            while (x < width) {
+                val p = rgbOf.invoke(img, x, y) as Int
+                if ((p ushr 24) > 200) counts[p and 0xFFFFFF] = (counts[p and 0xFFFFFF] ?: 0) + 1
+                x += 2
+            }
+            y += 2
+        }
+        val ranked = counts.entries.sortedByDescending { it.value }.map { it.key }
+        val chromatic = ranked.filter { c ->
+            val r = c shr 16 and 255; val g = c shr 8 and 255; val b = c and 255
+            maxOf(r, g, b) - minOf(r, g, b) > 24
+        }
+        val main = chromatic.firstOrNull() ?: ranked.firstOrNull() ?: return null
+        fun hex(c: Int) = "%06X".format(c and 0xFFFFFF)
+        fun shade(c: Int, n: Int): Int {
+            fun ch(v: Int) = (v + n).coerceIn(0, 255)
+            return (ch(c shr 16 and 255) shl 16) or (ch(c shr 8 and 255) shl 8) or ch(c and 255)
+        }
+        val dark = shade(main, -40)
+        val mid = shade(main, -16)
+        val lift = shade(main, 28)
+        // The words are white on a dark box and near-black on a light one, whichever reads more on the box they sit on
+        // (2026-10-09: white was used on every sheet, 1.02:1 on a cream one). The marks follow: the pale positive,
+        // negative and intermediate are for a dark box, deeper ones for a light box.
+        fun c(rgb: Int) = Color(0xFF000000.toInt() or rgb)
+        fun onIt(bg: Int): Boolean = inkContrast(Color.White, c(bg)) >= inkContrast(c(0x15161A), c(bg))
+        val upperLight = !onIt(mid); val lowerLight = !onIt(lift)
+        val text = if (upperLight) 0x15161A else 0xFFFFFF
+        val lowerText = if (lowerLight) 0x15161A else 0xFFFFFF
+        val marks = if (upperLight) "1B6E2A B3261E 7A5A00" else "C8DDFF FDCDCD FBFD85"
+        // Default text, lower text, positive, negative, intermediate, header, upper border, upper bg, lower border, lower bg, main.
+        "${hex(text)} ${hex(lowerText)} $marks ${hex(if (!onIt(main)) 0x15161A else 0xFFFFFF)} ${hex(dark)} ${hex(mid)} ${hex(dark)} ${hex(lift)} ${hex(main)} 0 1"
+    }.getOrNull()
+
     /**
      * AutoThemes.lua afterProgramDataUpdate for a Gen 3 or Game Boy game.
      * [party] is (species, isEgg) in slot order.
@@ -78,7 +139,8 @@ object AutoTheme {
         if (party.isEmpty()) return
         // Slot 1, or the next non-egg slot after it; all eggs: slot 1.
         val lead = party.firstOrNull { !it.second } ?: party[0]
-        val code = gbaThemeInPlay(lead.first)
+        val pack = if (heartSoul) HnsNumbers.toPack(lead.first) ?: lead.first else lead.first
+        val code = gbaThemeInPlay(lead.first) ?: painted(pack)
         if (code == null) { release(); return }
         if (code != current) apply(code)
     }

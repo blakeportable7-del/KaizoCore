@@ -107,6 +107,8 @@ interface ChatFacts {
     fun gacha(name: String): GachaLookup
     val version: String
     fun enabled(c: ChatCommand): Boolean
+    /** Commands answered before these (the PC's !favorites and !fav), as (word, help) for !help to list. */
+    val extraHelp: List<Pair<String, String>> get() = emptyList()
 }
 
 object ChatAnswers {
@@ -277,12 +279,15 @@ object ChatAnswers {
 
     private fun help(args: String, facts: ChatFacts): String {
         val on = ChatCommand.entries.filter { facts.enabled(it) }
+        val extra = facts.extraHelp
         if (args.isNotBlank()) {
+            val word = args.substringBefore(' ').lowercase().let { if (it.startsWith("!")) it else "!$it" }
+            extra.firstOrNull { it.first == word }?.let { return "Command: > ${it.first} ${it.second}" }
             val c = ChatCommand.of(args.substringBefore(' ')) ?: return "Command: > $NO_INFO"
             if (!facts.enabled(c)) return "Command: > That one is turned off."
             return "Command: > ${c.word} ${c.help}"
         }
-        return "Tracker Commands > " + on.joinToString(", ") { it.word }
+        return "Tracker Commands > " + (on.map { it.word } + extra.map { it.first }).joinToString(", ")
     }
 
     private fun gacha(s: Map<String, Any?>, name: String, facts: ChatFacts): String {

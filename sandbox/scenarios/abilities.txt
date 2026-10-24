@@ -1,0 +1,49 @@
+# Abilities, each played the moment the game shows its pop-up, and doing what it does in the game. Only abilities
+# that show a pop-up are here: a silent one (Compound Eyes, Shell Armor, Sand Veil) never plays for an opponent.
+lead Pikachu lv 30 moves Thunderbolt, Quick Attack, Dig, Growl
+# Thunderbolt into Lanturn: Volt Absorb soaks it up and heals a quarter.
+foe Lanturn lv 30 hp 60/110 moves Surf, Spark, Confuse Ray, Thunder Wave
+wait 0.6
+foe ability Volt Absorb
+# Dig into Bronzong: Levitate, and it floats over it.
+foe Bronzong lv 31 moves Confusion, Hypnosis, Iron Defense, Payback
+wait 0.6
+foe ability Levitate
+# Gyarados comes out and glares: your card cowers, Attack -1.
+foe Gyarados lv 32 moves Waterfall, Bite, Dragon Dance, Thrash
+view own
+wait 0.3
+foe ability Intimidate
+# Tyranitar's Sand Stream: the sandstorm rolls in.
+foe Tyranitar lv 33 moves Crunch, Rock Slide, Dragon Dance, Earthquake
+wait 0.6
+foe ability Sand Stream
+wait 0.6
+sand off
+# Graveler takes a full-HP hit and holds on at 1.
+foe Graveler lv 30 hp 72/72 moves Rock Throw, Magnitude, Defense Curl, Self-Destruct
+wait 0.6
+foe ability Sturdy
+# Ninjask's Speed Boost at the end of the turn.
+foe Ninjask lv 30 moves Fury Cutter, Swords Dance, Protect, Baton Pass
+wait 0.6
+foe ability Speed Boost
+# Dusknoir's Pressure: each of your moves costs 2 PP against it.
+foe Dusknoir lv 34 moves Shadow Punch, Will-O-Wisp, Pain Split, Curse
+view own
+wait 0.3
+view foe
+foe ability Pressure
+# Static: you touched it.
+foe Electabuzz lv 30 moves Thunder Punch, Low Kick, Leer, Light Screen
+wait 0.6
+foe ability Static
+# Your Growl does nothing: Metagross's Clear Body blocks the drop and shows itself.
+foe Metagross lv 34 moves Meteor Mash, Confusion, Pursuit, Agility
+wait 0.6
+foe ability Clear Body
+# Arcanine's Flash Fire takes the fire in.
+foe Arcanine lv 33 moves Flamethrower, Extreme Speed, Crunch, Roar
+wait 0.6
+foe ability Flash Fire
+wait 1.0

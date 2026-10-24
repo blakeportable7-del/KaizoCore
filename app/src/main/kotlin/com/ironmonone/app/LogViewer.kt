@@ -79,6 +79,8 @@ fun LogViewer(
     nds: com.ironmonone.tracker.nds.NdsTracker? = null,
     ndsParty: List<com.ironmonone.tracker.nds.NdsTrackedMon>? = null,
 ) {
+    // The stream follows the log while it is open, once the run is over (StreamHub.logOpen).
+    androidx.compose.runtime.DisposableEffect(Unit) { com.ironmonone.app.stream.StreamHub.logOpen = true; onDispose { com.ironmonone.app.stream.StreamHub.logOpen = false } }
     if (nds != null) { DsLogViewer(file, nds, ndsParty, onClose); return }
     var tab by remember { mutableStateOf(LogTab.POKEMON) }
     var query by remember { mutableStateOf("") }

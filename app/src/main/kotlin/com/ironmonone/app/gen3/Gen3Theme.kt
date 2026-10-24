@@ -29,7 +29,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.ironmonone.app.R
 
 /**
  * Gen 3 skin (docs/DESIGN_GEN3_UI.md): usability first, then the costume.
@@ -63,7 +62,7 @@ object Gen3 {
     val PcText = Color(0xFFFFFFFF)
     val PcGold = Color(0xFFFFFF00)
 
-    val PixelFont = FontFamily(Font(R.font.press_start_2p))
+    val PixelFont = com.ironmonone.app.pcPixelFontFamily()
 
     /**
      * The app shell runs the PC tracker's own palette, not the Emerald green it

@@ -22,7 +22,7 @@ class AmericanSpellingTest {
     private val sources = listOf(
         "app/src/main/kotlin", "tracker-gba/src/main/kotlin", "tracker-nds/src/main/kotlin", "core-api/src/main/kotlin",
         "core-patch/src/main/kotlin", "core-recipe/src/main/kotlin", "editor/src/main/kotlin", "libretrodroid/src/main/java",
-        "engine-zx/src", "engine-natdex/src",
+        "engine-zx/src", "engine-natdex/src", "engine-hns/src/main/kotlin", "desktop/src/main/kotlin",
     )
 
     /** What the app shows from its files: a folder, and the extension of the files it reads from there. */
@@ -34,7 +34,7 @@ class AmericanSpellingTest {
 
     /** The pages around the app a player reads: a file, or a folder of them. */
     private val pages = listOf(
-        "README.md", "NOTICE", "docs/RELEASE-NOTES.md", "docs/wiki", "site/index.html", "site/thanks.html", ".github/ISSUE_TEMPLATE",
+        "README.md", "NOTICE", "docs/RELEASE-NOTES.md", "docs/wiki", "site/index.html", "site/thanks.html", ".github/ISSUE_TEMPLATE", "desktop/package",
     )
 
     /**

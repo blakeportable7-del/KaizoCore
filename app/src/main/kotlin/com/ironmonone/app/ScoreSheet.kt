@@ -36,7 +36,7 @@ object ScoreSheet {
     class Result(val rows: List<Row>, val great: Int, val poor: Int, val total: Int, val percentage: String, val letter: Char)
 
     private const val MARGIN = 25
-    private val RANGES = mapOf("+" to (115 to 255), "--" to (11 to 70), "=" to (70 to 115))
+    private val RANGES = mapOf("+" to (115 to 255), StatMarks.MINUS to (11 to 70), "--" to (11 to 70), "=" to (70 to 115))
     private val GRADED = listOf(0, 1, 2, 3, 4)   // HP, ATK, DEF, SPA, SPD; Speed excluded
 
     /** checkAbilityException: which of the three special cases applies, if any. */

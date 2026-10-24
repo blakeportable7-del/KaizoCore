@@ -1,0 +1,21 @@
+Overworlds for the forms that were still using another Pokemon's sheet: credit the artists.
+
+The walking sprites KaizoCore draws for those forms (walkingpals-ow) come from three places.
+
+Willøw's pack, Eevee Expo resource 1475, resized and ported for Essentials:
+
+  https://eeveeexpo.com/resources/1475/
+
+Classic mega sheets in that pack: Kidkatt, Larryturbo, Princess-Phoenix.
+Z-A mega sheets in that pack: DarkusShadow, BluebirdDxD.
+The pack page asks that the artists be credited. Willøw resized and ported the sheets.
+
+Feraligatr-M and Garchomp-Z: JinGuinsoO00.
+
+  https://www.deviantart.com/jinguinsoo00
+
+Heart & Soul follower overworlds: the graphics/pokemon sheets in the Heart & Soul source
+(pokeemerald-expansion). Credit the artist of each sheet.
+
+Each sheet's own credit line is in walkingpals-ow/credits.tsv. A Sprite Collab sheet, when
+one is drawn, replaces these. No shinies ship in this folder.

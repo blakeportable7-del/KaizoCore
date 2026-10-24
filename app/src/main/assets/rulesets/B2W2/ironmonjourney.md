@@ -156,4 +156,4 @@ The randomizer will first randomize all evolutions with the usual "Same typing, 
 - game-specific rules and settings gist by UTDZac: https://gist.github.com/UTDZac/a147c497424dfbd537d8c4b0c22b5621 (last changed 2026-07-05)
 - IronMON Journey rules by PappyQC: https://gist.github.com/PappyQC/b9e28068ba4abbbdf191dd33625b737d (last changed 2026-02-23)
 
-Generated 2026-10-01 by tools/rules/build_rules.py. Rulesets get revised; if this reads behind a source, regenerate.
+Generated 2026-10-07 by tools/rules/build_rules.py. Rulesets get revised; if this reads behind a source, regenerate.

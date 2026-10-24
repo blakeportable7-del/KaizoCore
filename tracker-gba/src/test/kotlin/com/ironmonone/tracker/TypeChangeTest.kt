@@ -160,20 +160,28 @@ class TypeChangeTest {
         assertEquals(listOf(1, 13), t.settle().party[0].moveRows.map { it.type }, "Judgment Fighting, Terrain Pulse Electric")
     }
 
-    /** The hidden information fence (hard rule): an opponent's Pixilate changes nothing until the game has shown it. */
+    /**
+     * The hidden information fence (hard rule): an opponent's Pixilate changes nothing until THIS Pokemon has shown it in
+     * this battle. Another Pokemon of its species showing it says what the species can have, not what this one has.
+     */
     @Test
-    fun `an unrevealed opponent Pixilate does not change anything shown`() {
+    fun `an opponent's Pixilate counts only once that Pokemon has shown it`() {
         val (mem, t) = maxDexGame(ownAbility = 0, moves = listOf(33))
         t.settle()
         val foe = maxDex.battleMons + maxDex.battleMonSize
         mem.put16(foe + 0x20, 192)
+        mem.put32(foe + maxDex.status2Offset - 8, 0x1234ABCDL)
+        val species = mem.read(foe, 2).let { (it[0].toInt() and 0xFF) or ((it[1].toInt() and 0xFF) shl 8) }
         val struct = mem.read(foe, maxDex.battleMonSize)
         val tackle = assertNotNull(t.moveRowFor(33))
-        assertEquals(0, t.battleMoveRows(listOf(tackle), 1, struct, own = false, species = 39).single().type, "not shown: Normal")
-        // Its pop-up: the tracker records what the game showed, and then its Tackle shows Fairy.
-        t.noteShownAbility(39, "Pixilate")
-        assertEquals(18, t.battleMoveRows(listOf(tackle), 1, struct, own = false, species = 39).single().type)
-        // Another species' reveal does not count for this one.
-        assertEquals(0, t.battleMoveRows(listOf(tackle), 1, struct, own = false, species = 40).single().type)
+        fun shown() = t.battleMoveRows(listOf(tackle), 1, struct, own = false).single().type
+        assertEquals(0, shown(), "not shown: Normal")
+        // Another Pokemon of the same species showed Pixilate (a different personality value): still Normal.
+        t.notePopup(species, 192, personality = 0x0BADF00DL); t.read()
+        assertEquals(0, shown(), "another Pokemon's reveal does not count for this one")
+        // Its own pop-up, as the BizHawk script reports one with no personality: the battler on the field with that
+        // species and that ability. From the next read its Tackle shows Fairy.
+        t.notePopup(species, 192); t.read()
+        assertEquals(18, shown())
     }
 }

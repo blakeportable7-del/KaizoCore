@@ -260,4 +260,4 @@ Note: None of the Pokémon in this list have the Slow Exp. curve
 - Super Kaizo IronMON by PyroMikeGit: https://github.com/PyroMikeGit/SuperKaizoIronMON (README last changed 2026-03-20)
 - Nat. Dex Ruleset Changes, the Nat. Dex Extension wiki by CyanSixFour: https://github.com/CyanSMP64/NatDexExtension/wiki/Nat.-Dex-Ruleset-Changes (last changed 2026-06-29)
 
-Generated 2026-10-01 by tools/rules/build_rules.py. Rulesets get revised; if this reads behind a source, regenerate.
+Generated 2026-10-07 by tools/rules/build_rules.py. Rulesets get revised; if this reads behind a source, regenerate.

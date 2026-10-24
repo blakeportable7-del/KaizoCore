@@ -118,7 +118,10 @@ object Overworld {
      * build (its title and its own tables), and these are that build's addresses. The structs the native side reads are
      * Emerald's sizes and offsets here too; OverworldHnsTest holds sprite_core.h's constants to the build's.
      */
-    val HEARTSOUL_KAIZO = OverworldAddresses(
+    val HEARTSOUL_KAIZO: OverworldAddresses get() = if (HnsLayout.pcBuild) hnsPc else hnsApp
+    private val hnsApp: OverworldAddresses by lazy { HnsMaps.underBuild(false, ::hns) }
+    private val hnsPc: OverworldAddresses by lazy { HnsMaps.underBuild(true, ::hns) }
+    private fun hns() = OverworldAddresses(
         name = HnsMaps.NAME,
         main = HnsLayout.gMain, oamBufferOffset = HnsLayout.Main.oamBuffer.offset,
         cb2Overworld = HnsLayout.CB2_Overworld, cb2OverworldBasic = HnsLayout.CB2_OverworldBasic,

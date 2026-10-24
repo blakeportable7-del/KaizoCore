@@ -57,7 +57,7 @@ internal object HnsBattle {
         val weather = weatherName(raw)
         if (raw != 0 && weather != "None") {
             val left = BS.weatherDuration.at(bs)
-            field += if (left > 0) BattleDetail("Weather turns Left: $left") else BattleDetail("Weather: $weather")
+            field += if (left > 0) BattleDetail("$weather turns Left: $left") else BattleDetail("Weather: $weather")
         }
         val payday = bytes(HnsLayout.gPaydayMoney, 2).u16(0)
         if (payday != 0) field += BattleDetail("${names.move(6)} ($payday)", moveId = 6)

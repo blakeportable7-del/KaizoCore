@@ -27,6 +27,9 @@ include(":tracker-nds")
 include(":engine-zx")
 include(":engine-natdex")
 include(":engine-maxdex")   // MaxDex 1.0: the Nat. Dex 1.1.3 randomizer with Trip's changes
+include(":engine-hns")      // the Heart & Soul randomizer, shared by the app and KaizoCore PC (desktop)
+include(":desktop")         // KaizoCore PC (KaizoCore-PC.jar): Heart & Soul in BizHawk, built with the APK
+include(":pcui")            // the PC tracker's screens on a desktop JVM (Compose Multiplatform), for KaizoCore PC
 include(":editor")
 include(":libretrodroid")   // vendored, GPL-3.0, carries the memory-read patch
 include(":tracker-gba")

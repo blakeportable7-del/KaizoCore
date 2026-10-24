@@ -151,6 +151,21 @@ fun SideScreenDialogs(
         ) { s.timeMachineDialog = false }
     }
     s.moveHistory?.let { (species, n, lv) ->
+        // On a GBA game the header opens the level-up moves first, as KaizoCore PC does (MovesLearnedDialog), with History
+        // under them; the DS card keeps History straight away.
+        val gbaMoves = trackerRef?.takeIf { ndsTrackerRef == null }
+        var history by remember(s.moveHistory) { mutableStateOf(gbaMoves == null) }
+        if (gbaMoves != null && !history) {
+            val foe = trackerState?.enemy?.takeIf { it.species == species }
+            MovesLearnedDialog(
+                name = n, level = lv, learnset = remember(species) { runCatching { gbaMoves.learnset(species) }.getOrDefault(emptyList()) },
+                moveName = { id -> runCatching { gbaMoves.moveName(id) }.getOrDefault("?") },
+                open = InfoRules.canShowMoves(trackerState?.randomized), own = foe == null,
+                seenIds = foe?.moveRows.orEmpty().map { it.id }.toSet(),
+                onHistory = { history = true }, onClose = { s.moveHistory = null },
+            )
+            return@let
+        }
         MoveHistoryDialog(
             name = n, level = lv, seen = statMarks.movesSeenFor(species),
             learnLevels = ndsTrackerRef?.moveLevelsOf(species) ?: trackerRef?.learnset(species)?.map { it.first } ?: emptyList(),
@@ -158,6 +173,11 @@ fun SideScreenDialogs(
         )
     }
     s.randomEvos?.let { sp ->
+        // Heart & Soul's odds are its run's pool's (HnsPool): Vanilla's table for a Vanilla run, Nat. Dex's otherwise.
+        val evoContext = androidx.compose.ui.platform.LocalContext.current
+        remember(sp, trackerRef) {
+            runCatching { HnsPool.ofRun(PrepStore(evoContext))?.name }.getOrNull()?.let { trackerRef?.hnsEvoPool = it }
+        }
         RandomEvosDialog(sp, trackerRef, speciesName = { id -> trackerRef?.speciesName(id) ?: "#$id" }, spriteFor = spriteFor,
             onPick = { id -> if (trackerRef?.hasRandomEvos(id) == true) s.randomEvos = id }) { s.randomEvos = null }
     }

@@ -9,11 +9,21 @@ In KaizoCore, the item that starts in your PC is in the trash can in Elm's lab i
 ### What Heart & Soul does in KaizoCore
 
 In KaizoCore, Heart & Soul plays every IronMON mode this way:
-- You cannot run from a trainer battle or forfeit it: RUN is refused, as in Emerald. From a wild battle you can run as usual, or hold B as it starts, though never from a shiny.
-- Trainers who would battle you two at once (twins, couples, the gym pairs) battle you in a single battle, one of their Pokémon at a time, whatever your party: no second Pokémon is needed. In Kaizo Doubles every trainer battle is a double, as that mode asks.
+- You cannot run from a trainer battle or forfeit it: RUN is refused, as in Emerald. From a wild battle you can run as usual. Holding B as it starts gets you away only when RUN would surely work (your Pokémon is as fast as the wild one or faster, or holds a Smoke Ball, or has Run Away), never from a shiny; otherwise the battle starts and RUN takes your turn.
+- Battles are always SET: when a foe faints, the game never asks whether you want to switch Pokémon, whatever the Options menu says.
+- In any trainer battle, double battles too, you can throw a Poké Ball: the trainer blocks it and the turn is spent, as in Emerald. That is how a Pokémon that must not help in a double battle spends its turn.
+- Battles play by Nat. Dex Emerald's rules. A move's type decides whether it is physical or special (Fire, Water, Grass, Electric, Psychic, Ice, Dragon, Dark and Fairy are special; every other type is physical), critical hits come 1 time in 16 and do double damage, and moves, abilities and items work as they do in Nat. Dex Emerald. Only the Pokémon to choose from are more.
+- The challenge menu's Split, Synchronize, Sturdy, Sitrus Berry and Gen 1 recharge rows are fixed at Emerald's. Survive Poison stays on: outside battle, poison stops at 1 HP and then wears off.
+- Evolving is never a heal, as in Emerald: like a level-up, it adds only the extra max HP the new form has to your current HP, and it never restores PP.
+- The move menu shows no type effectiveness, as in Emerald.
+- The Pokédex's stats and evolution pages are closed during a run: they would show your randomized moves, abilities and evolutions.
+- Trainers who battle two at once in the game (twins, couples, the gym pairs) stay double battles. In Kaizo Doubles every trainer battle is a double, as that mode asks.
 - Catching a Pokémon gives no EXP.
 - Wild Pokémon come in turn: each list (grass, water, Rock Smash and each fishing rod) gives every species it has once, in order, before any comes again. A route with five species shows all five in five encounters.
-- No Pokémon learns an HM move by level or knows one when you meet it, yours or a trainer's, in either pool.
+- No Pokémon learns an HM move by level or knows one when you meet it, yours or a trainer's, in either pool. No egg move or TM is an HM move either.
+- With the Nat. Dex pool, moves are Emerald Nat. Dex Kaizo's list, plus every Fairy-type move. The Vanilla pool keeps Gen 1 to 3.
+- Abilities are Emerald's on both pools, through Air Lock. The hidden slot is the same as the first ability.
+- With the Nat. Dex pool, 600 BST and below is allowed: only a Pokémon of 601 BST or more is banned, where the rules below say 599 or 600. The Vanilla pool keeps 599.
 - No TM teaches an HM move, in either pool, as in vanilla Emerald.
 - The lab fight these rules name is your first rival battle, outside Cherrygrove City. It plays by FireRed's first-battle rules: your damaging moves never miss, neither side lands a critical hit, and the rival battles as FireRed's first rival does. A trainer's Pokémon never runs from a battle, the rival's included.
 - A held item that gets used up in battle stays used up. Only an item taken from you comes back after the battle.
@@ -23,13 +33,17 @@ In KaizoCore, Heart & Soul plays every IronMON mode this way:
 - A TM breaks after one use, as in Emerald, and there are no Nature Mints: the shop that sells them is closed.
 - Shiny odds are Gen 3's 1 in 8,192, and a wild Pokémon you defeat drops nothing. Neither can be changed.
 - A hidden item is never a TM. The TMs Heart & Soul hides become other items; a TM lying in the open is still a TM.
-- The start menu has an HM entry. Once an HM is in your bag and you have the badge it needs, you can use it from there with no Pokémon knowing the move, so no field move needs an HM friend.
+- There is no HM entry in the start menu. A field move (Cut, Rock Smash, Strength, Surf, Waterfall, Whirlpool, Dive) needs a Pokémon in your party that knows it, and the badge, as in Emerald: that is your HM friend.
+- Kurt's Apricorn Balls and the GS Ball catch like a Poké Ball, and in the Safari Zone every ball counts as a Safari Ball.
+- Mom does not save your money, so she never buys you anything.
+- A Pokémon put in the PC comes back healed, as in Emerald, and a Pokémon you release takes its held item with it.
 - Every Pokémon Center has a Name Rater: the Meowth standing near the counter.
 
 ## Standard IronMON
 
 - Randomize the game: All Pokémon, movesets, and items are randomized, with Trainer Pokémon & Wild Pokémon levels increased by 50%.
     - Note: Visit the Ironmon Discord for a list of Setting Strings to apply all required Randomizer settings.
+    - In KaizoCore, a Heart & Soul trainer Pokémon above level 50 before the raise gets less of it, so only Red's strongest reaches level 100: in Kaizo, Kanto's gym leaders top out between 85 and 89 instead of at 100.
 - Catch or Kill 1 per Route: You can only catch OR kill one Pokémon per Route. It does not have to be the first one seen. All other Exp will come from Trainers.
 - Permadeath: Once a Pokémon faints, you must release/store it. No exceptions.
     - Note: If a Pokémon dies with an item attached to it, the item cannot be salvaged.
@@ -69,7 +83,7 @@ In KaizoCore, Heart & Soul plays every IronMON mode this way:
 2. You are allowed to change to game's time for events that occur on specific days within the game.
     - In KaizoCore, no Heart & Soul event waits for a day of the week: the Week siblings ask you to guess their day, the Union Cave Lapras is there any day, and the Bug-Catching Contest is open every day, once a day.
 3. In many cases, you'll fight Red without hail due to the default date/time used by some emulators (e.g. Bizhawk). Or you can manually change the date/time for your emulator and game. Both are okay.
-    - In KaizoCore, the top of Mt. Silver always snows, whatever the date or time, so Red's battle always starts in snow: Heart & Soul's newer form of hail, which does no damage and raises the Defense of Ice types.
+    - In KaizoCore, Red is always fought without hail: the top of Mt. Silver snows, but the snow brings no weather into his battle, whatever the date or time.
 4. You may use Rock Smash repeatedly on the same rock in search of a catch/pivot for the area, but you cannot keep any items you get from the extra smashes.
 5. You cannot defeat the Shiny Gyarados more than once. (respawns after E4)
     - In KaizoCore, Heart & Soul's red Gyarados never comes back once you beat or catch it.
@@ -130,4 +144,4 @@ Note: None of the Pokémon in this list have the Slow Exp. curve
 - game-specific rules and settings gist by UTDZac: https://gist.github.com/UTDZac/a147c497424dfbd537d8c4b0c22b5621 (last changed 2026-07-05)
 - Nat. Dex Ruleset Changes, the Nat. Dex Extension wiki by CyanSixFour: https://github.com/CyanSMP64/NatDexExtension/wiki/Nat.-Dex-Ruleset-Changes (last changed 2026-06-29)
 
-Generated 2026-10-07 by tools/rules/build_rules.py. Rulesets get revised; if this reads behind a source, regenerate.
+Generated 2026-10-11 by tools/rules/build_rules.py. Rulesets get revised; if this reads behind a source, regenerate.

@@ -67,6 +67,12 @@ class TwitchLink(
     private val sendOn: Executor = Executors.newSingleThreadExecutor { r -> Thread(r, "twitch-send").apply { isDaemon = true } },
     private val keepaliveSeconds: Int = 30,
     val gate: ChatGate = ChatGate(clock),
+    /**
+     * A command of the host's own, asked before the shared ones: given every line that is this channel's to answer, it
+     * returns the reply to send, or null to let the shared commands have the line. KaizoCore PC's `!fav` (mods and the
+     * broadcaster only); the phone passes nothing and is unchanged.
+     */
+    private val extra: ((ChatLine) -> String?)? = null,
 ) {
     enum class Phase { SIGNED_OUT, GETTING_CODE, WAITING_FOR_CODE, CONNECTING, LISTENING, RECONNECTING, PAUSED }
 
@@ -389,6 +395,13 @@ class TwitchLink(
         // Shared Chat: a line from another streamer's channel is theirs to answer, and a reply would go to all of them.
         if (line.sourceBroadcasterId != null && line.sourceBroadcasterId != t.userId) return
         synchronized(sentIds) { if (sentIds.containsKey(line.messageId)) return }
+        extra?.let { own ->
+            val reply = runCatching { own(line) }.getOrNull()
+            if (reply != null) {
+                runCatching { sendOn.execute { runCatching { send(ChatAnswers.fit(reply), line.messageId) } } }
+                return
+            }
+        }
         val ask = ChatAsk.parse(line.text) ?: return
         if (!settings.enabled(ask.command)) return
         if (!gate.admit(ask.command)) return

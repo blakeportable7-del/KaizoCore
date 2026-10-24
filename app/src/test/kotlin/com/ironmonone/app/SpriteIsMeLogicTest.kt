@@ -76,8 +76,11 @@ class SpriteIsMeLogicTest {
         assertEquals(Pal(Pack.GEN3, "277"), L.choose(Who.LEAD, 0, Own.NONE, false, treecko, shipped).pal)
         // 412 in a retail game is not a Pokemon there (it is the egg's id): the trainer stays.
         assertEquals(Choice(Source.NONE), L.choose(Who.LEAD, 0, Own.NONE, false, Lead(412, 30, false, Dex.GEN3), shipped))
-        // One of the few nobody has drawn yet (Simisear) leaves the trainer too.
-        assertEquals(Choice(Source.NONE), L.choose(Who.LEAD, 0, Own.NONE, false, Lead(539, 30, false, Dex.NAT_DEX), shipped))
+        // Simisear, which Sprite Collab has not drawn, walks as the Generation 9 Resource Pack's follower (2026-10-08).
+        val simisear = Lead(539, 30, false, Dex.NAT_DEX)
+        assertEquals(Choice(Source.PAL, Pal(Pack.EXPO, "514"), simisear), L.choose(Who.LEAD, 0, Own.NONE, false, simisear, shipped))
+        // A lead with no sheet at all (Gen 3's unused slot 253) leaves the trainer.
+        assertEquals(Choice(Source.NONE), L.choose(Who.LEAD, 0, Own.NONE, false, Lead(253, 30, false, Dex.NAT_DEX), shipped))
     }
 
     /** "Always use" counts in the picker's numbering, the Nat. Dex table's, so a later Pokemon can be picked on any game. */
@@ -87,8 +90,9 @@ class SpriteIsMeLogicTest {
         assertEquals(Pal(Pack.NATIONAL, "387"), L.choose(Who.ALWAYS, 412, Own.NONE, false, charmander, shipped).pal, "Turtwig on a FireRed")
         assertEquals(Pal(Pack.NATIONAL, "6-mega-x"), L.choose(Who.ALWAYS, 1052, Own.NONE, false, charmander, shipped).pal)
         assertEquals(Pal(Pack.GEN3, "277"), L.choose(Who.ALWAYS, 277, Own.NONE, false, charmander, shipped).pal, "a pick from before is what it was")
-        // One with no sprite falls to the lead.
-        assertEquals(Pal(Pack.GEN3, "4"), L.choose(Who.ALWAYS, 539, Own.NONE, false, charmander, shipped).pal)
+        // Simisear picked walks as its Generation 9 Resource Pack follower; one with no sprite (unused slot 253) falls to the lead.
+        assertEquals(Pal(Pack.EXPO, "514"), L.choose(Who.ALWAYS, 539, Own.NONE, false, charmander, shipped).pal)
+        assertEquals(Pal(Pack.GEN3, "4"), L.choose(Who.ALWAYS, 253, Own.NONE, false, charmander, shipped).pal)
     }
 
     /** "Always use lists every species that has a sheet": the list the picker shows. */
@@ -101,9 +105,10 @@ class SpriteIsMeLogicTest {
         assertTrue(list.any { it.second == "Charizard-X" }, "a form, by the table's own spelling")
         assertTrue(1 in ids && 277 in ids && 411 in ids, "Gen 1-3 as before")
         assertEquals(386, ids.count { it <= 411 }, "every Gen 1-3 Pokemon, and no unused slot")
-        // Only those with a sheet: Simisear and Mega Falinks have none. Charizard-Y walks as Charizard (Blake, 2026-10-02:
-        // a Mega or form with no sheet of its own uses its base species').
-        assertTrue(539 !in ids && 1263 !in ids)
+        // Only those with a sheet; Simisear and Mega Falinks have one since 2026-10-08 (the Generation 9 Resource Pack's,
+        // Falinks's standing in for its Mega). Charizard-Y walks as Charizard (Blake, 2026-10-02: a Mega or form with no
+        // sheet of its own uses its base species').
+        assertTrue(539 in ids && 1263 in ids)
         assertTrue(1053 in ids)
         // Each listed one draws: its sheets are there.
         for (id in ids) assertTrue(ShippedPals.index.find(id, Dex.NAT_DEX) != null, "$id")
@@ -118,14 +123,14 @@ class SpriteIsMeLogicTest {
     fun `a MaxDex lead walks by MaxDex's own numbering, Gen 9 and the Z-A Megas included`() {
         val koraidon = Lead(1032, 30, false, Dex.MAX_DEX)
         assertEquals(Choice(Source.PAL, Pal(Pack.NATIONAL, "1007"), koraidon), L.choose(Who.LEAD, 0, Own.NONE, false, koraidon, shipped))
-        // MaxDex's 1236 is Dragonite-M, where Nat. Dex keeps Battle Bond Greninja: it walks as Dragonite until its own is drawn.
-        assertEquals(Pal(Pack.GEN3, "149"), L.choose(Who.LEAD, 0, Own.NONE, false, Lead(1236, 30, false, Dex.MAX_DEX), shipped).pal)
+        // MaxDex's 1236 is Dragonite-M, where Nat. Dex keeps Battle Bond Greninja: it walks as its own overworld sheet (2026-10-08).
+        assertEquals(Pal(Pack.OW, "149-mega"),L.choose(Who.LEAD, 0, Own.NONE, false, Lead(1236, 30, false, Dex.MAX_DEX), shipped).pal)
         assertEquals(Pal(Pack.NATIONAL, "998"), L.choose(Who.LEAD, 0, Own.NONE, false, Lead(1280, 30, false, Dex.MAX_DEX), shipped).pal, "Baxcalibur-M")
-        // One nobody has drawn yet leaves the trainer, as the line under the switch says: Iron Jugulis, and Falinks-M.
-        assertEquals(Choice(Source.NONE), L.choose(Who.LEAD, 0, Own.NONE, false, Lead(1018, 30, false, Dex.MAX_DEX), shipped))
+        // Iron Jugulis and Falinks-M walk as the Generation 9 Resource Pack's followers (Falinks's for its Mega), 2026-10-08.
+        assertEquals(Pal(Pack.EXPO, "993"), L.choose(Who.LEAD, 0, Own.NONE, false, Lead(1018, 30, false, Dex.MAX_DEX), shipped).pal)
         // Miraidon walks as DarkusShadow's sheet, where Sprite Collab has none (2026-10-04).
         assertEquals(Pal(Pack.DARKUS, "1008"), L.choose(Who.LEAD, 0, Own.NONE, false, Lead(1033, 30, false, Dex.MAX_DEX), shipped).pal)
-        assertEquals(Choice(Source.NONE), L.choose(Who.LEAD, 0, Own.NONE, false, Lead(1276, 30, false, Dex.MAX_DEX), shipped))
+        assertEquals(Pal(Pack.EXPO, "870"), L.choose(Who.LEAD, 0, Own.NONE, false, Lead(1276, 30, false, Dex.MAX_DEX), shipped).pal, "Falinks-M")
     }
 
     /** Always use counts in the picker's numbering on MaxDex too: a Gen 9 pick is the same Pokemon on every game. */
@@ -138,10 +143,12 @@ class SpriteIsMeLogicTest {
         assertEquals(Pal(Pack.NATIONAL, "1007"), L.choose(Who.ALWAYS, koraidon, Own.NONE, false, null, shipped).pal, "before the first Pokemon")
         // A Z-A Mega picked by its name walks as MaxDex's own does.
         assertEquals(ShippedPals.index.find(1236, Dex.MAX_DEX), L.choose(Who.ALWAYS, assertNotNull(Favorites.idOf("Dragonite-M")), Own.NONE, false, null, shipped).pal)
-        // A pick with no sprite falls to the lead; with none for the lead either, the trainer stays.
+        // Iron Jugulis picked walks as its Generation 9 Resource Pack follower (2026-10-08).
         val jugulis = assertNotNull(Favorites.idOf("Iron Jugulis"))
-        assertEquals(Pal(Pack.GEN3, "149"), L.choose(Who.ALWAYS, jugulis, Own.NONE, false, dragoniteM, shipped).pal)
-        assertEquals(Choice(Source.NONE), L.choose(Who.ALWAYS, jugulis, Own.NONE, false, Lead(1018, 30, false, Dex.MAX_DEX), shipped))
+        assertEquals(Pal(Pack.EXPO, "993"), L.choose(Who.ALWAYS, jugulis, Own.NONE, false, dragoniteM, shipped).pal)
+        // A pick with no sprite (unused slot 253) falls to the lead; with none for the lead either, the trainer stays.
+        assertEquals(Pal(Pack.OW, "149-mega"), L.choose(Who.ALWAYS, 253, Own.NONE, false, dragoniteM, shipped).pal)
+        assertEquals(Choice(Source.NONE), L.choose(Who.ALWAYS, 253, Own.NONE, false, Lead(253, 30, false, Dex.NAT_DEX), shipped))
     }
 
     /** The picker lists the Nat. Dex table on every game: each MaxDex Pokemon that walks is in it by name, and draws the same. */

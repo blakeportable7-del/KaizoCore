@@ -1487,6 +1487,7 @@ fun PlayScreen(
                 onAbilityDescription = { name ->
                     trackerRef?.let { t -> t.abilityIdOf(name)?.let(t::abilityDescription) }
                 },
+                onItemDescription = panelLookups::itemDescription,
                 onWeight = panelLookups::weight,
                 onEvolution = panelLookups::evolutionDetails,
                 onEffectiveness = panelLookups::effectiveness,
@@ -1979,6 +1980,7 @@ fun PlayScreen(
                 onAbilityDescription = { name ->
                     trackerRef?.let { t -> t.abilityIdOf(name)?.let(t::abilityDescription) }
                 },
+                onItemDescription = panelLookups::itemDescription,
                 onWeight = panelLookups::weight,
                 onEvolution = panelLookups::evolutionDetails,
                 onEffectiveness = panelLookups::effectiveness,
@@ -2076,6 +2078,7 @@ fun PlayScreen(
             systemFilePresent = { SystemFiles.present(context.filesDir, it) },
             onImportSystemFile = { name -> importSystemFileName = name; systemFilePicker.launch(arrayOf("*/*")) },
             onDismiss = { settingsDialog = false },
+            speeds = speedOptions(), speedNow = speedLabel, onSpeed = ::pickSpeed,
         )
     }
     if (statesDialog) {
@@ -2403,6 +2406,8 @@ internal fun PadButton(
                 { pressed = false
                   coreRelease(keyCode)
                   if (keyCode == KeyEvent.KEYCODE_BUTTON_B) FleeOnB.released(currentOnB) },
+                // The d-pad: a thumb slid onto the next arrow presses it (The Other Toby, 10/10), DpadSlide.
+                slideFrom = keyCode.takeIf { it in DPAD_KEYS }, cell = ((PadGeometry.BUTTON + 2 * PadGeometry.PAD) * scale).dp,
             )
             .padding(horizontal = hitX, vertical = hitY),
     ) {
@@ -2590,15 +2595,45 @@ private fun PcTarget(label: String, onClick: () -> Unit) {
  * returns on a consumed or cancelled gesture as well as on the release, so a
  * core key is still never left latched DOWN with the character walking on.
  */
-private fun Modifier.pressHold(onDown: () -> Unit, onUp: () -> Unit): Modifier =
+private fun Modifier.pressHold(
+    onDown: () -> Unit, onUp: () -> Unit,
+    /** A d-pad arrow: the held direction follows the thumb onto the other arrows (DpadSlide). */
+    slideFrom: Int? = null,
+    cell: androidx.compose.ui.unit.Dp = 0.dp,
+): Modifier =
     this.pointerInput(Unit) {
         awaitEachGesture {
-            awaitFirstDown(requireUnconsumed = false)
+            val down = awaitFirstDown(requireUnconsumed = false)
             onDown()
+            if (slideFrom == null) {
+                try {
+                    waitForUpOrCancellation()
+                } finally {
+                    onUp()
+                }
+                return@awaitEachGesture
+            }
+            val from: Int = slideFrom ?: return@awaitEachGesture
+            // The plus's centre in this arrow's own frame: the arrows sit one cell from it.
+            val c = cell.toPx()
+            val (gx, gy) = DpadSlide.grid(from)
+            val cx = size.width / 2f + (1 - gx) * c
+            val cy = size.height / 2f + (1 - gy) * c
+            var held = from
             try {
-                waitForUpOrCancellation()
+                while (true) {
+                    val e = awaitPointerEvent()
+                    val ch = e.changes.firstOrNull { it.id == down.id } ?: break
+                    if (!ch.pressed) break
+                    val now = DpadSlide.direction(ch.position.x - cx, ch.position.y - cy, c, held)
+                    if (now != held) {
+                        if (held == from) onUp() else coreRelease(held)
+                        if (now == from) onDown() else corePress(now)
+                        held = now
+                    }
+                }
             } finally {
-                onUp()
+                if (held == from) onUp() else coreRelease(held)
             }
         }
     }

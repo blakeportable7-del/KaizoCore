@@ -37,12 +37,15 @@ class StatMarks(private val file: File) {
         )
 
         /**
-         * Constants.STAT_STATES, verbatim. State 2 is TWO HYPHENS in the
-         * reference, not a minus sign - the glyph is part of the look.
+         * Constants.STAT_STATES' glyphs, but state 2: the reference's two hyphens are one proper minus sign, centred as
+         * "+" is (Blake, 2026-10-07: "--" "looks terrible" in a smooth font; the phone too). Only the glyph changed: the
+         * marks files store the state number, never the glyph.
          */
+        const val MINUS = "−"
+
         fun symbol(state: Int): String = when (state) {
             1 -> "+"
-            2 -> "--"
+            2 -> MINUS
             3 -> "="
             else -> " "
         }

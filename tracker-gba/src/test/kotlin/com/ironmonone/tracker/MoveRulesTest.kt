@@ -106,9 +106,9 @@ class MoveRulesTest {
     }
 
     @Test
-    fun `Return shows a number only from 100 power, and only with friendship readiness on`() {
+    fun `Return shows max friendship power when friendship readiness is on`() {
         assertEquals("102", adjust(216, ">FR", src = Side(20, friendship = 255)).power)
-        assertEquals(">FR", adjust(216, ">FR", src = Side(20, friendship = 200)).power)   // 80: still hidden
+        assertEquals("102", adjust(216, ">FR", src = Side(20, friendship = 200)).power)
         assertEquals(">FR", adjust(216, ">FR", src = Side(20, friendship = 255), friend = false).power)
         assertEquals("102", adjust(218, "<FR", src = Side(20, friendship = 0)).power)     // Frustration inverts
         assertEquals(">FR", adjust(216, ">FR", src = Side(20, friendship = 255), own = false).power)

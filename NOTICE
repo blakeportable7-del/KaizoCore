@@ -325,8 +325,33 @@ DarkusShadow's overworld sprites - free use with credit   https://www.deviantart
   princess-phoenix's ("Give credits to both if used"). Each post's own image, as fetched, is in
   tools/trainer-data/sources/darkusshadow with its link, dates and sha256 (sources.tsv), cut by
   tools/trainer-data/convert_walking_pals_nat.py at his own pixels, never resampled; each sheet's
-  artists are in walkingpals-darkus/credits.tsv. Used only where Sprite Collab has no sheet of its
+  artists are in walkingpals-darkus/credits.tsv.   Used only where Sprite Collab has no sheet of its
   own. No shinies: his are only on his full shiny sheet, whose public copy is a scaled JPEG.
+
+Overworlds for forms that were still using another Pokemon's sheet - credit the artists
+  https://eeveeexpo.com/resources/1475/
+  Walking Pals in app/src/main/assets/walkingpals-ow, added 2026-10-08. Willøw's Eevee Expo 1475
+  pack (Kidkatt, Larryturbo, Princess-Phoenix; Z-A megas by DarkusShadow and BluebirdDxD; Willøw
+  resized and ported them), JinGuinsoO00's Feraligatr-M and Garchomp-Z
+  (https://www.deviantart.com/jinguinsoo00), and the Heart & Soul follower overworlds from
+  graphics/pokemon in the Heart & Soul source. Each sheet's artists are in walkingpals-ow/credits.tsv.
+  The originals are in tools/trainer-data/sources/ow. No shinies. Mega Delphox is not in this set:
+  the only file on disk was a small preview of the whole line.
+
+Generation 9 Resource Pack followers - credit the artists   https://eeveeexpo.com/resources/1101/
+  Walking Pals for the species still missing after Sprite Collab and DarkusShadow
+  (app/src/main/assets/walkingpals-expo, added 2026-10-08): Simisear, Simipour, Tranquill,
+  Blitzle, Zebstrika, Throh, Crustle, Tirtouga, Carracosta, Amoonguss, Frillish, Shelmet,
+  Bouffalant, Trumbeak, Gumshoos, Shiinotic, Oranguru, Rolycoly, Carkol, Coalossal, Mr. Rime,
+  Falinks, Cufant, Zarude, Maschiff and Iron Jugulis. Mega Falinks walks as Falinks.
+  From Caruban's Generation 9 Resource Pack v3.3.8. The pack asks that the artists be credited.
+  Gen 5: MissingLukey, help-14, Kymoyonian, cSc-A7X, 2and2makes5, Pokegirl4ever, Fernandojl,
+  Silver-Skies, TyranitarDark, Getsuei-H, Kid1513, Milomilotic11, Kyt666, kdiamo11,
+  Chocosrawlooid, Syledude, Gallanty, Gizamimi-Pichu, Zyon17, LarryTurbo, spritesstealer.
+  Gen 7: Larry Turbo, princess-phoenix. Gen 8: SageDeoxys, Wolfang62, LarryTurbo, tammyclaydon.
+  Maschiff: Carmanekko. Iron Jugulis: TooManyLuigis, Mortedesu, Billla, Wolfang62.
+  The sheets as downloaded are in tools/trainer-data/sources/gen9pack (sources.tsv), cut by
+  tools/trainer-data/convert_walking_pals_nat.py. Used only where Sprite Collab has no sheet.
 
 LibretroDroid 0.13.2 — GPL-3.0                Swordfish90/LibretroDroid
   ** VENDORED IN THIS REPO ** at libretrodroid/, with its LICENSE. Oboe (Apache-2.0)
@@ -731,8 +756,10 @@ https://github.com/PokemonHnS-Development/pokehns-expansion
   (2026-10-04, docs/HNS-KAIZO.md). They take no donations and KaizoCore asks for none.
   The one Heart & Soul file in the APK is KaizoCore's own comfort patch, made by
   tools/hns/build.sh from the official 2.0.6 (CRC 01713508) to the KaizoCore build
-  (E61D7527) out of the patch series in tools/hns/patches. SHA-256:
-    55f1395f1820cf023b10dc18754cfabfa67841a69d592f454e3bfefdd5e7b76b  hns-kaizo-heartsoul-206.bps
+  (F5F37A8E) out of the patch series in tools/hns/patches. SHA-256:
+    0eafd91bc54233802ed9d60e8f3ff9e79c37c08b9ab0c01565b071b588b9407c  hns-kaizo-heartsoul-206.bps
+  KaizoCore PC ships its own build of the same series (F4E28E3D, desktop/assets). SHA-256:
+    437906ea57e3598fbeb6aeaa2a7afce72f6ada541f031d58a0a415d45e5e2b4c  hns-kaizo-heartsoul-206.bps
 
 BINDING RELEASE CONDITIONS — verify every one before any public build
 ---------------------------------------------------------------------
@@ -769,3 +796,8 @@ BINDING RELEASE CONDITIONS — verify every one before any public build
 [ ] 9. MaxDex (Tripc423/Maxdex) ships its patch, settings file, icons and tracker data
        with NO grant: the patch since rc34, on Blake's "yes" of 2026-10-03. See the Trip
        entry above. The credit and link on the About screen must stay.
+
+Roboto Condensed (KaizoCore PC only) - SIL Open Font License 1.1
+Copyright 2011 The Roboto Project Authors (https://github.com/googlefonts/roboto-classic)
+  Bundled in KaizoCore-PC.jar (pcui/src/main/resources/fonts, license text beside it) as the PC tracker panel's face:
+  the face Android's sans-serif-condensed is, which the phone's tracker uses from the system.

@@ -22,6 +22,8 @@ internal class PanelLookups(
     private val gb: () -> GbLookups?,
 ) {
     fun moveDescription(id: Int): String? = pick({ it.moveDescription(id) }, { it.moveDescription(id) })
+    /** A held item's description from the game's own table: Heart & Soul's (GbaTracker.itemDescription); null elsewhere. */
+    fun itemDescription(item: Int): String? = runCatching { gba()?.itemDescription(item) }.getOrNull()
     fun weight(species: Int): String? = pick({ it.weight(species) }, { it.weight(species) })
     fun evolution(species: Int): String? = pick({ it.evolution(species) }, { it.evolution(species) })
     /**

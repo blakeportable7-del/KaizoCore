@@ -34,7 +34,7 @@ class RunRestartsTest {
         assertEquals(3, RunHeader.attempt(inPlay = 3, picked = store.attemptOf("platinum-u", "DPPt Kaizo.rnqs")))
         assertEquals(4, RunHeader.attempt(inPlay = null, picked = 4), "no run in play: the picked game's count")
         val run = File("src/main/kotlin/com/ironmonone/app/RunScreen.kt").readText()
-        assertTrue("Attempt \${RunHeader.attempt(inPlay?.attempt, store.attemptOf(rom.id, selectedSettings?.name))}" in run, "the header asks RunHeader")
+        assertTrue("Attempt \${RunHeader.attempt(parked?.attempt ?: inPlay?.attempt, store.attemptOf(rom.id, selectedSettings?.name))}" in run, "the header asks RunHeader")
     }
 
     @Test

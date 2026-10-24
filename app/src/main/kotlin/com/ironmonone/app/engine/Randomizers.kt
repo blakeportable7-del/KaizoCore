@@ -90,20 +90,9 @@ object Randomizers {
      * run code no longer matched; on a phone with Arabic or Persian digits the log's numbers were written in them.
      * The default is the whole process's, so the rest of the app formats in ROOT for the seconds a randomize takes;
      * the app's own text names its locale where it matters. Every caller holds [engineLock], so two never meet here.
+     * The body is EngineLocale's (engine-hns), which KaizoCore PC runs too.
      */
-    internal fun <T> inEngineLocale(block: () -> T): T {
-        val default = Locale.getDefault()
-        val display = Locale.getDefault(Locale.Category.DISPLAY)
-        val format = Locale.getDefault(Locale.Category.FORMAT)
-        Locale.setDefault(Locale.ROOT)
-        try {
-            return block()
-        } finally {
-            Locale.setDefault(default)
-            Locale.setDefault(Locale.Category.DISPLAY, display)
-            Locale.setDefault(Locale.Category.FORMAT, format)
-        }
-    }
+    internal fun <T> inEngineLocale(block: () -> T): T = EngineLocale.inEngineLocale(block)
 
     /**
      * [engine], refusing a Game Boy or GBA ROM that is not whole (rc32 audit P2 #119). Those handlers write back the

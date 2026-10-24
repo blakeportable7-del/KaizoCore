@@ -14,3 +14,5 @@ bps_make.py export-ignore
 bps_apply.py export-ignore
 ups_apply.py export-ignore
 layout_check.py export-ignore
+guide export-ignore
+fx_art.py export-ignore

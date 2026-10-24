@@ -124,7 +124,7 @@ class HnsSetupTest {
         // The real checksums by default: Emerald (USA), the official 2.0.6 and the KaizoCore build.
         assertEquals(HnsSetup.Start.EMERALD, HnsSetup.startOf(0x1F1C08FBL, null))
         assertEquals(HnsSetup.Start.OFFICIAL, HnsSetup.startOf(0x01713508L, null))
-        assertEquals(HnsSetup.Start.KAIZO, HnsSetup.startOf(0xE61D7527L, null))
+        assertEquals(HnsSetup.Start.KAIZO, HnsSetup.startOf(0xF5F37A8EL, null))
     }
 
     @Test
@@ -373,7 +373,7 @@ class HnsSetupTest {
         assertEquals(0x01713508L, official.crc)
         assertEquals(RomKind.HEARTSOUL_206, official.kind)
         val kaizo = RomIdentity.identify(made.kaizo)
-        assertEquals(0xE61D7527L, kaizo.crc)
+        assertEquals(0xF5F37A8EL, kaizo.crc)
         assertEquals(RomKind.HEARTSOUL_KAIZO_206, kaizo.kind)
         // Into a Library: the official plays without a tracker, the KaizoCore build is tracked and Kaizo IronMON's.
         val library = LibraryStore(File(d, "library"), savesDir = null)

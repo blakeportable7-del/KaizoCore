@@ -107,7 +107,10 @@ internal fun MoveRow.toPcMove(ctx: MoveContext?): PcMove {
     // "Calculate variable damage" off: the labels stay labels, and Weather Ball
     // keeps its own type (the reference only recolours it with the option on).
     val adj = ctx?.takeIf { TrackerOptions.calculateVariableDamage }?.let {
-        MoveRules.adjust(id, shownType, base, acc0, it.source, it.target, it.inBattle, it.viewingOwn, it.weather, TrackerOptions.determineFriendship)
+        MoveRules.adjust(id, shownType, base, acc0, it.source, it.target, it.inBattle, it.viewingOwn, it.weather, TrackerOptions.determineFriendship,
+            // Blizzard never misses in hail only on a Heart & Soul build whose B_BLIZZARD_HAIL is Gen 4+ (the builds
+            // before patch 0047). Nat. Dex Emerald and MaxDex FireRed keep Gen 3's Blizzard (docs/HACK-RULES-*.md).
+            laterRules = it.ownCategories && com.ironmonone.tracker.HnsRules.blizzardSureInHail)
     } ?: MoveRules.Shown(shownType, base, acc0)
     // A Weather Ball that took the weather's type changes category with it:
     // Gen 3 splits physical and special by type.
@@ -145,6 +148,7 @@ internal fun MoveRow.toPcMove(ctx: MoveContext?): PcMove {
             // :1535-1541 clear its green only where the move types themselves are hidden; with them shown it stays green
             // on the real power, whatever the column prints (rc32 audit P3 #32).
             stab = battling && t != null && MoveRules.isStab(id, t, cat, adj.power, ctx.attackerTypes),
+            weatherMark = if (battling && t != null) MoveRules.weatherMark(id, t, ctx.weather) else 0, weather = ctx.weather.takeIf { battling },
             effect = if (battling && t != null && TrackerOptions.showMoveEffectiveness && !ctx.hideEffectiveness) MoveRules.effectiveness(id, t, cat, ctx.targetTypes, gen1 = ctx.generation == 1, power = adj.power, natDex = ctx.natDex, maxDex = ctx.maxDex, weather = ctx.weather).takeIf { it != 1.0 } else null,
         )
     }
@@ -155,6 +159,9 @@ internal fun MoveRow.toPcMove(ctx: MoveContext?): PcMove {
         type = adj.type, typeName = adj.type?.let(com.ironmonone.tracker.Gen3Types::name),
         priority = priority, contact = contact,
         powerText = adj.power, accText = adj.acc,
+        // The weather on this move's damage (Blake, 2026-10-10: "Mark it, keep the number"): an arrow by Pow, the number
+        // the move's own base power.
+        weatherMark = if (battling) MoveRules.weatherMark(id, adj.type, ctx!!.weather) else 0, weather = ctx?.weather.takeIf { battling },
         stab = battling && MoveRules.isStab(id, adj.type, cat, adj.power, ctx!!.attackerTypes),
         effect = if (battling && TrackerOptions.showMoveEffectiveness && !ctx!!.hideEffectiveness) MoveRules.effectiveness(id, adj.type, cat, ctx.targetTypes, gen1 = ctx.generation == 1, power = adj.power, natDex = ctx.natDex, maxDex = ctx.maxDex, weather = ctx.weather).takeIf { it != 1.0 } else null,
     )
@@ -185,6 +192,25 @@ internal fun PcEffectGlyph(effect: Double, modifier: Modifier = Modifier) {
         }
         if (up) { chevron(4f, true); if (two) chevron(2f, true) }
         else { chevron(0f, false); if (two) chevron(2f, false) }
+    }
+}
+
+/**
+ * The weather's arrow beside Pow: up when it boosts the move's damage, down when it weakens it, in the weather's colour
+ * (sun orange, rain blue, sand tan, hail ice). Three pixels wide on the card's grid; the number stays the base power.
+ */
+@Composable
+internal fun PcWeatherGlyph(mark: Int, weather: String?, modifier: Modifier = Modifier) {
+    if (mark == 0) return
+    val color = when (weather) { "SUN" -> Color(0xFFFF9A3C); "RAIN" -> Color(0xFF64AAFF); "SANDSTORM" -> Color(0xFFD7B46E); else -> Color(0xFFAADCFF) }
+    Canvas(modifier.width(4.rp).height(9.rp)) {
+        val u = size.width / 4f
+        // A filled triangle 4 wide and 3 tall at the number's middle: a 3 by 2 block of pixels read as a dash.
+        val (tip, base) = if (mark > 0) 3f to 6f else 6f to 3f
+        val path = androidx.compose.ui.graphics.Path().apply {
+            moveTo(0f, base * u); lineTo(4f * u, base * u); lineTo(2f * u, tip * u); close()
+        }
+        drawPath(path, color)
     }
 }
 

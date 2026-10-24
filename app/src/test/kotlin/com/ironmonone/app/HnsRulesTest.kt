@@ -96,7 +96,16 @@ class HnsRulesTest {
             "A TM breaks after one use",
             "Shiny odds are Gen 3's 1 in 8,192",
             "A hidden item is never a TM.",
-            "The start menu has an HM entry.",
+            "There is no HM entry in the start menu.",
+            "Battles play by Nat. Dex Emerald's rules.",
+            "Survive Poison stays on: outside battle, poison stops at 1 HP",
+            "Evolving is never a heal, as in Emerald",
+            "The move menu shows no type effectiveness",
+            "The Pokédex's stats and evolution pages are closed during a run",
+            "Kurt's Apricorn Balls and the GS Ball catch like a Poké Ball",
+            "Mom does not save your money",
+            "A Pokémon put in the PC comes back healed",
+            "Holding B as it starts gets you away only when RUN would surely work",
             "Every Pokémon Center has a Name Rater: the Meowth",
         )
         for (m in offered) {
@@ -106,7 +115,7 @@ class HnsRulesTest {
             for (g in game) assertEquals(1, text.split(g).size - 1, "${m.key}: \"$g\" once, at the top")
             for (g in game) assertTrue(g in top, "${m.key}: \"$g\" at the top")
             // The HeartGold and SoulSilver lines that are wrong for Heart & Soul carry its own fact right under them.
-            assertTrue("the top of Mt. Silver always snows, whatever the date or time" in text, m.key)
+            assertTrue("Red is always fought without hail" in text, m.key)
             assertTrue("Heart & Soul's red Gyarados never comes back" in text, m.key)
             assertTrue("no Heart & Soul event waits for a day of the week" in text, m.key)
             assertTrue("a call from Oak that opens Mt. Silver" in text, m.key)
@@ -128,7 +137,7 @@ class HnsRulesTest {
         }
         val sk = File(dir, "superkaizo.md").readText()
         assertTrue("Heart & Soul's Bug-Catching Contest is open every day, once a day, so no time change and no Celebi is needed." in sk)
-        assertTrue("Heart & Soul's newer form of hail, so Red is always fought in it" in sk)
+        assertTrue("Red is always fought without hail (the summit's snow brings no weather into his battle)" in sk)
         // Evo Kaizo: no evo loops in either pool (Blake, 2026-10-06), as the Nat. Dex rules say.
         val evo = File(dir, "evokaizo.md").readText()
         assertTrue("In KaizoCore, Heart & Soul's Evo Kaizo has no evo loops, in either pool" in evo)

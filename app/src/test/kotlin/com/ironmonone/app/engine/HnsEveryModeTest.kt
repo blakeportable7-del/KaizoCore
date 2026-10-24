@@ -13,6 +13,7 @@ import com.ironmonone.app.RunCodes
 import com.ironmonone.app.engine.hns.HnsGame
 import com.ironmonone.app.engine.hns.HnsLayout
 import com.ironmonone.app.engine.hns.HnsOptions
+import com.ironmonone.app.engine.hns.HnsRandomizer
 import com.ironmonone.app.engine.hns.HnsRom
 import com.ironmonone.app.engine.hns.HnsSpeciesFile
 import com.ironmonone.core.RomKind
@@ -248,7 +249,7 @@ class HnsEveryModeTest(private val mode: String, private val pool: HnsEngine.Poo
         // ------------------------------------------------------------- the mode's own rules outside the engine
         check("BST line is the rule sheet's") {
             val rs = RnqsInfo.parse(settingsFile.name).ruleset
-            expect(line == BstRule.lines(rs, natDex = natdex)?.own) { "engine line $line, rule sheet ${BstRule.lines(rs, natdex)} for $rs" }
+            expect(line == BstRule.lines(rs, natDex = natdex, hns = true)?.own) { "engine line $line, rule sheet ${BstRule.lines(rs, natdex, hns = true)} for $rs" }
         }
         check("Survival heal limit set up") {
             val limit = PcHeals.limitFor(settingsFile.name)
@@ -447,9 +448,9 @@ class HnsEveryModeTest(private val mode: String, private val pool: HnsEngine.Poo
         if (o.trainersLevelModified) check("trainer levels +${o.trainersLevelModifier}%") {
             for (t in out.trainers) {
                 val was = before.getValue(t.id)
-                val allowed = was.mons.map { modLevel(it.level, o.trainersLevelModifier) }.toSet()
+                val allowed = was.mons.map { HnsRandomizer.trainerLevel(it.level, o.trainersLevelModifier) }.toSet()
                 for (tm in t.mons) expect(tm.level in allowed) { "${t.constName} level ${tm.level} not in $allowed" }
-                expect(t.mons.maxOf { it.level } == modLevel(was.mons.maxOf { it.level }, o.trainersLevelModifier)) { "${t.constName} top level" }
+                expect(t.mons.maxOf { it.level } == HnsRandomizer.trainerLevel(was.mons.maxOf { it.level }, o.trainersLevelModifier)) { "${t.constName} top level" }
             }
         }
         check("trainer party sizes (boss +${o.additionalBossPokemon}, important +${o.additionalImportantPokemon}, regular +${o.additionalRegularPokemon}, doubles ${o.doubleBattleMode})") {

@@ -18,6 +18,18 @@ import kotlin.test.assertTrue
  */
 class PalFormsTest {
     private val F = PalForms
+
+    @Test
+    fun `Castform's battle type wears that weather's sheet`() {
+        assertEquals("351-sunny", F.battleForm(351, hns = true, listOf(10, 10)))
+        assertEquals("351-rainy", F.battleForm(351, hns = true, listOf(11)))
+        assertEquals("351-snowy", F.battleForm(385, hns = false, listOf(15, 15)))
+        assertNull(F.battleForm(351, hns = true, listOf(0, 0)), "Normal Castform keeps its own sheet")
+        assertNull(F.battleForm(6, hns = true, listOf(10)), "Color Change does not invent a form")
+        val look = F.lookFor(351, hns = true, listOf(10, 10), shiny = true, pid = 0)
+        assertEquals(Look(form = "351-sunny", shiny = true), look)
+        assertEquals(Pal(Pack.NATIONAL, "351-sunny"), ix.look(ix.find(1051, Dex.HNS)!!, Look()))
+    }
     private val ix = ShippedPals.index
 
     /** RC35-NOTICED rows 42 and 43: a DS Pokemon walks, and shows on the game over screen, in its own form. */

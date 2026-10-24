@@ -1,6 +1,5 @@
 package com.ironmonone.app
 
-import android.view.KeyEvent
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
@@ -15,8 +14,6 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import kotlin.math.roundToInt
@@ -50,6 +47,14 @@ import kotlinx.coroutines.withContext
  * Blake, 2026-10-04: "i want iron boulder, find the missing sprites". A third set, walkingpals-darkus/ ([Pack.DARKUS]),
  * holds DarkusShadow's overworld sprites for Pokemon Sprite Collab has not drawn (Iron Boulder, Iron Crown, Chien-Pao,
  * Mega Malamar and the rest natdex-map.tsv names there); Sprite Collab's own sheet always wins.
+ *
+ * Blake, 2026-10-08: "add them to this project". A fourth set, walkingpals-expo/ ([Pack.EXPO]), holds the Generation 9
+ * Resource Pack's follower sheets for the species still missing after those two (Simisear through Iron Jugulis).
+ * Sprite Collab's own sheet still wins.
+ *
+ * Blake, 2026-10-08: "add them to our tracker". A fifth set, walkingpals-ow/ ([Pack.OW]), holds the overworld sheets
+ * gathered for the forms that were still using another Pokémon's sheet: Willøw's mega pack, JinGuinsoO00's
+ * Feraligatr-M and Garchomp-Z, and the Heart & Soul follower strips.
  */
 object WalkingPals {
     enum class Anim(val key: String) { IDLE("idle"), WALK("walk"), SLEEP("sleep"), FAINT("faint") }
@@ -70,6 +75,17 @@ object WalkingPals {
          * DARKUSSHADOW). Free use with credit, credited on the About screen.
          */
         DARKUS("walkingpals-darkus", "walkingpals-darkus.tsv"),
+        /**
+         * Follower sheets from Caruban's Generation 9 Resource Pack (eeveeexpo.com/resources/1101), keyed as [NATIONAL]
+         * is, only where Sprite Collab has no sheet (Blake, 2026-10-08). Idle and walk only. Credit the artists.
+         */
+        EXPO("walkingpals-expo", "walkingpals-expo.tsv"),
+        /**
+         * Overworld sheets for forms that were still using another Pokémon's sheet (Blake, 2026-10-08: "add them to our
+         * tracker"). Willøw's mega pack, JinGuinsoO00's Feraligatr-M and Garchomp-Z, and the Heart & Soul follower
+         * strips. Idle and walk only. Credit the artists.
+         */
+        OW("walkingpals-ow", "walkingpals-ow.tsv"),
     }
 
     /** Where one Pokemon's sheets are: a set, its key in that set's table, and whether it is the shiny ([Index.look]). */
@@ -141,10 +157,14 @@ object WalkingPals {
         private val internalOf: (Int) -> Int? = Favorites::fromNational,
         private val shinies: Map<Pack, Shinies> = emptyMap(),
         private val darkus: Map<String, Map<Anim, Sheet>> = emptyMap(),
+        private val expo: Map<String, Map<Anim, Sheet>> = emptyMap(),
+        private val ow: Map<String, Map<Anim, Sheet>> = emptyMap(),
     ) {
         /** [pal]'s sheets; a shiny's own sheets in place of the plain ones for the animations that have them. */
         fun sheets(pal: Pal): Map<Anim, Sheet>? {
-            val plain = when (pal.pack) { Pack.GEN3 -> gen3; Pack.NATIONAL -> national; Pack.DARKUS -> darkus }[pal.key] ?: return null
+            val plain = when (pal.pack) {
+                Pack.GEN3 -> gen3; Pack.NATIONAL -> national; Pack.DARKUS -> darkus; Pack.EXPO -> expo; Pack.OW -> ow
+            }[pal.key] ?: return null
             val own = if (pal.shiny) shinies[pal.pack]?.sheets?.get(pal.key) else null
             return if (own == null) plain else plain + own.filterKeys { it in plain }
         }
@@ -340,14 +360,14 @@ object WalkingPals {
 
     @Volatile private var index: Index? = null
 
-    private fun <T> asset(ctx: android.content.Context, path: String, empty: T, read: (Sequence<String>) -> T): T =
-        runCatching { ctx.assets.open(path).bufferedReader(Charsets.UTF_8).useLines(read) }.getOrDefault(empty)
+    private fun <T> asset(ctx: PcCtx, path: String, empty: T, read: (Sequence<String>) -> T): T =
+        runCatching { ctx.pcOpenAsset(path).bufferedReader(Charsets.UTF_8).useLines(read) }.getOrDefault(empty)
 
     /**
      * The tables, read and parsed the first time: it blocks its caller while it reads, so it is for a background
      * thread (AndroidSpriteArt.prepare, [ready]'s own). The main thread asks [ready].
      */
-    fun index(ctx: android.content.Context): Index =
+    fun index(ctx: PcCtx): Index =
         index ?: synchronized(this) {
             index ?: Index(
                 asset(ctx, "${Pack.GEN3.dir}/${Pack.GEN3.table}", emptyMap()) { parse(it) },
@@ -358,6 +378,8 @@ object WalkingPals {
                     Shinies(asset(ctx, "${p.dir}/shiny-colors.tsv", emptyMap()) { parseShinyColors(it) }, asset(ctx, "${p.dir}/shiny.tsv", emptyMap()) { parse(it) })
                 },
                 darkus = asset(ctx, "${Pack.DARKUS.dir}/${Pack.DARKUS.table}", emptyMap()) { parse(it) },
+                expo = asset(ctx, "${Pack.EXPO.dir}/${Pack.EXPO.table}", emptyMap()) { parse(it) },
+                ow = asset(ctx, "${Pack.OW.dir}/${Pack.OW.table}", emptyMap()) { parse(it) },
             ).also { index = it }
         }
 
@@ -369,7 +391,7 @@ object WalkingPals {
      * picker in composition, Play as your Pokemon in a tick (RC35-NOTICED N #10). A composable that was told null
      * recomposes when they land, and a tick asks again on the next frame.
      */
-    fun ready(ctx: android.content.Context): Index? = loaded.get { index(ctx.applicationContext ?: ctx) }
+    fun ready(ctx: PcCtx): Index? = loaded.get { index(ctx.pcAppCtx) }
 
     /** What the decoded sheets may hold at most: a party's and a foe's, many times over, and never a session's worth. */
     const val CACHE_BYTES = 32L * 1024 * 1024
@@ -386,20 +408,12 @@ object WalkingPals {
      * where no shiny ships for that animation. Reads the app's assets: never on the main thread (WalkingPalsIcon and
      * AndroidSpriteArt call it on IO and Default).
      */
-    fun bitmap(ctx: android.content.Context, anim: Anim, pal: Pal): ImageBitmap? =
+    fun bitmap(ctx: PcCtx, anim: Anim, pal: Pal): ImageBitmap? =
         cache.get(if (pal.shiny) "shiny/" + pal.path(anim) else pal.path(anim)) { _ ->
             runCatching {
                 val art = if (pal.shiny) index(ctx).art(pal, anim) else Art(pal.path(anim))
                 val colors = art.colors
-                val opts = android.graphics.BitmapFactory.Options().apply { inMutable = colors != null }
-                val b = ctx.assets.open(art.path).use { android.graphics.BitmapFactory.decodeStream(it, null, opts) }
-                if (b != null && colors != null) {
-                    val px = IntArray(b.width * b.height)
-                    b.getPixels(px, 0, b.width, 0, 0, b.width, b.height)
-                    colors.apply(px)
-                    b.setPixels(px, 0, b.width, 0, 0, b.width, b.height)
-                }
-                b?.asImageBitmap()
+                ctx.pcOpenAsset(art.path).use { pcDecodePicture(it, colors?.let { c -> { px: IntArray -> c.apply(px) } }) }
             }.getOrNull()
         }
 
@@ -547,7 +561,7 @@ internal fun palAnim(afk: Boolean, status: String, walk: Boolean): WalkingPals.A
  */
 @Composable
 fun WalkingPalsIcon(pal: WalkingPals.Pal, status: String, unitDp: androidx.compose.ui.unit.Dp, boxDp: androidx.compose.ui.unit.Dp): Boolean {
-    val ctx = LocalContext.current
+    val ctx = LocalPcCtx.current
     // The tables are read off the main thread (RC35-NOTICED N #10); a pal was found in them, so they are in now.
     val sheets = WalkingPals.ready(ctx).let { ix -> remember(ix, pal) { ix?.sheets(pal) } }
     if (sheets == null) return false
@@ -597,4 +611,14 @@ fun WalkingPalsIcon(pal: WalkingPals.Pal, status: String, unitDp: androidx.compo
         )
     }
     return true
+}
+
+/** android.view.KeyEvent's own values, the ones the phone hands [SpriteMotion.key]; named here so the file is the same on a desktop. */
+private object KeyEvent {
+    const val ACTION_DOWN = 0
+    const val ACTION_UP = 1
+    const val KEYCODE_DPAD_UP = 19
+    const val KEYCODE_DPAD_DOWN = 20
+    const val KEYCODE_DPAD_LEFT = 21
+    const val KEYCODE_DPAD_RIGHT = 22
 }

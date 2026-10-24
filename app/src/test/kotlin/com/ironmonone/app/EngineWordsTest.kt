@@ -36,8 +36,9 @@ class EngineWordsTest {
         val f = File(dir, "natdex.gba").apply { writeBytes(ByteArray(4096)) }
         val e = assertFailsWith<NatDexEngine.EngineException> { NatDexEngine.randomize(f, File(presets, "RSE NatDex v1.2 Kaizo.rnqs"), File(dir, "out.gba"), 1L) }
         assertEquals("\"natdex.gba\" is not a GBA Pokémon game the Nat. Dex randomizer can open.", e.message)
-        for (src in listOf("engine/ZxEngine.kt", "engine/NatDexEngine.kt")) {
-            val text = File("src/main/kotlin/com/ironmonone/app/$src").readText()
+        // NatDexEngine moved to engine-hns with the Heart & Soul randomizer (KaizoCore PC), same package.
+        for (src in listOf("src/main/kotlin/com/ironmonone/app/engine/ZxEngine.kt", "../engine-hns/src/main/kotlin/com/ironmonone/app/engine/NatDexEngine.kt")) {
+            val text = File(src).readText()
             val literals = text.lines().filterNot { it.trimStart().startsWith("//") || it.trimStart().startsWith("*") }
                 .flatMap { line -> Regex("\"((?:[^\"\\\\]|\\\\.)*)\"").findAll(line).map { it.groupValues[1] } }
             for (s in literals) assertFalse(Regex("\\bROM\\b").containsMatchIn(s), "$src: ROM in prose: $s")

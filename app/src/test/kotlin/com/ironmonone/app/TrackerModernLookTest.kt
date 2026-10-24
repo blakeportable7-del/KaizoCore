@@ -74,7 +74,8 @@ class TrackerModernLookTest {
     @Test
     fun `beside the head the moves table drops the rule over its header, and the DS card the one over its encounter row`() {
         val moves = read("PcTracker.kt").substringAfter("fun PcMovesSection(").substringBefore("\n}\n")
-        assertTrue("if (!LocalMovesBeside.current) Box(Modifier.fillMaxWidth().height(1.dp)" in moves)
+        // The rule is 1.dp on the phone and one reference pixel at KaizoCore PC's rows (LocalPcReferenceRows).
+        assertTrue("if (!LocalMovesBeside.current) Box(Modifier.fillMaxWidth().height(if (ref) 1.rp else 1.dp)" in moves)
         assertTrue("if (!LocalMovesBeside.current) androidx.compose.foundation.layout.Box(" in read("NdsTrackerPanel.kt"))
     }
 

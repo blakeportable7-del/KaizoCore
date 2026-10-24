@@ -430,12 +430,14 @@ class RunScreenKaizoTest {
     fun `the start button says what it starts, and only Continue is red while a run exists`() {
         val footer = run.substringAfter("// ---- Sticky footer")
         assertTrue("RunCopy.start(nextAttempt),\n              modifier = Modifier.fillMaxWidth()," in footer)
-        assertTrue("accent = inPlay == null," in footer, "red only when there is no run to continue")
-        assertTrue("Gen3Button(RunCopy.start(nextAttempt), accent = inPlay == null) {" in footer, "the question's button too")
+        assertTrue("accent = inPlay == null && parked == null," in footer, "red only when there is no run to continue")
+        assertTrue("Gen3Button(RunCopy.start(nextAttempt), accent = inPlay == null && parked == null) {" in footer, "the question's button too")
         assertTrue("Gen3Button(RunCopy.CANCEL) { confirmNewRun = false }" in footer)
         assertTrue("RunCopy.confirmNewAttempt(" in footer)
         assertTrue("Gen3Button(if (run.nuzlocke) RunCopy.CONTINUE_NUZLOCKE else RunCopy.continueRun(run.attempt), accent = true) {" in run, "Continue is the filled one")
-        assertEquals(1, Regex("""accent = true""").findAll(run).count(), "one filled button on the screen")
+        // Continue the run in place, or the picked game's run set aside (PrepStore.parkedRun): never both on screen.
+        assertTrue("if (parked == null) inPlay?.let { run ->" in run, "one Continue at a time")
+        assertEquals(2, Regex("""accent = true""").findAll(run).count(), "one filled button on the screen")
         // The number is the next one: what is counted plus one.
         assertTrue("val nextAttempt = (selectedRom?.first?.id?.let { store.attemptOf(it, selectedSettings?.name) } ?: 0) + 1" in run)
         for (gone in listOf("\"Start new run\"", "\"Randomize\"", "YES, NEW RUN", "\"CANCEL\"", "Back to attempt", "End the current run and roll a new seed"))

@@ -166,7 +166,9 @@ object NextRunJob {
             if (settleMs > 0) Thread.sleep(settleMs)
             if (gen != generation || !ahead || RunJob.busy) return
             val store = PrepStore(app)
-            val (kind, prepared, settings) = runCatching { RunStart.lastInputs(store) }.getOrNull() ?: return
+            val (kind, prepared, file) = runCatching { RunStart.lastInputs(store) }.getOrNull() ?: return
+            // Black 2 and White 2's Challenge Mode copy, as RunStart makes the run from it (ExtraPasses.forRun).
+            val settings = runCatching { ExtraPasses.forRun(store, kind, file) }.getOrNull() ?: return
             // The passes as RUN has them switched now (ExtraPasses); NEW RUN asks again, and a
             // switch flipped in between makes a different recipe, so this stage is not taken.
             val secondPass = ExtraPasses.secondPassFor(app, store, kind, settings)

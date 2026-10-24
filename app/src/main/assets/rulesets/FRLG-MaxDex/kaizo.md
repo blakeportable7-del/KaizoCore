@@ -175,4 +175,4 @@ In KaizoCore, MaxDex is held to the Nat. Dex rules above for v1.0.0 to v1.1.3, t
 - Nat. Dex Ruleset Changes, the Nat. Dex Extension wiki by CyanSixFour: https://github.com/CyanSMP64/NatDexExtension/wiki/Nat.-Dex-Ruleset-Changes (last changed 2026-06-29)
 - Ruleset page of the MaxDex wiki by Trip (Tripc423), every version: https://github.com/Tripc423/Maxdex.wiki.git (made 2026-06-19, last changed and deleted 2026-07-03)
 
-Generated 2026-10-03 by tools/rules/build_rules.py. Rulesets get revised; if this reads behind a source, regenerate.
+Generated 2026-10-07 by tools/rules/build_rules.py. Rulesets get revised; if this reads behind a source, regenerate.

@@ -63,7 +63,7 @@ internal fun HeartSoulScreen(
     var gameLine by remember { mutableStateOf<Pair<String, Boolean>?>(null) }
     var patchLine by remember { mutableStateOf<Pair<String, Boolean>?>(null) }
     var result by remember { mutableStateOf<Pair<String, Boolean>?>(null) }
-    var added by remember { mutableStateOf<HnsSetup.Added?>(null) }
+    var added by remember { mutableStateOf<HnsAdded?>(null) }
     var busy by remember { mutableStateOf(false) }
     val fromLibrary = remember { mutableStateListOf<Pair<LibraryStore.Entry, HnsSetup.Start>>() }
     var listed by remember { mutableStateOf(0) }

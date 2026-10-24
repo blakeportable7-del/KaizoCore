@@ -6,6 +6,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 /**
@@ -126,16 +127,46 @@ class HnsTrackerTest {
 
     @Test
     fun `the generated layout is this layout export's`() {
-        val json = File("../app/src/main/assets/hns/layout-kaizo.json").readText()
-        assertEquals("%08X".format(HnsLayout.BUILD_CRC), Regex("\"buildCrc\":\\s*\"(\\w+)\"").find(json)!!.groupValues[1])
-        val syms = Regex("\"(\\w+)\":\\s*\\{\"addr\":\\s*\"0x([0-9A-F]{8})\",\\s*\"size\"").findAll(json.substringAfter("\"symbols\"").substringBefore("\"labels\""))
-            .associate { it.groupValues[1] to it.groupValues[2].toLong(16) }
-        assertTrue(syms.size >= 70, "symbols read: ${syms.size}")
-        for ((n, a) in syms) assertEquals(a, HnsLayout::class.java.getField(n).getLong(null), n)
+        // Two builds (patch 0061, 2026-10-23): the app's export in app/src/main/assets, the PC's in desktop/assets.
+        val was = HnsLayout.pcBuild
+        try {
+            for ((pc, path) in listOf(false to "../app/src/main/assets/hns/layout-kaizo.json", true to "../desktop/assets/hns/layout-kaizo.json")) {
+                HnsLayout.pcBuild = pc
+                val json = File(path).readText()
+                assertEquals("%08X".format(HnsLayout.BUILD_CRC), Regex("\"buildCrc\":\\s*\"(\\w+)\"").find(json)!!.groupValues[1])
+                val syms = Regex("\"(\\w+)\":\\s*\\{\"addr\":\\s*\"0x([0-9A-F]{8})\",\\s*\"size\"").findAll(json.substringAfter("\"symbols\"").substringBefore("\"labels\""))
+                    .associate { it.groupValues[1] to it.groupValues[2].toLong(16) }
+                assertTrue(syms.size >= 70, "symbols read: ${syms.size}")
+                for ((n, a) in syms) assertEquals(a, layoutLong(n), "$n (pc=$pc)")
+            }
+        } finally { HnsLayout.pcBuild = was }
         // The party is the 100-byte Gen 3 shape with every substructure packed; the battle struct grew to 136 bytes.
         assertEquals(100, HnsLayout.Pokemon.SIZE); assertEquals(11, HnsLayout.PokemonSubstruct0.species.width)
         assertEquals(136, HnsLayout.BattlePokemon.SIZE)
         assertEquals(HnsLayout.BattlePokemon.personality.offset, HnsLayout.BattlePokemon.volatiles.offset - 8, "the personality is read 8 below status2Offset")
+    }
+
+    /** A symbol of HnsLayout by name: a const field, or the getter of one that differs between the two builds. */
+    private fun layoutLong(n: String): Long = runCatching { HnsLayout::class.java.getField(n).getLong(null) }.getOrElse {
+        HnsLayout::class.java.getMethod("get" + n.replaceFirstChar { it.uppercase() }).invoke(HnsLayout) as Long
+    }
+
+    @Test
+    fun `each build is recognized and read with its own addresses`() {
+        val was = HnsLayout.pcBuild
+        try {
+            val dir = romDir() ?: return println("SKIP: no .vendor/hns")
+            for ((name, pc) in listOf("hns-kaizo-%08X.gba".format(HnsLayout.APP_BUILD_CRC) to false, "hns-kaizo-%08X.gba".format(HnsLayout.PC_BUILD_CRC) to true)) {
+                val f = File(dir, name)
+                if (!f.isFile) { println("SKIP: no $name"); continue }
+                val mem = Mem(f.readBytes())
+                HnsLayout.pcBuild = !pc
+                assertTrue(HnsMaps.isKaizoBuild(mem), name)
+                assertEquals(pc, HnsLayout.pcBuild, name)
+                assertSame(HnsMaps.KAIZO, GameMap.resolve(mem), name)
+                assertEquals("BULBASAUR", HnsData(mem).speciesName(1)?.uppercase(), name)
+            }
+        } finally { HnsLayout.pcBuild = was }
     }
 
     @Test
@@ -237,7 +268,7 @@ class HnsTrackerTest {
         val r = rom!!
         val d = HnsData(Mem(r))
         assertEquals(20.0 to false, d.healItems[28]); assertEquals(100.0 to true, d.healItems[31])
-        assertEquals(25.0 to true, d.healItems[523], "Sitrus Berry, a quarter")
+        assertEquals(30.0 to false, d.healItems[523], "Sitrus Berry, 30 HP flat (Gen 3, patch 0047)")
         assertEquals("Poison", d.statusItems[43]); assertEquals("All", d.statusItems[48])
         assertTrue(49 in d.ppItems); assertTrue(1 in d.balls && 2 in d.balls); assertTrue(121 in d.battleItems)
         // Route 29 (MAP_ROUTE29_HNS = group 0, num 11).
@@ -278,8 +309,8 @@ class HnsTrackerTest {
         mem.w8(sb1 + HnsLayout.SaveBlock1.location.offset, 0); mem.w8(sb1 + HnsLayout.SaveBlock1.location.offset + 1, 11)
         val s0 = t.read(); val s = t.read()   // a map id is adopted on its second read
         assertEquals(0b1_0000_0011, s.badges); assertEquals("GSC", s.badgeSet)
-        // Pikachu has 40 max HP: 3 Potions are 150% of it, 2 Sitrus Berries 50%.
-        assertEquals(5, s.healCount); assertEquals(200, s.healPercent)
+        // Pikachu has 40 max HP: 3 Potions are 150% of it, 2 Sitrus Berries at Gen 3's flat 30 HP another 150%.
+        assertEquals(5, s.healCount); assertEquals(300, s.healPercent)
         assertEquals(mapOf(4 to 5), t.bagBalls())
         val rows = t.healsInBag(s.party.first())
         assertEquals("HP", rows.first { it.id == 28 }.category); assertEquals("Status", rows.first { it.id == 43 }.category)
@@ -339,6 +370,10 @@ class HnsTrackerTest {
         assertEquals(listOf("TACKLE"), after.enemy!!.movesSeen.map { it.uppercase() })
 
         // Its ability pop-up: gBattlescriptCurrInstr inside BattleScript_AbilityPopUp, gBattlerAbility the foe.
+        // The game keeps the ability on the battle mon (the randomized one), and the reveal reads it there.
+        val bmAb = HnsLayout.BattlePokemon
+        val mons = mem.read(HnsLayout.gBattleMons, bmAb.SIZE * 2)
+        put(bmAb.ability, mons, bmAb.SIZE, t.baseStats(39)!!.ability1); mem.write(HnsLayout.gBattleMons, mons)
         mem.w8(HnsLayout.gBattlerAbility, 1)
         mem.w32(HnsLayout.gBattlescriptCurrInstr, HnsLayout.BattleScript_AbilityPopUp.first + 5)
         val reveals = t.readAbilityTriggers()
@@ -379,6 +414,9 @@ class HnsTrackerTest {
         put(V.leechSeed, mons, BM.volatiles.offset, 2)
         put(V.substitute, mons, BM.volatiles.offset, 1)
         put(V.tauntTimer, mons, BM.SIZE + BM.volatiles.offset, 2)
+        // The foe: confused too, and in love with Pikachu (INFATUATED_WITH(0) = 1).
+        put(V.confusionTurns, mons, BM.SIZE + BM.volatiles.offset, 2)
+        put(V.infatuation, mons, BM.SIZE + BM.volatiles.offset, 1)
         mem.write(HnsLayout.gBattleMons, mons)
         // The player's side: Reflect with 4 turns and two layers of Spikes; Tailwind on the foe's side.
         mem.w32(HnsLayout.gSideStatuses, HnsLayout.SIDE_STATUS_REFLECT.toLong())
@@ -409,6 +447,7 @@ class HnsTrackerTest {
         assertTrue("CONFUSED (1- 4 TURNS)" in me && "SUBSTITUTE" in me && "LEECH SEED (JIGGLYPUFF)" in me, "$me")
         val foe = d.mons[1].map { it.text.uppercase() }
         assertTrue("TAUNT: 2 TURNS LEFT" in foe && "FUTURE: 2 TURNS LEFT (PIKACHU)" in foe, "$foe")
+        assertTrue("CONFUSED (1- 4 TURNS)" in foe && "ATTRACT (PIKACHU)" in foe, "$foe")
     }
 
     @Test
@@ -526,6 +565,45 @@ class HnsTrackerTest {
         assertEquals("PIKACHU", t.starters()[0].name.uppercase())
     }
 
+    /** The five blocks kaizocore-hns.lua copies, and nothing else. */
+    private fun sparse(full: Mem): Mem {
+        val thin = Mem(full.rom)
+        fun copy(addr: Long, len: Int) {
+            thin.write(addr, full.read(addr, len))
+        }
+        copy(0x02000000L, 0x1E20)
+        copy(0x02034760L, 0x7B0)
+        copy(0x03001DACL, 0x2430)
+        val sb1p = full.read(HnsLayout.gSaveBlock1Ptr, 4).let { it.u32(0) }
+        val sb2p = full.read(HnsLayout.gSaveBlock2Ptr, 4).let { it.u32(0) }
+        copy(sb1p, 7612)
+        copy(sb2p, 176)
+        return thin
+    }
+
+    @Test
+    fun `the five RAM blocks the script copies are enough for the party, the battle, and the offered starter`() {
+        val (mem, _) = game() ?: return
+        onMap(mem, 1, 0)
+        val vars = sb1 + HnsLayout.SaveBlock1.vars.offset
+        mem.w16(vars + 2L * (HnsLayout.VAR_TEMP_2 - HnsLayout.VARS_START), 25)
+        mem.w16(HnsLayout.gSpecialVar_Result, 255)
+        val offered = GbaTracker(sparse(mem), GameMap.resolve(mem))
+        offered.read()
+        assertEquals(25, offered.read().starterOffered, "the yes/no is inside the five blocks")
+        mem.write(HnsLayout.gPlayerParty, pikachu); mem.w8(HnsLayout.gPlayerPartyCount, 1)
+        mem.w16(HnsLayout.gSpecialVar_Result, 0)
+        val cleared = GbaTracker(sparse(mem), GameMap.resolve(mem))
+        assertNull(cleared.read().starterOffered)
+        battle(mem, 39, 1)
+        val fighting = GbaTracker(sparse(mem), GameMap.resolve(mem))
+        fighting.read()
+        val s = fighting.read()
+        assertTrue(s.inBattle, "the battle opens from the five blocks")
+        assertEquals("JIGGLYPUFF", s.enemy!!.speciesName.uppercase())
+        assertEquals("PIKACHU", s.party.single().speciesName.uppercase())
+    }
+
     @Test
     fun `beating Lance is the League beaten, for Survival's Kanto heals`() {
         val (mem, t) = game() ?: return
@@ -580,8 +658,8 @@ class HnsTrackerTest {
         assertEquals(3, byItem.getValue(1).rate); assertEquals(5, byItem.getValue(1).quantity)
         assertTrue(byItem.getValue(1).pokeBall); assertEquals(1, d.rows.count { it.pokeBall })
         assertEquals(2, byItem.getValue(15).quantity); assertEquals(3, byItem.getValue(15).rate)
-        // Net x3.5 on a Bug: 28, 12%. Heavy: Steel, x4: 32, 14%. Master: certain.
-        assertEquals(12, byItem.getValue(7).rate); assertEquals(14, byItem.getValue(21).rate)
+        // Net x3 on a Bug (Gen 3): 24, 10%. Heavy, one of Kurt's: a Poke Ball in this build, 3%. Master: certain.
+        assertEquals(10, byItem.getValue(7).rate); assertEquals(3, byItem.getValue(21).rate)
         assertEquals(100, byItem.getValue(4).rate)
         // Every item in the Poke Balls pocket has one line; the carried ones first.
         assertEquals(d.rows.size, byItem.size)
@@ -760,5 +838,47 @@ class HnsTrackerTest {
         assertEquals(day, walking(1), "by day")
         assertEquals(day, walking(0), "morning has no table of its own: the day's (OW_TIME_OF_DAY_FALLBACK)")
         assertEquals(day, walking(2), "evening too")
+    }
+
+    @Test
+    fun `the RAM a Heart and Soul read touches`() {
+        val (mem, mapTracker) = game() ?: return
+        val hits = ArrayList<Pair<Long, Int>>()
+        val tracing = object : MemoryReader {
+            override fun read(address: Long, length: Int): ByteArray {
+                if (address in 0x02000000L..0x0203FFFFL || address in 0x03000000L..0x03007FFFL) hits += address to length
+                return mem.read(address, length)
+            }
+        }
+        val t = GbaTracker(tracing, mapTracker.map)
+        mem.write(HnsLayout.gPlayerParty, pikachu); mem.w8(HnsLayout.gPlayerPartyCount, 1)
+        mem.w8(sb1 + HnsLayout.SaveBlock1.location.offset, 0); mem.w8(sb1 + HnsLayout.SaveBlock1.location.offset + 1, 11)
+        t.read(); t.read()
+        battle(mem, 1, 1)
+        t.read(); t.read()
+        mem.w8(HnsLayout.gCurrentTurnActionNumber, 1)
+        t.read()
+        val merged = ArrayList<Pair<Long, Long>>()
+        for ((a, n) in hits.sortedBy { it.first }) {
+            val end = a + n
+            val last = merged.lastOrNull()
+            if (last != null && a <= last.second + 32) merged[merged.lastIndex] = last.first to maxOf(last.second, end)
+            else merged += a to end
+        }
+        var total = 0L
+        val out = StringBuilder()
+        for ((a, e) in merged) {
+            val n = e - a
+            total += n
+            val where = when {
+                a in sb1 until sb1 + HnsLayout.SaveBlock1.SIZE -> "sb1+${a - sb1}"
+                a in sb2 until sb2 + HnsLayout.SaveBlock2.SIZE -> "sb2+${a - sb2}"
+                else -> "abs"
+            }
+            out.append("%08X %4d %s\n".format(a, n, where))
+        }
+        out.append("TOTAL $total ranges ${merged.size}\n")
+        File("build/hns-ram-ranges.txt").also { it.parentFile.mkdirs() }.writeText(out.toString())
+        assertTrue(total < 8_000, "a read touched $total RAM bytes")
     }
 }

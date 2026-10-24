@@ -1,0 +1,26 @@
+# A showcase of the sandbox: a gym battle with most of the effects in it.
+lead Quilava lv 24 hp 70/71 ability Blaze item Charcoal moves Ember, Quick Attack, Smokescreen, Swift
+foe Miltank lv 25 moves Rollout, Milk Drink, Attract, Stomp
+wait 0.4
+# The opponent's card first.
+foe stage ATK +1
+foe status PAR
+foe damage 30
+wait 0.6
+foe taunt 3
+foe leech seed
+view own
+own stage ACC -1
+own stage ACC -1
+own status BRN
+own damage 28
+own use Full Restore
+own use X Accuracy
+own substitute on
+own disable Swift 4
+wait 0.5
+own substitute off
+own status CONFUSE
+own status ATTRACT
+levelup
+badge 3

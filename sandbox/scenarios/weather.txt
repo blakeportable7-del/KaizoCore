@@ -1,0 +1,22 @@
+# Weather on the moves: an arrow by Pow when the weather boosts or weakens the move's damage (the number stays the
+# move's base power), and the Acc column for Thunder and Blizzard. Then Golduck's Cloud Nine switches it all off.
+lead Mew lv 30 moves Flamethrower, Surf, Thunder, Solar Beam
+foe Graveler lv 30 moves Rock Throw, Magnitude, Defense Curl, Rollout
+view own
+wait 0.6
+sun
+wait 1.6
+rain
+wait 1.6
+sand
+wait 1.6
+hail
+wait 1.2
+own learn Blizzard over Solar Beam
+wait 1.0
+rain
+foe Golduck lv 31 moves Surf, Confusion, Fury Swipes, Disable
+view own
+wait 0.6
+foe ability Cloud Nine
+wait 1.6

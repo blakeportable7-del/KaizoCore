@@ -139,6 +139,29 @@ object PalForms {
      * The species to walk as on the overworld: Castform's weather forms, where a Nat. Dex or MaxDex build numbers them as
      * Pokemon of their own, are Castform; every other species is itself. A retail game's Castform is always Normal there.
      */
+    /**
+     * The sheet for a type this species wears in battle, when that type is a form of its own: Castform's weather
+     * (Fire, Water, Ice). Conversion and Color Change do not have a sheet per type; those keep the species' picture
+     * and only the type icons change. Null is the species' own sheet.
+     */
+    fun battleForm(species: Int, hns: Boolean, types: List<Int>): String? {
+        val castform = if (hns) species == CASTFORM_HNS else species == CASTFORM_GEN3
+        if (!castform) return null
+        return when (types.firstOrNull { it != 9 }) {
+            10 -> "351-sunny"
+            11 -> "351-rainy"
+            15 -> "351-snowy"
+            else -> null
+        }
+    }
+
+    /** The card's Walking Pals look: Unown's letter and shiny, then a battle type that is a form of its own. */
+    fun lookFor(species: Int, hns: Boolean, types: List<Int>, shiny: Boolean, pid: Long): WalkingPals.Look {
+        val base = gen3(species, if (hns) WalkingPals.Dex.HNS else WalkingPals.Dex.NAT_DEX, pid, shiny, "")
+        val typed = battleForm(species, hns, types)
+        return if (typed == null) base else base.copy(form = typed)
+    }
+
     fun overworld(species: Int, dex: WalkingPals.Dex): Int = when {
         (dex == WalkingPals.Dex.NAT_DEX || dex == WalkingPals.Dex.MAX_DEX) && species in CASTFORM_WEATHER -> CASTFORM_GEN3
         dex == WalkingPals.Dex.HNS && species in CASTFORM_WEATHER_HNS -> CASTFORM_HNS

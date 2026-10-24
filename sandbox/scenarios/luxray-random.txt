@@ -1,0 +1,127 @@
+# A randomly rolled Luxray (seed 304480): base 28/78/92/116/57/152, BST 523 as the game's own; Hasty.
+# Ability Damp, holding Focus Band, moves Hydro Pump, Outrage, Calm Mind, Psychic.
+say A randomly rolled Luxray. Base stats re-rolled, total kept at 523: HP 28, Atk 78, Def 92, SpA 116, SpD 57, Spe 152 (normally 80/120/79/95/79/70).
+lead Luxray lv 62 base 28/78/92/116/57/152 nature Hasty ability Damp item Focus Band moves Hydro Pump, Outrage, Calm Mind, Psychic
+wait 4.5
+say Level 62, Hasty nature. The card works its stats out the game's way: HP 119, Atk 114, Def 117, SpA 161, SpD 88, Spe 225.
+wait 4.5
+say Sp. Atk (161) beats Attack (114), so the player kept special attacks and Calm Mind: Hydro Pump (Water), Outrage (Dragon), Psychic (Psychic).
+wait 4.5
+say Rolled ability Damp, holding Focus Band.
+wait 3.0
+say Calcium: +10 Sp. Atk effort, for the stat it attacks with.
+own use Calcium
+say Carbos: +10 Speed effort.
+own use Carbos
+say Rare Candy: level 63. Every stat is worked out again for the new level.
+own use Rare Candy
+wait 0.6
+say Level 64 and a new move: Thunderbolt (Electric) replaces Outrage, its weakest attack.
+own learn Thunderbolt over Outrage levelup
+wait 1.2
+say Trainer battle with Gen 9 Pokemon, all in this game's National Dex. Dondozo comes out; the card switches to it.
+foe Dondozo lv 63 moves Waterfall, Curse, Earthquake, Rest
+wait 0.8
+say Dondozo's rolled ability, Intimidate, pops up and lowers Luxray's Attack one stage.
+foe ability Intimidate
+view own
+say Damp is Luxray's ability. It shows on the card; there is no pop-up until something sets it off.
+wait 2.4
+say Calm Mind: Sp. Atk and Sp. Def up a stage each.
+own stage SPA +1
+own stage SPD +1
+wait 0.8
+view foe
+say Dondozo uses Curse: Attack and Defense up a stage, Speed down one.
+foe stage ATK +1
+foe stage DEF +1
+foe stage SPE -1
+wait 0.6
+say Luxray hits with Thunderbolt. Dondozo's HP bar drops, and the added effect paralyzes it.
+foe damage 120
+foe status PAR
+wait 0.8
+view own
+say Waterfall hits Luxray. The HP bar drops and changes colour as it gets lower.
+own damage 40
+wait 0.6
+view foe
+say Another Thunderbolt. Dondozo faints.
+faint foe
+wait 0.8
+say Next: Arboliva. It brings out the sun and plants Leech Seed on Luxray.
+foe Arboliva lv 64 moves Sunny Day, Leech Seed, Toxic, Solar Beam
+sun
+view own
+own leech seed
+wait 0.6
+say Toxic badly poisons Luxray, and Solar Beam fires at once in the sun.
+own status TOX
+own damage 48
+say Full Restore: all HP back and the poison cured. Leech Seed stays until Luxray leaves the field.
+own use Full Restore
+wait 0.6
+view foe
+say Luxray knocks Arboliva out with Psychic. The sun fades.
+faint foe
+sun off
+wait 0.8
+say Next: Farigiraf, the trainer's last.
+foe Farigiraf lv 65 moves Taunt, Disable, Substitute, Swagger
+view own
+say Taunt (3 turns) shades Calm Mind; Disable (4 turns) locks Psychic, the move Luxray used last.
+own taunt 3
+own disable Psychic 4
+wait 0.8
+view foe
+say Farigiraf hides behind a Substitute.
+foe substitute on
+wait 0.8
+view own
+say Swagger: Luxray's Attack goes up two stages, and it is confused.
+own stage ATK +2
+own status CONFUSE
+wait 0.8
+say Luxray snaps out of its confusion.
+own confused off
+wait 0.6
+view foe
+say Thunderbolt breaks the Substitute, then knocks Farigiraf out.
+foe substitute off
+wait 0.6
+faint foe
+wait 0.6
+view own
+say The battle is over: Leech Seed, Taunt, Disable and every stat stage end with it.
+own stage ATK -1
+own stage SPA -1
+own stage SPD -1
+own leech seed off
+own taunt off
+own disable off
+wait 1.0
+say A wild Toedscruel on Route 28.
+route Route 28
+wild foe Toedscruel lv 58 moves Spore, Earthquake, Giga Drain, Mud Shot
+view own
+wait 0.6
+say Earthquake drops Luxray to low HP, then Spore puts it to sleep.
+own damage 113
+own status SLP
+wait 0.6
+say Hyper Potion: 120 HP back. Later Luxray wakes up.
+own use Hyper Potion
+wait 0.8
+own status NONE
+wait 0.6
+view foe
+say Hydro Pump knocks out the Toedscruel; Thunderbolt could not touch a Ground type.
+faint foe
+wait 0.6
+view own
+say Luxray levels up to 65. Every stat is worked out again for the new level.
+levelup
+wait 2.0
+say Earth Badge.
+badge 16
+wait 1.2

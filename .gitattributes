@@ -1,2 +1,8 @@
 # The Heart & Soul comfort ROM design notes stay out of the public snapshot (see tools/hns/.gitattributes).
 docs/HNS-KAIZO.md export-ignore
+
+# The client build of Heart & Soul (KaizoCore PC, patch 0061 with the client's easter eggs) and the notes that name
+# what is in it stay out of the public snapshot (2026-10-23): no easter egg is named in public files.
+desktop/assets/** export-ignore
+docs/PC-FIXLIST-2026-10-11.md export-ignore
+docs/kaizo-audit/patches-and-features.md export-ignore

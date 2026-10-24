@@ -52,7 +52,7 @@ class DsRunSaveTest {
     @Test
     fun `the install swaps before lastrun names the new run`() {
         val store = File("src/main/kotlin/com/ironmonone/app/PrepStore.kt").readText().replace("\r\n", "\n")
-        val swap = store.indexOf("RunSaves.dsSwap(filesDir, kind, RomKind.byId(loadLastRun()?.first))")
+        val swap = store.indexOf("RunSaves.dsSwap(filesDir, kind, goingOut ?: RomKind.byId(loadLastRun()?.first))")
         assertTrue(swap > 0)
         assertTrue(swap < store.indexOf("saveLastRun(kind.id, settingsName, custom", swap))
         assertTrue(swap < store.indexOf("nextRun.install(staged, currentRunFor(kind))", swap))

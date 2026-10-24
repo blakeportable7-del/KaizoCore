@@ -82,6 +82,8 @@ private fun PartyCard(
     onHealsTap: (() -> Unit)? = null,
     onMoveInfo: ((PcMove) -> Unit)? = null,
     onAbilityInfo: ((String) -> Unit)? = null,
+    /** The held item's info sheet (KaizoCore PC's ItemInfo screen), when the game describes its items. */
+    onItemInfo: (() -> Unit)? = null,
     onNameInfo: (() -> Unit)? = null,
     moveCtx: MoveContext? = null,
     /** Which attempt this is, for the PC heal counter. */
@@ -136,6 +138,7 @@ private fun PartyCard(
             abilityBan = abilityBan.takeIf { !hidden },
             hpText = dash.takeIf { hidden },
             onAbilityTap = onAbilityInfo?.let { cb -> abilityTapName(p.abilityName)?.let { name -> { cb(name) } } },
+            onItemTap = onItemInfo?.takeIf { !hidden && m.heldItem != 0 },
             onNameTap = onNameInfo,
             // The game's own picture where it is not the species' plain one (shiny, Unown's letter, Deoxys's form).
             sprite = romPicture(p.picture) ?: spriteFor(m.species),
@@ -499,6 +502,8 @@ fun TrackerPanel(
     steps: Int = 0,
     onMoveDescription: ((Int) -> String?)? = null,
     onAbilityDescription: ((String) -> String?)? = null,
+    /** A held item's description (PanelLookups.itemDescription): Heart & Soul describes its items. */
+    onItemDescription: ((Int) -> String?)? = null,
     onWeight: ((Int) -> String?)? = null,
     /** The info screen's evolution lines (PanelLookups.evolutionDetails). */
     onEvolution: ((Int) -> List<String>)? = null,
@@ -613,6 +618,8 @@ fun TrackerPanel(
             onNext = { speciesInfo = stepSpecies(sp, 1) },
             lookup = lookupNames, onLookup = { speciesInfo = it },
             onHistory = onMoveHistory?.let { cb -> { cb(sp, onSpeciesName?.invoke(sp) ?: "#$sp", 0) } },
+            // Any species looked up shows its random evolutions too, as the party's cards do.
+            onRandomEvos = if (onRandomEvos != null && hasRandomEvos(sp)) { { onRandomEvos(sp) } } else null,
             onResistances = if (base != null && onTypeDefenses != null) { { onTypeDefenses(onSpeciesName?.invoke(sp) ?: "#$sp", listOf(base.type1, base.type2)) } } else null,
             onEditNote = onEditNoteFor?.let { cb -> { cb(sp) } },
             name = onSpeciesName?.invoke(sp) ?: "#$sp",
@@ -903,10 +910,11 @@ fun TrackerPanel(
                         onAbilityInfo = { name ->
                             info = Triple(name, "Ability", onAbilityDescription?.invoke(name))
                         },
+                        onItemInfo = onItemDescription?.invoke(p.mon.heldItem)?.let { d -> { info = Triple(p.itemName, "Held item", d) } },
                         onNameInfo = { monInfo = p },
                         // Against the opponent shown, or its partner once it has fainted (GbaViewState.ownTarget).
                         moveCtx = ownMoveContext(p, view.ownTarget(state), state.weather, onWeight)
-                            .copy(ownCategories = hnsGame, hideEffectiveness = InfoRules.hideEffectiveness(state.randomized, state.isGhostBattle, own = true), generation = generation, natDex = natDex, maxDex = maxDex),
+                            .copy(ownCategories = hnsGame && !com.ironmonone.tracker.HnsRules.categoryByType, hideEffectiveness = InfoRules.hideEffectiveness(state.randomized, state.isGhostBattle, own = true), generation = generation, natDex = natDex, maxDex = maxDex),
                         attempt = attempt,
                         hidden = hideStats,
                         iconDex = WalkingPals.trackerDex(generation, speciesTotal, maxDex, hns = hnsGame),
@@ -945,7 +953,7 @@ fun TrackerPanel(
                         moveLevels = onMoveLevels?.invoke(enemy.species) ?: emptyList(),
                         // Against your Pokemon shown, or your other one once it has fainted (GbaViewState.foeTarget).
                         moveCtx = enemyMoveContext(enemy, view.foeTarget(state), state.weather, onWeight)
-                            .copy(ownCategories = hnsGame, hide = InfoRules.hiddenMoveInfo(state.randomized), hideEffectiveness = InfoRules.hideEffectiveness(state.randomized, state.isGhostBattle, own = false), generation = generation, natDex = natDex, maxDex = maxDex),
+                            .copy(ownCategories = hnsGame && !com.ironmonone.tracker.HnsRules.categoryByType, hide = InfoRules.hiddenMoveInfo(state.randomized), hideEffectiveness = InfoRules.hideEffectiveness(state.randomized, state.isGhostBattle, own = false), generation = generation, natDex = natDex, maxDex = maxDex),
                         rand = state.randomized,
                         catchText = state.catchPercent?.takeIf { state.isWildBattle && TrackerOptions.showCatchRate }?.let { pct ->
                             // DataHelper.lua:402-406 works it from the viewed Pokemon, the blank stand-in while hidden.

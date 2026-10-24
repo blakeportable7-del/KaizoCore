@@ -1,0 +1,3 @@
+lead Quilava lv 49 moves Ember, Quick Attack, Smokescreen, Swift
+settings battle
+settings off

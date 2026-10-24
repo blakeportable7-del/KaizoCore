@@ -196,7 +196,7 @@ internal fun TrackerWeatherPill(code: String) {
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 internal fun AreaName(name: String, modifier: Modifier) {
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val context = LocalPcCtx.current
     val still = androidx.compose.runtime.remember(context) { !TrackerMotion.animationsOn(context) }
     if (still) PixText(name, PcRef.FONT, Pc.Dim, modifier, weight = FontWeight.Medium, ellipsis = true)
     // basicMarquee moves only content wider than its room; a name that fits is drawn still.
@@ -207,9 +207,7 @@ internal fun AreaName(name: String, modifier: Modifier) {
 internal object TrackerMotion {
     fun animationsOn(scale: Float): Boolean = scale > 0f
 
-    fun animationsOn(context: android.content.Context): Boolean = animationsOn(
-        android.provider.Settings.Global.getFloat(context.contentResolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f),
-    )
+    fun animationsOn(context: PcCtx): Boolean = animationsOn(context.pcAnimatorScale())
 }
 
 /**

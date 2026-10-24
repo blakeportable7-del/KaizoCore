@@ -1,0 +1,19 @@
+# The phone/PC byte pin (HnsPinnedSeedsTest in app, KaizoCorePcPinTest in desktop): preset, pool, seed, the run's ROM
+# SHA-1 and its log's SHA-1 (UTF-8). Both tests must read these exact lines. Made from the comfort build E61D7527.
+# Pinned again 2026-10-07: Black 2 rules for Heart & Soul (Gen 1-5 moves on Nat. Dex, no HM move rolled, Black 2's
+# abilities, evolutions sharing a type with the Pokemon evolving, Nat. Dex BST line 601).
+# Pinned again 2026-10-11 on comfort build AA092306 (patches 0001-0058). They had last been written on E61D7527;
+# the builds after it (CDC719C2, Nat. Dex Emerald's Gen 3 rules; 1C824440; AA092306) each moved the bytes on
+# purpose, and the pins were left behind. Printed by HnsPinnedSeedsTest (IRONMON_PIN_PRINT=1); the PC test
+# gives the same lines.
+# Pinned again 2026-10-11 for fix4: trainer levels ease off above base level 50 (HnsRandomizer.trainerLevel), so only
+# Red's strongest reaches 100. Every seed moved, as it should: every Kaizo game has trainers above base 50.
+# Pinned again 2026-10-11 for fix6 on comfort build F4E28E3D (patches 0001-0060: Whirlpool, Red without Hail).
+# 2026-10-23 (patch 0061): two builds of one game. Columns 4-5 are KaizoCore PC's build F4E28E3D (unchanged), 6-7 the
+# Android app's build F5F37A8E: the same run, with its ROM tables at other offsets (its ROM bytes and the offsets its log
+# names). HnsPinnedSeedsTest checks the app's columns, KaizoCorePcPinTest the PC's and both logs alike without offsets.
+RSE NatDex v1.2 Kaizo	NATDEX	1234	136822307709C9774241501F39AB27B0D76EE286	E88D1B975D57D0D8A45760AEF32FC9119C38913D	2D1D064605F48CD0550C2068F1DBA48347C7D894	6BDCACF6DD046CA7D4FEA293A291F86F9C78D54E
+RSE NatDex v1.2 Kaizo	NATDEX	-2550962453265142767	2D41362BB5F722A04E84DBDA066BA38F9847F6A2	06A4DC9BAD0D8731BDE0B1FABCEB03417B35A784	C12F7D2D824A80231D44275F0E993B889886ED89	66DBFD800EDFBE822EB534F2C34CA5E295D63738
+RSE NatDex v1.2 Kaizo	VANILLA	1234	5155CA9DAC116154C4D06F1DBE591C969F2F1734	A418EFB2259C63C2DF4A5E21A7EE87DF629D5BA7	5727932D2DDFD7765DB10B842530D25AAE764FC6	1303950841D6E5FED78E59A6B91177578E05C8CE
+RSE NatDex v1.2 Kaizo	VANILLA	42	3858D82297ED36CB1B6C891EC702A4EA3B38622D	860ED1324D0049366CC14A8C8E1924DE5AB2D18B	57949E067463AA9DED44C2567663C246B910AE9E	2B673983D40D7BF3D0761B8CEBDAD458513DB6EF
+RSE Kaizo	VANILLA	7	68E4EBBDA6A82106A66EEED777F66825807D9869	7276BDEA8E45582E91FFFA667860556381E3D046	3B08061DF393EAA41D88EA1EC4AED70442E9C79F	78F1309911413E15911B863E19F5B595506AF9DC

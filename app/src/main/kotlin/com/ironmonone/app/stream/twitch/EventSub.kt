@@ -12,7 +12,13 @@ class ChatLine(
     val chatterName: String,
     /** Set in a Shared Chat session for a line that came from another channel; null for this channel's own. */
     val sourceBroadcasterId: String?,
-)
+    /** The chatter's badge sets as the event lists them (broadcaster, moderator, vip, subscriber...); none until read. */
+    val badges: List<String> = emptyList(),
+) {
+    /** The streamer's own line: the broadcaster badge, or the chatter being the channel. */
+    val isBroadcaster: Boolean get() = "broadcaster" in badges || (chatterId.isNotEmpty() && chatterId == broadcasterId)
+    val isModerator: Boolean get() = "moderator" in badges
+}
 
 /**
  * One EventSub WebSocket session (dev.twitch.tv/docs/eventsub/handling-websocket-events, checked 2026-10-05): connect,
@@ -143,6 +149,7 @@ class EventSub(
             chatterId = JsonIn.str(e, "chatter_user_id").orEmpty(),
             chatterName = JsonIn.str(e, "chatter_user_name") ?: JsonIn.str(e, "chatter_user_login").orEmpty(),
             sourceBroadcasterId = JsonIn.str(e, "source_broadcaster_user_id")?.takeIf { it.isNotBlank() },
+            badges = JsonIn.asList(e["badges"])?.mapNotNull { JsonIn.str(JsonIn.asObj(it), "set_id") }.orEmpty(),
         )
     }
 

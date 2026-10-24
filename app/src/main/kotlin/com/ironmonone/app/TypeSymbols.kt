@@ -119,7 +119,7 @@ internal object TypeSymbols {
  * a type with none, so every name in the table starts at the same x.
  */
 @Composable
-internal fun TypeSymbol(typeName: String?) {
+fun TypeSymbol(typeName: String?) {
     val s = TypeSymbols.of(typeName)
     val slot = Modifier.width(TypeSymbols.SLOT.rp).height(TypeSymbols.SLOT.rp)
     if (s == null) { androidx.compose.foundation.layout.Spacer(slot); return }

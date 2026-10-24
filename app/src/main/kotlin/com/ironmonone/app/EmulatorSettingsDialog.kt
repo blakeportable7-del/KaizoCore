@@ -51,6 +51,10 @@ fun EmulatorSettingsDialog(
     systemFilePresent: (String) -> Boolean,
     onImportSystemFile: (String) -> Unit,
     onDismiss: () -> Unit,
+    /** The speeds File > Speed offers (fast forward), the one in use and the pick: here too (VILLAIN, 10/10, looked here first). */
+    speeds: List<String> = emptyList(),
+    speedNow: String = "",
+    onSpeed: (String) -> Unit = {},
 ) {
     val opts = CoreOptions.forPlatform(platform)
     var picking by remember { mutableStateOf<CoreOptions.Option?>(null) }
@@ -63,6 +67,16 @@ fun EmulatorSettingsDialog(
         // list used to be capped at 520dp with the buttons under it, which put them
         // off-screen in landscape (2026-09-27, audit).
         Column {
+            // Fast forward, the same choice as File > Speed.
+            if (speeds.isNotEmpty()) {
+                androidx.compose.material3.Text(EmulatorSettingsCopy.SPEED, color = Shell.textOnNight, fontSize = 15.sp)
+                for (row in speeds.chunked(5)) Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    for (s in row) Seg(s, speedNow == s, Modifier.weight(1f)) { onSpeed(s) }
+                    repeat(5 - row.size) { Spacer(Modifier.weight(1f)) }
+                }
+                androidx.compose.material3.Text(EmulatorSettingsCopy.SPEED_LINE, color = Shell.hintOnNight, fontSize = 13.sp, modifier = Modifier.padding(top = 4.dp))
+                ShellDivider()
+            }
             // Play as your Pokemon: a game with no tracker has no tracker gear, and this is reachable in every mode.
             if (platform == Platform.GBA) { SpriteIsMeSettingsSection(); ShellDivider() }
             opts.groupBy { it.group }.forEach { (group, rows) ->
@@ -272,4 +286,10 @@ private fun DsiSection(
         if (on) Gen3Button("Back to DS") { apply(DsiMode.OFF) }
     }
     ShellDivider()
+}
+
+/** The words of the emulator settings' speed row. */
+internal object EmulatorSettingsCopy {
+    const val SPEED = "Speed (fast forward)"
+    const val SPEED_LINE = "The same choice as File > Speed."
 }

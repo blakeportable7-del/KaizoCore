@@ -21,7 +21,9 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
@@ -36,9 +38,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -96,17 +96,19 @@ import com.ironmonone.tracker.TrackedMon
  */
 // Lazy: created at first draw, so the JVM unit tests can reach this file's plain
 // helpers (pcTypeColorByName) without Typeface.create, which they cannot run.
-val PcFont by lazy {
-    androidx.compose.ui.text.font.FontFamily(
-        androidx.compose.ui.text.font.Typeface(
-            android.graphics.Typeface.create(
-                "sans-serif-condensed", android.graphics.Typeface.NORMAL,
-            )
-        )
-    )
-}
+// The face itself is the platform's (pcTrackerFontFamily): sans-serif-condensed on the phone, the same Roboto Condensed
+// bundled in KaizoCore PC.
+val PcFont by lazy { pcTrackerFontFamily() }
 
 val LocalRpx = androidx.compose.runtime.compositionLocalOf { 1.dp }
+
+/**
+ * KaizoCore PC's panel (pcui.PcPanel) draws the card at the reference's own rows, besteon's TrackerScreen.lua y
+ * positions, so the whole card and the carousel fill the 150x160 area beside the game: the icon 28 rows with 4 above
+ * the box, the heals strip 23, the moves header 12 and move rows 10 apart, the carousel 19. False on the phone, which
+ * keeps its own spacing (touch rows, the HP bar): nothing on the phone reads this as true.
+ */
+val LocalPcReferenceRows = androidx.compose.runtime.compositionLocalOf { false }
 
 /** [this] reference pixels as a real length. */
 val Int.rp: androidx.compose.ui.unit.Dp
@@ -306,24 +308,22 @@ object PcAssets {
      * Held while it is read or filled: the stream server's threads draw favorites through here too
      * (StreamFavoritePictures), beside the screens on the main thread.
      */
-    private fun load(context: android.content.Context, path: String): ImageBitmap? = synchronized(cache) {
+    private fun load(context: PcCtx, path: String): ImageBitmap? = synchronized(cache) {
         cache.getOrPut(path) {
             runCatching {
-                context.assets.open(path).use { input ->
-                    android.graphics.BitmapFactory.decodeStream(input)?.asImageBitmap()
-                }
+                context.pcOpenAsset(path).use { input -> pcDecodePicture(input) }
             }.getOrNull()
         }
     }
 
     /** Type icon by name, e.g. "FIRE". Null when the game has no such type. */
-    fun typeIcon(context: android.content.Context, typeName: String): ImageBitmap? {
+    fun typeIcon(context: PcCtx, typeName: String): ImageBitmap? {
         if (typeName.isBlank()) return null
         return load(context, "types/${typeName.lowercase()}.png")
     }
 
     /** Gym badge art. [set] is the tracker's badge set (FRLG, RSE, DPPT, RBY, GSC_K ...); [earned] picks the lit icon. */
-    fun badge(context: android.content.Context, set: String, index: Int, earned: Boolean):
+    fun badge(context: PcCtx, set: String, index: Int, earned: Boolean):
         ImageBitmap? = load(context, badgePath(set, index, earned))
 
     /**
@@ -347,14 +347,14 @@ object PcAssets {
      * PSN, SLP), drawn 16x8 over the Pokemon icon (Drawing.drawStatusIcon).
      * Bad poison is PSN, as the reference's StatusCodeMap has it.
      */
-    fun status(context: android.content.Context, code: String): ImageBitmap? =
+    fun status(context: PcCtx, code: String): ImageBitmap? =
         code.takeIf { it.isNotBlank() }?.let { load(context, "status/${if (it == "TOX") "PSN" else it}.png") }
 
     /** A tracker icon from assets/icons (the repel items). */
-    fun icon(context: android.content.Context, name: String): ImageBitmap? = load(context, "icons/$name.png")
+    fun icon(context: PcCtx, name: String): ImageBitmap? = load(context, "icons/$name.png")
 
     /** A full-screen scene from assets/backgrounds. */
-    fun background(context: android.content.Context, name: String): ImageBitmap? =
+    fun background(context: PcCtx, name: String): ImageBitmap? =
         load(context, "backgrounds/$name.png")
 
     /**
@@ -373,7 +373,7 @@ object PcAssets {
      *
      * Single 32x32 images, not the Gen 4 animation sheets, so no cell crop.
      */
-    fun gbaSprite(context: android.content.Context, species: Int): ImageBitmap? {
+    fun gbaSprite(context: PcCtx, species: Int): ImageBitmap? {
         if (species <= 0 || species > 1285) return null
         return load(context, "gbasprites/$species.png")
     }
@@ -383,7 +383,7 @@ object PcAssets {
      * draw MaxDex's own icons (assets/gbasprites-maxdex, tools/trainer-data/convert_maxdex.py). Its ids are Nat. Dex
      * 1.2.1's to 1235 and part ways after, where the Nat. Dex pack drew another Pokemon. Everything else is [gbaSprite].
      */
-    fun gbaSprite(context: android.content.Context, species: Int, nameSet: String?): ImageBitmap? =
+    fun gbaSprite(context: PcCtx, species: Int, nameSet: String?): ImageBitmap? =
         // Heart & Soul numbers its species the expansion's way (National Dex order, then forms): the pack's picture
         // for the same Pokemon (com.ironmonone.tracker.HnsSprites, by National Dex number and form).
         // The Egg (SPECIES_EGG) is in no species table: natDexId sends it to the pack's Egg, 1284. The PC tracker's Team
@@ -400,24 +400,22 @@ object PcAssets {
      * tiny Pokemon in the card where one belonged. The reference cycles the
      * frames; a static card wants the idle pose, which is the top-left cell.
      */
-    fun dsSprite(context: android.content.Context, species: Int, shiny: Boolean):
+    fun dsSprite(context: PcCtx, species: Int, shiny: Boolean):
         ImageBitmap? {
         if (species <= 0) return null
         // First choice: the sprite decoded from the player's own ROM (RomSprites),
         // a single image, no cell crop. The bundled sheet below is the fallback
         // until every DS kind has been seen decoding on a real dump.
         RomSprites.activeKind?.let { kind ->
-            val f = RomSprites.cacheFile(context.filesDir, kind, species, shiny)
-            if (f.isFile) runCatching { android.graphics.BitmapFactory.decodeFile(f.absolutePath)?.asImageBitmap() }.getOrNull()?.let { return it }
+            val f = RomSprites.cacheFile(context.pcFilesDir, kind, species, shiny)
+            if (f.isFile) runCatching { pcDecodePictureFile(f.absolutePath) }.getOrNull()?.let { return it }
         }
         val sheet = load(context, "gen4sprites/$species${if (shiny) "s" else ""}.png")
             ?: return null
         val cell = sheet.width / 4
         if (cell <= 0 || sheet.height < cell) return sheet
         return runCatching {
-            android.graphics.Bitmap.createBitmap(
-                sheet.asAndroidBitmap(), 0, 0, cell, cell,
-            ).asImageBitmap()
+            pcCrop(sheet, 0, 0, cell, cell)
         }.getOrDefault(sheet)
     }
 }
@@ -455,6 +453,10 @@ data class PcMove(
     val stab: Boolean = false,
     /** Effectiveness against the target when not neutral; null draws nothing. */
     val effect: Double? = null,
+    /** The weather on this move's damage: 1 boosted, -1 weakened, 0 none (MoveRules.weatherMark). */
+    val weatherMark: Int = 0,
+    /** That weather ("RAIN", "SUN", "SANDSTORM", "HAIL"), for the arrow's colour. */
+    val weather: String? = null,
     /** Your own Hidden Power on the DS card: the "<" and ">" that change its type (MainScreen's hiddenPowerArrowsFrame). */
     val hiddenPowerArrows: Boolean = false,
     /** This run's rules ban the move in the battle you are in (MoveRule): the name in red and the X after it. */
@@ -462,6 +464,60 @@ data class PcMove(
     /** Why and when the run bans it, for the move's card; null when it does not. */
     val banLine: String? = null,
 )
+
+/**
+ * The fill behind the words a [PixText] draws, where the card knows it (KaizoCore PC's card sets it for each box). With
+ * one, the words are kept readable on it ([readableInk]); without one (the phone) colours are drawn as given.
+ */
+val LocalInkGround = androidx.compose.runtime.compositionLocalOf<Color?> { null }
+
+private fun inkLin(c: Float): Double { val v = c.toDouble(); return if (v <= 0.04045) v / 12.92 else Math.pow((v + 0.055) / 1.055, 2.4) }
+private fun inkLum(c: Color): Double = 0.2126 * inkLin(c.red) + 0.7152 * inkLin(c.green) + 0.0722 * inkLin(c.blue)
+
+/** The WCAG contrast of two colours, 1 to 21. */
+fun inkContrast(a: Color, b: Color): Double {
+    val l1 = inkLum(a); val l2 = inkLum(b)
+    return (maxOf(l1, l2) + 0.05) / (minOf(l1, l2) + 0.05)
+}
+
+/** What words must read at on their fill: WCAG AA for small text. The card's letters are 6 to 9 pixels tall. */
+const val INK_MIN = 4.5
+
+/**
+ * What a colour [readableInk] has to move is moved to: a little over [INK_MIN], so a ground drawn a shade off the one
+ * declared (a fill three quarters solid, a rounded blend) still reads at 4.5 (the log's boxed words came out at 4.45).
+ */
+private const val INK_AIM = 4.65
+
+/**
+ * [color] when it reads on [ground] at [INK_MIN]; otherwise the same hue moved toward white or black (whichever reads
+ * more on [ground]) just far enough to read. One of the two always clears 4.58 on any fill, so this always reads.
+ * Auto themes made words their own colour on a fill they could not be read on (white on Bulbasaur's teal, 2.17:1).
+ */
+fun readableInk(color: Color, ground: Color): Color {
+    if (color.alpha == 0f || inkContrast(color, ground) >= INK_MIN) return color
+    val toward = if (inkContrast(Color.White, ground) >= inkContrast(Color.Black, ground)) Color.White else Color.Black
+    var best = toward
+    var lo = 0f; var hi = 1f
+    repeat(12) {
+        val t = (lo + hi) / 2f
+        val mixed = androidx.compose.ui.graphics.lerp(color, toward, t)
+        if (inkContrast(mixed, ground) >= INK_AIM) { best = mixed; hi = t } else lo = t
+    }
+    return best.copy(alpha = color.alpha)
+}
+
+/**
+ * For the contrast check only (pcui's TextContrastTest): with [hide] on, every PixText is drawn invisible and takes the
+ * same room, so a card drawn twice, with and without its words, gives each word's real background.
+ */
+object PixTextCheck {
+    // Compose state, so turning it on or off redraws every word; a plain var left the card as it was (0 words found).
+    private val state = androidx.compose.runtime.mutableStateOf(false)
+    var hide: Boolean
+        get() = state.value
+        set(v) { state.value = v }
+}
 
 @Composable
 fun PixText(
@@ -488,12 +544,12 @@ fun PixText(
     // requested size, so a 9-unit glyph needed ~12 units of box and every stat
     // row was sliced across the middle. Turning both off makes the text
     // occupy what it says it occupies, which is what the pitch assumes.
-    Text(text, fontFamily = PcFont, fontSize = size.rsp, color = color,
+    val ground = LocalInkGround.current
+    val ink = if (ground != null) readableInk(color, ground) else color
+    Text(text, fontFamily = PcFont, fontSize = size.rsp, color = if (PixTextCheck.hide) Color.Transparent else ink,
         lineHeight = size.rsp,
         style = androidx.compose.ui.text.TextStyle(
-            platformStyle = androidx.compose.ui.text.PlatformTextStyle(
-                includeFontPadding = false,
-            ),
+            platformStyle = pcTrackerPlatformStyle(),
             lineHeightStyle = androidx.compose.ui.text.style.LineHeightStyle(
                 alignment = androidx.compose.ui.text.style.LineHeightStyle.Alignment.Center,
                 trim = androidx.compose.ui.text.style.LineHeightStyle.Trim.None,
@@ -564,7 +620,7 @@ fun PcSprite(bmp: ImageBitmap?) {
  */
 @Composable
 fun romPicture(p: com.ironmonone.tracker.Gen3Pictures.Picture?): ImageBitmap? = remember(p) {
-    p?.let { android.graphics.Bitmap.createBitmap(it.argb, it.width, it.height, android.graphics.Bitmap.Config.ARGB_8888).asImageBitmap() }
+    p?.let { pcPictureOf(it.argb, it.width, it.height) }
 }
 
 
@@ -650,6 +706,13 @@ private fun RuleMarkedLine(text: String, ban: String?, what: String, onTap: (() 
     if (open) InfoSheet(text, { open = false }) { InfoParagraph(null, ban) }
 }
 
+/** A stat mark's colour from the theme showing (besteon's STAT_STATES): + Positive, the minus sign Negative, = and blank the text. */
+fun markColor(state: Int): androidx.compose.ui.graphics.Color = when (state) {
+    1 -> Pc.Positive
+    2 -> Pc.Negative
+    else -> Pc.Text
+}
+
 /**
  * The enemy stat column as notes. Tapping cycles blank → + → − → =, the
  * reference tracker's four states, stored per species by the caller.
@@ -665,7 +728,7 @@ fun PcMarkColumn(marks: IntArray, onCycle: (Int) -> Unit, singleSpecial: Boolean
     //  - the box border is "Upper box border" in every state; only the GLYPH
     //    takes a colour. This panel used to tint the whole row green or red,
     //    which the reference never does
-    //  - the glyphs are Constants.STAT_STATES: blank, "+", "--", "="
+    //  - the glyphs are Constants.STAT_STATES': blank, "+", a minus sign (the reference's "--"), "="
     StatMarks.STAT_NAMES.forEachIndexed { i, label ->
         // Gen 1 has one Special: the SPD row does not exist there (the Gen 1 reference lists hp/atk/def/spa/spe).
         if (singleSpecial && label == "SPD") return@forEachIndexed
@@ -677,11 +740,7 @@ fun PcMarkColumn(marks: IntArray, onCycle: (Int) -> Unit, singleSpecial: Boolean
             PixText(label, PcRef.FONT, Pc.Text, Modifier.width(27.rp))
             // KaizoCore's look: a rounded chip on the faint raised surface, washed in the mark's colour once marked,
             // where the reference draws an 8x8 square in the border colour. The glyph keeps its colour.
-            val markColor = when (state) {
-                1 -> Pc.Positive
-                2 -> Pc.Negative
-                else -> Pc.Text
-            }
+            val markColor = markColor(state)
             val chip = androidx.compose.foundation.shape.RoundedCornerShape(2.rp)
             Box(
                 Modifier.size(9.rp).clip(chip)
@@ -762,15 +821,18 @@ fun PcHeadBlock(
     statColumn: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit,
 ) {
     // IntrinsicSize.Min so the rule matches the taller of the two columns.
-    Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+    val ref = LocalPcReferenceRows.current
+    Row(Modifier.fillMaxWidth().then(if (ref) Modifier.height(75.rp) else Modifier.height(IntrinsicSize.Min))) {
         Column(Modifier.weight(1f)) {
-            Row(Modifier.padding(2.rp)) {
+            // At the reference's rows the icon box sits at y -1, 32 tall: 4 rows above the info box, 28 in it (TrackerScreen.lua:12).
+            Row(if (ref) Modifier.height(30.rp).padding(start = 1.rp) else Modifier.padding(2.rp)) {
                 // TrackerScreen.Buttons.PokemonIcon: the icon is the tap target, as well as the name.
                 Box((if (onNameTap != null) Modifier.clickable { onNameTap() } else Modifier)
+                    .then(if (ref) Modifier.offset(y = (-4).rp).wrapContentHeight(align = Alignment.Top, unbounded = true) else Modifier)
                     .clip(androidx.compose.foundation.shape.RoundedCornerShape(4.rp)).background(TrackerLook.inset)) {
                     // Either set: Gen 1-3 by Gen 3's ids, Gen 4-9 and a Nat. Dex build's forms by national number (WalkingPals),
                     // drawn as the game draws it: a shiny as its shiny, Unown as its letter (iconLook).
-                    val iconCtx = androidx.compose.ui.platform.LocalContext.current
+                    val iconCtx = LocalPcCtx.current
                     val pal = WalkingPals.ready(iconCtx).let { ix -> remember(ix, iconSpecies, iconDex, iconLook) { if (iconSpecies > 0) ix?.find(iconSpecies, iconDex, iconLook) else null } }
                     val animated = pal != null && TrackerOptions.animatedSprites &&
                         WalkingPalsIcon(pal, status, 1.rp, PcRef.ICON.rp)
@@ -786,7 +848,9 @@ fun PcHeadBlock(
                     if (status.isNotEmpty()) TrackerStatusPill(status, Modifier.padding(start = 13.rp, top = 1.rp))
                 }
                 Column(Modifier.padding(start = 2.rp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    // At the reference's rows the three lines sit 10 apart (name 5, HP 15, level 25).
+                    val line = if (ref) Modifier.height(10.rp) else Modifier
+                    Row(line, verticalAlignment = Alignment.CenterVertically) {
                         PixText(
                             name, PcRef.FONT, Pc.Text,
                             if (onNameTap != null) Modifier.clickable { onNameTap() }
@@ -798,11 +862,11 @@ fun PcHeadBlock(
                             PcGenderSymbol(gender)
                         }
                     }
-                    Spacer(Modifier.height(1.rp))
+                    Spacer(Modifier.height(if (ref) 0.rp else 1.rp))
                     if (encounterLine != null) {
-                        PcLevelLine(level, evo, levelPrefix)
-                        Spacer(Modifier.height(1.rp))
-                        PixText(encounterLine, PcRef.FONT, Pc.Gold)
+                        Box(line) { PcLevelLine(level, evo, levelPrefix) }
+                        Spacer(Modifier.height(if (ref) 0.rp else 1.rp))
+                        PixText(encounterLine, PcRef.FONT, Pc.Gold, line)
                     } else {
                     // TrackerScreen.lua:1206 draws the literal label "HP:"
                     // and puts the value 16 units to its right, coloured by
@@ -810,7 +874,7 @@ fun PcHeadBlock(
                     // Intermediate at 50% or less, Default above that. This
                     // panel printed a bare "29/29" in plain white.
                     if (showHp) {
-                        Row {
+                        Row(line) {
                             PixText("HP:", PcRef.FONT, Pc.Text, Modifier.width(16.rp))
                             PixText(
                                 hpText ?: "$curHp/$maxHp", PcRef.FONT,
@@ -823,8 +887,9 @@ fun PcHeadBlock(
                             )
                         }
                         // KaizoCore's look: the same fraction as a bar under it.
-                        if (hpText == null && maxHp > 0) { Spacer(Modifier.height(1.rp)); TrackerHpBar(curHp, maxHp) }
-                        Spacer(Modifier.height(1.rp))
+                        // The reference draws no HP bar: at its rows the text alone, 10 apart.
+                        if (hpText == null && maxHp > 0 && !ref) { Spacer(Modifier.height(1.rp)); TrackerHpBar(curHp, maxHp) }
+                        Spacer(Modifier.height(if (ref) 0.rp else 1.rp))
                     }
                     if (holdExpFraction != null) {
                         var held by remember { mutableStateOf(false) }
@@ -834,17 +899,17 @@ fun PcHeadBlock(
                             },
                             contentAlignment = Alignment.CenterStart,
                         ) { if (held) PcDsExpBar(holdExpFraction) else PcLevelLine(level, evo, levelPrefix) }
-                    } else PcLevelLine(level, evo, levelPrefix)
+                    } else Box(line) { PcLevelLine(level, evo, levelPrefix) }
                     // TrackerScreen.lua:1242, 60 by 3, just under the level.
                     expFraction?.let { Spacer(Modifier.height(2.rp)); PcExpBar(it) }
                     }
                 }
             }
-            Row(Modifier.fillMaxWidth()) {
+            Row(if (ref) Modifier.fillMaxWidth().height(22.rp) else Modifier.fillMaxWidth()) {
                 Column(if (onTypesTap != null) Modifier.clickable { onTypesTap() } else Modifier) {
                     typeChips.forEach { (label, color) -> PcTypeChip(label, color) }
                 }
-                Column(Modifier.padding(start = 2.rp, top = 1.rp)) {
+                Column(Modifier.padding(start = 2.rp, top = if (ref) 0.rp else 1.rp)) {
                     // DataHelper.lua:217 fills TWO lines here: for your own
                     // Pokemon, held item then ability; for an enemy, its two
                     // POSSIBLE abilities, the first suffixed " /". Joining them
@@ -859,14 +924,15 @@ fun PcHeadBlock(
                 }
             }
             if (belowHead != null) {
-                Spacer(Modifier.height(3.dp))
-                Box(Modifier.fillMaxWidth().height(1.dp).background(TrackerLook.divider))
+                if (!ref) Spacer(Modifier.height(3.dp))
+                Box(Modifier.fillMaxWidth().height(if (ref) 1.rp else 1.dp).background(TrackerLook.divider))
                 belowHead()
             }
         }
         Box(Modifier.width(1.rp).fillMaxHeight().background(TrackerLook.divider))
         // 44 reference pixels: the reference's own stats box width.
-        Column(Modifier.width(PcRef.STATS_W.rp).padding(vertical = 1.rp)) {
+        // The reference's stat rows start 2 under the box's top (statOffsetY 7 in a box at 5).
+        Column(Modifier.width(PcRef.STATS_W.rp).padding(top = if (ref) 2.rp else 1.rp, bottom = 1.rp)) {
             statColumn()
         }
     }
@@ -927,12 +993,13 @@ fun PcMovesSection(
 ) {
     val numAlign = if (!referenceColumns || rightJustify) TextAlign.End else TextAlign.Start
     val headAlign = if (referenceColumns) TextAlign.Start else TextAlign.End
+    val ref = LocalPcReferenceRows.current
     // Beside the head (PcMonCard, wide) the card's edge and the rule between the columns frame it already.
-    if (!LocalMovesBeside.current) Box(Modifier.fillMaxWidth().height(1.dp).background(Pc.LowerBorder.copy(alpha = 0.28f)))
+    if (!LocalMovesBeside.current) Box(Modifier.fillMaxWidth().height(if (ref) 1.rp else 1.dp).background(Pc.LowerBorder.copy(alpha = 0.28f)))
     Row(
-        Modifier.fillMaxWidth()
+        Modifier.fillMaxWidth().then(if (ref) Modifier.height(11.rp) else Modifier)
             .then(Pc.HeaderGroundX?.let { Modifier.background(trackerBoxFill(it)) } ?: Modifier.background(TrackerLook.inset))
-            .padding(vertical = 1.rp, horizontal = 2.rp),
+            .padding(vertical = if (ref) 0.rp else 1.rp, horizontal = 2.rp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // Column widths are the gaps between the reference's own offsets:
@@ -956,7 +1023,7 @@ fun PcMovesSection(
     Box(Modifier.fillMaxWidth().height(1.rp).background(Pc.LowerBorder.copy(alpha = 0.28f)))
     Column(
         (Pc.LowerGroundX?.let { Modifier.fillMaxWidth().background(trackerBoxFill(it)) } ?: Modifier)
-            .padding(vertical = 1.rp)
+            .padding(top = if (ref) 2.rp else 1.rp, bottom = 1.rp)
     ) {
         // FOUR rows, always. DataHelper.lua:256 starts from four placeholders
         // and fills what it knows, so the box is the same height whether a
@@ -965,14 +1032,14 @@ fun PcMovesSection(
         val padded = (rows + List(4) { BLANK_MOVE }).take(4)
         padded.forEach { r ->
             Row(
-                Modifier.fillMaxWidth()
+                Modifier.fillMaxWidth().then(if (ref) Modifier.height(10.rp) else Modifier)
                     .then(
                         // A blank row is no move: the PC tracker ignores a tap there (InfoScreen.lua:651-656, Input.lua:466-490),
                         // where this opened a "---" card with PP 0 (rc32 audit P3 #43).
                         if (onMoveTap != null && !r.blank) Modifier.clickable { onMoveTap(r) }
                         else Modifier
                     )
-                    .padding(horizontal = 2.rp, vertical = 1.rp),
+                    .padding(horizontal = 2.rp, vertical = if (ref) 0.rp else 1.rp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 PcCategoryIcon(r.category)
@@ -1024,7 +1091,12 @@ fun PcMovesSection(
                     r.effect?.let { PcEffectGlyph(it); Spacer(Modifier.width(1.rp)) }
                     PixText(shownPower, PcRef.FONT, if (r.stab) Pc.AltPositive else Pc.LowerText)
                 }
-                val shownAcc = r.accText?.let { if (it == "0") "---" else it }
+                // The weather's arrow just right of the power, as KaizoCore PC draws it (MoveRules.weatherMark): a zero-width
+                // box, so the columns stay where they are.
+                if (r.weatherMark != 0 && !r.blank) Box(Modifier.width(0.dp).wrapContentWidth(Alignment.Start, unbounded = true)) {
+                    PcWeatherGlyph(r.weatherMark, r.weather, Modifier.padding(start = 1.rp))
+                }
+                val shownAcc =r.accText?.let { if (it == "0") "---" else it }
                     ?: if (r.acc == null || r.acc == 0) "---" else "${r.acc}"
                 PixText(shownAcc, PcRef.FONT, Pc.LowerText, Modifier.width(PcRef.ACC_W.rp), numAlign)
             }
@@ -1544,7 +1616,7 @@ private fun PcCarouselLine(
         Modifier.fillMaxWidth().clip(androidx.compose.foundation.shape.RoundedCornerShape(TrackerLook.RADIUS.rp))
             .background(trackerBoxFill(Pc.LowerGroundX ?: Pc.Ground)).border(1.dp, Pc.LowerBorder.copy(alpha = 0.55f), androidx.compose.foundation.shape.RoundedCornerShape(TrackerLook.RADIUS.rp))
             .then(if (onTap != null) Modifier.clickable { onTap() } else Modifier)
-            .padding(horizontal = 6.dp, vertical = 5.dp),
+            .then(if (LocalPcReferenceRows.current) Modifier.height(19.rp).padding(horizontal = 2.rp) else Modifier.padding(horizontal = 6.dp, vertical = 5.dp)),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         icon?.let { it(); Spacer(Modifier.width(4.dp)) }
@@ -1765,7 +1837,7 @@ private fun PcInfoRow(label: String, value: String, color: Color = Pc.Text) {
 /** The eight gym badges, lit as they are earned - the PC tracker's badge row. */
 @Composable
 fun PcBadgeRow(badges: Int, set: String, leagueBeaten: Boolean = false) {
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val context = LocalPcCtx.current
     // Gold, Silver and Crystal: both rows, always (GbBadgeRows.kt).
     if (set == "GSC") {
         Column { gscBadgeRows(badges).forEach { (art, bits) -> PcBadgeRow(bits, art) } }
@@ -1785,7 +1857,7 @@ fun PcBadgeRow(badges: Int, set: String, leagueBeaten: Boolean = false) {
     Row(
         Modifier.fillMaxWidth().clip(androidx.compose.foundation.shape.RoundedCornerShape(TrackerLook.RADIUS.rp))
             .background(trackerBoxFill(Pc.Ground)).border(1.dp, TrackerLook.outline, androidx.compose.foundation.shape.RoundedCornerShape(TrackerLook.RADIUS.rp))
-            .padding(horizontal = 4.dp, vertical = 3.dp),
+            .then(if (LocalPcReferenceRows.current) Modifier.height(19.rp).padding(horizontal = 4.dp) else Modifier.padding(horizontal = 4.dp, vertical = 3.dp)),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -1838,9 +1910,10 @@ fun PcHealsBlock(
     // TrackerScreen.lua:1276 draws both lines in Default text. The colour
     // ramp here was invented, and it painted "0% HP (0)" bright red as though
     // something were wrong rather than simply reporting an empty bag.
-    Row(Modifier.fillMaxWidth().padding(horizontal = 2.rp, vertical = 1.rp), verticalAlignment = Alignment.Top) {
+    val ref = LocalPcReferenceRows.current
+    Row(Modifier.fillMaxWidth().then(if (ref) Modifier.height(22.rp) else Modifier).padding(horizontal = 2.rp, vertical = 1.rp), verticalAlignment = Alignment.Top) {
         Column(Modifier.weight(1f).then(if (onTap != null) Modifier.clickable { onTap() } else Modifier)) {
-            PixText("Heals:", PcRef.FONT, Pc.Text)
+            PixText("Heals:", PcRef.FONT, Pc.Text, if (ref) Modifier.height(11.rp) else Modifier)
             // "Show heals as whole number": the HP the bag would restore, instead of the share of max HP.
             PixText(if (TrackerOptions.healsWhole && wholeHp != null) "$wholeHp HP ($count)" else "$percent% HP ($count)", PcRef.FONT, Pc.Text)
         }
@@ -1853,8 +1926,11 @@ fun PcHealsBlock(
 @Composable
 fun PcNoteRow(note: String, onEdit: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().clickable { onEdit() }
-            .padding(horizontal = 4.dp, vertical = 3.dp),
+        Modifier.fillMaxWidth()
+            .then(if (LocalPcReferenceRows.current) Modifier.clip(androidx.compose.foundation.shape.RoundedCornerShape(TrackerLook.RADIUS.rp))
+                .background(trackerBoxFill(Pc.LowerGroundX ?: Pc.Ground)).border(1.rp, Pc.LowerBorder.copy(alpha = 0.55f), androidx.compose.foundation.shape.RoundedCornerShape(TrackerLook.RADIUS.rp)) else Modifier)
+            .clickable { onEdit() }
+            .then(if (LocalPcReferenceRows.current) Modifier.height(19.rp).padding(horizontal = 3.rp) else Modifier.padding(horizontal = 4.dp, vertical = 3.dp)),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         PixText("NOTE", 7, Pc.Dim, Modifier.width(34.dp))
@@ -1869,8 +1945,9 @@ fun PcNoteRow(note: String, onEdit: () -> Unit) {
 fun PcCard(content: @Composable () -> Unit) {
     // KaizoCore's look (TrackerLook): a rounded card, its outline the theme's border softened.
     val shape = androidx.compose.foundation.shape.RoundedCornerShape(TrackerLook.RADIUS.rp)
+    val ref = LocalPcReferenceRows.current
     Column(
-        Modifier.fillMaxWidth().padding(bottom = 3.rp).then(Modifier.clip(shape))
+        Modifier.fillMaxWidth().padding(bottom = if (ref) 0.rp else 3.rp).then(if (ref) Modifier else Modifier.clip(shape))
             .background(trackerBoxFill(Pc.Ground), shape).border(1.rp, TrackerLook.outline, shape),
     ) { content() }
 }
@@ -2219,10 +2296,17 @@ fun TypeDefensesDialog(name: String, buckets: Map<Double, List<String>>, onClose
                 any = true
                 PixText("${label.first} ${label.second}", 8, Pc.Text)
                 Spacer(Modifier.height(2.dp))
+                // The game's type icons four to a line, as KaizoCore PC's resistances card draws them (PcLogSide.Defenses),
+                // in a border box each; a type with no icon keeps its coloured name.
+                val iconCtx = LocalPcCtx.current
                 types.chunked(4).forEach { line ->
                     Row(Modifier.padding(start = 8.dp, bottom = 2.dp)) {
                         line.forEach { t ->
-                            Box(Modifier.padding(end = 2.dp).border(1.dp, Pc.Border).background(Pc.Ground).padding(horizontal = 4.dp, vertical = 2.dp)) {
+                            val icon = PcAssets.typeIcon(iconCtx, t)
+                            if (icon != null) Box(Modifier.padding(end = 2.dp).border(1.dp, Pc.Border).padding(1.dp)) {
+                                androidx.compose.foundation.Image(icon, t, filterQuality = androidx.compose.ui.graphics.FilterQuality.None,
+                                    modifier = Modifier.size(60.dp, 24.dp))
+                            } else Box(Modifier.padding(end = 2.dp).border(1.dp, Pc.Border).background(Pc.Ground).padding(horizontal = 4.dp, vertical = 2.dp)) {
                                 PixText(t.uppercase(), 7, pcTypeColorByName(t))
                             }
                         }

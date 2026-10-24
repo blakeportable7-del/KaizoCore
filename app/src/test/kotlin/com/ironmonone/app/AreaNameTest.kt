@@ -19,7 +19,9 @@ class AreaNameTest {
         assertTrue(TrackerMotion.animationsOn(1f))
         assertTrue(TrackerMotion.animationsOn(0.5f), "slowed down is still on")
         assertFalse(TrackerMotion.animationsOn(0f), "Remove animations sets the scale to 0")
-        assertTrue("Settings.Global.ANIMATOR_DURATION_SCALE, 1f" in read("TrackerLook.kt"), "it reads the system's scale")
+        // The scale is read through the PC tracker's platform names (PcPlatformAndroid.kt, KaizoCore PC).
+        assertTrue("animationsOn(context.pcAnimatorScale())" in read("TrackerLook.kt"), "it reads the system's scale")
+        assertTrue("Settings.Global.ANIMATOR_DURATION_SCALE, 1f" in read("PcPlatformAndroid.kt"), "the system's scale")
     }
 
     @Test

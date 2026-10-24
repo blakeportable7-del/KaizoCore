@@ -26,7 +26,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -110,7 +109,7 @@ fun InfoSheet(
 /** A type's icon at 1.5x the tracker's 30x12, for the popups; a coloured tag for a type with no icon. */
 @Composable
 fun InfoTypeTag(typeName: String, color: Color) {
-    val ctx = LocalContext.current
+    val ctx = LocalPcCtx.current
     val icon = remember(typeName) { PcAssets.typeIcon(ctx, typeName) }
     if (icon != null) {
         Image(icon, typeName, Modifier.width(45.dp).height(18.dp), filterQuality = FilterQuality.None)

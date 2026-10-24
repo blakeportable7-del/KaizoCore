@@ -49,7 +49,7 @@ td.n,th.n{text-align:right}
 const q=new URLSearchParams(location.search);
 if(q.get('w'))document.documentElement.style.setProperty('--w',q.get('w')+'px');
 const k=q.get('k')||'';
-let S=null, DEX=null, overTab='party', dexSel=null, dexQuery='', dexFailed=false, runKey=null;
+let S=null, DEX=null, overTab='party', dexSel=null, dexQuery='', dexFailed=false, runKey=null, lastLog=false;
 // OBS keeps this page open across runs: the randomizer data and its tab belong to one run, named by its game, seed and
 // attempt, and start over when that changes (rc33 audit P1 #5: run N+1 opened on run N's data).
 const keyOf=r=>[r.title,r.seed,r.attempt].join('|');
@@ -62,7 +62,7 @@ const moves=(ms,own)=>{if(!ms||!ms.length)return '';
   return `<table><tr><th>Move</th><th class="n">PP</th><th class="n">Pow</th><th class="n">Acc</th><th>Type</th></tr>`+
   ms.map(m=>`<tr><td>${esc(m.name)}</td><td class="n">${m.pp??'-'}${own&&m.ppMax?'/'+m.ppMax:''}</td><td class="n">${m.power||'-'}</td><td class="n">${m.acc||'-'}</td><td>${esc(m.type||'')}</td></tr>`).join('')+`</table>`};
 const MK=['','+','-','='];const MC=['','p','m','e'];
-const statsOwn=st=>st?`<table class="stats"><tr>${['hp','atk','def','spa','spd','spe'].map(n=>`<th class="n">${n.toUpperCase()}</th>`).join('')}</tr><tr>${['hp','atk','def','spa','spd','spe'].map(n=>`<td class="n">${st[n]??'-'}</td>`).join('')}</tr></table>`:'';
+const statsOwn=(st,nt)=>st?`<table class="stats"><tr>${['hp','atk','def','spa','spd','spe'].map(n=>`<th class="n">${n.toUpperCase()}${nt&&nt[n]?`<span class="mark ${nt[n]==='+'?'p':'m'}">${nt[n]}</span>`:''}</th>`).join('')}</tr><tr>${['hp','atk','def','spa','spd','spe'].map(n=>`<td class="n">${st[n]??'-'}</td>`).join('')}</tr></table>`:'';
 const statsMarks=mk=>`<table class="stats"><tr>${['HP','ATK','DEF','SPA','SPD','SPE'].map(n=>`<th class="n">${n}</th>`).join('')}</tr><tr>${[0,1,2,3,4,5].map(i=>{const v=(mk||[])[i]||0;return `<td class="n mark ${MC[v]}">${MK[v]||'·'}</td>`}).join('')}</tr></table>`;
 function foot(s){const r=s.route;const b=[];
   if(r)b.push(`<span>${esc(r.name)} <b>${r.seen}/${r.total}</b>${r.trainers?` · trainers ${r.trainers}`:''}</span>`);
@@ -81,7 +81,7 @@ function ownCard(s){const p=mine(s);if(!p)return `<div class="wait">${s.tracked?
   return `${side((s.sides||{}).own)}<h1><span>${esc(p.name)} <small>Lv ${p.level}</small></span>${types(p.types)}</h1>
   ${p.maxHp!=null?hpbar(p.hp,p.maxHp):''}<div class="row"><span>HP <b>${p.maxHp!=null?p.hp+'/'+p.maxHp:'---'}</b>${p.status?` <b style="color:var(--gold)">${esc(p.status)}</b>`:''}</span><span>BST <b>${p.bst??'-'}</b></span></div>
   <div class="row"><span>${esc(p.ability)}</span><span>${esc(p.item)}</span></div>
-  ${statsOwn(p.stats)}${moves(p.moves,true)}
+  ${statsOwn(p.stats,p.nature)}${moves(p.moves,true)}
   <div class="row"><span>Moves ${p.movesLearned}/${p.movesTotal}${p.nextMoveLevel?` · next Lv ${p.nextMoveLevel}`:''}</span><span>${esc(p.evolution||'')}</span></div>
   ${p.note?`<div class="note">${esc(p.note)}</div>`:''}${foot(s)}`}
 function enemyCard(s){const e=s.enemy;if(!e)return '';const team=(s.enemyTeam||[]);
@@ -105,6 +105,8 @@ function overView(s){const won=s.outcome==='WON';
     else{const ql=dexQuery.toLowerCase();h+=`<div id="dexlist">${DEX.filter(d=>!ql||d.name.toLowerCase().includes(ql)).slice(0,300).map(d=>`<div onclick="dexSel=${d.species};draw()">${esc(d.name)} <span class="mini">${(d.types||[]).join('/')}${d.bst?' · '+d.bst:''}</span></div>`).join('')}</div>`}}
   return h}
 function draw(){if(!S)return;const over=document.getElementById('over'),en=document.getElementById('enemy'),own=document.getElementById('own');
+  // The phone's log viewer opened or closed after the run (StreamHub.logOpen): the view follows it.
+  if(S.outcome&&!!S.logOpen!==lastLog){lastLog=!!S.logOpen;if(lastLog){loadDex();return}overTab='party'}
   if(S.outcome){over.className='on';own.style.display='none';en.className='';over.innerHTML=overView(S);return}
   over.className='';own.style.display='';own.innerHTML=ownCard(S);
   if(S.enemy&&S.inBattle){en.className='on';en.innerHTML=enemyCard(S)}else{en.className=''}

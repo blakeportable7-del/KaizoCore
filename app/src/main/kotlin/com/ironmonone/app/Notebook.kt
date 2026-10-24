@@ -162,7 +162,7 @@ fun NotebookDialog(
                     if (rows.isEmpty()) DialogText(if (q.isEmpty()) "Nothing tracked yet this run." else "No Pokemon match.", 13, Pc.Dim)
                     rows.forEach { (id, name) ->
                         val m = marks.of(id)
-                        val summary = StatMarks.STAT_NAMES.indices.mapNotNull { i -> when (m.getOrElse(i) { 0 }) { 1 -> StatMarks.STAT_NAMES[i] + "+"; 2 -> StatMarks.STAT_NAMES[i] + "--"; 3 -> StatMarks.STAT_NAMES[i] + "="; else -> null } }.joinToString(" ")
+                        val summary = StatMarks.STAT_NAMES.indices.mapNotNull { i -> when (m.getOrElse(i) { 0 }) { 1 -> StatMarks.STAT_NAMES[i] + "+"; 2 -> StatMarks.STAT_NAMES[i] + StatMarks.MINUS; 3 -> StatMarks.STAT_NAMES[i] + "="; else -> null } }.joinToString(" ")
                         Row(Modifier.fillMaxWidth().heightIn(min = PcMin.DIALOG_TOUCH_DP.dp).border(1.dp, Pc.Border).clickable { viewed = id; page = "note" }.padding(3.dp), verticalAlignment = Alignment.CenterVertically) {
                             PcSprite(spriteFor(id))
                             Column(Modifier.weight(1f).padding(start = 6.dp)) {
@@ -204,7 +204,7 @@ fun NotebookDialog(
                         Column {
                             StatMarks.STAT_NAMES.forEachIndexed { i, n ->
                                 val st = m.getOrElse(i) { 0 }
-                                if (st != 0) DialogText(n + " " + StatMarks.symbol(st), 12, Pc.Gold)
+                                if (st != 0) DialogText(n + " " + StatMarks.symbol(st), 12, markColor(st))
                             }
                         }
                     }
