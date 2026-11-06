@@ -26,6 +26,8 @@ class ModeCreditsTest {
         "UTDZac/c8c3a84553840f8eabb063be80a33ee7", "pastebin.com/puyAqPyt",
         "stealmylyrics.com/kaizo/patch", "tom-overton/pokefirered", "CyanSMP64/Emerald_Smart_AI",
         "SentorG/PlatinumSuperKaizo", "PyroMikeGit/IronMONHGSS", "Tripc423/Maxdex", "rh-hideout/pokeemerald-expansion",
+        // Linked, not bundled (2026-11-06): the builds a player makes from them are recognized and tracked.
+        "DrMaple/Faster-FireRed-Super-Kaizo", "SentorG/NewPlatPatch",
     )
 
     @Test

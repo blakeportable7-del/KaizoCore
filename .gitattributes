@@ -6,3 +6,6 @@ docs/HNS-KAIZO.md export-ignore
 desktop/assets/** export-ignore
 docs/PC-FIXLIST-2026-10-11.md export-ignore
 docs/kaizo-audit/patches-and-features.md export-ignore
+# Internal working notes (2026-11-06): not public source.
+README-CLAUDE.md export-ignore
+docs/APK-FOLLOWUPS.md export-ignore

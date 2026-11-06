@@ -33,6 +33,8 @@ import kotlinx.coroutines.launch
 
 private const val NATDEX_URL = "https://github.com/CyanSMP64/NatDexExtension"
 private const val FASTER_URL = "https://github.com/DrMaple/Faster-FireRed"
+/** Blake, 2026-11-06: what the credits say beside each patch bundled on its author's word (NOTICE has the hashes). */
+internal const val PATCH_PERMISSION = "Bundled with the author's permission, given to Blake Porterfield on the KaizoCore Discord, 2026-11."
 private const val TRACKER_URL = "https://github.com/besteon/Ironmon-Tracker"
 /** The Game Boy trackers' references (NOTICE): Red, Blue and Yellow; Crystal. */
 private const val GEN1_TRACKER_URL = "https://github.com/mollo010/Ironmon-gen-tracker"
@@ -564,6 +566,18 @@ fun AboutScreen(modifier: Modifier = Modifier, onStats: () -> Unit = {}) {
         CreditLink("https://github.com/tom-overton/pokefirered/releases/tag/smart-ai-v2") { openOrSay(it) }
         CreditLink("https://github.com/CyanSMP64/Emerald_Smart_AI") { openOrSay(it) }
         CreditLink("https://github.com/SentorG/PlatinumSuperKaizo") { openOrSay(it) }
+        Spacer(Modifier.height(8.dp))
+        Text(
+            "Faster FireRed Super Kaizo 1.0.2 by DrMaple, and its No Blocks build. " + PATCH_PERMISSION,
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        CreditLink("https://github.com/DrMaple/Faster-FireRed-Super-Kaizo") { openOrSay(it) }
+        Spacer(Modifier.height(8.dp))
+        Text(
+            "The Platinum GIGA patch 3.1 by SentorG, with thanks to PyroMike, Arex and Toxxxyn, in its plain, FLX and Snowy builds. " + PATCH_PERMISSION,
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        CreditLink("https://github.com/SentorG/NewPlatPatch") { openOrSay(it) }
 
         Spacer(Modifier.height(12.dp))
 
@@ -688,7 +702,8 @@ fun AboutScreen(modifier: Modifier = Modifier, onStats: () -> Unit = {}) {
         Spacer(Modifier.height(12.dp))
 
         Text(
-            "On Nat. Dex and MaxDex, most descriptions of the moves from X and Y on are Pokémon Showdown's, by " +
+            "On Nat. Dex and MaxDex, most descriptions of the moves from X and Y on, and on Nat. Dex those of the " +
+                "abilities from X and Y on, are Pokémon Showdown's, by " +
                 "Guangcong Luo and contributors, used under the MIT license.",
             style = MaterialTheme.typography.bodyMedium,
         )

@@ -44,7 +44,7 @@ object RulesetCatalog {
      */
     private val ORDER = listOf(
         "standard", "ultimate", "kaizo", "superkaizo", "survival", "survivalrevival",
-        "kaizodoubles", "chaoskaizo", "evokaizo", "ironmonjourney",
+        "kaizodoubles", RnqsInfo.SUPER_KAIZO_DOUBLES, "chaoskaizo", "evokaizo", "ironmonjourney",
     )
 
     /** Every mode the row can show, in the order it shows them. */
@@ -92,6 +92,7 @@ object RulesetCatalog {
      */
     private val UNDEFINED = mapOf(
         "superkaizo" to setOf(RomKind.RUBY_U.id, RomKind.SAPPHIRE_U.id, RomKind.DIAMOND_U.id, RomKind.PEARL_U.id),
+        RnqsInfo.SUPER_KAIZO_DOUBLES to setOf(RomKind.RUBY_U.id, RomKind.SAPPHIRE_U.id, RomKind.DIAMOND_U.id, RomKind.PEARL_U.id),
     )
 
     /** Whether [key]'s rules cover [kind]'s game. */
@@ -106,13 +107,13 @@ object RulesetCatalog {
      */
     fun superKaizoWarning(kind: RomKind, key: String?): String? {
         // Heart & Soul takes the Nat. Dex Super Kaizo file, whose smart AI HnsEngine applies (Trainer.aiFlags).
-        if (key != "superkaizo" || kind.isNatDex || kind.isHns || kind.patchTag == "smartai" || kind.patchTag == "superkaizo") return null
+        if (!RnqsInfo.isSuperKaizo(key) || kind.isNatDex || kind.isHns || kind.patchTag in RomKind.SMART_AI_TAGS) return null
         val base = RomKind.byId(kind.baseId) ?: kind
         if (!defined(kind, "superkaizo")) return when (base.family) {
             "RSE" -> "Super Kaizo's rules are written for Emerald, and there is no Smart AI patch for Ruby or Sapphire."
             else -> "Super Kaizo's rules are written for Platinum, and there is no Smart AI patch for Diamond or Pearl."
         }
-        val option = PrepOptions.forKind(base).firstOrNull { it.out?.patchTag == "smartai" || it.out?.patchTag == "superkaizo" }
+        val option = PrepOptions.forKind(base).firstOrNull { it.out?.patchTag in RomKind.SMART_AI_TAGS }
             ?: return when (base.id) {
                 RomKind.SOULSILVER_U.id -> "Super Kaizo gives every trainer smart AI through a patch, and the Super Kaizo patch is made for HeartGold only. On SoulSilver the trainers keep their normal AI."
                 else -> "Super Kaizo gives every trainer smart AI through a patch, and this app has none for ${base.displayName.removePrefix("Pok\u00e9mon ")}. " +
@@ -220,6 +221,8 @@ object RulesetCatalog {
             "and one more after your eighth.",
         "kaizodoubles" to "Kaizo, but every trainer battle is a double battle. The run ends if either of your two " +
             "Pok\u00e9mon faints.",
+        RnqsInfo.SUPER_KAIZO_DOUBLES to "KaizoCore's own mix, not an official IronMON ruleset: Super Kaizo with Kaizo Doubles' " +
+            "changes. The run ends if either of your two Pok\u00e9mon faints.",
         "chaoskaizo" to "Kaizo with random Pok\u00e9mon types, random move power, accuracy and PP, and looser item rules. " +
             "Its rules are marked as a work in progress.",
         "evokaizo" to "Kaizo, but your Pok\u00e9mon evolves on every level up and you cannot cancel it.",

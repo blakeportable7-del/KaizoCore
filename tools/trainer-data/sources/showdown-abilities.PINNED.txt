@@ -1,0 +1,17 @@
+showdown-abilities.ts beside this file is Pokemon Showdown's data/text/abilities.ts, byte for byte, as served at
+
+  https://raw.githubusercontent.com/smogon/pokemon-showdown/9fb3a5b99f1a0bea17f495c5cc1bfe04fdd19c3e/data/text/abilities.ts
+
+Repository  https://github.com/smogon/pokemon-showdown
+Commit      9fb3a5b99f1a0bea17f495c5cc1bfe04fdd19c3e (the commit showdown-moves.ts is pinned to)
+Fetched     2026-11-06, with Blake's yes ("fill the 154 Nat. Dex abilities ... with Pokemon Showdown's short
+            descriptions"), the one file and nothing else from the repository. Its LICENSE is the one in
+            showdown-moves.PINNED.txt (MIT), at the same commit.
+Size        150575 bytes, LF line endings
+SHA-256     f6f2a0d4fc8be06cc6051d39e11f5f0a3d3d9d11020d5855b09c9b2f34a00568
+            (of the LF bytes; tools/trainer-data/convert_natdex_ability_desc.py checks it)
+
+A build input only. convert_natdex_ability_desc.py READS it as data (nothing in it is run) for the descriptions of the
+Nat. Dex abilities from X and Y on, whose own text in the Nat. Dex ROM is "Not implemented yet.". It takes each
+ability's shortDesc, never its desc. The app does not carry this file; it carries those descriptions, in
+tracker-gba/src/main/resources/natdex/abilitydesc.tsv, with Showdown's license (NOTICE).

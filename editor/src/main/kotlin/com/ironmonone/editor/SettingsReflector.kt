@@ -55,16 +55,18 @@ object SettingsReflector {
     /**
      * Excluded: engine plumbing a player never sets directly, and settings
      * whose data this editor cannot edit yet (2026-09-27, audit): "Limit
-     * Pokémon" needs its generation list (currentRestrictions), and
-     * "Standardize EXP curves" needs the curve itself (selectedEXPCurve), so
-     * both switches turned on something with no way to say what. The Slow
-     * curve choice only matters under Standardize, so it goes with it. The
-     * file keeps whatever values these have.
+     * Pokémon" needs its generation list (currentRestrictions), so its switch
+     * turned on something with no way to say what. The file keeps whatever
+     * values these have.
+     *
+     * "Standardize EXP curves" was excluded the same way until the curve itself
+     * (selectedEXPCurve) had a control: since 2026-11-06 all three are offered
+     * (a player setting up Kaizo Doubles needs Medium Slow and could not find it).
      */
     private val EXCLUDED = setOf(
         "romName", "customNames", "currentRestrictions", "currentMiscTweaks",
         "updatedFromOldVersion",
-        "limitPokemon", "standardizeEXPCurves", "expCurveMod",
+        "limitPokemon",
         // Never written to the file nor read by the engine: an edit here was
         // lost on save (found by the every-field-has-a-label test, 2026-09-27).
         "trainersEnforceDistribution", "trainersEnforceMainPlaythrough",
@@ -132,9 +134,11 @@ object SettingsReflector {
         // `setXxxMod(boolean...)`; the enum-typed setter is private. We call the
         // private one directly - this is our own vendored code, not framework API, so
         // setAccessible is legitimate on Android too.
+        // selectedEXPCurve is the one enum that is not nested in Settings (pokemon.ExpCurve), and its setter is public;
+        // a bare Settings holds null there, which reads as the desktop's first curve, Medium Fast.
         methods.filter {
             it.parameterCount == 0 && it.name.startsWith("get") &&
-                it.returnType.isEnum && it.returnType.enclosingClass == cls
+                it.returnType.isEnum && (it.returnType.enclosingClass == cls || it.name == "getSelectedEXPCurve")
         }.sortedBy { it.name }.forEach { getter ->
             val id = getter.name.removePrefix("get").decap()
             if (id in EXCLUDED) return@forEach
@@ -147,7 +151,7 @@ object SettingsReflector {
             val values = type.enumConstants.map { (it as Enum<*>).name }.filterNot { it in hidden }
             out += Option.Choice(
                 id, labelFor(id), sectionOf(id), values,
-                get = { s -> (getter.invoke(s) as Enum<*>).name },
+                get = { s -> (getter.invoke(s) as Enum<*>?)?.name ?: values.firstOrNull { it == "MEDIUM_FAST" } ?: values.first() },
                 set = { s, v ->
                     @Suppress("UNCHECKED_CAST")
                     val e = java.lang.Enum.valueOf(type as Class<out Enum<*>>, v)
@@ -169,7 +173,7 @@ object SettingsReflector {
         // field) by tools/extract_upr_order.py. Anything the desktop GUI does
         // not expose sorts to the end, alphabetically, rather than vanishing.
         return out.sortedWith(
-            compareBy({ UPR_ORDER[it.id] ?: Int.MAX_VALUE }, { it.id }),
+            compareBy({ orderOf(it.id) }, { it.id }),
         )
     }
 
@@ -253,6 +257,9 @@ object SettingsReflector {
         "totemLevelModifier" to Gate("totemLevelsModified", "false"),
         "minimumCatchRateLevel" to Gate("useMinimumCatchRate", "false"),
         "wildBSTLimit" to Gate("blockWildLegendaries", "false"),
+        // pbsEXPCurveComboBox and the Slow-curve radio buttons follow pbsStandardizeEXPCurvesCheckBox.
+        "selectedEXPCurve" to Gate("standardizeEXPCurves", "false"),
+        "expCurveMod" to Gate("standardizeEXPCurves", "false"),
     )
 
     /** Every rule that can grey [id] out; it is dead while ANY of them holds. */
@@ -325,6 +332,26 @@ object SettingsReflector {
         }
     }
     private val UPR_ORDER: Map<String, Int> by lazy { UPR_CONTROLS.mapValues { it.value.first } }
+
+    /**
+     * Where a control sorts. The desktop puts the Slow-curve radio buttons above the Standardize switch (they share a
+     * panel), which on a phone list reads as an answer before its question: the switch, then the curve, then who keeps Slow.
+     */
+    private fun orderOf(id: String): Double = when (id) {
+        "selectedEXPCurve" -> (UPR_ORDER["standardizeEXPCurves"] ?: Int.MAX_VALUE) + 0.1
+        "expCurveMod" -> (UPR_ORDER["standardizeEXPCurves"] ?: Int.MAX_VALUE) + 0.2
+        else -> (UPR_ORDER[id] ?: Int.MAX_VALUE).toDouble()
+    }
+
+    /**
+     * The EXP curves a generation's games have, as the desktop's own list offers them (getEXPCurvesForGeneration):
+     * Gen 1 and 2 have no Erratic or Fluctuating. Every other choice offers all its values.
+     */
+    fun choicesIn(id: String, values: List<String>, generation: String?): List<String> {
+        if (id != "selectedEXPCurve" || generation == null) return values
+        val g = Regex("\\d+").find(generation)?.value?.toIntOrNull() ?: return values
+        return if (g < 3) values.filterNot { it == "ERRATIC" || it == "FLUCTUATING" } else values
+    }
 
     fun bySection(cls: Class<*>): Map<Section, List<Option>> =
         options(cls).groupBy { it.section }.toSortedMap(compareBy { it.ordinal })
@@ -410,6 +437,7 @@ object SettingsReflector {
         "assignEvoStatsRandomly" to "Randomize stats added on evolution",
         "standardizeEXPCurves" to "Standardize EXP curves",
         "expCurveMod" to "Keep the Slow EXP curve for",
+        "selectedEXPCurve" to "EXP curve",
         // Types
         "typesMod" to "Types",
         "typesFollowMegaEvolutions" to "Types follow Mega Evolutions",
@@ -593,6 +621,11 @@ object SettingsReflector {
      */
     internal val VALUE_LABELS: Map<String, Map<String, String>> = mapOf(
         "baseStatisticsMod" to mapOf("UNCHANGED" to "Unchanged", "SHUFFLE" to "Shuffle", "RANDOM" to "Random"),
+        // The desktop's own names (ExpCurve.toString).
+        "selectedEXPCurve" to mapOf(
+            "MEDIUM_FAST" to "Medium Fast", "MEDIUM_SLOW" to "Medium Slow", "FAST" to "Fast", "SLOW" to "Slow",
+            "ERRATIC" to "Erratic", "FLUCTUATING" to "Fluctuating",
+        ),
         "expCurveMod" to mapOf(
             "LEGENDARIES" to "Legendaries", "STRONG_LEGENDARIES" to "Strong legendaries",
             "ALL" to "No one (all Pokémon get the chosen curve)",

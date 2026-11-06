@@ -45,6 +45,10 @@ object HackLinks {
             PC + "326118/", setOf("firered-u-v10"), "FireRed 1.0 (US)"),
         HackLink("Faster FireRed", "DrMaple", "Quality of life for IronMON: faster, hidden items marked. KaizoCore already includes it.",
             "https://github.com/DrMaple/Faster-FireRed/releases", setOf("firered-u-v11"), "FireRed 1.1 (US)"),
+        // Bundled with DrMaple's permission (2026-11-06); the link stays, to his own page.
+        HackLink("Faster FireRed Super Kaizo", "DrMaple", "Faster FireRed with smart AI for every trainer and the Super Kaizo blocks, for Super Kaizo runs. " +
+            "KaizoCore already includes it, and its No Blocks build. Tap PATCH on your FireRed 1.1 in My games and pick it.",
+            "https://github.com/DrMaple/Faster-FireRed-Super-Kaizo/releases", setOf("firered-u-v11"), "FireRed 1.1 (US)"),
         HackLink("MaxDex Kaizo IronMON", "Trip", "Nat. Dex Kaizo with moves and abilities through Gen 9. KaizoCore already includes it. Tap PATCH on your FireRed 1.1 in My games and pick MaxDex.",
             MaxDexInfo.REPO, setOf("firered-u-v11"), "FireRed 1.1 (US)"),
         // ---- Emerald ----
@@ -68,6 +72,10 @@ object HackLinks {
         HackLink("Emerald Seaglass", "Nemo622", "New graphics, a bigger Pokédex and the Battle Frontier.",
             "https://ko-fi.com/s/4a1535f351", setOf("emerald-u"), "Emerald (US)"),
         // ---- Platinum ----
+        // Bundled with SentorG's permission (2026-11-06), all four builds; the link stays, to his own page.
+        HackLink("Platinum GIGA patch", "SentorG", "Quality of life for Platinum IronMON: much less talk, NPCs and signs out of the way, instant honey, " +
+            "beds that heal, crash fixes. KaizoCore already includes it, FLX and Snowy too. Tap PATCH on your Platinum in My games and pick it.",
+            "https://github.com/SentorG/NewPlatPatch/releases", setOf("platinum-u"), "Platinum 1.0 (US)"),
         HackLink("Renegade Platinum", "Drayano", "All 493 Pokémon, tougher trainers, no trade evolutions.",
             "https://projectpokemon.org/home/forums/topic/52294-pok%C3%A9mon-renegade-platinum/", setOf("platinum-u"), "Platinum (US)"),
         // ---- HeartGold / SoulSilver ----

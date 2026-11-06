@@ -37,7 +37,9 @@ The patched game goes under **YOUR ROM HACKS**, and your original stays exactly 
 | MaxDex 1.0 | FireRed v1.1 | Nat. Dex with the Legends Z-A Megas, and moves and abilities through Gen 9. Its one mode is Kaizo. MaxDex by Trip (Tripc423). |
 | Pseudo-fluctuating | Red, Blue, Yellow, Gold, Silver, Crystal | The growth patch. The default for Gold, Silver and Crystal. |
 | Super Kaizo builds | FireRed 1.0, LeafGreen, Emerald, HeartGold, Platinum | The patched games Super Kaizo is played on. |
+| Faster FireRed Super Kaizo 1.0.2, with or without blocks | FireRed v1.1 | Faster FireRed with smart AI and the Super Kaizo blocks: FireRed v1.1's Super Kaizo build. By DrMaple, bundled with his permission. |
 | Faster FireRed 1.3.2 | FireRed v1.1 | Quality of life: shorter intros, instant healing, skipped cutscenes. |
 | Faster Emerald 1.3.2 and 1.2.1 | Emerald | The same for Emerald. 1.3.2 carries the 6% level increase already. |
 | Faster B2W2, with or without PWT | Black 2, White 2 | The same for Black 2 and White 2. |
 | IronMON HGSS 0.2.2a | HeartGold | Quality of life: faster walking and battle animations, the intro skipped, less talk until Goldenrod. |
+| GIGA patch 3.1, plain, FLX or Snowy | Platinum | Quality of life: much less talk, NPCs and signs out of the way, instant honey, beds that heal. FLX runs faster; Snowy adds snow in Twinleaf. By SentorG, bundled with his permission. |

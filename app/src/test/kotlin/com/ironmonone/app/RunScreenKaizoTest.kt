@@ -43,12 +43,12 @@ class RunScreenKaizoTest {
     fun `the mode row is in the order the rules build`() {
         assertEquals(
             listOf("standard", "ultimate", "kaizo", "superkaizo", "survival", "survivalrevival",
-                "kaizodoubles", "chaoskaizo", "evokaizo", "ironmonjourney"),
+                "kaizodoubles", "superkaizodoubles", "chaoskaizo", "evokaizo", "ironmonjourney"),
             RulesetCatalog.keys)
         // Nat. Dex Emerald has every mode there is, and Emerald has eight of them.
         assertEquals(RulesetCatalog.keys, RulesetCatalog.forRom(RomKind.EMERALD_NATDEX_121, presets).map { it.key })
         assertEquals(
-            listOf("standard", "ultimate", "kaizo", "superkaizo", "survival", "kaizodoubles", "chaoskaizo", "ironmonjourney"),
+            listOf("standard", "ultimate", "kaizo", "superkaizo", "survival", "kaizodoubles", "superkaizodoubles", "chaoskaizo", "ironmonjourney"),
             RulesetCatalog.forRom(RomKind.EMERALD_U, presets).map { it.key })
         // Whatever a game offers: Standard, Ultimate, Kaizo, then Super Kaizo where it has it, then the variants.
         // MaxDex offers its one mode, Kaizo, as Trip ships it.
@@ -123,7 +123,7 @@ class RunScreenKaizoTest {
 
     @Test
     fun `each mode has one plain line and the words for a mode nobody knows are the fallback`() {
-        assertEquals(10, RulesetCatalog.keys.size)
+        assertEquals(11, RulesetCatalog.keys.size)
         for (key in RulesetCatalog.keys) for (natDex in listOf(false, true)) {
             val line = RulesetCatalog.modeLine(key, natDex)
             assertTrue(line.isNotBlank() && '\n' !in line && line.endsWith("."), "$key: $line")
@@ -131,7 +131,7 @@ class RunScreenKaizoTest {
             assertNotEquals(RulesetCatalog.OTHER_LINE, line, "$key has a line of its own")
             assertCopyRules(line, key)
         }
-        assertEquals(10, RulesetCatalog.keys.map { RulesetCatalog.modeLine(it) }.toSet().size, "no two modes share a line")
+        assertEquals(11, RulesetCatalog.keys.map { RulesetCatalog.modeLine(it) }.toSet().size, "no two modes share a line")
         assertEquals("A variant of Kaizo. Read its rules first.", RulesetCatalog.modeLine("mymode"))
         assertCopyRules(RulesetCatalog.OTHER_LINE, "the fallback")
         assertCopyRules(RulesetCatalog.MODE_HEADER, "the line under Mode")
@@ -176,6 +176,11 @@ class RunScreenKaizoTest {
             "After Acquiring your 8th Gym badge, you gain one Bonus Pokémon Center usage."),
         Claim("kaizodoubles", "every trainer battle is a double battle", "All trainer battles possible are doubles battles (2v2)."),
         Claim("kaizodoubles", "The run ends if either of your two Pokémon faints",
+            "if either of your two Pokémon faint it's game over and the run ends."),
+        // KaizoCore's own mix (2026-11-06): its line and its book say it is not an official ruleset, and what it combines.
+        Claim("superkaizodoubles", "not an official IronMON ruleset", "is a KaizoCore preset, not an official IronMON ruleset"),
+        Claim("superkaizodoubles", "Super Kaizo with Kaizo Doubles' changes", "Super Kaizo, played with the Kaizo Doubles rules"),
+        Claim("superkaizodoubles", "The run ends if either of your two Pokémon faints",
             "if either of your two Pokémon faint it's game over and the run ends."),
         Claim("chaoskaizo", "random Pokémon types", "Pokémon Types: Random (follow evolutions)"),
         Claim("chaoskaizo", "random move power, accuracy and PP", "Move Data: Randomize move: Power, Accuracy, and PP"),
@@ -236,8 +241,9 @@ class RunScreenKaizoTest {
                 // Kaizo, and every mode after it, holds Standard, Ultimate and Kaizo, in that order, before its own.
                 else -> assertEquals(listOf("Standard IronMON", "Ultimate IronMON", "Kaizo IronMON"), heads.take(3), where)
             }
-            // Only Super Kaizo holds Super Kaizo: Survival and the rest start from Kaizo, not from it.
-            assertEquals(f.nameWithoutExtension == "superkaizo", "Super Kaizo IronMON" in heads, where)
+            // Only Super Kaizo holds Super Kaizo, and KaizoCore's Super Kaizo Doubles, which is Super Kaizo played with
+            // the Kaizo Doubles rules: Survival and the rest start from Kaizo, not from it.
+            assertEquals(f.nameWithoutExtension in setOf("superkaizo", "superkaizodoubles"), "Super Kaizo IronMON" in heads, where)
             seen++
         }
         assertTrue(seen >= 71, "$seen rules files")

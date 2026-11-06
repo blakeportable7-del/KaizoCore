@@ -67,7 +67,10 @@ class PrepOptionsTest {
         assertEquals("faster121-${RomKind.EMERALD_U.id}.ips", PrepOptions.forKind(RomKind.EMERALD_U)[3].asset)
         assertEquals(listOf("STANDARD", RomKind.FIRERED_V10_SMARTAI.id), PrepOptions.forKind(RomKind.FIRERED_U_V10).map { it.id })
         // MaxDex last, made with Trip's patch, bundled since rc34 (MaxDexPrepareTest).
-        assertEquals(listOf("STANDARD", "NATDEX", RomKind.FIRERED_V11_FASTER.id, RomKind.FIRERED_MAXDEX_10.id), PrepOptions.forKind(RomKind.FIRERED_U_V11).map { it.id })
+        assertEquals(listOf("STANDARD", "NATDEX", RomKind.FIRERED_V11_FASTER.id, RomKind.FIRERED_V11_FASTER_SK.id, RomKind.FIRERED_V11_FASTER_SK_NB.id,
+            RomKind.FIRERED_MAXDEX_10.id), PrepOptions.forKind(RomKind.FIRERED_U_V11).map { it.id })
+        assertEquals(listOf("fastersk-${RomKind.FIRERED_U_V11.id}.ips", "fasterskopen-${RomKind.FIRERED_U_V11.id}.ips"),
+            PrepOptions.forKind(RomKind.FIRERED_U_V11).subList(3, 5).map { it.asset })
         assertEquals("faster-${RomKind.FIRERED_U_V11.id}.ips", PrepOptions.forKind(RomKind.FIRERED_U_V11)[2].asset)
         assertEquals(1, PrepOptions.forKind(RomKind.EMERALD_NATDEX_121).size)
         assertEquals(1, PrepOptions.forKind(RomKind.EMERALD_SMARTAI).size)
@@ -84,9 +87,11 @@ class PrepOptionsTest {
         assertEquals("Skips the intro, shortens the talk until Goldenrod, and speeds up walking and battle animations.", PrepOptions.describe(hg[1]))
         assertEquals("superkaizo-${RomKind.HEARTGOLD_U.id}.xdelta", hg[2].asset)
         assertEquals(listOf("STANDARD"), PrepOptions.forKind(RomKind.SOULSILVER_U).map { it.id })
-        assertEquals(listOf("STANDARD", RomKind.PLATINUM_SUPERKAIZO.id), PrepOptions.forKind(RomKind.PLATINUM_U).map { it.id })
-        assertEquals("superkaizo-${RomKind.PLATINUM_U.id}.xdelta", PrepOptions.forKind(RomKind.PLATINUM_U)[1].asset)
-        assertEquals("Super Kaizo 1.0 patch", PrepOptions.forKind(RomKind.PLATINUM_U)[1].label)
+        assertEquals(listOf("STANDARD", RomKind.PLATINUM_GIGA.id, RomKind.PLATINUM_GIGA_FLX.id, RomKind.PLATINUM_GIGA_SNOWY.id,
+            RomKind.PLATINUM_GIGA_SNOWY_FLX.id, RomKind.PLATINUM_SUPERKAIZO.id), PrepOptions.forKind(RomKind.PLATINUM_U).map { it.id })
+        assertEquals("giga-${RomKind.PLATINUM_U.id}.xdelta", PrepOptions.forKind(RomKind.PLATINUM_U)[1].asset)
+        assertEquals("superkaizo-${RomKind.PLATINUM_U.id}.xdelta", PrepOptions.forKind(RomKind.PLATINUM_U)[5].asset)
+        assertEquals("Super Kaizo 1.0 patch", PrepOptions.forKind(RomKind.PLATINUM_U)[5].label)
         assertEquals("Super Kaizo 0.0.3 patch", hg[2].label)
         // Diamond and Pearl have no Super Kaizo patch (the README's Platinum patch is for Platinum 1.0 only).
         assertEquals(listOf("STANDARD"), PrepOptions.forKind(RomKind.DIAMOND_U).map { it.id })

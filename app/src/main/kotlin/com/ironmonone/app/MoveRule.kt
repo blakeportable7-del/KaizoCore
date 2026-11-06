@@ -226,6 +226,13 @@ object MoveRule {
                 put(SETUP, "a setup move", When.BOSS)
                 noGuard = true
             }
+            "superkaizodoubles" -> {
+                // KaizoCore's mix: Super Kaizo's bans, and Kaizo Doubles' shared-move rule and Dark Void.
+                hm(); kaizo(drainWild = true)
+                put(SETUP, "a setup move", When.BOSS)
+                noGuard = true; shared = true
+                put(listOf("Dark Void"), "Dark Void", When.TRAINER)
+            }
             "survival" -> {
                 // "Cut is no longer banned"; draining and status-only healing moves in trainer battles only.
                 hm(except = setOf("Cut")); kaizo(drainWild = true, leechSeedWild = true, statusWild = true)

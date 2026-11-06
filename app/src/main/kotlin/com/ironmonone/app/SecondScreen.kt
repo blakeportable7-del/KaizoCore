@@ -171,7 +171,7 @@ internal fun ownDisplayId(context: Context): Int {
     }.getOrNull() ?: Display.DEFAULT_DISPLAY
 }
 
-private fun Context.findComponentActivity(): ComponentActivity? {
+internal fun Context.findComponentActivity(): ComponentActivity? {
     var c: Context? = this
     while (c != null) {
         if (c is ComponentActivity) return c

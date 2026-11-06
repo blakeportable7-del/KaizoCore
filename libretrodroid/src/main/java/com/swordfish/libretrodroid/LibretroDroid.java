@@ -197,6 +197,11 @@ public class LibretroDroid {
     public static native void onMotionEvent(int port, int motionSource, float xAxis, float yAxis);
     public static native void onTouchEvent(float xAxis, float yAxis);
 
+    /** KaizoCore: rows [top, bottom) of the frame on [surface], a second display's; null stops. GL thread only. */
+    public static native void setSecondDisplay(android.view.Surface surface, float top, float bottom);
+    /** KaizoCore: frames drawn on the second display since it was set; -1 once EGL refused it. Any thread. */
+    public static native long secondDisplayFrames();
+
     public static native void onKeyEvent(int port, int action, int keyCode);
 
     public static native void refreshAspectRatio();

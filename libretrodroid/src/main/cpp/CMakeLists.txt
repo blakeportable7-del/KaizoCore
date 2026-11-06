@@ -124,3 +124,5 @@ target_link_libraries(libretrodroid
 
 # KaizoCore: Play as your Pokemon (Sprite Is Me). sprite_core.h is header-only.
 target_sources(libretrodroid PRIVATE sprite_overlay.h sprite_overlay.cpp)
+# KaizoCore: the DS bottom screen on a second display (dual-screen handhelds).
+target_sources(libretrodroid PRIVATE seconddisplay.h seconddisplay.cpp)

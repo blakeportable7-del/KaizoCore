@@ -18,6 +18,7 @@
 #include <jni.h>
 
 #include <EGL/egl.h>
+#include <android/native_window_jni.h>
 
 #include <memory>
 #include <string>
@@ -451,6 +452,26 @@ JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onTouchEve
     jfloat yAxis
 ) {
     LibretroDroid::getInstance().onTouchEvent(xAxis, yAxis);
+}
+
+// KaizoCore: the DS bottom screen on a second display. Called on the GL thread (GLRetroView.setSecondDisplay).
+JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_setSecondDisplay(
+    JNIEnv* env,
+    jclass obj,
+    jobject surface,
+    jfloat top,
+    jfloat bottom
+) {
+    ANativeWindow* window = surface != nullptr ? ANativeWindow_fromSurface(env, surface) : nullptr;
+    LibretroDroid::getInstance().setSecondDisplay(window, top, bottom);
+}
+
+// KaizoCore: frames drawn on the second display since it was set, -1 once refused (the tester's touch info). Any thread.
+JNIEXPORT jlong JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_secondDisplayFrames(
+    JNIEnv* env,
+    jclass obj
+) {
+    return (jlong) LibretroDroid::getInstance().secondDisplayFrames();
 }
 
 JNIEXPORT void JNICALL Java_com_swordfish_libretrodroid_LibretroDroid_onKeyEvent(

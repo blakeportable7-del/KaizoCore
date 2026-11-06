@@ -137,6 +137,15 @@ object TrackerOptions {
      */
     var trackerOnSecondScreen by mutableStateOf(false)
 
+    /** A DS game's bottom screen on the second display (DsSecondDisplay), the top on the phone; before the tracker. */
+    var dsBottomOnSecondScreen by mutableStateOf(false)
+
+    /**
+     * For a tester (Thor test build, 2026-11-06): the last touch the second display delivered, where it landed on the DS
+     * touch screen (256 by 192) and the display's size and refresh, shown on both screens (DsSecondDisplay). Off by default.
+     */
+    var dsSecondScreenTouchInfo by mutableStateOf(false)
+
     /**
      * FireRed and LeafGreen's dungeon maps (FrlgPictures), off by default (Blake, 2026-09-30). They are guide
      * pictures with routes, item spots and trainer counts, the same in every game and nothing from the player's own
@@ -359,6 +368,8 @@ object TrackerOptions {
                     "dsAutoSwapToEnemy" -> dsAutoSwapToEnemy = v == "true"
                     "dsEnemyLocking" -> dsEnemyLocking = v == "true"
                     "trackerOnSecondScreen" -> trackerOnSecondScreen = v == "true"
+                    "dsBottomOnSecondScreen" -> dsBottomOnSecondScreen = v == "true"
+                    "dsSecondScreenTouchInfo" -> dsSecondScreenTouchInfo = v == "true"
                     "frlgGuidePictures" -> frlgGuidePictures = v == "true"
                     "showTypeMatchups" -> showTypeMatchups = v == "true"
                     "showRepel" -> showRepel = v == "true"
@@ -417,7 +428,7 @@ object TrackerOptions {
         DiskWriter.write(f, text())
     }
 
-    fun text(): String = "showBallPicker=$showBallPicker\nshowCategoryIcons=$showCategoryIcons\nhealsWhole=$healsWhole\nshowTeamView=$showTeamView\nautoPokemonThemes=$autoPokemonThemes\nrestorePoints=$restorePoints\nshowTimer=$showTimer\ntourneyTracker=$tourneyTracker\nkantoBadgesFirst=$kantoBadgesFirst\nshowBothBadgeSets=$showBothBadgeSets\nlogCustomTrainerNames=$logCustomTrainerNames\nlogShowUnlearnableGymTms=$logShowUnlearnableGymTms\nlogShowPreEvolutions=$logShowPreEvolutions\nlossCondition=${lossCondition.key}\ndsLossCondition=${dsLossCondition.key}\nlandscapeTracker=${landscapeTracker.name}\nfloatingLocked=$floatingLocked\nshowRepel=$showRepel\nbattleAnimations=$battleAnimations\nprogressAnimations=$progressAnimations\nanimatedSprites=$animatedSprites\nspritesWalk=$spritesWalk\ndetermineFriendship=$determineFriendship\ndisplayPedometer=$displayPedometer\nshowMoveEffectiveness=$showMoveEffectiveness\nshowCatchRate=$showCatchRate\ncalculateVariableDamage=$calculateVariableDamage\ncountEnemyPp=$countEnemyPp\nshowLastDamage=$showLastDamage\nrealHitChance=$realHitChance\nrealMovePower=$realMovePower\ncalcAtkWildOnly=$calcAtkWildOnly\n${autoSwapChoice.value?.let { "autoSwapToEnemyChoice=$it\n" } ?: ""}showNicknames=$showNicknames\ndisplayGender=$displayGender\nshowExpBar=$showExpBar\nruleMarks=$ruleMarks\ncolorStatNumbers=$colorStatNumbers\nrightJustifiedNumbers=$rightJustifiedNumbers\ntrackPcHeals=$trackPcHeals\npcHealsCountDownward=$pcHealsCountDownward\nhideStatsUntilSummary=$hideStatsUntilSummary\nshowDataForVanillaGame=$showDataForVanillaGame\nopenBookPlayMode=$openBookPlayMode\nrevealInfoIfRandomized=$revealInfoIfRandomized\nallowCarouselRotation=$allowCarouselRotation\ncarouselItems=$carouselItems\ncarouselSpeed=$carouselSpeed\nshowStarterBallInfo=$showStarterBallInfo\ndsPokecenterHeals=$dsPokecenterHeals\ndsExpBar=$dsExpBar\ndsAccEva=$dsAccEva\ndsAutoSwapToEnemy=$dsAutoSwapToEnemy\ndsEnemyLocking=$dsEnemyLocking\ntrackerOnSecondScreen=$trackerOnSecondScreen\nfrlgGuidePictures=$frlgGuidePictures\nshowTypeMatchups=$showTypeMatchups\nnuzlockeBallPicker=$nuzlockeBallPicker\nfloatingSolid=$floatingSolid\ntrackerHud=$trackerHud\nhudShowMine=$hudShowMine\nhudShowRest=$hudShowRest\n" +
+    fun text(): String = "showBallPicker=$showBallPicker\nshowCategoryIcons=$showCategoryIcons\nhealsWhole=$healsWhole\nshowTeamView=$showTeamView\nautoPokemonThemes=$autoPokemonThemes\nrestorePoints=$restorePoints\nshowTimer=$showTimer\ntourneyTracker=$tourneyTracker\nkantoBadgesFirst=$kantoBadgesFirst\nshowBothBadgeSets=$showBothBadgeSets\nlogCustomTrainerNames=$logCustomTrainerNames\nlogShowUnlearnableGymTms=$logShowUnlearnableGymTms\nlogShowPreEvolutions=$logShowPreEvolutions\nlossCondition=${lossCondition.key}\ndsLossCondition=${dsLossCondition.key}\nlandscapeTracker=${landscapeTracker.name}\nfloatingLocked=$floatingLocked\nshowRepel=$showRepel\nbattleAnimations=$battleAnimations\nprogressAnimations=$progressAnimations\nanimatedSprites=$animatedSprites\nspritesWalk=$spritesWalk\ndetermineFriendship=$determineFriendship\ndisplayPedometer=$displayPedometer\nshowMoveEffectiveness=$showMoveEffectiveness\nshowCatchRate=$showCatchRate\ncalculateVariableDamage=$calculateVariableDamage\ncountEnemyPp=$countEnemyPp\nshowLastDamage=$showLastDamage\nrealHitChance=$realHitChance\nrealMovePower=$realMovePower\ncalcAtkWildOnly=$calcAtkWildOnly\n${autoSwapChoice.value?.let { "autoSwapToEnemyChoice=$it\n" } ?: ""}showNicknames=$showNicknames\ndisplayGender=$displayGender\nshowExpBar=$showExpBar\nruleMarks=$ruleMarks\ncolorStatNumbers=$colorStatNumbers\nrightJustifiedNumbers=$rightJustifiedNumbers\ntrackPcHeals=$trackPcHeals\npcHealsCountDownward=$pcHealsCountDownward\nhideStatsUntilSummary=$hideStatsUntilSummary\nshowDataForVanillaGame=$showDataForVanillaGame\nopenBookPlayMode=$openBookPlayMode\nrevealInfoIfRandomized=$revealInfoIfRandomized\nallowCarouselRotation=$allowCarouselRotation\ncarouselItems=$carouselItems\ncarouselSpeed=$carouselSpeed\nshowStarterBallInfo=$showStarterBallInfo\ndsPokecenterHeals=$dsPokecenterHeals\ndsExpBar=$dsExpBar\ndsAccEva=$dsAccEva\ndsAutoSwapToEnemy=$dsAutoSwapToEnemy\ndsEnemyLocking=$dsEnemyLocking\ntrackerOnSecondScreen=$trackerOnSecondScreen\ndsBottomOnSecondScreen=$dsBottomOnSecondScreen\ndsSecondScreenTouchInfo=$dsSecondScreenTouchInfo\nfrlgGuidePictures=$frlgGuidePictures\nshowTypeMatchups=$showTypeMatchups\nnuzlockeBallPicker=$nuzlockeBallPicker\nfloatingSolid=$floatingSolid\ntrackerHud=$trackerHud\nhudShowMine=$hudShowMine\nhudShowRest=$hudShowRest\n" +
         lossBySettings.entries.joinToString("") { (name, c) -> "lossConditionFor.$name=${c.key}\n" } +
         dsLossBySettings.entries.joinToString("") { (name, c) -> "dsLossConditionFor.$name=${c.key}\n" }
 }

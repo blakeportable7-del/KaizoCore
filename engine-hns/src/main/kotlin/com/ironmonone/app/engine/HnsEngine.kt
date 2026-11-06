@@ -67,6 +67,7 @@ object HnsEngine {
     fun modeKey(name: String): String? {
         val n = name.lowercase()
         return when {
+            // KaizoCore's Super Kaizo Doubles takes Super Kaizo's lines; its doubles come from the file (doubleBattleMode).
             "super kaizo" in n -> "superkaizo"
             "kaizo doubles" in n -> "kaizodoubles"
             "survival revival" in n -> "survivalrevival"

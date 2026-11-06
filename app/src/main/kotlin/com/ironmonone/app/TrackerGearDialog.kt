@@ -206,6 +206,9 @@ fun TrackerGearDialog(
             val ctx = androidx.compose.ui.platform.LocalContext.current
             val second = remember(ctx) { ctx.getSystemService(android.hardware.display.DisplayManager::class.java)?.let { presentationDisplay(it, ownDisplayId(ctx)) } != null }
             if (second) GearToggle("Tracker on the second screen (view only)", TrackerOptions.trackerOnSecondScreen) { TrackerOptions.trackerOnSecondScreen = it; TrackerOptions.save() }
+            if (second) GearToggle("DS games: bottom screen on the second screen", TrackerOptions.dsBottomOnSecondScreen) { TrackerOptions.dsBottomOnSecondScreen = it; TrackerOptions.save() }
+            // For testers: the touches the second display delivers, shown on both screens (DsSecondDisplay).
+            if (second && TrackerOptions.dsBottomOnSecondScreen) GearToggle("Second screen touch info (for testing)", TrackerOptions.dsSecondScreenTouchInfo) { TrackerOptions.dsSecondScreenTouchInfo = it; TrackerOptions.save() }
             if (!ds && (gameBoy || scope.randomized)) GearToggle("Reveal info if randomized", TrackerOptions.revealInfoIfRandomized) { TrackerOptions.revealInfoIfRandomized = it; TrackerOptions.save() }
             if (!ds && (gameBoy || scope.randomized)) GearToggle("Open Book Play Mode", TrackerOptions.openBookPlayMode) { TrackerOptions.openBookPlayMode = it; TrackerOptions.save() }
             // Not a PC tracker option: KaizoCore's guide pictures, off until the player turns them on (FrlgPictures, 2026-09-30).

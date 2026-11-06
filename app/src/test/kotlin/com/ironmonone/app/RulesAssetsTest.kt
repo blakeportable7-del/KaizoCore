@@ -84,6 +84,7 @@ class RulesAssetsTest {
         "superkaizo" -> "Super Kaizo IronMON"; "survival" -> "Survival IronMON"; "kaizodoubles" -> "Kaizo Doubles"
         "survivalrevival" -> "Survival Revival IronMON"; "ironmonjourney" -> "IronMON Journey"
         "chaoskaizo" -> "Chaos Kaizo IronMON"; "evokaizo" -> "Evo Kaizo IronMON"
+        "superkaizodoubles" -> "Super Kaizo IronMON"
         else -> mode
     }
 }

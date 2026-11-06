@@ -211,6 +211,11 @@ void Video::renderFrame() {
 
         glUseProgram(0);
     }
+
+    // KaizoCore: the DS bottom screen on a second display, after the main frame (SecondDisplay).
+    if (secondDisplay != nullptr) {
+        secondDisplay->draw(renderer->getTexture(), videoLayout.getForegroundVertices(), videoLayout.getTextureCoordinates());
+    }
 }
 
 float Video::getScreenDensity() {

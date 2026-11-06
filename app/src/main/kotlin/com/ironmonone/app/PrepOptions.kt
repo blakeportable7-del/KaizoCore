@@ -17,7 +17,8 @@ import com.ironmonone.core.RomKind
  *   beside Standard (and Nat. Dex where it exists). Never stacked on Nat. Dex.
  * - HeartGold: IronMON HGSS (xdelta), its quality-of-life patch, and the Super Kaizo 0.0.3 patch (xdelta), two
  *   options beside Standard.
- * - Platinum: the Platinum Super Kaizo 1.0 patch (xdelta), the same way.
+ * - Platinum: SentorG's GIGA patch 3.1 in its four builds and the Platinum Super Kaizo 1.0 patch (xdelta).
+ * - FireRed 1.1: Faster FireRed, and DrMaple's Faster FireRed Super Kaizo 1.0.2 and its No Blocks build (IPS).
  * - Everything else: stored as is. Black 2 / White 2 Kaizo needs no patch.
  *
  * Standard is the first option and the one the page opens on (2026-09-30, UX audit P0-10): Nat. Dex came first for
@@ -60,6 +61,12 @@ object PrepOptions {
             }
             "faster121" -> "The same quality of life without the level increase. The one for Standard and Ultimate."
             "fasterpwt" -> "Also skips the Driftveil tournament and its three battles."
+            "fastersk" -> "Faster FireRed with smart AI for every trainer and the Super Kaizo blocks. Needed for Super Kaizo."
+            "fasterskopen" -> "The same without the blocks: Nugget Bridge, the S.S. Anne's rooms and the Rocket Hideout stay open."
+            "giga" -> "Much less talk, NPCs and signs out of the way, instant honey, beds that heal, crash fixes."
+            "gigaflx" -> "The same with the frame limiter off, so the game runs faster."
+            "gigasnowy" -> "The same with snow falling in Twinleaf Town."
+            "gigasnowyflx" -> "Snow in Twinleaf Town and the frame limiter off."
             "ironmon" -> "Skips the intro, shortens the talk until Goldenrod, and speeds up walking and battle animations."
             else -> "Applies a patch before randomizing."
         }
@@ -101,6 +108,15 @@ object PrepOptions {
             // HeartGold's quality-of-life patch goes by its own name, IronMON HGSS (PyroMikeGit, 2026-10-02).
             tagged("ironmon")?.let { add(patch("IronMON HGSS: quality-of-life patch", it, "xdelta")) }
             if (smart != null) add(patch("Super Kaizo: Smart AI patch", smart, "ips"))
+            // DrMaple's Faster FireRed Super Kaizo 1.0.2, FireRed 1.1's Super Kaizo build, and its No Blocks file
+            // (bundled with his permission, 2026-11-06).
+            tagged("fastersk")?.let { add(patch("Faster FireRed Super Kaizo 1.0.2", it, "ips")) }
+            tagged("fasterskopen")?.let { add(patch("Faster FireRed Super Kaizo 1.0.2, No Blocks", it, "ips")) }
+            // SentorG's GIGA patch 3.1 for Platinum, its four builds (bundled with his permission, 2026-11-06).
+            tagged("giga")?.let { add(patch("GIGA patch 3.1: quality-of-life patch", it, "xdelta")) }
+            tagged("gigaflx")?.let { add(patch("GIGA patch 3.1 FLX", it, "xdelta")) }
+            tagged("gigasnowy")?.let { add(patch("GIGA patch 3.1 Snowy", it, "xdelta")) }
+            tagged("gigasnowyflx")?.let { add(patch("GIGA patch 3.1 Snowy FLX", it, "xdelta")) }
             // Each Super Kaizo patch under its own release number: HeartGold 0.0.3 (PyroMikeGit), Platinum 1.0 (SentorG).
             if (sk != null) add(patch(if (k.id == RomKind.PLATINUM_U.id) "Super Kaizo 1.0 patch" else "Super Kaizo 0.0.3 patch", sk, "xdelta"))
             // MaxDex 1.0 (Tripc423/Maxdex), last: Trip's patch, bundled since rc34 and named as every bundled patch is.

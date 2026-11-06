@@ -501,7 +501,8 @@ fun TrackerPanel(
     routeBosses: Int = 0,
     steps: Int = 0,
     onMoveDescription: ((Int) -> String?)? = null,
-    onAbilityDescription: ((String) -> String?)? = null,
+    /** An ability's text by its name and the species showing it (Heart & Soul has two As One and four Embody Aspect). */
+    onAbilityDescription: ((String, Int?) -> String?)? = null,
     /** A held item's description (PanelLookups.itemDescription): Heart & Soul describes its items. */
     onItemDescription: ((Int) -> String?)? = null,
     onWeight: ((Int) -> String?)? = null,
@@ -745,7 +746,7 @@ fun TrackerPanel(
                   party = state.party, spriteFor = spriteFor,
                   onMon = { monInfo = it },
                   onTypes = onTypeDefenses?.let { cb -> { p -> p.base?.let { cb(p.speciesName, typesOf(p)) } } },
-                  onAbility = { p -> info = Triple(p.abilityName, "Ability", onAbilityDescription?.invoke(p.abilityName)) },
+                  onAbility = { p -> info = Triple(p.abilityName, "Ability", onAbilityDescription?.invoke(p.abilityName, p.mon.species)) },
                   // PokemonData.Values.EggId, 412; past Gen 3's 411 species (Nat. Dex) the bundled pack's egg is 1284.
                   eggSpecies = if (hnsGame) com.ironmonone.tracker.HnsSpecies.EGG else if (speciesTotal > 411) 1284 else 412,
               )
@@ -908,7 +909,7 @@ fun TrackerPanel(
                                 .copy(hiddenPowerPid = p.mon.pid.takeIf { mv.id == com.ironmonone.tracker.MoveRules.HIDDEN_POWER })
                         },
                         onAbilityInfo = { name ->
-                            info = Triple(name, "Ability", onAbilityDescription?.invoke(name))
+                            info = Triple(name, "Ability", onAbilityDescription?.invoke(name, p.mon.species))
                         },
                         onItemInfo = onItemDescription?.invoke(p.mon.heldItem)?.let { d -> { info = Triple(p.itemName, "Held item", d) } },
                         onNameInfo = { monInfo = p },
@@ -969,7 +970,7 @@ fun TrackerPanel(
                                 enemy.abilityGuess.split(" / ").getOrNull(line - 1)?.trim()
                             else if (line == 1) revealedEnemyAbility else revealedEnemyAbility2
                             if (name.isNullOrBlank() || name == "?" || name == "-" || name == "---") onEditNote()
-                            else info = Triple(name, "Ability", onAbilityDescription?.invoke(name))
+                            else info = Triple(name, "Ability", onAbilityDescription?.invoke(name, enemy.species))
                         },
                         onMoveInfo = { mv ->
                             moveInfo = detailOf(mv, onMoveDescription?.invoke(mv.id), noRomData = moveRowFor(mv.id)?.let { it.pp == 0 && (it.power ?: 0) == 0 } == true, gen1 = generation == 1, natDex = natDex)

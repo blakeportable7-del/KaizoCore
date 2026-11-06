@@ -2,6 +2,41 @@
 
 Newest first. Each build's GitHub release has the same list, with the APK and its checksum.
 
+## 1.0.0-rc40
+
+**Two patches, bundled with their authors' permission**
+
+- **Faster FireRed Super Kaizo 1.0.2 by DrMaple,** both of its builds: in Library, Patched versions, for your FireRed
+  1.1. Super Kaizo counts it as a smart AI build, and the tracker reads it as FireRed 1.1.
+- **Platinum GIGA patch 3.1 by SentorG,** all four builds (plain, FLX, Snowy and Snowy FLX): in Library, Patched
+  versions, for your Platinum. Kaizo runs, the randomizer and the tracker work on all four.
+- Both authors are credited on the About screen, with links to their release pages. Thank you, DrMaple and SentorG.
+
+**Runs**
+
+- **Super Kaizo Doubles, a KaizoCore preset** (not an official ruleset): Super Kaizo's settings with the four changes
+  the official Kaizo Doubles rules make, on every game that has both modes. The Mode row, the rules box and the run's
+  name say "(KaizoCore preset)", and it has its own rules pages.
+- **Standardize EXP Curves** is in the settings editor, with the curve and who keeps Slow.
+
+**Tracker**
+
+- **Every ability has a description.** Nat. Dex and MaxDex showed none for abilities newer than Gen 3. Nat. Dex's
+  abilities past Gen 5, where the game only says "Not implemented yet.", read Pokémon Showdown's short text. Heart &
+  Soul's abilities that share a name each show their own.
+- **An opponent's nature is never shown,** wild or a trainer's, in any game, on the tracker, the floating window, the
+  stream or anywhere else. Your own Pokémon keeps its nature's + and -, and the marks you put on an opponent's stats
+  stay.
+
+**Two screens**
+
+- DS games on two-screen devices like the AYN Thor: an option to show the bottom screen on the second display (new,
+  tell us how it works on yours). It is in Tracker Setup, and only shows while a second display is attached.
+
+**Size**
+
+- The APK is bigger, about 229 MB (rc39 was 150 MB), because it carries the two new patches.
+
 ## 1.0.0-rc39
 
 **Heart & Soul: Nat. Dex Emerald's Kaizo rules**

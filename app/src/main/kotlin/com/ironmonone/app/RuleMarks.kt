@@ -82,7 +82,7 @@ object RuleMarks {
     private val KEPT_KEYS = KEPT_WHILE_HELD.map(::key).toSet()
 
     /** The modes that keep Kaizo's held item restriction ("All Kaizo Ironmon Rules are still in play" in Evo Kaizo). */
-    private val KAIZO_HELD = setOf("kaizo", "kaizodoubles", "ironmonjourney", "superkaizo", "evokaizo", "survival")
+    private val KAIZO_HELD = setOf("kaizo", "kaizodoubles", "ironmonjourney", "superkaizo", "superkaizodoubles", "evokaizo", "survival")
 
     /**
      * The card's line for your Pokemon holding [item] in [run], null when the run allows it. [moves]: its move names, for
@@ -116,7 +116,7 @@ object RuleMarks {
     /** Survival: "If your pokemon has BST of 400 or more, the following abilities are banned: Huge Power/Pure Power, Battle Armor/Shell Armor, Parental Bond, Protean, Fur Coat, Magic Guard". */
     private val SURVIVAL = listOf("Huge Power", "Pure Power", "Battle Armor", "Shell Armor", "Parental Bond", "Protean", "Fur Coat", "Magic Guard")
     /** Kaizo and the modes that keep its Banned Abilities rule. Evo Kaizo: "All Abilities are LEGAL". */
-    private val KAIZO_ABILITIES = setOf("kaizo", "kaizodoubles", "ironmonjourney", "superkaizo", "survivalrevival")
+    private val KAIZO_ABILITIES = setOf("kaizo", "kaizodoubles", "ironmonjourney", "superkaizo", "superkaizodoubles", "survivalrevival")
 
     /**
      * Kaizo's exceptions, which its rule gives every banned ability: "Banned abilities don't apply to: Pokémon with BST
@@ -160,7 +160,7 @@ object RuleMarks {
         val line = when {
             run.mode == "survival" ->
                 if (named(SURVIVAL) && !survivalExempt(run, bst)) "Banned in this run: $ability. ${survivalExceptionLine(run)}" else null
-            run.mode == "superkaizo" && named(SUPER_KAIZO) && !kaizoExempt(run, bst, canEvolve) ->
+            (run.mode == "superkaizo" || run.mode == "superkaizodoubles") && named(SUPER_KAIZO) && !kaizoExempt(run, bst, canEvolve) ->
                 "Banned in this run: $ability. ${kaizoExceptionLine(run)}"
             else -> null
         } ?: return null

@@ -172,6 +172,26 @@ class GLRetroView(
         queueEvent { LibretroDroid.onKeyEvent(port, action, keyCode) }
     }
 
+    /**
+     * KaizoCore (2026-10-23): rows [top] to [bottom] of the frame (fractions of its height) drawn on [surface] as well,
+     * every frame, a second display's (a DS's bottom screen on a dual-screen handheld); null stops. The native side keeps
+     * the window and makes its EGL surface at the next frame drawn, so one set while the app is in the background, or
+     * before a new GL surface or context, still shows (2026-11-06).
+     *
+     * [waitMs] above 0 waits up to that long for the GL thread to take it: a SurfaceView's surfaceDestroyed must not
+     * return while the GL thread can still draw to it. The GL thread runs queued events while paused too.
+     */
+    fun setSecondDisplay(surface: android.view.Surface?, top: Float, bottom: Float, waitMs: Long = 0) {
+        val done = java.util.concurrent.CountDownLatch(1)
+        queueEvent {
+            try { LibretroDroid.setSecondDisplay(surface, top, bottom) } finally { done.countDown() }
+        }
+        if (waitMs > 0) runCatching { done.await(waitMs, java.util.concurrent.TimeUnit.MILLISECONDS) }
+    }
+
+    /** KaizoCore: frames drawn on the second display since it was set; -1 once EGL refused it (setSecondDisplay). */
+    fun secondDisplayFrames(): Long = runCatching { LibretroDroid.secondDisplayFrames() }.getOrDefault(0L)
+
     fun sendMotionEvent(source: Int, xAxis: Float, yAxis: Float, port: Int = 0) {
         queueEvent { LibretroDroid.onMotionEvent(port, source, xAxis, yAxis) }
     }

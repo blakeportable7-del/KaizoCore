@@ -89,7 +89,10 @@ class RulesetCatalogTest {
             RomKind.FIRERED_U_V10 to "Super Kaizo: Smart AI patch", RomKind.LEAFGREEN_U to "Super Kaizo: Smart AI patch",
             RomKind.HEARTGOLD_U to "Super Kaizo 0.0.3 patch", RomKind.PLATINUM_U to "Super Kaizo 1.0 patch",
             // IronMON HGSS gives no trainer smart AI: Super Kaizo on it names the Super Kaizo build, as on HeartGold.
-            RomKind.HEARTGOLD_IRONMON to "Super Kaizo 0.0.3 patch")
+            RomKind.HEARTGOLD_IRONMON to "Super Kaizo 0.0.3 patch",
+            // FireRed 1.1's Super Kaizo build is DrMaple's Faster FireRed Super Kaizo, bundled since 2026-11-06; GIGA has no smart AI.
+            RomKind.FIRERED_U_V11 to "Faster FireRed Super Kaizo 1.0.2", RomKind.FIRERED_V11_FASTER to "Faster FireRed Super Kaizo 1.0.2",
+            RomKind.PLATINUM_GIGA to "Super Kaizo 1.0 patch", RomKind.PLATINUM_GIGA_SNOWY_FLX to "Super Kaizo 1.0 patch")
         for ((k, option) in named) {
             val w = RulesetCatalog.superKaizoWarning(k, "superkaizo")!!
             assertTrue("\"$option\"" in w && "Patched versions" in w, "${k.id}: $w")
@@ -97,8 +100,8 @@ class RulesetCatalogTest {
         }
         // Where no build exists, it says so instead.
         assertTrue("HeartGold only" in RulesetCatalog.superKaizoWarning(RomKind.SOULSILVER_U, "superkaizo")!!)
-        assertTrue("FireRed (U) v1.1" in RulesetCatalog.superKaizoWarning(RomKind.FIRERED_U_V11, "superkaizo")!!)
-        assertTrue("FireRed (U) v1.1" in RulesetCatalog.superKaizoWarning(RomKind.FIRERED_V11_FASTER, "superkaizo")!!)
+        assertNull(RulesetCatalog.superKaizoWarning(RomKind.FIRERED_V11_FASTER_SK, "superkaizo"))
+        assertNull(RulesetCatalog.superKaizoWarning(RomKind.FIRERED_V11_FASTER_SK_NB, "superkaizo"))
         assertTrue("written for Emerald" in RulesetCatalog.superKaizoWarning(RomKind.RUBY_U, "superkaizo")!!)
         assertTrue("written for Platinum" in RulesetCatalog.superKaizoWarning(RomKind.PEARL_U, "superkaizo")!!)
         for (k in RomKind.all) RulesetCatalog.superKaizoWarning(k, "superkaizo")?.let { assertTrue('\u2014' !in it, "${k.id}: em dash") }

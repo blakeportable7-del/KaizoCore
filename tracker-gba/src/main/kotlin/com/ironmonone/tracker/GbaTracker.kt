@@ -2070,6 +2070,10 @@ class GbaTracker(
         internal const val TRACE = 36
         /** Psycho Boost, the last of the five games' 354 moves. */
         const val VANILLA_LAST_MOVE = 354
+        /** Air Lock, the last of Gen 3's abilities (gen3/abilitydesc.tsv). */
+        const val VANILLA_LAST_ABILITY = 77
+        /** Spicy Spray, the last ability Nat. Dex 1.2.1 names (its table runs 0-319 on FireRed and Emerald). */
+        const val NATDEX_LAST_ABILITY = 319
         /** A starter ball's place, on FireRed's lab table or Hoenn's starter screen, from the left. */
         val BALL_NAMES = listOf("LEFT", "MIDDLE", "RIGHT")
         /**
@@ -4065,15 +4069,82 @@ class GbaTracker(
      */
     fun abilityDescription(abilityId: Int): String? {
         hns?.let { return it.abilityDescription(abilityId) }
-        val d = abilityDescs[abilityId] ?: return null
-        val base = d.second.takeIf { it.isNotBlank() }
-        val emerald = d.third.takeIf { it.isNotBlank() }?.let { "In Emerald:\n$it" }
-        return listOfNotNull(base, emerald).joinToString("\n\n").ifEmpty { null }
+        abilityDescs[abilityId]?.let { d ->
+            val base = d.second.takeIf { it.isNotBlank() }
+            val emerald = d.third.takeIf { it.isNotBlank() }?.let { "In Emerald:\n$it" }
+            return listOfNotNull(base, emerald).joinToString("\n\n").ifEmpty { null }
+        }
+        if (!expandedAbilities || abilityId !in 1..lastAbilityId) return null
+        // Past Gen 3 (2026-11-06: no ability past Air Lock had a description on Nat. Dex or MaxDex): the DS tracker's Gen 5
+        // wording for an ability Black and White already had, by name, else the game's own summary-screen text. Where
+        // the game's own is Nat. Dex 1.2.1's "Not implemented yet." (its 152 abilities past Gen 5), Pokemon Showdown's
+        // short text (Blake, 2026-11-06).
+        val name = moveKey(abilityName(abilityId))
+        abilityDescsBySource["nds"]?.get(name)?.let { return it }
+        val own = romAbilityDescription(abilityId)
+        if (own != null && own != ABILITY_PLACEHOLDER) return own
+        return abilityDescsBySource["showdown"]?.get(name) ?: own
     }
 
-    /** Ability id for a name, so the panel can look up what it is showing. */
-    fun abilityIdOf(name: String): Int? =
-        if (hns != null) hns.abilityId(name) else abilityDescs.entries.firstOrNull { it.value.first.equals(name, true) }?.key
+    /** The Nat. Dex builds' summary-screen text for an ability they do not describe. */
+    private val ABILITY_PLACEHOLDER = "Not implemented yet."
+
+    /** Nat. Dex and MaxDex: abilities past Gen 3's 77, named by the game's own table or MaxDex's list. */
+    private val expandedAbilities: Boolean get() = map.namesFromLists || map.nameSet == "maxdex"
+
+    /** The highest ability id: 77 on the five games, Spicy Spray's 319 on Nat. Dex 1.2.1, the end of MaxDex's list. */
+    val lastAbilityId: Int get() = when {
+        map.hns -> HnsLayout.ABILITIES_COUNT - 1
+        map.nameSet == "maxdex" -> abilityNameCache.keys.filter { it > 0 }.maxOrNull() ?: VANILLA_LAST_ABILITY
+        map.namesFromLists -> NATDEX_LAST_ABILITY
+        else -> VANILLA_LAST_ABILITY
+    }
+
+    /**
+     * natdex/abilitydesc.tsv by source, then by name (tools/trainer-data/convert_natdex_ability_desc.py): "nds", Gen 4 and
+     * 5's abilities in the DS tracker's Gen 5 wording; "showdown", Pokemon Showdown's short text (MIT) for Nat. Dex's later
+     * ones.
+     */
+    private val abilityDescsBySource: Map<String, Map<String, String>> by lazy {
+        loadDesc("/natdex/abilitydesc.tsv").values.groupBy({ it.third }, { moveKey(it.first) to it.second }).mapValues { it.value.toMap() }
+    }
+
+    /**
+     * The game's own description of an ability, from the table every Gen 3 ROM names in its header (the pointer at
+     * 0x080001C4, beside the names' at 0x080001C0): what its summary screen shows. Nat. Dex 1.2.1's says "Not
+     * implemented yet." for every ability past Gen 3; that is shown as the game says it, as the PC tracker does.
+     */
+    private fun romAbilityDescription(id: Int): String? {
+        val table = u32le(memory.read(0x080001C4L, 4)).takeIf { it in 0x08000000L until 0x0A000000L } ?: return null
+        val ptr = u32le(memory.read(table + id * 4L, 4)).takeIf { it in 0x08000000L until 0x0A000000L } ?: return null
+        val raw = memory.read(ptr, 200).takeIf { it.isNotEmpty() } ?: return null
+        val end = raw.indexOf(0xFF.toByte()).let { if (it < 0) raw.size else it }
+        val cut = raw.copyOf(end).also { for (i in it.indices) if (it[i] == 0xFE.toByte()) it[i] = 0x00 }
+        return Gen3Text.decode(cut + 0xFF.toByte()).replace(Regex("\\s+"), " ").trim().takeIf { it.isNotBlank() }
+    }
+
+    private fun u32le(b: ByteArray): Long =
+        if (b.size < 4) 0L else (b[0].toLong() and 0xFF) or ((b[1].toLong() and 0xFF) shl 8) or ((b[2].toLong() and 0xFF) shl 16) or ((b[3].toLong() and 0xFF) shl 24)
+
+    /**
+     * Ability id for a name, so the panel can look up what it is showing. Heart & Soul has two As One and four Embody
+     * Aspect, each with its own text: with [species] the one that species has is picked, else the first.
+     */
+    fun abilityIdOf(name: String, species: Int? = null): Int? {
+        val ids = abilityIdsOf(name)
+        if (ids.size <= 1 || species == null) return ids.firstOrNull()
+        val own = baseStats(species)?.let { listOf(it.ability1, it.ability2, it.ability3) }.orEmpty()
+        return ids.firstOrNull { it in own } ?: ids.first()
+    }
+
+    private fun abilityIdsOf(name: String): List<Int> {
+        val n = name.trim()
+        return when {
+            hns != null -> hns.abilityIds(n)
+            expandedAbilities -> (1..lastAbilityId).filter { abilityName(it).equals(n, true) }
+            else -> abilityDescs.entries.filter { it.value.first.equals(n, true) }.map { it.key }.sorted()
+        }
+    }
 
     /**
      * Coverage: how many species in this game each of your move types can hit,

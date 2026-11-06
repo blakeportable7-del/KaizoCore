@@ -27,7 +27,7 @@ internal object FavoriteRules {
     const val HEAD = "This mode's rules for favorites"
 
     /** Modes whose books allow no legendary favorite: Super Kaizo ("No Legendary favorites") and Survival. */
-    val NO_LEGENDARY_MODES = setOf("superkaizo", "survival")
+    val NO_LEGENDARY_MODES = setOf("superkaizo", "superkaizodoubles", "survival")
 
     /**
      * Legendary, sub-legendary and mythical Pokemon by National Dex number: the Nat. Dex engine's list (engine-natdex

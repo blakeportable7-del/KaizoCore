@@ -321,7 +321,10 @@ internal class HnsData(private val memory: MemoryReader) {
     }
 
     /** An ability's id by its name, as [abilityName] gives it. */
-    fun abilityId(name: String): Int? = (1 until HnsLayout.ABILITIES_COUNT).firstOrNull { abilityName(it)?.equals(name.trim(), true) == true }
+    fun abilityId(name: String): Int? = abilityIds(name).firstOrNull()
+
+    /** Every ability called [name]: As One is two (Glastrier's and Spectrier's rider), Embody Aspect four (Ogerpon's masks). */
+    fun abilityIds(name: String): List<Int> = (1 until HnsLayout.ABILITIES_COUNT).filter { abilityName(it)?.equals(name.trim(), true) == true }
 
     fun baseStats(id: Int): BaseStats? {
         val b = species(id) ?: return null

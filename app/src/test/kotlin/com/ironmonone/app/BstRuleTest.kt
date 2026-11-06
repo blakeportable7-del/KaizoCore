@@ -19,7 +19,7 @@ class BstRuleTest {
 
     @Test
     fun `Kaizo and the modes on it draw the line at 599, Nat Dex at 600, Evo Kaizo's lab at 601`() {
-        for (mode in listOf("kaizo", "survival", "superkaizo", "kaizodoubles", "survivalrevival")) {
+        for (mode in listOf("kaizo", "survival", "superkaizo", "kaizodoubles", "superkaizodoubles", "survivalrevival")) {
             assertEquals(BstRule.Lines(599, 599), BstRule.lines(mode, natDex = false), mode)
             assertEquals(BstRule.Lines(600, 600), BstRule.lines(mode, natDex = true), mode)
         }
@@ -27,9 +27,9 @@ class BstRuleTest {
         assertEquals(BstRule.Lines(own = 601, wild = 600), BstRule.lines("evokaizo", natDex = true))
         for (mode in listOf("standard", "ultimate", "chaoskaizo", "ironmonjourney", null))
             assertNull(BstRule.lines(mode, natDex = false), "$mode draws no line")
-        // Every key a settings file can carry is one of these (RnqsInfo.RULESETS).
+        // Every key a settings file can carry is one of these (RnqsInfo.RULESETS), KaizoCore's Super Kaizo Doubles too (2026-11-06).
         val keys = read("RnqsInfo.kt").substringAfter("private val RULESETS = listOf(").substringBefore(")")
-        assertEquals(10, Regex("\"([a-z]+)\"").findAll(keys).count())
+        assertEquals(11, Regex("\"([a-z]+)\"").findAll(keys).count())
     }
 
     @Test

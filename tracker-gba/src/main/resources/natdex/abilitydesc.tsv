@@ -1,0 +1,241 @@
+# id	name	description	source (nds: NDS-Ironmon-Tracker AbilityData, Gen 5, via tracker-nds nds/ability-desc.tsv, id = DS id; showdown: Pokemon Showdown data/text/abilities.ts shortDesc, MIT, id = Nat. Dex id). Made by tools/trainer-data/convert_natdex_ability_desc.py
+77	Tangled Feet	Doubles evasion when confused.	nds
+78	Motor Drive	Absorbs electric moves, raising Speed one stage.	nds
+79	Rivalry	Increases damage inflicted to 1.25x against Pokémon of the same gender, but decreases damage to 0.75x against the opposite gender.	nds
+80	Steadfast	Raises Speed one stage upon flinching.	nds
+81	Snow Cloak	Increases Evasion to 1.25x during hail. Protects against hail damage.	nds
+82	Gluttony	Makes the Pokémon eat any held Berry triggered by low HP below 1/2 its max HP.	nds
+83	Anger Point	Raises Attack to the maximum of six stages upon receiving a critical hit.	nds
+84	Unburden	Doubles Speed upon using or losing a held item.	nds
+85	Heatproof	Halves damage from fire moves and burns.	nds
+86	Simple	Doubles all stat modifiers, whether positive or negative.	nds
+87	Dry Skin	Causes 1/8 max HP in damage each turn during strong sunlight, but heals for 1/8 max HP during rain. Increases damage from fire moves to 1.25x, but absorbs water moves, healing for 1/4 max HP.	nds
+88	Download	Raises the Attack stat corresponding to the opponents' weaker Defense one stage upon entering battle.	nds
+89	Iron Fist	Strengthens punch-based moves to 1.2x their power.	nds
+90	Poison Heal	Heals for 1/8 max HP after each turn when poisoned in place of damage.	nds
+91	Adaptability	Increases the same-type attack bonus from 1.5x to 2x.	nds
+92	Skill Link	Extends two-to-five-hit moves and triple kick to their full length every time.	nds
+93	Hydration	Cures any major status ailment after each turn during rain.	nds
+94	Solar Power	Increases Special Attack to 1.5x but costs 1/8 max HP after each turn during strong sunlight.	nds
+95	Quick Feet	Increases Speed to 1.5x with a major status ailment.	nds
+96	Normalize	Makes the Pokémon's moves all act normal-type.	nds
+97	Sniper	Strengthens critical hits to inflict 3x damage rather than 2x.	nds
+98	Magic Guard	Protects against damage not directly caused by a move.	nds
+99	No Guard	Ensures all moves used by and against the Pokémon hit.	nds
+100	Stall	Makes the Pokémon move last within its move's priority bracket.	nds
+101	Technician	Strengthens moves of 60 base power or less to 1.5x their power.	nds
+102	Leaf Guard	Protects against major status ailments during strong sunlight.	nds
+103	Klutz	Prevents the effects of held items.	nds
+104	Mold Breaker	Bypasses targets' abilities if they could hinder or prevent a move.	nds
+105	Super Luck	Raises moves' critical hit rates one stage.	nds
+106	Aftermath	Damages the attacker for 1/4 its max HP when knocked out by a contact move.	nds
+107	Anticipation	Notifies all trainers upon entering battle if an opponent has a super-effective move, self destruct, explosion, or a one-hit KO move.	nds
+108	Forewarn	Reveals the opponents' strongest move upon entering battle.	nds
+109	Unaware	Ignores other Pokémon's stat modifiers for damage and Accuracy calculation.	nds
+110	Tinted Lens	Doubles damage inflicted with not-very-effective moves.	nds
+111	Filter	Decreases damage taken from super-effective moves by 1/4.	nds
+112	Slow Start	Halves Attack and Speed for five turns upon entering battle.	nds
+113	Scrappy	Lets the Pokémon's normal and fighting moves hit ghost Pokémon.	nds
+114	Storm Drain	Redirects single-target water moves to this Pokémon and absorbs them, raising Special Attack one stage.	nds
+115	Ice Body	Heals for 1/16 max HP after each turn during hail. Protects against hail damage.	nds
+116	Solid Rock	Decreases damage taken from super-effective moves by 1/4.	nds
+117	Snow Warning	Summons hail that lasts indefinitely upon entering battle.	nds
+118	Honey Gather	The Pokémon may pick up honey after battle.	nds
+119	Frisk	Reveals the opponent's held item upon entering battle.	nds
+120	Reckless	Strengthens recoil moves to 1.2x their power.	nds
+121	Multitype	Changes Arceus's type and form to match its held Plate.	nds
+122	Flower Gift	Increases friendly Pokémon's Attack and Special Defense to 1.5x during strong sunlight.	nds
+123	Bad Dreams	Damages sleeping opponents for 1/8 their max HP after each turn.	nds
+124	Pickpocket	Steals attacking Pokémon's held items on contact.	nds
+125	Sheer Force	Strengthens moves with extra effects to 1.3x their power, but prevents their extra effects.	nds
+126	Contrary	Inverts stat changes.	nds
+127	Unnerve	Prevents opposing Pokémon from eating held Berries.	nds
+128	Defiant	Raises Attack two stages upon having any stat lowered.	nds
+129	Defeatist	Halves Attack and Special Attack at 50% max HP or less.	nds
+130	Cursed Body	Has a 30% chance of Disabling any move that hits the Pokémon.	nds
+131	Healer	Has a 30% chance of curing each adjacent ally of any major status ailment after each turn.	nds
+132	Friend Guard	Decreases all direct damage taken by friendly Pokémon to 0.75x.	nds
+133	Weak Armor	Raises Speed and lowers Defense by one stage each upon being hit by a physical move.	nds
+134	Heavy Metal	Doubles the Pokémon's weight.	nds
+135	Light Metal	Halves the Pokémon's weight.	nds
+136	Multiscale	Halves damage taken from full HP.	nds
+137	Toxic Boost	Increases Attack to 1.5x when poisoned.	nds
+138	Flare Boost	Increases Special Attack to 1.5x when burned.	nds
+139	Harvest	Has a 50% chance of restoring a used Berry after each turn if the Pokémon has held no items in the meantime.	nds
+140	Telepathy	Protects against friendly Pokémon's damaging moves.	nds
+141	Moody	Raises a random stat two stages and lowers another one stage after each turn.	nds
+142	Overcoat	Protects against damage from weather.	nds
+143	Poison Touch	Has a 30% chance of poisoning target Pokémon upon contact.	nds
+144	Regenerator	Heals for 1/3 max HP upon switching out.	nds
+145	Big Pecks	Prevents Defense from being lowered.	nds
+146	Sand Rush	Doubles Speed during a sandstorm. Protects against sandstorm damage.	nds
+147	Wonder Skin	Lowers incoming non-damaging moves' base accuracy to exactly 50%.	nds
+148	Analytic	Strengthens moves to 1.3x their power when moving last.	nds
+149	Illusion	Takes the appearance of the last conscious party Pokémon upon being sent out until hit by a damaging move.	nds
+150	Imposter	Transforms upon entering battle.	nds
+151	Infiltrator	Bypasses Light Screen, Reflect, and Safeguard.	nds
+152	Mummy	Changes attacking Pokémon's abilities to Mummy on contact.	nds
+153	Moxie	Raises Attack one stage upon KOing a Pokémon.	nds
+154	Justified	Raises Attack one stage upon taking damage from a dark move.	nds
+155	Rattled	Raises Speed one stage upon being hit by a dark, ghost, or bug move.	nds
+156	Magic Bounce	Reflects most non-damaging moves back at their user.	nds
+157	Sap Sipper	Absorbs grass moves, raising Attack one stage.	nds
+158	Prankster	Raises non-damaging moves' priority by one stage.	nds
+159	Sand Force	Strengthens rock, ground, and steel moves to 1.3x their power during a sandstorm. Protects against sandstorm damage.	nds
+160	Iron Barbs	Damages attacking Pokémon for 1/8 their max HP on contact.	nds
+161	Zen Mode	Changes Darmanitan's form after each turn depending on its HP: Zen Mode below 50% max HP, and Standard Mode otherwise.	nds
+162	Victory Star	Increases moves' accuracy to 1.1x for friendly Pokémon.	nds
+163	Turboblaze	Bypasses targets' abilities if they could hinder or prevent moves.	nds
+164	Teravolt	Bypasses targets' abilities if they could hinder or prevent moves.	nds
+166	Aroma Veil	Protects user/allies from Attract, Disable, Encore, Heal Block, Taunt, and Torment.	showdown
+167	Flower Veil	This side's Grass types can't have stats lowered or status inflicted by other Pokemon.	showdown
+168	Cheek Pouch	If this Pokemon eats a Berry, it restores 1/3 of its max HP after the Berry's effect.	showdown
+169	Protean	This Pokemon's type changes to the type of the move it is using. Once per switch-in.	showdown
+170	Fur Coat	This Pokemon's Defense is doubled.	showdown
+171	Magician	If this Pokemon has no item, it steals the item off a Pokemon it hits with an attack.	showdown
+172	Bulletproof	This Pokemon is immune to bullet moves.	showdown
+173	Competitive	This Pokemon's Sp. Atk is raised by 2 for each of its stats that is lowered by a foe.	showdown
+174	Strong Jaw	This Pokemon's bite-based attacks have 1.5× power. Bug Bite is not boosted.	showdown
+175	Refrigerate	This Pokemon's Normal-type moves become Ice type and have 1.2× power.	showdown
+176	Sweet Veil	This Pokemon and its allies cannot fall asleep; those already asleep do not wake up.	showdown
+177	Stance Change	If Aegislash, changes Forme to Blade before attacks and Shield before King's Shield.	showdown
+178	Gale Wings	If this Pokemon is at full HP, its Flying-type moves have their priority increased by 1.	showdown
+179	Mega Launcher	This Pokemon's pulse moves have 1.5× power. Heal Pulse heals 3/4 target's max HP.	showdown
+180	Grass Pelt	If Grassy Terrain is active, this Pokemon's Defense is multiplied by 1.5.	showdown
+181	Symbiosis	If an ally uses its item, this Pokemon gives its item to that ally immediately.	showdown
+182	Tough Claws	This Pokemon's contact moves have their power multiplied by 1.3.	showdown
+183	Pixilate	This Pokemon's Normal-type moves become Fairy type and have 1.2× power.	showdown
+184	Gooey	Pokemon making contact with this Pokemon have their Speed lowered by 1 stage.	showdown
+185	Aerilate	This Pokemon's Normal-type moves become Flying type and have 1.2× power.	showdown
+186	Parental Bond	This Pokemon's damaging moves hit twice. The second hit has its damage quartered.	showdown
+187	Dark Aura	While this Pokemon is active, a Dark move used by any Pokemon has 1.33× power.	showdown
+188	Fairy Aura	While this Pokemon is active, a Fairy move used by any Pokemon has 1.33× power.	showdown
+189	Aura Break	While this Pokemon is active, the Dark Aura and Fairy Aura power modifier is 0.75×.	showdown
+190	Primordial Sea	On switch-in, heavy rain begins until this Ability is not active in battle.	showdown
+191	Desolate Land	On switch-in, extremely harsh sunlight begins until this Ability is not active in battle.	showdown
+192	Delta Stream	On switch-in, strong winds begin until this Ability is not active in battle.	showdown
+193	Stamina	This Pokemon's Defense is raised by 1 stage after it is damaged by a move.	showdown
+194	Wimp Out	This Pokemon switches out when it reaches 1/2 or less of its maximum HP.	showdown
+195	Emergency Exit	This Pokemon switches out when it reaches 1/2 or less of its maximum HP.	showdown
+196	Water Compaction	This Pokemon's Defense is raised 2 stages after it is damaged by a Water-type move.	showdown
+197	Merciless	This Pokemon's attacks are critical hits if the target is poisoned.	showdown
+198	Shields Down	If Minior, switch-in/end of turn it changes to Core at 1/2 max HP or less, else Meteor.	showdown
+199	Stakeout	This Pokemon's offensive stat is doubled against a target that switched in this turn.	showdown
+200	Water Bubble	This Pokemon's Water power is 2×; it can't be burned; Fire power against it is halved.	showdown
+201	Steelworker	This Pokemon's offensive stat is multiplied by 1.5 while using a Steel-type attack.	showdown
+202	Berserk	This Pokemon's Sp. Atk is raised by 1 when it reaches 1/2 or less of its max HP.	showdown
+203	Slush Rush	If Snow is active, this Pokemon's Speed is doubled.	showdown
+204	Long Reach	This Pokemon's attacks do not make contact with the target.	showdown
+205	Liquid Voice	This Pokemon's sound-based moves become Water type.	showdown
+206	Triage	This Pokemon's healing moves have their priority increased by 3.	showdown
+207	Galvanize	This Pokemon's Normal-type moves become Electric type and have 1.2× power.	showdown
+208	Surge Surfer	If Electric Terrain is active, this Pokemon's Speed is doubled.	showdown
+209	Schooling	If user is Wishiwashi, changes to School Form if it has > 1/4 max HP, else Solo Form.	showdown
+210	Disguise	(Mimikyu only) The first hit it takes is blocked, and it takes 1/8 HP damage instead.	showdown
+211	Battle Bond	After KOing a Pokemon: raises Attack, Sp. Atk, Speed by 1 stage. Once per battle.	showdown
+212	Power Construct	If Zygarde 10%/50%, changes to Complete if at 1/2 max HP or less at end of turn.	showdown
+213	Corrosion	This Pokemon can poison or badly poison a Pokemon regardless of its typing.	showdown
+214	Comatose	This Pokemon cannot be statused, and is considered to be asleep.	showdown
+215	Queenly Majesty	This Pokemon and its allies are protected from opposing priority moves.	showdown
+216	Innards Out	If this Pokemon is KOed with a move, that move's user loses an equal amount of HP.	showdown
+217	Dancer	After another Pokemon uses a dance move, this Pokemon uses the same move.	showdown
+218	Battery	This Pokemon's allies have the power of their special attacks multiplied by 1.3.	showdown
+219	Fluffy	This Pokemon takes 1/2 damage from contact moves, 2× damage from Fire moves.	showdown
+220	Dazzling	This Pokemon and its allies are protected from opposing priority moves.	showdown
+221	Soul-Heart	This Pokemon's Special Attack is raised by 1 stage when another Pokemon faints.	showdown
+222	Tangling Hair	Pokemon making contact with this Pokemon have their Speed lowered by 1 stage.	showdown
+223	Receiver	This Pokemon copies the Ability of an ally that faints.	showdown
+224	Power Of Alchemy	This Pokemon copies the Ability of an ally that faints.	showdown
+225	Beast Boost	This Pokemon's highest stat is raised by 1 if it attacks and KOes another Pokemon.	showdown
+226	RKS System	If this Pokemon is a Silvally, its type changes to match its held Memory.	showdown
+227	Electric Surge	On switch-in, this Pokemon summons Electric Terrain.	showdown
+228	Psychic Surge	On switch-in, this Pokemon summons Psychic Terrain.	showdown
+229	Misty Surge	On switch-in, this Pokemon summons Misty Terrain.	showdown
+230	Grassy Surge	On switch-in, this Pokemon summons Grassy Terrain.	showdown
+231	Full Metal Body	Prevents other Pokemon from lowering this Pokemon's stat stages.	showdown
+232	Shadow Shield	If this Pokemon is at full HP, damage taken from attacks is halved.	showdown
+233	Prism Armor	This Pokemon receives 3/4 damage from supereffective attacks.	showdown
+234	Neuroforce	This Pokemon's attacks that are super effective against the target do 1.25× damage.	showdown
+235	Intrepid Sword	On switch-in, this Pokemon's Attack is raised by 1 stage. Once per battle.	showdown
+236	Dauntless Shield	On switch-in, this Pokemon's Defense is raised by 1 stage. Once per battle.	showdown
+237	Libero	This Pokemon's type changes to the type of the move it is using. Once per switch-in.	showdown
+238	Ball Fetch	No competitive use.	showdown
+239	Cotton Down	If this Pokemon is hit, it lowers the Speed of all other Pokemon on the field 1 stage.	showdown
+240	Propeller Tail	This Pokemon's moves cannot be redirected to a different target by any effect.	showdown
+241	Mirror Armor	If this Pokemon's stat stages would be lowered, the attacker's are lowered instead.	showdown
+242	Gulp Missile	When hit after Surf/Dive, attacker takes 1/4 max HP and -1 Defense or paralysis.	showdown
+243	Stalwart	This Pokemon's moves cannot be redirected to a different target by any effect.	showdown
+244	Steam Engine	This Pokemon's Speed is raised by 6 stages after it is damaged by Fire/Water moves.	showdown
+245	Punk Rock	This Pokemon receives 1/2 damage from sound moves. Its own have 1.3× power.	showdown
+246	Sand Spit	When this Pokemon is hit by an attack, the effect of Sandstorm begins.	showdown
+247	Ice Scales	This Pokemon receives 1/2 damage from special attacks.	showdown
+248	Ripen	When this Pokemon eats certain Berries, the effects are doubled.	showdown
+249	Ice Face	If Eiscue, the first physical hit it takes deals 0 damage. Effect is restored in Snow.	showdown
+250	Power Spot	This Pokemon's allies have the power of their moves multiplied by 1.3.	showdown
+251	Mimicry	This Pokemon's types change to match the Terrain. Type reverts when Terrain ends.	showdown
+252	Screen Cleaner	On switch-in, the effects of Aurora Veil, Light Screen, and Reflect end for both sides.	showdown
+253	Steely Spirit	This Pokemon and its allies' Steel-type moves have their power multiplied by 1.5.	showdown
+254	Perish Body	Making contact with this Pokemon starts the Perish Song effect for it and the attacker.	showdown
+255	Wandering Spirit	Pokemon making contact with this Pokemon have their Ability swapped with this one.	showdown
+256	Gorilla Tactics	This Pokemon's Attack is 1.5×, but it can only select the first move it executes.	showdown
+257	Neutralizing Gas	While this Pokemon is active, Abilities have no effect.	showdown
+258	Pastel Veil	This Pokemon and its allies cannot be poisoned. On switch-in, cures poisoned allies.	showdown
+259	Hunger Switch	If Morpeko, it changes between Full Belly and Hangry Mode at the end of each turn.	showdown
+260	Quick Draw	This Pokemon has a 30% chance to move first in its priority bracket with attacking moves.	showdown
+261	Unseen Fist	This Pokemon's contact moves ignore the target's protection, except Max Guard.	showdown
+262	Curious Medicine	On switch-in, this Pokemon's allies have their stat stages reset to 0.	showdown
+263	Transistor	This Pokemon's offensive stat is multiplied by 1.3 while using an Electric-type attack.	showdown
+264	Dragon's Maw	This Pokemon's offensive stat is multiplied by 1.5 while using a Dragon-type attack.	showdown
+265	Chilling Neigh	This Pokemon's Attack is raised by 1 stage if it attacks and KOes another Pokemon.	showdown
+266	Grim Neigh	This Pokemon's Sp. Atk is raised by 1 stage if it attacks and KOes another Pokemon.	showdown
+267	As One-I	Combination of the Unnerve and Chilling Neigh Abilities.	showdown
+268	As One-S	Combination of the Unnerve and Grim Neigh Abilities.	showdown
+269	Lingering Aroma	Making contact with this Pokemon has the attacker's Ability become Lingering Aroma.	showdown
+270	Seed Sower	When this Pokemon is hit by an attack, the effect of Grassy Terrain begins.	showdown
+271	Thermal Exchange	This Pokemon's Attack is raised by 1 when damaged by Fire moves; can't be burned.	showdown
+272	Anger Shell	At 1/2 or less of this Pokemon's max HP: +1 Atk, Sp. Atk, Spe, and -1 Def, Sp. Def.	showdown
+273	Purifying Salt	Ghost damage to this Pokemon dealt with a halved offensive stat; can't be statused.	showdown
+274	Well-Baked Body	This Pokemon's Defense is raised 2 stages if hit by a Fire move; Fire immunity.	showdown
+275	Wind Rider	Attack raised by 1 if hit by a wind move or Tailwind begins. Wind move immunity.	showdown
+276	Guard Dog	Immune to Intimidate. Intimidated: +1 Attack. Cannot be forced to switch out.	showdown
+277	Rocky Payload	This Pokemon's offensive stat is multiplied by 1.5 while using a Rock-type attack.	showdown
+278	Wind Power	This Pokemon gains the Charge effect when hit by a wind move or Tailwind begins.	showdown
+279	Zero to Hero	If this Pokemon is a Palafin in Zero Form, switching out has it change to Hero Form.	showdown
+280	Commander	If ally is Dondozo: this Pokemon cannot act or be hit, +2 to all Dondozo's stats.	showdown
+281	Electromorphosis	This Pokemon gains the Charge effect when it takes a hit from an attack.	showdown
+282	Protosynthesis	Sun active or Booster Energy used: highest stat is 1.3×, or 1.5× if Speed.	showdown
+283	Quark Drive	Electric Terrain active or Booster Energy used: highest stat is 1.3×, or 1.5× if Speed.	showdown
+284	Good as Gold	This Pokemon is immune to Status moves.	showdown
+285	Vessel of Ruin	Active Pokemon without this Ability have their Special Attack multiplied by 0.75.	showdown
+286	Sword of Ruin	Active Pokemon without this Ability have their Defense multiplied by 0.75.	showdown
+287	Tablets of Ruin	Active Pokemon without this Ability have their Attack multiplied by 0.75.	showdown
+288	Beads of Ruin	Active Pokemon without this Ability have their Special Defense multiplied by 0.75.	showdown
+289	Orichalcum Pulse	On switch-in, summons Sun. During Sun, Attack is 1.3333×.	showdown
+290	Hadron Engine	On switch-in, summons Electric Terrain. During Electric Terrain, Sp. Atk is 1.3333×.	showdown
+291	Opportunist	When an opposing Pokemon has a stat stage raised, this Pokemon copies the effect.	showdown
+292	Cud Chew	If this Pokemon eats a Berry, it will eat that Berry again at the end of the next turn.	showdown
+293	Sharpness	This Pokemon's slicing moves have their power multiplied by 1.5.	showdown
+294	Supreme Overlord	This Pokemon's moves have 10% more power for each fainted ally, up to 5 allies.	showdown
+295	Costar	On switch-in, this Pokemon copies all of its ally's stat stage changes.	showdown
+296	Toxic Debris	If this Pokemon is hit by a physical attack, Toxic Spikes are set on the opposing side.	showdown
+297	Armor Tail	This Pokemon and its allies are protected from opposing priority moves.	showdown
+298	Earth Eater	This Pokemon heals 1/4 of its max HP when hit by Ground moves; Ground immunity.	showdown
+299	Mycelium Might	This Pokemon's Status moves go last in their priority bracket and ignore Abilities.	showdown
+300	Hospitality	On switch-in, this Pokemon restores 1/4 of its ally's maximum HP, rounded down.	showdown
+301	Mind's Eye	Fighting, Normal moves hit Ghost. Accuracy can't be lowered, ignores evasiveness.	showdown
+302	Embody Aspect-T	On switch-in, this Pokemon's Speed is raised by 1 stage.	showdown
+303	Embody Aspect-H	On switch-in, this Pokemon's Attack is raised by 1 stage.	showdown
+304	Embody Aspect-W	On switch-in, this Pokemon's Special Defense is raised by 1 stage.	showdown
+305	Embody Aspect-C	On switch-in, this Pokemon's Defense is raised by 1 stage.	showdown
+306	Toxic Chain	This Pokemon's attacks have a 30% chance of badly poisoning.	showdown
+307	Supersweet Syrup	On switch-in, this Pokemon lowers the evasiveness of opponents 1 stage. Once per battle.	showdown
+308	Tera Shift	If this Pokemon is a Terapagos, it transforms into its Terastal Form on entry.	showdown
+309	Tera Shell	Terapagos: If full HP, attacks taken have 0.5× effectiveness unless naturally immune.	showdown
+310	Teraform Zero	Terapagos: Terastallizing ends the effects of weather and terrain. Once per battle.	showdown
+311	Poison Puppeteer	Pecharunt: If this Pokemon poisons a target, the target also becomes confused.	showdown
+312	Piercing Drill	This Pokemon's contact moves ignore a target's protection and deal 1/4 the usual damage.	showdown
+313	Dragonize	This Pokemon's Normal-type moves become Dragon type and have 1.2× power.	showdown
+314	Eelevate	This Pokemon is immune to Ground; +1 to highest stat if it KOes another Pokemon.	showdown
+316	Mega Sol	This Pokemon's moves are used as if the effects of Sun were active.	showdown
+317	Fire Mane	This Pokemon's offensive stat is multiplied by 1.5 while using a Fire-type attack.	showdown
+319	Spicy Spray	If this Pokemon is hit by an attack, the attacker becomes burned.	showdown

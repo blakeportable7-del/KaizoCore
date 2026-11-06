@@ -17,7 +17,7 @@ class SecondScreenTest {
 
     @Test fun `the play screen gives the tracker to a second display in every layout`() {
         val play = src("PlayScreen.kt")
-        assertTrue("val trackerOnSecond = SecondScreenHost(session.tracked && !streamClean && trackerOpen && TrackerOptions.trackerOnSecondScreen) { trackerContent() }" in play)
+        assertTrue("val trackerOnSecond = SecondScreenHost(session.tracked && !streamClean && trackerOpen && TrackerOptions.trackerOnSecondScreen && !dsWantSecond) { trackerContent() }" in play, "the DS bottom screen takes the second display first (DsSecondDisplay)")
         assertTrue("if (landscape && !streamClean && !trackerOnSecond) trackerPane()" in play, "landscape, docked")
         assertTrue("session.tracked && !trackerOnSecond && TrackerOptions.landscapeTracker == LandscapeTracker.FLOATING" in play, "landscape, floating")
         assertEquals(2, Regex("""if \(streamClean \|\| !session\.tracked \|\| trackerOnSecond\)""").findAll(play).count(), "portrait: the spacer and the panel")

@@ -92,7 +92,8 @@ object RomFormSprites {
     private val GAMES = setOf(RomKind.PLATINUM_U.id, RomKind.HEARTGOLD_U.id, RomKind.SOULSILVER_U.id, RomKind.BLACK2_U.id, RomKind.WHITE2_U.id)
 
     /** The patched builds proven to keep their base game's archives byte for byte, built from the dumps in RomFormSpritesTest. */
-    val PATCHED_PROVEN = setOf(RomKind.PLATINUM_SUPERKAIZO.id, RomKind.HEARTGOLD_SUPERKAIZO.id, RomKind.HEARTGOLD_IRONMON.id)
+    val PATCHED_PROVEN = setOf(RomKind.PLATINUM_SUPERKAIZO.id, RomKind.HEARTGOLD_SUPERKAIZO.id, RomKind.HEARTGOLD_IRONMON.id,
+        RomKind.PLATINUM_GIGA.id, RomKind.PLATINUM_GIGA_FLX.id, RomKind.PLATINUM_GIGA_SNOWY.id, RomKind.PLATINUM_GIGA_SNOWY_FLX.id)
 
     /** The game whose places [kind] reads: its own, or for a proven patched build its base game's. */
     private fun game(kind: RomKind): String = if (kind.id in PATCHED_PROVEN) kind.baseId ?: kind.id else kind.id

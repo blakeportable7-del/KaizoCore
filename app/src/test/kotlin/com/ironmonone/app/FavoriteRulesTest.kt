@@ -26,7 +26,8 @@ class FavoriteRulesTest {
 
     @Test
     fun `every book's favorites count is the one the app gives its game`() {
-        assertEquals(82, allBooks().size, "the books bundled today (Heart & Soul's ten since 2026-10-05)")
+        // Heart & Soul's ten since 2026-10-05; KaizoCore's seven Super Kaizo Doubles books since 2026-11-06.
+        assertEquals(89, allBooks().size, "the books bundled today")
         for (f in allBooks()) {
             val text = f.readText()
             val family = f.parentFile.name

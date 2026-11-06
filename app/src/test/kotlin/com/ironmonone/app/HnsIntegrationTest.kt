@@ -140,7 +140,7 @@ class HnsIntegrationTest {
     fun `Heart and Soul plays every Emerald Nat Dex v1_2 mode and no other game's files`() {
         val k = RomKind.HEARTSOUL_KAIZO_206
         val modes = RulesetCatalog.forRom(k, presets)
-        assertEquals(listOf("standard", "ultimate", "kaizo", "superkaizo", "survival", "survivalrevival", "kaizodoubles", "chaoskaizo", "evokaizo", "ironmonjourney"),
+        assertEquals(listOf("standard", "ultimate", "kaizo", "superkaizo", "survival", "survivalrevival", "kaizodoubles", "superkaizodoubles", "chaoskaizo", "evokaizo", "ironmonjourney"),
             modes.map { it.key })
         assertTrue(modes.all { it.preset.name.startsWith("RSE NatDex v1.2 ") }, modes.map { it.preset.name }.toString())
         assertEquals("RSE NatDex v1.2 Kaizo.rnqs", RulesetCatalog.openingFile(k, presets, null, null)!!.name)

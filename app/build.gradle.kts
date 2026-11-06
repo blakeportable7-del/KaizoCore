@@ -29,11 +29,15 @@ android {
         // module later would raise this to 29, which is a decision, not an accident.
         minSdk = 26
         targetSdk = 34
-        versionCode = 54
+        versionCode = 55
         // The build id rides on the version so INFO and the bug report say WHICH rc15:
         // three same-named builds went to Blake's phone in one evening (2026-09-08).
-        val baseVersion = "1.0.0-rc39"
+        val baseVersion = "1.0.0-rc40"
         versionName = baseVersion + "+" + (project.findProperty("buildId")?.toString()?.takeIf { it.isNotBlank() } ?: "local")
+        // A tester's side build names itself instead (-Pironmon.testVersion=1.0.0-rc40-thor1, 2026-11-06): the versionCode
+        // stays this one, so it installs over the release it came from and the next release installs over it. Its name
+        // carries no commit, so site_bump.py refuses it.
+        project.findProperty("ironmon.testVersion")?.toString()?.takeIf { it.isNotBlank() }?.let { versionName = it }
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         // Only the ABIs the emulator cores ship for (app/src/main/jniLibs): with libretrodroid built for four, a
         // 32-bit phone installed the app and then every game said "Emulator core missing from this build." Now

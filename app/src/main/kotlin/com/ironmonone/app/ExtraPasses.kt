@@ -59,7 +59,7 @@ object ExtraPasses {
     }
 
     /** Emerald's modes that take the 60% levels (callsFor60). */
-    val RSE_60_MODES = setOf("kaizo", "survival", "superkaizo", "kaizodoubles", "chaoskaizo", "ironmonjourney")
+    val RSE_60_MODES = setOf("kaizo", "survival", "superkaizo", "kaizodoubles", RnqsInfo.SUPER_KAIZO_DOUBLES, "chaoskaizo", "ironmonjourney")
 
     /** Whether a build already carries the 6% (Faster Emerald 1.3.2), so RUN can say why there is no switch. */
     fun carries60(kind: RomKind): Boolean = kind.id == RomKind.EMERALD_FASTER.id
@@ -156,7 +156,7 @@ object ExtraPasses {
             if (prePassName(kind) != null && callsFor60(kind, ruleset) && !prePassTaken) add("50% levels")
             if ((carries60(kind) || (prePassName(kind) != null && prePassTaken)) && !callsFor60(kind, ruleset)) add("+6% levels")
             if (takesPart2(kind) && !patched(kind) && !part2Taken) add("no PART 2")
-            if (ruleset == "superkaizo" && RulesetCatalog.superKaizoWarning(kind, "superkaizo") != null) add("no Smart AI")
+            if (RnqsInfo.isSuperKaizo(ruleset) && RulesetCatalog.superKaizoWarning(kind, "superkaizo") != null) add("no Smart AI")
             // Official all the same (Blake, 2026-10-23); the record says it was played that way.
             if (challenge) add("Challenge Mode")
         }

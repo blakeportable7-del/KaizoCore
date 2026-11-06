@@ -178,7 +178,6 @@ class SettingsReflectorTest {
         val opts = SettingsReflector.options(Settings::class.java)
         val ids = opts.map { it.id }.toSet()
         assertTrue("limitPokemon" !in ids)
-        assertTrue("standardizeEXPCurves" !in ids)
         val starters = opts.filterIsInstance<Option.Choice>().first { it.id == "startersMod" }
         assertTrue("CUSTOM" !in starters.values, "Custom starters has no picker here")
         assertEquals("Other", Section.MISC.title)
@@ -224,5 +223,60 @@ class SettingsReflectorTest {
         assertTrue(c is Option.Choice, "wildBSTLimit is ${c::class.simpleName}")
         assertEquals(listOf("0", "1", "2"), c.values)
         assertEquals("Legendaries and Mythicals", SettingsReflector.valueLabel("wildBSTLimit", "1"))
+    }
+
+    /**
+     * Standardize EXP curves, the curve, and who keeps Slow (2026-11-06: a player setting up Kaizo Doubles needed Medium
+     * Slow and could not find it). Both engines, read from the bundled presets, edited, written and read back.
+     */
+    @Test
+    fun `the EXP curve settings are offered, follow the switch, and round-trip in both engines`() {
+        val presets = File("../app/src/main/assets/presets")
+        for ((cls, file) in listOf(
+            com.dabomstew.pkrandomzx.Settings::class.java to File(presets, "FRLG Kaizo Doubles.rnqs"),
+            Settings::class.java to File(presets, "RSE NatDex v1.2 Kaizo.rnqs"),
+        )) {
+            val opts = SettingsReflector.options(cls).associateBy { it.id }
+            val std = opts["standardizeEXPCurves"] as Option.Bool
+            val curve = opts["selectedEXPCurve"] as Option.Choice
+            val slow = opts["expCurveMod"] as Option.Choice
+            assertEquals(listOf("SLOW", "MEDIUM_SLOW", "MEDIUM_FAST", "FAST", "ERRATIC", "FLUCTUATING"), curve.values)
+            assertEquals("Medium Slow", SettingsReflector.valueLabel("selectedEXPCurve", "MEDIUM_SLOW"))
+            // The switch, then the curve, then who keeps Slow, together and in that order.
+            val order = SettingsReflector.options(cls).map { it.id }
+            assertEquals(listOf("standardizeEXPCurves", "selectedEXPCurve", "expCurveMod"),
+                order.subList(order.indexOf("standardizeEXPCurves"), order.indexOf("standardizeEXPCurves") + 3), cls.name)
+            assertEquals(Section.TRAITS, curve.section)
+            for (id in listOf("selectedEXPCurve", "expCurveMod")) {
+                assertEquals(listOf(SettingsReflector.Gate("standardizeEXPCurves", "false")), SettingsReflector.gatesFor(id), id)
+            }
+
+            val read = cls.getMethod("read", FileInputStream::class.java)
+            val s = FileInputStream(file).use { read.invoke(null, it) }
+            // The file's own values are what the editor shows.
+            assertTrue(std.get(s), file.name)
+            assertEquals(if ("Doubles" in file.name) "MEDIUM_SLOW" else "FLUCTUATING", curve.get(s), file.name)
+            std.set(s, true); curve.set(s, "FAST"); slow.set(s, "ALL")
+            val out = File.createTempFile("curve", ".rnqs")
+            try {
+                java.io.FileOutputStream(out).use { cls.getMethod("write", java.io.FileOutputStream::class.java).invoke(s, it) }
+                val back = FileInputStream(out).use { read.invoke(null, it) }
+                assertEquals(Triple(true, "FAST", "ALL"), Triple(std.get(back), curve.get(back), slow.get(back)), cls.name)
+            } finally { out.delete() }
+        }
+        // A bare Settings has no curve: it reads as the desktop's first, Medium Fast, rather than throwing.
+        val bare = Settings()
+        assertEquals("MEDIUM_FAST", (SettingsReflector.options(Settings::class.java).first { it.id == "selectedEXPCurve" } as Option.Choice).get(bare))
+    }
+
+    @Test
+    fun `Gen 1 and 2 are offered only the curves their games have`() {
+        val all = listOf("SLOW", "MEDIUM_SLOW", "MEDIUM_FAST", "FAST", "ERRATIC", "FLUCTUATING")
+        assertEquals(listOf("SLOW", "MEDIUM_SLOW", "MEDIUM_FAST", "FAST"), SettingsReflector.choicesIn("selectedEXPCurve", all, "GB1"))
+        assertEquals(listOf("SLOW", "MEDIUM_SLOW", "MEDIUM_FAST", "FAST"), SettingsReflector.choicesIn("selectedEXPCurve", all, "GBC2"))
+        assertEquals(all, SettingsReflector.choicesIn("selectedEXPCurve", all, "GBA3"))
+        assertEquals(all, SettingsReflector.choicesIn("selectedEXPCurve", all, "NDS5"))
+        assertEquals(all, SettingsReflector.choicesIn("selectedEXPCurve", all, null))
+        assertEquals(listOf("A", "B"), SettingsReflector.choicesIn("startersMod", listOf("A", "B"), "GB1"))
     }
 }

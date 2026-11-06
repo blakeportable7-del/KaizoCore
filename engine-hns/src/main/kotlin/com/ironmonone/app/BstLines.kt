@@ -27,7 +27,7 @@ package com.ironmonone.app
  * and keep the v1.2.0+ lines above.
  */
 object BstRule {
-    private val FROM_KAIZO = setOf("kaizo", "survival", "superkaizo", "kaizodoubles", "survivalrevival")
+    private val FROM_KAIZO = setOf("kaizo", "survival", "superkaizo", "kaizodoubles", "superkaizodoubles", "survivalrevival")
 
     /**
      * The BST from which a Pokemon is banned: [own] for yours, [wild] for one you could catch, and [legendary] for a

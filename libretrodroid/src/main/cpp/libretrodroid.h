@@ -152,6 +152,10 @@ public:
     void onKeyEvent(unsigned int port, int action, int keyCode);
     void onMotionEvent(unsigned int port, unsigned int source, float xAxis, float yAxis);
     void onTouchEvent(float xAxis, float yAxis);
+    /** KaizoCore: a band of the frame on a second display (SecondDisplay); takes [window]'s reference. GL thread. */
+    void setSecondDisplay(ANativeWindow* window, float top, float bottom);
+    /** KaizoCore: frames drawn on the second display since it was set; -1 once EGL refused it (SecondDisplay). */
+    long secondDisplayFrames() { return secondDisplay.framesDrawn(); }
 
     void refreshAspectRatio();
     float getAspectRatio();
@@ -245,6 +249,8 @@ private:
     std::unique_ptr<Core> core;
     std::unique_ptr<Audio> audio;
     std::unique_ptr<Video> video;
+    // KaizoCore: kept here, not in Video, so the window set survives a new Video (onSurfaceCreated) (SecondDisplay).
+    SecondDisplay secondDisplay;
     std::unique_ptr<FPSSync> fpsSync;
     std::unique_ptr<Input> input;
     std::unique_ptr<Rumble> rumble;

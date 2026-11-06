@@ -60,6 +60,39 @@ https://github.com/DrMaple/Faster-FireRed
   The patch is the author's own work, not game content. No ROM is bundled.
 
 
+DrMaple / Faster-FireRed-Super-Kaizo - NO LICENSE FILE, BUNDLED WITH THE AUTHOR'S PERMISSION
+https://github.com/DrMaple/Faster-FireRed-Super-Kaizo/releases/tag/1.0.2
+
+  Faster FireRed Super Kaizo 1.0.2 (2024-04-25): Faster FireRed's changes plus smart AI
+  for every trainer and the Super Kaizo blocks, for FireRed Rev 1 (1.1). The repository
+  carries no LICENSE file (GitHub API: license null).
+  Bundled with the author's permission, given to Blake Porterfield on the KaizoCore
+  Discord, 2026-11. Both release files, unmodified, SHA-256:
+    9777aaaf3f7f894ca74597ee837cc48f0c6c7d8ca0ca7c295c602ef70261b714  fastersk-firered-u-v11.ips     (Faster.FireRed.Super.Kaizo.1.0.2.ips)
+    ff6f51c67183836eb3cdf4787c80f84b8c526458cc63f4740b5e96dc7b389257  fasterskopen-firered-u-v11.ips (Faster.FireRed.Super.Kaizo.1.0.2.No.Blocks.ips)
+  Offered on Library, Patched versions, for FireRed 1.1 (RomKind.FIRERED_V11_FASTER_SK,
+  FIRERED_V11_FASTER_SK_NB), and linked to his release page on ROM Hacks. Credited by
+  name in the About screen.
+
+
+SentorG / NewPlatPatch (Platinum GIGA patch) - NO LICENSE FILE, BUNDLED WITH THE AUTHOR'S PERMISSION
+https://github.com/SentorG/NewPlatPatch/releases/tag/v3.1
+
+  Platinum IronMON GIGA patch 3.1 (2025-02-12), the Platinum quality-of-life patch:
+  dialogue cut to the Hall of Fame, NPCs and signs moved, instant honey encounters,
+  beds that heal, all-day trainers, three crash fixes. Thanks in its README to
+  PyroMike, Arex and Toxxxyn. For Platinum 1.0. The repository carries no LICENSE file.
+  Bundled with the author's permission, given to Blake Porterfield on the KaizoCore
+  Discord, 2026-11. All four release files, unmodified, SHA-256:
+    f79ae1cac4913da1a0d035b0e62a9b03495a5201eb274a705037f28802c4fd46  giga-platinum-u.xdelta         (SentorGIGAPATCH3.1.xdelta)
+    c6c68cefd08080375d4698fffcde7d497d0923cbef2937210a2df9a5fe2eb679  gigaflx-platinum-u.xdelta      (SentorGIGAPATCH3.1FLX.xdelta)
+    506eda9354ef05fee042d2f7c201ab9606844cd670083eb337bab0a77aaa3357  gigasnowy-platinum-u.xdelta    (SnowySentorGIGAPATCH3.1.xdelta)
+    cfae1809c635c69cc65a2d6006376413d8dd9a80b8be6c36c15d25c0ae193992  gigasnowyflx-platinum-u.xdelta (SnowySentorGIGAPATCH3.1FLX.xdelta)
+  Offered on Library, Patched versions, for Platinum (RomKind.PLATINUM_GIGA, _FLX,
+  _SNOWY, _SNOWY_FLX), and linked to his release page on ROM Hacks. Credited by name
+  in the About screen.
+
+
 Trip (Tripc423) / Maxdex - NO LICENSE, BUNDLED ON BLAKE'S DECISION, NO GRANT
 https://github.com/Tripc423/Maxdex
 
@@ -267,7 +300,13 @@ smogon / pokemon-showdown - MIT               https://github.com/smogon/pokemon-
   em dashes (tools/trainer-data/convert_natdex_move_desc.py, into tracker-gba
   natdex/movedesc.tsv). The other 10, whose shortDesc reads "No competitive use." or
   "No additional effect.", have KaizoCore's own line instead. The file is read as
-  data; none of its code is run and the APK does not carry it. Its LICENSE:
+  data; none of its code is run and the APK does not carry it.
+  Its ability text, data/text/abilities.ts at the same commit (fetched 2026-11-06,
+  Blake's yes; tools/trainer-data/sources/showdown-abilities.ts and its PINNED.txt),
+  supplies the descriptions of the 152 Nat. Dex abilities from X and Y onward, whose
+  own text in the Nat. Dex ROM is "Not implemented yet.": each its shortDesc, word for
+  word but for American spelling and no em dashes (convert_natdex_ability_desc.py, into
+  tracker-gba natdex/abilitydesc.tsv). Its LICENSE:
 
     Copyright (c) 2011-2026 Guangcong Luo and other contributors http://pokemonshowdown.com/
 
@@ -574,6 +613,20 @@ https://gist.github.com/UTDZac/a147c497424dfbd537d8c4b0c22b5621
     c5d9259cefff72eef18a4e3d05d405997a999dd494c82068d8f1d4b2f9f0cab0  DPPt Kaizo.rnqs
   The rules text (app/src/main/assets/rulesets/) is generated from these gists and
   the community rulesets' sources by tools/rules/build_rules.py.
+
+KaizoCore's own "Super Kaizo Doubles" presets (not an official IronMON ruleset)
+
+  Blake, 2026-11-06: "give the player the options". Each is the game's official Super
+  Kaizo preset with the four randomizer changes the official Kaizo Doubles rules list
+  (Standardize EXP Curves on Medium Slow, Double Battle Mode, one more Pokemon for
+  important and for regular trainers), made and checked by the editor's
+  SuperKaizoDoublesPresetsTest. Labeled "(KaizoCore preset)" in the app. SHA-256:
+    5844023746e1d84a66f27ece6bd1d6e7d5fcb9aeee035977ccdcc313cba50485  DPPt Super Kaizo Doubles.rnqs
+    9143bd5d50f1679356f1913d6b5058ad5372170a1055cd54e783178cd44c18e4  FRLG NatDex v1.2 Super Kaizo Doubles.rnqs
+    b0270296d62729e1ff1ef63460732a749e118c69a2a913e888d41c9c2cb16607  FRLG Super Kaizo Doubles.rnqs
+    834145df868476246cf0cd5cb9b40193a9a6c06b329873e48bce3e94779e69a1  HGSS Super Kaizo Doubles.rnqs
+    54c65cfea9569bda57c6e31b1b965c19056bde5cffcdc92081f21d3ce280fdb2  RSE NatDex v1.2 Super Kaizo Doubles.rnqs
+    175a23374072023a5fa1ca42b0a7e80e37e118cae6d0318bda4f7f9f03ce0096  RSE Super Kaizo Doubles.rnqs
 
 The pseudo-fluctuating growth patches (Red, Blue, Yellow, Gold, Silver, Crystal)
 https://www.stealmylyrics.com/kaizo/patch/

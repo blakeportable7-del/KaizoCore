@@ -42,9 +42,12 @@ data class RnqsInfo(
     }
 
     companion object {
+        /** KaizoCore's Super Kaizo Doubles: Super Kaizo with Kaizo Doubles' changes. Not an official IronMON ruleset. */
+        const val SUPER_KAIZO_DOUBLES = "superkaizodoubles"
+
         // Longest-first: "superkaizo" must match before "kaizo".
         private val RULESETS = listOf(
-            "survivalrevival", "ironmonjourney", "kaizodoubles", "superkaizo",
+            "superkaizodoubles", "survivalrevival", "ironmonjourney", "kaizodoubles", "superkaizo",
             "chaoskaizo", "evokaizo", "standard", "survival", "ultimate", "kaizo",
         )
         // Longest-first again, and both the reference's full file names and the
@@ -63,7 +66,15 @@ data class RnqsInfo(
             "ultimate" to "Ultimate", "survival" to "Survival", "kaizodoubles" to "Kaizo Doubles",
             "chaoskaizo" to "Chaos Kaizo", "evokaizo" to "Evo Kaizo",
             "survivalrevival" to "Survival Revival", "ironmonjourney" to "IronMON Journey",
+            // KaizoCore's own mix, not an official IronMON ruleset (Blake, 2026-11-06), and every label says so.
+            SUPER_KAIZO_DOUBLES to "Super Kaizo Doubles (KaizoCore preset)",
         )
+
+        /** The modes whose Super Kaizo rules hold: Super Kaizo and KaizoCore's Super Kaizo Doubles. */
+        fun isSuperKaizo(key: String?): Boolean = key == "superkaizo" || key == SUPER_KAIZO_DOUBLES
+
+        /** The modes whose Kaizo Doubles rules hold: Kaizo Doubles and KaizoCore's Super Kaizo Doubles. */
+        fun isKaizoDoubles(key: String?): Boolean = key == "kaizodoubles" || key == SUPER_KAIZO_DOUBLES
 
         /** The part of a preset file name the app wrote: everything before the first bracket. */
         internal fun front(fileName: String): String = fileName.substringBefore('(')

@@ -495,6 +495,10 @@ fun PlayScreen(
         }
     }
     var dsTopOnly by remember(session.id) { mutableStateOf(prefs0.dsTopOnly) }
+    // A DS's bottom screen on a second display (DsSecondDisplay): the phone shows the top one, stacked and unspaced, while
+    // it is up there. If the display goes away mid-game, both screens come back to the phone in the player's layout.
+    val dsWantSecond = dsScreens && TrackerOptions.dsBottomOnSecondScreen && secondDisplayPresent()
+    val dsOnSecond = DsBottomOnSecondDisplay(dsWantSecond, retro)
     // Tracker pane width, dragged by the tracker's left edge. Narrower pane = bigger game.
     val windowWidthDp = androidx.compose.ui.platform.LocalConfiguration
         .current.screenWidthDp.toFloat()
@@ -880,12 +884,12 @@ fun PlayScreen(
     // No layout chosen: in landscape the screens arrange themselves to the game column's
     // shape (side by side on a phone, stacked on a tablet-shaped column), see NdsScreens.
     var gameColumn by remember { mutableStateOf(androidx.compose.ui.unit.IntSize.Zero) }
-    val dsLayoutName = padLayout.dsLayout ?: if (landscape) NdsScreens.autoLayout(gameColumn.width, gameColumn.height) else "top-bottom"
-    LaunchedEffect(dsLayoutName, retro, platform) {
+    val dsLayoutName = if (dsOnSecond) "top-bottom" else padLayout.dsLayout ?: if (landscape) NdsScreens.autoLayout(gameColumn.width, gameColumn.height) else "top-bottom"
+    LaunchedEffect(dsLayoutName, retro, platform, dsOnSecond) {
         if (platform != com.ironmonone.core.Platform.NDS) return@LaunchedEffect
         retro?.updateVariables(
             com.swordfish.libretrodroid.Variable("melonds_screen_layout", NdsScreens.classicName(dsLayoutName)),
-            com.swordfish.libretrodroid.Variable("melonds_screen_gap", NdsScreens.classicGap(padLayout.dsGap)),
+            com.swordfish.libretrodroid.Variable("melonds_screen_gap", if (dsOnSecond) NdsScreens.classicGap(0) else NdsScreens.classicGap(padLayout.dsGap)),
         )
     }
 
@@ -1484,8 +1488,8 @@ fun PlayScreen(
                 routeBosses = trackerState?.routeBosses ?: 0,
                 steps = trackerState?.steps ?: 0,
                 onMoveDescription = panelLookups::moveDescription,
-                onAbilityDescription = { name ->
-                    trackerRef?.let { t -> t.abilityIdOf(name)?.let(t::abilityDescription) }
+                onAbilityDescription = { name, species ->
+                    trackerRef?.let { t -> t.abilityIdOf(name, species)?.let(t::abilityDescription) }
                 },
                 onItemDescription = panelLookups::itemDescription,
                 onWeight = panelLookups::weight,
@@ -1528,7 +1532,7 @@ fun PlayScreen(
                   )
                   }
     // The tracker on a second display when there is one (SecondScreen.kt); the phone keeps the game.
-    val trackerOnSecond = SecondScreenHost(session.tracked && !streamClean && trackerOpen && TrackerOptions.trackerOnSecondScreen) { trackerContent() }
+    val trackerOnSecond = SecondScreenHost(session.tracked && !streamClean && trackerOpen && TrackerOptions.trackerOnSecondScreen && !dsWantSecond) { trackerContent() }
     // A DS on Hybrid Top with the tracker docked: the tracker fills the black box above the touch screen (DsDock).
     val dsDock = dsDockIn(retro, ui, landscape && fullscreen && dsScreens && !dsTopOnly && dsLayoutName == "hybrid-top" && session.tracked && !streamClean && !trackerOnSecond,
         trackerOpen, gameColumn, coreValues)
@@ -1739,7 +1743,7 @@ fun PlayScreen(
                         // still renders both; this only changes what is shown,
                         // so nothing about emulation or save states changes.
                         .then(
-                            if (dsScreens && dsTopOnly)
+                            if (dsScreens && (dsTopOnly || dsOnSecond))
                                 Modifier.graphicsLayer {
                                     scaleX = 2f; scaleY = 2f
                                     transformOrigin = androidx.compose.ui.graphics
@@ -1828,6 +1832,8 @@ fun PlayScreen(
                     FacecamBubble(onDenied = { permanent -> facecam = false; status = CameraDenied.note(context, ui, permanent) })
                 }
             }
+            // The second display's touch info for a tester, on the phone too, where a screenshot catches it.
+            if (dsOnSecond && TrackerOptions.dsSecondScreenTouchInfo) DsSecondTouchInfo(Modifier.align(Alignment.TopStart))
 
             // DS stylus: the game view's own touch handling. LibretroDroid's
             // GLRetroView.onTouchEvent normalises the touch over the view and
@@ -1977,8 +1983,8 @@ fun PlayScreen(
                 routeBosses = trackerState?.routeBosses ?: 0,
                 steps = trackerState?.steps ?: 0,
                 onMoveDescription = panelLookups::moveDescription,
-                onAbilityDescription = { name ->
-                    trackerRef?.let { t -> t.abilityIdOf(name)?.let(t::abilityDescription) }
+                onAbilityDescription = { name, species ->
+                    trackerRef?.let { t -> t.abilityIdOf(name, species)?.let(t::abilityDescription) }
                 },
                 onItemDescription = panelLookups::itemDescription,
                 onWeight = panelLookups::weight,

@@ -61,7 +61,12 @@ class BundledPresetsTest {
 
     // The order the rules build (2026-09-30, UX audit P0-12): Standard, Ultimate, Kaizo, Super Kaizo, then the variants.
     private val gen3 = listOf("standard", "ultimate", "kaizo", "superkaizo", "survival")
-    private fun expected(k: RomKind): List<String> = when {
+    /** KaizoCore's Super Kaizo Doubles (2026-11-06) wherever a game has both Super Kaizo and Kaizo Doubles, after Kaizo Doubles. */
+    private fun expected(k: RomKind): List<String> = official(k).let { m ->
+        if ("superkaizo" in m && "kaizodoubles" in m) m.flatMap { if (it == "kaizodoubles") listOf(it, "superkaizodoubles") else listOf(it) } else m
+    }
+
+    private fun official(k: RomKind): List<String> = when {
         // MaxDex ships one preset, Kaizo, as Trip does.
         k.isMaxDex -> listOf("kaizo")
         k.isNatDex -> gen3 + listOf("survivalrevival", "kaizodoubles", "chaoskaizo", "evokaizo", "ironmonjourney")

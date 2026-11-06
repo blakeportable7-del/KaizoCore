@@ -752,7 +752,9 @@ private fun OptionRow(
             fun name(v: String) = SettingsReflector.valueLabel(opt.id, v)
             // A value the editor does not offer (Custom starters) still shows
             // when the file already uses it.
-            val values = if (current in opt.values) opt.values else opt.values + current
+            // The EXP curves offered are the game's own: no Erratic or Fluctuating on Gen 1 and 2.
+            val offered = SettingsReflector.choicesIn(opt.id, opt.values, generation)
+            val values = if (current in offered) offered else offered + current
             // Segmented only when the labels actually FIT. Counting values was
             // not enough - three long names do not fit a phone width.
             val inline = values.size <= 3 && values.sumOf { name(it).length } <= 26

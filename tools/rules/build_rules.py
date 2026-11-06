@@ -78,7 +78,8 @@ SUPER_GAME = {"FRLG": "Fire Red / Leaf Green", "RSE": "Emerald", "HGSS": "Heart 
 
 MODE_LABEL = {"standard": "Standard", "ultimate": "Ultimate", "kaizo": "Kaizo", "superkaizo": "Super Kaizo",
               "survival": "Survival", "kaizodoubles": "Kaizo Doubles", "survivalrevival": "Survival Revival",
-              "ironmonjourney": "IronMON Journey", "chaoskaizo": "Chaos Kaizo", "evokaizo": "Evo Kaizo"}
+              "ironmonjourney": "IronMON Journey", "chaoskaizo": "Chaos Kaizo", "evokaizo": "Evo Kaizo",
+              "superkaizodoubles": "Super Kaizo Doubles (KaizoCore preset)"}
 # What each mode builds on, in reading order.
 KAIZO = ["standard", "ultimate", "kaizo"]
 CHAIN = {
@@ -92,10 +93,17 @@ CHAIN = {
     "ironmonjourney": KAIZO + ["ironmonjourney"],
     "chaoskaizo": KAIZO + ["chaoskaizo"],
     "evokaizo": KAIZO + ["evokaizo"],
+    # KaizoCore's own mix (Blake, 2026-11-06), not an official ruleset: Super Kaizo, played with Kaizo Doubles' rules.
+    "superkaizodoubles": KAIZO + ["superkaizo", "kaizodoubles"],
 }
+SKD_INTRO = [
+    "Super Kaizo Doubles is a KaizoCore preset, not an official IronMON ruleset. It puts two official rulesets together: "
+    "Super Kaizo, played with the Kaizo Doubles rules. Both are below, in full. Its settings file is this game's Super "
+    "Kaizo file with the four randomizer changes the Kaizo Doubles rules list: Standardize EXP Curves on Medium Slow, "
+    "Double Battle Mode on, and one more Pokémon for important trainers and for regular trainers.", ""]
 KAIZO_BASED = set(CHAIN) - {"standard", "ultimate"}
 # Longest first, as RnqsInfo matches them.
-MODE_KEYS = ["survivalrevival", "ironmonjourney", "kaizodoubles", "superkaizo", "chaoskaizo", "evokaizo",
+MODE_KEYS = ["superkaizodoubles", "survivalrevival", "ironmonjourney", "kaizodoubles", "superkaizo", "chaoskaizo", "evokaizo",
              "standard", "survival", "ultimate", "kaizo"]
 
 
@@ -105,7 +113,7 @@ def applies(title, mode):
     if "general" in t or "standard & up" in t: return True
     if "standard & ultimate" in t: return mode in ("standard", "ultimate")
     if "ultimate & up" in t: return mode != "standard"
-    if "super kaizo" in t: return mode == "superkaizo"
+    if "super kaizo" in t: return mode in ("superkaizo", "superkaizodoubles")
     if "kaizo & up" in t or "kaizo & survival" in t or "kaizo/survival" in t: return mode in KAIZO_BASED
     if "survival" in t: return mode == "survival"   # Survival's own; Survival Revival does not take them
     return False
@@ -452,13 +460,13 @@ HNS_AFTER = [
      "In KaizoCore, Heart & Soul's Ruins of Alph are not dark, so Flash plays no part there: each item room opens when a "
      "Pokémon in your party is Ho-Oh, Aerodactyl, Kabuto or Omanyte. Only Dark Cave is dark."),
     # Super Kaizo's HeartGold and SoulSilver section.
-    ("    - The pivot must be done in one of the Bug Catching Contest", {"superkaizo"},
+    ("    - The pivot must be done in one of the Bug Catching Contest", {"superkaizo", "superkaizodoubles"},
      "In KaizoCore, Heart & Soul's Bug-Catching Contest is open every day, once a day, so no time change and no Celebi is needed."),
-    ("    - The TM on Route 42", {"superkaizo"},
+    ("    - The TM on Route 42", {"superkaizo", "superkaizodoubles"},
      "In KaizoCore, Heart & Soul's Route 42 TM lies by Mt. Mortar's north entrance."),
-    ("    - The TM inside Burned Tower", {"superkaizo"},
+    ("    - The TM inside Burned Tower", {"superkaizo", "superkaizodoubles"},
      "In KaizoCore, Heart & Soul's Burned Tower TM is in the basement's southwest corner, beside a Strength boulder."),
-    ("    6. Must fight Red with hail weather active", {"superkaizo"},
+    ("    6. Must fight Red with hail weather active", {"superkaizo", "superkaizodoubles"},
      "In KaizoCore, Red is always fought without hail (the summit's snow brings no weather into his battle), so this "
      "one cannot be set up."),
     # Free heals (Blake asked, 2026-10-06; the official rules answer it). Survival's limit counts "a PokeCenter (or
@@ -672,6 +680,7 @@ def main():
         out = [f"# {label}: {MODE_LABEL[mode]}", "",
                "Every ruleset builds on the ones before it, so they are all here in order, then this game's own updates.", ""]
         out += list(intro)
+        if mode == "superkaizodoubles": out += SKD_INTRO
         used = ["rules", "games"]
         for step in CHAIN[mode]:
             if step in base:

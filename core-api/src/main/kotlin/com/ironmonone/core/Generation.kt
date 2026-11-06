@@ -105,8 +105,8 @@ data class RomKind(
         const val HNS_FAMILY = "HnS"
 
         /**
-         * KaizoCore PC's Heart & Soul build (2026-10-23): [HEARTSOUL_KAIZO_206]'s game with the client's easter eggs
-         * (patch 0061, KAIZOCORE_CLIENT_EGGS on). The PC's comfort patch makes it and its setup expects it
+         * KaizoCore PC's Heart & Soul build (2026-10-23): [HEARTSOUL_KAIZO_206]'s game with the PC build's
+         * extras (patch 0061 on). The PC's comfort patch makes it and its setup expects it
          * (HnsSetup.Crcs.PC); to the app it is another KaizoCore's build, so the app makes its own from 2.0.6.
          */
         const val HNS_PC_BUILD_CRC = 0xF4E28E3DL
@@ -388,8 +388,8 @@ data class RomKind(
         /**
          * Pokemon Heart & Soul 2.0.6 with KaizoCore's comfort patch (docs/HNS-KAIZO.md): the official 2.0.6 (01713508)
          * plus our BPS, CRC F5F37A8E (Nat. Dex Emerald's Gen 3 rules, patches 0047-0061, 2026-10-23): the Android app's build.
-         * KaizoCore PC makes the same game with the client's easter eggs, [HNS_PC_BUILD_CRC], from the same source (patch
-         * 0061's KAIZOCORE_CLIENT_EGGS); the tracker reads both. The header is Heart & Soul's own ("POKEMON HNS", game code BPEE); the tracker
+         * KaizoCore PC makes the same game with its own extras, [HNS_PC_BUILD_CRC], from the same source (patch
+         * 0061); the tracker reads both. The header is Heart & Soul's own ("POKEMON HNS", game code BPEE); the tracker
          * picks its map by that title and the build's tables (GameMap.resolve, HnsMaps). Minimal on purpose
          * (feat/hns-tracker, 2026-10-05): recognition for the Library and the tracker only; the randomizer for it is
          * HnsEngine's to wire, and another branch may define this kind too.
@@ -500,8 +500,38 @@ data class RomKind(
          * IronmonHgssTest): 127,005,664 bytes, header still POKEMON HG IPKE.
          */
         val HEARTGOLD_IRONMON = patched(HEARTGOLD_U, HEARTGOLD_U.id + "-ironmon", "Pokémon HeartGold + IronMON HGSS 0.2.2a", 0x6211D424L, "ironmon")
+        /**
+         * Faster FireRed Super Kaizo 1.0.2 (DrMaple, DrMaple/Faster-FireRed-Super-Kaizo, 2024-04-25): Faster FireRed's
+         * changes plus every trainer's smart AI and the Super Kaizo blocks (Nugget Bridge until Misty, the S.S. Anne's
+         * trainer rooms locked, the Rocket Hideout until Erika, hidden items after Mt. Moon and step items removed). For
+         * FireRed Rev 1 only (its README: base SHA-1 DD5945DB...F417), so it is the FireRed 1.1 Super Kaizo build. Its
+         * "No Blocks" IPS is the same without the four blocks. Both are bundled since 2026-11-06 with DrMaple's permission,
+         * given to Blake on the KaizoCore Discord (NOTICE), as fastersk- and fasterskopen-firered-u-v11.ips. Measured by applying each release IPS to the pinned v1.1 dump (2026-11-06): every ROM table the
+         * tracker reads and the battle code it compares against are byte-identical to vanilla v1.1 except the 657
+         * trainers' AI flags, so it tracks on FireRed 1.1's map (FasterFireRedSuperKaizoTest).
+         */
+        val FIRERED_V11_FASTER_SK = patched(FIRERED_U_V11, FIRERED_U_V11.id + "-fastersk", "Pokémon FireRed 1.1 + Faster FireRed Super Kaizo 1.0.2", 0xDACC4653L, "fastersk")
+        val FIRERED_V11_FASTER_SK_NB = patched(FIRERED_U_V11, FIRERED_U_V11.id + "-fasterskopen", "Pokémon FireRed 1.1 + Faster FireRed Super Kaizo 1.0.2, No Blocks", 0x9CBD8E0CL, "fasterskopen")
+
+        /**
+         * Sentor's GIGA patch 3.1 for Platinum (SentorG/NewPlatPatch, release v3.1, 2025-02-12): the Platinum IronMON
+         * quality-of-life patch (dialogue cut to the Hall of Fame, NPCs and signs moved, instant honey encounters, beds that
+         * heal, all-day trainers, three crash fixes). No smart AI: Platinum Super Kaizo 1.0 is derived from it. For
+         * Platinum 1.0 only. Four builds: plain, FLX (frame limiter off), and the two with snow in Twinleaf, all four
+         * bundled since 2026-11-06 with SentorG's permission, given to Blake on the KaizoCore Discord (NOTICE). Measured by applying each release xdelta to the pinned dump (2026-11-06, PlatinumGigaTest):
+         * header and arm9 unchanged, so the DS tracker reads it as Platinum.
+         */
+        val PLATINUM_GIGA = patched(PLATINUM_U, PLATINUM_U.id + "-giga", "Pokémon Platinum + GIGA patch 3.1", 0x872CB52CL, "giga")
+        val PLATINUM_GIGA_FLX = patched(PLATINUM_U, PLATINUM_U.id + "-gigaflx", "Pokémon Platinum + GIGA patch 3.1 FLX", 0xC31E27E7L, "gigaflx")
+        val PLATINUM_GIGA_SNOWY = patched(PLATINUM_U, PLATINUM_U.id + "-gigasnowy", "Pokémon Platinum + GIGA patch 3.1 Snowy", 0x3CBA2A1FL, "gigasnowy")
+        val PLATINUM_GIGA_SNOWY_FLX = patched(PLATINUM_U, PLATINUM_U.id + "-gigasnowyflx", "Pokémon Platinum + GIGA patch 3.1 Snowy FLX", 0x7888B8D4L, "gigasnowyflx")
+
+        /** Patch tags that give every trainer smart AI, as Super Kaizo's rules want. */
+        val SMART_AI_TAGS = setOf("smartai", "superkaizo", "fastersk", "fasterskopen")
+
         val allPatched = listOf(RED_PF, BLUE_PF, YELLOW_PF, GOLD_PF, SILVER_PF, CRYSTAL_PF, FIRERED_V10_SMARTAI, LEAFGREEN_SMARTAI, EMERALD_SMARTAI, HEARTGOLD_SUPERKAIZO, FIRERED_V11_FASTER,
-            EMERALD_FASTER, EMERALD_FASTER121, BLACK2_FASTER, BLACK2_FASTERPWT, WHITE2_FASTER, WHITE2_FASTERPWT, PLATINUM_SUPERKAIZO, HEARTGOLD_IRONMON)
+            EMERALD_FASTER, EMERALD_FASTER121, BLACK2_FASTER, BLACK2_FASTERPWT, WHITE2_FASTER, WHITE2_FASTERPWT, PLATINUM_SUPERKAIZO, HEARTGOLD_IRONMON,
+            FIRERED_V11_FASTER_SK, FIRERED_V11_FASTER_SK_NB, PLATINUM_GIGA, PLATINUM_GIGA_FLX, PLATINUM_GIGA_SNOWY, PLATINUM_GIGA_SNOWY_FLX)
     }
 }
 

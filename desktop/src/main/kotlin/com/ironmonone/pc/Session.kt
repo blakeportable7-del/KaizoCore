@@ -273,6 +273,8 @@ class Session(
     private fun rulesMode(): String {
         val n = settings.nameWithoutExtension.lowercase()
         return when {
+            // KaizoCore's Super Kaizo Doubles (2026-11-06): Super Kaizo's bans and Kaizo Doubles' (MoveRule).
+            "super kaizo doubles" in n || "superkaizodoubles" in n -> "superkaizodoubles"
             "kaizo doubles" in n || "kaizodoubles" in n -> "kaizodoubles"
             "super" in n && "kaizo" in n -> "superkaizo"
             "chaos" in n -> "chaoskaizo"

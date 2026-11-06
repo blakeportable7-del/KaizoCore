@@ -28,6 +28,7 @@
 #include "utils/rect.h"
 #include "immersivemode.h"
 #include "videolayout.h"
+#include "seconddisplay.h"
 
 namespace libretrodroid {
 
@@ -86,7 +87,12 @@ public:
         return renderer->rendersInVideoCallback();
     }
 
+    /** KaizoCore: drawn after each frame, a band of it on a second display; LibretroDroid owns it (SecondDisplay). */
+    void setSecondDisplay(SecondDisplay* display) { secondDisplay = display; }
+
 private:
+    SecondDisplay* secondDisplay = nullptr;
+
     void updateProgram();
 
     float getScreenDensity();

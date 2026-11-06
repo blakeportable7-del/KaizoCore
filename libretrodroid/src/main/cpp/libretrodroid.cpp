@@ -364,6 +364,7 @@ void LibretroDroid::onSurfaceCreated() {
     );
 
     video = std::unique_ptr<Video>(newVideo);
+    video->setSecondDisplay(&secondDisplay);
 
     if (Environment::getInstance().getHwContextReset() != nullptr) {
         Environment::getInstance().getHwContextReset()();
@@ -380,6 +381,11 @@ void LibretroDroid::onMotionEvent(
     if (input) {
         input->onMotionEvent(port, source, xAxis, yAxis);
     }
+}
+
+void LibretroDroid::setSecondDisplay(ANativeWindow* window, float top, float bottom) {
+    // Kept with or without a Video: the next Video draws it (onSurfaceCreated).
+    secondDisplay.set(window, top, bottom);
 }
 
 void LibretroDroid::onTouchEvent(float xAxis, float yAxis) {
@@ -574,6 +580,8 @@ void LibretroDroid::destroy() {
     std::string().swap(contentPath);
 
     video = nullptr;
+    // KaizoCore: the second display's window goes with the game (the app's own release may never reach the GL thread).
+    secondDisplay.set(nullptr, 0.0f, 0.0f);
     core = nullptr;
     rumble = nullptr;
     fpsSync = nullptr;
