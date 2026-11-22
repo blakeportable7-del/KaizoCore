@@ -26,6 +26,7 @@ include(":app")
 include(":tracker-nds")
 include(":engine-zx")
 include(":engine-natdex")
+include(":engine-natdex122")   // Nat. Dex 1.2.2, beside 1.2.1 (renamed: com.dabomstew.pkrandom122)
 include(":engine-maxdex")   // MaxDex 1.0: the Nat. Dex 1.1.3 randomizer with Trip's changes
 include(":engine-hns")      // the Heart & Soul randomizer, shared by the app and KaizoCore PC (desktop)
 include(":desktop")         // KaizoCore PC (KaizoCore-PC.jar): Heart & Soul in BizHawk, built with the APK

@@ -94,4 +94,17 @@ class PadLayoutTest {
         }
         kotlin.test.assertEquals(null, PadLayout.SUPERNDS_LANDSCAPE.dsLayout, "auto: the column picks the arrangement")
     }
+
+    @Test
+    fun `the button band's height is kept, and a hand-edited one is held to its range`() {
+        val dir = java.nio.file.Files.createTempDirectory("band").toFile()
+        val store = LayoutStore(dir)
+        val key = PadLayout.key(false, com.ironmonone.core.Platform.GBA)
+        store.save(key, PadLayout.default(false, nds = false).copy(band = 1.3f))
+        assertEquals(1.3f, store.load(key, false).band)
+        java.io.File(dir, "$key.properties").appendText("band=9\n")
+        assertEquals(PadLayout.BAND_MAX, store.load(key, false).band)
+        assertEquals(1f, PadLayout.default(false, nds = false).band, "an untouched install keeps the designed band")
+        dir.deleteRecursively()
+    }
 }

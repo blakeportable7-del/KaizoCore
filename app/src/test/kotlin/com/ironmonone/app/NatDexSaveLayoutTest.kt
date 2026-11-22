@@ -50,18 +50,23 @@ class NatDexSaveLayoutTest {
 
     @Test
     fun `FireRed Nat Dex keeps the party count at SaveBlock1 plus 0x34, in section 1`() {
-        val rom = rom("firered-natdex-121.gba") ?: return
-        assertEquals(1, countStores(rom, u32(rom, 0x278), atX34), "SavePlayerParty")
-        assertEquals(0, countStores(rom, u32(rom, 0x278), atX234))
-        assertEquals(1, saveBlock1Section(rom, 0xFEC))
+        // 1.2.2 grew the key items pocket, which lies after the party: the count stays where 1.2.1 keeps it.
+        for (name in listOf("firered-natdex-121.gba", "firered-natdex-122.gba")) {
+            val rom = rom(name) ?: continue
+            assertEquals(1, countStores(rom, u32(rom, 0x278), atX34), "$name: SavePlayerParty")
+            assertEquals(0, countStores(rom, u32(rom, 0x278), atX234), name)
+            assertEquals(1, saveBlock1Section(rom, 0xFEC), name)
+        }
     }
 
     @Test
     fun `Emerald Nat Dex keeps it at SaveBlock1 plus 0x234, in section 1`() {
-        val rom = rom("emerald-natdex-121.gba") ?: return
-        assertEquals(1, countStores(rom, u32(rom, 0x278), atX234), "SavePlayerParty")
-        assertEquals(0, countStores(rom, u32(rom, 0x278), atX34))
-        assertEquals(1, saveBlock1Section(rom, 0xFEC))
+        for (name in listOf("emerald-natdex-121.gba", "emerald-natdex-122.gba")) {
+            val rom = rom(name) ?: continue
+            assertEquals(1, countStores(rom, u32(rom, 0x278), atX234), "$name: SavePlayerParty")
+            assertEquals(0, countStores(rom, u32(rom, 0x278), atX34), name)
+            assertEquals(1, saveBlock1Section(rom, 0xFEC), name)
+        }
     }
 
     @Test

@@ -72,6 +72,12 @@ fun SecondScreenHost(enabled: Boolean, content: @Composable () -> Unit): Boolean
             return@DisposableEffect onDispose { }
         }
         val presentation = Presentation(activity, d)
+        // Never focusable, as the DS bottom screen's (DsSecondDisplay): on one focused window for every display, a touch
+        // on the tracker took the focus, the game stopped reading its buttons, and B then closed the tracker as a dialog.
+        // Keys meant for the game found no focused window, and Android called the app not responding (Thor tester and
+        // crash report, 2026-11-20). Touches still reach it; it has no field to type in.
+        presentation.window?.addFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
+        presentation.setCancelable(false)
         val view = ComposeView(presentation.context).apply {
             setViewTreeLifecycleOwner(activity)
             setViewTreeSavedStateRegistryOwner(activity)

@@ -66,12 +66,14 @@ class AbilityDescriptionsTest {
         val nds = File("../tracker-nds/src/main/resources/nds/ability-desc.tsv").readLines().filterNot { it.startsWith("#") }
             .map { it.split('\t') }.associate { key(it[1]) to it[3].trim() }
         // MaxDex has no Multitype, Imposter or Zen Mode, so 85 of Black and White's 88 abilities past Gen 3.
-        for ((game, last, gen45) in listOf(Triple("firered-natdex-121", GbaTracker.NATDEX_LAST_ABILITY, 88),
-            Triple("emerald-natdex-121", GbaTracker.NATDEX_LAST_ABILITY, 88), Triple("firered-maxdex", 289, 85))) {
+        // Nat. Dex 1.2.2, the release the app makes, adds Aura Guard (320); 1.2.1's run to 319 for a run made on it.
+        for ((game, last, gen45) in listOf(Triple("firered-natdex-122", GbaTracker.NATDEX_LAST_ABILITY, 88),
+            Triple("emerald-natdex-122", GbaTracker.NATDEX_LAST_ABILITY, 88), Triple("firered-natdex-121", 319, 88),
+            Triple("emerald-natdex-121", 319, 88), Triple("firered-maxdex", 289, 85))) {
             val rom = Dumps.rom("$game.gba") ?: continue
             val t = tracker(rom.readBytes())
             assertEquals(last, t.lastAbilityId, game)
-            // Nat. Dex 1.2.1 has two empty slots, named by their number (315, 318): no species holds them.
+            // Nat. Dex has two empty slots, named by their number (315, 318): no species holds them.
             val holes = (1..last).filter { t.abilityName(it).all(Char::isDigit) }.toSet()
             assertEquals(if ("natdex" in game) setOf(315, 318) else emptySet(), holes, game)
             for (s in 1..1300) t.baseStats(s)?.let { b -> assertTrue(listOf(b.ability1, b.ability2, b.ability3).none { it in holes }, "$game species $s") }
@@ -87,7 +89,7 @@ class AbilityDescriptionsTest {
             val showdown = (78..last).filter { it !in holes && nds[key(t.abilityName(it))] == null }
             println("$game: ${showdown.size} abilities past Gen 5")
             if ("natdex" in game) {
-                assertEquals(152, showdown.size, game)
+                assertEquals(152 + (last - 319), showdown.size, game)
                 assertEquals("Combination of the Unnerve and Chilling Neigh Abilities.", t.abilityDescription(t.abilityIdOf("As One-I")!!))
                 assertEquals("On switch-in, this Pokemon's Defense is raised by 1 stage.", t.abilityDescription(t.abilityIdOf("Embody Aspect-C")!!))
             } else assertEquals("Wandering Spirit.", t.abilityDescription(260), "MaxDex keeps its own words")

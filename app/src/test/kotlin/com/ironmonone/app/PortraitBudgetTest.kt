@@ -84,4 +84,15 @@ class PortraitBudgetTest {
     fun `unmeasured is the designed layout, never a shrunken first frame`() {
         assertEquals(PortraitBudget.Plan(1f, 1f), PortraitBudget.plan(0, 0, d, false))
     }
+
+    /** The player's band height (PadLayout.band, 2026-11-20): what it gains comes out of the game on a short phone, never the buttons. */
+    @Test
+    fun `a taller button band takes its room from the game, a shorter one gives it back`() {
+        val normal = PortraitBudget.plan(1080, 1540, 2.625f, false)
+        val tall = PortraitBudget.plan(1080, 1540, 2.625f, false, band = PadLayout.BAND_MAX)
+        val short = PortraitBudget.plan(1080, 1540, 2.625f, false, band = PadLayout.BAND_MIN)
+        assertEquals(normal.padScale, tall.padScale, "the buttons keep their size")
+        assertTrue(tall.gameFraction < normal.gameFraction, "the game paid for the taller band: $tall vs $normal")
+        assertTrue(short.gameFraction >= normal.gameFraction, "a shorter band gives the game room back: $short vs $normal")
+    }
 }

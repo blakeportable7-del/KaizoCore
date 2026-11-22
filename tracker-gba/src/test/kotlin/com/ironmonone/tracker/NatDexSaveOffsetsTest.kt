@@ -47,6 +47,19 @@ class NatDexSaveOffsetsTest {
         assertEquals(0x1458L, e.gameFlagsOffset)
         assertEquals(0x1584L, e.gameVarsOffset)
         assertEquals(0x1584L + 0x52, e.repelStepsOffset, "Emerald Nat. Dex moves the repel var to +0x52")
+        // 1.2.2's key items pocket grew by two slots (8 bytes), and everything after it moved with it.
+        val fr2 = rom("firered-natdex-122.gba") ?: return
+        val m2 = GameMap.resolve(Mem(fr2).reader())
+        assertEquals(0x1098L, m2.gameFlagsOffset)
+        assertEquals(0x11B8L, m2.gameVarsOffset)
+        assertEquals(0x11B8L + 0x40, m2.repelStepsOffset)
+        assertEquals(0x3831L, m2.rivalNameOffset)
+        assertEquals(0x500, m2.trainerFlagStart)
+        val em2 = rom("emerald-natdex-122.gba") ?: return
+        val e2 = GameMap.resolve(Mem(em2).reader())
+        assertEquals(0x1460L, e2.gameFlagsOffset)
+        assertEquals(0x158CL, e2.gameVarsOffset)
+        assertEquals(0x158CL + 0x52, e2.repelStepsOffset)
         // The vanilla maps are untouched.
         assertEquals(0xEE0L, GameMap.FIRERED_U_V10.gameFlagsOffset)
         assertEquals(0x1040L, GameMap.FIRERED_U_V10.repelStepsOffset)
@@ -55,16 +68,26 @@ class NatDexSaveOffsetsTest {
 
     @Test
     fun `FireRed Nat Dex reads the repel, the flags and the rival's name where they are`() {
-        val fr = rom("firered-natdex-121.gba") ?: return
+        // Each release's own offsets (both builds publish their own offsets, above).
+        for ((name, flags, repel, rival) in listOf(Quad("firered-natdex-121.gba", 0x1090, 0x11B0 + 0x40, 0x3829),
+                Quad("firered-natdex-122.gba", 0x1098, 0x11B8 + 0x40, 0x3831))) {
+            val fr = rom(name) ?: continue
+            readsTheSave(fr, flags, repel, rival)
+        }
+    }
+
+    private data class Quad(val name: String, val flags: Int, val repel: Int, val rival: Int)
+
+    private fun readsTheSave(fr: ByteArray, flags: Int, repel: Int, rival: Int) {
         val mem = Mem(fr)
         val m = GameMap.resolve(mem.reader())
         mem.put32(m.saveBlock1Ptr, SB1)
-        mem.put8(SB1 + 0x11B0 + 0x40, 120)                          // a Super Repel, 120 steps left
+        mem.put8(SB1 + repel, 120)                                  // a Super Repel, 120 steps left
         val brock = 0x500 + 414
-        mem.put8(SB1 + 0x1090 + brock / 8, 1 shl (brock % 8))    // Brock beaten
-        mem.put8(SB1 + 0x1090 + 0x800 / 8, 1)                     // SYS_SAFARI_MODE
-        "GARY".forEachIndexed { i, c -> mem.put8(SB1 + 0x3829 + i, 0xBB + (c - 'A')) }
-        mem.put8(SB1 + 0x3829 + 4, 0xFF)
+        mem.put8(SB1 + flags + brock / 8, 1 shl (brock % 8))     // Brock beaten
+        mem.put8(SB1 + flags + 0x800 / 8, 1)                      // SYS_SAFARI_MODE
+        "GARY".forEachIndexed { i, c -> mem.put8(SB1 + rival + i, 0xBB + (c - 'A')) }
+        mem.put8(SB1 + rival + 4, 0xFF)
         val t = GbaTracker(mem.reader(), m)
         assertEquals(120, t.readRepelSteps())
         assertTrue(t.trainerDefeated(414))

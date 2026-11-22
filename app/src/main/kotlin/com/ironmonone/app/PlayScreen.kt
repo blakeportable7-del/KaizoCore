@@ -46,6 +46,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.ui.draw.alpha
@@ -1681,6 +1682,7 @@ fun PlayScreen(
       val budget = PortraitBudget.plan(
           playArea.width, playArea.height,
           androidx.compose.ui.platform.LocalDensity.current.density, false,
+          band = if (landscape) 1f else padLayout.band,
       )
       val scrollable = false
       Column(
@@ -1910,7 +1912,8 @@ fun PlayScreen(
                 if (editingLayout) layoutToolbar(Modifier)
                 // The band is the pad area the layout's fractions refer to:
                 // the designed 192dp, shrunk by the portrait budget.
-                Box(Modifier.fillMaxWidth().height((PortraitBudget.PAD_NATURAL_DP * budget.padScale).dp)) {
+                val bandDp = PortraitBudget.PAD_NATURAL_DP * budget.padScale * padLayout.band
+                Box(Modifier.fillMaxWidth().height(bandDp.dp)) {
                     FreePad(
                         layout = padLayout, onB = { if (wildBattleNow) flee() },
                         translucent = false, skin = padSkin, baseScale = budget.padScale,
@@ -1918,6 +1921,13 @@ fun PlayScreen(
                         onSelect = { selectedElement = it }, onEdit = { padLayout = it },
                     )
                 }
+                // The band's own height, while editing: drag this bar down for a taller band, up for a shorter one.
+                if (editingLayout) BandHandle(
+                    onDrag = { dyDp ->
+                        val per = PortraitBudget.PAD_NATURAL_DP * budget.padScale
+                        padLayout = padLayout.copy(band = (padLayout.band + dyDp / per).coerceIn(PadLayout.BAND_MIN, PadLayout.BAND_MAX))
+                    },
+                )
             }
             if (streamClean || !session.tracked || trackerOnSecond) {
                 // Nothing here: the weighted spacer that holds the pad at the
@@ -2646,3 +2656,24 @@ private fun Modifier.pressHold(
 
 /** The four direction keys: the OUTLINE skin draws these square, the My Boy cross. */
 private val DPAD_KEYS = setOf(KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN, KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT)
+
+/**
+ * Under the portrait band in Edit layout: a bar to drag for the band's height (PadLayout.band). [onDrag] gets the drag
+ * in dp, down positive. Tall enough to grab, and marked as a handle so it is not taken for a button.
+ */
+@Composable
+private fun BandHandle(onDrag: (Float) -> Unit) {
+    val density = androidx.compose.ui.platform.LocalDensity.current.density
+    Box(
+        Modifier.fillMaxWidth().height(32.dp)
+            .background(androidx.compose.ui.graphics.Color(0x33FFFFFF))
+            .pointerInput(Unit) {
+                detectVerticalDragGestures { change, dy ->
+                    change.consume(); onDrag(dy / density)
+                }
+            },
+        contentAlignment = Alignment.Center,
+    ) {
+        Text("Drag to resize the button area", fontSize = 12.sp, color = Shell.hintOnNight)
+    }
+}

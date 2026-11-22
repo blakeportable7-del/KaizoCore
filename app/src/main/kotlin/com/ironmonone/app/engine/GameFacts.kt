@@ -56,6 +56,7 @@ object GameFacts {
         synchronized(cache) { cache[key]?.let { return it } }
         val facts = when (kind.engine) {
             com.ironmonone.core.Engine.NATDEX -> readNatDex(rom)
+            com.ironmonone.core.Engine.NATDEX122 -> readNatDex122(rom)
             com.ironmonone.core.Engine.MAXDEX -> readMaxDex(rom)
             com.ironmonone.core.Engine.ZX -> readZx(kind, rom)
             // Build your own reads and writes the UPR settings formats for UPR's own games; Heart & Soul is not offered it yet.
@@ -97,6 +98,21 @@ object GameFacts {
         val factory = com.dabomstew.pkrandom.romhandlers.Gen3RomHandler.Factory()
         require(factory.isLoadable(rom.absolutePath)) { "\"${rom.name}\" is not a GBA Pokémon ROM this engine can open." }
         val h = factory.create(com.dabomstew.pkrandom.RandomSource.instance())
+        h.loadRom(rom.absolutePath)
+        val list = if (h.generationOfPokemon() >= 6) h.pokemonInclFormes.filter { it == null || !it.actuallyCosmetic } else h.pokemon
+        return Facts(
+            species = named(list.map { it?.fullName() }),
+            ownStarters = h.starters.map { list.indexOf(it) },
+            hasAbilities = h.abilitiesPerPokemon() > 0,
+            hasMoveTutors = h.hasMoveTutors(),
+        )
+    }
+
+    /** The same for Nat. Dex 1.2.2, read by its own engine (engine-natdex122), as the 1.2.2 randomizer will. */
+    private fun readNatDex122(rom: File): Facts {
+        NatDex122Engine.refusal(rom)?.let { throw IllegalArgumentException(it) }
+        val factory = com.dabomstew.pkrandom122.romhandlers.Gen3RomHandler.Factory()
+        val h = factory.create(com.dabomstew.pkrandom122.RandomSource.instance())
         h.loadRom(rom.absolutePath)
         val list = if (h.generationOfPokemon() >= 6) h.pokemonInclFormes.filter { it == null || !it.actuallyCosmetic } else h.pokemon
         return Facts(

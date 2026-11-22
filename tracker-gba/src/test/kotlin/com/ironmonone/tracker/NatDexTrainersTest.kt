@@ -17,6 +17,8 @@ import kotlin.test.assertTrue
 class NatDexTrainersTest {
     private val fr = File("C:/Users/bepor/IronMonOne/.vendor/roms/firered-natdex-121.gba")
     private val em = File("C:/Users/bepor/IronMonOne/.vendor/roms/emerald-natdex-121.gba")
+    private val fr122 = File("C:/Users/bepor/IronMonOne/.vendor/roms/firered-natdex-122.gba")
+    private val em122 = File("C:/Users/bepor/IronMonOne/.vendor/roms/emerald-natdex-122.gba")
 
     private fun reader(bytes: ByteArray) = MemoryReader { a, n ->
         val off = (a - 0x08000000L).toInt()
@@ -30,11 +32,17 @@ class NatDexTrainersTest {
 
     @Test
     fun `FireRed Nat Dex 1_2_1 reads its trainers through its own slots and layout`() {
-        if (!fr.exists()) { println("SKIP: Nat. Dex FireRed ROM missing"); return }
-        val t = tracker(fr.readBytes())
+        // 1.2.2's tables, read through the same slots, are where its randomizer's gen3_offsets.ini puts them.
+        for ((file, trainers, classes) in listOf(Triple(fr, 0x08211D68L, 0x082116B8L), Triple(fr122, 0x0820921CL, 0x08208B6CL))) {
+            if (!file.exists()) { println("SKIP: ${file.name} missing"); continue }
+            fireRedTrainers(tracker(file.readBytes()), trainers, classes)
+        }
+    }
+
+    private fun fireRedTrainers(t: GbaTracker, trainers: Long, classes: Long) {
         val m = t.map
-        assertEquals(0x08211D68L, m.gTrainers)
-        assertEquals(0x082116B8L, m.gTrainerClassNames)
+        assertEquals(trainers, m.gTrainers)
+        assertEquals(classes, m.gTrainerClassNames)
         val l = m.trainerLayout
         assertEquals(listOf(0x2C, 16, 16), listOf(l.size, l.nameSize, l.classNameSize))
         assertEquals(listOf(0x14, 0x1C, 0x20, 0x24, 0x28), listOf(l.itemsOffset, l.doubleOffset, l.aiOffset, l.partySizeOffset, l.partyPtrOffset))
@@ -53,10 +61,15 @@ class NatDexTrainersTest {
 
     @Test
     fun `Emerald Nat Dex 1_2_1 too`() {
-        if (!em.exists()) { println("SKIP: Nat. Dex Emerald ROM missing"); return }
-        val t = tracker(em.readBytes())
-        assertEquals(0x083791C0L, t.map.gTrainers)
-        assertEquals(0x0837141CL, t.map.gTrainerClassNames)
+        for ((file, trainers, classes) in listOf(Triple(em, 0x083791C0L, 0x0837141CL), Triple(em122, 0x08377920L, 0x0836FB7CL))) {
+            if (!file.exists()) { println("SKIP: ${file.name} missing"); continue }
+            emeraldTrainers(tracker(file.readBytes()), trainers, classes)
+        }
+    }
+
+    private fun emeraldTrainers(t: GbaTracker, trainers: Long, classes: Long) {
+        assertEquals(trainers, t.map.gTrainers)
+        assertEquals(classes, t.map.gTrainerClassNames)
         val roxanne = assertNotNull(t.trainer(265))
         assertEquals("Gym Leader Roxanne", "${roxanne.className} ${roxanne.name}")
         assertEquals(listOf(13, 13, 0, 0), roxanne.items)

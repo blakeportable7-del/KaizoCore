@@ -2,6 +2,32 @@
 
 Newest first. Each build's GitHub release has the same list, with the APK and its checksum.
 
+## 1.0.0-rc41
+
+**Nat. Dex 1.2.2**
+
+- **Nat. Dex 1.2.2 by CyanSMP64 sits beside 1.2.1.** In Library, Patched versions, Nat. Dex now makes 1.2.2, which
+  adds the Accelerator: an item in the bag from the start that switches the game to double speed and back. A 1.2.1
+  game you already have stays, with its runs, saves, tracker and attempt count.
+- A 1.2.2 game has its own attempt count. Starting a run on it keeps your 1.2.1 run; pick 1.2.1 to continue that one.
+
+**Fixes**
+
+- **The app no longer freezes when you tick cheats on and off.** Each tick used to wait for the emulator; a few in a
+  row could make Android say the app was not responding.
+- **DS cheats are checked before they reach the game.** A DS code has to be Action Replay lines, two groups of 8
+  digits each, 64 lines at most. A longer or broken code could freeze the game. A saved code that does not fit is
+  left out.
+- **The tracker on a second screen (AYN Thor and other two-screen devices) no longer takes the game's buttons.**
+  Touching it used to stop the game reading its controls, and B closed the tracker.
+- **An opponent's move is shown only once it is used.** An opponent that was asleep, paralyzed, frozen, flinching
+  or confused and never moved could still have its move shown on the tracker.
+
+**Controls**
+
+- **Portrait: the button area can be made taller or shorter.** In Edit layout, drag the bar under the buttons. The
+  room comes from the tracker below it, and on a short phone from the game.
+
 ## 1.0.0-rc40
 
 **Two patches, bundled with their authors' permission**

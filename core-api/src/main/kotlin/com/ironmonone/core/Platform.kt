@@ -58,4 +58,6 @@ enum class Platform(
  * Heart & Soul's tables, read from the same settings files). The pairing guard in
  * RunScreen exists because crossing them crashes the intro.
  */
-enum class Engine { ZX, NATDEX, MAXDEX, HNS }
+enum class Engine { ZX, NATDEX, MAXDEX, HNS,
+    /** Nat. Dex 1.2.2's randomizer (engine-natdex122), beside 1.2.1's (NATDEX) since 2026-11-20. */
+    NATDEX122 }

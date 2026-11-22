@@ -1,5 +1,13 @@
 # Nat. Dex 1.2.1 battle rules, read from the ROMs
 
+**Nat. Dex 1.2.2 (2026-11-07, in KaizoCore from 2026-11-12) changes none of the rules below.** Its source diff (pokeemerald
+20eadb6c..f1c0f44a, pokefirered b84ca974..01887785) touches the battle code only for the Accelerator's double speed
+(waits doubled), Present (no `typecalc`, so its effectiveness message no longer shows; damage unchanged), Intimidate's
+ability pop-up and the stat-change animation. Five Mega forms' abilities changed in `gSpeciesInfo` (Mega Absol Z:
+Sharpness, Mega Garchomp Z: Levitate, Mega Lucario Z: Aura Guard, Mega Golisopod: Tough Claws, Mega Baxcalibur: Thermal
+Exchange only), and Aura Guard (320) was added as a placeholder ("Not implemented yet." in the game). The bag's key items pocket grew from 30 to 32 slots, moving every SaveBlock1 field after it by 8;
+the tracker reads those offsets from the ROM's own slots.
+
 Emerald Nat. Dex (`.vendor/roms/emerald-natdex-121.gba`) and FireRed Nat. Dex (`.vendor/roms/firered-natdex-121.gba`),
 both carrying version bytes `01 02 01` at 0x0800048C and species count 1258 at 0x08000170. Read 2026-10-10 by
 disassembling the Thumb code (`arm-none-eabi-objdump -Mforce-thumb`) and dumping the data tables, then comparing with

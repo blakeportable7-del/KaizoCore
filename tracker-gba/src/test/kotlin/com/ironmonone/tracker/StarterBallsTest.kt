@@ -31,7 +31,7 @@ class StarterBallsTest {
     @Test
     fun `FireRed and LeafGreen stand Bulbasaur, Squirtle and Charmander from the left`() {
         var read = 0
-        for (rom in listOf("firered-u-v10.gba", "firered-u-v11.gba", "leafgreen-u.gba", "firered-natdex-121.gba")) {
+        for (rom in listOf("firered-u-v10.gba", "firered-u-v11.gba", "leafgreen-u.gba", "firered-natdex-121.gba", "firered-natdex-122.gba")) {
             val bytes = bytesOf(rom) ?: run { println("SKIP: $rom missing"); null } ?: continue
             assertEquals(listOf("LEFT" to 1, "MIDDLE" to 7, "RIGHT" to 4), balls(bytes), rom)
             read++
@@ -42,7 +42,7 @@ class StarterBallsTest {
     @Test
     fun `Ruby, Sapphire and Emerald stand Treecko, Torchic and Mudkip from the left`() {
         var read = 0
-        for (rom in listOf("emerald-u.gba", "ruby-u.gba", "sapphire-u.gba", "emerald-natdex-121.gba")) {
+        for (rom in listOf("emerald-u.gba", "ruby-u.gba", "sapphire-u.gba", "emerald-natdex-121.gba", "emerald-natdex-122.gba")) {
             val bytes = bytesOf(rom) ?: run { println("SKIP: $rom missing"); null } ?: continue
             // The Gen 3 build's own ids, which the Nat. Dex builds keep for the first 411.
             assertEquals(listOf("LEFT" to 277, "MIDDLE" to 280, "RIGHT" to 283), balls(bytes), rom)

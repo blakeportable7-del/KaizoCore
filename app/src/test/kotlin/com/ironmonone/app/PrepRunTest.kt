@@ -69,15 +69,16 @@ class PrepRunTest {
         // Kaizo IronMON offers the Nat. Dex version under the game, made from a copy of the game picked there.
         val run = src("RunScreen.kt")
         val notice = run.substringAfter("NatDexInfo.buildOf(rom)").substringBefore("// Build your own")
-        assertTrue("NatDexNotice(busy)" in notice)
+        assertTrue("NatDexNotice(busy," in notice)
         assertTrue("base.copyTo(tmp, overwrite = true)" in notice && "PrepRun.run(context, store, tmp, rom," in notice)
         assertFalse("PrepRun.run(context, store, base" in notice)
     }
 
     @Test
     fun `the Nat Dex build of each game is the one its patch makes`() {
-        assertEquals(RomKind.FIRERED_NATDEX_121, NatDexInfo.buildOf(RomKind.FIRERED_U_V11))
-        assertEquals(RomKind.EMERALD_NATDEX_121, NatDexInfo.buildOf(RomKind.EMERALD_U))
+        // Since 2026-11-20 the patches the app carries make 1.2.2; a 1.2.1 game already made stays beside it.
+        assertEquals(RomKind.FIRERED_NATDEX_122, NatDexInfo.buildOf(RomKind.FIRERED_U_V11))
+        assertEquals(RomKind.EMERALD_NATDEX_122, NatDexInfo.buildOf(RomKind.EMERALD_U))
         for (k in RomKind.all) if (NatDexInfo.buildOf(k) != null) assertTrue(PrepRun.builtIns(k).any { it.mode == PrepOptions.Mode.NATDEX }, k.id)
         assertEquals(null, NatDexInfo.buildOf(RomKind.LEAFGREEN_U))
     }

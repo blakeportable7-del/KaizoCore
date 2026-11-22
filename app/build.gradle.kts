@@ -29,10 +29,10 @@ android {
         // module later would raise this to 29, which is a decision, not an accident.
         minSdk = 26
         targetSdk = 34
-        versionCode = 55
+        versionCode = 56
         // The build id rides on the version so INFO and the bug report say WHICH rc15:
         // three same-named builds went to Blake's phone in one evening (2026-09-08).
-        val baseVersion = "1.0.0-rc40"
+        val baseVersion = "1.0.0-rc41"
         versionName = baseVersion + "+" + (project.findProperty("buildId")?.toString()?.takeIf { it.isNotBlank() } ?: "local")
         // A tester's side build names itself instead (-Pironmon.testVersion=1.0.0-rc40-thor1, 2026-11-06): the versionCode
         // stays this one, so it installs over the release it came from and the next release installs over it. Its name
@@ -126,6 +126,7 @@ dependencies {
     // Both randomizer engines. engine-zx is package-renamed to com.dabomstew.pkrandomzx
     // so it can coexist with the Nat. Dex fork's com.dabomstew.pkrandom in one APK.
     implementation(project(":engine-natdex"))
+    implementation(project(":engine-natdex122"))
     implementation(project(":engine-zx"))
     // MaxDex 1.0's randomizer: Nat. Dex 1.1.3 with Trip's changes, renamed com.dabomstew.pkrandommd.
     implementation(project(":engine-maxdex"))

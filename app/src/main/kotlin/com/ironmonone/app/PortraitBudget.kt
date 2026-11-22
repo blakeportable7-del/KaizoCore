@@ -49,13 +49,14 @@ object PortraitBudget {
     fun gamePx(widthPx: Int, fraction: Float, density: Float): Float =
         widthPx * fraction * 2f / 3f + FRAME_DP * density
 
-    fun plan(widthPx: Int, heightPx: Int, density: Float, menuOpen: Boolean): Plan {
+    /** [band]: the player's band height, PadLayout.band (1 = the designed 192dp). */
+    fun plan(widthPx: Int, heightPx: Int, density: Float, menuOpen: Boolean, band: Float = 1f): Plan {
         // Not measured yet: the designed sizes, so the first frame is not a
         // shrunken flash.
         if (widthPx <= 0 || heightPx <= 0) return Plan(1f, 1f)
         val menu = if (menuOpen) MENU_DP * density else 0f
         val trackerMin = TRACKER_MIN_DP * density
-        val padNatural = PAD_NATURAL_DP * density
+        val padNatural = PAD_NATURAL_DP * density * band
 
         // 1. The pad keeps its designed size. It yields to the WIDTH only, so
         // a narrow screen fits the band instead of clipping its middle column;

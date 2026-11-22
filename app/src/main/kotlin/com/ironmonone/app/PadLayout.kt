@@ -31,6 +31,14 @@ data class PadLayout(
      * The editor drags the four as one.
      */
     val abxyDiamond: Boolean = false,
+    /**
+     * Portrait only: the band's height as a share of its designed height (PortraitBudget.PAD_NATURAL_DP), from
+     * [BAND_MIN] to [BAND_MAX]. The editor's handle under the band drags it (a player, 2026-11-20, wanted the buttons
+     * resized and moved in portrait). What the band gains comes out of the tracker under it, and on a short phone out
+     * of the game too, as PortraitBudget already shares the height. The element places are fractions of the band, so
+     * the buttons keep where they were put relative to each other.
+     */
+    val band: Float = 1f,
 ) {
     enum class Element(val label: String) {
         DPAD("D-pad"), A("A"), B("B"), L("L"), R("R"), SELECT("Select"), START("Start"),
@@ -51,6 +59,8 @@ data class PadLayout(
     fun with(e: Element, p: Place) = copy(places = places + (e to p))
 
     companion object {
+        const val BAND_MIN = 0.75f
+        const val BAND_MAX = 1.6f
         val DEFAULT_PLACE = Place(0.5f, 0.5f)
         val DIAMOND = setOf(Element.X, Element.Y, Element.A, Element.B)
         val DS_LAYOUTS = listOf("top-bottom", "bottom-top", "left-right", "right-left",
@@ -210,6 +220,7 @@ class LayoutStore(private val dir: File) {
             dsLayout = p.getProperty("dsLayout")?.takeIf { it in PadLayout.DS_LAYOUTS } ?: d.dsLayout,
             dsGap = p.getProperty("dsGap")?.toIntOrNull()?.takeIf { it in PadLayout.DS_GAPS } ?: d.dsGap,
             abxyDiamond = p.getProperty("abxyDiamond")?.toBooleanStrictOrNull() ?: d.abxyDiamond,
+            band = p.getProperty("band")?.toFloatOrNull()?.coerceIn(PadLayout.BAND_MIN, PadLayout.BAND_MAX) ?: d.band,
         )
     }
 
@@ -223,6 +234,7 @@ class LayoutStore(private val dir: File) {
         l.dsLayout?.let { p.setProperty("dsLayout", it) }
         p.setProperty("dsGap", l.dsGap.toString())
         p.setProperty("abxyDiamond", l.abxyDiamond.toString())
+        p.setProperty("band", l.band.toString())
         // Whole or not at all (SafeWrite): a failed first rename deleted the layout and renamed again, so a kill in between
         // put the pad back on its default (RC35-NOTICED N #4).
         runCatching {

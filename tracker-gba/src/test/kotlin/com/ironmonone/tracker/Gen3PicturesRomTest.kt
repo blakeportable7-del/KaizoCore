@@ -163,7 +163,9 @@ class Gen3PicturesRomTest {
      */
     @Test
     fun `the Nat Dex and MaxDex builds keep the header's tables current, and their card is left to its icons`() {
+        // 1.2.2 moved Emerald's table; the tracker reads it from the header since (GameMap.resolve).
         for ((file, species, scanned) in listOf(Triple("firered-natdex-121.gba", 1283, null), Triple("emerald-natdex-121.gba", 1283, 0x08369C2CL),
+                Triple("firered-natdex-122.gba", 1283, null), Triple("emerald-natdex-122.gba", 1283, 0x0836838CL),
                 Triple("firered-maxdex.gba", 1280, 0x0824E5D4L))) {
             val f = dump(file) ?: run { println("$file not here; skipped"); null } ?: continue
             val m = reader(f)

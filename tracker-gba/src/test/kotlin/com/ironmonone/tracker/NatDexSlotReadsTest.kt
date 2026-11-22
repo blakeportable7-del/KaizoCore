@@ -17,6 +17,9 @@ import kotlin.test.assertTrue
 class NatDexSlotReadsTest {
     private val frFile = File("C:/Users/bepor/IronMonOne/.vendor/roms/firered-natdex-121.gba")
     private val emFile = File("C:/Users/bepor/IronMonOne/.vendor/roms/emerald-natdex-121.gba")
+    /** Nat. Dex 1.2.2, the release the app makes since 2026-11-12: everything after the key items pocket moved 8 bytes. */
+    private val frFile122 = File("C:/Users/bepor/IronMonOne/.vendor/roms/firered-natdex-122.gba")
+    private val emFile122 = File("C:/Users/bepor/IronMonOne/.vendor/roms/emerald-natdex-122.gba")
     private val SB1 = 0x02025000L
     private val SB2 = 0x02024000L
 
@@ -100,12 +103,20 @@ class NatDexSlotReadsTest {
 
     @Test
     fun `the EXP bar, the friendship threshold, the balls pocket and the FireRed starter preview work`() {
-        val mem = load(frFile) ?: return
+        // The balls pocket where each release keeps it: 1.2.1 0x580, 1.2.2 0x588 (two more key item slots before it).
+        for ((file, balls) in listOf(frFile to 0x580L, frFile122 to 0x588L)) {
+            val mem = load(file) ?: continue
+            assertEquals(balls, GameMap.resolve(mem.reader()).bagBallsOffset, file.name)
+            expBarAndStarterPreview(mem, balls)
+        }
+    }
+
+    private fun expBarAndStarterPreview(mem: Mem, balls: Long) {
         val m = GameMap.resolve(mem.reader())
         mem.put32(m.saveBlock1Ptr, SB1); mem.put32(m.saveBlock2Ptr, SB2)
         mem.put8(m.partyCount, 1)
         stageMon(mem, m.party, m.monLayout, species = 1, level = 5, exp = 150)   // Bulbasaur, medium slow
-        mem.put16(SB1 + 0x580, 4); mem.put16(SB1 + 0x580 + 2, 5)                   // five Poke Balls (key 0)
+        mem.put16(SB1 + balls, 4); mem.put16(SB1 + balls + 2, 5)                   // five Poke Balls (key 0)
         val t = GbaTracker(mem.reader(), m)
         val s = t.read()
         assertEquals(3, t.baseStats(1)?.growthRate, "Bulbasaur is medium slow")
@@ -139,10 +150,17 @@ class NatDexSlotReadsTest {
 
     @Test
     fun `the Emerald starter preview finds the confirm task`() {
-        val mem = load(emFile) ?: return
+        // Task_HandleConfirmStarterInput, where each release has it (the ROM's slot at 0x08000300).
+        for ((file, task) in listOf(emFile to 0x0813A1EDL, emFile122 to 0x08135999L)) {
+            val mem = load(file) ?: continue
+            confirmTask(mem, task)
+        }
+    }
+
+    private fun confirmTask(mem: Mem, task: Long) {
         val m = GameMap.resolve(mem.reader())
         mem.put16(m.mapHeader + 0x12, 17)
-        mem.put32(m.gTasks, 0x0813A1EDL)       // Task_HandleConfirmStarterInput running
+        mem.put32(m.gTasks, task)              // Task_HandleConfirmStarterInput running
         mem.put16(m.gTasks + 8, 1)              // the middle ball: rival 523's lead
         val t = GbaTracker(mem.reader(), m)
         t.read()

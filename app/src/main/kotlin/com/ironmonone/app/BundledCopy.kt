@@ -22,6 +22,16 @@ internal object BundledCopy {
     fun bpsIntact(f: File): Boolean =
         runCatching { com.ironmonone.patch.Bps.info(f.readBytes()).patchIntact }.getOrDefault(false).also { if (it) markWhole(f) }
 
+    /** The CRC32 of the game a BPS patch makes, from its 12-byte footer (source, target, patch CRCs); null if unreadable. */
+    fun bpsTarget(f: File): Long? = runCatching {
+        java.io.RandomAccessFile(f, "r").use { r ->
+            if (r.length() < 16) return@use null
+            r.seek(r.length() - 8)
+            val b = ByteArray(4).also { r.readFully(it) }
+            (0..3).fold(0L) { v, i -> v or ((b[i].toLong() and 0xFF) shl (8 * i)) }
+        }
+    }.getOrNull()
+
     /** Copies [asset] out of the APK to [dest], whole or not at all; null when it could not. */
     fun extract(context: Context, asset: String, dest: File): File? = copyWhole(dest) { out ->
         context.assets.open(asset).use { it.copyTo(out) }

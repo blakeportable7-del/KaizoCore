@@ -75,12 +75,24 @@ data class MoveScripts(
  * next one, and filed a doubles partner's moves under the left foe (rc33 audit P1 #72). A move is recorded only:
  *  - in a battler's own move action (gCurrentTurnActionNumber below gBattlersCount, its gActionsByTurnOrder entry
  *    B_ACTION_USE_MOVE, no confirmation pending in gBattleCommunication), once the battle's first action is under way;
- *  - one poll after that action began, once, and only if the game did not mark the Pokemon unable to use it
- *    (gHitMarker HITMARKER_UNABLE_TO_USE_MOVE);
+ *  - once the game has decided the move happens (2026-11-13, below), once an action, and never in an action the game
+ *    marked the Pokemon unable to move in (gHitMarker HITMARKER_UNABLE_TO_USE_MOVE);
  *  - never while a "confused", "in love", "frozen" or "woke up" pause is showing (Battle.moveDelayed);
  *  - for an opposing battler, and only a move its Pokemon knew as the battle began, not one Mimic gave it (Battle.lua:432).
  * Focus Punch's set-up names it before it becomes the last move used (Battle.lua:452-470), and a snatched move belongs to
  * the battler that snatched it (Battle.lua:409-426). Struggle is never tracked (Tracker.TrackMove).
+ *
+ * When the move is decided (Blake, 2026-11-13: an opponent asleep or paralysed still had its move shown, "this violates
+ * the kaizo rules"). The reference decides on its second look after the action number changes, whatever the game is doing
+ * then, and that is a race the game can lose twice. HandleAction_UseMove writes the last move used a frame BEFORE the
+ * move's script runs `attackcanceler`, the command that checks sleep, paralysis, freeze, flinch, Truant, Taunt and the
+ * rest and only then raises the unable mark: a look in between saw the move and no mark. And the action number changes a
+ * frame before the next battler's HandleAction_UseMove runs: a look in between read the LAST action's move, the unable
+ * mark already cleared for the new action. So a look counts only when the game is past both: the action is running its
+ * script (gCurrentActionFuncId B_ACTION_EXEC_SCRIPT, where the map has it), and the script is not standing on a command
+ * in the wait set: `attackcanceler` (not yet checked) or the `end` of the script before (the next action not yet begun).
+ * Any look before that waits, the action is settled by the first look that counts, and the unable mark seen then settles
+ * it with nothing recorded.
  */
 class EnemyMoveWatch {
     /** One poll's reads. */
@@ -104,23 +116,31 @@ class EnemyMoveWatch {
         /** gBattleResults' last move used by the player's side (+0x22) and by the opposing side (+0x24). */
         val lastMovePlayer: Int,
         val lastMoveOpponent: Int,
+        /** gCurrentActionFuncId, or -1 on a map that does not have it. */
+        val actionFunc: Int = -1,
+        /** The battle script command at gBattlescriptCurrInstr, or -1 when it could not be read. */
+        val opcode: Int = -1,
     )
 
     private var firstActionTaken = false
     private var prevAction = 4
-    private var recordNext = false
+    /** The action in [prevAction] has been decided: its move recorded, or found unable. */
+    private var settled = true
 
     /** Battle.lua:758-759: a new battle. */
     @Synchronized
-    fun reset() { firstActionTaken = false; prevAction = 4; recordNext = false }
+    fun reset() { firstActionTaken = false; prevAction = 4; settled = true }
 
     /**
      * One poll: the opposing battler and the move it used, or null. [knew] gives a battler's four moves as its Pokemon
      * has them in its party; [maxMove] is the game's last move id (MoveData.getTotal).
      */
     @Synchronized
-    fun tick(f: Frame, scripts: MoveScripts?, maxMove: Int, knew: (battler: Int) -> List<Int>): Pair<Int, Int>? {
+    fun tick(f: Frame, scripts: MoveScripts?, maxMove: Int, waitOpcodes: Set<Int> = WAIT_GEN3, knew: (battler: Int) -> List<Int>): Pair<Int, Int>? {
         fun lastBy(battler: Int) = if (battler % 2 == 0) f.lastMovePlayer else f.lastMoveOpponent
+        // Every change of the action number starts an undecided action, the turn's end included (the number reaches
+        // gBattlersCount): the same number next turn is a new action.
+        if (prevAction != f.actionNumber) { prevAction = f.actionNumber; settled = false }
         val last = lastBy(f.attacker)
         // "Handles this value not being cleared from the previous battle" (Battle.lua:381-387).
         if (f.actionNumber <= 1 && (last != 0 || f.action != 0)) firstActionTaken = true
@@ -128,12 +148,15 @@ class EnemyMoveWatch {
         if (scripts != null && scripts.focusPunchSetUp != 0L && f.script == scripts.focusPunchSetUp)
             return if (f.attacker % 2 == 1 && FOCUS_PUNCH in knew(f.attacker)) f.attacker to FOCUS_PUNCH else null
         if (f.actionNumber >= f.battlers || !firstActionTaken || f.confirmedCount != 0 || f.action != 0) return null
+        if (settled) return null
+        // Not yet this battler's move: the action function has not started its script, or the script still stands on
+        // the last one's end. Not yet decided: the script stands on attackcanceler.
+        if (f.actionFunc >= 0 && f.actionFunc != EXEC_SCRIPT) return null
+        if (f.opcode in waitOpcodes) return null
+        // Decided. Unable to move settles the action with nothing recorded, whatever its script goes on to show.
+        if (f.hitMarker and UNABLE_TO_USE_MOVE != 0L) { settled = true; return null }
         if (last !in 1..maxMove) return null
-        if (prevAction != f.actionNumber) { recordNext = true; prevAction = f.actionNumber; return null }
-        if (!recordNext) return null
-        // Only one chance to record per action.
-        recordNext = false
-        if (f.hitMarker and UNABLE_TO_USE_MOVE != 0L) return null
+        settled = true
         val snatched = scripts != null && scripts.snatchedMove != 0L && f.script == scripts.snatchedMove
         val battler = if (snatched) f.scriptingBattler else f.attacker
         val move = lastBy(battler)
@@ -147,5 +170,19 @@ class EnemyMoveWatch {
         const val STRUGGLE = 165
         /** HITMARKER_UNABLE_TO_USE_MOVE (Program.Addresses.hitmarkerFlag80000). */
         const val UNABLE_TO_USE_MOVE = 0x80000L
+        /** B_ACTION_EXEC_SCRIPT: the action's battle script is running (HandleAction_UseMove has set the move). */
+        const val EXEC_SCRIPT = 10
+        /**
+         * The commands a look waits on in Ruby, Sapphire, FireRed, LeafGreen, Emerald and the builds made from them
+         * (gBattleScriptingCommandsTable): attackcanceler 0x00, end 0x3D, end2 0x3E, end3 0x3F, endselectionscript 0x44.
+         */
+        val WAIT_GEN3: Set<Int> = setOf(0x00, 0x3D, 0x3E, 0x3F, 0x44)
+        /**
+         * Heart & Soul's (pokehns-expansion Release-v2.0.6, enum BattleScriptOpcode): attackcanceler 0, end 60, end2 61,
+         * end3 62, endselectionscript 67, and moveend 72, because its move end clears gBattleStruct->unableToUseMove
+         * while the action's script is still running (MoveEnd's last state, ClearDamageCalcResults): a first look
+         * there would find a cancelled move unmarked.
+         */
+        val WAIT_HNS: Set<Int> = setOf(0, 60, 61, 62, 67, 72)
     }
 }

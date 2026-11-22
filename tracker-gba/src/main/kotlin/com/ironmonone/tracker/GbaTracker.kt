@@ -183,6 +183,8 @@ data class GameMap(
     /** True when species/move names come from the bundled lists (Nat. Dex: no ROM
      *  name-table pointer is published, and the lists are used with permission). */
     val namesFromLists: Boolean = false,
+    /** Nat. Dex: the highest ability id the ROM's release names (NatDexFixed.lastAbility); 0 = [GbaTracker.NATDEX_LAST_ABILITY]. */
+    val natDexLastAbility: Int = 0,
     /**
      * True when this ROM uses the expansion's EXTENDED species numbering.
      *
@@ -790,6 +792,28 @@ data class GameMap(
         const val NATDEX_VERSION_ADDR = 0x0800048CL
 
         /**
+         * What no Nat. Dex slot publishes, per release, found in its builds: the trainer pictures' tables (1.2.1's in
+         * rc34; 1.2.2's by finding a table with 1.2.1's entries, sizes, tags and first picture, 2026-11-12) and the
+         * starter tables, Emerald's starter screen table and FireRed's lab scripts (1.2.1's 2026-10-01; 1.2.2's from
+         * its randomizer's gen3_offsets.ini StarterPokemon and Gen3Constants frlgStarter2Offset/3Offset), and the last
+         * ability the release names (1.2.2 added Aura Guard, 320). 1.2.1 stays for a run made on it before the app moved
+         * to 1.2.2.
+         */
+        internal class NatDexFixed(
+            val trainerPics: Long, val trainerPicPalettes: Long, val starters: Long, val starter2Off: Int, val starter3Off: Int,
+            val lastAbility: Int,
+        )
+
+        /** [NatDexFixed] for the release [version] (major * 10000 + minor * 100 + patch); null for one KaizoCore never made. */
+        internal fun natDexFixed(version: Int, emerald: Boolean): NatDexFixed? = when (version) {
+            10201 -> if (emerald) NatDexFixed(0x08367694L, 0x0836797CL, 0x08612CECL, 2, 4, 319)
+                else NatDexFixed(0x082313F8L, 0x08231898L, 0x089746A7L, 511, 457, 319)
+            10202 -> if (emerald) NatDexFixed(0x08365DF4L, 0x083660DCL, 0x0860A7E4L, 2, 4, GbaTracker.NATDEX_LAST_ABILITY)
+                else NatDexFixed(0x082288ACL, 0x08228D4CL, 0x08951334L, 519, 465, GbaTracker.NATDEX_LAST_ABILITY)
+            else -> null
+        }
+
+        /**
          * Resolve the right map for whatever ROM is loaded. Nat. Dex publishes its
          * addresses through a pointer table baked into the ROM (slots read from the
          * extension's own Lua on 2026-08-30) — that is how each release absorbs its
@@ -1117,8 +1141,11 @@ data class GameMap(
                 // Between the class (0x494) and the name (0x49A): the music and gender byte's offset, then the picture's.
                 picOffset = slot16(0x08000498, 0..0x7F, lay.picOffset),
             )
-            // The trainer pictures' tables of Nat. Dex 1.2.1, found in both vendored builds (rc34): another version draws none.
-            val v121 = memory.read(NATDEX_VERSION_ADDR, 3).let { it.size == 3 && it.u8(0) == 1 && it.u8(1) == 2 && it.u8(2) == 1 }
+            // What no slot publishes, for the releases KaizoCore has made (NatDexFixed): another version draws no trainer
+            // and reads no starters rather than wrong ones.
+            val fixed = memory.read(NATDEX_VERSION_ADDR, 3).let { v ->
+                if (v.size < 3) null else natDexFixed(v.u8(0) * 10000 + v.u8(1) * 100 + v.u8(2), em)
+            }
 
             val map = GameMap(
                 name = "Nat. Dex",
@@ -1211,15 +1238,14 @@ data class GameMap(
                 gTasks = iwramPtr(ptr(0x080002E8)),
                 confirmStarterTask = if (!em) 0L else if (legacy113) 0x08134DC0L
                     else romPtr(ptr(0x08000300)).let { if (it == 0L) 0L else it - 1 },
-                // The starter tables of Nat. Dex 1.2.1, found in Blake's builds (2026-10-01): Emerald's starter screen
-                // table and FireRed's lab scripts. No slot publishes them, so on another build starters() finds other
-                // bytes around them and reads no balls rather than three wrong ones.
-                startersBase = if (em) 0x08612CECL else 0x089746A7L,
-                starter2Off = if (em) 2 else 511,
-                starter3Off = if (em) 4 else 457,
+                // The starter tables: Emerald's starter screen table and FireRed's lab scripts (NatDexFixed).
+                startersBase = fixed?.starters ?: 0L,
+                starter2Off = fixed?.starter2Off ?: 0,
+                starter3Off = fixed?.starter3Off ?: 0,
                 // Program.Addresses.offsetPokedex (u32 at 0x08000158) + offsetPokedexOwned (0x08000424).
                 pokedexOwnedOffset = slotOffset(0x08000158, 0x18) + slot16(0x08000424, 0..0xFF, 0x10),
                 namesFromLists = true,
+                natDexLastAbility = fixed?.lastAbility ?: 0,
                 expandedSpeciesIds = true,
                 // Nat. Dex publishes these three itself in the same pointer block
                 // (discovered 2026-08-30; the values match the empirical scans
@@ -1237,10 +1263,12 @@ data class GameMap(
                 // half look unreachable. Verified by rendering Turtwig (412),
                 // Piplup, Lucario, Togekiss and species 1283 out of the real ROM
                 // (tools/natdex_palette_lock.py, plus fifteen color anchors).
-                frontPics = if (isEmeraldHeader(memory)) 0x08369C2C else 0L,
-                palettes = if (isEmeraldHeader(memory)) 0x08360FA8 else 0L,
-                trainerPics = if (!v121) 0L else if (em) 0x08367694L else 0x082313F8L,
-                trainerPicPalettes = if (!v121) 0L else if (em) 0x0836797CL else 0x08231898L,
+                // Read from Game Freak's own ROM header (monFrontPics at 0x08000128, monNormalPalettes at 0x08000130):
+                // 1.2.1's held 0x08369C2C and 0x08360FA8, the addresses this used to name, and 1.2.2 moved both.
+                frontPics = if (isEmeraldHeader(memory)) romPtr(ptr(0x08000128)) else 0L,
+                palettes = if (isEmeraldHeader(memory)) romPtr(ptr(0x08000130)) else 0L,
+                trainerPics = fixed?.trainerPics ?: 0L,
+                trainerPicPalettes = fixed?.trainerPicPalettes ?: 0L,
                 trainerPicCount = if (em) 93 else 148,
                 playerPic = if (em) 71 else 135,
                 spriteCount = 1284,
@@ -2072,8 +2100,8 @@ class GbaTracker(
         const val VANILLA_LAST_MOVE = 354
         /** Air Lock, the last of Gen 3's abilities (gen3/abilitydesc.tsv). */
         const val VANILLA_LAST_ABILITY = 77
-        /** Spicy Spray, the last ability Nat. Dex 1.2.1 names (its table runs 0-319 on FireRed and Emerald). */
-        const val NATDEX_LAST_ABILITY = 319
+        /** Aura Guard, the last ability Nat. Dex 1.2.2 names (its table runs 0-320 on FireRed and Emerald; 1.2.1's to 319). */
+        const val NATDEX_LAST_ABILITY = 320
         /** A starter ball's place, on FireRed's lab table or Hoenn's starter screen, from the left. */
         val BALL_NAMES = listOf("LEFT", "MIDDLE", "RIGHT")
         /**
@@ -4092,11 +4120,11 @@ class GbaTracker(
     /** Nat. Dex and MaxDex: abilities past Gen 3's 77, named by the game's own table or MaxDex's list. */
     private val expandedAbilities: Boolean get() = map.namesFromLists || map.nameSet == "maxdex"
 
-    /** The highest ability id: 77 on the five games, Spicy Spray's 319 on Nat. Dex 1.2.1, the end of MaxDex's list. */
+    /** The highest ability id: 77 on the five games, Aura Guard's 320 on Nat. Dex 1.2.2 (319 on 1.2.1), the end of MaxDex's list. */
     val lastAbilityId: Int get() = when {
         map.hns -> HnsLayout.ABILITIES_COUNT - 1
         map.nameSet == "maxdex" -> abilityNameCache.keys.filter { it > 0 }.maxOrNull() ?: VANILLA_LAST_ABILITY
-        map.namesFromLists -> NATDEX_LAST_ABILITY
+        map.namesFromLists -> map.natDexLastAbility.takeIf { it > 0 } ?: NATDEX_LAST_ABILITY
         else -> VANILLA_LAST_ABILITY
     }
 
@@ -5361,6 +5389,9 @@ class GbaTracker(
         val actionNumber = rb(map.currentTurnActionNumber)
         val last = memory.read(map.battleResults + map.battleResultsLastMovesOffset, 4)
         if (last.size < 4) return
+        val script = if (map.scriptCurrInstr != 0L) rd(map.scriptCurrInstr) else 0L
+        // The command the script stands on. A battle script lies in the ROM, or in RAM for the few the game builds there.
+        val opcode = if (script in 0x02000000L..0x09FFFFFFL) memory.read(script, 1).let { if (it.size == 1) it.u8(0) else -1 } else -1
         val frame = EnemyMoveWatch.Frame(
             battlers = n,
             attacker = rb(map.battlerAttacker),
@@ -5369,11 +5400,16 @@ class GbaTracker(
             action = rb(map.actionsByTurnOrder + actionNumber),
             confirmedCount = rb(map.battleCommunication + 4),
             hitMarker = if (map.hns) hnsUnableToUseMove() else rd(map.hitMarker),
-            script = if (map.scriptCurrInstr != 0L) rd(map.scriptCurrInstr) else 0L,
+            script = script,
             lastMovePlayer = last.u16(0),
             lastMoveOpponent = last.u16(2),
+            // gCurrentActionFuncId is the byte after gCurrentTurnActionNumber in every Gen 3 game and the builds made from
+            // them (battle_main.c declares them together); Heart & Soul's layout does not name it.
+            actionFunc = if (map.hns) -1 else rb(map.currentTurnActionNumber + 1),
+            opcode = opcode,
         )
-        val (battler, move) = moveWatch.tick(frame, map.moveScripts, if (map.hns) HnsLayout.MOVES_COUNT_ALL else if (map.expandedSpeciesIds) 2000 else 354, ::partyMovesOf) ?: return
+        val (battler, move) = moveWatch.tick(frame, map.moveScripts, if (map.hns) HnsLayout.MOVES_COUNT_ALL else if (map.expandedSpeciesIds) 2000 else 354,
+            if (map.hns) EnemyMoveWatch.WAIT_HNS else EnemyMoveWatch.WAIT_GEN3, ::partyMovesOf) ?: return
         val slot = enemySlotOf(battler) ?: return
         synchronized(battleMoves) { battleMoves.getOrPut(slot) { LinkedHashSet() }.add(move) }
     }

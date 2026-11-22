@@ -63,6 +63,13 @@ data class RomKind(
      */
     val isMaxDex: Boolean = false,
     /**
+     * Nat. Dex 1.2.2 (2026-11-20), a game of its own beside 1.2.1: its own id, CRC, randomizer (Engine.NATDEX122) and
+     * stats, so a 1.2.1 game, its saves and its runs stay exactly as they were (Blake: "Don't hurt the players who are
+     * on the old system"). Everything else Nat. Dex ([isNatDex]) is the same for both: the rules, the settings files,
+     * the tracker, which reads each release through the addresses the ROM publishes.
+     */
+    val natDex122: Boolean = false,
+    /**
      * A known build the app plays and nothing more: no tracker, no randomizer, no rules (2026-10-05). The official
      * Heart & Soul 2.0.6 is one: KaizoCore can name it and patch it, but its addresses come from another compiler than
      * the build the tracker has symbols for, so only the KaizoCore build ([HEARTSOUL_KAIZO_206]) is tracked.
@@ -96,6 +103,7 @@ data class RomKind(
     val engine: Engine get() = when {
         isHns -> Engine.HNS
         isMaxDex -> Engine.MAXDEX
+        natDex122 -> Engine.NATDEX122
         isNatDex -> Engine.NATDEX
         else -> Engine.ZX
     }
@@ -364,7 +372,30 @@ data class RomKind(
             FIRERED_U_V11, FIRERED_U_V10, LEAFGREEN_U, EMERALD_U, RUBY_U, SAPPHIRE_U, DIAMOND_U, PEARL_U, PLATINUM_U, HEARTGOLD_U, SOULSILVER_U,
             BLACK_U, WHITE_U, BLACK2_U, WHITE2_U, CRYSTAL_U, GOLD_U, SILVER_U, RED_U, BLUE_U, YELLOW_U,
         )
-        val allNatDex = listOf(EMERALD_NATDEX_121, FIRERED_NATDEX_121)
+        /**
+         * Nat. Dex 1.2.2 (CyanSixFour, 2026-11-07), made from the same games with the patches the app has carried since
+         * 2026-11-20 (assets/patches/natdex-*.bps, pokeemerald_natdex_1.2.2.bps and pokefirered_natdex_1.2.2.bps).
+         * CRCs from the patches' footers, and Blake's dumps patched with them read the same (tools/hns/bps_apply.py).
+         * Like 1.2.1, the header is the plain game's: the CRC is the only gate.
+         */
+        val EMERALD_NATDEX_122 = EMERALD_NATDEX_121.copy(
+            id = "emerald-natdex-122",
+            displayName = "Pokémon Emerald + Nat. Dex 1.2.2",
+            expectedCrc = 0x7B4291C4L,
+            natDex122 = true,
+        )
+
+        val FIRERED_NATDEX_122 = FIRERED_NATDEX_121.copy(
+            id = "firered-natdex-122",
+            displayName = "Pokémon FireRed + Nat. Dex 1.2.2",
+            expectedCrc = 0x34AAFED7L,
+            natDex122 = true,
+        )
+
+        val allNatDex = listOf(EMERALD_NATDEX_121, FIRERED_NATDEX_121, EMERALD_NATDEX_122, FIRERED_NATDEX_122)
+
+        /** The Nat. Dex games the app makes now: the release its patches are (NatDexInfo.buildOf). */
+        val natDexMade = listOf(EMERALD_NATDEX_122, FIRERED_NATDEX_122)
 
         /**
          * MaxDex 1.0 (Trip, Tripc423/Maxdex): FireRed USA 1.1 patched with his MaxDex.bps of 2026-06-25. The CRC

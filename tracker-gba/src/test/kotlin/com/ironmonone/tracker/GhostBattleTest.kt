@@ -62,6 +62,8 @@ class GhostBattleTest {
         mem.put8(m.scriptingBattler, 1)
         // Its move action: the Gastly in the enemy's party knows Lick, and it is the opponent's turn (EnemyMoveWatch).
         mem.put8(m.battlerAttacker, 1)
+        // HandleAction_UseMove has run: gCurrentActionFuncId, the byte after the action number, is B_ACTION_EXEC_SCRIPT.
+        mem.put8(m.currentTurnActionNumber + 1, EnemyMoveWatch.EXEC_SCRIPT)
         val plain = ByteArray(48).also { it[0] = 92; it[12] = LICK.toByte() }
         for (w in 0 until 12) for (i in 0 until 4) {
             val v = ((plain[w * 4 + i].toInt() and 0xFF) xor ((24 shr (i * 8)) and 0xFF))

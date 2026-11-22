@@ -19,6 +19,10 @@ class EnemyMovesSeenTest {
     private val thundershock = 84; private val tackle = 33; private val growl = 45; private val ember = 52
     private val mimic = 102; private val focusPunch = 264; private val tailWhip = 39
 
+    // Three places a battle script can stand, poked into the blank ROM: a move's script under way (accuracycheck, 0x01),
+    // its first command (attackcanceler, 0x00, which the blank ROM already holds) and the end of a script (end, 0x3D).
+    private val running = 0x08300000L; private val canceler = 0x08300010L; private val ended = 0x08300020L
+
     private class Mem(val rom: ByteArray) {
         val ram = HashMap<Long, Byte>()
         fun put8(a: Long, v: Int) { ram[a] = v.toByte() }
@@ -59,6 +63,7 @@ class EnemyMovesSeenTest {
         for ((id, n) in listOf(thundershock to "THUNDERSHOCK", tackle to "TACKLE", growl to "GROWL", ember to "EMBER",
                 mimic to "MIMIC", focusPunch to "FOCUS PUNCH", tailWhip to "TAIL WHIP"))
             poke(map.moveNames + id * 13L, name(n, 13))
+        poke(running, byteArrayOf(0x01)); poke(ended, byteArrayOf(0x3D))
         val mem = Mem(rom)
         mem.put8(map.battlersCount, if (doubles) 4 else 2)
         mem.put32(map.battleMainFunc, map.handleTurnAction)
@@ -81,10 +86,14 @@ class EnemyMovesSeenTest {
 
     /**
      * [battler]'s move action, the [n]th of the turn: the game has written [move] as its side's last move, and the
-     * tracker polls twice while the action runs. [unable]: the game marked the Pokemon unable to use it.
+     * tracker polls twice while the action runs. [unable]: the game marked the Pokemon unable to use it. [script]: where
+     * the battle script stands, past attackcanceler unless told otherwise. [func]: gCurrentActionFuncId, the byte after
+     * the action number; 10 once HandleAction_UseMove has run.
      */
-    private fun act(mem: Mem, t: GbaTracker, battler: Int, n: Int, move: Int, unable: Boolean = false, script: Long = 0L): TrackerState {
+    private fun act(mem: Mem, t: GbaTracker, battler: Int, n: Int, move: Int, unable: Boolean = false, script: Long = running,
+                    func: Int = EnemyMoveWatch.EXEC_SCRIPT): TrackerState {
         mem.put8(map.currentTurnActionNumber, n)
+        mem.put8(map.currentTurnActionNumber + 1, func)
         mem.put8(map.actionsByTurnOrder + n, 0)
         mem.put8(map.battlerAttacker, battler)
         mem.put16(map.battleResults + if (battler % 2 == 0) 0x22 else 0x24, move)
@@ -171,16 +180,70 @@ class EnemyMovesSeenTest {
         act(mem, t, 0, 0, thundershock)
         assertEquals(emptyList(), seen(act(mem, t, 1, 1, tackle, script = scripts.isConfused)), "it may yet hurt itself")
         // It did not: the move's own script runs.
-        mem.put32(map.scriptCurrInstr, 0L)
+        mem.put32(map.scriptCurrInstr, running)
         t.read()
         assertEquals(listOf("TACKLE"), seen(t.read()))
         // The next turn it hurts itself: the game marks it unable while the pause is showing.
         endTurn(mem, t)
         act(mem, t, 0, 0, thundershock)
         act(mem, t, 1, 1, growl, unable = true, script = scripts.isConfused)
-        mem.put32(map.scriptCurrInstr, 0L)
+        mem.put32(map.scriptCurrInstr, running)
         t.read()
         assertEquals(listOf("TACKLE"), seen(t.read()), "Growl was never used")
+    }
+
+    /**
+     * Blake, 2026-11-13: an opponent asleep or paralysed still had its move shown. The game writes the move a frame
+     * before attackcanceler checks whether the Pokemon can act, and the tracker looked in between.
+     */
+    @Test
+    fun `a look before the game has checked sleep or paralysis reveals nothing, whatever comes after`() {
+        val (mem, t) = battle(listOf(rattata to listOf(tackle, growl)))
+        act(mem, t, 0, 0, thundershock)
+        // The move is written and the script stands on attackcanceler: not yet marked unable, not yet decided.
+        assertEquals(emptyList(), seen(act(mem, t, 1, 1, tackle, script = canceler)), "undecided")
+        repeat(3) { assertEquals(emptyList(), seen(t.read()), "still undecided") }
+        // attackcanceler finds it asleep: the unable mark, and the "is fast asleep" script.
+        mem.put32(map.hitMarker, EnemyMoveWatch.UNABLE_TO_USE_MOVE)
+        mem.put32(map.scriptCurrInstr, running)
+        repeat(3) { assertEquals(emptyList(), seen(t.read()), "it never moved") }
+        // Even if the mark were gone before the action ends, the action stays settled.
+        mem.put32(map.hitMarker, 0L)
+        repeat(3) { assertEquals(emptyList(), seen(t.read()), "settled for this action") }
+    }
+
+    @Test
+    fun `a look that waited on attackcanceler records the move once it passes`() {
+        val (mem, t) = battle(listOf(rattata to listOf(tackle, growl)))
+        act(mem, t, 0, 0, thundershock)
+        assertEquals(emptyList(), seen(act(mem, t, 1, 1, tackle, script = canceler)))
+        mem.put32(map.scriptCurrInstr, running)
+        assertEquals(listOf("TACKLE"), seen(t.read()))
+    }
+
+    @Test
+    fun `the action after a move that never fired does not inherit it`() {
+        val (mem, t) = battle(listOf(rattata to listOf(tackle, growl)))
+        // The opponent is faster and asleep: its action is over, unable.
+        assertEquals(emptyList(), seen(act(mem, t, 1, 0, tackle, unable = true)))
+        // The action number moves on a frame before your HandleAction_UseMove runs. In that frame the attacker is still
+        // the opponent, its move still the last one written, the unable mark cleared for the new action, the action
+        // function not yet a script, and the script still on the last one's end.
+        assertEquals(emptyList(), seen(act(mem, t, 1, 1, tackle, script = ended, func = 0)), "between two actions")
+        // Either sign alone holds it back: a map without the action function still has the script's end.
+        mem.put8(map.currentTurnActionNumber + 1, EnemyMoveWatch.EXEC_SCRIPT)
+        repeat(2) { assertEquals(emptyList(), seen(t.read()), "the script's end alone") }
+        mem.put8(map.currentTurnActionNumber + 1, 0); mem.put32(map.scriptCurrInstr, running)
+        repeat(2) { assertEquals(emptyList(), seen(t.read()), "the action function alone") }
+        assertEquals(emptyList(), seen(act(mem, t, 0, 1, thundershock)), "then your move")
+    }
+
+    @Test
+    fun `the same action number the next turn is a new action`() {
+        val (mem, t) = battle(listOf(rattata to listOf(tackle, growl)))
+        assertEquals(listOf("TACKLE"), seen(act(mem, t, 1, 0, tackle)))
+        endTurn(mem, t)
+        assertEquals(listOf("TACKLE", "GROWL"), seen(act(mem, t, 1, 0, growl)))
     }
 
     @Test

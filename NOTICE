@@ -204,6 +204,13 @@ CyanSMP64 randomizer fork — GPL-3.0          CyanSMP64/universal-pokemon-rando
   engine-natdex/test.
   Preserve copyright notices; keep GPL-3.0. This is also Cyan's fourth condition above.
 
+CyanSMP64 randomizer fork, release v1.2.2 — GPL-3.0      CyanSMP64/universal-pokemon-randomizer-zx
+  ** VENDORED IN THIS REPO ** at engine-natdex122/src on 2026-11-20: the tree above with upstream's own diff
+  71e50737...82be84aa (release v1.2.2, six files) applied, then renamed to com.dabomstew.pkrandom122 and
+  nd122-prefixed sibling packages, resource paths included (tools/rename_engine.py), so it ships beside the
+  1.2.1 copy: a Nat. Dex 1.2.1 game keeps that one, a 1.2.2 game is randomized here (engine-natdex122/PINNED.txt).
+  The same two LOCAL MODIFICATIONs as the copy above. Preserve copyright notices; keep GPL-3.0.
+
 MaxDex randomizer, ported - GPL-3.0         CyanSMP64/universal-pokemon-randomizer-zx, with Trip's changes
   ** VENDORED IN THIS REPO ** at engine-maxdex/src on 2026-10-02: CyanSixFour's fork at
   commit d53e08242f8609062ffc17375806365a68f31e60, release v1.1.3, with
@@ -499,7 +506,14 @@ LICENSE TEXTS IN THE APK
 BUNDLED IN THE APK
 ------------------
 
-  app/src/main/assets/patches/   natdex-emerald.bps, natdex-firered.bps, and the
+  app/src/main/assets/patches/   natdex-emerald.bps, natdex-firered.bps (the Nat.
+                                 Dex Extension's release v1.2.2 rom_patches,
+                                 pokeemerald_natdex_1.2.2.bps, sha256
+                                 90b3da74705c6faad9954b47e90e288eb7211644c0cb0710236b0843fc0b5c0e,
+                                 and pokefirered_natdex_1.2.2.bps, sha256
+                                 36bd16dcda8207cfc594035212ff332c2560c5a6af8aeeda13e7c79afd76d4de,
+                                 byte for byte, by CyanSixFour; 1.2.1's until
+                                 2026-11-20), and the
                                  IronMON mode patches listed under IRONMON MODE
                                  PATCHES AND SETTINGS below
   app/src/main/assets/types/     19 type icons, DRAWN BY THIS PROJECT
@@ -720,10 +734,11 @@ https://github.com/SentorG/PlatinumSuperKaizo/releases/tag/v1.0
   Offered on Library, Patched versions, for Platinum (RomKind.PLATINUM_SUPERKAIZO).
 
 CyanSMP64 / NatDexExtension, the Nat. Dex v1.2 settings files
-https://github.com/CyanSMP64/NatDexExtension/tree/v1.2.1/natdex/rnqs_files
+https://github.com/CyanSMP64/NatDexExtension/tree/v1.2.2/natdex/rnqs_files
 
   All twenty of release v1.2.1's settings files (2026-06-29), ten modes for
-  FireRed and ten for Emerald, byte for byte as the tag holds them. Two (the
+  FireRed and ten for Emerald, byte for byte as the tag holds them; release
+  v1.2.2 (2026-11-07) ships the same twenty, byte for byte. Two (the
   Kaizo pair) were bundled before; the other eighteen since 2026-09-29. By
   CyanSixFour (CyanSMP64). SHA-256:
     98d224f8a74b3ddbcf4f69b67bcb6e249d2d129031bcde7745d4a9842b5492e8  FRLG NatDex v1.2 Chaos Kaizo.rnqs

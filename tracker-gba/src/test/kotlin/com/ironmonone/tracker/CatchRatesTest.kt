@@ -58,7 +58,7 @@ class CatchRatesTest {
         assertEquals(9, toxic(GameMap.FIRERED_U_V10)); assertEquals(9, toxic(GameMap.LEAFGREEN_U))
         // The Nat. Dex builds follow their own code (IRONMON_ROMS; skipped without the dumps): both test status1 & 0xD8,
         // Toxic included, in handleballthrow (Emerald Nat. Dex 1.2.1 at 0x08059360, FireRed's at 0x0802E7DC).
-        for ((file, want) in listOf("emerald-natdex-121.gba" to 9, "firered-natdex-121.gba" to 9)) {
+        for ((file, want) in listOf("emerald-natdex-121.gba" to 9, "firered-natdex-121.gba" to 9, "emerald-natdex-122.gba" to 9, "firered-natdex-122.gba" to 9)) {
             val f = Dumps.rom(file) ?: continue
             val rom = f.readBytes()
             val mem = MemoryReader { a, n ->
@@ -76,7 +76,8 @@ class CatchRatesTest {
         // (status1 & 0x27) doubles, status1 & 0xD8 (poison, burn, paralysis and Toxic) adds half, Dive's 35 and the 30 of
         // Net and Repeat, and four shake checks (cmp r4, #4). No modern formula, no new balls, so the Gen 3 estimate holds.
         val tables = listOf("firered-u-v11.gba" to 0x0825018CL, "emerald-u.gba" to 0x0831BD10L,
-            "firered-natdex-121.gba" to 0x0820C5CCL, "emerald-natdex-121.gba" to 0x0838F4D0L, "firered-maxdex.gba" to 0x0826425CL)
+            "firered-natdex-121.gba" to 0x0820C5CCL, "emerald-natdex-121.gba" to 0x0838F4D0L,
+            "firered-natdex-122.gba" to 0x08203A80L, "emerald-natdex-122.gba" to 0x083867A8L, "firered-maxdex.gba" to 0x0826425CL)
         for ((file, table) in tables) {
             val rom = Dumps.rom(file)?.readBytes() ?: continue
             fun u32(a: Long): Long { val o = (a - 0x08000000L).toInt(); return rom.u32(o) }

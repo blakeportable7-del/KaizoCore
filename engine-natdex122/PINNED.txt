@@ -1,0 +1,3 @@
+CyanSMP64/universal-pokemon-randomizer-zx, branch natdex, commit 82be84aa0d43e46426ecb1b20f95ac4da25aaa35 'release v1.2.2', vendored 2026-11-20
+engine-natdex's tree (commit 71e50737 'release v1.2.1' and the two LOCAL MODIFICATIONs NOTICE lists) plus upstream's diff 71e50737...82be84aa
+(six files), then renamed by tools/rename_engine.py engine-natdex122 122 (com.dabomstew.pkrandom122, nd122* siblings).

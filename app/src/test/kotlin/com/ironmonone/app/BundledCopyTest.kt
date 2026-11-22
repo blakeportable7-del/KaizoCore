@@ -70,6 +70,7 @@ class BundledCopyTest {
         val store = File("src/main/kotlin/com/ironmonone/app/PrepStore.kt").readText().replace("\r\n", "\n")
         val needle = "BundledCopy.extract(context, \"patches/" + "$" + "name\", dest)"
         assertEquals(2, store.split(needle).size - 1)
-        assertTrue("if (dest.isFile && (BundledCopy.whole(dest) || BundledCopy.bpsIntact(dest))) return dest" in store)
+        // A patch copied out before 1.2.2 is not reused: only one that makes the current release is (2026-11-20).
+        assertTrue("if (dest.isFile && makesCurrentNatDex(dest) && (BundledCopy.whole(dest) || BundledCopy.bpsIntact(dest))) return dest" in store)
     }
 }

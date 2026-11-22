@@ -65,6 +65,7 @@ object Randomizers {
     ): NatDexEngine.Outcome = synchronized(engineLock) {
         val engine: (File, File, File, Long) -> NatDexEngine.Outcome = whole(kind, when (kind.engine) {
             Engine.NATDEX -> { src, st, d, sd -> NatDexEngine.randomize(src, st, d, sd) }
+            Engine.NATDEX122 -> { src, st, d, sd -> NatDex122Engine.randomize(src, st, d, sd) }
             Engine.MAXDEX -> { src, st, d, sd -> MaxDexEngine.randomize(src, st, d, sd) }
             Engine.ZX -> { src, st, d, sd -> ZxEngine.randomize(src, st, d, sd, kind.generation) }
             Engine.HNS -> { src, st, d, sd -> HnsEngine.randomize(src, st, d, sd, pool ?: hnsPoolNow(), HnsEngine.appAssets()) }
@@ -142,6 +143,7 @@ object Randomizers {
      */
     fun engineId(kind: RomKind, pool: HnsEngine.Pool? = null): String = when (kind.engine) {
         Engine.NATDEX -> NatDexEngine.ID
+        Engine.NATDEX122 -> NatDex122Engine.ID
         Engine.MAXDEX -> MaxDexEngine.ID
         Engine.ZX -> ZxEngine.ID
         Engine.HNS -> HnsEngine.ID + " " + (pool ?: hnsPoolNow()).name.lowercase(Locale.ROOT)
@@ -150,6 +152,7 @@ object Randomizers {
     /** The engine that randomizes [kind], by the name a player reads (the Kaizo IronMON screen's settings line). */
     fun engineName(kind: RomKind): String = when (kind.engine) {
         Engine.NATDEX -> NatDexEngine.DISPLAY_NAME
+        Engine.NATDEX122 -> NatDex122Engine.DISPLAY_NAME
         Engine.MAXDEX -> MaxDexEngine.DISPLAY_NAME
         Engine.ZX -> ZxEngine.DISPLAY_NAME
         Engine.HNS -> HnsEngine.DISPLAY_NAME

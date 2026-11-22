@@ -21,7 +21,7 @@ import com.ironmonone.core.RomKind
 internal object NatDexInfo {
     const val TITLE = "Make the Nat. Dex version"
     const val WHAT = "What the Nat. Dex version adds"
-    const val CREDIT = "From the Nat. Dex Extension by CyanSMP64, version 1.2.1."
+    const val CREDIT = "From the Nat. Dex Extension by CyanSMP64, version 1.2.2."
 
     /** One line for a list row: what it is and why to pick it. */
     const val SHORT = "Pokémon from every generation, a faster battle engine, shorter cutscenes and hidden items that sparkle. For the Nat. Dex modes."
@@ -34,16 +34,30 @@ internal object NatDexInfo {
         "Run from a wild battle with B (not from a shiny one).",
         "Modern HMs: use a field move with just the HM and its badge, and forget HM moves at any time.",
         "A 120-item bag, faster fishing, and a prompt to use another Repel when one runs out.",
+        "An Accelerator in the bag from the start: use it to switch the game to double speed and back.",
+        "Random battle music, on by default and set in the options.",
     )
 
     const val BUTTON = "MAKE THE NAT. DEX VERSION"
 
     /** The Nat. Dex build made from [base], for the two games the Nat. Dex Extension has a patch for; null for any other. */
     fun buildOf(base: RomKind): RomKind? = when (base.id) {
+        RomKind.FIRERED_U_V11.id -> RomKind.FIRERED_NATDEX_122
+        RomKind.EMERALD_U.id -> RomKind.EMERALD_NATDEX_122
+        else -> null
+    }
+
+    /** The 1.2.1 game a player may already have of [base]'s Nat. Dex: it stays, beside the 1.2.2 one (2026-11-20). */
+    fun olderOf(base: RomKind): RomKind? = when (base.id) {
         RomKind.FIRERED_U_V11.id -> RomKind.FIRERED_NATDEX_121
         RomKind.EMERALD_U.id -> RomKind.EMERALD_NATDEX_121
         else -> null
     }
+
+    /** What the make notice says when the player has the 1.2.1 game already. */
+    const val NEW_RELEASE = "Nat. Dex 1.2.2 is out: the Accelerator for double speed, random battle music and Cyan's fixes. " +
+        "Make it here as a game of its own. Your Nat. Dex 1.2.1 game, its saves and its runs stay as they are."
+
 
     /** Everything the Nat. Dex version of [base] adds, every game's lines first, then that game's own. */
     fun lines(base: RomKind): List<String> = everyGame + when (base.id) {
@@ -54,6 +68,7 @@ internal object NatDexInfo {
         RomKind.EMERALD_U.id -> listOf(
             "Everything Faster Emerald has: a shorter intro and instant healing.",
             "Nurses on Route 104 and Route 116, and running in Pacifidlog Town and on Fortree's bridges.",
+            "A step counter in the Safari Zone.",
         )
         else -> emptyList()
     }
@@ -65,9 +80,10 @@ internal object NatDexInfo {
  * games that have it"), as GrowthPatchNotice does for Gold, Silver and Crystal.
  */
 @Composable
-internal fun NatDexNotice(busy: Boolean, onMake: () -> Unit) {
+internal fun NatDexNotice(busy: Boolean, hasOlder: Boolean = false, onMake: () -> Unit) {
     Column(Modifier.padding(vertical = 4.dp)) {
-        Text("This game also has a Nat. Dex version, for the Nat. Dex modes: " + NatDexInfo.SHORT.removeSuffix(" For the Nat. Dex modes."),
+        Text(if (hasOlder) NatDexInfo.NEW_RELEASE
+            else "This game also has a Nat. Dex version, for the Nat. Dex modes: " + NatDexInfo.SHORT.removeSuffix(" For the Nat. Dex modes."),
             style = MaterialTheme.typography.bodySmall, color = Shell.hintOnNight)
         Spacer(Modifier.height(6.dp))
         com.ironmonone.app.gen3.Gen3Button(NatDexInfo.BUTTON, enabled = !busy, onClick = onMake)

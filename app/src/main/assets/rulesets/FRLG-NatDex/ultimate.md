@@ -72,7 +72,7 @@ C) You Cannot Travel to the Sevii Islands with Bill before beating the Elite 4.
 
 ## Nat. Dex ruleset changes
 
-(Rules the page marks "v1.0.0 to v1.1.3 only" are left out: KaizoCore's Nat. Dex is 1.2.1.)
+(Rules the page marks "v1.0.0 to v1.1.3 only" are left out: KaizoCore's Nat. Dex games are 1.2.1 and 1.2.2.)
 
 Read the official IronMON Rules first (http://ironmon.gg/), as well as the version specific rules for FireRed (https://gist.github.com/UTDZac/a147c497424dfbd537d8c4b0c22b5621#fire-red--leaf-green) and Emerald (https://gist.github.com/UTDZac/a147c497424dfbd537d8c4b0c22b5621#ruby--sapphire--emerald)!!
 - The BST limit for banned Abilities such as Huge Power is increased to 420 inclusive.
@@ -126,4 +126,4 @@ Note: None of the Pokémon in this list have the Slow Exp. curve
 - game-specific rules and settings gist by UTDZac: https://gist.github.com/UTDZac/a147c497424dfbd537d8c4b0c22b5621 (last changed 2026-07-05)
 - Nat. Dex Ruleset Changes, the Nat. Dex Extension wiki by CyanSixFour: https://github.com/CyanSMP64/NatDexExtension/wiki/Nat.-Dex-Ruleset-Changes (last changed 2026-06-29)
 
-Generated 2026-10-07 by tools/rules/build_rules.py. Rulesets get revised; if this reads behind a source, regenerate.
+Generated 2026-11-20 by tools/rules/build_rules.py. Rulesets get revised; if this reads behind a source, regenerate.

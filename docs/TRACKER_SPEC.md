@@ -57,7 +57,8 @@ key-value store) as seam interfaces. Maps onto our `Tracker` / `AttachResult` in
 Confirmed independently by `tools/RomTool.java`: NatDex leaves the header untouched
 (a patched Emerald still reads `POKEMON EMER` / `BPEE`), so **header identification
 cannot distinguish NatDex.** Use the CRC-32 gate for that: Emerald NatDex 1.2.1 is
-`ebfdce4b`, FireRed NatDex 1.2.1 is `33779943`.
+`ebfdce4b`, FireRed NatDex 1.2.1 is `33779943`; 1.2.2, a game of its own beside them since 2026-11-20,
+is `7b4291c4` and `34aafed7`.
 
 `GameAddresses` holds per game+version+language: partyCount, partyBase,
 baseStatsTable, levelUpLearnsets, enemyParty, battleTypeFlags, battleMons,

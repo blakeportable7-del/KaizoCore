@@ -47,4 +47,31 @@ class CheatStoreTest {
         assertNull(CheatStore.normalise("hello", Platform.GBA), "not a code, not the single hex digit E")
         assertNull(CheatStore.normalise("c518e2ce 7ff6acd5\nmaster code", Platform.GBA), "one bad line refuses the code")
     }
+
+    /**
+     * Crash reports, Samsung, 2026-11-14: melonDS's retro_cheat_set copies every word of a code into a buffer of 128
+     * with no bound and runs it there and then. A DS code is whole Action Replay lines or nothing.
+     */
+    @Test
+    fun `a DS code is whole Action Replay lines, no more than melonDS holds`() {
+        assertEquals("02000000 00000001+1209D2E0 00000063",
+            CheatStore.normalise("02000000 00000001\n1209d2e0 00000063", Platform.NDS))
+        assertEquals("02000000 00000001", CheatStore.normalise("0200000000000001", Platform.NDS), "16 digits run together")
+        assertNull(CheatStore.normalise("02000000", Platform.NDS), "half a line")
+        assertNull(CheatStore.normalise("02000000 00000001\n1209D2E0", Platform.NDS), "an odd word out")
+        assertNull(CheatStore.normalise("0200 00000001", Platform.NDS), "a short word")
+        val most = (1..CheatStore.DS_MAX_LINES).joinToString("\n") { "02000000 %08X".format(it) }
+        assertEquals(CheatStore.DS_MAX_LINES, CheatStore.normalise(most, Platform.NDS)!!.split('+').size)
+        assertNull(CheatStore.normalise(most + "\n02000000 00000000", Platform.NDS), "one line past melonDS's buffer")
+    }
+
+    @Test
+    fun `the tracker on a second display never takes the game's buttons, and cheats never hold the screen`() {
+        val second = java.io.File("src/main/kotlin/com/ironmonone/app/SecondScreen.kt").readText()
+        assertTrue("FLAG_NOT_FOCUSABLE" in second && "setCancelable(false)" in second)
+        val view = java.io.File("../libretrodroid/src/main/java/com/swordfish/libretrodroid/GLRetroView.kt").readText().replace("\r\n", "\n")
+        val setCheats = view.substringAfter("fun setCheats(").substringBefore("private val cheatTicket")
+        assertFalse("runOnEmulationThread" in setCheats, "applying cheats is not waited for")
+        assertTrue("queueEvent" in setCheats)
+    }
 }

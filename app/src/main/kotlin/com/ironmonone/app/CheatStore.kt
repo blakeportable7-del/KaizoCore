@@ -57,6 +57,9 @@ class CheatStore(private val dir: File) {
     companion object {
         const val SAVE_FAILED = "Could not save the cheats. If this phone is out of space, free some, then try again."
 
+        /** The most lines of a DS code: melonDS's ARCode holds 128 words (src/ARCodeFile.h, Code[2*64]). */
+        const val DS_MAX_LINES = 64
+
         /**
          * Whether cheats may run at all for this session: never in a Kaizo IronMON run or a Nuzlocke, and in plain
          * play, tracked or not (2026-09-30, UX audit P1: every tracked game used to refuse them).
@@ -81,6 +84,16 @@ class CheatStore(private val dir: File) {
             // turn "hello" into "E" and accept it (audit, 2026-09-27).
             val allowed = if (platform == Platform.GBC) Regex("[0-9A-Fa-f +:-]+") else Regex("[0-9A-Fa-f +:]+")
             if (raw.any { !allowed.matches(it) }) return null
+            // A DS code is Action Replay DS: every line two 8-digit words, at most [DS_MAX_LINES] lines. melonDS's
+            // retro_cheat_set copies each word into a fixed buffer of 128 with no bound and runs the code there and
+            // then: a longer or broken code overran it and held the emulation thread, and the screen waiting on that
+            // thread froze until Android called the app not responding (crash reports, Samsung, 2026-11-14).
+            if (platform == Platform.NDS) {
+                val words = raw.flatMap { line -> line.replace(":", " ").split(' ').filter { it.isNotEmpty() } }
+                    .flatMap { w -> if (w.length == 16) listOf(w.take(8), w.drop(8)) else listOf(w) }
+                if (words.isEmpty() || words.size % 2 != 0 || words.size > DS_MAX_LINES * 2 || words.any { it.length != 8 }) return null
+                return words.chunked(2).joinToString("+") { (a, b) -> a.uppercase() + " " + b.uppercase() }
+            }
             val lines = raw
                 .map { line ->
                     // Game Genie codes for the Game Boy keep their dashes; everything

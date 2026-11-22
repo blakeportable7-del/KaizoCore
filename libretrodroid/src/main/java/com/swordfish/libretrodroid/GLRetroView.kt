@@ -280,11 +280,20 @@ class GLRetroView(
      * kept the main thread past Android's five seconds; one job waits once, whatever the number of codes.
      */
     fun setCheats(cheats: List<Pair<Boolean, String>>, useEmulationThread: Boolean = true) {
-        runOnEmulationThread(useEmulationThread, Unit) {
+        fun apply() {
             LibretroDroid.resetCheat()
             cheats.forEachIndexed { i, (enabled, code) -> LibretroDroid.setCheat(i, enabled, code) }
         }
+        if (!useEmulationThread || Thread.currentThread().name.startsWith("GLThread")) return apply()
+        // KaizoCore patch (2026-11-20): handed to the emulation thread and NOT waited for. A tick in the cheats list
+        // waited up to 3.5 s for a thread busy with frames, a few ticks in a row passed Android's 10 s and the app
+        // was called not responding (crash reports, Samsung, 2026-11-14). The newest list wins: one queued before it
+        // and not yet run is skipped. Queued jobs run in order, before the next frame, as they did when waited for.
+        val ticket = cheatTicket.incrementAndGet()
+        queueEvent { if (cheatTicket.get() == ticket) apply() }
     }
+
+    private val cheatTicket = java.util.concurrent.atomic.AtomicInteger(0)
 
     /**
      * KaizoCore patch (2026-09-30): told before and after every state load, whoever loads it (a slot, undo,

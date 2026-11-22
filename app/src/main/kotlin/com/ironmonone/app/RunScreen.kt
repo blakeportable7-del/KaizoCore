@@ -438,7 +438,8 @@ fun RunScreen(
         selectedRom?.let { (rom, base) ->
             val natDex = NatDexInfo.buildOf(rom)
             if (natDex != null && preparedList.none { it.first.id == natDex.id }) {
-                NatDexNotice(busy) {
+                // A player with the 1.2.1 game is told it stays (side by side, 2026-11-20).
+                NatDexNotice(busy, hasOlder = NatDexInfo.olderOf(rom)?.let { o -> preparedList.any { it.first.id == o.id } } == true) {
                     pickAfterPatch = natDex.id to null
                     RunJob.run(RunPhase.PATCHING, "Could not make the Nat. Dex version") {
                         val tmp = java.io.File(context.cacheDir, "prep-" + System.nanoTime())

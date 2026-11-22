@@ -58,6 +58,9 @@ class GameBuildRomTest {
             Expect(RomKind.DIAMOND_U, 493, listOf(387, 390, 393), true, false),
             Expect(RomKind.FIRERED_NATDEX_121, 1258, listOf(1, 4, 7), true, true),
             Expect(RomKind.EMERALD_NATDEX_121, 1258, listOf(252, 255, 258), true, true),
+            // Nat. Dex 1.2.2 read by its own randomizer (engine-natdex122): the same Pokemon and starters.
+            Expect(RomKind.FIRERED_NATDEX_122, 1258, listOf(1, 4, 7), true, true),
+            Expect(RomKind.EMERALD_NATDEX_122, 1258, listOf(252, 255, 258), true, true),
         )
         var ran = 0
         for (e in expected) {

@@ -186,7 +186,9 @@ class PrepStore(private val filesDir: File) {
         val dest = File(patches, name)
         // Used when known whole: copied whole out of the APK (marked), or a BPS whose own checksum holds, checked
         // once and then marked; an imported copy counts too. A copy cut short is copied again (rc33 audit P1).
-        if (dest.isFile && (BundledCopy.whole(dest) || BundledCopy.bpsIntact(dest))) return dest
+        // And only when it makes the release the app makes now (RomKind.natDexMade): a phone that had the 1.2.1 patch
+        // copied out before the update would have made 1.2.1 again (2026-11-20). That copy is replaced from the APK.
+        if (dest.isFile && makesCurrentNatDex(dest) && (BundledCopy.whole(dest) || BundledCopy.bpsIntact(dest))) return dest
         return BundledCopy.extract(context, "patches/$name", dest)
     }
 
@@ -199,6 +201,10 @@ class PrepStore(private val filesDir: File) {
         if (BundledCopy.whole(dest) && dest.lastModified() >= installed) return dest
         return BundledCopy.extract(context, "patches/$name", dest)
     }
+
+    /** [patch] makes a Nat. Dex game of the release the app makes now, by its footer's target CRC. */
+    private fun makesCurrentNatDex(patch: File): Boolean =
+        BundledCopy.bpsTarget(patch).let { t -> RomKind.natDexMade.any { it.expectedCrc == t } }
 
     /** Returns the stored location, or a plain-English refusal. */
     fun importPatch(bytes: ByteArray): Result<File> {

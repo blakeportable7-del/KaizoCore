@@ -94,7 +94,7 @@ class OverworldScanTest {
                          val plttUnfaded: Long, val objectEvents: Long)
 
     @Test
-    fun `both Nat Dex 1_2_1 dumps are read, and what is read is consistent with itself and with the retail games' unmoved variables`() {
+    fun `the Nat Dex 1_2_1 and 1_2_2 dumps are read, and what is read is consistent with itself and with the retail games' unmoved variables`() {
         // What the scan reads out of each dump. These numbers come from the dumps themselves (there is no symbol file for
         // Nat. Dex), so they are a record of what was found, and the relations after them are what makes them believable.
         val dumps = listOf(
@@ -102,6 +102,11 @@ class OverworldScanTest {
                 coordX = 0x02021BC8, plttUnfaded = 0x020371A4, objectEvents = 0x02036DE4),
             Golden("emerald-natdex-121.gba", main = 0x03002CC0, cb2 = 0x08072379, avatar = 0x0203734C, sprites = 0x02020630,
                 coordX = 0x02021BBC, plttUnfaded = 0x020374D0, objectEvents = 0x0203710C),
+            // 1.2.2 (2026-11-12): the Accelerator's new variables moved Emerald's gMain 0x10 on, and both games' later EWRAM.
+            Golden("firered-natdex-122.gba", main = 0x03002CC0, cb2 = 0x0805C2DD, avatar = 0x02037030, sprites = 0x0202063C,
+                coordX = 0x02021BC8, plttUnfaded = 0x020371B0, objectEvents = 0x02036DF0),
+            Golden("emerald-natdex-122.gba", main = 0x03002CD0, cb2 = 0x08064021, avatar = 0x0203727C, sprites = 0x02020630,
+                coordX = 0x02021BBC, plttUnfaded = 0x02037400, objectEvents = 0x0203703C),
         )
         var checked = 0
         for (d in dumps) {
@@ -135,7 +140,7 @@ class OverworldScanTest {
             assertEquals(retail.coordOffsetY, a.coordOffsetY)
             checked++
         }
-        if (dir != null) assertEquals(2, checked, "a Nat. Dex dump is missing from IRONMON_ROMS")
+        if (dir != null) assertEquals(4, checked, "a Nat. Dex dump is missing from IRONMON_ROMS")
         if (dir != null) println("OverworldScanTest: the scan read $checked Nat. Dex dumps")
     }
 

@@ -40,8 +40,10 @@ class CheatsAllowanceTest {
         val apply = play.substring(play.indexOf("fun applyCheats()")).substringBefore("\n")
         assertFalse("r.setCheat(" in apply || "r.resetCheat(" in apply, "no call per code")
         val view = File("../libretrodroid/src/main/java/com/swordfish/libretrodroid/GLRetroView.kt").readText().replace("\r\n", "\n")
-        val set = view.substringAfter("fun setCheats(").substringBefore("\n    }\n")
-        assertTrue("runOnEmulationThread(useEmulationThread, Unit) {\n            LibretroDroid.resetCheat()\n            cheats.forEachIndexed { i, (enabled, code) -> LibretroDroid.setCheat(i, enabled, code) }" in set)
+        val set = view.substringAfter("fun setCheats(").substringBefore("private val cheatTicket")
+        // One job: reset, then every code in order. Queued and not waited for (2026-11-20, crash reports).
+        assertTrue("LibretroDroid.resetCheat()\n            cheats.forEachIndexed { i, (enabled, code) -> LibretroDroid.setCheat(i, enabled, code) }" in set)
+        assertTrue("queueEvent { if (cheatTicket.get() == ticket) apply() }" in set)
     }
 
     @Test

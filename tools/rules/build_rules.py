@@ -554,7 +554,7 @@ V113_ONLY = "v1.0.0 to v1.1.3 only"
 V120_ONLY = "v1.2.0+ only"
 
 def natdex_changes(drop=V113_ONLY):
-    """The wiki page without the rules it marks [drop]. KaizoCore's Nat. Dex is 1.2.1, so its books leave out what
+    """The wiki page without the rules it marks [drop]. KaizoCore's Nat. Dex games are 1.2.1 and 1.2.2, so its books leave out what
     applies to v1.0.0 to v1.1.3 only; MaxDex's book leaves out the v1.2.0+ rules instead (see NOTE_MAXDEX)."""
     t = (COMM / "Nat.-Dex-Ruleset-Changes.md").read_text(encoding="utf-8")
     kept, drop_below = [], None
@@ -573,9 +573,9 @@ def natdex_changes(drop=V113_ONLY):
         kept.append(line)
     return render_md("\n".join(kept))
 
-NATDEX_NOTE = "(Rules the page marks \"v1.0.0 to v1.1.3 only\" are left out: KaizoCore's Nat. Dex is 1.2.1.)"
+NATDEX_NOTE = "(Rules the page marks \"v1.0.0 to v1.1.3 only\" are left out: KaizoCore's Nat. Dex games are 1.2.1 and 1.2.2.)"
 NATDEX_NOTE_HNS = ("(On Heart & Soul, this section is for a run with the Nat. Dex pool only; a Vanilla pool run skips it. "
-                   "Rules the page marks \"v1.0.0 to v1.1.3 only\" are left out: KaizoCore's Nat. Dex is 1.2.1.)")
+                   "Rules the page marks \"v1.0.0 to v1.1.3 only\" are left out: KaizoCore's Nat. Dex games are 1.2.1 and 1.2.2.)")
 # The Nat. Dex page's note, as it reads on MaxDex, which is built on Nat. Dex 1.1.3 (Blake, 2026-10-03: "Max dex is
 # allowed a bst 600 pokemon").
 NATDEX_NOTE_MAXDEX = ("(Rules the page marks \"v1.2.0+ only\" are left out: MaxDex is built on Nat. Dex 1.1.3, so the ones marked "

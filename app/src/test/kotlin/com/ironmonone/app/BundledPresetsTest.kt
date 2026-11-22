@@ -31,6 +31,7 @@ class BundledPresetsTest {
                 Engine.MAXDEX -> com.dabomstew.pkrandommd.Settings.read(it)
                 // HnsEngine reads the Nat. Dex fork's files (the RSE NatDex v1.2 presets it is offered).
                 Engine.HNS -> com.dabomstew.pkrandom.Settings.read(it)
+                Engine.NATDEX122 -> com.dabomstew.pkrandom122.Settings.read(it)
             }
         }
     }.isSuccess
@@ -45,7 +46,10 @@ class BundledPresetsTest {
             assertTrue(kinds.isNotEmpty(), "${f.name} is offered for no game")
             // Heart & Soul plays the Emerald Nat. Dex v1.2 files too, read by HnsEngine through the Nat. Dex fork's
             // Settings: it shares them with the Nat. Dex games and is held to the Nat. Dex engine's rule here.
-            val engines = kinds.map { it.engine }.toSet() - Engine.HNS
+            // Nat. Dex 1.2.2 (2026-11-20) plays the same v1.2 files as 1.2.1, so each one offered to it must load in its
+            // own copy of the randomizer too; it is held to the Nat. Dex engine's rule with them.
+            if (kinds.any { it.engine == Engine.NATDEX122 }) assertTrue(readsWith(Engine.NATDEX122, f), "${f.name} does not load in NATDEX122")
+            val engines = kinds.map { it.engine }.toSet() - Engine.HNS - Engine.NATDEX122
             assertEquals(1, engines.size, "${f.name} is offered to both engines' games: ${kinds.map { it.id }}")
             assertTrue(readsWith(engines.single(), f), "${f.name} does not load in ${engines.single()}")
             val others = when (engines.single()) {
@@ -53,7 +57,7 @@ class BundledPresetsTest {
                 Engine.NATDEX -> listOf(Engine.ZX)
                 // MaxDex's 1.1.3 engine brings an older file up to its own version, so it is the one held to both others refusing its file.
                 Engine.MAXDEX -> listOf(Engine.ZX, Engine.NATDEX)
-                Engine.HNS -> listOf(Engine.ZX)
+                Engine.HNS, Engine.NATDEX122 -> listOf(Engine.ZX)
             }
             for (other in others) assertFalse(readsWith(other, f), "${f.name} also loads in $other")
         }

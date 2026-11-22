@@ -33,7 +33,7 @@ The patched game goes under **YOUR ROM HACKS**, and your original stays exactly 
 
 | Patched version | For | What it is |
 |---|---|---|
-| Nat. Dex 1.2.1 | Emerald, FireRed v1.1 | Adds Pokémon from later games. All ten IronMON modes work on it. Nat. Dex Extension by CyanSMP64, used with permission. |
+| Nat. Dex 1.2.2 (and 1.2.1) | Emerald, FireRed v1.1 | Adds Pokémon from later games; 1.2.2 adds the Accelerator for double speed. A 1.2.1 game you already have keeps working. All ten IronMON modes work on it. Nat. Dex Extension by CyanSMP64, used with permission. |
 | MaxDex 1.0 | FireRed v1.1 | Nat. Dex with the Legends Z-A Megas, and moves and abilities through Gen 9. Its one mode is Kaizo. MaxDex by Trip (Tripc423). |
 | Pseudo-fluctuating | Red, Blue, Yellow, Gold, Silver, Crystal | The growth patch. The default for Gold, Silver and Crystal. |
 | Super Kaizo builds | FireRed 1.0, LeafGreen, Emerald, HeartGold, Platinum | The patched games Super Kaizo is played on. |

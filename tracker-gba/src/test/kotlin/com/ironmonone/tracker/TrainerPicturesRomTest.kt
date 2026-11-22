@@ -26,6 +26,8 @@ class TrainerPicturesRomTest {
         Build("sapphire-u.gba", 0x081EC4CC, 83, 265, roxanne, 417172497, -75273623),
         Build("firered-natdex-121.gba", 0x082313F8, 148, 414, brock, -2088954863, 1680215201),
         Build("emerald-natdex-121.gba", 0x08367694, 93, 265, roxanne, 458322473, -821413319),
+        Build("firered-natdex-122.gba", 0x082288AC, 148, 414, brock, -2088954863, 1680215201),
+        Build("emerald-natdex-122.gba", 0x08365DF4, 93, 265, roxanne, 458322473, -821413319),
         Build("firered-maxdex.gba", 0x0825C548, 148, 414, brock, -2088954863, 1680215201),
     )
 
